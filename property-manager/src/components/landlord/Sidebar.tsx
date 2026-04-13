@@ -6,7 +6,7 @@ import { usePathname } from 'next/navigation'
 const navItems = [
   {
     label: 'Dashboard',
-    href: '/admin',
+    href: '/landlord',
     icon: (
       <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75}
@@ -15,8 +15,8 @@ const navItems = [
     ),
   },
   {
-    label: 'Listings',
-    href: '/admin/properties',
+    label: 'My Listings',
+    href: '/landlord/listings',
     icon: (
       <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75}
@@ -25,18 +25,18 @@ const navItems = [
     ),
   },
   {
-    label: 'Landlords',
-    href: '/admin/landlords',
+    label: 'Profile',
+    href: '/landlord/profile',
     icon: (
       <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75}
-          d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
+          d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
       </svg>
     ),
   },
 ]
 
-export default function Sidebar() {
+export default function LandlordSidebar() {
   const pathname = usePathname()
 
   return (
@@ -49,15 +49,18 @@ export default function Sidebar() {
               d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
           </svg>
         </div>
-        <span className="text-sm font-semibold text-gray-900">Property Manager</span>
+        <div>
+          <span className="text-sm font-semibold text-gray-900">Property Manager</span>
+          <p className="text-xs text-gray-400">Landlord portal</p>
+        </div>
       </div>
 
       {/* Nav */}
       <nav className="flex-1 px-3 py-4 space-y-0.5">
         {navItems.map((item) => {
           const isActive =
-            item.href === '/admin'
-              ? pathname === '/admin'
+            item.href === '/landlord'
+              ? pathname === '/landlord'
               : pathname.startsWith(item.href)
 
           return (
@@ -84,8 +87,8 @@ export default function Sidebar() {
         <form action="/auth/signout" method="post">
           <button
             type="submit"
-            className="flex items-center gap-3 w-full px-3 py-2 rounded-lg text-sm font-medium text-gray-600
-              hover:bg-gray-100 hover:text-gray-900 transition-colors"
+            className="flex items-center gap-3 w-full px-3 py-2 rounded-lg text-sm font-medium
+              text-gray-600 hover:bg-gray-100 hover:text-gray-900 transition-colors"
           >
             <svg className="w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75}
