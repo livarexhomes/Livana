@@ -13,8 +13,11 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Property Manager",
-  description: "Admin panel for managing property listings",
+  title: {
+    default: 'Property Manager',
+    template: '%s — Property Manager',
+  },
+  description: 'Find verified rental and sale properties. Connect directly with landlords via WhatsApp.',
 };
 
 export default function RootLayout({

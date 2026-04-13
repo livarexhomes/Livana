@@ -127,8 +127,9 @@ export default function LandlordPropertyForm({
           <select name="status" defaultValue={f.status ?? 'available'}
             className="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white">
             <option value="available">Available</option>
-            <option value="unavailable">Unavailable</option>
-            <option value="pending">Pending</option>
+            <option value="taken">Taken</option>
+            <option value="coming_soon">Coming Soon</option>
+            <option value="under_negotiation">Under Negotiation</option>
           </select>
         </div>
       </div>

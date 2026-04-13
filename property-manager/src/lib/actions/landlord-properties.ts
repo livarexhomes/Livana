@@ -15,7 +15,7 @@ const PropertySchema = z.object({
   bathrooms: z.coerce.number().int().min(0),
   area_sqft: z.coerce.number().positive().optional().nullable(),
   type: z.enum(['sale', 'rent']),
-  status: z.enum(['available', 'unavailable', 'pending']),
+  status: z.enum(['available', 'taken', 'coming_soon', 'under_negotiation']),
   featured: z.coerce.boolean().optional().default(false),
 })
 
@@ -135,7 +135,7 @@ export async function landlordDeleteProperty(id: string): Promise<{ error?: stri
 
 export async function landlordUpdateAvailability(
   propertyId: string,
-  status: 'available' | 'unavailable' | 'pending'
+  status: 'available' | 'taken' | 'coming_soon' | 'under_negotiation'
 ): Promise<{ error?: string }> {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()

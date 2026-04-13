@@ -3,7 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 async function getStats() {
   const supabase = await createClient()
 
-  const [{ count: total }, { count: available }, { count: unavailable }] =
+  const [{ count: total }, { count: available }, { count: taken }] =
     await Promise.all([
       supabase.from('properties').select('*', { count: 'exact', head: true }),
       supabase
@@ -13,10 +13,10 @@ async function getStats() {
       supabase
         .from('properties')
         .select('*', { count: 'exact', head: true })
-        .eq('status', 'unavailable'),
+        .eq('status', 'taken'),
     ])
 
-  return { total: total ?? 0, available: available ?? 0, unavailable: unavailable ?? 0 }
+  return { total: total ?? 0, available: available ?? 0, unavailable: taken ?? 0 }
 }
 
 const statCards = [
