@@ -6,8 +6,16 @@ import type { Property } from '@/lib/types/database'
 
 const statusStyles: Record<Property['status'], string> = {
   available: 'bg-green-100 text-green-700',
-  unavailable: 'bg-red-100 text-red-700',
-  pending: 'bg-yellow-100 text-yellow-700',
+  taken: 'bg-red-100 text-red-700',
+  coming_soon: 'bg-blue-100 text-blue-700',
+  under_negotiation: 'bg-yellow-100 text-yellow-700',
+}
+
+const statusLabels: Record<Property['status'], string> = {
+  available: 'Available',
+  taken: 'Taken',
+  coming_soon: 'Coming Soon',
+  under_negotiation: 'Under Negotiation',
 }
 
 export default async function LandlordListingsPage() {
@@ -85,8 +93,8 @@ export default async function LandlordListingsPage() {
                       </svg>
                     </div>
                   )}
-                  <span className={`absolute top-2 right-2 px-2 py-0.5 rounded-full text-xs font-medium capitalize ${statusStyles[p.status as Property['status']]}`}>
-                    {p.status}
+                  <span className={`absolute top-2 right-2 px-2 py-0.5 rounded-full text-xs font-medium ${statusStyles[p.status as Property['status']]}`}>
+                    {statusLabels[p.status as Property['status']]}
                   </span>
                 </div>
 
@@ -98,33 +106,22 @@ export default async function LandlordListingsPage() {
                   <p className="text-sm font-semibold text-gray-900">${Number(p.price).toLocaleString()}</p>
 
                   {/* Availability toggle */}
-                  <div className="flex gap-2">
-                    <form action={async () => {
-                      'use server'
-                      await landlordUpdateAvailability(p.id, 'available')
-                    }}>
-                      <button type="submit"
-                        className={`text-xs px-2.5 py-1 rounded-lg font-medium transition ${
-                          p.status === 'available'
-                            ? 'bg-green-100 text-green-700 ring-1 ring-green-300'
-                            : 'bg-gray-100 text-gray-500 hover:bg-green-50 hover:text-green-700'
-                        }`}>
-                        Available
-                      </button>
-                    </form>
-                    <form action={async () => {
-                      'use server'
-                      await landlordUpdateAvailability(p.id, 'unavailable')
-                    }}>
-                      <button type="submit"
-                        className={`text-xs px-2.5 py-1 rounded-lg font-medium transition ${
-                          p.status === 'unavailable'
-                            ? 'bg-red-100 text-red-700 ring-1 ring-red-300'
-                            : 'bg-gray-100 text-gray-500 hover:bg-red-50 hover:text-red-700'
-                        }`}>
-                        Unavailable
-                      </button>
-                    </form>
+                  <div className="flex flex-wrap gap-1.5">
+                    {(['available', 'taken', 'coming_soon', 'under_negotiation'] as const).map((s) => (
+                      <form key={s} action={async () => {
+                        'use server'
+                        await landlordUpdateAvailability(p.id, s)
+                      }}>
+                        <button type="submit"
+                          className={`text-xs px-2 py-1 rounded-lg font-medium transition ${
+                            p.status === s
+                              ? `${statusStyles[s]} ring-1 ring-current`
+                              : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
+                          }`}>
+                          {statusLabels[s]}
+                        </button>
+                      </form>
+                    ))}
                   </div>
 
                   <div className="flex items-center gap-3 pt-1 border-t border-gray-100">
