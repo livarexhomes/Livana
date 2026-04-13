@@ -5,8 +5,16 @@ import type { Property } from '@/lib/types/database'
 
 const statusStyles: Record<Property['status'], string> = {
   available: 'bg-green-100 text-green-700',
-  unavailable: 'bg-red-100 text-red-700',
-  pending: 'bg-yellow-100 text-yellow-700',
+  taken: 'bg-red-100 text-red-700',
+  coming_soon: 'bg-blue-100 text-blue-700',
+  under_negotiation: 'bg-yellow-100 text-yellow-700',
+}
+
+const statusLabels: Record<Property['status'], string> = {
+  available: 'Available',
+  taken: 'Taken',
+  coming_soon: 'Coming Soon',
+  under_negotiation: 'Under Negotiation',
 }
 
 export default async function AdminPropertiesPage() {
@@ -82,8 +90,8 @@ export default async function AdminPropertiesPage() {
                     ${Number(p.price).toLocaleString()}
                   </td>
                   <td className="px-4 py-3">
-                    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium capitalize ${statusStyles[p.status as Property['status']]}`}>
-                      {p.status}
+                    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${statusStyles[p.status as Property['status']]}`}>
+                      {statusLabels[p.status as Property['status']]}
                     </span>
                   </td>
                   <td className="px-4 py-3">
@@ -91,14 +99,14 @@ export default async function AdminPropertiesPage() {
                       {/* Quick status toggle */}
                       <form action={async () => {
                         'use server'
-                        const next = p.status === 'available' ? 'unavailable' : 'available'
+                        const next = p.status === 'available' ? 'taken' : 'available'
                         await updatePropertyStatus(p.id, next)
                       }}>
                         <button
                           type="submit"
                           className="text-xs text-gray-500 hover:text-gray-800 underline underline-offset-2"
                         >
-                          {p.status === 'available' ? 'Mark unavailable' : 'Mark available'}
+                          {p.status === 'available' ? 'Mark taken' : 'Mark available'}
                         </button>
                       </form>
                       <Link

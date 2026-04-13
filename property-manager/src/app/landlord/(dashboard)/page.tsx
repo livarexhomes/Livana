@@ -15,17 +15,17 @@ export default async function LandlordDashboardPage() {
 
   if (!landlord) redirect('/landlord/register')
 
-  const [{ count: total }, { count: available }, { count: unavailable }] =
+  const [{ count: total }, { count: available }, { count: taken }] =
     await Promise.all([
       supabase.from('properties').select('*', { count: 'exact', head: true }).eq('landlord_id', landlord.id),
       supabase.from('properties').select('*', { count: 'exact', head: true }).eq('landlord_id', landlord.id).eq('status', 'available'),
-      supabase.from('properties').select('*', { count: 'exact', head: true }).eq('landlord_id', landlord.id).eq('status', 'unavailable'),
+      supabase.from('properties').select('*', { count: 'exact', head: true }).eq('landlord_id', landlord.id).eq('status', 'taken'),
     ])
 
   const stats = [
     { label: 'Total listings', value: total ?? 0, color: 'bg-indigo-50 text-indigo-700' },
     { label: 'Available', value: available ?? 0, color: 'bg-green-50 text-green-700' },
-    { label: 'Unavailable', value: unavailable ?? 0, color: 'bg-red-50 text-red-700' },
+    { label: 'Taken', value: taken ?? 0, color: 'bg-red-50 text-red-700' },
   ]
 
   return (
