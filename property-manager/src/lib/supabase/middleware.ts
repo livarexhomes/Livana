@@ -32,18 +32,35 @@ export async function updateSession(request: NextRequest) {
 
   const { pathname } = request.nextUrl
 
-  // Protect all /admin routes except /admin/login
+  // --- Admin route protection ---
   if (pathname.startsWith('/admin') && pathname !== '/admin/login' && !user) {
-    const loginUrl = request.nextUrl.clone()
-    loginUrl.pathname = '/admin/login'
-    return NextResponse.redirect(loginUrl)
+    const url = request.nextUrl.clone()
+    url.pathname = '/admin/login'
+    return NextResponse.redirect(url)
   }
 
-  // Redirect authenticated users away from login page
   if (pathname === '/admin/login' && user) {
-    const dashboardUrl = request.nextUrl.clone()
-    dashboardUrl.pathname = '/admin'
-    return NextResponse.redirect(dashboardUrl)
+    const url = request.nextUrl.clone()
+    url.pathname = '/admin'
+    return NextResponse.redirect(url)
+  }
+
+  // --- Landlord route protection ---
+  const landlordPublic = ['/landlord/login', '/landlord/register']
+  if (
+    pathname.startsWith('/landlord') &&
+    !landlordPublic.includes(pathname) &&
+    !user
+  ) {
+    const url = request.nextUrl.clone()
+    url.pathname = '/landlord/login'
+    return NextResponse.redirect(url)
+  }
+
+  if (landlordPublic.includes(pathname) && user) {
+    const url = request.nextUrl.clone()
+    url.pathname = '/landlord'
+    return NextResponse.redirect(url)
   }
 
   return supabaseResponse
