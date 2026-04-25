@@ -11,13 +11,21 @@ type Tab = 'Buy' | 'Rent' | 'Lease' | 'Commercial'
 
 export default function LatestProperties({
   initialProperties,
+  initialSavedIds = [],
+  isAuthenticated = false,
   activeTab,
 }: {
   initialProperties: PropertyWithLandlord[]
+  /** Property IDs saved by the current user (for the initial server-fetched tab). */
+  initialSavedIds?: string[]
+  isAuthenticated?: boolean
   activeTab: Tab
 }) {
   const tab = activeTab
   const [properties, setProperties] = useState<PropertyWithLandlord[]>(initialProperties)
+  // savedIds only applies to the initial server-fetched batch; client-fetched
+  // tabs default to unsaved (clicking save will redirect unauthenticated users).
+  const savedSet = new Set(initialSavedIds)
   const [loading, setLoading] = useState(false)
   const [initialLoad, setInitialLoad] = useState(true)
 
@@ -88,7 +96,12 @@ export default function LatestProperties({
         ) : properties.length > 0 ? (
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
             {properties.map((p) => (
-              <PropertyCard key={p.id} property={p} />
+              <PropertyCard
+                key={p.id}
+                property={p}
+                saved={savedSet.has(p.id)}
+                isAuthenticated={isAuthenticated}
+              />
             ))}
           </div>
         ) : (

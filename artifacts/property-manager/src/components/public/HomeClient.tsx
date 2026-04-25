@@ -13,9 +13,14 @@ type Tab = 'Buy' | 'Rent' | 'Lease' | 'Commercial'
  */
 export default function HomeClient({
   initialProperties,
+  initialSavedIds = [],
+  isAuthenticated = false,
   heroSlot,
 }: {
   initialProperties: PropertyWithLandlord[]
+  /** Property IDs the current user has saved (serialisable for RSC → client boundary). */
+  initialSavedIds?: string[]
+  isAuthenticated?: boolean
   heroSlot: React.ReactNode
 }) {
   const [activeTab, setActiveTab] = useState<Tab>('Buy')
@@ -31,7 +36,12 @@ export default function HomeClient({
       </section>
 
       {/* Listings — reacts to tab selection in the hero search */}
-      <LatestProperties initialProperties={initialProperties} activeTab={activeTab} />
+      <LatestProperties
+        initialProperties={initialProperties}
+        initialSavedIds={initialSavedIds}
+        isAuthenticated={isAuthenticated}
+        activeTab={activeTab}
+      />
     </>
   )
 }
