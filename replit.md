@@ -1,27 +1,36 @@
-# Workspace
+# Replit Project — Property Manager monorepo
 
-## Overview
+This pnpm monorepo hosts a Next.js Property Manager app and supporting services.
 
-pnpm workspace monorepo using TypeScript. Each package manages its own dependencies.
+## Artifacts
 
-## Stack
+- **`artifacts/property-manager/`** — **Next.js 15 App Router** web app (Property Manager). Served at `/` on port `21844`.
+  - Tailwind CSS v4 (via `@tailwindcss/postcss`)
+  - Supabase via `@supabase/ssr` (browser + server clients)
+  - Long-running production server (`next start`), not a static export — server actions and middleware are used.
+  - Auth-aware middleware in `src/middleware.ts` redirects `/admin/*` and `/landlord/*` based on session.
+- **`artifacts/api-server/`** — Express API server (existing scaffold, not used by the Property Manager app).
+- **`artifacts/mockup-sandbox/`** — Mockup/canvas sandbox.
 
-- **Monorepo tool**: pnpm workspaces
-- **Node.js version**: 24
-- **Package manager**: pnpm
-- **TypeScript version**: 5.9
-- **API framework**: Express 5
-- **Database**: PostgreSQL + Drizzle ORM
-- **Validation**: Zod (`zod/v4`), `drizzle-zod`
-- **API codegen**: Orval (from OpenAPI spec)
-- **Build**: esbuild (CJS bundle)
+## Required environment variables
 
-## Key Commands
+Set these in the Secrets pane (shared environment) before the Property Manager app can talk to Supabase:
 
-- `pnpm run typecheck` — full typecheck across all packages
-- `pnpm run build` — typecheck + build all packages
-- `pnpm --filter @workspace/api-spec run codegen` — regenerate API hooks and Zod schemas from OpenAPI spec
-- `pnpm --filter @workspace/db run push` — push DB schema changes (dev only)
-- `pnpm --filter @workspace/api-server run dev` — run API server locally
+- `NEXT_PUBLIC_SUPABASE_URL` — your Supabase project URL
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY` — your Supabase public anon key
 
-See the `pnpm-workspace` skill for workspace structure, TypeScript setup, and package details.
+The app gracefully degrades when these are unset (Supabase calls return empty data and middleware passes through), so the home page still renders during initial setup.
+
+## Routing structure (Next.js)
+
+- `/` — public home
+- `/about`, `/contact` — public marketing
+- `/listings`, `/listings/[id]` — public listings
+- `/admin/login`, `/admin`, `/admin/landlords`, `/admin/properties[/new|/[id]/edit]` — admin
+- `/landlord/{login,register,pending,rejected}`, `/landlord` (dashboard), `/landlord/listings[/new|/[id]/edit]`, `/landlord/profile` — landlord
+- `/auth/callback`, `/auth/signout` — auth helpers
+
+## Notes
+
+- The original task plan asked for a Vite + React port, but the user explicitly requested Next.js, so the artifact runs `next dev` / `next start` instead. The artifact metadata still lists `react-vite` as the integrated skill (artifact metadata is locked once registered).
+- Do not run `pnpm dev` at the workspace root — apps run via Replit workflows.
