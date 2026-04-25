@@ -5,17 +5,27 @@ import LatestProperties from '@/components/public/LatestProperties'
 import type { PropertyWithLandlord } from '@/lib/types/database'
 import { ArrowRight, ShieldCheck } from 'lucide-react'
 
-export default async function HomePage() {
-  const supabase = await createClient()
+async function fetchRecent(): Promise<PropertyWithLandlord[]> {
+  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+    return []
+  }
+  try {
+    const supabase = await createClient()
+    const { data } = await supabase
+      .from('properties')
+      .select('*, landlords(full_name, whatsapp, is_verified), property_images(storage_path, alt_text, is_cover)')
+      .eq('status', 'available')
+      .eq('type', 'sale')
+      .order('created_at', { ascending: false })
+      .limit(8)
+    return (data ?? []) as PropertyWithLandlord[]
+  } catch {
+    return []
+  }
+}
 
-  // Fetch some recent properties
-  const { data: recent } = await supabase
-    .from('properties')
-    .select('*, landlords(full_name, whatsapp, is_verified), property_images(storage_path, alt_text, is_cover)')
-    .eq('status', 'available')
-    .eq('type', 'sale')
-    .order('created_at', { ascending: false })
-    .limit(8)
+export default async function HomePage() {
+  const recent = await fetchRecent()
 
   return (
     <div className="min-h-screen flex flex-col bg-[#FAFAFA] text-slate-900 font-sans selection:bg-black selection:text-white">
@@ -42,7 +52,7 @@ export default async function HomePage() {
           </div>
           
           <h1 className="text-5xl md:text-7xl font-bold mb-6 text-white tracking-tighter leading-[1.05] text-balance drop-shadow-lg">
-            Discover a place you'll <br className="hidden md:block" /> 
+            Discover a place you&apos;ll <br className="hidden md:block" /> 
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-gray-100 to-gray-400">love to live.</span>
           </h1>
           
@@ -60,7 +70,7 @@ export default async function HomePage() {
         <div className="flex flex-col md:flex-row md:items-end justify-between mb-10 gap-4">
           <div>
             <h2 className="text-3xl md:text-4xl font-bold text-gray-900 tracking-tight">Explore Destinations</h2>
-            <p className="text-gray-500 mt-2 font-medium">Find properties in Nigeria's most sought-after cities.</p>
+            <p className="text-gray-500 mt-2 font-medium">Find properties in Nigeria&apos;s most sought-after cities.</p>
           </div>
           <Link href="/listings" className="group flex items-center gap-2 text-sm font-semibold text-black hover:text-gray-600 transition-colors">
             View all locations
@@ -108,7 +118,7 @@ export default async function HomePage() {
       </section>
 
       {/* --- LATEST LISTINGS CLIENT COMPONENT --- */}
-      <LatestProperties initialProperties={(recent || []) as PropertyWithLandlord[]} />
+      <LatestProperties initialProperties={recent} />
 
       {/* --- SNAGGING BANNER --- */}
       <section className="max-w-7xl mx-auto w-full px-4 sm:px-6 py-24">
@@ -127,10 +137,10 @@ export default async function HomePage() {
               Expert Snagging
             </div>
             <h2 className="text-4xl md:text-5xl font-bold mb-6 leading-[1.1] tracking-tight text-balance">
-              Don't let hidden defects ruin your investment.
+              Don&apos;t let hidden defects ruin your investment.
             </h2>
             <p className="text-gray-400 mb-10 text-lg leading-relaxed max-w-md font-light text-balance">
-              Our professional inspectors catch what developers hope you'll miss. Get a comprehensive 150+ point quality report before you sign.
+              Our professional inspectors catch what developers hope you&apos;ll miss. Get a comprehensive 150+ point quality report before you sign.
             </p>
             <div className="flex flex-col sm:flex-row items-center gap-4">
               <Link href="/snagging" className="w-full sm:w-auto px-8 py-4 bg-white text-black font-semibold rounded-full hover:bg-gray-100 transition-colors text-center">
