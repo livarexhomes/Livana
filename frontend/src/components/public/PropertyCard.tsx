@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import type { PropertyWithLandlord, PropertyStatus } from '@/lib/types/database'
+import { MapPin, BedDouble, Bath, SquareSquare, Heart, ShieldCheck } from 'lucide-react'
 
 function timeAgo(dateString: string) {
   const date = new Date(dateString)
@@ -9,11 +10,11 @@ function timeAgo(dateString: string) {
   const diffInDays = Math.floor(diffInSeconds / (60 * 60 * 24))
   if (diffInDays === 0) return 'Listed today'
   if (diffInDays === 1) return 'Listed yesterday'
-  if (diffInDays < 7) return `Listed ${diffInDays} days ago`
+  if (diffInDays < 7) return `${diffInDays} days ago`
   const diffInWeeks = Math.floor(diffInDays / 7)
-  if (diffInWeeks < 4) return `Listed ${diffInWeeks} ${diffInWeeks === 1 ? 'week' : 'weeks'} ago`
+  if (diffInWeeks < 4) return `${diffInWeeks} ${diffInWeeks === 1 ? 'week' : 'weeks'} ago`
   const diffInMonths = Math.floor(diffInDays / 30)
-  return `Listed ${diffInMonths} ${diffInMonths === 1 ? 'month' : 'months'} ago`
+  return `${diffInMonths} ${diffInMonths === 1 ? 'month' : 'months'} ago`
 }
 
 export default function PropertyCard({ property }: { property: PropertyWithLandlord }) {
@@ -24,74 +25,107 @@ export default function PropertyCard({ property }: { property: PropertyWithLandl
 
   const landlord = property.landlords
   
-  // Use Naira symbol for the price since we are aiming for Nigerian real estate format
+  // Format price
   const formattedPrice = `₦${Number(property.price).toLocaleString()}`
 
   return (
-    <Link href={`/listings/${property.id}`} className="group block text-left">
-      <div className="relative aspect-[4/3] rounded-2xl overflow-hidden mb-4 bg-gray-100 shadow-sm border border-gray-100">
+    <Link href={`/listings/${property.id}`} className="group block flex flex-col bg-white rounded-[1.5rem] border border-gray-100 shadow-[0_2px_10px_rgba(0,0,0,0.02)] hover:shadow-[0_20px_40px_-15px_rgba(0,0,0,0.1)] transition-all duration-300">
+      
+      {/* Image Container */}
+      <div className="relative w-full aspect-[4/3] rounded-t-[1.5rem] overflow-hidden bg-gray-50 shrink-0">
         {coverUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
             src={coverUrl}
             alt={property.title}
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-in-out"
           />
         ) : (
-          <div className="w-full h-full flex items-center justify-center bg-gray-50">
-             <span className="text-gray-300 font-medium">No Image</span>
+          <div className="w-full h-full flex items-center justify-center bg-gray-100">
+             <span className="text-gray-400 font-medium text-sm">No Image</span>
           </div>
         )}
         
-        {/* Top left tags */}
+        {/* Overlay Badges */}
         <div className="absolute top-4 left-4 flex flex-col gap-2">
-           {/* Property Type marker */}
+          <span className="px-3 py-1 bg-white/95 backdrop-blur-sm text-gray-900 text-[10px] font-bold uppercase tracking-wider rounded-full shadow-sm">
+            {property.type === 'sale' ? 'For Sale' : 'For Rent'}
+          </span>
         </div>
         
-        {/* Top right tags (Heart icon usually for saving) */}
-        <div className="absolute top-4 right-4 flex gap-2">
-            <button className="w-8 h-8 rounded-full bg-white/90 backdrop-blur-sm flex items-center justify-center text-gray-400 hover:text-red-500 transition-colors shadow-sm">
-               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-               </svg>
-            </button>
+        <div className="absolute top-4 right-4">
+          <button className="w-8 h-8 rounded-full bg-white/95 backdrop-blur-sm flex items-center justify-center text-gray-400 hover:text-red-500 hover:bg-white transition-all shadow-sm">
+            <Heart className="w-4 h-4" />
+          </button>
         </div>
         
-        {/* Featured Ribbon */}
         {property.featured && (
           <div className="absolute bottom-4 left-4">
-             <span className="px-2 py-1 bg-black text-white text-[10px] font-bold uppercase tracking-wider rounded shadow-sm">
+             <span className="px-3 py-1 bg-black text-white text-[10px] font-bold uppercase tracking-widest rounded-full shadow-md">
                Featured
              </span>
           </div>
         )}
       </div>
 
-      <div className="space-y-1.5 px-1">
-        <p className="text-[13px] text-gray-500 font-medium">{timeAgo(property.created_at)}</p>
-        <p className="text-xl font-bold text-gray-900 tracking-tight">{formattedPrice}</p>
-        <p className="text-[15px] text-gray-600 truncate">{property.city}</p>
+      {/* Content Container */}
+      <div className="p-5 flex flex-col flex-1">
+        <div className="flex justify-between items-start mb-2">
+          <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">{timeAgo(property.created_at)}</p>
+        </div>
         
-        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[13px] text-gray-500 font-medium mt-1">
-           {property.bedrooms > 0 && <span className="flex items-center">{property.bedrooms} Beds</span>}
-           {property.bathrooms > 0 && <span className="flex items-center">{property.bathrooms} Baths</span>}
-           {property.area_sqft ? <span>{property.area_sqft} SQM</span> : null}
-           <span className="capitalize px-2 py-0.5 bg-gray-100 rounded-md text-gray-700 text-xs">{property.type === 'sale' ? 'Sale' : 'Rent'}</span>
+        <h3 className="text-2xl font-bold text-gray-900 tracking-tight mb-1 truncate">
+          {formattedPrice}
+        </h3>
+        
+        <div className="flex items-center gap-1.5 text-gray-500 mb-4">
+          <MapPin className="w-3.5 h-3.5 shrink-0" />
+          <p className="text-sm font-medium truncate">{property.city}</p>
+        </div>
+        
+        {/* Specs Grid */}
+        <div className="flex items-center gap-4 text-sm text-gray-600 font-medium mb-5 pb-5 border-b border-gray-100">
+          {property.bedrooms > 0 && (
+            <div className="flex items-center gap-1.5">
+              <BedDouble className="w-4 h-4 text-gray-400" />
+              <span>{property.bedrooms}</span>
+            </div>
+          )}
+          {property.bathrooms > 0 && (
+            <div className="flex items-center gap-1.5">
+              <Bath className="w-4 h-4 text-gray-400" />
+              <span>{property.bathrooms}</span>
+            </div>
+          )}
+          {property.area_sqft && (
+            <div className="flex items-center gap-1.5">
+              <SquareSquare className="w-4 h-4 text-gray-400" />
+              <span>{property.area_sqft} <span className="text-xs">sqm</span></span>
+            </div>
+          )}
         </div>
 
-        {landlord && (
-           <div className="flex items-center gap-2 mt-4 pt-3 border-t border-gray-100">
-               <div className="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center shrink-0 text-[10px] font-bold text-blue-700">
-                 {landlord.full_name.charAt(0).toUpperCase()}
-               </div>
-               <span className="text-[13px] font-semibold text-gray-700">Developer</span>
-               {landlord.is_verified && (
-                 <svg className="w-3.5 h-3.5 text-blue-500 ml-auto" viewBox="0 0 20 20" fill="currentColor">
-                   <path fillRule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                 </svg>
-               )}
-           </div>
-        )}
+        {/* Footer: Landlord Info */}
+        <div className="mt-auto pt-2 flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-xs font-bold text-gray-600 border border-gray-200">
+              {landlord?.full_name ? landlord.full_name.charAt(0).toUpperCase() : 'A'}
+            </div>
+            <div className="flex flex-col">
+              <div className="flex items-center gap-1">
+                <span className="text-sm font-semibold text-gray-900 truncate max-w-[120px]">
+                  {landlord?.full_name || 'Agent'}
+                </span>
+                {landlord?.is_verified && (
+                  <ShieldCheck className="w-3.5 h-3.5 text-blue-500" />
+                )}
+              </div>
+              <span className="text-[10px] text-gray-500 font-medium uppercase tracking-wider">
+                {landlord?.is_verified ? 'Verified Owner' : 'Agent'}
+              </span>
+            </div>
+          </div>
+        </div>
       </div>
     </Link>
   )
