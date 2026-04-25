@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
+import { requireAdmin } from '@/lib/supabase/require-admin'
 import { z } from 'zod'
 
 const ProfileSchema = z.object({
@@ -42,6 +43,8 @@ export async function upsertLandlordProfile(
 
 export async function approveLandlord(id: string): Promise<{ error?: string }> {
   const supabase = await createClient()
+  const auth = await requireAdmin(supabase)
+  if (auth.error) return { error: auth.error }
   const { error } = await supabase
     .from('landlords')
     .update({ status: 'approved' })
@@ -53,6 +56,8 @@ export async function approveLandlord(id: string): Promise<{ error?: string }> {
 
 export async function rejectLandlord(id: string): Promise<{ error?: string }> {
   const supabase = await createClient()
+  const auth = await requireAdmin(supabase)
+  if (auth.error) return { error: auth.error }
   const { error } = await supabase
     .from('landlords')
     .update({ status: 'rejected' })
@@ -67,6 +72,8 @@ export async function toggleVerifiedBadge(
   is_verified: boolean
 ): Promise<{ error?: string }> {
   const supabase = await createClient()
+  const auth = await requireAdmin(supabase)
+  if (auth.error) return { error: auth.error }
   const { error } = await supabase
     .from('landlords')
     .update({ is_verified })
