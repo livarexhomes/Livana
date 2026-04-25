@@ -57,3 +57,43 @@ export interface PropertyWithLandlord extends Property {
   landlords: Pick<Landlord, 'full_name' | 'whatsapp' | 'is_verified'> | null
   property_images: Pick<PropertyImage, 'storage_path' | 'alt_text' | 'is_cover'>[]
 }
+
+// ── Tenant types ──────────────────────────────────────────────
+
+export interface Tenant {
+  id: string
+  user_id: string
+  full_name: string
+  phone: string | null
+  created_at: string
+  updated_at: string
+}
+
+export type EnquiryStatus = 'open' | 'replied' | 'closed'
+
+export interface SavedProperty {
+  id: string
+  tenant_id: string
+  property_id: string
+  created_at: string
+}
+
+export interface Enquiry {
+  id: string
+  tenant_id: string
+  property_id: string
+  landlord_id: string | null
+  message: string
+  status: EnquiryStatus
+  created_at: string
+  updated_at: string
+}
+
+// Joined types
+export interface SavedPropertyWithProperty extends SavedProperty {
+  properties: PropertyWithLandlord
+}
+
+export interface EnquiryWithProperty extends Enquiry {
+  properties: Pick<Property, 'id' | 'title' | 'city' | 'price' | 'type'>
+}

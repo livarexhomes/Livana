@@ -17,10 +17,26 @@ export default function LoginPage() {
     setLoading(true)
 
     const supabase = createClient()
-    const { error } = await supabase.auth.signInWithPassword({ email, password })
+    const { data, error: signInError } = await supabase.auth.signInWithPassword({ email, password })
 
-    if (error) {
-      setError(error.message)
+    if (signInError) {
+      setError(signInError.message)
+      setLoading(false)
+      return
+    }
+
+    // Verify the signed-in user actually has the admin role before redirecting.
+    // Without this check a landlord who knows the /admin/login URL could sign in
+    // and get a confusing redirect loop from middleware.
+    const meta = data.user?.app_metadata ?? {}
+    const isAdmin =
+      meta.role === 'admin' ||
+      (Array.isArray(meta.roles) && meta.roles.includes('admin'))
+
+    if (!isAdmin) {
+      // Sign them back out so the session isn't left open in the browser
+      await supabase.auth.signOut()
+      setError('This account does not have admin access.')
       setLoading(false)
       return
     }

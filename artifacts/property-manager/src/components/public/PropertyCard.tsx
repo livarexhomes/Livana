@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import type { PropertyWithLandlord, PropertyStatus } from '@/lib/types/database'
-import { MapPin, BedDouble, Bath, SquareSquare, Heart, ShieldCheck } from 'lucide-react'
+import { MapPin, BedDouble, Bath, SquareSquare, ShieldCheck } from 'lucide-react'
+import SaveButton from '@/components/public/SaveButton'
 
 function timeAgo(dateString: string) {
   const date = new Date(dateString)
