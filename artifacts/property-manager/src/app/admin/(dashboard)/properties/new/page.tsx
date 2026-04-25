@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic'
+
 import PropertyForm from '@/components/ui/PropertyForm'
 import { createProperty } from '@/lib/actions/properties'
 

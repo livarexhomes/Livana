@@ -1,28 +1,22 @@
 import { createServerClient } from '@supabase/ssr'
+import type { SupabaseClient } from '@supabase/supabase-js'
 import { cookies } from 'next/headers'
 
-export async function createClient() {
+export function isSupabaseConfigured(): boolean {
+  return Boolean(
+    process.env.NEXT_PUBLIC_SUPABASE_URL &&
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+  )
+}
+
+export async function createClient(): Promise<SupabaseClient> {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
   if (!url || !key) {
-    const noopBuilder: any = new Proxy(function () {}, {
-      get(_target, prop) {
-        if (prop === 'then') return undefined
-        return () => noopBuilder
-      },
-      apply() {
-        return Promise.resolve({ data: [], error: null })
-      },
-    })
-    return {
-      auth: {
-        async getUser() { return { data: { user: null }, error: null } },
-        async getSession() { return { data: { session: null }, error: null } },
-      },
-      from: () => noopBuilder,
-      storage: { from: () => ({ upload: async () => ({ error: { message: 'Supabase not configured' } }) }) },
-    } as any
+    throw new Error(
+      'Supabase is not configured. Set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY in your environment.',
+    )
   }
 
   const cookieStore = await cookies()
@@ -34,12 +28,12 @@ export async function createClient() {
       setAll(cookiesToSet) {
         try {
           cookiesToSet.forEach(({ name, value, options }) =>
-            cookieStore.set(name, value, options)
+            cookieStore.set(name, value, options),
           )
         } catch {
-          // setAll called from a Server Component — cookies will be set by middleware
+          // setAll called from a Server Component — cookies will be persisted by middleware.
         }
       },
     },
-  })
+  }) as unknown as SupabaseClient
 }

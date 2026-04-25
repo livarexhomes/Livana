@@ -1,14 +1,14 @@
 import Link from 'next/link'
-import { createClient } from '@/lib/supabase/server'
+import { createClient, isSupabaseConfigured } from '@/lib/supabase/server'
 import HeroSearch from '@/components/public/HeroSearch'
 import LatestProperties from '@/components/public/LatestProperties'
 import type { PropertyWithLandlord } from '@/lib/types/database'
 import { ArrowRight, ShieldCheck } from 'lucide-react'
 
+export const dynamic = 'force-dynamic'
+
 async function fetchRecent(): Promise<PropertyWithLandlord[]> {
-  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
-    return []
-  }
+  if (!isSupabaseConfigured()) return []
   try {
     const supabase = await createClient()
     const { data } = await supabase
@@ -18,7 +18,7 @@ async function fetchRecent(): Promise<PropertyWithLandlord[]> {
       .eq('type', 'sale')
       .order('created_at', { ascending: false })
       .limit(8)
-    return (data ?? []) as PropertyWithLandlord[]
+    return (Array.isArray(data) ? data : []) as PropertyWithLandlord[]
   } catch {
     return []
   }

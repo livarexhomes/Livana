@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic'
+
 import { notFound } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import PropertyForm from '@/components/ui/PropertyForm'
