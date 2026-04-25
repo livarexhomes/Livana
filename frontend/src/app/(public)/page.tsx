@@ -1,9 +1,9 @@
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
-import PropertyCard from '@/components/public/PropertyCard'
 import HeroSearch from '@/components/public/HeroSearch'
+import LatestProperties from '@/components/public/LatestProperties'
 import type { PropertyWithLandlord } from '@/lib/types/database'
-import { Building2, ArrowRight, ShieldCheck } from 'lucide-react'
+import { ArrowRight, ShieldCheck } from 'lucide-react'
 
 export default async function HomePage() {
   const supabase = await createClient()
@@ -13,6 +13,7 @@ export default async function HomePage() {
     .from('properties')
     .select('*, landlords(full_name, whatsapp, is_verified), property_images(storage_path, alt_text, is_cover)')
     .eq('status', 'available')
+    .eq('type', 'sale')
     .order('created_at', { ascending: false })
     .limit(8)
 
@@ -106,36 +107,8 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* --- LATEST LISTINGS --- */}
-      <section className="bg-white py-24">
-        <div className="max-w-7xl mx-auto w-full px-4 sm:px-6">
-          <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-4">
-            <div>
-              <h2 className="text-3xl md:text-4xl font-bold text-gray-900 tracking-tight">Newly Listed Properties</h2>
-              <p className="text-gray-500 mt-2 font-medium">Fresh opportunities from verified landlords.</p>
-            </div>
-            <Link href="/listings" className="px-6 py-3 rounded-full bg-gray-100 text-sm font-semibold hover:bg-gray-200 transition-colors text-black">
-              View all properties
-            </Link>
-          </div>
-          
-          {recent && recent.length > 0 ? (
-            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-              {recent.map((p) => (
-                <PropertyCard key={p.id} property={p as PropertyWithLandlord} />
-              ))}
-            </div>
-          ) : (
-            <div className="bg-[#FAFAFA] rounded-[2rem] border border-gray-100 p-16 text-center flex flex-col items-center justify-center">
-              <div className="w-16 h-16 bg-white rounded-full shadow-sm flex items-center justify-center mb-4">
-                <Building2 className="w-8 h-8 text-gray-300" />
-              </div>
-              <h3 className="text-lg font-semibold text-gray-900">No properties available</h3>
-              <p className="text-gray-500 mt-1">Check back later for new listings.</p>
-            </div>
-          )}
-        </div>
-      </section>
+      {/* --- LATEST LISTINGS CLIENT COMPONENT --- */}
+      <LatestProperties initialProperties={(recent || []) as PropertyWithLandlord[]} />
 
       {/* --- SNAGGING BANNER --- */}
       <section className="max-w-7xl mx-auto w-full px-4 sm:px-6 py-24">
