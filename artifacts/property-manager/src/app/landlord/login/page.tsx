@@ -18,18 +18,47 @@ export default function LandlordLoginPage() {
     const form = new FormData(e.currentTarget as HTMLFormElement)
     const supabase = createClient()
 
-    const { error } = await supabase.auth.signInWithPassword({
+    const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
       email: form.get('email') as string,
       password: form.get('password') as string,
     })
 
-    if (error) {
-      setError(error.message)
+    if (signInError) {
+      setError(signInError.message)
       setLoading(false)
       return
     }
 
-    router.push('/landlord')
+    const user = signInData.user
+
+    // Admins who land on the landlord login get sent to the admin panel
+    const meta = user?.app_metadata ?? {}
+    const isAdmin =
+      meta.role === 'admin' ||
+      (Array.isArray(meta.roles) && meta.roles.includes('admin'))
+    if (isAdmin) {
+      router.push('/admin')
+      router.refresh()
+      return
+    }
+
+    // Check whether a landlord profile exists and route by status
+    const { data: landlord } = await supabase
+      .from('landlords')
+      .select('status')
+      .eq('user_id', user!.id)
+      .single()
+
+    if (!landlord) {
+      // Signed up via auth but never completed landlord registration
+      router.push('/landlord/register')
+    } else if (landlord.status === 'pending') {
+      router.push('/landlord/pending')
+    } else if (landlord.status === 'rejected') {
+      router.push('/landlord/rejected')
+    } else {
+      router.push('/landlord')
+    }
     router.refresh()
   }
 

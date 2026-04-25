@@ -1,7 +1,6 @@
 import Link from 'next/link'
 import { createClient, isSupabaseConfigured } from '@/lib/supabase/server'
-import HeroSearch from '@/components/public/HeroSearch'
-import LatestProperties from '@/components/public/LatestProperties'
+import HomeClient from '@/components/public/HomeClient'
 import type { PropertyWithLandlord } from '@/lib/types/database'
 import { ArrowRight, ShieldCheck } from 'lucide-react'
 
@@ -30,40 +29,43 @@ export default async function HomePage() {
   return (
     <div className="min-h-screen flex flex-col bg-[#FAFAFA] text-slate-900 font-sans selection:bg-black selection:text-white">
       
-      {/* --- HERO SECTION --- */}
-      <section className="relative w-full min-h-[90vh] flex flex-col items-center justify-center pt-24 pb-12 px-4 sm:px-6 lg:px-8">
-        {/* Background Image & Overlays */}
-        <div className="absolute inset-0 z-0 overflow-hidden">
-          <img 
-            src="https://images.unsplash.com/photo-1553194588-ecc5e217ebf0?q=85&fm=jpg&crop=entropy&cs=srgb" 
-            alt="Luxury Real Estate" 
-            className="w-full h-full object-cover scale-105"
-          />
-          <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/20 to-[#FAFAFA]" />
-          <div className="absolute inset-0 bg-black/20 backdrop-blur-[2px]" />
-        </div>
+      {/* --- HERO + LISTINGS (HomeClient owns shared tab state) --- */}
+      <HomeClient
+        initialProperties={recent}
+        heroSlot={
+          <>
+            {/* Background image & overlays */}
+            <div className="absolute inset-0 z-0 overflow-hidden">
+              <img
+                src="https://images.unsplash.com/photo-1553194588-ecc5e217ebf0?q=85&fm=jpg&crop=entropy&cs=srgb"
+                alt="Luxury Real Estate"
+                className="w-full h-full object-cover scale-105"
+              />
+              <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/20 to-[#FAFAFA]" />
+              <div className="absolute inset-0 bg-black/20 backdrop-blur-[2px]" />
+            </div>
 
-        <div className="relative z-10 w-full max-w-5xl mx-auto flex flex-col items-center text-center mt-auto">
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/20 backdrop-blur-md border border-white/30 text-white text-xs font-semibold tracking-wide uppercase mb-8 shadow-2xl">
-            <span className="flex h-2 w-2 rounded-full bg-emerald-400 relative">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-            </span>
-            Premium Nigerian Real Estate
-          </div>
-          
-          <h1 className="text-5xl md:text-7xl font-bold mb-6 text-white tracking-tighter leading-[1.05] text-balance drop-shadow-lg">
-            Discover a place you&apos;ll <br className="hidden md:block" /> 
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-gray-100 to-gray-400">love to live.</span>
-          </h1>
-          
-          <p className="text-lg md:text-xl text-gray-200 mb-12 max-w-2xl font-light text-balance drop-shadow-md">
-            Seamlessly search verified properties, connect directly with owners, and move in without the hassle.
-          </p>
+            {/* Hero text */}
+            <div className="relative z-10 w-full max-w-5xl mx-auto flex flex-col items-center text-center">
+              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/20 backdrop-blur-md border border-white/30 text-white text-xs font-semibold tracking-wide uppercase mb-8 shadow-2xl">
+                <span className="flex h-2 w-2 rounded-full bg-emerald-400 relative">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                </span>
+                Premium Nigerian Real Estate
+              </div>
 
-          {/* Client-side Search Component */}
-          <HeroSearch />
-        </div>
-      </section>
+              <h1 className="text-5xl md:text-7xl font-bold mb-6 text-white tracking-tighter leading-[1.05] text-balance drop-shadow-lg">
+                Discover a place you&apos;ll <br className="hidden md:block" />
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-gray-100 to-gray-400">love to live.</span>
+              </h1>
+
+              <p className="text-lg md:text-xl text-gray-200 mb-12 max-w-2xl font-light text-balance drop-shadow-md">
+                Seamlessly search verified properties, connect directly with owners, and move in without the hassle.
+              </p>
+            </div>
+          </>
+        }
+      />
 
       {/* --- FEATURED LOCATIONS --- */}
       <section className="max-w-7xl mx-auto w-full px-4 sm:px-6 py-24">
@@ -116,9 +118,6 @@ export default async function HomePage() {
           ))}
         </div>
       </section>
-
-      {/* --- LATEST LISTINGS CLIENT COMPONENT --- */}
-      <LatestProperties initialProperties={recent} />
 
       {/* --- SNAGGING BANNER --- */}
       <section className="max-w-7xl mx-auto w-full px-4 sm:px-6 py-24">

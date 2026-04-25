@@ -3,7 +3,7 @@
  * Keeping this list explicit prevents open-redirect attacks where an attacker
  * supplies a `next` value like `//evil.com` or `/evil` to hijack sessions.
  */
-const ALLOWED_NEXT_PREFIXES = ['/admin', '/landlord'] as const
+const ALLOWED_NEXT_PREFIXES = ['/admin', '/landlord', '/user'] as const
 
 /**
  * Returns true only when `next` is a relative path that starts with one of
