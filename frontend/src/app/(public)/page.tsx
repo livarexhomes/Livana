@@ -1,8 +1,9 @@
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import PropertyCard from '@/components/public/PropertyCard'
+import HeroSearch from '@/components/public/HeroSearch'
 import type { PropertyWithLandlord } from '@/lib/types/database'
-import { Search, MapPin, Building2, BedDouble, ArrowRight, ShieldCheck } from 'lucide-react'
+import { Building2, ArrowRight, ShieldCheck } from 'lucide-react'
 
 export default async function HomePage() {
   const supabase = await createClient()
@@ -48,62 +49,8 @@ export default async function HomePage() {
             Seamlessly search verified properties, connect directly with owners, and move in without the hassle.
           </p>
 
-          {/* Modern Floating Search Bar */}
-          <div className="w-full bg-white rounded-[2rem] shadow-[0_30px_60px_-15px_rgba(0,0,0,0.3)] p-3 md:p-4 transition-all hover:shadow-[0_40px_80px_-15px_rgba(0,0,0,0.3)]">
-            <div className="flex flex-wrap gap-1 p-1 mb-3 bg-gray-50 rounded-full w-fit mx-auto md:mx-0">
-              <button className="px-6 py-2 rounded-full text-sm font-semibold transition-all bg-white text-black shadow-sm border border-gray-200/50">Buy</button>
-              <button className="px-6 py-2 rounded-full text-sm font-semibold transition-all text-gray-500 hover:text-black hover:bg-gray-100">Rent</button>
-              <button className="px-6 py-2 rounded-full text-sm font-semibold transition-all text-gray-500 hover:text-black hover:bg-gray-100">Lease</button>
-            </div>
-            
-            <form action="/listings" method="GET" className="flex flex-col md:flex-row items-center gap-3">
-              <div className="w-full flex flex-col md:flex-row items-center bg-gray-50 rounded-2xl md:rounded-[1.5rem] border border-gray-100 flex-1 px-2">
-                
-                {/* Location */}
-                <div className="flex-1 w-full flex items-center gap-3 px-4 py-3 md:py-4 border-b md:border-b-0 md:border-r border-gray-200 group">
-                  <MapPin className="w-5 h-5 text-gray-400 group-focus-within:text-black transition-colors" />
-                  <div className="flex flex-col flex-1">
-                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Location</span>
-                    <input type="text" name="city" placeholder="Lagos, Abuja..." className="w-full bg-transparent border-none p-0 text-sm font-medium focus:ring-0 placeholder:text-gray-400 placeholder:font-normal" />
-                  </div>
-                </div>
-
-                {/* Property Type */}
-                <div className="flex-1 w-full flex items-center gap-3 px-4 py-3 md:py-4 border-b md:border-b-0 md:border-r border-gray-200 group">
-                  <Building2 className="w-5 h-5 text-gray-400 group-focus-within:text-black transition-colors" />
-                  <div className="flex flex-col flex-1">
-                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Property Type</span>
-                    <select name="type" className="w-full bg-transparent border-none p-0 text-sm font-medium focus:ring-0 appearance-none cursor-pointer">
-                      <option value="">Any Type</option>
-                      <option value="apartment">Apartment</option>
-                      <option value="detached">Detached Duplex</option>
-                      <option value="terrace">Terrace</option>
-                    </select>
-                  </div>
-                </div>
-
-                {/* Bedrooms */}
-                <div className="flex-1 w-full flex items-center gap-3 px-4 py-3 md:py-4 group">
-                  <BedDouble className="w-5 h-5 text-gray-400 group-focus-within:text-black transition-colors" />
-                  <div className="flex flex-col flex-1">
-                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Bedrooms</span>
-                    <select name="beds" className="w-full bg-transparent border-none p-0 text-sm font-medium focus:ring-0 appearance-none cursor-pointer">
-                      <option value="">Any Size</option>
-                      <option value="1">1+ Beds</option>
-                      <option value="2">2+ Beds</option>
-                      <option value="3">3+ Beds</option>
-                      <option value="4">4+ Beds</option>
-                    </select>
-                  </div>
-                </div>
-              </div>
-
-              <button type="submit" className="w-full md:w-auto h-[3.5rem] md:h-auto md:self-stretch px-8 bg-black text-white rounded-[1.2rem] font-semibold hover:bg-gray-800 transition-colors flex items-center justify-center gap-2">
-                <Search className="w-5 h-5" />
-                <span className="md:hidden">Search Properties</span>
-              </button>
-            </form>
-          </div>
+          {/* Client-side Search Component */}
+          <HeroSearch />
         </div>
       </section>
 
