@@ -6,8 +6,8 @@ import { ArrowRight, ShieldCheck } from 'lucide-react'
 
 export const dynamic = 'force-dynamic'
 
-async function fetchRecent(): Promise<PropertyWithLandlord[]> {
-  if (!isSupabaseConfigured()) return []
+async function fetchRecent(): Promise<{ properties: PropertyWithLandlord[]; savedIds: Set<string>; isAuthenticated: boolean }> {
+  if (!isSupabaseConfigured()) return { properties: [], savedIds: new Set(), isAuthenticated: false }
   try {
     const supabase = await createClient()
     const { data } = await supabase
@@ -17,14 +17,34 @@ async function fetchRecent(): Promise<PropertyWithLandlord[]> {
       .eq('type', 'sale')
       .order('created_at', { ascending: false })
       .limit(8)
-    return (Array.isArray(data) ? data : []) as PropertyWithLandlord[]
+
+    const properties = (Array.isArray(data) ? data : []) as PropertyWithLandlord[]
+
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return { properties, savedIds: new Set(), isAuthenticated: false }
+
+    const { data: tenant } = await supabase
+      .from('tenants')
+      .select('id')
+      .eq('user_id', user.id)
+      .single()
+
+    if (!tenant) return { properties, savedIds: new Set(), isAuthenticated: true }
+
+    const { data: saved } = await supabase
+      .from('saved_properties')
+      .select('property_id')
+      .eq('tenant_id', tenant.id)
+
+    const savedIds = new Set((saved ?? []).map((r: { property_id: string }) => r.property_id))
+    return { properties, savedIds, isAuthenticated: true }
   } catch {
-    return []
+    return { properties: [], savedIds: new Set(), isAuthenticated: false }
   }
 }
 
 export default async function HomePage() {
-  const recent = await fetchRecent()
+  const { properties: recent, savedIds, isAuthenticated } = await fetchRecent()
 
   return (
     <div className="min-h-screen flex flex-col bg-[#FAFAFA] text-slate-900 font-sans selection:bg-black selection:text-white">
@@ -32,6 +52,8 @@ export default async function HomePage() {
       {/* --- HERO + LISTINGS (HomeClient owns shared tab state) --- */}
       <HomeClient
         initialProperties={recent}
+        initialSavedIds={[...savedIds]}
+        isAuthenticated={isAuthenticated}
         heroSlot={
           <>
             {/* Background image & overlays */}

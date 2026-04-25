@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic'
 
 import type { Metadata } from 'next'
 import Link from 'next/link'
+import ContactForm from '@/components/public/ContactForm'
 
 export const metadata: Metadata = {
   title: 'Contact — Property Manager',
@@ -101,54 +102,7 @@ export default function ContactPage() {
             </div>
 
             {/* Contact form */}
-            <div className="bg-white rounded-2xl border border-gray-200 p-6 sm:p-8">
-              <h2 className="text-base font-semibold text-gray-900 mb-5">Send us a message</h2>
-              <form className="space-y-4">
-                <div className="grid sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1.5">Name</label>
-                    <input type="text" name="name" required placeholder="Your name"
-                      className="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent" />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1.5">Email</label>
-                    <input type="email" name="email" required placeholder="you@example.com"
-                      className="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent" />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">I am a…</label>
-                  <select name="role"
-                    className="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
-                    <option value="renter">Renter</option>
-                    <option value="landlord">Landlord</option>
-                    <option value="other">Other</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">Subject</label>
-                  <input type="text" name="subject" required placeholder="How can we help?"
-                    className="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent" />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">Message</label>
-                  <textarea name="message" required rows={5} placeholder="Tell us more…"
-                    className="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent resize-none" />
-                </div>
-
-                <button type="submit"
-                  className="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2">
-                  Send message
-                </button>
-
-                <p className="text-xs text-center text-gray-400">
-                  We typically respond within 1–2 business days.
-                </p>
-              </form>
-            </div>
+            <ContactForm />
           </div>
 
           {/* Right: FAQ */}

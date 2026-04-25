@@ -5,6 +5,7 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import ImageGallery from './ImageGallery'
+import EnquireButton from '@/components/public/EnquireButton'
 import type { PropertyStatus } from '@/lib/types/database'
 
 const statusStyles: Record<PropertyStatus, string> = {
@@ -50,13 +51,18 @@ export default async function PropertyDetailPage({
   const { id } = await params
   const supabase = await createClient()
 
-  const { data: property } = await supabase
-    .from('properties')
-    .select('*, landlords(full_name, whatsapp, bio, avatar_url, is_verified), property_images(id, storage_path, alt_text, is_cover, sort_order)')
-    .eq('id', id)
-    .single()
+  const [{ data: property }, { data: { user } }] = await Promise.all([
+    supabase
+      .from('properties')
+      .select('*, landlords(id, full_name, whatsapp, bio, avatar_url, is_verified), property_images(id, storage_path, alt_text, is_cover, sort_order)')
+      .eq('id', id)
+      .single(),
+    supabase.auth.getUser(),
+  ])
 
   if (!property) notFound()
+
+  const isAuthenticated = !!user
 
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
   const images = (property.property_images as {
@@ -69,7 +75,7 @@ export default async function PropertyDetailPage({
     })) ?? []
 
   const landlord = property.landlords as {
-    full_name: string; whatsapp: string; bio: string | null; avatar_url: string | null; is_verified: boolean
+    id: string; full_name: string; whatsapp: string; bio: string | null; avatar_url: string | null; is_verified: boolean
   } | null
 
   const status = property.status as PropertyStatus
@@ -203,6 +209,13 @@ export default async function PropertyDetailPage({
                 {landlord.bio && (
                   <p className="text-sm text-gray-500 leading-relaxed">{landlord.bio}</p>
                 )}
+
+                {/* In-app enquiry */}
+                <EnquireButton
+                  propertyId={property.id}
+                  landlordId={landlord?.id ?? null}
+                  isAuthenticated={isAuthenticated}
+                />
 
                 {/* WhatsApp CTA */}
                 {whatsappUrl && (
