@@ -23,7 +23,7 @@ export default function SaveButton({ propertyId, saved: initialSaved, isAuthenti
     e.stopPropagation()
 
     if (!isAuthenticated) {
-      router.push('/user/login')
+      router.push('/login')
       return
     }
 

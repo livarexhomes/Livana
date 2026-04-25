@@ -26,7 +26,7 @@ const contactOptions = [
     title: 'For landlords',
     description: 'Want to list your property or need help with your account?',
     action: 'Landlord portal',
-    href: '/landlord/login',
+    href: '/login',
     icon: (
       <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75}

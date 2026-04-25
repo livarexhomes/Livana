@@ -33,12 +33,12 @@ export default function Footer() {
             </ul>
           </div>
 
-          {/* Landlords */}
+          {/* Account */}
           <div className="space-y-3">
-            <h3 className="text-xs font-semibold text-white uppercase tracking-wider">Landlords</h3>
+            <h3 className="text-xs font-semibold text-white uppercase tracking-wider">Account</h3>
             <ul className="space-y-2 text-sm">
-              <li><Link href="/landlord/register" className="hover:text-white transition-colors">List your property</Link></li>
-              <li><Link href="/landlord/login" className="hover:text-white transition-colors">Landlord login</Link></li>
+              <li><Link href="/login" className="hover:text-white transition-colors">Sign in</Link></li>
+              <li><Link href="/register" className="hover:text-white transition-colors">Create account</Link></li>
             </ul>
           </div>
         </div>

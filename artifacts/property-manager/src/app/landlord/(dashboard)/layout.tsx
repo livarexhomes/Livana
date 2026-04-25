@@ -13,7 +13,7 @@ export default async function LandlordDashboardLayout({
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
-  if (!user) redirect('/landlord/login')
+  if (!user) redirect('/login')
 
   // Check landlord profile exists and is approved
   const { data: landlord } = await supabase
@@ -22,7 +22,7 @@ export default async function LandlordDashboardLayout({
     .eq('user_id', user.id)
     .single()
 
-  if (!landlord) redirect('/landlord/register')
+  if (!landlord) redirect('/login')
   if (landlord.status === 'pending') redirect('/landlord/pending')
   if (landlord.status === 'rejected') redirect('/landlord/rejected')
 
