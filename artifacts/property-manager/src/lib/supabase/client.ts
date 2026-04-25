@@ -1,35 +1,24 @@
-import { createBrowserClient } from '@supabase/ssr'
+import { createBrowserClient, type CookieOptions } from '@supabase/ssr'
+import type { SupabaseClient } from '@supabase/supabase-js'
 
-export function createClient() {
+export function isSupabaseConfigured(): boolean {
+  return Boolean(
+    process.env.NEXT_PUBLIC_SUPABASE_URL &&
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+  )
+}
+
+export function createClient(): SupabaseClient {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
-  // If credentials are missing (e.g. local dev before secrets are wired),
-  // return a permissive stub so client components don't crash on import.
   if (!url || !key) {
-    const noopBuilder: any = new Proxy(function () {}, {
-      get(_target, prop) {
-        if (prop === 'then') return undefined
-        return () => noopBuilder
-      },
-      apply() {
-        return Promise.resolve({ data: [], error: null })
-      },
-    })
-    const noopAuth = {
-      async getUser() { return { data: { user: null }, error: null } },
-      async getSession() { return { data: { session: null }, error: null } },
-      async signOut() { return { error: null } },
-      async signInWithPassword() { return { data: { user: null, session: null }, error: { message: 'Supabase not configured' } } },
-      async signUp() { return { data: { user: null, session: null }, error: { message: 'Supabase not configured' } } },
-      async exchangeCodeForSession() { return { data: { session: null }, error: null } },
-    }
-    return {
-      auth: noopAuth,
-      from: () => noopBuilder,
-      storage: { from: () => ({ upload: async () => ({ error: { message: 'Supabase not configured' } }) }) },
-    } as any
+    throw new Error(
+      'Supabase is not configured. Set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY in your environment.',
+    )
   }
 
-  return createBrowserClient(url, key)
+  return createBrowserClient(url, key) as unknown as SupabaseClient
 }
+
+export type { CookieOptions }

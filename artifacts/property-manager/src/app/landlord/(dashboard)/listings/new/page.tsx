@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic'
+
 import LandlordPropertyForm from '@/components/ui/LandlordPropertyForm'
 import { landlordCreateProperty } from '@/lib/actions/landlord-properties'
 

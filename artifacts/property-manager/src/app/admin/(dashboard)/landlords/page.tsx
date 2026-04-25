@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic'
+
 import { createClient } from '@/lib/supabase/server'
 import { approveLandlord, rejectLandlord, toggleVerifiedBadge } from '@/lib/actions/landlords'
 import type { LandlordStatus } from '@/lib/types/database'
