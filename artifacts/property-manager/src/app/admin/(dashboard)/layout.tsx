@@ -17,7 +17,7 @@ export default async function DashboardLayout({
   // Defence-in-depth: middleware already blocks non-admins, but the layout
   // verifies independently so a misconfigured matcher can't bypass it.
   if (!user || !isAdminUser(user)) {
-    redirect('/admin/login')
+    redirect('/login')
   }
 
   return (

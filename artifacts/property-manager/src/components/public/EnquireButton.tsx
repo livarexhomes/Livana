@@ -19,7 +19,7 @@ export default function EnquireButton({ propertyId, landlordId, isAuthenticated 
 
   function handleOpen() {
     if (!isAuthenticated) {
-      router.push('/user/login')
+      router.push('/login')
       return
     }
     setOpen(true)

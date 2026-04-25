@@ -9,8 +9,7 @@ export async function GET(request: Request) {
   const code = searchParams.get('code')
   const next = searchParams.get('next')
 
-  // Validate the redirect destination before using it to prevent open-redirect
-  const redirectTo = isSafeNextPath(next) ? next : '/admin'
+  const redirectTo = isSafeNextPath(next) ? next : '/user'
 
   if (code) {
     const supabase = await createClient()
@@ -20,5 +19,5 @@ export async function GET(request: Request) {
     }
   }
 
-  return NextResponse.redirect(`${origin}/admin/login?error=auth_callback_failed`)
+  return NextResponse.redirect(`${origin}/login?error=auth_callback_failed`)
 }

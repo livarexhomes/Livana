@@ -38,7 +38,7 @@ export default async function LandlordNavbar({ title }: NavbarProps) {
           <span className="text-sm text-gray-700 hidden sm:block">{landlord?.full_name}</span>
         </div>
 
-        <form action="/auth/signout?next=/landlord/login" method="POST">
+        <form action="/auth/signout" method="POST">
           <button
             type="submit"
             className="p-2 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
