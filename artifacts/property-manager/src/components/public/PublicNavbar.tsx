@@ -3,12 +3,13 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useState, useEffect } from 'react'
-import { Menu, X, Home, List, Info, Mail, ChevronRight } from 'lucide-react'
+import { Menu, X, Home, ShoppingBag, KeyRound, FileSignature, Building2, ChevronRight } from 'lucide-react'
 
 const navLinks = [
-  { label: 'Listings', href: '/listings', icon: List },
-  { label: 'About',    href: '/about',    icon: Info },
-  { label: 'Contact',  href: '/contact',  icon: Mail },
+  { label: 'Buy',        href: '/listings?type=sale',  icon: ShoppingBag },
+  { label: 'Rent',       href: '/listings?type=rent',  icon: KeyRound },
+  { label: 'Lease',      href: '/listings?type=lease', icon: FileSignature },
+  { label: 'Properties', href: '/listings',            icon: Building2 },
 ]
 
 interface PublicNavbarProps {
@@ -33,8 +34,17 @@ export default function PublicNavbar({ tenantName }: PublicNavbarProps) {
     return () => { document.body.style.overflow = '' }
   }, [open])
 
-  const isActive = (href: string) =>
-    pathname === href || (href !== '/' && pathname.startsWith(href))
+  const [searchParams, setSearchParams] = useState('')
+  useEffect(() => {
+    setSearchParams(window.location.search)
+  }, [pathname])
+
+  const isActive = (href: string) => {
+    const [hrefPath, hrefQuery] = href.split('?')
+    if (pathname !== hrefPath) return false
+    if (!hrefQuery) return !searchParams  // "Properties" active only when no type filter
+    return searchParams.includes(hrefQuery)
+  }
 
   return (
     <>
