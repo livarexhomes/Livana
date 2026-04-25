@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import type { PropertyWithLandlord, PropertyStatus } from '@/lib/types/database'
+import type { PropertyWithLandlord } from '@/lib/types/database'
 import { MapPin, BedDouble, Bath, SquareSquare, ShieldCheck } from 'lucide-react'
 import SaveButton from '@/components/public/SaveButton'
 
@@ -18,7 +18,17 @@ function timeAgo(dateString: string) {
   return `${diffInMonths} ${diffInMonths === 1 ? 'month' : 'months'} ago`
 }
 
-export default function PropertyCard({ property }: { property: PropertyWithLandlord }) {
+export default function PropertyCard({
+  property,
+  saved = false,
+  isAuthenticated = false,
+}: {
+  property: PropertyWithLandlord
+  /** Whether the current user has already saved this property. */
+  saved?: boolean
+  /** Whether a tenant session exists. False redirects to login on click. */
+  isAuthenticated?: boolean
+}) {
   const cover = property.property_images?.find((i) => i.is_cover) ?? property.property_images?.[0]
   const coverUrl = cover
     ? `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/property-images/${cover.storage_path}`
@@ -55,9 +65,11 @@ export default function PropertyCard({ property }: { property: PropertyWithLandl
         </div>
         
         <div className="absolute top-4 right-4">
-          <button className="w-8 h-8 rounded-full bg-white/95 backdrop-blur-sm flex items-center justify-center text-gray-400 hover:text-red-500 hover:bg-white transition-all shadow-sm">
-            <Heart className="w-4 h-4" />
-          </button>
+          <SaveButton
+            propertyId={property.id}
+            saved={saved}
+            isAuthenticated={isAuthenticated}
+          />
         </div>
         
         {property.featured && (

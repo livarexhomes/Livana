@@ -5,6 +5,25 @@ import { createClient } from '@/lib/supabase/server'
 import PropertyCard from '@/components/public/PropertyCard'
 import type { PropertyWithLandlord } from '@/lib/types/database'
 
+async function getSavedPropertyIds(supabase: Awaited<ReturnType<typeof createClient>>): Promise<Set<string>> {
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return new Set()
+
+  const { data: tenant } = await supabase
+    .from('tenants')
+    .select('id')
+    .eq('user_id', user.id)
+    .single()
+  if (!tenant) return new Set()
+
+  const { data: saved } = await supabase
+    .from('saved_properties')
+    .select('property_id')
+    .eq('tenant_id', tenant.id)
+
+  return new Set((saved ?? []).map((r: { property_id: string }) => r.property_id))
+}
+
 export const metadata: Metadata = {
   title: 'All Listings — Property Manager',
   description: 'Browse available properties for rent and sale. Filter by location, price, type and more.',
@@ -28,6 +47,9 @@ export default async function ListingsPage({
   const { type, city, status, min_price, max_price, bedrooms } = params
 
   const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  const authed = !!user
+  const savedIds = await getSavedPropertyIds(supabase)
 
   let query = supabase
     .from('properties')
@@ -159,7 +181,12 @@ export default async function ListingsPage({
             ) : (
               <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
                 {properties?.map((p) => (
-                  <PropertyCard key={p.id} property={p as PropertyWithLandlord} />
+                  <PropertyCard
+                    key={p.id}
+                    property={p as PropertyWithLandlord}
+                    saved={savedIds.has(p.id)}
+                    isAuthenticated={authed}
+                  />
                 ))}
               </div>
             )}
