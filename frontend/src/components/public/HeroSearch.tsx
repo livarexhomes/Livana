@@ -27,7 +27,7 @@ const BED_OPTIONS = [
 
 export default function HeroSearch() {
   const router = useRouter()
-  const [tab, setTab] = useState<'Buy' | 'Rent' | 'Lease'>('Buy')
+  const [tab, setTab] = useState<'Buy' | 'Rent' | 'Lease' | 'Commercial'>('Buy')
   const [location, setLocation] = useState('')
   const [selectedTypes, setSelectedTypes] = useState<string[]>([])
   const [beds, setBeds] = useState('')
@@ -83,16 +83,16 @@ export default function HeroSearch() {
 
   return (
     <div className="w-full max-w-5xl mx-auto bg-white rounded-[2.5rem] p-3 md:p-5 shadow-[0_20px_50px_-15px_rgba(0,0,0,0.2)] text-left relative z-50">
-      {/* Tabs */}
-      <div className="inline-flex bg-[#FAFAFA] rounded-full p-1.5 mb-3 md:mb-5 border border-gray-100">
-        {(['Buy', 'Rent', 'Lease'] as const).map((t) => (
+      {/* Green Tabs (Updated to match the second screenshot) */}
+      <div className="inline-flex bg-[#aadb5a] rounded-[2.5rem] p-1.5 mb-4 md:mb-6 shadow-sm overflow-x-auto max-w-full no-scrollbar border border-[#a2d354]">
+        {(['Buy', 'Rent', 'Lease', 'Commercial'] as const).map((t) => (
           <button
             key={t}
             onClick={() => setTab(t)}
-            className={`px-6 py-2.5 rounded-full text-[15px] font-bold transition-all ${
+            className={`px-6 md:px-8 py-2.5 rounded-[2rem] text-[15px] md:text-[16px] font-bold transition-all whitespace-nowrap ${
               tab === t
-                ? 'bg-white shadow-[0_2px_10px_rgba(0,0,0,0.08)] text-black'
-                : 'text-gray-500 hover:text-black hover:bg-white/50'
+                ? 'bg-white shadow-[0_2px_10px_rgba(0,0,0,0.08)] text-[#0f172a]'
+                : 'text-[#0f172a]/80 hover:bg-white/40'
             }`}
           >
             {t}
