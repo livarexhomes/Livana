@@ -3,6 +3,7 @@ import { NextResponse, type NextRequest } from 'next/server'
 
 const ADMIN_PUBLIC_PATHS = new Set(['/admin/login'])
 const LANDLORD_PUBLIC_PATHS = new Set(['/landlord/login', '/landlord/register'])
+const USER_PUBLIC_PATHS = new Set(['/user/login', '/user/register'])
 
 function isAdminUser(user: { app_metadata?: Record<string, unknown> | null } | null): boolean {
   if (!user) return false
@@ -94,9 +95,29 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(redirect)
   }
 
-  if (LANDLORD_PUBLIC_PATHS.has(pathname) && user) {
+  // Redirect authenticated users away from landlord login/register,
+  // but only if they are not admins (admins may legitimately visit these pages).
+  if (LANDLORD_PUBLIC_PATHS.has(pathname) && user && !isAdminUser(user as unknown as { app_metadata?: Record<string, unknown> })) {
     const redirect = request.nextUrl.clone()
     redirect.pathname = '/landlord'
+    return NextResponse.redirect(redirect)
+  }
+
+  // --- User (tenant) route protection ---
+  if (
+    pathname.startsWith('/user') &&
+    !USER_PUBLIC_PATHS.has(pathname) &&
+    !user
+  ) {
+    const redirect = request.nextUrl.clone()
+    redirect.pathname = '/user/login'
+    return NextResponse.redirect(redirect)
+  }
+
+  // Redirect authenticated users away from user login/register
+  if (USER_PUBLIC_PATHS.has(pathname) && user) {
+    const redirect = request.nextUrl.clone()
+    redirect.pathname = '/user'
     return NextResponse.redirect(redirect)
   }
 

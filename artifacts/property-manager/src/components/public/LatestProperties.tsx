@@ -2,25 +2,36 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { createClient } from '@/lib/supabase/client'
+import { createClient, isSupabaseConfigured } from '@/lib/supabase/client'
 import PropertyCard from '@/components/public/PropertyCard'
 import type { PropertyWithLandlord } from '@/lib/types/database'
 import { Building2 } from 'lucide-react'
 
-export default function LatestProperties({ initialProperties }: { initialProperties: PropertyWithLandlord[] }) {
-  const [tab, setTab] = useState<'Buy' | 'Rent' | 'Lease' | 'Commercial'>('Buy')
+type Tab = 'Buy' | 'Rent' | 'Lease' | 'Commercial'
+
+export default function LatestProperties({
+  initialProperties,
+  activeTab,
+}: {
+  initialProperties: PropertyWithLandlord[]
+  activeTab: Tab
+}) {
+  const tab = activeTab
   const [properties, setProperties] = useState<PropertyWithLandlord[]>(initialProperties)
   const [loading, setLoading] = useState(false)
   const [initialLoad, setInitialLoad] = useState(true)
-  
-  // Use useMemo or state for client to avoid hydration mismatch if needed
-  const [supabase] = useState(() => createClient())
+
+  // Only instantiate the client when Supabase is configured to avoid a
+  // hard crash when env vars are absent (e.g. local dev without .env.local).
+  const [supabase] = useState(() => isSupabaseConfigured() ? createClient() : null)
 
   useEffect(() => {
     if (initialLoad) {
       setInitialLoad(false)
-      if (tab === 'Buy') return // skip fetch if it's the initial load and tab is 'Buy'
+      if (tab === 'Buy') return // server already fetched Buy listings as initialProperties
     }
+
+    if (!supabase) return // Supabase not configured — keep showing initialProperties
 
     async function fetchProperties() {
       setLoading(true)
@@ -32,7 +43,7 @@ export default function LatestProperties({ initialProperties }: { initialPropert
       }
       
       try {
-        const { data } = await supabase
+        const { data } = await supabase!
           .from('properties')
           .select('*, landlords(full_name, whatsapp, is_verified), property_images(storage_path, alt_text, is_cover)')
           .eq('status', 'available')
@@ -49,31 +60,12 @@ export default function LatestProperties({ initialProperties }: { initialPropert
     }
     
     fetchProperties()
-  }, [tab, supabase]) // removed initialLoad from deps to avoid re-triggering
+  }, [tab, supabase])
 
   return (
     <section className="bg-white py-16 md:py-24">
       <div className="max-w-7xl mx-auto w-full px-4 sm:px-6">
         
-        {/* Green Tabs */}
-        <div className="flex justify-center mb-10">
-          <div className="inline-flex bg-[#aadb5a] rounded-[2.5rem] p-1.5 shadow-sm overflow-x-auto max-w-full no-scrollbar border border-[#a2d354]">
-            {(['Buy', 'Rent', 'Lease', 'Commercial'] as const).map((t) => (
-              <button
-                key={t}
-                onClick={() => setTab(t)}
-                className={`px-6 md:px-8 py-2.5 rounded-[2rem] text-[15px] md:text-[16px] font-bold transition-all whitespace-nowrap ${
-                  tab === t
-                    ? 'bg-white shadow-[0_2px_10px_rgba(0,0,0,0.08)] text-[#0f172a]'
-                    : 'text-[#0f172a]/80 hover:bg-white/40'
-                }`}
-              >
-                {t}
-              </button>
-            ))}
-          </div>
-        </div>
-
         {/* Heading & View All Button */}
         <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-10 gap-4">
           <div>
