@@ -17,7 +17,7 @@ export default function RejectedPage() {
           Your landlord account was not approved. Please contact support if you believe
           this is a mistake.
         </p>
-        <Link href="/landlord/login"
+        <Link href="/login"
           className="inline-block text-sm text-indigo-600 hover:text-indigo-800 font-medium">
           Back to sign in
         </Link>

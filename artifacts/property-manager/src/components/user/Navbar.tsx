@@ -30,7 +30,7 @@ export default async function UserNavbar({ title }: NavbarProps) {
           <span className="text-sm text-gray-700 hidden sm:block">{tenant?.full_name ?? user?.email}</span>
         </div>
 
-        <form action="/auth/signout?next=/user/login" method="POST">
+        <form action="/auth/signout" method="POST">
           <button
             type="submit"
             className="p-2 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"

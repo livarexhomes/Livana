@@ -17,7 +17,7 @@ export default function PendingApprovalPage() {
           Your account has been created and is awaiting admin approval. You&apos;ll be able to
           manage listings once approved. This usually takes less than 24 hours.
         </p>
-        <Link href="/landlord/login"
+        <Link href="/login"
           className="inline-block text-sm text-indigo-600 hover:text-indigo-800 font-medium">
           Back to sign in
         </Link>

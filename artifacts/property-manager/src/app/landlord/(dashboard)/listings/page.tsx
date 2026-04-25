@@ -23,7 +23,7 @@ const statusLabels: Record<Property['status'], string> = {
 export default async function LandlordListingsPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/landlord/login')
+  if (!user) redirect('/login')
 
   const { data: landlord } = await supabase
     .from('landlords')
@@ -31,7 +31,7 @@ export default async function LandlordListingsPage() {
     .eq('user_id', user.id)
     .single()
 
-  if (!landlord) redirect('/landlord/register')
+  if (!landlord) redirect('/login')
 
   const { data: properties } = await supabase
     .from('properties')

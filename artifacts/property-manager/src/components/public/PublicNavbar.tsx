@@ -47,10 +47,6 @@ export default function PublicNavbar({ tenantName }: PublicNavbarProps) {
           </nav>
 
           <div className="hidden md:flex items-center gap-3">
-            <Link href="/landlord/login"
-              className="text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors">
-              Landlord login
-            </Link>
             {tenantName ? (
               <Link href="/user"
                 className="flex items-center gap-2 px-4 py-2 bg-[#aadb5a] hover:bg-[#9bcf4a] text-gray-900 text-sm font-semibold rounded-lg transition-colors">
@@ -61,11 +57,11 @@ export default function PublicNavbar({ tenantName }: PublicNavbarProps) {
               </Link>
             ) : (
               <>
-                <Link href="/user/login"
+                <Link href="/login"
                   className="text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors">
                   Sign in
                 </Link>
-                <Link href="/user/register"
+                <Link href="/register"
                   className="px-4 py-2 bg-[#aadb5a] hover:bg-[#9bcf4a] text-gray-900 text-sm font-semibold rounded-lg transition-colors">
                   Sign up
                 </Link>
@@ -100,10 +96,6 @@ export default function PublicNavbar({ tenantName }: PublicNavbarProps) {
               </Link>
             ))}
             <div className="pt-2 border-t border-gray-100 space-y-1">
-              <Link href="/landlord/login" onClick={() => setOpen(false)}
-                className="block px-3 py-2.5 rounded-lg text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 transition-colors">
-                Landlord login
-              </Link>
               {tenantName ? (
                 <Link href="/user" onClick={() => setOpen(false)}
                   className="block px-3 py-2.5 rounded-lg text-sm font-semibold text-gray-900 bg-[#aadb5a]/20 hover:bg-[#aadb5a]/30 transition-colors">
@@ -111,11 +103,11 @@ export default function PublicNavbar({ tenantName }: PublicNavbarProps) {
                 </Link>
               ) : (
                 <>
-                  <Link href="/user/login" onClick={() => setOpen(false)}
+                  <Link href="/login" onClick={() => setOpen(false)}
                     className="block px-3 py-2.5 rounded-lg text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 transition-colors">
                     Sign in
                   </Link>
-                  <Link href="/user/register" onClick={() => setOpen(false)}
+                  <Link href="/register" onClick={() => setOpen(false)}
                     className="block px-3 py-2.5 rounded-lg text-sm font-semibold text-gray-900 bg-[#aadb5a] hover:bg-[#9bcf4a] transition-colors">
                     Sign up free
                   </Link>

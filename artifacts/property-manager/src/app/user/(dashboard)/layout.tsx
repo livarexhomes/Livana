@@ -13,7 +13,7 @@ export default async function UserDashboardLayout({
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
-  if (!user) redirect('/user/login')
+  if (!user) redirect('/login')
 
   // Ensure a tenant profile exists
   const { data: tenant } = await supabase
@@ -22,7 +22,7 @@ export default async function UserDashboardLayout({
     .eq('user_id', user.id)
     .single()
 
-  if (!tenant) redirect('/user/register')
+  if (!tenant) redirect('/register')
 
   return (
     <div className="flex min-h-screen bg-gray-50">

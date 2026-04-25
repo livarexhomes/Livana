@@ -7,7 +7,7 @@ import { createClient } from '@/lib/supabase/server'
 export default async function LandlordDashboardPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/landlord/login')
+  if (!user) redirect('/login')
 
   const { data: landlord } = await supabase
     .from('landlords')
@@ -15,7 +15,7 @@ export default async function LandlordDashboardPage() {
     .eq('user_id', user.id)
     .single()
 
-  if (!landlord) redirect('/landlord/register')
+  if (!landlord) redirect('/login')
 
   const [{ count: total }, { count: available }, { count: taken }] =
     await Promise.all([
