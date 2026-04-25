@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
+import { requireAdmin } from '@/lib/supabase/require-admin'
 import { z } from 'zod'
 
 const PropertySchema = z.object({
@@ -29,6 +30,8 @@ export async function createProperty(
   formData: FormData
 ): Promise<PropertyFormState> {
   const supabase = await createClient()
+  const auth = await requireAdmin(supabase)
+  if (auth.error) return { error: auth.error }
 
   const raw = Object.fromEntries(formData)
   const parsed = PropertySchema.safeParse(raw)
@@ -51,6 +54,8 @@ export async function updateProperty(
   formData: FormData
 ): Promise<PropertyFormState> {
   const supabase = await createClient()
+  const auth = await requireAdmin(supabase)
+  if (auth.error) return { error: auth.error }
 
   const raw = Object.fromEntries(formData)
   const parsed = PropertySchema.safeParse(raw)
@@ -73,6 +78,8 @@ export async function updateProperty(
 
 export async function deleteProperty(id: string): Promise<{ error?: string }> {
   const supabase = await createClient()
+  const auth = await requireAdmin(supabase)
+  if (auth.error) return { error: auth.error }
   const { error } = await supabase.from('properties').delete().eq('id', id)
   if (error) return { error: error.message }
   revalidatePath('/admin/properties')
@@ -85,6 +92,8 @@ export async function updatePropertyStatus(
   status: 'available' | 'taken' | 'coming_soon' | 'under_negotiation'
 ): Promise<{ error?: string }> {
   const supabase = await createClient()
+  const auth = await requireAdmin(supabase)
+  if (auth.error) return { error: auth.error }
   const { error } = await supabase
     .from('properties')
     .update({ status })
