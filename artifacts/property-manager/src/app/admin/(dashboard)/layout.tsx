@@ -20,12 +20,16 @@ export default async function DashboardLayout({
     redirect('/login')
   }
 
+  const displayName =
+    user.user_metadata?.full_name ||
+    (user.email ? user.email.split('@')[0] : 'Admin')
+
   return (
     <div className="flex min-h-screen bg-gray-50">
-      <Sidebar />
+      <Sidebar userEmail={user.email} userName={displayName} />
       <div className="flex flex-col flex-1 min-w-0">
-        <Navbar title="Dashboard" />
-        <main className="flex-1 p-6">{children}</main>
+        <Navbar />
+        <main className="flex-1 p-6 overflow-auto">{children}</main>
       </div>
     </div>
   )
