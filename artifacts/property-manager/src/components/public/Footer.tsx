@@ -14,7 +14,7 @@ export default function Footer() {
                     d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
                 </svg>
               </div>
-              <span className="font-semibold text-white text-sm">Property Manager</span>
+              <span className="font-semibold text-white text-sm">Livana</span>
             </div>
             <p className="text-sm leading-relaxed">
               Connecting renters with verified landlords. Find your next home with confidence.
@@ -44,7 +44,7 @@ export default function Footer() {
         </div>
 
         <div className="border-t border-gray-800 pt-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
-          <p>© {new Date().getFullYear()} Property Manager. All rights reserved.</p>
+          <p>© {new Date().getFullYear()} Livana. All rights reserved.</p>
           <p>Built with care for renters and landlords.</p>
         </div>
       </div>
