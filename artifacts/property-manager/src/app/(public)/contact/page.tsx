@@ -5,8 +5,8 @@ import Link from 'next/link'
 import ContactForm from '@/components/public/ContactForm'
 
 export const metadata: Metadata = {
-  title: 'Contact — Property Manager',
-  description: 'Get in touch with the Property Manager team. We\'re here to help renters and landlords.',
+  title: 'Contact — Livana',
+  description: 'Get in touch with the Livana team. We\'re here to help renters and landlords.',
 }
 
 const contactOptions = [

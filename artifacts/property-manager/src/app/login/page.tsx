@@ -92,7 +92,7 @@ export default function LoginPage() {
 
         {/* Heading */}
         <h1 className="text-2xl font-bold text-gray-900 mb-8 leading-snug">
-          Sign In to unlock the best of<br />Expert Listing
+          Sign In to unlock the best of<br />Livana
         </h1>
 
         {/* Card */}

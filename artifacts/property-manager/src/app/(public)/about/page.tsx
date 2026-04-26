@@ -4,8 +4,8 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 
 export const metadata: Metadata = {
-  title: 'About — Property Manager',
-  description: 'Learn how Property Manager connects renters with verified landlords for a transparent, hassle-free experience.',
+  title: 'About — Livana',
+  description: 'Learn how Livana connects renters with verified landlords for a transparent, hassle-free experience.',
 }
 
 const values = [
@@ -71,7 +71,7 @@ export default function AboutPage() {
               Connecting renters with landlords they can trust
             </h1>
             <p className="text-lg text-indigo-200 leading-relaxed">
-              Property Manager is a platform built to make finding a home straightforward — real listings, real availability, real people.
+              Livana is a platform built to make finding a home straightforward — real listings, real availability, real people.
             </p>
           </div>
         </div>
@@ -83,7 +83,7 @@ export default function AboutPage() {
           <div>
             <h2 className="text-2xl font-bold text-gray-900 mb-4">Our mission</h2>
             <p className="text-gray-600 leading-relaxed mb-4">
-              Finding a rental shouldn&apos;t mean sifting through outdated listings, chasing agents, or paying unnecessary fees. We built Property Manager to cut through the noise.
+              Finding a rental shouldn&apos;t mean sifting through outdated listings, chasing agents, or paying unnecessary fees. We built Livana to cut through the noise.
             </p>
             <p className="text-gray-600 leading-relaxed mb-4">
               Every property on our platform comes from a landlord who has been reviewed and approved. Every listing shows live availability. Every inquiry goes directly to the person who owns the property.

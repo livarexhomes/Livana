@@ -14,8 +14,8 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: {
-    default: 'Property Manager',
-    template: '%s — Property Manager',
+    default: 'Livana',
+    template: '%s — Livana',
   },
   description: 'Find verified rental and sale properties. Connect directly with landlords via WhatsApp.',
 };

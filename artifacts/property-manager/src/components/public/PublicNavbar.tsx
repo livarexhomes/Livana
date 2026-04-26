@@ -64,7 +64,7 @@ export default function PublicNavbar({ tenantName }: PublicNavbarProps) {
                 <Home className="w-4 h-4 text-white" strokeWidth={2} />
               </div>
               <span className="font-bold text-gray-900 text-[15px] tracking-tight">
-                Expert<span className="text-[#6b9e6e]">Listing</span>
+                Liv<span className="text-[#6b9e6e]">ana</span>
               </span>
             </Link>
 
@@ -149,7 +149,7 @@ export default function PublicNavbar({ tenantName }: PublicNavbarProps) {
               <Home className="w-4 h-4 text-white" strokeWidth={2} />
             </div>
             <span className="font-bold text-gray-900 text-sm tracking-tight">
-              Expert<span className="text-[#6b9e6e]">Listing</span>
+              Liv<span className="text-[#6b9e6e]">ana</span>
             </span>
           </Link>
           <button

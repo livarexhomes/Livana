@@ -64,7 +64,7 @@ export default function RegisterPage() {
 
         {/* Heading */}
         <h1 className="text-2xl font-bold text-gray-900 mb-8 leading-snug">
-          Create your account on<br />Expert Listing
+          Create your account on<br />Livana
         </h1>
 
         <form onSubmit={handleSubmit} className="space-y-4">
