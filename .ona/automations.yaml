@@ -1,0 +1,27 @@
+tasks:
+  install:
+    name: Install dependencies
+    description: Install all workspace dependencies via pnpm.
+    command: pnpm install
+    triggeredBy:
+      - postDevcontainerStart
+
+  setup-env:
+    name: Scaffold .env.local
+    description: Copy .env.local.example to the app directory if .env.local does not already exist.
+    command: |
+      cp -n .env.local.example artifacts/property-manager/.env.local \
+        && echo ".env.local created — fill in your Supabase credentials." \
+        || echo ".env.local already exists, skipping."
+    triggeredBy:
+      - postDevcontainerStart
+    dependsOn:
+      - install
+
+services:
+  dev-server:
+    name: Next.js Dev Server
+    description: Runs the property-manager Next.js app in development mode on port 3000.
+    commands:
+      start: cd artifacts/property-manager && PORT=3000 pnpm dev
+      ready: curl -sf http://localhost:3000
