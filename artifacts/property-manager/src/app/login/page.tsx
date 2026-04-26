@@ -95,8 +95,8 @@ export default function LoginPage() {
           Sign In to unlock the best of<br />Livana
         </h1>
 
-        {/* Card */}
-        <div className="space-y-4">
+        {/* Card — single form element, method=post prevents GET fallback */}
+        <form method="post" onSubmit={handleSubmit} className="space-y-4">
 
           {/* Email */}
           <div>
@@ -106,7 +106,6 @@ export default function LoginPage() {
               required
               autoComplete="email"
               placeholder="Email Address"
-              form="login-form"
               className="w-full px-4 py-3.5 rounded-xl border border-gray-200 bg-gray-50 text-sm text-gray-900
                 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#6b9e6e] focus:border-transparent
                 transition"
@@ -121,7 +120,6 @@ export default function LoginPage() {
               required
               autoComplete="current-password"
               placeholder="Password"
-              form="login-form"
               className="w-full px-4 py-3.5 pr-12 rounded-xl border border-gray-200 bg-gray-50 text-sm text-gray-900
                 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#6b9e6e] focus:border-transparent
                 transition"
@@ -153,18 +151,15 @@ export default function LoginPage() {
             </div>
           )}
 
-          {/* Submit — the actual form wraps the inputs via the `form` attribute */}
-          <form id="login-form" onSubmit={handleSubmit}>
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full py-3.5 bg-[#6b9e6e] hover:bg-[#5d8f60] disabled:opacity-60
-                text-white font-semibold rounded-full transition focus:outline-none focus:ring-2
-                focus:ring-[#6b9e6e] focus:ring-offset-2"
-            >
-              {loading ? 'Signing in…' : 'Proceed'}
-            </button>
-          </form>
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full py-3.5 bg-[#6b9e6e] hover:bg-[#5d8f60] disabled:opacity-60
+              text-white font-semibold rounded-full transition focus:outline-none focus:ring-2
+              focus:ring-[#6b9e6e] focus:ring-offset-2"
+          >
+            {loading ? 'Signing in…' : 'Proceed'}
+          </button>
 
           {/* Register link */}
           <p className="text-center text-sm text-gray-500">
@@ -200,7 +195,7 @@ export default function LoginPage() {
             {googleLoading ? 'Redirecting…' : 'Continue with Google'}
           </button>
 
-        </div>
+        </form>
       </div>
     </div>
   )
