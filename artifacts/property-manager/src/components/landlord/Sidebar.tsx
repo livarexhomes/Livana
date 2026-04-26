@@ -50,7 +50,7 @@ export default function LandlordSidebar() {
           </svg>
         </div>
         <div>
-          <span className="text-sm font-semibold text-gray-900">Property Manager</span>
+          <span className="text-sm font-semibold text-gray-900">Livana</span>
           <p className="text-xs text-gray-400">Landlord portal</p>
         </div>
       </div>

@@ -38,7 +38,7 @@ export async function generateMetadata({
   if (!data) return { title: 'Property not found' }
 
   return {
-    title: `${data.title} — Property Manager`,
+    title: `${data.title} — Livana`,
     description: data.description ?? `${data.type === 'rent' ? 'For rent' : 'For sale'} in ${data.city}. $${Number(data.price).toLocaleString()}${data.type === 'rent' ? '/mo' : ''}.`,
   }
 }

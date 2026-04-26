@@ -25,7 +25,7 @@ async function getSavedPropertyIds(supabase: Awaited<ReturnType<typeof createCli
 }
 
 export const metadata: Metadata = {
-  title: 'All Listings — Property Manager',
+  title: 'All Listings — Livana',
   description: 'Browse available properties for rent and sale. Filter by location, price, type and more.',
 }
 
