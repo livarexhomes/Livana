@@ -1,5 +1,0 @@
-{
-  "buildCommand": "pnpm --filter @workspace/property-manager run build",
-  "outputDirectory": "artifacts/property-manager/.next",
-  "installCommand": "pnpm install --frozen-lockfile"
-}
