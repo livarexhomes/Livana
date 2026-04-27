@@ -97,3 +97,8 @@ export interface SavedPropertyWithProperty extends SavedProperty {
 export interface EnquiryWithProperty extends Enquiry {
   properties: Pick<Property, 'id' | 'title' | 'city' | 'price' | 'type'>
 }
+
+export interface EnquiryWithTenantAndProperty extends Enquiry {
+  properties: Pick<Property, 'id' | 'title' | 'city' | 'price' | 'type'>
+  tenants: Pick<Tenant, 'full_name' | 'phone'> | null
+}
