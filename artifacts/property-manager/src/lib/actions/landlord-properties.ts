@@ -133,6 +133,30 @@ export async function landlordDeleteProperty(id: string): Promise<{ error?: stri
   return {}
 }
 
+export async function landlordUpdateEnquiryStatus(
+  enquiryId: string,
+  status: 'open' | 'replied' | 'closed'
+): Promise<{ error?: string }> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Not authenticated' }
+
+  const landlord = await getLandlordId(supabase, user.id)
+  if (!landlord) return { error: 'Account not found' }
+
+  // Only update enquiries directed at this landlord's properties
+  const { error } = await supabase
+    .from('enquiries')
+    .update({ status })
+    .eq('id', enquiryId)
+    .eq('landlord_id', landlord.id)
+
+  if (error) return { error: error.message }
+
+  revalidatePath('/landlord/enquiries')
+  return {}
+}
+
 export async function landlordUpdateAvailability(
   propertyId: string,
   status: 'available' | 'taken' | 'coming_soon' | 'under_negotiation'
