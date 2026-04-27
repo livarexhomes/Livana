@@ -1,4 +1,4 @@
-# AGENTS.md — Property Manager Monorepo
+# AGENTS.md — Property Manager
 
 Agent-facing reference for this repository. Read this before writing any code.
 
@@ -9,17 +9,13 @@ Agent-facing reference for this repository. Read this before writing any code.
 ```
 /
 ├── artifacts/
-│   ├── property-manager/   # Next.js 15 App Router web app (primary artifact)
-│   ├── api-server/         # Express scaffold (unused by property-manager)
-│   └── mockup-sandbox/     # UI mockup canvas
-├── lib/                    # Shared libraries
-├── scripts/                # Workspace-level scripts (TypeScript, run via tsx)
+│   └── property-manager/   # Next.js 15 App Router web app — the only app
 ├── pnpm-workspace.yaml     # Workspace + catalog definitions
 ├── tsconfig.base.json      # Base TS config inherited by all packages
-└── .devcontainer/          # Dev container config (universal image)
+└── .devcontainer/          # Dev container config
 ```
 
-The **only production app** is `artifacts/property-manager`. All feature work goes there unless explicitly stated otherwise.
+The **only production app** is `artifacts/property-manager`. All feature work goes there.
 
 ---
 
@@ -31,10 +27,10 @@ The **only production app** is `artifacts/property-manager`. All feature work go
 # Install all workspace deps
 pnpm install
 
-# Run a script in a specific package
+# Run a script in the app
 pnpm --filter @workspace/property-manager <script>
 
-# Add a dep to the property-manager app
+# Add a dep to the app
 pnpm --filter @workspace/property-manager add <package>
 ```
 
@@ -53,7 +49,7 @@ Copy `.env.local.example` to `artifacts/property-manager/.env.local` and fill in
 
 The app degrades gracefully when these are unset (Supabase calls return empty data, middleware passes through), so the home page renders without them. Auth-dependent pages will not function.
 
-**Never commit `.env.local` or any file containing real credentials.** Both `.env.local` and `.env.*.local` are in `.gitignore`.
+**Never commit `.env.local` or any file containing real credentials.**
 
 ---
 
@@ -66,13 +62,11 @@ pnpm --filter @workspace/property-manager dev
 cd artifacts/property-manager && pnpm dev
 ```
 
-The dev server binds to `0.0.0.0` and reads `$PORT` (defaults to Next.js default 3000 if unset).
-
-Do **not** run `pnpm dev` at the workspace root — there is no root dev script.
+The dev server binds to `0.0.0.0` and reads `$PORT` (defaults to 3000 if unset).
 
 ---
 
-## Tech stack — property-manager
+## Tech stack
 
 | Concern | Library / version |
 |---|---|
@@ -86,7 +80,7 @@ Do **not** run `pnpm dev` at the workspace root — there is no root dev script.
 
 ---
 
-## Project structure — property-manager
+## Project structure
 
 ```
 src/
@@ -152,28 +146,23 @@ Check `isSupabaseConfigured()` before calling Supabase in code paths that must d
 ## Testing
 
 ```bash
-# Run all tests (from artifact dir or via filter)
 pnpm --filter @workspace/property-manager test
-
-# Watch mode
 pnpm --filter @workspace/property-manager test:watch
 ```
 
-Tests live alongside source files as `*.test.ts`. Vitest runs in `node` environment. Do not use `jsdom` globals without updating `vitest.config.ts`.
+Tests live alongside source files as `*.test.ts`. Vitest runs in `node` environment.
 
 ---
 
 ## Next.js version note
 
-This project uses **Next.js 15 App Router**. APIs, conventions, and file structure differ significantly from Next.js 12/13 Page Router. Key differences:
+This project uses **Next.js 15 App Router**. Key differences from older versions:
 
 - `app/` directory only — no `pages/`.
 - Server Components are the default; add `'use client'` only when needed.
 - Server Actions replace API routes for mutations.
 - `cookies()` and `headers()` are async in Next.js 15.
 - `params` and `searchParams` in page components are Promises — `await` them.
-
-Read `node_modules/next/dist/docs/` for authoritative API reference if uncertain.
 
 ---
 
@@ -191,6 +180,4 @@ Example: `feat(landlord): add property image upload`
 - Do not commit `.env.local` or any secrets.
 - Do not add `console.log` debug statements to committed code.
 - Do not use `any` types without a comment explaining why.
-- Do not modify `pnpm-workspace.yaml` catalog versions without checking for downstream breakage.
-- Do not run `pnpm dev` at the workspace root.
 - Do not use the Page Router (`pages/` directory).
