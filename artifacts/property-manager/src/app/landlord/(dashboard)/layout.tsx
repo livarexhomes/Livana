@@ -15,10 +15,9 @@ export default async function LandlordDashboardLayout({
 
   if (!user) redirect('/login')
 
-  // Check landlord profile exists and is approved
   const { data: landlord } = await supabase
     .from('landlords')
-    .select('status')
+    .select('status, full_name, is_verified')
     .eq('user_id', user.id)
     .single()
 
@@ -28,10 +27,14 @@ export default async function LandlordDashboardLayout({
 
   return (
     <div className="flex min-h-screen bg-gray-50">
-      <LandlordSidebar />
+      <LandlordSidebar
+        userName={landlord.full_name}
+        userEmail={user.email}
+        isVerified={landlord.is_verified}
+      />
       <div className="flex flex-col flex-1 min-w-0">
-        <LandlordNavbar title="Dashboard" />
-        <main className="flex-1 p-6">{children}</main>
+        <LandlordNavbar />
+        <main className="flex-1 p-6 overflow-auto">{children}</main>
       </div>
     </div>
   )
