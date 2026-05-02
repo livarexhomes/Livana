@@ -414,36 +414,32 @@ export default function HomePage() {
       {/* ── CTA BANNER ── */}
       <section className="py-20 md:py-28 px-5 sm:px-8 bg-gray-50">
         <div className="max-w-7xl mx-auto">
-          <div className="relative overflow-hidden rounded-[2rem] hero-gradient grid-pattern">
-            {/* Glowing elements */}
-            <div className="absolute top-0 right-0 w-96 h-96 bg-blue-500/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/4 pointer-events-none" />
-            <div className="absolute bottom-0 left-1/4 w-64 h-64 bg-blue-600/20 rounded-full blur-3xl translate-y-1/2 pointer-events-none" />
-
+          <div className="relative overflow-hidden rounded-[2rem] bg-gray-950">
             <div className="relative z-10 p-10 md:p-16 flex flex-col md:flex-row items-center justify-between gap-10">
               <div className="max-w-xl">
-                <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 border border-white/15 text-xs font-semibold uppercase tracking-widest text-blue-300 mb-6">
+                <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 border border-white/15 text-xs font-semibold uppercase tracking-widest text-blue-400 mb-6">
                   <ShieldCheck className="w-3.5 h-3.5" />
                   Verified Platform
                 </div>
                 <h2 className="text-3xl md:text-5xl font-extrabold text-white leading-tight mb-4 tracking-tight">
                   Ready to find your<br />perfect home?
                 </h2>
-                <p className="text-blue-100/70 text-base leading-relaxed mb-8 max-w-md">
+                <p className="text-gray-400 text-base leading-relaxed mb-8 max-w-md">
                   Join over 10,000 Nigerians who've found their ideal property on Livana. Start your search today — it's completely free.
                 </p>
                 <ul className="space-y-2 mb-8">
                   {['Verified landlords only', 'Zero agent fees', 'Direct WhatsApp contact'].map(item => (
-                    <li key={item} className="flex items-center gap-2.5 text-blue-100/80 text-sm">
-                      <CheckCircle2 className="w-4 h-4 text-blue-400 shrink-0" />
+                    <li key={item} className="flex items-center gap-2.5 text-gray-400 text-sm">
+                      <CheckCircle2 className="w-4 h-4 text-blue-500 shrink-0" />
                       {item}
                     </li>
                   ))}
                 </ul>
                 <div className="flex flex-col sm:flex-row gap-3">
-                  <Link href="/listings" className="px-7 py-3.5 bg-white text-blue-700 font-bold rounded-2xl hover:bg-blue-50 transition-all text-center text-sm shadow-xl hover:shadow-white/20">
+                  <Link href="/listings" className="px-7 py-3.5 bg-white text-gray-900 font-bold rounded-2xl hover:bg-gray-100 transition-all text-center text-sm shadow-xl">
                     Browse Listings
                   </Link>
-                  <Link href="/register" className="px-7 py-3.5 bg-blue-600/30 text-white font-semibold rounded-2xl hover:bg-blue-600/50 transition-all text-center border border-white/15 text-sm">
+                  <Link href="/register" className="px-7 py-3.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-2xl transition-all text-center text-sm">
                     List Your Property
                   </Link>
                 </div>
@@ -456,9 +452,9 @@ export default function HomePage() {
                   { num: '₦0', label: 'Agent Fees' },
                   { num: '4.9★', label: 'Average Rating' },
                 ].map(item => (
-                  <div key={item.label} className="bg-white/8 backdrop-blur border border-white/12 rounded-2xl px-6 py-5 text-center hover:bg-white/12 transition-all">
+                  <div key={item.label} className="bg-white/5 border border-white/10 rounded-2xl px-6 py-5 text-center hover:bg-white/8 transition-all">
                     <p className="text-2xl font-extrabold text-white">{item.num}</p>
-                    <p className="text-blue-300/70 text-xs mt-1 font-medium">{item.label}</p>
+                    <p className="text-gray-500 text-xs mt-1 font-medium">{item.label}</p>
                   </div>
                 ))}
               </div>
