@@ -1,6 +1,7 @@
+import type { User } from '@supabase/supabase-js'
 import { createClient } from './supabase'
 
-export function isAdminUser(user: { app_metadata?: Record<string, unknown> | null } | null): boolean {
+export function isAdminUser(user: User | null): boolean {
   if (!user) return false
   const meta = user.app_metadata ?? {}
   if (meta.role === 'admin') return true

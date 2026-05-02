@@ -24,13 +24,13 @@ export default function AuthGuard({ children, require: req, redirectTo = '/login
       if (req === 'any') { setStatus('ok'); return }
 
       if (req === 'admin') {
-        if (isAdminUser(user as any)) { setStatus('ok') }
+        if (isAdminUser(user)) { setStatus('ok') }
         else { navigate('/'); }
         return
       }
 
       if (req === 'landlord') {
-        const { data: landlord } = await supabase.from('landlords').select('id, status').eq('user_id', user.id).single()
+        const { data: landlord } = await supabase.from('landlords').select('id, status').eq('user_id', user.id).single() as { data: { id: string; status: string } | null }
         if (!landlord) { navigate('/'); return }
         if (landlord.status === 'pending') { navigate('/landlord/pending'); return }
         if (landlord.status === 'rejected') { navigate('/landlord/rejected'); return }

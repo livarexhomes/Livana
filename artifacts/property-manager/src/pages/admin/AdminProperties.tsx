@@ -34,13 +34,13 @@ export default function AdminProperties() {
 
   async function toggleFeatured(id: string, featured: boolean) {
     const supabase = createClient()
-    await supabase.from('properties').update({ featured }).eq('id', id)
+    await (supabase.from('properties').update({ featured } as Record<string, unknown>).eq('id', id) as unknown as Promise<unknown>)
     setProperties(ps => ps.map(p => p.id === id ? { ...p, featured } : p))
   }
 
   async function updateStatus(id: string, status: string) {
     const supabase = createClient()
-    await supabase.from('properties').update({ status }).eq('id', id)
+    await (supabase.from('properties').update({ status } as Record<string, unknown>).eq('id', id) as unknown as Promise<unknown>)
     setProperties(ps => ps.map(p => p.id === id ? { ...p, status } : p))
   }
 

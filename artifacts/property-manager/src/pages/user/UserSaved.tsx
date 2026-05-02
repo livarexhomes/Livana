@@ -13,14 +13,14 @@ export default function UserSavedPage() {
     const supabase = createClient()
     supabase.auth.getUser().then(async ({ data: { user } }) => {
       if (!user) return
-      const { data: tenant } = await supabase.from('tenants').select('id').eq('user_id', user.id).single()
+      const { data: tenant } = await supabase.from('tenants').select('id').eq('user_id', user.id).single() as { data: { id: string } | null }
       if (!tenant) { setLoading(false); return }
-      const { data } = await supabase
+      const result = await supabase
         .from('saved_properties')
         .select('id, property_id, created_at, properties(id, title, city, price, type, bedrooms, bathrooms, landlords(full_name, is_verified), property_images(storage_path, is_cover))')
         .eq('tenant_id', tenant.id)
         .order('created_at', { ascending: false })
-      setItems(data ?? [])
+      setItems((result.data as any[]) ?? [])
       setLoading(false)
     })
   }, [])

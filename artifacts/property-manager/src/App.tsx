@@ -7,6 +7,7 @@ import AboutPage from "./pages/AboutPage";
 import ContactPage from "./pages/ContactPage";
 import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
+import AuthCallbackPage from "./pages/AuthCallbackPage";
 
 import LandlordDashboard from "./pages/landlord/LandlordDashboard";
 import LandlordListings from "./pages/landlord/LandlordListings";
@@ -50,6 +51,7 @@ function Router() {
       <Route path="/contact" component={ContactPage} />
       <Route path="/login" component={LoginPage} />
       <Route path="/register" component={RegisterPage} />
+      <Route path="/auth/callback" component={AuthCallbackPage} />
 
       <Route path="/landlord" component={LandlordDashboard} />
       <Route path="/landlord/listings" component={LandlordListings} />

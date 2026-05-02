@@ -38,13 +38,13 @@ export default function PropertyCard({ property: p, saved: initialSaved = false,
       const supabase = createClient()
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) { navigate('/login'); return }
-      const { data: tenant } = await supabase.from('tenants').select('id').eq('user_id', user.id).single()
+      const { data: tenant } = await supabase.from('tenants').select('id').eq('user_id', user.id).single() as { data: { id: string } | null }
       if (!tenant) { navigate('/user'); return }
       if (saved) {
         await supabase.from('saved_properties').delete().eq('tenant_id', tenant.id).eq('property_id', p.id)
         setSaved(false)
       } else {
-        await supabase.from('saved_properties').insert({ tenant_id: tenant.id, property_id: p.id })
+        await (supabase.from('saved_properties').insert({ tenant_id: tenant.id, property_id: p.id }) as unknown as Promise<unknown>)
         setSaved(true)
       }
     } finally {

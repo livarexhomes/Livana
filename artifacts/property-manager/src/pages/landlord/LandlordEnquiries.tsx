@@ -22,15 +22,15 @@ export default function LandlordEnquiries() {
     supabase.auth.getUser().then(async ({ data: { user } }) => {
       if (!user) return
       setUser({ email: user.email })
-      const { data: l } = await supabase.from('landlords').select('*').eq('user_id', user.id).single()
+      const { data: l } = await supabase.from('landlords').select('*').eq('user_id', user.id).single() as { data: Landlord | null }
       setLandlord(l)
       if (l) {
-        const { data } = await supabase
+        const result = await supabase
           .from('enquiries')
           .select('*, properties(id, title, city, price), tenants(full_name, phone)')
           .eq('landlord_id', l.id)
           .order('created_at', { ascending: false })
-        setEnquiries(data ?? [])
+        setEnquiries((result.data as any[]) ?? [])
       }
       setLoading(false)
     })
@@ -38,7 +38,7 @@ export default function LandlordEnquiries() {
 
   async function updateStatus(id: string, status: string) {
     const supabase = createClient()
-    await supabase.from('enquiries').update({ status }).eq('id', id)
+    await (supabase.from('enquiries').update({ status } as Record<string, unknown>).eq('id', id) as unknown as Promise<unknown>)
     setEnquiries(es => es.map(e => e.id === id ? { ...e, status } : e))
   }
 

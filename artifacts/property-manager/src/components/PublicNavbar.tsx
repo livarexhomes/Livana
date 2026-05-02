@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Link, useLocation } from 'wouter'
+import type { User } from '@supabase/supabase-js'
 import { createClient, isSupabaseConfigured } from '../lib/supabase'
 import { isAdminUser } from '../lib/auth'
 
@@ -13,16 +14,15 @@ export default function PublicNavbar() {
     const supabase = createClient()
     supabase.auth.getUser().then(async ({ data: { user } }) => {
       if (!user) { setUser(null); return }
-      const admin = isAdminUser(user as any)
+      const admin = isAdminUser(user)
       const { data: landlord } = await supabase.from('landlords').select('id').eq('user_id', user.id).single()
       setUser({ email: user.email, isAdmin: admin, isLandlord: !!landlord })
     })
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       if (!session?.user) { setUser(null); return }
-      const u = session.user
-      isAdminUser(u as any)
+      const u: User = session.user
       supabase.from('landlords').select('id').eq('user_id', u.id).single().then(({ data: landlord }) => {
-        setUser({ email: u.email, isAdmin: isAdminUser(u as any), isLandlord: !!landlord })
+        setUser({ email: u.email, isAdmin: isAdminUser(u), isLandlord: !!landlord })
       })
     })
     return () => subscription.unsubscribe()

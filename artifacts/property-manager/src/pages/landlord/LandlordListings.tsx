@@ -29,11 +29,11 @@ export default function LandlordListings() {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
     setUser({ email: user.email })
-    const { data: l } = await supabase.from('landlords').select('*').eq('user_id', user.id).single()
+    const { data: l } = await supabase.from('landlords').select('*').eq('user_id', user.id).single() as { data: Landlord | null }
     setLandlord(l)
     if (l) {
-      const { data } = await supabase.from('properties').select('*').eq('landlord_id', l.id).order('created_at', { ascending: false })
-      setProperties((data as Property[]) ?? [])
+      const { data } = await supabase.from('properties').select('*').eq('landlord_id', l.id).order('created_at', { ascending: false }) as unknown as { data: Property[] | null }
+      setProperties(data ?? [])
     }
     setLoading(false)
   }

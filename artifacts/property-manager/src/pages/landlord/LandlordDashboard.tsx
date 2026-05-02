@@ -18,12 +18,12 @@ export default function LandlordDashboard() {
     supabase.auth.getUser().then(async ({ data: { user } }) => {
       if (!user) return
       setUser({ email: user.email })
-      const { data: l } = await supabase.from('landlords').select('*').eq('user_id', user.id).single()
+      const { data: l } = await supabase.from('landlords').select('*').eq('user_id', user.id).single() as { data: Landlord | null }
       setLandlord(l)
       if (l) {
         const [{ data: props }, { data: enqs }] = await Promise.all([
-          supabase.from('properties').select('*').eq('landlord_id', l.id).order('created_at', { ascending: false }).limit(5),
-          supabase.from('enquiries').select('id').eq('landlord_id', l.id),
+          supabase.from('properties').select('*').eq('landlord_id', l.id).order('created_at', { ascending: false }).limit(5) as unknown as Promise<{ data: Property[] | null }>,
+          supabase.from('enquiries').select('id').eq('landlord_id', l.id) as unknown as Promise<{ data: { id: string }[] | null }>,
         ])
         const allProps = props ?? []
         setRecentListings(allProps)

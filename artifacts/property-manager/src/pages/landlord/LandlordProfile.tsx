@@ -17,7 +17,7 @@ export default function LandlordProfile() {
     supabase.auth.getUser().then(async ({ data: { user } }) => {
       if (!user) return
       setUser({ email: user.email, id: user.id })
-      const { data: l } = await supabase.from('landlords').select('*').eq('user_id', user.id).single()
+      const { data: l } = await supabase.from('landlords').select('*').eq('user_id', user.id).single() as { data: Landlord | null }
       setLandlord(l)
       if (l) setForm({ full_name: l.full_name ?? '', whatsapp: l.whatsapp ?? '', bio: l.bio ?? '' })
     })
@@ -30,10 +30,10 @@ export default function LandlordProfile() {
     setError('')
     setSuccess(false)
     const supabase = createClient()
-    const { error: err } = await supabase.from('landlords').upsert(
-      { user_id: user.id, ...form },
+    const { error: err } = await (supabase.from('landlords').upsert(
+      { user_id: user.id, ...form } as Record<string, unknown>,
       { onConflict: 'user_id' }
-    )
+    ) as unknown as Promise<{ error: Error | null }>)
     if (err) setError(err.message)
     else setSuccess(true)
     setLoading(false)
