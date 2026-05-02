@@ -1,7 +1,7 @@
 {
   "framework": null,
   "installCommand": "pnpm install",
-  "buildCommand": "pnpm --filter @workspace/property-manager run build",
-  "outputDirectory": "artifacts/property-manager/dist/public",
+  "buildCommand": "pnpm --filter @workspace/property-manager run build && mkdir -p vercel-out && cp -r artifacts/property-manager/dist/. vercel-out/",
+  "outputDirectory": "vercel-out",
   "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]
 }
