@@ -19,14 +19,14 @@ export default function UserEnquiriesPage() {
     const supabase = createClient()
     supabase.auth.getUser().then(async ({ data: { user } }) => {
       if (!user) return
-      const { data: tenant } = await supabase.from('tenants').select('id').eq('user_id', user.id).single()
+      const { data: tenant } = await supabase.from('tenants').select('id').eq('user_id', user.id).single() as { data: { id: string } | null }
       if (!tenant) { setLoading(false); return }
-      const { data } = await supabase
+      const result = await supabase
         .from('enquiries')
         .select('id, message, status, created_at, properties(id, title, city, price, type)')
         .eq('tenant_id', tenant.id)
         .order('created_at', { ascending: false })
-      setItems(data ?? [])
+      setItems((result.data as any[]) ?? [])
       setLoading(false)
     })
   }, [])

@@ -15,7 +15,7 @@ export default function UserProfilePage() {
     supabase.auth.getUser().then(async ({ data: { user } }) => {
       if (!user) return
       setUserId(user.id)
-      const { data } = await supabase.from('tenants').select('full_name, phone').eq('user_id', user.id).single()
+      const { data } = await supabase.from('tenants').select('full_name, phone').eq('user_id', user.id).single() as { data: { full_name: string | null; phone: string | null } | null }
       if (data) setForm({ full_name: data.full_name ?? '', phone: data.phone ?? '' })
     })
   }, [])
@@ -27,10 +27,10 @@ export default function UserProfilePage() {
     setError('')
     setSuccess(false)
     const supabase = createClient()
-    const { error: err } = await supabase.from('tenants').upsert(
-      { user_id: userId, full_name: form.full_name, phone: form.phone || null },
+    const { error: err } = await (supabase.from('tenants').upsert(
+      { user_id: userId, full_name: form.full_name, phone: form.phone || null } as Record<string, unknown>,
       { onConflict: 'user_id' }
-    )
+    ) as unknown as Promise<{ error: Error | null }>)
     if (err) setError(err.message)
     else setSuccess(true)
     setLoading(false)

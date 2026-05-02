@@ -7,7 +7,8 @@ export function isSupabaseConfigured(): boolean {
   return Boolean(url && key)
 }
 
-let _client: ReturnType<typeof createSupabaseClient> | null = null
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let _client: ReturnType<typeof createSupabaseClient<any>> | null = null
 
 export function createClient() {
   if (!_client) {

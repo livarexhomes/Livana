@@ -56,10 +56,10 @@ export default function PropertyDetailPage() {
       setProperty(prop as FullProperty)
       setIsAuthenticated(!!user)
       if (user) {
-        const { data: tenant } = await supabase.from('tenants').select('id').eq('user_id', user.id).single()
+        const { data: tenant } = await supabase.from('tenants').select('id').eq('user_id', user.id).single() as { data: { id: string } | null }
         if (tenant) {
           setTenantId(tenant.id)
-          const { data: sv } = await supabase.from('saved_properties').select('id').eq('tenant_id', tenant.id).eq('property_id', params.id!).single()
+          const { data: sv } = await supabase.from('saved_properties').select('id').eq('tenant_id', tenant.id).eq('property_id', params.id!).single() as { data: { id: string } | null }
           setSaved(!!sv)
         }
       }
@@ -79,7 +79,7 @@ export default function PropertyDetailPage() {
       await supabase.from('saved_properties').delete().eq('tenant_id', tenantId).eq('property_id', params.id!)
       setSaved(false)
     } else {
-      await supabase.from('saved_properties').insert({ tenant_id: tenantId, property_id: params.id! })
+      await (supabase.from('saved_properties').insert({ tenant_id: tenantId, property_id: params.id! }) as unknown as Promise<unknown>)
       setSaved(true)
     }
     setSaving(false)
@@ -91,12 +91,12 @@ export default function PropertyDetailPage() {
     if (!tenantId) { navigate('/user'); return }
     setEnquiryLoading(true)
     const supabase = createClient()
-    await supabase.from('enquiries').insert({
+    await (supabase.from('enquiries').insert({
       tenant_id: tenantId,
       property_id: params.id!,
       landlord_id: property?.landlords?.id ?? null,
       message: enquiryMsg,
-    })
+    }) as unknown as Promise<unknown>)
     setEnquirySuccess(true)
     setEnquiryLoading(false)
     setEnquiryMsg('')

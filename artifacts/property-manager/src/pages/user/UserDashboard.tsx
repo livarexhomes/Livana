@@ -64,7 +64,7 @@ export function UserLayout({ children, title }: { children: React.ReactNode; tit
     supabase.auth.getUser().then(async ({ data: { user } }) => {
       if (!user) return
       setUser({ email: user.email })
-      const { data: t } = await supabase.from('tenants').select('*').eq('user_id', user.id).single()
+      const { data: t } = await supabase.from('tenants').select('*').eq('user_id', user.id).single() as { data: Tenant | null }
       setTenant(t)
     })
   }, [])
@@ -100,11 +100,11 @@ export default function UserDashboardPage() {
     const supabase = createClient()
     supabase.auth.getUser().then(async ({ data: { user } }) => {
       if (!user) return
-      const { data: tenant } = await supabase.from('tenants').select('id').eq('user_id', user.id).single()
+      const { data: tenant } = await supabase.from('tenants').select('id').eq('user_id', user.id).single() as { data: { id: string } | null }
       if (!tenant) { setLoading(false); return }
       const [{ count: savedCount }, { count: enqCount }] = await Promise.all([
-        supabase.from('saved_properties').select('id', { count: 'exact', head: true }).eq('tenant_id', tenant.id),
-        supabase.from('enquiries').select('id', { count: 'exact', head: true }).eq('tenant_id', tenant.id),
+        supabase.from('saved_properties').select('id', { count: 'exact', head: true }).eq('tenant_id', tenant.id) as unknown as Promise<{ count: number | null }>,
+        supabase.from('enquiries').select('id', { count: 'exact', head: true }).eq('tenant_id', tenant.id) as unknown as Promise<{ count: number | null }>,
       ])
       setStats({ saved: savedCount ?? 0, enquiries: enqCount ?? 0 })
       setLoading(false)
