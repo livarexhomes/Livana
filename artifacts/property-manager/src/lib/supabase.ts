@@ -1,0 +1,26 @@
+import { createClient as createSupabaseClient } from '@supabase/supabase-js'
+
+const url = import.meta.env.VITE_SUPABASE_URL as string
+const key = import.meta.env.VITE_SUPABASE_ANON_KEY as string
+
+export function isSupabaseConfigured(): boolean {
+  return Boolean(url && key)
+}
+
+let _client: ReturnType<typeof createSupabaseClient> | null = null
+
+export function createClient() {
+  if (!_client) {
+    if (!url || !key) {
+      throw new Error(
+        'Supabase is not configured. Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.',
+      )
+    }
+    _client = createSupabaseClient(url, key)
+  }
+  return _client
+}
+
+export function getSupabaseImageUrl(storagePath: string) {
+  return `${url}/storage/v1/object/public/property-images/${storagePath}`
+}
