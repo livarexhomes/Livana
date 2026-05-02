@@ -43,20 +43,20 @@ export default function LandlordListingForm() {
       const { data: l } = await supabase.from('landlords').select('*').eq('user_id', user.id).single() as { data: Landlord | null }
       setLandlord(l)
       if (isEdit && params.id) {
-        const { data: p } = await supabase.from('properties').select('*').eq('id', params.id).single() as unknown as { data: Record<string, unknown> | null }
+        const { data: p } = await supabase.from('properties').select('*').eq('id', params.id).single()
         if (p) {
           setForm({
-            title: (p.title as string) ?? '',
-            description: (p.description as string) ?? '',
-            address: (p.address as string) ?? '',
-            city: (p.city as string) ?? '',
+            title: p.title ?? '',
+            description: p.description ?? '',
+            address: p.address ?? '',
+            city: p.city ?? '',
             price: String(p.price ?? ''),
             bedrooms: String(p.bedrooms ?? 1),
             bathrooms: String(p.bathrooms ?? 1),
             area_sqft: String(p.area_sqft ?? ''),
-            type: (p.type as string) ?? 'rent',
-            status: (p.status as string) ?? 'available',
-            featured: (p.featured as boolean) ?? false,
+            type: p.type ?? 'rent',
+            status: p.status ?? 'available',
+            featured: p.featured ?? false,
           })
         }
         setLoadingData(false)
@@ -85,10 +85,10 @@ export default function LandlordListingForm() {
       featured: form.featured,
     }
     if (isEdit && params.id) {
-      const { error: err } = await (supabase.from('properties').update(data as Record<string, unknown>).eq('id', params.id) as unknown as Promise<{ error: Error | null }>)
+      const { error: err } = await supabase.from('properties').update(data).eq('id', params.id)
       if (err) { setError(err.message); setLoading(false); return }
     } else {
-      const { error: err } = await (supabase.from('properties').insert(data as Record<string, unknown>) as unknown as Promise<{ error: Error | null }>)
+      const { error: err } = await supabase.from('properties').insert(data)
       if (err) { setError(err.message); setLoading(false); return }
     }
     navigate('/landlord/listings')

@@ -25,7 +25,7 @@ export default function ContactPage() {
     setLoading(true)
     setError('')
     const supabase = createClient()
-    const { error: err } = await (supabase.from('contact_messages').insert(form) as unknown as Promise<{ error: Error | null }>)
+    const { error: err } = await supabase.from('contact_messages').insert(form)
     if (err) setError(err.message)
     else setSuccess(true)
     setLoading(false)

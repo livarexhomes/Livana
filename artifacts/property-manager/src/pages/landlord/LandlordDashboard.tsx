@@ -21,16 +21,18 @@ export default function LandlordDashboard() {
       const { data: l } = await supabase.from('landlords').select('*').eq('user_id', user.id).single() as { data: Landlord | null }
       setLandlord(l)
       if (l) {
-        const [{ data: props }, { data: enqs }] = await Promise.all([
-          supabase.from('properties').select('*').eq('landlord_id', l.id).order('created_at', { ascending: false }).limit(5) as unknown as Promise<{ data: Property[] | null }>,
-          supabase.from('enquiries').select('id').eq('landlord_id', l.id) as unknown as Promise<{ data: { id: string }[] | null }>,
+        const [propsResult, enqsResult] = await Promise.all([
+          supabase.from('properties').select('*').eq('landlord_id', l.id).order('created_at', { ascending: false }).limit(5),
+          supabase.from('enquiries').select('id').eq('landlord_id', l.id),
         ])
+        const props = propsResult.data as Property[] | null
+        const enqs = enqsResult.data as { id: string }[] | null
         const allProps = props ?? []
         setRecentListings(allProps)
         setStats({
           listings: allProps.length,
           enquiries: enqs?.length ?? 0,
-          available: allProps.filter((p: any) => p.status === 'available').length,
+          available: allProps.filter(p => p.status === 'available').length,
         })
       }
       setLoading(false)
