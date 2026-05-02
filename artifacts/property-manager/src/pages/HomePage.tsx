@@ -288,53 +288,8 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ── HOW IT WORKS ── */}
-      <section className="bg-white py-20 md:py-28">
-        <div className="max-w-6xl mx-auto px-5 sm:px-8">
-          <div className="text-center mb-16">
-            <p className="text-blue-600 font-semibold text-sm uppercase tracking-widest mb-3">Simple Process</p>
-            <h2 className="text-3xl md:text-4xl font-extrabold text-gray-900 tracking-tight">How Livana Works</h2>
-            <p className="text-gray-500 mt-3 text-base max-w-xl mx-auto">Finding your ideal property has never been this simple. Three easy steps to get you home.</p>
-          </div>
-          <div className="grid md:grid-cols-3 gap-6">
-            {[
-              {
-                step: '01',
-                icon: '🔍',
-                title: 'Search & Filter',
-                desc: 'Browse thousands of verified listings by city, price, type, and size. Find exactly what you\'re looking for in seconds.',
-              },
-              {
-                step: '02',
-                icon: '🤝',
-                title: 'Connect Directly',
-                desc: 'Contact verified landlords instantly via WhatsApp or enquiry. No agents, no delays — just real conversations.',
-              },
-              {
-                step: '03',
-                icon: '🏠',
-                title: 'Move In',
-                desc: 'Schedule your viewing, seal the deal, and move into your new home with complete peace of mind.',
-              },
-            ].map((item, i) => (
-              <div key={i} className="group relative bg-gray-50 hover:bg-blue-600 rounded-3xl p-8 transition-all duration-300 overflow-hidden">
-                <div className="absolute top-6 right-6 text-7xl font-black text-gray-100 group-hover:text-blue-500/20 transition-colors leading-none select-none">
-                  {item.step}
-                </div>
-                <div className="text-4xl mb-5">{item.icon}</div>
-                <h3 className="text-xl font-bold text-gray-900 group-hover:text-white mb-3 transition-colors">{item.title}</h3>
-                <p className="text-gray-500 group-hover:text-blue-100 text-sm leading-relaxed transition-colors">{item.desc}</p>
-                <div className="mt-6 flex items-center gap-2 text-blue-600 group-hover:text-white font-semibold text-sm transition-colors">
-                  Learn more <ChevronRight className="w-4 h-4" />
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
       {/* ── CITIES ── */}
-      <section className="bg-gray-50 py-20 md:py-28">
+      <section className="bg-white py-20 md:py-28">
         <div className="max-w-7xl mx-auto px-5 sm:px-8">
           <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-4">
             <div>
@@ -349,26 +304,89 @@ export default function HomePage() {
               </span>
             </Link>
           </div>
-          <div className="grid sm:grid-cols-2 md:grid-cols-4 gap-4">
+
+          {/* Bento grid */}
+          <div className="grid grid-cols-2 md:grid-cols-4 grid-rows-[280px_200px] gap-3 md:gap-4">
+            {/* Lagos — large feature cell (2 cols × 2 rows) */}
+            <Link
+              href="/listings?city=Lagos"
+              className="relative group overflow-hidden rounded-3xl col-span-2 row-span-2 shadow-sm hover:shadow-2xl transition-all duration-500"
+            >
+              <img src="https://images.pexels.com/photos/36622013/pexels-photo-36622013.jpeg?auto=compress&cs=tinysrgb&w=1200" alt="Lagos" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
+              <div className="absolute bottom-6 left-6">
+                <span className="inline-block bg-blue-600 text-white text-xs font-bold px-3 py-1 rounded-full mb-2">Most Popular</span>
+                <h3 className="text-3xl font-extrabold text-white">Lagos</h3>
+                <p className="text-blue-300 text-sm font-medium mt-1">Commercial Capital</p>
+              </div>
+              <div className="absolute top-5 right-5 w-9 h-9 rounded-full bg-white/15 backdrop-blur flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all translate-x-2 group-hover:translate-x-0 duration-300">
+                <ArrowRight className="w-4 h-4 text-white" />
+              </div>
+            </Link>
+
+            {/* Abuja — top right */}
+            <Link
+              href="/listings?city=Abuja"
+              className="relative group overflow-hidden rounded-3xl col-span-1 shadow-sm hover:shadow-2xl transition-all duration-500"
+            >
+              <img src="https://images.unsplash.com/photo-1567985207911-725f4e7c8926?w=800" alt="Abuja" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/20 to-transparent" />
+              <div className="absolute bottom-4 left-4">
+                <h3 className="text-lg font-bold text-white">Abuja</h3>
+                <p className="text-blue-300 text-xs font-medium mt-0.5">Federal Capital</p>
+              </div>
+            </Link>
+
+            {/* Ibadan — top far-right */}
+            <Link
+              href="/listings?city=Ibadan"
+              className="relative group overflow-hidden rounded-3xl col-span-1 shadow-sm hover:shadow-2xl transition-all duration-500"
+            >
+              <img src="https://images.unsplash.com/photo-1553194588-ecc5e217ebf0?w=800" alt="Ibadan" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/20 to-transparent" />
+              <div className="absolute bottom-4 left-4">
+                <h3 className="text-lg font-bold text-white">Ibadan</h3>
+                <p className="text-blue-300 text-xs font-medium mt-0.5">Cultural Centre</p>
+              </div>
+            </Link>
+
+            {/* Port Harcourt — bottom center (2 cols) */}
+            <Link
+              href="/listings?city=Port Harcourt"
+              className="relative group overflow-hidden rounded-3xl col-span-2 shadow-sm hover:shadow-2xl transition-all duration-500"
+            >
+              <img src="https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=1000" alt="Port Harcourt" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/20 to-transparent" />
+              <div className="absolute bottom-4 left-5 flex items-end justify-between w-full pr-10">
+                <div>
+                  <h3 className="text-xl font-bold text-white">Port Harcourt</h3>
+                  <p className="text-blue-300 text-xs font-medium mt-0.5">Oil City Hub</p>
+                </div>
+              </div>
+              <div className="absolute top-4 right-4 w-9 h-9 rounded-full bg-white/15 backdrop-blur flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all translate-x-2 group-hover:translate-x-0 duration-300">
+                <ArrowRight className="w-4 h-4 text-white" />
+              </div>
+            </Link>
+          </div>
+
+          {/* Second row — smaller cities */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mt-3 md:mt-4">
             {[
-              { name: 'Lagos', sub: 'Commercial Capital', img: 'https://images.pexels.com/photos/36622013/pexels-photo-36622013.jpeg?auto=compress&cs=tinysrgb&w=800' },
-              { name: 'Abuja', sub: 'Federal Capital', img: 'https://images.unsplash.com/photo-1567985207911-725f4e7c8926?w=800' },
-              { name: 'Port Harcourt', sub: 'Oil City Hub', img: 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=800' },
-              { name: 'Ibadan', sub: 'Cultural Centre', img: 'https://images.unsplash.com/photo-1553194588-ecc5e217ebf0?w=800' },
+              { name: 'Kano', sub: 'Northern Hub', img: 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=800' },
+              { name: 'Enugu', sub: 'Coal City', img: 'https://images.unsplash.com/photo-1448630360428-65456885c650?w=800' },
+              { name: 'Benin City', sub: 'Ancient Kingdom', img: 'https://images.unsplash.com/photo-1613545325278-f24b0cae1224?w=800' },
+              { name: 'Kaduna', sub: 'Industrial Centre', img: 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=800' },
             ].map(loc => (
               <Link
                 key={loc.name}
                 href={`/listings?city=${loc.name}`}
-                className="relative group overflow-hidden rounded-3xl h-56 shadow-sm hover:shadow-2xl transition-all duration-500"
+                className="relative group overflow-hidden rounded-2xl h-36 shadow-sm hover:shadow-xl transition-all duration-500"
               >
                 <img src={loc.img} alt={loc.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
-                <div className="absolute bottom-5 left-5">
-                  <h3 className="text-xl font-bold text-white">{loc.name}</h3>
-                  <p className="text-blue-300 text-xs font-medium mt-0.5">{loc.sub}</p>
-                </div>
-                <div className="absolute top-4 right-4 w-8 h-8 rounded-full bg-white/10 backdrop-blur flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all transform translate-x-2 group-hover:translate-x-0 duration-300">
-                  <ArrowRight className="w-4 h-4 text-white" />
+                <div className="absolute bottom-3 left-4">
+                  <h3 className="text-base font-bold text-white">{loc.name}</h3>
+                  <p className="text-blue-300 text-xs font-medium">{loc.sub}</p>
                 </div>
               </Link>
             ))}
@@ -377,32 +395,49 @@ export default function HomePage() {
       </section>
 
       {/* ── TESTIMONIALS ── */}
-      <section className="bg-white py-20 md:py-28">
+      <section className="bg-gray-950 py-20 md:py-28">
         <div className="max-w-6xl mx-auto px-5 sm:px-8">
-          <div className="text-center mb-14">
-            <p className="text-blue-600 font-semibold text-sm uppercase tracking-widest mb-3">Testimonials</p>
-            <h2 className="text-3xl md:text-4xl font-extrabold text-gray-900 tracking-tight">Trusted by Thousands</h2>
+          <div className="mb-14">
+            <p className="text-blue-500 font-semibold text-sm uppercase tracking-widest mb-3">What People Say</p>
+            <h2 className="text-3xl md:text-4xl font-extrabold text-white tracking-tight max-w-sm">Real stories from real people.</h2>
           </div>
-          <div className="grid md:grid-cols-3 gap-6">
+          <div className="grid md:grid-cols-3 gap-5">
             {[
-              { name: 'Adebayo O.', role: 'Tenant • Lagos', text: 'Found my perfect 3-bedroom in Lekki within a week. The landlord verification gave me total peace of mind. Absolutely recommend Livana!', avatar: 'AO', stars: 5 },
-              { name: 'Chidinma E.', role: 'Landlord • Abuja', text: 'Listed my property on a Friday, had 3 serious enquiries by Monday. The platform is slick and my tenants are quality people.', avatar: 'CE', stars: 5 },
-              { name: 'Emeka N.', role: 'Tenant • Port Harcourt', text: 'No agent stress, no fake listings. I contacted the landlord directly on WhatsApp and moved in within two weeks. Game changer.', avatar: 'EN', stars: 5 },
+              { name: 'Adebayo O.', role: 'Tenant', city: 'Lagos', text: 'Found my perfect 3-bedroom in Lekki within a week. The landlord verification gave me total peace of mind. Absolutely recommend Livana!', avatar: 'AO', featured: false },
+              { name: 'Chidinma E.', role: 'Landlord', city: 'Abuja', text: 'Listed my property on a Friday, had 3 serious enquiries by Monday. The platform is slick and my tenants are quality people.', avatar: 'CE', featured: true },
+              { name: 'Emeka N.', role: 'Tenant', city: 'Port Harcourt', text: 'No agent stress, no fake listings. I contacted the landlord directly on WhatsApp and moved in within two weeks. Game changer.', avatar: 'EN', featured: false },
             ].map((t, i) => (
-              <div key={i} className="bg-gray-50 rounded-3xl p-7 flex flex-col gap-5 hover:shadow-lg transition-shadow duration-300 border border-gray-100">
+              <div
+                key={i}
+                className={`relative rounded-3xl p-8 flex flex-col gap-6 transition-all duration-300 ${
+                  t.featured
+                    ? 'bg-blue-600 shadow-2xl shadow-blue-600/30 scale-[1.02]'
+                    : 'bg-white/5 border border-white/10 hover:bg-white/8'
+                }`}
+              >
+                {/* Big decorative quote */}
+                <span className={`absolute top-6 right-7 text-8xl font-serif leading-none select-none ${t.featured ? 'text-blue-400/40' : 'text-white/8'}`}>"</span>
+
+                {/* Stars */}
                 <div className="flex gap-1">
-                  {Array.from({ length: t.stars }).map((_, j) => (
-                    <Star key={j} className="w-4 h-4 fill-amber-400 text-amber-400" />
+                  {Array.from({ length: 5 }).map((_, j) => (
+                    <Star key={j} className={`w-4 h-4 ${t.featured ? 'fill-white text-white' : 'fill-amber-400 text-amber-400'}`} />
                   ))}
                 </div>
-                <p className="text-gray-700 text-sm leading-relaxed flex-1">"{t.text}"</p>
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold text-sm shrink-0 shadow-md shadow-blue-600/20">
+
+                {/* Quote */}
+                <p className={`text-base leading-relaxed flex-1 relative z-10 ${t.featured ? 'text-white' : 'text-gray-300'}`}>
+                  "{t.text}"
+                </p>
+
+                {/* Person */}
+                <div className="flex items-center gap-3 pt-2 border-t border-white/10">
+                  <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold shrink-0 ${t.featured ? 'bg-white text-blue-600' : 'bg-blue-600 text-white'}`}>
                     {t.avatar}
                   </div>
                   <div>
-                    <p className="font-semibold text-gray-900 text-sm">{t.name}</p>
-                    <p className="text-gray-400 text-xs">{t.role}</p>
+                    <p className={`font-bold text-sm ${t.featured ? 'text-white' : 'text-white'}`}>{t.name}</p>
+                    <p className={`text-xs ${t.featured ? 'text-blue-200' : 'text-gray-500'}`}>{t.role} • {t.city}</p>
                   </div>
                 </div>
               </div>
