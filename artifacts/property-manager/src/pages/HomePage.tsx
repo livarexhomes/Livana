@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { Link } from 'wouter'
-import { ArrowRight, ShieldCheck, Building2, Users, TrendingUp, Star, CheckCircle2, MapPin, ChevronRight } from 'lucide-react'
+import { ArrowRight, ShieldCheck, Building2, Users, TrendingUp, Star, CheckCircle2, CheckCircle, MapPin, ChevronRight } from 'lucide-react'
 import PublicNavbar from '../components/PublicNavbar'
 import Footer from '../components/Footer'
 import PropertyCard from '../components/PropertyCard'
@@ -87,96 +87,121 @@ export default function HomePage() {
       <PublicNavbar />
 
       {/* ── HERO ── */}
-      <section className="relative min-h-screen flex flex-col items-center justify-center overflow-hidden hero-gradient">
-        {/* Dot grid pattern */}
-        <div className="absolute inset-0 grid-pattern opacity-60" />
+      <section className="relative min-h-screen bg-white flex overflow-hidden">
+        {/* Left Column */}
+        <div className="w-full lg:w-[55%] flex flex-col justify-center px-6 sm:px-10 lg:px-16 xl:px-24 pt-28 pb-16 lg:py-0">
+          <div className="max-w-xl">
+            {/* Label */}
+            <div className="flex items-center gap-2.5 mb-7">
+              <span className="relative flex h-3 w-3">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-500 opacity-75" />
+                <span className="relative inline-flex rounded-full h-3 w-3 bg-blue-600" />
+              </span>
+              <span className="text-sm font-semibold text-blue-600 uppercase tracking-wider">
+                Nigeria's Leading Property Platform
+              </span>
+            </div>
 
-        {/* Glowing orbs */}
-        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-blue-600/20 rounded-full blur-3xl animate-float pointer-events-none" />
-        <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-blue-400/15 rounded-full blur-3xl animate-float-delayed pointer-events-none" />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-blue-800/10 rounded-full blur-3xl pointer-events-none" />
+            {/* Headline */}
+            <h1 className="text-5xl sm:text-6xl xl:text-7xl font-extrabold leading-[1.08] mb-6 tracking-tight text-gray-900">
+              Find Your Next<br />Home in Nigeria
+            </h1>
 
-        <div className="relative z-10 w-full max-w-6xl mx-auto px-5 sm:px-8 flex flex-col items-center text-center pt-28 pb-20">
+            {/* Subtitle */}
+            <p className="text-lg text-gray-500 mb-10 leading-relaxed max-w-md">
+              Browse verified listings. Contact landlords directly. No agent fees.
+            </p>
 
-          {/* Badge */}
-          <div className="inline-flex items-center gap-2.5 px-5 py-2.5 rounded-full bg-white/8 backdrop-blur border border-white/15 text-white text-xs font-semibold tracking-widest uppercase mb-8">
-            <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-400"></span>
-            </span>
-            Nigeria's #1 Property Platform
-          </div>
-
-          {/* Headline */}
-          <h1 className="text-5xl sm:text-6xl md:text-7xl font-extrabold text-white leading-[1.05] tracking-tight mb-6 max-w-4xl">
-            Find Your Dream{' '}
-            <span className="text-gradient">Property</span>
-            <br />in Nigeria
-          </h1>
-
-          <p className="text-lg md:text-xl text-blue-100/70 mb-12 max-w-2xl font-light leading-relaxed">
-            Search thousands of verified properties across Nigeria's top cities.
-            Connect directly with landlords — no agents, no hidden fees.
-          </p>
-
-          {/* Search Card */}
-          <div className="w-full max-w-3xl bg-white/8 backdrop-blur-2xl rounded-3xl p-2 border border-white/15 shadow-2xl mb-14">
-            {/* Tab row */}
-            <div className="flex gap-1 mb-2 p-1">
-              {(['Buy', 'Rent', 'Lease', 'Commercial'] as Tab[]).map(t => (
+            {/* Search Card */}
+            <div className="bg-white rounded-2xl shadow-[0_8px_40px_rgb(0,0,0,0.09)] border border-gray-100 p-3 mb-12">
+              <div className="flex gap-1 mb-1 px-1 pt-1 pb-3 border-b border-gray-100">
+                {(['Buy', 'Rent', 'Lease', 'Commercial'] as Tab[]).map(t => (
+                  <button
+                    key={t}
+                    onClick={() => setActiveTab(t)}
+                    className={`px-4 py-2 rounded-full text-sm font-semibold transition-all ${
+                      activeTab === t
+                        ? 'bg-blue-50 text-blue-600'
+                        : 'text-gray-400 hover:text-gray-800 hover:bg-gray-50'
+                    }`}
+                  >
+                    {t}
+                  </button>
+                ))}
+              </div>
+              <form onSubmit={handleSearch} className="flex flex-col sm:flex-row gap-2 p-1 pt-3">
+                <div className="relative flex-1">
+                  <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
+                  <input
+                    type="text"
+                    placeholder="Lagos, Abuja, Port Harcourt…"
+                    value={searchCity}
+                    onChange={e => setSearchCity(e.target.value)}
+                    className="w-full pl-11 pr-4 py-3.5 rounded-xl bg-gray-50 border border-transparent focus:bg-white focus:border-blue-400 focus:ring-2 focus:ring-blue-100 outline-none transition-all text-sm text-gray-900 placeholder-gray-400"
+                  />
+                </div>
                 <button
-                  key={t}
-                  onClick={() => setActiveTab(t)}
-                  className={`flex-1 py-2.5 px-3 rounded-xl text-sm font-semibold transition-all duration-200 ${
-                    activeTab === t
-                      ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/40'
-                      : 'text-white/70 hover:text-white hover:bg-white/10'
-                  }`}
+                  type="submit"
+                  className="bg-blue-600 hover:bg-blue-700 text-white px-7 py-3.5 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 transition-all shadow-lg shadow-blue-600/25 whitespace-nowrap"
                 >
-                  {t}
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+                  Search
                 </button>
+              </form>
+            </div>
+
+            {/* Stats */}
+            <div className="flex items-center gap-8 text-sm text-gray-400">
+              {[
+                { value: 2400, suffix: '+', label: 'Properties' },
+                { value: 850, suffix: '+', label: 'Landlords' },
+                { value: 0, prefix: '₦', label: 'Agent Fees' },
+              ].map((s, i) => (
+                <div key={s.label} className="flex items-center gap-8">
+                  {i > 0 && <div className="w-px h-10 bg-gray-200" />}
+                  <div className="flex flex-col gap-0.5">
+                    <span className="font-extrabold text-gray-900 text-xl leading-none">
+                      {s.prefix ?? ''}<AnimatedCounter target={s.value} suffix={s.suffix ?? ''} />
+                    </span>
+                    <span className="text-xs text-gray-400">{s.label}</span>
+                  </div>
+                </div>
               ))}
             </div>
-            <form onSubmit={handleSearch} className="flex gap-2 p-1">
-              <div className="flex-1 relative">
-                <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                <input
-                  type="text"
-                  placeholder="Search by city, state or neighbourhood..."
-                  value={searchCity}
-                  onChange={e => setSearchCity(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3.5 rounded-2xl bg-white text-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30 placeholder-gray-400 font-medium shadow-sm"
-                />
-              </div>
-              <button
-                type="submit"
-                className="bg-blue-600 text-white px-7 py-3.5 rounded-2xl font-semibold text-sm hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/30 hover:shadow-blue-600/50 whitespace-nowrap flex items-center gap-2"
-              >
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
-                Search
-              </button>
-            </form>
-          </div>
-
-          {/* Stats row */}
-          <div className="flex flex-wrap justify-center gap-8 md:gap-16">
-            {[
-              { value: 2400, suffix: '+', label: 'Properties Listed' },
-              { value: 850, suffix: '+', label: 'Verified Landlords' },
-              { value: 12, suffix: '', label: 'Cities Covered' },
-            ].map((s) => (
-              <div key={s.label} className="flex flex-col items-center">
-                <p className="text-3xl md:text-4xl font-extrabold text-white tracking-tight">
-                  <AnimatedCounter target={s.value} suffix={s.suffix} />
-                </p>
-                <p className="text-blue-300/70 text-sm mt-1 font-medium">{s.label}</p>
-              </div>
-            ))}
           </div>
         </div>
 
-        {/* Bottom fade */}
-        <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-white to-transparent" />
+        {/* Right Column — Image */}
+        <div className="hidden lg:block lg:w-[45%] h-screen relative p-4 pl-0">
+          <div className="w-full h-full relative rounded-l-[3rem] overflow-hidden shadow-2xl">
+            <img
+              src="https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=1400&q=85"
+              alt="Modern luxury home"
+              className="w-full h-full object-cover"
+            />
+            {/* Verified badge */}
+            <div className="absolute top-8 right-8 bg-white/95 backdrop-blur-sm shadow-xl rounded-full px-4 py-2 flex items-center gap-2">
+              <CheckCircle className="w-4 h-4 text-green-500" />
+              <span className="text-sm font-semibold text-gray-900">Verified Landlord</span>
+            </div>
+            {/* Property card */}
+            <div className="absolute bottom-12 left-8 bg-white/95 backdrop-blur-md shadow-2xl rounded-2xl p-6 w-72 border border-white/30">
+              <div className="bg-blue-100 text-blue-700 text-xs font-bold uppercase tracking-wider px-3 py-1 rounded-full inline-block mb-3">
+                Just Listed
+              </div>
+              <h3 className="font-bold text-base text-gray-900 mb-1">3 Bed Detached • Lekki</h3>
+              <p className="text-blue-600 font-extrabold text-xl mb-4">
+                ₦4,500,000<span className="text-sm text-gray-400 font-normal">/yr</span>
+              </p>
+              <Link
+                href="/listings"
+                className="w-full bg-gray-900 hover:bg-gray-800 text-white py-3 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 transition-colors"
+              >
+                View Listings <ArrowRight className="w-4 h-4" />
+              </Link>
+            </div>
+          </div>
+        </div>
       </section>
 
       {/* ── TRUST BADGES ── */}
