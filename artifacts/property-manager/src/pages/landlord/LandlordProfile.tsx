@@ -30,10 +30,10 @@ export default function LandlordProfile() {
     setError('')
     setSuccess(false)
     const supabase = createClient()
-    const { error: err } = await (supabase.from('landlords').upsert(
-      { user_id: user.id, ...form } as Record<string, unknown>,
+    const { error: err } = await supabase.from('landlords').upsert(
+      { user_id: user.id, ...form },
       { onConflict: 'user_id' }
-    ) as unknown as Promise<{ error: Error | null }>)
+    )
     if (err) setError(err.message)
     else setSuccess(true)
     setLoading(false)

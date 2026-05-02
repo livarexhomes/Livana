@@ -79,7 +79,7 @@ export default function PropertyDetailPage() {
       await supabase.from('saved_properties').delete().eq('tenant_id', tenantId).eq('property_id', params.id!)
       setSaved(false)
     } else {
-      await (supabase.from('saved_properties').insert({ tenant_id: tenantId, property_id: params.id! }) as unknown as Promise<unknown>)
+      await supabase.from('saved_properties').insert({ tenant_id: tenantId, property_id: params.id! })
       setSaved(true)
     }
     setSaving(false)
@@ -91,12 +91,12 @@ export default function PropertyDetailPage() {
     if (!tenantId) { navigate('/user'); return }
     setEnquiryLoading(true)
     const supabase = createClient()
-    await (supabase.from('enquiries').insert({
+    await supabase.from('enquiries').insert({
       tenant_id: tenantId,
       property_id: params.id!,
       landlord_id: property?.landlords?.id ?? null,
       message: enquiryMsg,
-    }) as unknown as Promise<unknown>)
+    })
     setEnquirySuccess(true)
     setEnquiryLoading(false)
     setEnquiryMsg('')
@@ -107,7 +107,7 @@ export default function PropertyDetailPage() {
       <div className="min-h-screen flex flex-col">
         <PublicNavbar />
         <div className="flex-1 flex items-center justify-center">
-          <div className="animate-spin w-8 h-8 border-4 border-[#aadb5a] border-t-transparent rounded-full" />
+          <div className="animate-spin w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full" />
         </div>
       </div>
     )

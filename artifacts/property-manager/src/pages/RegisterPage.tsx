@@ -28,11 +28,11 @@ export default function RegisterPage() {
       return
     }
 
-    const { error: profileError } = await (supabase.from('tenants').insert({
+    const { error: profileError } = await supabase.from('tenants').insert({
       user_id: data.user.id,
       full_name: fullName,
       phone: phone || null,
-    }) as unknown as Promise<{ error: Error | null }>)
+    })
 
     if (profileError) {
       setError(profileError.message)

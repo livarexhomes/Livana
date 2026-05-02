@@ -43,7 +43,7 @@ export default function AdminLandlords() {
   async function updateStatus(id: string, status: 'approved' | 'rejected') {
     setProcessing(id)
     const supabase = createClient()
-    await (supabase.from('landlords').update({ status } as Record<string, unknown>).eq('id', id) as unknown as Promise<unknown>)
+    await supabase.from('landlords').update({ status }).eq('id', id)
     setLandlords(ls => ls.map(l => l.id === id ? { ...l, status } : l))
     setProcessing(null)
   }
@@ -51,7 +51,7 @@ export default function AdminLandlords() {
   async function toggleVerified(id: string, is_verified: boolean) {
     setProcessing(id)
     const supabase = createClient()
-    await (supabase.from('landlords').update({ is_verified } as Record<string, unknown>).eq('id', id) as unknown as Promise<unknown>)
+    await supabase.from('landlords').update({ is_verified }).eq('id', id)
     setLandlords(ls => ls.map(l => l.id === id ? { ...l, is_verified } : l))
     setProcessing(null)
   }

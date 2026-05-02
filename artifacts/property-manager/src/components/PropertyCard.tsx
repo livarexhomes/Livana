@@ -51,7 +51,7 @@ export default function PropertyCard({ property: p, saved: initialSaved = false,
         await supabase.from('saved_properties').delete().eq('tenant_id', tenant.id).eq('property_id', p.id)
         setSaved(false)
       } else {
-        await (supabase.from('saved_properties').insert({ tenant_id: tenant.id, property_id: p.id }) as unknown as Promise<unknown>)
+        await supabase.from('saved_properties').insert({ tenant_id: tenant.id, property_id: p.id })
         setSaved(true)
       }
     } finally {

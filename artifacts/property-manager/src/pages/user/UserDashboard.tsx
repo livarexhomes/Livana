@@ -102,10 +102,12 @@ export default function UserDashboardPage() {
       if (!user) return
       const { data: tenant } = await supabase.from('tenants').select('id').eq('user_id', user.id).single() as { data: { id: string } | null }
       if (!tenant) { setLoading(false); return }
-      const [{ count: savedCount }, { count: enqCount }] = await Promise.all([
-        supabase.from('saved_properties').select('id', { count: 'exact', head: true }).eq('tenant_id', tenant.id) as unknown as Promise<{ count: number | null }>,
-        supabase.from('enquiries').select('id', { count: 'exact', head: true }).eq('tenant_id', tenant.id) as unknown as Promise<{ count: number | null }>,
+      const [savedResult, enqResult] = await Promise.all([
+        supabase.from('saved_properties').select('id', { count: 'exact', head: true }).eq('tenant_id', tenant.id),
+        supabase.from('enquiries').select('id', { count: 'exact', head: true }).eq('tenant_id', tenant.id),
       ])
+      const savedCount = savedResult.count
+      const enqCount = enqResult.count
       setStats({ saved: savedCount ?? 0, enquiries: enqCount ?? 0 })
       setLoading(false)
     })
@@ -116,7 +118,7 @@ export default function UserDashboardPage() {
       <UserLayout title="Overview">
         {loading ? (
           <div className="flex items-center justify-center py-20">
-            <div className="animate-spin w-8 h-8 border-4 border-[#aadb5a] border-t-transparent rounded-full" />
+            <div className="animate-spin w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full" />
           </div>
         ) : (
           <div className="max-w-2xl space-y-6">

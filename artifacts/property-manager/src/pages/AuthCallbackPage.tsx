@@ -49,7 +49,7 @@ export default function AuthCallbackPage() {
 
       const { data: tenant } = await supabase.from('tenants').select('id').eq('user_id', typedUser.id).single() as { data: { id: string } | null }
       if (!tenant) {
-        await (supabase.from('tenants').insert({ user_id: typedUser.id, full_name: typedUser.user_metadata?.full_name ?? typedUser.email ?? 'User' }) as unknown as Promise<unknown>)
+        await supabase.from('tenants').insert({ user_id: typedUser.id, full_name: typedUser.user_metadata?.full_name ?? typedUser.email ?? 'User' })
       }
 
       navigate(redirectTo)
@@ -59,7 +59,7 @@ export default function AuthCallbackPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-[#FAFAFA]">
       <div className="flex flex-col items-center gap-4">
-        <div className="animate-spin w-8 h-8 border-4 border-[#aadb5a] border-t-transparent rounded-full" />
+        <div className="animate-spin w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full" />
         <p className="text-sm text-gray-500">Signing you in…</p>
       </div>
     </div>

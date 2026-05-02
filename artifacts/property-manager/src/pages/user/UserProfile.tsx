@@ -27,10 +27,10 @@ export default function UserProfilePage() {
     setError('')
     setSuccess(false)
     const supabase = createClient()
-    const { error: err } = await (supabase.from('tenants').upsert(
-      { user_id: userId, full_name: form.full_name, phone: form.phone || null } as Record<string, unknown>,
+    const { error: err } = await supabase.from('tenants').upsert(
+      { user_id: userId, full_name: form.full_name, phone: form.phone || null },
       { onConflict: 'user_id' }
-    ) as unknown as Promise<{ error: Error | null }>)
+    )
     if (err) setError(err.message)
     else setSuccess(true)
     setLoading(false)

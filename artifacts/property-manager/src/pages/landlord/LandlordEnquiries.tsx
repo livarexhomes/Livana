@@ -38,7 +38,7 @@ export default function LandlordEnquiries() {
 
   async function updateStatus(id: string, status: string) {
     const supabase = createClient()
-    await (supabase.from('enquiries').update({ status } as Record<string, unknown>).eq('id', id) as unknown as Promise<unknown>)
+    await supabase.from('enquiries').update({ status }).eq('id', id)
     setEnquiries(es => es.map(e => e.id === id ? { ...e, status } : e))
   }
 
