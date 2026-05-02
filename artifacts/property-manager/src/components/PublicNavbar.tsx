@@ -46,10 +46,8 @@ export default function PublicNavbar() {
   const isHomePage = location === '/'
 
   return (
-    <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
-      scrolled || !isHomePage
-        ? 'bg-white/95 nav-blur border-b border-gray-100 shadow-sm'
-        : 'bg-transparent'
+    <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 bg-white/95 nav-blur border-b border-gray-100 ${
+      scrolled ? 'shadow-sm' : ''
     }`}>
       <div className="max-w-7xl mx-auto px-5 sm:px-8 h-18 flex items-center gap-8" style={{ height: '72px' }}>
         <Link href="/" className="flex items-center gap-2.5 shrink-0">
@@ -58,9 +56,7 @@ export default function PublicNavbar() {
               <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z" />
             </svg>
           </div>
-          <span className={`text-xl font-bold tracking-tight transition-colors ${
-            scrolled || !isHomePage ? 'text-gray-900' : 'text-white'
-          }`}>Livana</span>
+          <span className="text-xl font-bold tracking-tight text-gray-900">Livana</span>
         </Link>
 
         <div className="hidden md:flex items-center gap-1 flex-1">
@@ -70,12 +66,8 @@ export default function PublicNavbar() {
               href={href}
               className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
                 (isActive(href) && href !== '/') || (href === '/' && location === '/')
-                  ? scrolled || !isHomePage
-                    ? 'bg-blue-50 text-blue-600'
-                    : 'bg-white/15 text-white'
-                  : scrolled || !isHomePage
-                    ? 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
-                    : 'text-white/80 hover:text-white hover:bg-white/10'
+                  ? 'bg-blue-50 text-blue-600'
+                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
               }`}
             >
               {label}
@@ -87,22 +79,16 @@ export default function PublicNavbar() {
           {user ? (
             <>
               {user.isAdmin && (
-                <Link href="/admin" className={`text-sm font-medium px-4 py-2 rounded-lg transition-all ${
-                  scrolled || !isHomePage ? 'text-gray-600 hover:text-gray-900 hover:bg-gray-50' : 'text-white/80 hover:text-white hover:bg-white/10'
-                }`}>
+                <Link href="/admin" className="text-sm font-medium px-4 py-2 rounded-lg transition-all text-gray-600 hover:text-gray-900 hover:bg-gray-50">
                   Admin
                 </Link>
               )}
               {user.isLandlord && (
-                <Link href="/landlord" className={`text-sm font-medium px-4 py-2 rounded-lg transition-all ${
-                  scrolled || !isHomePage ? 'text-gray-600 hover:text-gray-900 hover:bg-gray-50' : 'text-white/80 hover:text-white hover:bg-white/10'
-                }`}>
+                <Link href="/landlord" className="text-sm font-medium px-4 py-2 rounded-lg transition-all text-gray-600 hover:text-gray-900 hover:bg-gray-50">
                   Dashboard
                 </Link>
               )}
-              <Link href="/user" className={`text-sm font-medium px-4 py-2 rounded-lg transition-all ${
-                scrolled || !isHomePage ? 'text-gray-600 hover:text-gray-900 hover:bg-gray-50' : 'text-white/80 hover:text-white hover:bg-white/10'
-              }`}>
+              <Link href="/user" className="text-sm font-medium px-4 py-2 rounded-lg transition-all text-gray-600 hover:text-gray-900 hover:bg-gray-50">
                 My Account
               </Link>
               <button
