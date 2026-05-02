@@ -8,6 +8,13 @@ export default function PublicNavbar() {
   const [location] = useLocation()
   const [user, setUser] = useState<{ email?: string; isAdmin?: boolean; isLandlord?: boolean } | null>(null)
   const [menuOpen, setMenuOpen] = useState(false)
+  const [scrolled, setScrolled] = useState(false)
+
+  useEffect(() => {
+    const handleScroll = () => setScrolled(window.scrollY > 20)
+    window.addEventListener('scroll', handleScroll)
+    return () => window.removeEventListener('scroll', handleScroll)
+  }, [])
 
   useEffect(() => {
     if (!isSupabaseConfigured()) return
@@ -36,16 +43,24 @@ export default function PublicNavbar() {
     { href: '/contact', label: 'Contact' },
   ]
 
+  const isHomePage = location === '/'
+
   return (
-    <nav className="sticky top-0 z-50 bg-white/95 backdrop-blur border-b border-gray-100 shadow-sm">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center gap-6">
-        <Link href="/" className="flex items-center gap-2 shrink-0">
-          <div className="w-8 h-8 rounded-lg bg-[#6b9e6e] flex items-center justify-center shadow-sm">
-            <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 24 24">
+    <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
+      scrolled || !isHomePage
+        ? 'bg-white/95 nav-blur border-b border-gray-100 shadow-sm'
+        : 'bg-transparent'
+    }`}>
+      <div className="max-w-7xl mx-auto px-5 sm:px-8 h-18 flex items-center gap-8" style={{ height: '72px' }}>
+        <Link href="/" className="flex items-center gap-2.5 shrink-0">
+          <div className="w-9 h-9 rounded-xl bg-blue-600 flex items-center justify-center shadow-lg shadow-blue-600/30">
+            <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
               <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z" />
             </svg>
           </div>
-          <span className="text-lg font-bold text-gray-900 tracking-tight">Livana</span>
+          <span className={`text-xl font-bold tracking-tight transition-colors ${
+            scrolled || !isHomePage ? 'text-gray-900' : 'text-white'
+          }`}>Livana</span>
         </Link>
 
         <div className="hidden md:flex items-center gap-1 flex-1">
@@ -53,12 +68,14 @@ export default function PublicNavbar() {
             <Link
               key={href}
               href={href}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                isActive(href) && href !== '/'
-                  ? 'bg-[#6b9e6e]/10 text-[#4a7f4d]'
-                  : href === '/' && location === '/'
-                    ? 'bg-[#6b9e6e]/10 text-[#4a7f4d]'
-                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                (isActive(href) && href !== '/') || (href === '/' && location === '/')
+                  ? scrolled || !isHomePage
+                    ? 'bg-blue-50 text-blue-600'
+                    : 'bg-white/15 text-white'
+                  : scrolled || !isHomePage
+                    ? 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                    : 'text-white/80 hover:text-white hover:bg-white/10'
               }`}
             >
               {label}
@@ -66,20 +83,26 @@ export default function PublicNavbar() {
           ))}
         </div>
 
-        <div className="ml-auto hidden md:flex items-center gap-3">
+        <div className="ml-auto hidden md:flex items-center gap-2">
           {user ? (
             <>
               {user.isAdmin && (
-                <Link href="/admin" className="text-sm font-medium text-gray-600 hover:text-gray-900 px-3 py-2 rounded-lg hover:bg-gray-50 transition-colors">
+                <Link href="/admin" className={`text-sm font-medium px-4 py-2 rounded-lg transition-all ${
+                  scrolled || !isHomePage ? 'text-gray-600 hover:text-gray-900 hover:bg-gray-50' : 'text-white/80 hover:text-white hover:bg-white/10'
+                }`}>
                   Admin
                 </Link>
               )}
               {user.isLandlord && (
-                <Link href="/landlord" className="text-sm font-medium text-gray-600 hover:text-gray-900 px-3 py-2 rounded-lg hover:bg-gray-50 transition-colors">
+                <Link href="/landlord" className={`text-sm font-medium px-4 py-2 rounded-lg transition-all ${
+                  scrolled || !isHomePage ? 'text-gray-600 hover:text-gray-900 hover:bg-gray-50' : 'text-white/80 hover:text-white hover:bg-white/10'
+                }`}>
                   Dashboard
                 </Link>
               )}
-              <Link href="/user" className="text-sm font-medium text-gray-600 hover:text-gray-900 px-3 py-2 rounded-lg hover:bg-gray-50 transition-colors">
+              <Link href="/user" className={`text-sm font-medium px-4 py-2 rounded-lg transition-all ${
+                scrolled || !isHomePage ? 'text-gray-600 hover:text-gray-900 hover:bg-gray-50' : 'text-white/80 hover:text-white hover:bg-white/10'
+              }`}>
                 My Account
               </Link>
               <button
@@ -89,17 +112,19 @@ export default function PublicNavbar() {
                   setUser(null)
                   window.location.href = '/'
                 }}
-                className="text-sm font-medium text-red-600 hover:text-red-700 px-3 py-2 rounded-lg hover:bg-red-50 transition-colors"
+                className="text-sm font-medium text-red-500 hover:text-red-600 px-4 py-2 rounded-lg hover:bg-red-50 transition-all"
               >
                 Logout
               </button>
             </>
           ) : (
             <>
-              <Link href="/login" className="text-sm font-medium text-gray-700 hover:text-gray-900 px-4 py-2 rounded-lg hover:bg-gray-50 transition-colors">
+              <Link href="/login" className={`text-sm font-medium px-4 py-2 rounded-lg transition-all ${
+                scrolled || !isHomePage ? 'text-gray-700 hover:text-gray-900 hover:bg-gray-50' : 'text-white/90 hover:text-white hover:bg-white/10'
+              }`}>
                 Sign in
               </Link>
-              <Link href="/register" className="text-sm font-medium bg-[#6b9e6e] hover:bg-[#4a7f4d] text-white px-4 py-2 rounded-lg transition-colors shadow-sm">
+              <Link href="/register" className="text-sm font-semibold bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl transition-all shadow-lg shadow-blue-600/25 hover:shadow-blue-600/40">
                 Get Started
               </Link>
             </>
@@ -107,7 +132,9 @@ export default function PublicNavbar() {
         </div>
 
         <button
-          className="md:hidden ml-auto p-2 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors"
+          className={`md:hidden ml-auto p-2.5 rounded-xl transition-all ${
+            scrolled || !isHomePage ? 'text-gray-600 hover:bg-gray-100' : 'text-white hover:bg-white/10'
+          }`}
           onClick={() => setMenuOpen(!menuOpen)}
         >
           {menuOpen ? (
@@ -119,28 +146,28 @@ export default function PublicNavbar() {
       </div>
 
       {menuOpen && (
-        <div className="md:hidden border-t border-gray-100 bg-white px-4 py-4 space-y-1">
+        <div className="md:hidden border-t border-gray-100 bg-white/98 nav-blur px-5 py-4 space-y-1 shadow-xl">
           {navLinks.map(({ href, label }) => (
             <Link key={href} href={href} onClick={() => setMenuOpen(false)}
-              className={`block px-4 py-2.5 rounded-lg text-sm font-medium transition-colors ${
-                isActive(href) ? 'bg-[#6b9e6e]/10 text-[#4a7f4d]' : 'text-gray-600 hover:bg-gray-50'
+              className={`block px-4 py-3 rounded-xl text-sm font-medium transition-all ${
+                isActive(href) ? 'bg-blue-50 text-blue-600' : 'text-gray-700 hover:bg-gray-50'
               }`}>
               {label}
             </Link>
           ))}
-          <div className="pt-2 border-t border-gray-100">
+          <div className="pt-3 border-t border-gray-100 space-y-1">
             {user ? (
               <>
-                {user.isAdmin && <Link href="/admin" onClick={() => setMenuOpen(false)} className="block px-4 py-2.5 text-sm font-medium text-gray-600 hover:bg-gray-50 rounded-lg">Admin</Link>}
-                {user.isLandlord && <Link href="/landlord" onClick={() => setMenuOpen(false)} className="block px-4 py-2.5 text-sm font-medium text-gray-600 hover:bg-gray-50 rounded-lg">Dashboard</Link>}
-                <Link href="/user" onClick={() => setMenuOpen(false)} className="block px-4 py-2.5 text-sm font-medium text-gray-600 hover:bg-gray-50 rounded-lg">My Account</Link>
+                {user.isAdmin && <Link href="/admin" onClick={() => setMenuOpen(false)} className="block px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 rounded-xl">Admin</Link>}
+                {user.isLandlord && <Link href="/landlord" onClick={() => setMenuOpen(false)} className="block px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 rounded-xl">Dashboard</Link>}
+                <Link href="/user" onClick={() => setMenuOpen(false)} className="block px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 rounded-xl">My Account</Link>
                 <button onClick={async () => { const supabase = createClient(); await supabase.auth.signOut(); setUser(null); setMenuOpen(false); window.location.href = '/' }}
-                  className="block w-full text-left px-4 py-2.5 text-sm font-medium text-red-600 hover:bg-red-50 rounded-lg">Logout</button>
+                  className="block w-full text-left px-4 py-3 text-sm font-medium text-red-500 hover:bg-red-50 rounded-xl">Logout</button>
               </>
             ) : (
               <>
-                <Link href="/login" onClick={() => setMenuOpen(false)} className="block px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 rounded-lg">Sign in</Link>
-                <Link href="/register" onClick={() => setMenuOpen(false)} className="block px-4 py-2.5 text-sm font-medium bg-[#6b9e6e] text-white rounded-lg text-center mt-1">Get Started</Link>
+                <Link href="/login" onClick={() => setMenuOpen(false)} className="block px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 rounded-xl">Sign in</Link>
+                <Link href="/register" onClick={() => setMenuOpen(false)} className="block px-4 py-3 text-sm font-semibold bg-blue-600 text-white rounded-xl text-center hover:bg-blue-700 transition-colors shadow-lg shadow-blue-600/25">Get Started</Link>
               </>
             )}
           </div>
