@@ -66,7 +66,7 @@ export default function AdminLandlords() {
 
         <div className="flex-1 flex flex-col min-w-0">
           {/* Header */}
-          <header className="h-14 flex items-center justify-between px-4 md:px-6 bg-white border-b border-gray-100 shrink-0">
+          <header className="h-14 flex items-center justify-between pl-14 pr-4 md:px-6 bg-white border-b border-gray-100 shrink-0">
             <div className="flex items-center gap-3">
               <div className="w-8 h-8 rounded-xl bg-blue-50 flex items-center justify-center">
                 <Users className="w-4 h-4 text-blue-600" />
