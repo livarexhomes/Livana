@@ -43,7 +43,7 @@ export default function LandlordRegisterPage() {
       whatsapp: form.whatsapp,
       city: form.city || null,
       bio: form.bio || null,
-      status: 'pending',
+      status: 'not_submitted',
       is_verified: false,
     })
 

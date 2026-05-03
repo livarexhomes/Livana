@@ -1,6 +1,6 @@
 export type PropertyType = 'sale' | 'rent'
 export type PropertyStatus = 'available' | 'taken' | 'coming_soon' | 'under_negotiation'
-export type LandlordStatus = 'pending' | 'approved' | 'rejected'
+export type LandlordStatus = 'not_submitted' | 'pending' | 'approved' | 'rejected' | 'suspended'
 
 export interface Landlord {
   id: string
