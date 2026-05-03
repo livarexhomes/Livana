@@ -55,7 +55,7 @@ export default function AdminProperties() {
             <h1 className="font-semibold text-gray-900">Properties</h1>
             <span className="text-sm text-gray-500">{properties.length} total</span>
           </header>
-          <main className="flex-1 overflow-y-auto p-6">
+          <main className="flex-1 overflow-y-auto p-4 md:p-6 pb-24 md:pb-6">
             {loading ? (
               <div className="flex items-center justify-center py-20">
                 <div className="animate-spin w-8 h-8 border-4 border-[#aadb5a] border-t-transparent rounded-full" />

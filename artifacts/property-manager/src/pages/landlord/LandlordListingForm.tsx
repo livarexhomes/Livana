@@ -119,7 +119,7 @@ export default function LandlordListingForm() {
           <header className="h-16 flex items-center px-6 bg-white border-b border-gray-100 shrink-0">
             <h1 className="font-semibold text-gray-900">{isEdit ? 'Edit Listing' : 'New Listing'}</h1>
           </header>
-          <main className="flex-1 overflow-y-auto p-6">
+          <main className="flex-1 overflow-y-auto p-4 md:p-6 pb-24 md:pb-6">
             <div className="max-w-2xl">
               {error && <div className="mb-5 px-4 py-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-700">{error}</div>}
               <form onSubmit={handleSubmit} className="space-y-5 bg-white rounded-2xl border border-gray-200 p-6">
@@ -135,7 +135,7 @@ export default function LandlordListingForm() {
                     placeholder="Describe the property..."
                     className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-[#6b9e6e] resize-none" />
                 </div>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1.5">Address *</label>
                     <input required value={form.address} onChange={e => set('address', e.target.value)}
@@ -149,7 +149,7 @@ export default function LandlordListingForm() {
                       className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-[#6b9e6e]" />
                   </div>
                 </div>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1.5">Price (₦) *</label>
                     <input required type="number" min="0" value={form.price} onChange={e => set('price', e.target.value)}
@@ -163,7 +163,7 @@ export default function LandlordListingForm() {
                       className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-[#6b9e6e]" />
                   </div>
                 </div>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1.5">Bedrooms</label>
                     <select value={form.bedrooms} onChange={e => set('bedrooms', e.target.value)}
@@ -179,7 +179,7 @@ export default function LandlordListingForm() {
                     </select>
                   </div>
                 </div>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1.5">Type</label>
                     <select value={form.type} onChange={e => set('type', e.target.value)}

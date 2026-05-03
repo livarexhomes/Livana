@@ -306,7 +306,7 @@ export default function HomePage() {
           </div>
 
           {/* Bento grid */}
-          <div className="grid grid-cols-2 md:grid-cols-4 grid-rows-[280px_200px] gap-3 md:gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 grid-rows-[200px_160px_160px_140px] md:grid-rows-[280px_200px] gap-3 md:gap-4">
             {/* Lagos — large feature cell (2 cols × 2 rows) */}
             <Link
               href="/listings?city=Lagos"

@@ -47,7 +47,7 @@ export default function LandlordProfile() {
           <header className="h-16 flex items-center px-6 bg-white border-b border-gray-100 shrink-0">
             <h1 className="font-semibold text-gray-900">Profile</h1>
           </header>
-          <main className="flex-1 overflow-y-auto p-6">
+          <main className="flex-1 overflow-y-auto p-4 md:p-6 pb-24 md:pb-6">
             <div className="max-w-lg space-y-5">
               <div className="bg-white rounded-2xl border border-gray-200 p-6">
                 <form onSubmit={handleSubmit} className="space-y-5">
