@@ -489,18 +489,10 @@ export default function HomePage() {
       {/* ── CITIES ── */}
       <section className="bg-white py-20 md:py-28">
         <div className="max-w-7xl mx-auto px-5 sm:px-8">
-          <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-4">
-            <div>
-              <p className="text-blue-600 font-semibold text-sm uppercase tracking-widest mb-2">Top Locations</p>
-              <h2 className="text-3xl md:text-4xl font-extrabold text-gray-900 tracking-tight">Explore by City</h2>
-              <p className="text-gray-500 mt-2">Nigeria's most sought-after real estate markets.</p>
-            </div>
-            <Link href="/listings" className="flex items-center gap-2 text-sm font-semibold text-blue-600 hover:text-blue-700 transition-colors group">
-              View all cities
-              <span className="w-8 h-8 rounded-full bg-blue-50 group-hover:bg-blue-100 flex items-center justify-center transition-colors">
-                <ArrowRight className="w-4 h-4" />
-              </span>
-            </Link>
+          <div className="mb-12">
+            <p className="text-blue-600 font-semibold text-sm uppercase tracking-widest mb-2">Top Locations</p>
+            <h2 className="text-3xl md:text-4xl font-extrabold text-gray-900 tracking-tight">Explore by City</h2>
+            <p className="text-gray-500 mt-2">Nigeria's most sought-after real estate markets.</p>
           </div>
 
           {/* Bento grid */}
