@@ -4,12 +4,12 @@ import { createClient } from '../lib/supabase'
 import {
   LayoutDashboard, Building2, UserPlus, FolderKanban, UserCog,
   Settings, HelpCircle, LogOut, Menu, X,
-  PanelLeftClose, PanelLeftOpen, ShieldCheck, Activity,
+  PanelLeftClose, PanelLeftOpen, ShieldCheck, Activity, List,
 } from 'lucide-react'
 
 const mainNav = [
   { label: 'Dashboard',    href: '/admin',            exact: true,  icon: LayoutDashboard },
-  { label: 'Properties',  href: '/admin/properties', exact: false, icon: Building2 },
+  { label: 'Listings',    href: '/admin/properties', exact: false, icon: List },
   { label: 'Clients',     href: '/admin/landlords',  exact: false, icon: UserPlus },
   { label: 'KYC Review',  href: '/admin/kyc',        exact: false, icon: ShieldCheck },
   { label: 'Projects',    href: '/admin/projects',   exact: false, icon: FolderKanban },
