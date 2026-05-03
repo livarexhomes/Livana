@@ -25,6 +25,7 @@ import UserProfile from "./pages/user/UserProfile";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminLandlords from "./pages/admin/AdminLandlords";
 import AdminProperties from "./pages/admin/AdminProperties";
+import AdminProjects from "./pages/admin/AdminProjects";
 
 function NotFound() {
   return (
@@ -70,6 +71,7 @@ function Router() {
       <Route path="/admin" component={AdminDashboard} />
       <Route path="/admin/landlords" component={AdminLandlords} />
       <Route path="/admin/properties" component={AdminProperties} />
+      <Route path="/admin/projects" component={AdminProjects} />
 
       <Route component={NotFound} />
     </Switch>
