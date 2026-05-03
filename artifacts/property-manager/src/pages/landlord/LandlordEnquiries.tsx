@@ -50,7 +50,7 @@ export default function LandlordEnquiries() {
           <header className="h-16 flex items-center px-6 bg-white border-b border-gray-100 shrink-0">
             <h1 className="font-semibold text-gray-900">Enquiries</h1>
           </header>
-          <main className="flex-1 overflow-y-auto p-6">
+          <main className="flex-1 overflow-y-auto p-4 md:p-6 pb-24 md:pb-6">
             {loading ? (
               <div className="flex items-center justify-center py-20">
                 <div className="animate-spin w-8 h-8 border-4 border-[#aadb5a] border-t-transparent rounded-full" />

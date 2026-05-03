@@ -57,7 +57,7 @@ export default function AdminDashboard() {
               <h1 className="text-base font-semibold text-gray-900">{displayName}</h1>
             </div>
           </header>
-          <main className="flex-1 overflow-y-auto p-6">
+          <main className="flex-1 overflow-y-auto p-4 md:p-6 pb-24 md:pb-6">
             {loading ? (
               <div className="flex items-center justify-center py-20">
                 <div className="animate-spin w-8 h-8 border-4 border-[#aadb5a] border-t-transparent rounded-full" />
