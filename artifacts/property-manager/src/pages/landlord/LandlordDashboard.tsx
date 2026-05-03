@@ -142,7 +142,7 @@ export default function LandlordDashboard() {
           </header>
 
           {/* ── Scrollable content ── */}
-          <main className="flex-1 overflow-y-auto p-4 md:p-5 space-y-4">
+          <main className="flex-1 overflow-y-auto p-4 md:p-6 pb-24 md:pb-6 space-y-4">
             {loading ? (
               <div className="flex items-center justify-center py-32">
                 <div className="animate-spin w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full" />
@@ -227,7 +227,7 @@ export default function LandlordDashboard() {
                 </div>
 
                 {/* ── Stat cards ── */}
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                   {[
                     { label: 'Total Listings', value: stats.listings,    icon: Building2,     color: 'text-blue-600',   bg: 'bg-blue-50' },
                     { label: 'Available',      value: stats.available,   icon: CheckCircle,   color: 'text-emerald-600', bg: 'bg-emerald-50' },

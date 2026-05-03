@@ -185,7 +185,8 @@ export default function AdminLandlords() {
               </div>
             ) : (
               <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-                <table className="w-full">
+                <div className="overflow-x-auto">
+                <table className="w-full min-w-[520px]">
                   <thead className="bg-slate-50 border-b border-gray-100">
                     <tr>
                       <th className="text-left px-5 py-3.5 text-[10px] font-black text-gray-400 uppercase tracking-widest">Landlord</th>
@@ -281,6 +282,7 @@ export default function AdminLandlords() {
                     })}
                   </tbody>
                 </table>
+                </div>
               </div>
             )}
           </main>
