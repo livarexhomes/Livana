@@ -175,8 +175,8 @@ export default function HomePage() {
         <div className="hidden lg:block lg:w-[45%] h-screen relative p-4 pl-0">
           <div className="w-full h-full relative rounded-l-[3rem] overflow-hidden shadow-2xl">
             <img
-              src="https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=1400&q=85"
-              alt="Modern luxury home"
+              src="https://images.unsplash.com/photo-1580587771525-78b9dba3b914?w=1400&q=85"
+              alt="Modern Nigerian home"
               className="w-full h-full object-cover"
             />
             {/* Verified badge */}

@@ -1,9 +1,9 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Link } from 'wouter'
 import {
   Building2, MessageSquare, Eye, Plus, TrendingUp,
   ArrowRight, Clock, CheckCircle, AlertCircle, MapPin,
-  Sparkles,
+  Sparkles, Bell, X,
 } from 'lucide-react'
 import LandlordSidebar from '../../components/LandlordSidebar'
 import AuthGuard from '../../components/AuthGuard'
@@ -64,6 +64,16 @@ export default function LandlordDashboard() {
 
   const displayName   = landlord?.full_name || user?.email?.split('@')[0] || 'Landlord'
   const occupancyRate = stats.listings > 0 ? Math.round((stats.taken / stats.listings) * 100) : 0
+  const [bellOpen, setBellOpen] = useState(false)
+  const bellRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (bellRef.current && !bellRef.current.contains(e.target as Node)) setBellOpen(false)
+    }
+    document.addEventListener('mousedown', handleClick)
+    return () => document.removeEventListener('mousedown', handleClick)
+  }, [])
 
   return (
     <AuthGuard require="landlord">
@@ -77,11 +87,58 @@ export default function LandlordDashboard() {
               <p className="text-[11px] text-gray-400 font-medium uppercase tracking-wider">{greeting()}</p>
               <h1 className="text-base font-extrabold text-gray-900 tracking-tight leading-tight">{displayName}</h1>
             </div>
-            <Link href="/landlord/listings/new"
-              className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-xl shadow-sm shadow-blue-600/20 transition-colors">
-              <Plus className="w-4 h-4" />
-              <span className="hidden sm:inline">Add Listing</span>
-            </Link>
+            <div className="flex items-center gap-2">
+              {/* Notification bell */}
+              <div className="relative" ref={bellRef}>
+                <button type="button" onClick={() => setBellOpen(o => !o)}
+                  className="relative w-9 h-9 flex items-center justify-center rounded-xl bg-gray-50 border border-gray-200 hover:bg-gray-100 transition-colors">
+                  <Bell className="w-4 h-4 text-gray-600" />
+                  {stats.enquiries > 0 && (
+                    <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-blue-600 rounded-full border-2 border-white" />
+                  )}
+                </button>
+                {bellOpen && (
+                  <div className="absolute right-0 top-11 w-80 bg-white rounded-2xl shadow-2xl border border-gray-100 z-50 overflow-hidden">
+                    <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
+                      <p className="text-sm font-bold text-gray-900">Notifications</p>
+                      <button onClick={() => setBellOpen(false)} className="text-gray-400 hover:text-gray-600"><X className="w-4 h-4" /></button>
+                    </div>
+                    {recentEnquiries.length === 0 ? (
+                      <div className="py-10 text-center px-4">
+                        <Bell className="w-8 h-8 text-gray-200 mx-auto mb-2" />
+                        <p className="text-sm text-gray-400">No new notifications</p>
+                      </div>
+                    ) : (
+                      <div className="divide-y divide-gray-50 max-h-72 overflow-y-auto">
+                        {recentEnquiries.map((e: any) => (
+                          <div key={e.id} className="flex items-start gap-3 px-4 py-3 hover:bg-gray-50 transition-colors">
+                            <div className="w-8 h-8 rounded-xl bg-blue-50 flex items-center justify-center shrink-0 mt-0.5">
+                              <MessageSquare className="w-3.5 h-3.5 text-blue-600" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-xs font-semibold text-gray-800 truncate">New enquiry on {e.properties?.title ?? 'your listing'}</p>
+                              <p className="text-[11px] text-gray-400 mt-0.5 line-clamp-1">{e.message}</p>
+                              <p className="text-[10px] text-gray-300 mt-1">{new Date(e.created_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })}</p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    <div className="px-4 py-2.5 border-t border-gray-100">
+                      <Link href="/landlord/enquiries" onClick={() => setBellOpen(false)}
+                        className="text-xs font-bold text-blue-600 hover:text-blue-700 transition-colors flex items-center gap-1">
+                        View all enquiries <ArrowRight className="w-3 h-3" />
+                      </Link>
+                    </div>
+                  </div>
+                )}
+              </div>
+              <Link href="/landlord/listings/new"
+                className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-xl shadow-sm shadow-blue-600/20 transition-colors">
+                <Plus className="w-4 h-4" />
+                <span className="hidden sm:inline">Add Listing</span>
+              </Link>
+            </div>
           </header>
 
           {/* ── Scrollable content ── */}

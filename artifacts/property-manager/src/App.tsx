@@ -16,6 +16,7 @@ import LandlordEnquiries from "./pages/landlord/LandlordEnquiries";
 import LandlordProfile from "./pages/landlord/LandlordProfile";
 import LandlordPending from "./pages/landlord/LandlordPending";
 import LandlordRejected from "./pages/landlord/LandlordRejected";
+import LandlordSettings from "./pages/landlord/LandlordSettings";
 
 import UserDashboard from "./pages/user/UserDashboard";
 import UserSaved from "./pages/user/UserSaved";
@@ -65,6 +66,7 @@ function Router() {
       <Route path="/landlord/profile" component={LandlordProfile} />
       <Route path="/landlord/pending" component={LandlordPending} />
       <Route path="/landlord/rejected" component={LandlordRejected} />
+      <Route path="/landlord/settings" component={LandlordSettings} />
 
       <Route path="/user" component={UserDashboard} />
       <Route path="/user/saved" component={UserSaved} />

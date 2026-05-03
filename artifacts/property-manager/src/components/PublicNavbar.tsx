@@ -118,9 +118,7 @@ export default function PublicNavbar() {
         </div>
 
         <button
-          className={`md:hidden ml-auto p-2.5 rounded-xl transition-all ${
-            scrolled || !isHomePage ? 'text-gray-600 hover:bg-gray-100' : 'text-white hover:bg-white/10'
-          }`}
+          className="md:hidden ml-auto p-2.5 rounded-xl transition-all text-gray-700 hover:bg-gray-100"
           onClick={() => setMenuOpen(!menuOpen)}
         >
           {menuOpen ? (
