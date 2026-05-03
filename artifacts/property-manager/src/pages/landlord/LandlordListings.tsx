@@ -125,7 +125,8 @@ export default function LandlordListings() {
               </div>
             ) : viewMode === 'list' ? (
               <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-                <table className="w-full">
+                <div className="overflow-x-auto">
+                <table className="w-full min-w-[480px]">
                   <thead className="bg-slate-50 border-b border-gray-100">
                     <tr>
                       <th className="text-left px-5 py-3.5 text-[10px] font-black text-gray-400 uppercase tracking-widest">Property</th>
@@ -178,6 +179,7 @@ export default function LandlordListings() {
                     })}
                   </tbody>
                 </table>
+                </div>
               </div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
