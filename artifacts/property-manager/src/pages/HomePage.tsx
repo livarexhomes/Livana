@@ -61,6 +61,9 @@ export default function HomePage() {
   const [savedIds, setSavedIds] = useState<Set<string>>(new Set())
   const [searchState, setSearchState] = useState('')
   const [searchArea, setSearchArea] = useState('')
+  const [searchPropertyType, setSearchPropertyType] = useState('')
+  const [searchBeds, setSearchBeds] = useState('')
+  const [searchPrice, setSearchPrice] = useState('')
   const [allProjects, setAllProjects] = useState<Project[]>([])
   const [heroIdx, setHeroIdx] = useState(0)
   const [heroVisible, setHeroVisible] = useState(true)
@@ -123,6 +126,9 @@ export default function HomePage() {
     params.set('type', typeMap[activeTab])
     if (searchState) params.set('city', searchState)
     if (searchArea) params.set('area', searchArea)
+    if (searchPropertyType) params.set('property_type', searchPropertyType)
+    if (searchBeds) params.set('beds', searchBeds)
+    if (searchPrice) params.set('price', searchPrice)
     window.location.href = `/listings?${params.toString()}`
   }
 
@@ -157,59 +163,160 @@ export default function HomePage() {
             </p>
 
             {/* Search Card */}
-            <div className="bg-white rounded-2xl shadow-[0_8px_40px_rgb(0,0,0,0.09)] border border-gray-100 p-3 mb-12">
-              <div className="flex gap-1 mb-1 px-1 pt-1 pb-3 border-b border-gray-100">
+            <div className="mb-12">
+              {/* Tabs */}
+              <div className="flex gap-1 mb-3">
                 {(['Buy', 'Rent', 'Lease', 'Commercial'] as Tab[]).map(t => (
                   <button
                     key={t}
                     onClick={() => setActiveTab(t)}
                     className={`px-4 py-2 rounded-full text-sm font-semibold transition-all ${
                       activeTab === t
-                        ? 'bg-blue-50 text-blue-600'
-                        : 'text-gray-400 hover:text-gray-800 hover:bg-gray-50'
+                        ? 'bg-gray-900 text-white shadow-sm'
+                        : 'text-gray-500 hover:text-gray-800 hover:bg-gray-100'
                     }`}
                   >
                     {t}
                   </button>
                 ))}
               </div>
-              <form onSubmit={handleSearch} className="flex flex-col gap-2 p-1 pt-3">
-                <div className="flex flex-col sm:flex-row gap-2">
-                  {/* State dropdown */}
-                  <div className="relative flex-1">
-                    <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4 pointer-events-none z-10" />
-                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4 pointer-events-none z-10" />
-                    <select
-                      value={searchState}
-                      onChange={e => setSearchState(e.target.value)}
-                      className="w-full pl-11 pr-9 py-3.5 rounded-xl bg-gray-50 border border-transparent focus:bg-white focus:border-blue-400 focus:ring-2 focus:ring-blue-100 outline-none transition-all text-sm text-gray-900 appearance-none cursor-pointer"
-                    >
-                      <option value="">Select State…</option>
-                      {NIGERIAN_STATES.map(s => <option key={s} value={s}>{s}</option>)}
-                    </select>
+
+              {/* Pill search bar — desktop */}
+              <form onSubmit={handleSearch}
+                className="hidden sm:flex items-center bg-white rounded-full shadow-[0_4px_30px_rgb(0,0,0,0.12)] border border-gray-100 overflow-hidden">
+
+                {/* Location */}
+                <div className="relative flex-1 min-w-0 group">
+                  <label className="absolute top-2.5 left-5 text-[10px] font-bold text-gray-400 uppercase tracking-wider pointer-events-none">Location</label>
+                  <div className="absolute left-4 bottom-3 pointer-events-none z-10">
+                    <MapPin className="w-3.5 h-3.5 text-gray-400" />
                   </div>
-                  {/* Area input */}
-                  <div className="relative flex-1">
-                    <input
-                      type="text"
-                      placeholder="Area / Neighbourhood (e.g. Lekki)"
-                      value={searchArea}
-                      onChange={e => setSearchArea(e.target.value)}
-                      list="area-suggestions"
-                      className="w-full px-4 py-3.5 rounded-xl bg-gray-50 border border-transparent focus:bg-white focus:border-blue-400 focus:ring-2 focus:ring-blue-100 outline-none transition-all text-sm text-gray-900 placeholder-gray-400"
-                    />
-                    {searchState && (POPULAR_AREAS[searchState]?.length ?? 0) > 0 && (
-                      <datalist id="area-suggestions">
-                        {(POPULAR_AREAS[searchState] ?? []).map(a => <option key={a} value={a} />)}
-                      </datalist>
-                    )}
-                  </div>
+                  <select
+                    value={searchState}
+                    onChange={e => setSearchState(e.target.value)}
+                    className="w-full pt-7 pb-3 pl-9 pr-5 bg-transparent text-sm text-gray-800 font-medium outline-none appearance-none cursor-pointer"
+                  >
+                    <option value="">Any State</option>
+                    {NIGERIAN_STATES.map(s => <option key={s} value={s}>{s}</option>)}
+                  </select>
+                  {searchState && (POPULAR_AREAS[searchState]?.length ?? 0) > 0 && (
+                    <datalist id="area-suggestions">
+                      {(POPULAR_AREAS[searchState] ?? []).map(a => <option key={a} value={a} />)}
+                    </datalist>
+                  )}
                 </div>
-                <button
-                  type="submit"
-                  className="w-full bg-blue-600 hover:bg-blue-700 text-white px-7 py-3.5 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 transition-all shadow-lg shadow-blue-600/25"
-                >
-                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+
+                <div className="w-px h-10 bg-gray-200 shrink-0" />
+
+                {/* Property Type */}
+                <div className="relative flex-1 min-w-0">
+                  <label className="absolute top-2.5 left-5 text-[10px] font-bold text-gray-400 uppercase tracking-wider pointer-events-none">Property Type</label>
+                  <ChevronDown className="absolute right-4 bottom-3.5 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
+                  <select
+                    value={searchPropertyType}
+                    onChange={e => setSearchPropertyType(e.target.value)}
+                    className="w-full pt-7 pb-3 pl-5 pr-9 bg-transparent text-sm text-gray-800 font-medium outline-none appearance-none cursor-pointer"
+                  >
+                    <option value="">Any</option>
+                    <option value="house">House</option>
+                    <option value="apartment">Apartment</option>
+                    <option value="land">Land</option>
+                    <option value="office">Office</option>
+                    <option value="shop">Shop</option>
+                    <option value="warehouse">Warehouse</option>
+                  </select>
+                </div>
+
+                <div className="w-px h-10 bg-gray-200 shrink-0" />
+
+                {/* Beds & Baths */}
+                <div className="relative flex-1 min-w-0">
+                  <label className="absolute top-2.5 left-5 text-[10px] font-bold text-gray-400 uppercase tracking-wider pointer-events-none">Beds &amp; Baths</label>
+                  <ChevronDown className="absolute right-4 bottom-3.5 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
+                  <select
+                    value={searchBeds}
+                    onChange={e => setSearchBeds(e.target.value)}
+                    className="w-full pt-7 pb-3 pl-5 pr-9 bg-transparent text-sm text-gray-800 font-medium outline-none appearance-none cursor-pointer"
+                  >
+                    <option value="">Beds / Baths</option>
+                    <option value="1">1 Bed</option>
+                    <option value="2">2 Beds</option>
+                    <option value="3">3 Beds</option>
+                    <option value="4">4 Beds</option>
+                    <option value="5">5+ Beds</option>
+                  </select>
+                </div>
+
+                <div className="w-px h-10 bg-gray-200 shrink-0" />
+
+                {/* Price */}
+                <div className="relative flex-1 min-w-0">
+                  <label className="absolute top-2.5 left-5 text-[10px] font-bold text-gray-400 uppercase tracking-wider pointer-events-none">Price</label>
+                  <ChevronDown className="absolute right-4 bottom-3.5 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
+                  <select
+                    value={searchPrice}
+                    onChange={e => setSearchPrice(e.target.value)}
+                    className="w-full pt-7 pb-3 pl-5 pr-9 bg-transparent text-sm text-gray-800 font-medium outline-none appearance-none cursor-pointer"
+                  >
+                    <option value="">Price Range</option>
+                    <option value="0-500000">Under ₦500k</option>
+                    <option value="500000-1500000">₦500k – ₦1.5M</option>
+                    <option value="1500000-5000000">₦1.5M – ₦5M</option>
+                    <option value="5000000-20000000">₦5M – ₦20M</option>
+                    <option value="20000000-999999999">Above ₦20M</option>
+                  </select>
+                </div>
+
+                {/* Search button */}
+                <div className="px-2.5 shrink-0">
+                  <button type="submit"
+                    className="w-12 h-12 rounded-full bg-[#a8e63d] hover:bg-[#95d12a] flex items-center justify-center shadow-md transition-all active:scale-95">
+                    <svg className="w-5 h-5 text-[#1a2e00]" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+                  </button>
+                </div>
+              </form>
+
+              {/* Mobile stacked search */}
+              <form onSubmit={handleSearch}
+                className="sm:hidden bg-white rounded-2xl shadow-[0_4px_24px_rgb(0,0,0,0.10)] border border-gray-100 p-3 space-y-2">
+                <div className="relative">
+                  <MapPin className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+                  <select value={searchState} onChange={e => setSearchState(e.target.value)}
+                    className="w-full pl-10 pr-4 py-3 rounded-xl bg-gray-50 text-sm text-gray-800 outline-none appearance-none">
+                    <option value="">Location — Any State</option>
+                    {NIGERIAN_STATES.map(s => <option key={s} value={s}>{s}</option>)}
+                  </select>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <select value={searchPropertyType} onChange={e => setSearchPropertyType(e.target.value)}
+                    className="w-full px-3 py-3 rounded-xl bg-gray-50 text-sm text-gray-800 outline-none appearance-none">
+                    <option value="">Property Type</option>
+                    <option value="house">House</option>
+                    <option value="apartment">Apartment</option>
+                    <option value="land">Land</option>
+                    <option value="office">Office</option>
+                  </select>
+                  <select value={searchBeds} onChange={e => setSearchBeds(e.target.value)}
+                    className="w-full px-3 py-3 rounded-xl bg-gray-50 text-sm text-gray-800 outline-none appearance-none">
+                    <option value="">Beds</option>
+                    <option value="1">1 Bed</option>
+                    <option value="2">2 Beds</option>
+                    <option value="3">3 Beds</option>
+                    <option value="4">4+ Beds</option>
+                  </select>
+                </div>
+                <select value={searchPrice} onChange={e => setSearchPrice(e.target.value)}
+                  className="w-full px-3 py-3 rounded-xl bg-gray-50 text-sm text-gray-800 outline-none appearance-none">
+                  <option value="">Price Range</option>
+                  <option value="0-500000">Under ₦500k</option>
+                  <option value="500000-1500000">₦500k – ₦1.5M</option>
+                  <option value="1500000-5000000">₦1.5M – ₦5M</option>
+                  <option value="5000000-20000000">₦5M – ₦20M</option>
+                  <option value="20000000-999999999">Above ₦20M</option>
+                </select>
+                <button type="submit"
+                  className="w-full bg-[#a8e63d] hover:bg-[#95d12a] text-[#1a2e00] font-bold py-3.5 rounded-xl text-sm flex items-center justify-center gap-2 transition-all shadow-sm">
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
                   Search Properties
                 </button>
               </form>
