@@ -181,7 +181,7 @@ export default function HomePage() {
       <PublicNavbar />
 
       {/* ── HERO ── */}
-      <section className="relative min-h-screen bg-white flex overflow-hidden">
+      <section className="relative min-h-screen bg-white flex">
         {/* Left Column */}
         <div className="w-full lg:w-[55%] flex flex-col justify-center px-6 sm:px-10 lg:px-16 xl:px-24 pt-28 pb-16 lg:py-0">
           <div className="max-w-xl">
@@ -372,14 +372,26 @@ export default function HomePage() {
                         className="text-xs font-semibold text-blue-600 hover:text-blue-700">Reset</button>
                     </div>
                     <div className="flex gap-3 mb-5">
-                      <div className="flex-1 border border-gray-200 rounded-xl px-3 py-2.5">
-                        <p className="text-[10px] text-gray-400 font-semibold uppercase tracking-wide mb-0.5">Min</p>
-                        <p className="text-sm font-bold text-gray-900">{fmtPrice(priceMin)}</p>
+                      <div className="flex-1 border border-gray-200 rounded-xl px-3 py-2 focus-within:border-blue-400 focus-within:ring-2 focus-within:ring-blue-100 transition-all">
+                        <p className="text-[10px] text-gray-400 font-semibold uppercase tracking-wide mb-0.5">Min (₦)</p>
+                        <input
+                          type="number" min={0} max={priceMax - 500_000} step={100_000}
+                          value={priceMin === 0 ? '' : priceMin}
+                          placeholder="0"
+                          onChange={e => { const v = Number(e.target.value) || 0; if (v < priceMax) setPriceMin(v) }}
+                          className="w-full text-sm font-bold text-gray-900 outline-none bg-transparent"
+                        />
                       </div>
                       <div className="flex items-center text-gray-300 font-bold">—</div>
-                      <div className="flex-1 border border-gray-200 rounded-xl px-3 py-2.5">
-                        <p className="text-[10px] text-gray-400 font-semibold uppercase tracking-wide mb-0.5">Max</p>
-                        <p className="text-sm font-bold text-gray-900">{fmtPrice(priceMax)}</p>
+                      <div className="flex-1 border border-gray-200 rounded-xl px-3 py-2 focus-within:border-blue-400 focus-within:ring-2 focus-within:ring-blue-100 transition-all">
+                        <p className="text-[10px] text-gray-400 font-semibold uppercase tracking-wide mb-0.5">Max (₦)</p>
+                        <input
+                          type="number" min={priceMin + 500_000} max={500_000_000} step={100_000}
+                          value={priceMax === 500_000_000 ? '' : priceMax}
+                          placeholder="500,000,000"
+                          onChange={e => { const v = Number(e.target.value) || 500_000_000; if (v > priceMin) setPriceMax(v) }}
+                          className="w-full text-sm font-bold text-gray-900 outline-none bg-transparent"
+                        />
                       </div>
                     </div>
                     {/* Dual range slider */}
