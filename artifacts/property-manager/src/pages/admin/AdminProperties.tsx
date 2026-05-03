@@ -3,7 +3,7 @@ import { Link } from 'wouter'
 import {
   Building2, Search, LayoutGrid, List,
   MapPin, BedDouble, Bath, Pencil, Trash2, ArrowRight, Plus, Eye,
-  SlidersHorizontal, CheckCircle, Clock, XCircle,
+  SlidersHorizontal, CheckCircle, Clock, XCircle, X, Save,
 } from 'lucide-react'
 import AdminSidebar from '../../components/AdminSidebar'
 import AdminHeader from '../../components/AdminHeader'
@@ -41,6 +41,9 @@ const STATUS_META: Record<string, { label: string; icon: any; cls: string }> = {
   under_negotiation: { label: 'Negotiating',   icon: Clock,       cls: 'text-amber-600 bg-amber-50' },
 }
 
+type EditForm = { title: string; city: string; price: string; type: string; status: string; bedrooms: string; bathrooms: string }
+const emptyEdit: EditForm = { title: '', city: '', price: '', type: 'rent', status: 'available', bedrooms: '', bathrooms: '' }
+
 export default function AdminProperties() {
   const [user, setUser]             = useState<{ email?: string } | null>(null)
   const [properties, setProperties] = useState<any[]>([])
@@ -51,6 +54,9 @@ export default function AdminProperties() {
   const [sort, setSort]             = useState('newest')
   const [statusFilter, setStatusFilter] = useState('all')
   const [deleting, setDeleting]     = useState<string | null>(null)
+  const [editingProp, setEditingProp] = useState<any | null>(null)
+  const [editForm, setEditForm]     = useState<EditForm>(emptyEdit)
+  const [saving, setSaving]         = useState(false)
 
   useEffect(() => {
     const supabase = createClient()
@@ -91,6 +97,38 @@ export default function AdminProperties() {
     await supabase.from('properties').delete().eq('id', id)
     setProperties(ps => ps.filter(p => p.id !== id))
     setDeleting(null)
+  }
+
+  function openEdit(p: any) {
+    setEditingProp(p)
+    setEditForm({
+      title: p.title ?? '',
+      city: p.city ?? '',
+      price: p.price != null ? String(p.price) : '',
+      type: p.type ?? 'rent',
+      status: p.status ?? 'available',
+      bedrooms: p.bedrooms != null ? String(p.bedrooms) : '',
+      bathrooms: p.bathrooms != null ? String(p.bathrooms) : '',
+    })
+  }
+
+  async function handleEditSave() {
+    if (!editingProp) return
+    setSaving(true)
+    const supabase = createClient()
+    const patch = {
+      title: editForm.title,
+      city: editForm.city,
+      price: editForm.price ? Number(editForm.price) : null,
+      type: editForm.type,
+      status: editForm.status,
+      bedrooms: editForm.bedrooms ? Number(editForm.bedrooms) : null,
+      bathrooms: editForm.bathrooms ? Number(editForm.bathrooms) : null,
+    }
+    await supabase.from('properties').update(patch).eq('id', editingProp.id)
+    setProperties(ps => ps.map(p => p.id === editingProp.id ? { ...p, ...patch } : p))
+    setSaving(false)
+    setEditingProp(null)
   }
 
   const displayName = user?.email ? user.email.split('@')[0] : 'Admin'
@@ -248,7 +286,7 @@ export default function AdminProperties() {
 
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-1">
-                            <button title="Edit"
+                            <button title="Edit" onClick={() => openEdit(p)}
                               className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-colors">
                               <Pencil className="w-3.5 h-3.5" />
                             </button>
@@ -314,7 +352,7 @@ export default function AdminProperties() {
                           </td>
                           <td className="px-5 py-3.5">
                             <div className="flex items-center justify-end gap-1">
-                              <button className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-colors">
+                              <button onClick={() => openEdit(p)} className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-colors">
                                 <Pencil className="w-3.5 h-3.5" />
                               </button>
                               <button onClick={() => handleDelete(p.id)} disabled={deleting === p.id}
@@ -336,7 +374,89 @@ export default function AdminProperties() {
             )}
           </main>
         </div>
+
+        {/* Edit modal */}
+        {editingProp && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+            <div className="w-full max-w-lg bg-white rounded-2xl shadow-2xl overflow-hidden">
+              <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+                <div>
+                  <h2 className="text-base font-bold text-gray-900">Edit Property</h2>
+                  <p className="text-xs text-gray-400 mt-0.5 truncate max-w-xs">{editingProp.title}</p>
+                </div>
+                <button onClick={() => setEditingProp(null)} className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors">
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+              <div className="p-6 space-y-4">
+                <div>
+                  <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5 block">Title</label>
+                  <input value={editForm.title} onChange={e => setEditForm(f => ({ ...f, title: e.target.value }))}
+                    className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gray-50 focus:bg-white transition-all" />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5 block">City</label>
+                    <input value={editForm.city} onChange={e => setEditForm(f => ({ ...f, city: e.target.value }))}
+                      className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gray-50 focus:bg-white transition-all" />
+                  </div>
+                  <div>
+                    <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5 block">Price (₦)</label>
+                    <input type="number" value={editForm.price} onChange={e => setEditForm(f => ({ ...f, price: e.target.value }))}
+                      className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gray-50 focus:bg-white transition-all" />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5 block">Type</label>
+                    <select value={editForm.type} onChange={e => setEditForm(f => ({ ...f, type: e.target.value }))}
+                      className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50 focus:bg-white transition-all">
+                      <option value="rent">Rent</option>
+                      <option value="sale">Buy / Sale</option>
+                      <option value="lease">Lease</option>
+                      <option value="commercial">Commercial</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5 block">Status</label>
+                    <select value={editForm.status} onChange={e => setEditForm(f => ({ ...f, status: e.target.value }))}
+                      className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50 focus:bg-white transition-all">
+                      <option value="available">Available</option>
+                      <option value="taken">Taken</option>
+                      <option value="under_negotiation">Under Negotiation</option>
+                      <option value="coming_soon">Coming Soon</option>
+                    </select>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5 block">Bedrooms</label>
+                    <input type="number" min="0" value={editForm.bedrooms} onChange={e => setEditForm(f => ({ ...f, bedrooms: e.target.value }))}
+                      className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50 focus:bg-white transition-all" />
+                  </div>
+                  <div>
+                    <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5 block">Bathrooms</label>
+                    <input type="number" min="0" value={editForm.bathrooms} onChange={e => setEditForm(f => ({ ...f, bathrooms: e.target.value }))}
+                      className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50 focus:bg-white transition-all" />
+                  </div>
+                </div>
+              </div>
+              <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-gray-100 bg-gray-50">
+                <button onClick={() => setEditingProp(null)}
+                  className="px-4 py-2 text-sm font-semibold text-gray-600 hover:text-gray-800 transition-colors">
+                  Cancel
+                </button>
+                <button onClick={handleEditSave} disabled={saving}
+                  className="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white text-sm font-bold rounded-xl transition-colors shadow-sm shadow-blue-600/20">
+                  <Save className="w-4 h-4" />
+                  {saving ? 'Saving…' : 'Save Changes'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </AuthGuard>
+
   )
 }

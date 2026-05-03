@@ -29,6 +29,7 @@ Nigerian real estate platform built with React + Vite + Wouter + TailwindCSS v4 
 - `/admin/projects` — AdminProjects
 - `/admin/users` — AdminUsers
 - `/admin/settings` — AdminSettings
+- `/landlord/settings` — LandlordSettings (Notifications, Account, Security, WhatsApp)
 - `/admin/help` — AdminHelp
 - `/landlord` — LandlordDashboard (role: landlord)
 - `/landlord/listings` — LandlordListings

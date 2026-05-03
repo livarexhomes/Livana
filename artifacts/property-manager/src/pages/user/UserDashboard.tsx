@@ -110,6 +110,27 @@ export default function UserDashboardPage() {
           </div>
         ) : (
           <div className="space-y-5 max-w-3xl">
+            {/* Hero banner */}
+            <div className="relative rounded-2xl overflow-hidden min-h-[160px] shadow-sm">
+              <img
+                src="https://images.unsplash.com/photo-1580587771525-78b9dba3b914?w=1200&q=80"
+                alt="Find your home"
+                className="absolute inset-0 w-full h-full object-cover"
+              />
+              <div className="absolute inset-0 bg-gradient-to-r from-blue-900/80 via-blue-800/60 to-transparent" />
+              <div className="relative px-6 py-7 flex flex-col sm:flex-row sm:items-center gap-4 justify-between">
+                <div>
+                  <p className="text-blue-200 text-xs font-semibold uppercase tracking-widest mb-1">Welcome to Livana</p>
+                  <h2 className="text-xl font-extrabold text-white leading-snug">Find Your Perfect Home</h2>
+                  <p className="text-blue-200 text-sm mt-1">Browse verified listings from trusted landlords.</p>
+                </div>
+                <Link href="/listings"
+                  className="shrink-0 inline-flex items-center gap-2 px-5 py-2.5 bg-white text-blue-700 text-sm font-bold rounded-xl shadow-lg hover:bg-blue-50 transition-colors">
+                  Browse Listings <ArrowRight className="w-4 h-4" />
+                </Link>
+              </div>
+            </div>
+
             {/* Stat cards */}
             <div className="grid grid-cols-2 gap-4">
               <Link href="/user/saved"
