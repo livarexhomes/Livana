@@ -4,6 +4,7 @@ import {
   X, Trash2, CheckCircle, AlertCircle, Pencil, ToggleLeft, ToggleRight,
 } from 'lucide-react'
 import AdminSidebar from '../../components/AdminSidebar'
+import AdminHeader from '../../components/AdminHeader'
 import AuthGuard from '../../components/AuthGuard'
 import { createClient } from '../../lib/supabase'
 
@@ -166,17 +167,17 @@ export default function AdminUsers() {
         <AdminSidebar userEmail={user?.email} userName={displayName} />
 
         <div className="flex-1 flex flex-col min-w-0">
-          <header className="flex items-center justify-between pl-14 pr-4 md:px-8 py-4 bg-white border-b border-gray-100 shrink-0">
-            <div>
-              <h1 className="text-xl font-extrabold text-gray-900 tracking-tight">Team Members</h1>
-              <p className="text-sm text-gray-400 mt-0.5">{users.length} members · {activeCount} active</p>
-            </div>
-            <button type="button" onClick={openInvite}
-              className="inline-flex items-center gap-2 px-4 py-2.5 bg-[#0c0c15] hover:bg-[#1a1a28] text-white text-sm font-bold rounded-xl transition-colors shadow-sm">
-              <Plus className="w-4 h-4" />
-              <span className="hidden sm:inline">Invite Member</span>
-            </button>
-          </header>
+          <AdminHeader
+            title="Team Members"
+            subtitle={`${users.length} members · ${activeCount} active`}
+            action={
+              <button type="button" onClick={openInvite}
+                className="inline-flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-xl transition-colors shadow-sm shadow-blue-600/20">
+                <Plus className="w-4 h-4" />
+                <span className="hidden sm:inline">Invite Member</span>
+              </button>
+            }
+          />
 
           <main className="flex-1 overflow-y-auto p-4 md:p-6 pb-24 md:pb-6 space-y-4">
             {toast && (
@@ -214,7 +215,7 @@ export default function AdminUsers() {
                 <button key={tab.key} type="button" onClick={() => setRoleFilter(tab.key)}
                   className={`shrink-0 flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all border ${
                     roleFilter === tab.key
-                      ? 'bg-[#0c0c15] text-white border-[#0c0c15]'
+                      ? 'bg-blue-600 text-white border-blue-600'
                       : 'bg-white text-gray-600 border-gray-200 hover:border-gray-400'
                   }`}>
                   {tab.label}
@@ -240,7 +241,7 @@ export default function AdminUsers() {
                 <p className="text-gray-800 font-bold text-base mb-1">No team members yet</p>
                 <p className="text-sm text-gray-400 mb-5">Invite team members and assign their roles and permissions.</p>
                 <button type="button" onClick={openInvite}
-                  className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#0c0c15] text-white text-sm font-bold rounded-xl">
+                  className="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-xl transition-colors">
                   <Plus className="w-4 h-4" /> Invite First Member
                 </button>
               </div>
@@ -433,7 +434,7 @@ export default function AdminUsers() {
                 Cancel
               </button>
               <button type="button" onClick={handleSave} disabled={saving}
-                className="flex-1 py-2.5 bg-[#0c0c15] hover:bg-[#1a1a28] disabled:opacity-60 text-white text-sm font-bold rounded-xl transition-colors">
+                className="flex-1 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white text-sm font-bold rounded-xl transition-colors">
                 {saving ? 'Saving…' : editing ? 'Save Changes' : 'Send Invite'}
               </button>
             </div>
