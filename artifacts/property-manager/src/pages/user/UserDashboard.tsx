@@ -1,12 +1,28 @@
 import { useState, useEffect } from 'react'
 import { Link, useLocation } from 'wouter'
 import {
-  Heart, MessageSquare, User, ArrowRight, Clock, MapPin, Building2, Menu,
+  Heart, MessageSquare, User, ArrowRight, Clock, MapPin, Building2, Menu, TrendingUp, Calendar,
 } from 'lucide-react'
 import AuthGuard from '../../components/AuthGuard'
 import UserSidebar from '../../components/UserSidebar'
 import { createClient } from '../../lib/supabase'
 import type { Tenant } from '../../lib/types'
+
+const PROJECTS_KEY = 'livana_admin_projects'
+type Project = {
+  id: string; name: string; developer: string; location: string
+  description: string; image: string; price: number; down: number
+  completion: string; progress: number; units: number; sold: number
+  category: string; status: string
+}
+function loadProjects(): Project[] {
+  try { const r = localStorage.getItem(PROJECTS_KEY); if (r) return JSON.parse(r) } catch {}
+  return []
+}
+function progressColor(p: number) {
+  if (p >= 80) return 'bg-emerald-500'; if (p >= 50) return 'bg-blue-600'
+  if (p >= 30) return 'bg-amber-500'; return 'bg-rose-500'
+}
 
 export function UserLayout({ children, title }: { children: React.ReactNode; title: string }) {
   const [tenant, setTenant] = useState<Tenant | null>(null)
@@ -65,6 +81,7 @@ export function UserLayout({ children, title }: { children: React.ReactNode; tit
 export default function UserDashboardPage() {
   const [stats, setStats] = useState({ saved: 0, enquiries: 0 })
   const [recentEnquiries, setRecentEnquiries] = useState<any[]>([])
+  const [projects, setProjects] = useState<Project[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -79,6 +96,7 @@ export default function UserDashboardPage() {
       ])
       setStats({ saved: savedRes.count ?? 0, enquiries: enqRes.count ?? 0 })
       setRecentEnquiries(enqRes.data ?? [])
+      setProjects(loadProjects())
       setLoading(false)
     })
   }, [])
@@ -153,6 +171,70 @@ export default function UserDashboardPage() {
                     </div>
                   ))}
                 </div>
+              </div>
+            )}
+
+            {/* Featured Developments */}
+            {projects.filter(p => p.status === 'active' || p.status === 'coming_soon').length > 0 && (
+              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+                <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+                  <div>
+                    <h2 className="text-sm font-bold text-gray-900">Featured Developments</h2>
+                    <p className="text-xs text-gray-400 mt-0.5">Off-plan properties available now</p>
+                  </div>
+                  <Building2 className="w-4 h-4 text-gray-300" />
+                </div>
+                <div className="divide-y divide-gray-50">
+                  {projects.filter(p => p.status === 'active' || p.status === 'coming_soon').slice(0, 3).map(p => (
+                    <div key={p.id} className="flex gap-3.5 p-4 hover:bg-slate-50/60 transition-colors">
+                      <div className="w-16 h-16 rounded-xl overflow-hidden bg-gray-100 shrink-0">
+                        {p.image
+                          ? <img src={p.image} alt={p.name} className="w-full h-full object-cover" onError={(e: any) => { e.currentTarget.style.display = 'none' }} />
+                          : <div className="w-full h-full flex items-center justify-center"><Building2 className="w-6 h-6 text-gray-300" /></div>
+                        }
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-start justify-between gap-2">
+                          <p className="text-sm font-bold text-gray-900 truncate">{p.name}</p>
+                          {p.status === 'coming_soon' && (
+                            <span className="shrink-0 px-2 py-0.5 bg-blue-50 text-blue-700 text-[10px] font-bold rounded-lg">Coming Soon</span>
+                          )}
+                        </div>
+                        <p className="text-xs text-gray-400 mt-0.5 flex items-center gap-1 truncate">
+                          <MapPin className="w-3 h-3 shrink-0" />{p.location} · {p.developer}
+                        </p>
+                        <div className="flex items-center gap-3 mt-2">
+                          {p.progress > 0 && (
+                            <div className="flex items-center gap-1.5 flex-1">
+                              <div className="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                                <div className={`h-full rounded-full ${progressColor(p.progress)}`} style={{ width: `${p.progress}%` }} />
+                              </div>
+                              <span className="text-[10px] font-bold text-gray-500 shrink-0">{p.progress}%</span>
+                            </div>
+                          )}
+                          {p.price > 0 && (
+                            <span className="text-[11px] font-extrabold text-gray-900 shrink-0">
+                              ₦{(p.price / 1_000_000).toFixed(0)}M
+                            </span>
+                          )}
+                          {p.completion && (
+                            <span className="text-[10px] text-gray-400 flex items-center gap-0.5 shrink-0">
+                              <Calendar className="w-2.5 h-2.5" />{p.completion}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                {projects.filter(p => p.status === 'active' || p.status === 'coming_soon').length > 3 && (
+                  <div className="px-5 py-3 border-t border-gray-100 text-center">
+                    <p className="text-xs text-gray-400 font-medium flex items-center justify-center gap-1">
+                      <TrendingUp className="w-3 h-3" />
+                      {projects.filter(p => p.status === 'active' || p.status === 'coming_soon').length - 3} more development{projects.length - 3 > 1 ? 's' : ''} available
+                    </p>
+                  </div>
+                )}
               </div>
             )}
 

@@ -1,59 +1,50 @@
 import { useState, useEffect } from 'react'
-import { Search, MapPin, Calendar, Plus, TrendingUp, Building2 } from 'lucide-react'
+import {
+  Search, MapPin, Calendar, Plus, TrendingUp, Building2,
+  Pencil, Trash2, X, CheckCircle, AlertCircle, MoreVertical,
+} from 'lucide-react'
 import AdminSidebar from '../../components/AdminSidebar'
 import AuthGuard from '../../components/AuthGuard'
 import { createClient } from '../../lib/supabase'
 
-const PROJECTS = [
-  {
-    id: '1', name: 'Skyline Residences', developer: 'Mixta Africa',
-    location: 'Victoria Island, Lagos',
-    description: 'Premium waterfront apartments with panoramic Atlantic Ocean views.',
-    image: 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=900&q=80',
-    price: 85_000_000, down: 20, completion: 'Q3 2026', progress: 52, units: 240, sold: 124,
-    category: 'Residential',
-  },
-  {
-    id: '2', name: 'Abuja Pearl Towers', developer: 'Novare Estates',
-    location: 'Maitama, Abuja',
-    description: 'Contemporary tower in the most prestigious district of Nigeria\'s capital.',
-    image: 'https://images.unsplash.com/photo-1613977257363-707ba9348227?w=900&q=80',
-    price: 120_000_000, down: 25, completion: 'Q1 2026', progress: 75, units: 180, sold: 135,
-    category: 'Mixed Use',
-  },
-  {
-    id: '3', name: 'Lekki Phase II Estate', developer: 'Propertymart',
-    location: 'Lekki, Lagos',
-    description: 'Gated community with smart homes, green spaces, and world-class amenities.',
-    image: 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=900&q=80',
-    price: 55_000_000, down: 15, completion: 'Q4 2025', progress: 88, units: 320, sold: 282,
-    category: 'Residential',
-  },
-  {
-    id: '4', name: 'Asokoro Heights', developer: 'Citiview',
-    location: 'Asokoro, Abuja',
-    description: 'Luxury duplexes and terrace houses in Abuja\'s most exclusive diplomatic zone.',
-    image: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=900&q=80',
-    price: 95_000_000, down: 30, completion: 'Q2 2027', progress: 20, units: 96, sold: 19,
-    category: 'Residential',
-  },
-  {
-    id: '5', name: 'Port Harcourt Gardens', developer: 'Elalan Construction',
-    location: 'GRA Phase 2, PH',
-    description: 'Serene garden-themed estate with 3–5 bedroom homes and 24/7 security.',
-    image: 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=900&q=80',
-    price: 42_000_000, down: 20, completion: 'Q3 2025', progress: 95, units: 160, sold: 152,
-    category: 'Residential',
-  },
-  {
-    id: '6', name: 'Banana Island Court', developer: 'Landmark Africa',
-    location: 'Banana Island, Lagos',
-    description: 'Ultra-luxury island residences — the pinnacle of Nigerian real estate.',
-    image: 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=900&q=80',
-    price: 350_000_000, down: 40, completion: 'Q4 2026', progress: 38, units: 48, sold: 18,
-    category: 'Luxury',
-  },
-]
+type ProjectStatus = 'active' | 'coming_soon' | 'completed' | 'on_hold'
+
+type Project = {
+  id: string
+  name: string
+  developer: string
+  location: string
+  description: string
+  image: string
+  price: number
+  down: number
+  completion: string
+  progress: number
+  units: number
+  sold: number
+  category: string
+  status: ProjectStatus
+}
+
+const CATEGORY_COLORS: Record<string, string> = {
+  Residential:  'bg-blue-50 text-blue-700',
+  'Mixed Use':  'bg-violet-50 text-violet-700',
+  Luxury:       'bg-amber-50 text-amber-700',
+  Commercial:   'bg-emerald-50 text-emerald-700',
+}
+
+const STATUS_META: Record<ProjectStatus, { label: string; bg: string; text: string; dot: string }> = {
+  active:      { label: 'Active',       bg: 'bg-emerald-50', text: 'text-emerald-700', dot: 'bg-emerald-500' },
+  coming_soon: { label: 'Coming Soon',  bg: 'bg-blue-50',    text: 'text-blue-700',    dot: 'bg-blue-500'    },
+  completed:   { label: 'Completed',    bg: 'bg-gray-100',   text: 'text-gray-600',    dot: 'bg-gray-400'    },
+  on_hold:     { label: 'On Hold',      bg: 'bg-amber-50',   text: 'text-amber-700',   dot: 'bg-amber-500'   },
+}
+
+const EMPTY_FORM = {
+  name: '', developer: '', location: '', description: '',
+  image: '', price: 0, down: 20, completion: '', progress: 0,
+  units: 0, sold: 0, category: 'Residential', status: 'active' as ProjectStatus,
+}
 
 function progressColor(pct: number) {
   if (pct >= 80) return 'bg-emerald-500'
@@ -61,39 +52,115 @@ function progressColor(pct: number) {
   if (pct >= 30) return 'bg-amber-500'
   return 'bg-rose-500'
 }
-
-function progressTextColor(pct: number) {
+function progressText(pct: number) {
   if (pct >= 80) return 'text-emerald-600'
   if (pct >= 50) return 'text-blue-600'
   if (pct >= 30) return 'text-amber-600'
   return 'text-rose-500'
 }
 
-const CATEGORY_COLORS: Record<string, string> = {
-  Residential: 'bg-blue-50 text-blue-700',
-  'Mixed Use': 'bg-violet-50 text-violet-700',
-  Luxury: 'bg-amber-50 text-amber-700',
-  Commercial: 'bg-emerald-50 text-emerald-700',
+const STORAGE_KEY = 'livana_admin_projects'
+
+function loadProjects(): Project[] {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY)
+    if (raw) return JSON.parse(raw)
+  } catch {}
+  return []
+}
+
+function saveProjects(projects: Project[]) {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(projects)) } catch {}
 }
 
 export default function AdminProjects() {
-  const [user, setUser] = useState<{ email?: string } | null>(null)
-  const [search, setSearch] = useState('')
+  const [user, setUser]         = useState<{ email?: string } | null>(null)
+  const [projects, setProjects] = useState<Project[]>([])
+  const [search, setSearch]     = useState('')
+  const [catFilter, setCatFilter] = useState('all')
+  const [menuOpen, setMenuOpen] = useState<string | null>(null)
+
+  // modal
+  const [modalOpen, setModalOpen]         = useState(false)
+  const [editing, setEditing]             = useState<Project | null>(null)
+  const [form, setForm]                   = useState(EMPTY_FORM)
+  const [deleteId, setDeleteId]           = useState<string | null>(null)
+  const [toast, setToast]                 = useState<{ msg: string; ok: boolean } | null>(null)
+  const [saving, setSaving]               = useState(false)
 
   useEffect(() => {
     const supabase = createClient()
     supabase.auth.getUser().then(({ data: { user } }) => setUser({ email: user?.email }))
+    setProjects(loadProjects())
   }, [])
 
-  const filtered = PROJECTS.filter(p => {
+  function showToast(msg: string, ok = true) {
+    setToast({ msg, ok })
+    setTimeout(() => setToast(null), 3000)
+  }
+
+  function openAdd() {
+    setEditing(null); setForm(EMPTY_FORM); setModalOpen(true)
+  }
+  function openEdit(p: Project) {
+    setEditing(p)
+    setForm({ name: p.name, developer: p.developer, location: p.location, description: p.description,
+      image: p.image, price: p.price, down: p.down, completion: p.completion, progress: p.progress,
+      units: p.units, sold: p.sold, category: p.category, status: p.status })
+    setModalOpen(true)
+    setMenuOpen(null)
+  }
+
+  async function handleSave() {
+    if (!form.name.trim() || !form.developer.trim() || !form.location.trim()) {
+      showToast('Name, developer, and location are required.', false)
+      return
+    }
+    setSaving(true)
+    let updated: Project[]
+    if (editing) {
+      updated = projects.map(p => p.id === editing.id ? { ...editing, ...form } : p)
+    } else {
+      const newProject: Project = { ...form, id: crypto.randomUUID() }
+      updated = [newProject, ...projects]
+    }
+    setProjects(updated)
+    saveProjects(updated)
+    setSaving(false)
+    setModalOpen(false)
+    showToast(editing ? 'Project updated.' : 'Project created.')
+  }
+
+  function handleDelete() {
+    if (!deleteId) return
+    const updated = projects.filter(p => p.id !== deleteId)
+    setProjects(updated)
+    saveProjects(updated)
+    setDeleteId(null)
+    showToast('Project deleted.')
+  }
+
+  function changeStatus(id: string, status: ProjectStatus) {
+    const updated = projects.map(p => p.id === id ? { ...p, status } : p)
+    setProjects(updated)
+    saveProjects(updated)
+    setMenuOpen(null)
+  }
+
+  const categories = ['all', ...Array.from(new Set(projects.map(p => p.category)))]
+  const filtered = projects.filter(p => {
     const q = search.toLowerCase()
-    return !q || p.name.toLowerCase().includes(q) || p.developer.toLowerCase().includes(q) || p.location.toLowerCase().includes(q)
+    const matchSearch = !q || p.name.toLowerCase().includes(q) || p.developer.toLowerCase().includes(q) || p.location.toLowerCase().includes(q)
+    const matchCat = catFilter === 'all' || p.category === catFilter
+    return matchSearch && matchCat
   })
 
   const displayName = user?.email ? user.email.split('@')[0] : 'Admin'
-  const totalValue = PROJECTS.reduce((sum, p) => sum + p.price * p.units, 0)
-  const totalSold  = PROJECTS.reduce((sum, p) => sum + p.sold, 0)
-  const totalUnits = PROJECTS.reduce((sum, p) => sum + p.units, 0)
+  const totalUnits = projects.reduce((s, p) => s + (p.units || 0), 0)
+  const totalSold  = projects.reduce((s, p) => s + (p.sold  || 0), 0)
+
+  const F = (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) =>
+    setForm(f => ({ ...f, [k]: e.target.type === 'number' ? Number(e.target.value) : e.target.value }))
 
   return (
     <AuthGuard require="admin">
@@ -104,22 +171,30 @@ export default function AdminProjects() {
           <header className="flex items-center justify-between pl-14 pr-4 md:px-8 py-4 bg-white border-b border-gray-100 shrink-0">
             <div>
               <h1 className="text-xl font-extrabold text-gray-900 tracking-tight">Projects</h1>
-              <p className="text-sm text-gray-400 mt-0.5">Off-plan developments from Nigeria's top builders</p>
+              <p className="text-sm text-gray-400 mt-0.5">Manage off-plan developments</p>
             </div>
-            <button type="button"
-              className="inline-flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-xl shadow-sm shadow-blue-600/20 transition-colors">
+            <button type="button" onClick={openAdd}
+              className="inline-flex items-center gap-2 px-4 py-2.5 bg-[#0c0c15] hover:bg-[#1a1a28] text-white text-sm font-bold rounded-xl transition-colors shadow-sm">
               <Plus className="w-4 h-4" />
               <span className="hidden sm:inline">Add Project</span>
             </button>
           </header>
 
-          <main className="flex-1 overflow-y-auto p-4 md:p-6 pb-24 md:pb-6 space-y-5">
+          <main className="flex-1 overflow-y-auto p-4 md:p-6 pb-24 md:pb-6 space-y-5" onClick={() => setMenuOpen(null)}>
+            {/* Toast */}
+            {toast && (
+              <div className={`fixed top-5 right-5 z-50 flex items-center gap-2.5 px-4 py-3 rounded-2xl shadow-xl text-sm font-semibold text-white transition-all ${toast.ok ? 'bg-emerald-600' : 'bg-red-600'}`}>
+                {toast.ok ? <CheckCircle className="w-4 h-4" /> : <AlertCircle className="w-4 h-4" />}
+                {toast.msg}
+              </div>
+            )}
+
             {/* KPI strip */}
             <div className="grid grid-cols-3 gap-3">
               {[
-                { label: 'Total Projects', value: PROJECTS.length, icon: Building2, color: 'text-blue-600', bg: 'bg-blue-50' },
-                { label: 'Units Sold', value: `${totalSold}/${totalUnits}`, icon: TrendingUp, color: 'text-emerald-600', bg: 'bg-emerald-50' },
-                { label: 'Total GDV', value: `₦${(totalValue / 1_000_000_000).toFixed(1)}B`, icon: TrendingUp, color: 'text-violet-600', bg: 'bg-violet-50' },
+                { label: 'Total Projects', value: projects.length, icon: Building2, color: 'text-blue-600', bg: 'bg-blue-50' },
+                { label: 'Units Sold',     value: `${totalSold}/${totalUnits}`, icon: TrendingUp, color: 'text-emerald-600', bg: 'bg-emerald-50' },
+                { label: 'Avg Progress',   value: projects.length > 0 ? `${Math.round(projects.reduce((s, p) => s + p.progress, 0) / projects.length)}%` : '—', icon: TrendingUp, color: 'text-violet-600', bg: 'bg-violet-50' },
               ].map(s => {
                 const Icon = s.icon
                 return (
@@ -136,32 +211,65 @@ export default function AdminProjects() {
               })}
             </div>
 
-            {/* Search */}
-            <div className="flex items-center gap-2 bg-white border border-gray-200 rounded-xl px-4 py-3 shadow-sm focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-blue-500 transition-all">
-              <Search className="w-4 h-4 text-gray-400 shrink-0" />
-              <input value={search} onChange={e => setSearch(e.target.value)}
-                placeholder="Search projects, developers, locations…"
-                className="flex-1 text-sm text-gray-700 placeholder-gray-400 focus:outline-none bg-transparent" />
+            {/* Filters */}
+            <div className="flex items-center gap-3 flex-wrap">
+              <div className="flex items-center gap-2 flex-1 min-w-[200px] bg-white border border-gray-200 rounded-xl px-4 py-2.5 shadow-sm focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-blue-500 transition-all">
+                <Search className="w-4 h-4 text-gray-400 shrink-0" />
+                <input value={search} onChange={e => setSearch(e.target.value)}
+                  placeholder="Search projects, developers, locations…"
+                  className="flex-1 text-sm text-gray-700 placeholder-gray-400 focus:outline-none bg-transparent" />
+              </div>
+              <div className="flex items-center gap-2 overflow-x-auto">
+                {categories.map(cat => (
+                  <button key={cat} type="button" onClick={() => setCatFilter(cat)}
+                    className={`shrink-0 px-3 py-2 rounded-xl text-xs font-semibold border transition-all ${
+                      catFilter === cat
+                        ? 'bg-[#0c0c15] text-white border-[#0c0c15]'
+                        : 'bg-white text-gray-600 border-gray-200 hover:border-gray-400'
+                    }`}>
+                    {cat === 'all' ? 'All' : cat}
+                  </button>
+                ))}
+              </div>
             </div>
 
+            {/* Grid */}
             {filtered.length === 0 ? (
-              <div className="bg-white rounded-2xl border border-gray-100 p-16 text-center shadow-sm">
-                <p className="text-gray-500 font-medium">No projects match your search.</p>
+              <div className="bg-white rounded-2xl border border-gray-100 p-20 text-center shadow-sm">
+                <Building2 className="w-12 h-12 text-gray-200 mx-auto mb-4" />
+                <p className="text-gray-800 font-bold text-base mb-1">{projects.length === 0 ? 'No projects yet' : 'No projects match your filter'}</p>
+                <p className="text-sm text-gray-400 mb-5">
+                  {projects.length === 0
+                    ? 'Add your first development project and it will appear on the user dashboard.'
+                    : 'Try adjusting your search or filter.'}
+                </p>
+                {projects.length === 0 && (
+                  <button type="button" onClick={openAdd}
+                    className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#0c0c15] text-white text-sm font-bold rounded-xl">
+                    <Plus className="w-4 h-4" /> Add First Project
+                  </button>
+                )}
               </div>
             ) : (
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
                 {filtered.map(p => {
-                  const soldPct   = Math.round((p.sold / p.units) * 100)
-                  const catColor  = CATEGORY_COLORS[p.category] ?? 'bg-gray-100 text-gray-600'
+                  const soldPct  = p.units > 0 ? Math.round((p.sold / p.units) * 100) : 0
+                  const catColor = CATEGORY_COLORS[p.category] ?? 'bg-gray-100 text-gray-600'
+                  const sm       = STATUS_META[p.status] ?? STATUS_META.active
                   return (
                     <div key={p.id} className="bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 group">
-                      {/* Full-bleed image */}
-                      <div className="relative h-52 overflow-hidden">
-                        <img src={p.image} alt={p.name}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
-                          onError={(e: any) => { e.currentTarget.src = 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=900&q=80' }} />
+                      {/* Image */}
+                      <div className="relative h-52 overflow-hidden bg-gray-100">
+                        {p.image ? (
+                          <img src={p.image} alt={p.name}
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+                            onError={(e: any) => { e.currentTarget.style.display = 'none' }} />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center">
+                            <Building2 className="w-16 h-16 text-gray-200" />
+                          </div>
+                        )}
                         <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
-                        {/* Overlay text */}
                         <div className="absolute bottom-4 left-4 right-4">
                           <div className="flex items-start justify-between gap-2">
                             <div>
@@ -175,49 +283,85 @@ export default function AdminProjects() {
                             </span>
                           </div>
                         </div>
-                        {/* Category */}
                         <div className="absolute top-3 left-3">
                           <span className={`px-2.5 py-1 rounded-lg text-[11px] font-bold shadow-sm ${catColor}`}>{p.category}</span>
                         </div>
-                        {/* Progress pill */}
-                        <div className={`absolute top-3 right-3 px-2.5 py-1 rounded-lg text-[11px] font-black shadow-sm ${progressTextColor(p.progress)} bg-white/90 backdrop-blur`}>
+                        <div className={`absolute top-3 right-3 px-2.5 py-1 rounded-lg text-[11px] font-black shadow-sm ${progressText(p.progress)} bg-white/90 backdrop-blur`}>
                           {p.progress}% Built
+                        </div>
+
+                        {/* Admin action menu */}
+                        <div className="absolute bottom-4 right-4" onClick={e => e.stopPropagation()}>
+                          <button type="button"
+                            onClick={() => setMenuOpen(menuOpen === p.id ? null : p.id)}
+                            className="w-8 h-8 flex items-center justify-center rounded-lg bg-white/90 backdrop-blur hover:bg-white text-gray-800 shadow-sm transition-all">
+                            <MoreVertical className="w-4 h-4" />
+                          </button>
+                          {menuOpen === p.id && (
+                            <div className="absolute bottom-10 right-0 bg-white rounded-2xl shadow-xl border border-gray-100 py-1.5 min-w-[170px] z-10">
+                              <button type="button" onClick={() => openEdit(p)}
+                                className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
+                                <Pencil className="w-3.5 h-3.5 text-gray-400" /> Edit Project
+                              </button>
+                              <div className="border-t border-gray-100 my-1" />
+                              <p className="px-4 py-1 text-[10px] font-bold uppercase tracking-wide text-gray-400">Change Status</p>
+                              {(Object.keys(STATUS_META) as ProjectStatus[]).map(st => (
+                                <button key={st} type="button" onClick={() => changeStatus(p.id, st)}
+                                  className={`w-full flex items-center gap-2.5 px-4 py-2 text-sm transition-colors ${p.status === st ? 'text-blue-700 bg-blue-50' : 'text-gray-700 hover:bg-gray-50'}`}>
+                                  <span className={`w-2 h-2 rounded-full ${STATUS_META[st].dot}`} />
+                                  {STATUS_META[st].label}
+                                </button>
+                              ))}
+                              <div className="border-t border-gray-100 my-1" />
+                              <button type="button" onClick={() => { setDeleteId(p.id); setMenuOpen(null) }}
+                                className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors">
+                                <Trash2 className="w-3.5 h-3.5" /> Delete
+                              </button>
+                            </div>
+                          )}
                         </div>
                       </div>
 
                       {/* Content */}
                       <div className="p-5">
-                        <p className="text-sm text-gray-500 leading-relaxed mb-4 line-clamp-2">{p.description}</p>
+                        <div className="flex items-center justify-between mb-3">
+                          <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold ${sm.bg} ${sm.text}`}>
+                            <span className={`w-1.5 h-1.5 rounded-full ${sm.dot}`} />
+                            {sm.label}
+                          </span>
+                        </div>
+                        {p.description && (
+                          <p className="text-sm text-gray-500 leading-relaxed mb-4 line-clamp-2">{p.description}</p>
+                        )}
 
-                        {/* Progress bar */}
                         <div className="mb-4">
                           <div className="flex items-center justify-between text-xs mb-1.5">
                             <span className="font-semibold text-gray-700">Construction Progress</span>
-                            <span className={`font-bold ${progressTextColor(p.progress)}`}>{p.progress}%</span>
+                            <span className={`font-bold ${progressText(p.progress)}`}>{p.progress}%</span>
                           </div>
                           <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
-                            <div className={`h-full rounded-full transition-all ${progressColor(p.progress)}`}
-                              style={{ width: `${p.progress}%` }} />
+                            <div className={`h-full rounded-full transition-all ${progressColor(p.progress)}`} style={{ width: `${p.progress}%` }} />
                           </div>
                         </div>
 
-                        {/* Sales */}
-                        <div className="mb-4">
-                          <div className="flex items-center justify-between text-xs mb-1.5">
-                            <span className="font-semibold text-gray-700">Units Sold</span>
-                            <span className="font-bold text-gray-900">{p.sold} / {p.units}</span>
+                        {p.units > 0 && (
+                          <div className="mb-4">
+                            <div className="flex items-center justify-between text-xs mb-1.5">
+                              <span className="font-semibold text-gray-700">Units Sold</span>
+                              <span className="font-bold text-gray-900">{p.sold} / {p.units}</span>
+                            </div>
+                            <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                              <div className="h-full rounded-full bg-violet-500 transition-all" style={{ width: `${soldPct}%` }} />
+                            </div>
                           </div>
-                          <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
-                            <div className="h-full rounded-full bg-violet-500 transition-all"
-                              style={{ width: `${soldPct}%` }} />
-                          </div>
-                        </div>
+                        )}
 
-                        {/* Meta */}
                         <div className="grid grid-cols-3 gap-3 pt-4 border-t border-gray-100">
                           <div>
                             <p className="text-[10px] text-gray-400 font-semibold uppercase tracking-wide mb-0.5">Starting From</p>
-                            <p className="text-sm font-extrabold text-gray-900">₦{(p.price / 1_000_000).toFixed(0)}M</p>
+                            <p className="text-sm font-extrabold text-gray-900">
+                              {p.price > 0 ? `₦${(p.price / 1_000_000).toFixed(0)}M` : '—'}
+                            </p>
                           </div>
                           <div>
                             <p className="text-[10px] text-gray-400 font-semibold uppercase tracking-wide mb-0.5">Down Payment</p>
@@ -227,7 +371,7 @@ export default function AdminProjects() {
                             <p className="text-[10px] text-gray-400 font-semibold uppercase tracking-wide mb-0.5">Completion</p>
                             <div className="flex items-center gap-1">
                               <Calendar className="w-3 h-3 text-gray-400" />
-                              <p className="text-sm font-extrabold text-gray-900">{p.completion}</p>
+                              <p className="text-sm font-extrabold text-gray-900">{p.completion || '—'}</p>
                             </div>
                           </div>
                         </div>
@@ -240,6 +384,132 @@ export default function AdminProjects() {
           </main>
         </div>
       </div>
+
+      {/* ── Add / Edit Modal ── */}
+      {modalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col">
+            <div className="flex items-center justify-between px-6 py-5 border-b border-gray-100 shrink-0">
+              <h2 className="text-lg font-extrabold text-gray-900">{editing ? 'Edit Project' : 'Add New Project'}</h2>
+              <button type="button" onClick={() => setModalOpen(false)}
+                className="w-8 h-8 flex items-center justify-center rounded-xl text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto px-6 py-5 space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="col-span-2 sm:col-span-1">
+                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1.5 block">Project Name *</label>
+                  <input value={form.name} onChange={F('name')} placeholder="e.g. Skyline Residences"
+                    className="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                </div>
+                <div className="col-span-2 sm:col-span-1">
+                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1.5 block">Developer *</label>
+                  <input value={form.developer} onChange={F('developer')} placeholder="e.g. Mixta Africa"
+                    className="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                </div>
+                <div className="col-span-2">
+                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1.5 block">Location *</label>
+                  <input value={form.location} onChange={F('location')} placeholder="e.g. Victoria Island, Lagos"
+                    className="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                </div>
+                <div className="col-span-2">
+                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1.5 block">Description</label>
+                  <textarea value={form.description} onChange={F('description')} rows={3} placeholder="Brief description..."
+                    className="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none" />
+                </div>
+                <div className="col-span-2">
+                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1.5 block">Cover Image URL</label>
+                  <input value={form.image} onChange={F('image')} placeholder="https://..."
+                    className="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                </div>
+                <div>
+                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1.5 block">Starting Price (₦)</label>
+                  <input type="number" min={0} value={form.price} onChange={F('price')} placeholder="85000000"
+                    className="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                </div>
+                <div>
+                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1.5 block">Down Payment %</label>
+                  <input type="number" min={0} max={100} value={form.down} onChange={F('down')}
+                    className="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                </div>
+                <div>
+                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1.5 block">Total Units</label>
+                  <input type="number" min={0} value={form.units} onChange={F('units')}
+                    className="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                </div>
+                <div>
+                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1.5 block">Units Sold</label>
+                  <input type="number" min={0} value={form.sold} onChange={F('sold')}
+                    className="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                </div>
+                <div>
+                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1.5 block">Construction % (0–100)</label>
+                  <input type="number" min={0} max={100} value={form.progress} onChange={F('progress')}
+                    className="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                </div>
+                <div>
+                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1.5 block">Completion Date</label>
+                  <input value={form.completion} onChange={F('completion')} placeholder="e.g. Q3 2026"
+                    className="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                </div>
+                <div>
+                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1.5 block">Category</label>
+                  <select value={form.category} onChange={F('category')}
+                    className="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white cursor-pointer">
+                    <option>Residential</option><option>Mixed Use</option><option>Luxury</option><option>Commercial</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1.5 block">Status</label>
+                  <select value={form.status} onChange={F('status')}
+                    className="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white cursor-pointer">
+                    <option value="active">Active</option>
+                    <option value="coming_soon">Coming Soon</option>
+                    <option value="completed">Completed</option>
+                    <option value="on_hold">On Hold</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex gap-3 px-6 py-4 border-t border-gray-100 shrink-0">
+              <button type="button" onClick={() => setModalOpen(false)}
+                className="flex-1 py-2.5 border border-gray-200 rounded-xl text-sm font-semibold text-gray-600 hover:bg-gray-50 transition-colors">
+                Cancel
+              </button>
+              <button type="button" onClick={handleSave} disabled={saving}
+                className="flex-1 py-2.5 bg-[#0c0c15] hover:bg-[#1a1a28] disabled:opacity-60 text-white text-sm font-bold rounded-xl transition-colors">
+                {saving ? 'Saving…' : editing ? 'Save Changes' : 'Create Project'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Delete confirmation ── */}
+      {deleteId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="bg-white rounded-3xl shadow-2xl p-7 w-full max-w-sm text-center">
+            <div className="w-14 h-14 rounded-full bg-red-100 flex items-center justify-center mx-auto mb-4">
+              <Trash2 className="w-7 h-7 text-red-600" />
+            </div>
+            <h3 className="text-lg font-extrabold text-gray-900 mb-1">Delete this project?</h3>
+            <p className="text-sm text-gray-500 mb-6">This action cannot be undone.</p>
+            <div className="flex gap-3">
+              <button type="button" onClick={() => setDeleteId(null)}
+                className="flex-1 py-2.5 border border-gray-200 rounded-xl text-sm font-semibold text-gray-600 hover:bg-gray-50 transition-colors">
+                Cancel
+              </button>
+              <button type="button" onClick={handleDelete}
+                className="flex-1 py-2.5 bg-red-600 hover:bg-red-700 text-white text-sm font-bold rounded-xl transition-colors">
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </AuthGuard>
   )
 }
