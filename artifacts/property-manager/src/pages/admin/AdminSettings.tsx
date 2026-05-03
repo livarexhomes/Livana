@@ -81,6 +81,24 @@ export default function AdminSettings() {
           </header>
 
           <main className="flex-1 overflow-y-auto p-4 md:p-6 pb-24 md:pb-6">
+            {/* Mobile section tabs */}
+            <div className="sm:hidden flex gap-2 overflow-x-auto pb-3 mb-4 scrollbar-none -mx-1 px-1">
+              {SECTIONS.map(s => {
+                const Icon = s.icon
+                return (
+                  <button key={s.id} type="button" onClick={() => setActive(s.id)}
+                    className={`flex items-center gap-1.5 px-3 py-2 rounded-full text-xs font-semibold whitespace-nowrap shrink-0 transition-all ${
+                      active === s.id
+                        ? 'bg-blue-600 text-white shadow-sm'
+                        : 'bg-white border border-gray-200 text-gray-600'
+                    }`}>
+                    <Icon className="w-3.5 h-3.5" strokeWidth={1.7} />
+                    {s.label}
+                  </button>
+                )
+              })}
+            </div>
+
             <div className="flex gap-5 max-w-5xl">
               {/* ── Left nav ── */}
               <div className="hidden sm:block w-48 shrink-0">

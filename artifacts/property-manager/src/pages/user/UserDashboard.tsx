@@ -87,7 +87,7 @@ export default function UserDashboardPage() {
   useEffect(() => {
     const supabase = createClient()
     supabase.auth.getUser().then(async ({ data: { user } }) => {
-      if (!user) return
+      if (!user) { setLoading(false); return }
       const { data: tenant } = await supabase.from('tenants').select('id').eq('user_id', user.id).single() as { data: { id: string } | null }
       if (!tenant) { setLoading(false); return }
       const [savedRes, enqRes] = await Promise.all([
