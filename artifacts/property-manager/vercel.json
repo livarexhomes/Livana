@@ -1,5 +1,7 @@
 {
   "version": 2,
-  "outputDirectory": "vercel-out",
+  "framework": null,
+  "buildCommand": "cd ../.. && pnpm --filter @workspace/property-manager run build",
+  "outputDirectory": "artifacts/property-manager/vercel-out",
   "routes": [{ "src": "/(.*)", "dest": "/index.html" }]
 }
