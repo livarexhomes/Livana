@@ -40,7 +40,6 @@ export default function PublicNavbar() {
   const navLinks = [
     { href: '/', label: 'Home' },
     { href: '/about', label: 'About' },
-    { href: '/partners', label: 'List Your Property' },
     { href: '/contact', label: 'Contact' },
   ]
 
