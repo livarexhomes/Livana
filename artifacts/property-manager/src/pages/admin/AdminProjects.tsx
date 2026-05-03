@@ -25,6 +25,7 @@ type Project = {
   sold: number
   category: string
   status: ProjectStatus
+  type: string
 }
 
 const CATEGORY_COLORS: Record<string, string> = {
@@ -45,6 +46,7 @@ const EMPTY_FORM = {
   name: '', developer: '', location: '', description: '',
   image: '', price: 0, down: 20, completion: '', progress: 0,
   units: 0, sold: 0, category: 'Residential', status: 'active' as ProjectStatus,
+  type: 'sale',
 }
 
 function progressColor(pct: number) {
@@ -107,7 +109,7 @@ export default function AdminProjects() {
     setEditing(p)
     setForm({ name: p.name, developer: p.developer, location: p.location, description: p.description,
       image: p.image, price: p.price, down: p.down, completion: p.completion, progress: p.progress,
-      units: p.units, sold: p.sold, category: p.category, status: p.status })
+      units: p.units, sold: p.sold, category: p.category, status: p.status, type: p.type ?? 'sale' })
     setModalOpen(true)
     setMenuOpen(null)
   }
@@ -461,6 +463,17 @@ export default function AdminProjects() {
                     className="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white cursor-pointer">
                     <option>Residential</option><option>Mixed Use</option><option>Luxury</option><option>Commercial</option>
                   </select>
+                </div>
+                <div>
+                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1.5 block">Listing Type</label>
+                  <select value={form.type} onChange={F('type')}
+                    className="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white cursor-pointer">
+                    <option value="sale">Buy / Sale</option>
+                    <option value="rent">Rent</option>
+                    <option value="lease">Lease</option>
+                    <option value="commercial">Commercial</option>
+                  </select>
+                  <p className="text-[11px] text-gray-400 mt-1">Determines which tab this project appears under on the homepage.</p>
                 </div>
                 <div>
                   <label className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1.5 block">Status</label>
