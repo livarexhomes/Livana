@@ -8,6 +8,7 @@ import LandlordSidebar from '../../components/LandlordSidebar'
 import AuthGuard from '../../components/AuthGuard'
 import { createClient } from '../../lib/supabase'
 import type { Landlord } from '../../lib/types'
+import { NIGERIAN_STATES, POPULAR_AREAS } from '../../lib/nigerianStates'
 
 type FormData = {
   title: string; description: string; address: string; city: string
@@ -170,18 +171,26 @@ export default function LandlordListingForm() {
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                      <label className="text-sm font-semibold text-gray-700 mb-2 block">Address *</label>
-                      <input required value={form.address}
-                        onChange={e => set('address', e.target.value)}
-                        placeholder="Street address"
-                        className={FIELD_CLASS} />
+                      <label className="text-sm font-semibold text-gray-700 mb-2 block">State *</label>
+                      <select required value={form.city}
+                        onChange={e => set('city', e.target.value)}
+                        className={SELECT_CLASS}>
+                        <option value="">Select state…</option>
+                        {NIGERIAN_STATES.map(s => <option key={s} value={s}>{s}</option>)}
+                      </select>
                     </div>
                     <div>
-                      <label className="text-sm font-semibold text-gray-700 mb-2 block">City *</label>
-                      <input required value={form.city}
-                        onChange={e => set('city', e.target.value)}
-                        placeholder="e.g. Lagos"
+                      <label className="text-sm font-semibold text-gray-700 mb-2 block">Area / Neighbourhood *</label>
+                      <input required value={form.address}
+                        onChange={e => set('address', e.target.value)}
+                        placeholder={form.city && POPULAR_AREAS[form.city] ? `e.g. ${POPULAR_AREAS[form.city][0]}` : 'e.g. Lekki, Maitama…'}
+                        list="landlord-area-suggestions"
                         className={FIELD_CLASS} />
+                      {form.city && (POPULAR_AREAS[form.city]?.length ?? 0) > 0 && (
+                        <datalist id="landlord-area-suggestions">
+                          {(POPULAR_AREAS[form.city] ?? []).map(a => <option key={a} value={a} />)}
+                        </datalist>
+                      )}
                     </div>
                   </div>
 

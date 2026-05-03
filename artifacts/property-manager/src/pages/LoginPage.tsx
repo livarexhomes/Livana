@@ -35,8 +35,15 @@ export default function LoginPage() {
       return
     }
 
-    const { data: tenant } = await supabase.from('tenants').select('id').eq('user_id', user.id).single() as { data: { id: string } | null }
-    if (!tenant) { navigate('/register'); return }
+    let { data: tenant } = await supabase.from('tenants').select('id').eq('user_id', user.id).single() as { data: { id: string } | null }
+    if (!tenant) {
+      const meta = user.user_metadata ?? {}
+      await supabase.from('tenants').insert({
+        user_id: user.id,
+        full_name: meta.full_name ?? user.email?.split('@')[0] ?? 'User',
+        phone: meta.phone ?? null,
+      })
+    }
 
     navigate('/user')
   }

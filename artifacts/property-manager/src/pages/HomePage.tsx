@@ -1,11 +1,12 @@
 import { useState, useEffect, useRef } from 'react'
 import { Link } from 'wouter'
-import { ArrowRight, ShieldCheck, Building2, Users, TrendingUp, Star, CheckCircle2, CheckCircle, MapPin, ChevronRight, Calendar } from 'lucide-react'
+import { ArrowRight, ShieldCheck, Building2, Users, TrendingUp, Star, CheckCircle2, CheckCircle, MapPin, ChevronRight, Calendar, ChevronDown } from 'lucide-react'
 import PublicNavbar from '../components/PublicNavbar'
 import Footer from '../components/Footer'
 import PropertyCard from '../components/PropertyCard'
 import { createClient, isSupabaseConfigured } from '../lib/supabase'
 import type { PropertyWithLandlord } from '../lib/types'
+import { NIGERIAN_STATES, POPULAR_AREAS } from '../lib/nigerianStates'
 
 type Tab = 'Buy' | 'Rent' | 'Lease' | 'Commercial'
 const typeMap: Record<Tab, string> = { Buy: 'sale', Rent: 'rent', Lease: 'lease', Commercial: 'commercial' }
@@ -58,7 +59,8 @@ export default function HomePage() {
   const [loading, setLoading] = useState(true)
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [savedIds, setSavedIds] = useState<Set<string>>(new Set())
-  const [searchCity, setSearchCity] = useState('')
+  const [searchState, setSearchState] = useState('')
+  const [searchArea, setSearchArea] = useState('')
   const [allProjects, setAllProjects] = useState<Project[]>([])
   const [heroIdx, setHeroIdx] = useState(0)
   const [heroVisible, setHeroVisible] = useState(true)
@@ -119,7 +121,8 @@ export default function HomePage() {
     e.preventDefault()
     const params = new URLSearchParams()
     params.set('type', typeMap[activeTab])
-    if (searchCity) params.set('city', searchCity)
+    if (searchState) params.set('city', searchState)
+    if (searchArea) params.set('area', searchArea)
     window.location.href = `/listings?${params.toString()}`
   }
 
@@ -170,23 +173,44 @@ export default function HomePage() {
                   </button>
                 ))}
               </div>
-              <form onSubmit={handleSearch} className="flex flex-col sm:flex-row gap-2 p-1 pt-3">
-                <div className="relative flex-1">
-                  <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
-                  <input
-                    type="text"
-                    placeholder="Lagos, Abuja, Port Harcourt…"
-                    value={searchCity}
-                    onChange={e => setSearchCity(e.target.value)}
-                    className="w-full pl-11 pr-4 py-3.5 rounded-xl bg-gray-50 border border-transparent focus:bg-white focus:border-blue-400 focus:ring-2 focus:ring-blue-100 outline-none transition-all text-sm text-gray-900 placeholder-gray-400"
-                  />
+              <form onSubmit={handleSearch} className="flex flex-col gap-2 p-1 pt-3">
+                <div className="flex flex-col sm:flex-row gap-2">
+                  {/* State dropdown */}
+                  <div className="relative flex-1">
+                    <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4 pointer-events-none z-10" />
+                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4 pointer-events-none z-10" />
+                    <select
+                      value={searchState}
+                      onChange={e => setSearchState(e.target.value)}
+                      className="w-full pl-11 pr-9 py-3.5 rounded-xl bg-gray-50 border border-transparent focus:bg-white focus:border-blue-400 focus:ring-2 focus:ring-blue-100 outline-none transition-all text-sm text-gray-900 appearance-none cursor-pointer"
+                    >
+                      <option value="">Select State…</option>
+                      {NIGERIAN_STATES.map(s => <option key={s} value={s}>{s}</option>)}
+                    </select>
+                  </div>
+                  {/* Area input */}
+                  <div className="relative flex-1">
+                    <input
+                      type="text"
+                      placeholder="Area / Neighbourhood (e.g. Lekki)"
+                      value={searchArea}
+                      onChange={e => setSearchArea(e.target.value)}
+                      list="area-suggestions"
+                      className="w-full px-4 py-3.5 rounded-xl bg-gray-50 border border-transparent focus:bg-white focus:border-blue-400 focus:ring-2 focus:ring-blue-100 outline-none transition-all text-sm text-gray-900 placeholder-gray-400"
+                    />
+                    {searchState && (POPULAR_AREAS[searchState]?.length ?? 0) > 0 && (
+                      <datalist id="area-suggestions">
+                        {(POPULAR_AREAS[searchState] ?? []).map(a => <option key={a} value={a} />)}
+                      </datalist>
+                    )}
+                  </div>
                 </div>
                 <button
                   type="submit"
-                  className="bg-blue-600 hover:bg-blue-700 text-white px-7 py-3.5 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 transition-all shadow-lg shadow-blue-600/25 whitespace-nowrap"
+                  className="w-full bg-blue-600 hover:bg-blue-700 text-white px-7 py-3.5 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 transition-all shadow-lg shadow-blue-600/25"
                 >
                   <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
-                  Search
+                  Search Properties
                 </button>
               </form>
             </div>
