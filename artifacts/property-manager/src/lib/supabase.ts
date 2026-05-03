@@ -25,3 +25,7 @@ export function createClient() {
 export function getSupabaseImageUrl(storagePath: string) {
   return `${url}/storage/v1/object/public/property-images/${storagePath}`
 }
+
+export function getSupabaseAvatarUrl(storagePath: string) {
+  return `${url}/storage/v1/object/public/landlord-avatars/${storagePath}`
+}

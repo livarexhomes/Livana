@@ -1,12 +1,12 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import {
-  CheckCircle, User, Phone, FileText, Shield,
+  CheckCircle, User, Phone, Shield,
   MapPin, Briefcase, Calendar, Globe, Twitter,
-  Linkedin, Instagram, Camera, Save,
+  Linkedin, Instagram, Camera, Save, Loader2,
 } from 'lucide-react'
 import LandlordSidebar from '../../components/LandlordSidebar'
 import AuthGuard from '../../components/AuthGuard'
-import { createClient } from '../../lib/supabase'
+import { createClient, getSupabaseAvatarUrl } from '../../lib/supabase'
 import type { Landlord } from '../../lib/types'
 
 const FIELD = "w-full px-4 py-3 rounded-xl border border-gray-200 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all bg-gray-50 focus:bg-white"
@@ -21,6 +21,10 @@ export default function LandlordProfile() {
   const [loading, setLoading]   = useState(false)
   const [success, setSuccess]   = useState(false)
   const [error, setError]       = useState('')
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
+  const [avatarUploading, setAvatarUploading] = useState(false)
+  const [avatarError, setAvatarError] = useState('')
+  const avatarInputRef = useRef<HTMLInputElement>(null)
 
   const [form, setForm] = useState({
     full_name: '', whatsapp: '', bio: '',
@@ -38,6 +42,7 @@ export default function LandlordProfile() {
         .from('landlords').select('*').eq('user_id', user.id).single() as { data: Landlord | null }
       setLandlord(l)
       if (l) {
+        setAvatarUrl(l.avatar_url ?? null)
         setForm({
           full_name:        l.full_name        ?? '',
           whatsapp:         l.whatsapp         ?? '',
@@ -54,6 +59,43 @@ export default function LandlordProfile() {
       }
     })
   }, [])
+
+  async function handleAvatarChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file || !user?.id) return
+    if (!file.type.startsWith('image/')) { setAvatarError('Please select an image file.'); return }
+    if (file.size > 5 * 1024 * 1024) { setAvatarError('Image must be under 5MB.'); return }
+
+    setAvatarUploading(true)
+    setAvatarError('')
+    const supabase = createClient()
+    const ext = file.name.split('.').pop() ?? 'jpg'
+    const path = `${user.id}/avatar.${ext}`
+
+    const { error: upErr } = await supabase.storage
+      .from('landlord-avatars')
+      .upload(path, file, { upsert: true, contentType: file.type })
+
+    if (upErr) {
+      setAvatarError('Upload failed: ' + upErr.message)
+      setAvatarUploading(false)
+      return
+    }
+
+    const publicUrl = getSupabaseAvatarUrl(path)
+    const { error: dbErr } = await supabase
+      .from('landlords')
+      .update({ avatar_url: publicUrl })
+      .eq('user_id', user.id)
+
+    if (dbErr) {
+      setAvatarError('Saved photo but failed to update profile: ' + dbErr.message)
+    } else {
+      setAvatarUrl(publicUrl)
+    }
+    setAvatarUploading(false)
+    e.target.value = ''
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -76,7 +118,12 @@ export default function LandlordProfile() {
   return (
     <AuthGuard require="landlord">
       <div className="flex h-screen overflow-hidden bg-[#F4F6FB]">
-        <LandlordSidebar userName={landlord?.full_name} userEmail={user?.email} isVerified={landlord?.is_verified} />
+        <LandlordSidebar
+          userName={landlord?.full_name}
+          userEmail={user?.email}
+          isVerified={landlord?.is_verified}
+          avatarUrl={avatarUrl}
+        />
 
         <div className="flex-1 flex flex-col min-w-0">
           <header className="flex items-center justify-between pl-14 pr-4 md:px-8 py-4 bg-white border-b border-gray-100 shrink-0">
@@ -100,15 +147,45 @@ export default function LandlordProfile() {
                 {/* Profile header card */}
                 <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
                   <div className="h-24 bg-gradient-to-r from-blue-600 to-indigo-600 relative">
-                    <button type="button" className="absolute bottom-3 right-3 w-8 h-8 bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-lg flex items-center justify-center text-white transition-colors">
-                      <Camera className="w-4 h-4" />
+                    <button
+                      type="button"
+                      onClick={() => avatarInputRef.current?.click()}
+                      disabled={avatarUploading}
+                      title="Change cover / avatar"
+                      className="absolute bottom-3 right-3 w-8 h-8 bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-lg flex items-center justify-center text-white transition-colors disabled:opacity-60">
+                      {avatarUploading
+                        ? <Loader2 className="w-4 h-4 animate-spin" />
+                        : <Camera className="w-4 h-4" />}
                     </button>
                   </div>
+
                   <div className="px-6 pb-5">
                     <div className="flex items-end gap-4 -mt-8 mb-4">
-                      <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center shadow-lg ring-4 ring-white shrink-0">
-                        <span className="text-xl font-extrabold text-white">{initials}</span>
+                      {/* Avatar — real photo or initials fallback */}
+                      <div className="relative shrink-0 group">
+                        <div className="w-16 h-16 rounded-2xl ring-4 ring-white shadow-lg overflow-hidden bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center">
+                          {avatarUrl
+                            ? <img
+                                src={avatarUrl}
+                                alt={displayName}
+                                className="w-full h-full object-cover"
+                                onError={() => setAvatarUrl(null)}
+                              />
+                            : <span className="text-xl font-extrabold text-white">{initials}</span>
+                          }
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => avatarInputRef.current?.click()}
+                          disabled={avatarUploading}
+                          title="Upload profile photo"
+                          className="absolute inset-0 rounded-2xl bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white transition-opacity disabled:opacity-60">
+                          {avatarUploading
+                            ? <Loader2 className="w-5 h-5 animate-spin" />
+                            : <Camera className="w-5 h-5" />}
+                        </button>
                       </div>
+
                       <div className="pb-1">
                         <p className="text-lg font-extrabold text-gray-900 leading-tight">{displayName}</p>
                         <div className="flex items-center gap-3 text-xs text-gray-400 mt-0.5">
@@ -124,11 +201,32 @@ export default function LandlordProfile() {
                         </div>
                       )}
                     </div>
+
                     {form.bio && <p className="text-sm text-gray-500 leading-relaxed line-clamp-2">{form.bio}</p>}
+
+                    {/* Upload hint */}
+                    <p className="text-xs text-gray-400 mt-2 flex items-center gap-1">
+                      <Camera className="w-3 h-3" />
+                      Click your photo or the camera icon to upload a profile picture
+                    </p>
                   </div>
                 </div>
 
-                {/* Feedback */}
+                {/* Hidden file input */}
+                <input
+                  ref={avatarInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleAvatarChange}
+                />
+
+                {/* Avatar error */}
+                {avatarError && (
+                  <div className="px-4 py-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-700">{avatarError}</div>
+                )}
+
+                {/* Form feedback */}
                 {error && <div className="px-4 py-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-700">{error}</div>}
                 {success && (
                   <div className="flex items-center gap-2 px-4 py-3 bg-emerald-50 border border-emerald-200 rounded-xl text-sm text-emerald-700">
@@ -180,10 +278,10 @@ export default function LandlordProfile() {
                         <h2 className="text-sm font-bold text-gray-900">Social & Web Presence</h2>
                       </div>
                       {[
-                        { key: 'website',   label: 'Website',   icon: Globe,     placeholder: 'https://yourwebsite.com' },
-                        { key: 'linkedin',  label: 'LinkedIn',  icon: Linkedin,  placeholder: 'linkedin.com/in/yourname' },
-                        { key: 'twitter',   label: 'X (Twitter)', icon: Twitter, placeholder: '@yourusername' },
-                        { key: 'instagram', label: 'Instagram', icon: Instagram, placeholder: '@yourhandle' },
+                        { key: 'website',   label: 'Website',     icon: Globe,     placeholder: 'https://yourwebsite.com' },
+                        { key: 'linkedin',  label: 'LinkedIn',    icon: Linkedin,  placeholder: 'linkedin.com/in/yourname' },
+                        { key: 'twitter',   label: 'X (Twitter)', icon: Twitter,   placeholder: '@yourusername' },
+                        { key: 'instagram', label: 'Instagram',   icon: Instagram, placeholder: '@yourhandle' },
                       ].map(s => {
                         const Icon = s.icon
                         return (
@@ -273,6 +371,7 @@ export default function LandlordProfile() {
                     <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-100 rounded-2xl p-5 space-y-3">
                       <p className="text-sm font-bold text-blue-900">Profile Tips</p>
                       {[
+                        'Upload a clear profile photo to build trust',
                         'A complete profile gets 3× more enquiries',
                         'Add your WhatsApp number to enable direct contact',
                         'A clear bio builds trust with potential tenants',
