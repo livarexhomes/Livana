@@ -3,9 +3,12 @@
   "builds": [
     {
       "src": "artifacts/property-manager/package.json",
-      "use": "@vercel/static-build"
+      "use": "@vercel/static-build",
+      "config": { "distDir": "vercel-out" }
     }
   ],
-  "outputDirectory": "vercel-out",
-  "routes": [{ "src": "/(.*)", "dest": "/index.html" }]
+  "routes": [
+    { "handle": "filesystem" },
+    { "src": "/(.*)", "dest": "/index.html" }
+  ]
 }
