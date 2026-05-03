@@ -1,17 +1,20 @@
 import { useState, useEffect } from 'react'
 import {
   Users, Search, Mail, Phone, MapPin,
-  Building2, CheckCircle, Clock, XCircle, Plus, SlidersHorizontal,
+  Building2, CheckCircle, Clock, XCircle, Plus, SlidersHorizontal, Ban, ShieldCheck,
 } from 'lucide-react'
+import { Link } from 'wouter'
 import AdminSidebar from '../../components/AdminSidebar'
 import AdminHeader from '../../components/AdminHeader'
 import AuthGuard from '../../components/AuthGuard'
 import { createClient } from '../../lib/supabase'
 
 const STATUS_META: Record<string, { label: string; icon: any; bg: string; text: string; dot: string }> = {
-  approved: { label: 'Verified',  icon: CheckCircle, bg: 'bg-emerald-50', text: 'text-emerald-700', dot: 'bg-emerald-500' },
-  pending:  { label: 'Pending',   icon: Clock,       bg: 'bg-amber-50',   text: 'text-amber-700',   dot: 'bg-amber-500'   },
-  rejected: { label: 'Rejected',  icon: XCircle,     bg: 'bg-red-50',     text: 'text-red-600',     dot: 'bg-red-500'     },
+  approved:      { label: 'Approved',      icon: CheckCircle, bg: 'bg-emerald-50', text: 'text-emerald-700', dot: 'bg-emerald-500' },
+  pending:       { label: 'KYC Pending',   icon: Clock,       bg: 'bg-amber-50',   text: 'text-amber-700',   dot: 'bg-amber-500'   },
+  rejected:      { label: 'Rejected',      icon: XCircle,     bg: 'bg-red-50',     text: 'text-red-600',     dot: 'bg-red-500'     },
+  suspended:     { label: 'Suspended',     icon: Ban,         bg: 'bg-orange-50',  text: 'text-orange-700',  dot: 'bg-orange-500'  },
+  not_submitted: { label: 'Not Submitted', icon: Clock,       bg: 'bg-gray-50',    text: 'text-gray-500',    dot: 'bg-gray-400'    },
 }
 
 const AVATAR_GRADIENTS = [
@@ -76,20 +79,22 @@ export default function AdminLandlords() {
     setFiltered(list)
   }, [search, sort, statusFilter, clients])
 
-  async function handleApprove(id: string) {
+  async function updateStatus(id: string, status: string) {
     setProcessing(id)
     const supabase = createClient()
-    await supabase.from('landlords').update({ status: 'approved' }).eq('id', id)
-    setClients(cs => cs.map(c => c.id === id ? { ...c, status: 'approved' } : c))
+    const patch: any = { status }
+    if (status === 'approved') patch.is_verified = true
+    await supabase.from('landlords').update(patch).eq('id', id)
+    setClients(cs => cs.map(c => c.id === id ? { ...c, ...patch } : c))
     setProcessing(null)
   }
 
-  async function handleReject(id: string) {
-    if (!confirm('Reject this landlord?')) return
+  async function handleDelete(id: string) {
+    if (!confirm('Permanently delete this landlord record? This cannot be undone.')) return
     setProcessing(id)
     const supabase = createClient()
-    await supabase.from('landlords').update({ status: 'rejected' }).eq('id', id)
-    setClients(cs => cs.map(c => c.id === id ? { ...c, status: 'rejected' } : c))
+    await supabase.from('landlords').delete().eq('id', id)
+    setClients(cs => cs.filter(c => c.id !== id))
     setProcessing(null)
   }
 
@@ -98,9 +103,11 @@ export default function AdminLandlords() {
   const approved = clients.filter(c => c.status === 'approved').length
 
   const STATUS_TABS = [
-    { key: 'all',      label: 'All',      count: clients.length },
-    { key: 'approved', label: 'Verified', count: approved },
-    { key: 'pending',  label: 'Pending',  count: pending },
+    { key: 'all',           label: 'All',           count: clients.length },
+    { key: 'approved',      label: 'Approved',      count: approved },
+    { key: 'pending',       label: 'KYC Pending',   count: pending },
+    { key: 'suspended',     label: 'Suspended',     count: clients.filter(c => c.status === 'suspended').length },
+    { key: 'not_submitted', label: 'Not Submitted', count: clients.filter(c => c.status === 'not_submitted').length },
   ]
 
   return (
@@ -111,14 +118,16 @@ export default function AdminLandlords() {
         <div className="flex-1 flex flex-col min-w-0">
           <AdminHeader
             title="Clients"
-            subtitle={`${clients.length.toLocaleString()} landlords${pending > 0 ? ` · ${pending} pending` : ''}`}
+            subtitle={`${clients.length.toLocaleString()} landlords${pending > 0 ? ` · ${pending} pending KYC` : ''}`}
             pendingCount={pending}
             action={
-              <button type="button"
-                className="inline-flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-xl shadow-sm shadow-blue-600/20 transition-colors">
-                <Plus className="w-4 h-4" />
-                <span className="hidden sm:inline">Invite Client</span>
-              </button>
+              <Link href="/admin/kyc">
+                <button type="button"
+                  className="inline-flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-xl shadow-sm shadow-blue-600/20 transition-colors">
+                  <ShieldCheck className="w-4 h-4" />
+                  <span className="hidden sm:inline">KYC Review</span>
+                </button>
+              </Link>
             }
           />
 
@@ -148,10 +157,6 @@ export default function AdminLandlords() {
                   placeholder="Search by name, city, phone…"
                   className="flex-1 text-sm text-gray-700 placeholder-gray-400 focus:outline-none bg-transparent" />
               </div>
-              <button className="flex items-center gap-2 px-3 py-2.5 bg-white border border-gray-200 rounded-xl text-sm font-semibold text-gray-600 hover:bg-gray-50 transition-colors shadow-sm">
-                <SlidersHorizontal className="w-4 h-4" />
-                <span className="hidden sm:inline">Filter</span>
-              </button>
               <select value={sort} onChange={e => setSort(e.target.value)}
                 className="px-3 py-2.5 bg-white border border-gray-200 rounded-xl text-sm font-semibold text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm cursor-pointer">
                 <option value="newest">Newest</option>
@@ -160,17 +165,16 @@ export default function AdminLandlords() {
               </select>
             </div>
 
-            {/* Pending banner */}
+            {/* KYC pending banner */}
             {pending > 0 && statusFilter === 'all' && (
-              <div className="flex items-center gap-3 bg-amber-50 border border-amber-200 rounded-2xl px-5 py-3">
-                <Clock className="w-4 h-4 text-amber-500 shrink-0" />
-                <p className="text-sm font-semibold text-amber-800 flex-1">
-                  {pending} landlord{pending > 1 ? 's' : ''} waiting for approval — review and approve their accounts.
+              <div className="flex items-center gap-3 bg-indigo-50 border border-indigo-200 rounded-2xl px-5 py-3">
+                <ShieldCheck className="w-4 h-4 text-indigo-500 shrink-0" />
+                <p className="text-sm font-semibold text-indigo-800 flex-1">
+                  {pending} landlord{pending > 1 ? 's' : ''} waiting for KYC approval.
                 </p>
-                <button type="button" onClick={() => setStatusFilter('pending')}
-                  className="text-xs font-bold text-amber-700 hover:text-amber-900 transition-colors">
-                  Show pending →
-                </button>
+                <Link href="/admin/kyc" className="text-xs font-bold text-indigo-700 hover:text-indigo-900 transition-colors">
+                  Review KYC →
+                </Link>
               </div>
             )}
 
@@ -186,102 +190,119 @@ export default function AdminLandlords() {
             ) : (
               <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
                 <div className="overflow-x-auto">
-                <table className="w-full min-w-[520px]">
-                  <thead className="bg-slate-50 border-b border-gray-100">
-                    <tr>
-                      <th className="text-left px-5 py-3.5 text-[10px] font-black text-gray-400 uppercase tracking-widest">Landlord</th>
-                      <th className="text-left px-5 py-3.5 text-[10px] font-black text-gray-400 uppercase tracking-widest hidden md:table-cell">Contact</th>
-                      <th className="text-left px-5 py-3.5 text-[10px] font-black text-gray-400 uppercase tracking-widest hidden lg:table-cell">Location</th>
-                      <th className="text-left px-5 py-3.5 text-[10px] font-black text-gray-400 uppercase tracking-widest hidden sm:table-cell">Properties</th>
-                      <th className="text-left px-5 py-3.5 text-[10px] font-black text-gray-400 uppercase tracking-widest">Status</th>
-                      <th className="text-right px-5 py-3.5 text-[10px] font-black text-gray-400 uppercase tracking-widest">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-50">
-                    {filtered.map(l => {
-                      const meta = STATUS_META[l.status] ?? STATUS_META.pending
-                      const StatusIcon = meta.icon
-                      const grad = avatarGrad(l.full_name)
-                      const initials = getInitials(l.full_name)
-                      return (
-                        <tr key={l.id} className="hover:bg-slate-50/60 transition-colors">
-                          <td className="px-5 py-4">
-                            <div className="flex items-center gap-3">
-                              <div className={`w-10 h-10 rounded-full bg-gradient-to-br ${grad} flex items-center justify-center shrink-0 shadow-sm`}>
-                                <span className="text-xs font-bold text-white">{initials}</span>
-                              </div>
-                              <div>
-                                <p className="font-semibold text-gray-900 text-sm leading-tight">{l.full_name}</p>
-                                <p className="text-[11px] text-gray-400 mt-0.5">
-                                  Since {new Date(l.created_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
-                                </p>
-                              </div>
-                            </div>
-                          </td>
-                          <td className="px-5 py-4 hidden md:table-cell">
-                            <div className="space-y-1">
-                              {l.email && (
-                                <div className="flex items-center gap-1.5 text-xs text-gray-500">
-                                  <Mail className="w-3 h-3 text-gray-400" />
-                                  <span className="truncate max-w-[160px]">{l.email}</span>
+                  <table className="w-full min-w-[520px]">
+                    <thead className="bg-slate-50 border-b border-gray-100">
+                      <tr>
+                        <th className="text-left px-5 py-3.5 text-[10px] font-black text-gray-400 uppercase tracking-widest">Landlord</th>
+                        <th className="text-left px-5 py-3.5 text-[10px] font-black text-gray-400 uppercase tracking-widest hidden md:table-cell">Contact</th>
+                        <th className="text-left px-5 py-3.5 text-[10px] font-black text-gray-400 uppercase tracking-widest hidden lg:table-cell">Location</th>
+                        <th className="text-left px-5 py-3.5 text-[10px] font-black text-gray-400 uppercase tracking-widest hidden sm:table-cell">Properties</th>
+                        <th className="text-left px-5 py-3.5 text-[10px] font-black text-gray-400 uppercase tracking-widest">Status</th>
+                        <th className="text-right px-5 py-3.5 text-[10px] font-black text-gray-400 uppercase tracking-widest">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-50">
+                      {filtered.map(l => {
+                        const meta = STATUS_META[l.status] ?? STATUS_META.not_submitted
+                        const StatusIcon = meta.icon
+                        const grad = avatarGrad(l.full_name)
+                        const initials = getInitials(l.full_name)
+                        return (
+                          <tr key={l.id} className="hover:bg-slate-50/60 transition-colors">
+                            <td className="px-5 py-4">
+                              <div className="flex items-center gap-3">
+                                <div className={`w-10 h-10 rounded-full bg-gradient-to-br ${grad} flex items-center justify-center shrink-0 shadow-sm`}>
+                                  <span className="text-xs font-bold text-white">{initials}</span>
                                 </div>
-                              )}
-                              {l.whatsapp && (
-                                <div className="flex items-center gap-1.5 text-xs text-gray-500">
-                                  <Phone className="w-3 h-3 text-gray-400" />
-                                  {l.whatsapp}
+                                <div>
+                                  <p className="font-semibold text-gray-900 text-sm leading-tight">{l.full_name}</p>
+                                  <p className="text-[11px] text-gray-400 mt-0.5">
+                                    Since {new Date(l.created_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
+                                  </p>
                                 </div>
-                              )}
-                            </div>
-                          </td>
-                          <td className="px-5 py-4 hidden lg:table-cell">
-                            {l.city ? (
-                              <div className="flex items-center gap-1.5 text-sm text-gray-600">
-                                <MapPin className="w-3.5 h-3.5 text-gray-400 shrink-0" />
-                                {l.city}
                               </div>
-                            ) : <span className="text-gray-300">—</span>}
-                          </td>
-                          <td className="px-5 py-4 hidden sm:table-cell">
-                            <div className="flex items-center gap-1.5 text-sm font-semibold text-gray-900">
-                              <Building2 className="w-3.5 h-3.5 text-gray-400" />
-                              {l.property_count}
-                            </div>
-                          </td>
-                          <td className="px-5 py-4">
-                            <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold ${meta.bg} ${meta.text}`}>
-                              <span className={`w-1.5 h-1.5 rounded-full ${meta.dot}`} />
-                              {meta.label}
-                            </span>
-                          </td>
-                          <td className="px-5 py-4">
-                            <div className="flex items-center justify-end gap-2">
-                              {l.status === 'pending' && (
-                                <>
-                                  <button type="button"
-                                    onClick={() => handleApprove(l.id)}
-                                    disabled={processing === l.id}
-                                    className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg transition-colors disabled:opacity-50">
-                                    Approve
+                            </td>
+                            <td className="px-5 py-4 hidden md:table-cell">
+                              <div className="space-y-1">
+                                {l.email && (
+                                  <div className="flex items-center gap-1.5 text-xs text-gray-500">
+                                    <Mail className="w-3 h-3 text-gray-400" />
+                                    <span className="truncate max-w-[160px]">{l.email}</span>
+                                  </div>
+                                )}
+                                {l.whatsapp && (
+                                  <div className="flex items-center gap-1.5 text-xs text-gray-500">
+                                    <Phone className="w-3 h-3 text-gray-400" />
+                                    {l.whatsapp}
+                                  </div>
+                                )}
+                              </div>
+                            </td>
+                            <td className="px-5 py-4 hidden lg:table-cell">
+                              {l.city ? (
+                                <div className="flex items-center gap-1.5 text-sm text-gray-600">
+                                  <MapPin className="w-3.5 h-3.5 text-gray-400 shrink-0" />
+                                  {l.city}
+                                </div>
+                              ) : <span className="text-gray-300">—</span>}
+                            </td>
+                            <td className="px-5 py-4 hidden sm:table-cell">
+                              <div className="flex items-center gap-1.5 text-sm font-semibold text-gray-900">
+                                <Building2 className="w-3.5 h-3.5 text-gray-400" />
+                                {l.property_count}
+                              </div>
+                            </td>
+                            <td className="px-5 py-4">
+                              <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold ${meta.bg} ${meta.text}`}>
+                                <span className={`w-1.5 h-1.5 rounded-full ${meta.dot}`} />
+                                {meta.label}
+                              </span>
+                            </td>
+                            <td className="px-5 py-4">
+                              <div className="flex items-center justify-end gap-2 flex-wrap">
+                                {/* KYC pending → quick approve or go to KYC page */}
+                                {l.status === 'pending' && (
+                                  <>
+                                    <Link href="/admin/kyc" className="px-3 py-1.5 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 text-xs font-bold rounded-lg transition-colors">
+                                      Review KYC
+                                    </Link>
+                                    <button type="button" onClick={() => updateStatus(l.id, 'approved')} disabled={processing === l.id}
+                                      className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg transition-colors disabled:opacity-50">
+                                      Approve
+                                    </button>
+                                    <button type="button" onClick={() => updateStatus(l.id, 'suspended')} disabled={processing === l.id}
+                                      className="px-3 py-1.5 bg-orange-50 text-orange-700 hover:bg-orange-100 text-xs font-bold rounded-lg transition-colors disabled:opacity-50">
+                                      Suspend
+                                    </button>
+                                  </>
+                                )}
+                                {l.status === 'approved' && (
+                                  <button type="button" onClick={() => updateStatus(l.id, 'suspended')} disabled={processing === l.id}
+                                    className="px-3 py-1.5 bg-orange-50 text-orange-700 hover:bg-orange-100 text-xs font-bold rounded-lg transition-colors disabled:opacity-50">
+                                    Suspend
                                   </button>
-                                  <button type="button"
-                                    onClick={() => handleReject(l.id)}
-                                    disabled={processing === l.id}
-                                    className="px-3 py-1.5 bg-red-50 text-red-600 hover:bg-red-100 text-xs font-bold rounded-lg transition-colors disabled:opacity-50">
-                                    Reject
+                                )}
+                                {l.status === 'suspended' && (
+                                  <button type="button" onClick={() => updateStatus(l.id, 'approved')} disabled={processing === l.id}
+                                    className="px-3 py-1.5 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 text-xs font-bold rounded-lg transition-colors disabled:opacity-50">
+                                    Reinstate
                                   </button>
-                                </>
-                              )}
-                              {l.status !== 'pending' && (
-                                <span className="text-xs text-gray-400 italic">No actions</span>
-                              )}
-                            </div>
-                          </td>
-                        </tr>
-                      )
-                    })}
-                  </tbody>
-                </table>
+                                )}
+                                {l.status === 'not_submitted' && (
+                                  <span className="text-xs text-gray-400 italic">KYC not submitted</span>
+                                )}
+                                {/* Delete always available */}
+                                <button type="button" onClick={() => handleDelete(l.id)} disabled={processing === l.id}
+                                  className="px-3 py-1.5 bg-red-50 text-red-600 hover:bg-red-100 text-xs font-bold rounded-lg transition-colors disabled:opacity-50">
+                                  Delete
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        )
+                      })}
+                    </tbody>
+                  </table>
                 </div>
               </div>
             )}

@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, ReactNode } from 'react'
 import { useLocation } from 'wouter'
-import { Search, Bell, X, Building2, Users, MessageSquare, ArrowRight, ChevronRight } from 'lucide-react'
+import { Search, Bell, X, Building2, Users, MessageSquare, ArrowRight, ChevronRight, ShieldCheck } from 'lucide-react'
 import { createClient } from '../lib/supabase'
 
 type SearchResult = {
@@ -16,7 +16,7 @@ type Notif = {
   label: string
   sub: string
   href: string
-  type: 'warning' | 'info'
+  type: 'warning' | 'info' | 'kyc' | 'signup'
 }
 
 interface AdminHeaderProps {
@@ -39,24 +39,66 @@ export default function AdminHeader({ title, subtitle, action, pendingCount = 0 
   const notifRef  = useRef<HTMLDivElement>(null)
   const inputRef  = useRef<HTMLInputElement>(null)
 
-  // Load notifications once
+  // Load notifications: KYC pending + new signups (last 48h) + open enquiries
   useEffect(() => {
     const supabase = createClient()
+    const cutoff = new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString()
+
     Promise.all([
-      supabase.from('landlords').select('id, full_name, city, status').eq('status', 'pending').limit(5),
+      // Landlords with pending KYC
+      supabase.from('landlords').select('id, full_name, city, status').eq('status', 'pending').order('created_at', { ascending: false }).limit(5),
+      // Brand-new landlord signups (last 48h, any status)
+      supabase.from('landlords').select('id, full_name, created_at').gte('created_at', cutoff).order('created_at', { ascending: false }).limit(5),
+      // New tenant signups (last 48h)
+      supabase.from('tenants').select('id, full_name, created_at').gte('created_at', cutoff).order('created_at', { ascending: false }).limit(5),
+      // Open enquiries
       supabase.from('enquiries').select('id, message, status, properties(title)').eq('status', 'open').order('created_at', { ascending: false }).limit(3),
-    ]).then(([{ data: pending }, { data: enqs }]) => {
+    ]).then(([{ data: kycPending }, { data: newLandlords }, { data: newTenants }, { data: enqs }]) => {
       const items: Notif[] = []
-      for (const l of pending ?? []) {
-        items.push({ id: l.id, label: `${l.full_name} awaiting approval`, sub: l.city ?? 'Nigeria', href: '/admin/landlords', type: 'warning' })
+      const seen = new Set<string>()
+
+      // KYC awaiting review
+      for (const l of kycPending ?? []) {
+        if (!seen.has(l.id)) {
+          seen.add(l.id)
+          items.push({ id: `kyc-${l.id}`, label: `${l.full_name} submitted KYC`, sub: 'Awaiting your review', href: '/admin/kyc', type: 'kyc' })
+        }
       }
+
+      // New landlord signups
+      for (const l of newLandlords ?? []) {
+        if (!seen.has(l.id)) {
+          seen.add(l.id)
+          const ago = relAgo(l.created_at)
+          items.push({ id: `ll-${l.id}`, label: `${l.full_name} signed up as landlord`, sub: ago, href: '/admin/kyc', type: 'signup' })
+        }
+      }
+
+      // New tenant signups
+      for (const t of newTenants ?? []) {
+        const ago = relAgo(t.created_at)
+        items.push({ id: `tn-${t.id}`, label: `${t.full_name} created an account`, sub: ago, href: '/admin/activity', type: 'signup' })
+      }
+
+      // Open enquiries
       for (const e of enqs ?? []) {
-        items.push({ id: e.id, label: (e as any).properties?.title ?? 'Property enquiry', sub: e.message?.slice(0, 50) ?? '', href: '/admin/properties', type: 'info' })
+        items.push({ id: `eq-${e.id}`, label: (e as any).properties?.title ?? 'Property enquiry', sub: (e.message ?? '').slice(0, 55), href: '/admin/properties', type: 'info' })
       }
+
       setNotifs(items)
       setUnread(items.length)
     })
   }, [])
+
+  function relAgo(ts: string) {
+    const diff = Date.now() - new Date(ts).getTime()
+    const m = Math.floor(diff / 60000)
+    if (m < 1) return 'just now'
+    if (m < 60) return `${m} min ago`
+    const h = Math.floor(m / 60)
+    if (h < 24) return `${h}h ago`
+    return `${Math.floor(h / 24)}d ago`
+  }
 
   // Debounced search
   useEffect(() => {
@@ -66,7 +108,7 @@ export default function AdminHeader({ title, subtitle, action, pendingCount = 0 
       const supabase = createClient()
       const q = query.trim()
       const [propRes, llRes] = await Promise.all([
-        supabase.from('properties').select('id, title, city, property_type, price').ilike('title', `%${q}%`).limit(5),
+        supabase.from('properties').select('id, title, city, price').ilike('title', `%${q}%`).limit(5),
         supabase.from('landlords').select('id, full_name, city, status').ilike('full_name', `%${q}%`).limit(4),
       ])
       const out: SearchResult[] = [
@@ -88,46 +130,37 @@ export default function AdminHeader({ title, subtitle, action, pendingCount = 0 
   // Close on outside click
   useEffect(() => {
     function handle(e: MouseEvent) {
-      if (searchRef.current && !searchRef.current.contains(e.target as Node)) {
-        setShowSearch(false)
-      }
-      if (notifRef.current && !notifRef.current.contains(e.target as Node)) {
-        setShowNotif(false)
-      }
+      if (searchRef.current && !searchRef.current.contains(e.target as Node)) setShowSearch(false)
+      if (notifRef.current && !notifRef.current.contains(e.target as Node)) setShowNotif(false)
     }
     document.addEventListener('mousedown', handle)
     return () => document.removeEventListener('mousedown', handle)
   }, [])
 
   function openSearch() {
-    setShowSearch(true)
-    setShowNotif(false)
+    setShowSearch(true); setShowNotif(false)
     setTimeout(() => inputRef.current?.focus(), 50)
   }
 
-  function clearSearch() {
-    setQuery('')
-    setResults([])
-    inputRef.current?.focus()
-  }
-
-  function goToResult(href: string) {
-    setShowSearch(false)
-    setQuery('')
-    navigate(href)
-  }
-
   function openNotif() {
-    setShowNotif(v => !v)
-    setShowSearch(false)
-    setUnread(0)
+    setShowNotif(v => !v); setShowSearch(false); setUnread(0)
+  }
+
+  function goTo(href: string) {
+    setShowSearch(false); setShowNotif(false); setQuery(''); navigate(href)
   }
 
   const ICON_MAP = { property: Building2, landlord: Users, enquiry: MessageSquare }
 
+  const notifIconFor = (type: Notif['type']) => {
+    if (type === 'kyc')    return { Icon: ShieldCheck, bg: 'bg-indigo-100', ic: 'text-indigo-600' }
+    if (type === 'signup') return { Icon: Users,       bg: 'bg-blue-100',   ic: 'text-blue-600'   }
+    if (type === 'warning')return { Icon: Users,       bg: 'bg-amber-100',  ic: 'text-amber-600'  }
+    return                        { Icon: MessageSquare,bg: 'bg-blue-100',  ic: 'text-blue-600'   }
+  }
+
   return (
     <header className="flex items-center justify-between pl-14 pr-4 md:px-6 py-3.5 bg-white border-b border-gray-100 shrink-0 gap-3">
-      {/* Title */}
       <div className="min-w-0">
         <h1 className="text-base font-extrabold text-gray-900 truncate">{title}</h1>
         {subtitle && <p className="text-xs text-gray-400 mt-0.5 truncate">{subtitle}</p>}
@@ -139,14 +172,12 @@ export default function AdminHeader({ title, subtitle, action, pendingCount = 0 
           {showSearch ? (
             <div className="flex items-center gap-2 bg-white border-2 border-blue-500 rounded-xl px-3 py-2 w-56 md:w-72 shadow-lg shadow-blue-500/10 transition-all">
               <Search className="w-3.5 h-3.5 text-blue-500 shrink-0" />
-              <input
-                ref={inputRef}
-                value={query}
-                onChange={e => setQuery(e.target.value)}
+              <input ref={inputRef} value={query} onChange={e => setQuery(e.target.value)}
                 placeholder="Search properties, landlords…"
                 className="bg-transparent text-xs text-gray-700 placeholder-gray-400 focus:outline-none w-full" />
               {query && (
-                <button type="button" onClick={clearSearch} className="text-gray-400 hover:text-gray-600 transition-colors shrink-0">
+                <button type="button" onClick={() => { setQuery(''); setResults([]); inputRef.current?.focus() }}
+                  className="text-gray-400 hover:text-gray-600 shrink-0">
                   <X className="w-3.5 h-3.5" />
                 </button>
               )}
@@ -159,7 +190,6 @@ export default function AdminHeader({ title, subtitle, action, pendingCount = 0 
             </button>
           )}
 
-          {/* Results dropdown */}
           {showSearch && (searching || results.length > 0 || query.trim()) && (
             <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl shadow-2xl border border-gray-100 py-2 z-50 overflow-hidden min-w-[280px]">
               {searching && (
@@ -177,7 +207,7 @@ export default function AdminHeader({ title, subtitle, action, pendingCount = 0 
                   {results.map(r => {
                     const Icon = ICON_MAP[r.type] ?? Building2
                     return (
-                      <button key={r.id} type="button" onClick={() => goToResult(r.href)}
+                      <button key={r.id} type="button" onClick={() => goTo(r.href)}
                         className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-blue-50 transition-colors group">
                         <div className="w-7 h-7 rounded-lg bg-blue-100 flex items-center justify-center shrink-0">
                           <Icon className="w-3.5 h-3.5 text-blue-600" />
@@ -208,14 +238,15 @@ export default function AdminHeader({ title, subtitle, action, pendingCount = 0 
             )}
           </button>
 
-          {/* Notification panel */}
           {showNotif && (
             <div className="absolute top-full right-0 mt-2 w-80 bg-white rounded-2xl shadow-2xl border border-gray-100 z-50 overflow-hidden">
               <div className="flex items-center justify-between px-4 py-3.5 border-b border-gray-100">
                 <h3 className="text-sm font-extrabold text-gray-900">Notifications</h3>
-                <span className="text-[10px] font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full">
-                  {notifs.length} new
-                </span>
+                {notifs.length > 0 && (
+                  <span className="text-[10px] font-bold text-red-600 bg-red-50 px-2 py-0.5 rounded-full">
+                    {notifs.length} new
+                  </span>
+                )}
               </div>
 
               {notifs.length === 0 ? (
@@ -225,37 +256,39 @@ export default function AdminHeader({ title, subtitle, action, pendingCount = 0 
                 </div>
               ) : (
                 <div className="divide-y divide-gray-50 max-h-80 overflow-y-auto">
-                  {notifs.map(n => (
-                    <button key={n.id} type="button" onClick={() => { navigate(n.href); setShowNotif(false) }}
-                      className="w-full flex items-start gap-3 px-4 py-3.5 hover:bg-blue-50/50 transition-colors text-left group">
-                      <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 mt-0.5 ${
-                        n.type === 'warning' ? 'bg-amber-100' : 'bg-blue-100'
-                      }`}>
-                        {n.type === 'warning'
-                          ? <Users className="w-4 h-4 text-amber-600" />
-                          : <MessageSquare className="w-4 h-4 text-blue-600" />}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-xs font-semibold text-gray-800 leading-snug group-hover:text-blue-700 transition-colors">{n.label}</p>
-                        <p className="text-[11px] text-gray-400 mt-0.5 line-clamp-1">{n.sub}</p>
-                      </div>
-                      <ChevronRight className="w-3.5 h-3.5 text-gray-300 group-hover:text-blue-500 shrink-0 mt-1 transition-colors" />
-                    </button>
-                  ))}
+                  {notifs.map(n => {
+                    const { Icon, bg, ic } = notifIconFor(n.type)
+                    return (
+                      <button key={n.id} type="button" onClick={() => goTo(n.href)}
+                        className="w-full flex items-start gap-3 px-4 py-3.5 hover:bg-blue-50/50 transition-colors text-left group">
+                        <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 mt-0.5 ${bg}`}>
+                          <Icon className={`w-4 h-4 ${ic}`} />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs font-semibold text-gray-800 leading-snug group-hover:text-blue-700 transition-colors">{n.label}</p>
+                          <p className="text-[11px] text-gray-400 mt-0.5 line-clamp-1">{n.sub}</p>
+                        </div>
+                        <ChevronRight className="w-3.5 h-3.5 text-gray-300 group-hover:text-blue-500 shrink-0 mt-1 transition-colors" />
+                      </button>
+                    )
+                  })}
                 </div>
               )}
 
-              <div className="px-4 py-3 border-t border-gray-100">
-                <button type="button" onClick={() => { navigate('/admin/landlords'); setShowNotif(false) }}
-                  className="w-full flex items-center justify-center gap-1.5 text-xs font-semibold text-blue-600 hover:text-blue-700 transition-colors">
-                  View all activity <ArrowRight className="w-3 h-3" />
+              <div className="px-4 py-3 border-t border-gray-100 flex gap-3">
+                <button type="button" onClick={() => goTo('/admin/activity')}
+                  className="flex-1 flex items-center justify-center gap-1.5 text-xs font-semibold text-blue-600 hover:text-blue-700 transition-colors">
+                  Activity log <ArrowRight className="w-3 h-3" />
+                </button>
+                <button type="button" onClick={() => goTo('/admin/kyc')}
+                  className="flex-1 flex items-center justify-center gap-1.5 text-xs font-semibold text-indigo-600 hover:text-indigo-700 transition-colors">
+                  KYC review <ArrowRight className="w-3 h-3" />
                 </button>
               </div>
             </div>
           )}
         </div>
 
-        {/* Optional action button */}
         {action}
       </div>
     </header>

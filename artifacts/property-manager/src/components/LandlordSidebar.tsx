@@ -84,8 +84,8 @@ export default function LandlordSidebar({ userName, userEmail, isVerified }: Pro
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
                   <span className="text-[15px] font-extrabold text-white tracking-tight">Livana</span>
-                  <span className="text-[9px] font-bold bg-white/10 text-white/70 border border-white/[0.12] px-2 py-0.5 rounded-full uppercase tracking-wider">
-                    Landlord
+                  <span className="text-[9px] font-bold bg-white/10 text-white/70 border border-white/[0.12] px-2 py-0.5 rounded-full tracking-wider truncate max-w-[80px]">
+                    {displayName.split(' ')[0]}
                   </span>
                 </div>
               </div>

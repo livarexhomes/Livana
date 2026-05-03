@@ -18,6 +18,8 @@ import LandlordProfile from "./pages/landlord/LandlordProfile";
 import LandlordPending from "./pages/landlord/LandlordPending";
 import LandlordRejected from "./pages/landlord/LandlordRejected";
 import LandlordSettings from "./pages/landlord/LandlordSettings";
+import LandlordKYCPage from "./pages/landlord/LandlordKYCPage";
+import LandlordSuspended from "./pages/landlord/LandlordSuspended";
 
 import UserDashboard from "./pages/user/UserDashboard";
 import UserSaved from "./pages/user/UserSaved";
@@ -31,6 +33,8 @@ import AdminProjects from "./pages/admin/AdminProjects";
 import AdminUsers from "./pages/admin/AdminUsers";
 import AdminSettings from "./pages/admin/AdminSettings";
 import AdminHelp from "./pages/admin/AdminHelp";
+import AdminKYC from "./pages/admin/AdminKYC";
+import AdminActivity from "./pages/admin/AdminActivity";
 
 function NotFound() {
   return (
@@ -66,8 +70,10 @@ function Router() {
       <Route path="/landlord/listings/:id/edit" component={LandlordListingForm} />
       <Route path="/landlord/enquiries" component={LandlordEnquiries} />
       <Route path="/landlord/profile" component={LandlordProfile} />
+      <Route path="/landlord/kyc" component={LandlordKYCPage} />
       <Route path="/landlord/pending" component={LandlordPending} />
       <Route path="/landlord/rejected" component={LandlordRejected} />
+      <Route path="/landlord/suspended" component={LandlordSuspended} />
       <Route path="/landlord/settings" component={LandlordSettings} />
 
       <Route path="/user" component={UserDashboard} />
@@ -80,6 +86,8 @@ function Router() {
       <Route path="/admin/properties" component={AdminProperties} />
       <Route path="/admin/projects" component={AdminProjects} />
       <Route path="/admin/users" component={AdminUsers} />
+      <Route path="/admin/kyc" component={AdminKYC} />
+      <Route path="/admin/activity" component={AdminActivity} />
       <Route path="/admin/settings" component={AdminSettings} />
       <Route path="/admin/help" component={AdminHelp} />
 
