@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link, useLocation } from 'wouter'
-import { Eye, EyeOff } from 'lucide-react'
+import { Eye, EyeOff, ShieldCheck, Building2, Users } from 'lucide-react'
 import { createClient, isSupabaseConfigured } from '../lib/supabase'
 import { isAdminUser } from '../lib/auth'
 import type { User } from '@supabase/supabase-js'
@@ -52,80 +52,32 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-white px-4">
-      <div className="w-full max-w-sm">
-        <Link href="/" className="flex items-center gap-2 mb-8">
-          <div className="w-8 h-8 rounded-lg bg-[#6b9e6e] flex items-center justify-center">
-            <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z" /></svg>
-          </div>
-          <span className="font-bold text-gray-900">Livana</span>
-        </Link>
-
-        <h1 className="text-2xl font-bold text-gray-900 mb-8 leading-snug">
-          Sign in to unlock the best of<br />Livana
-        </h1>
-
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <input
-            type="email"
-            required
-            autoComplete="email"
-            placeholder="Email Address"
-            value={email}
-            onChange={e => setEmail(e.target.value)}
-            className="w-full px-4 py-3.5 rounded-xl border border-gray-200 bg-gray-50 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#6b9e6e] focus:border-transparent transition"
-          />
-
-          <div className="relative">
-            <input
-              type={showPassword ? 'text' : 'password'}
-              required
-              autoComplete="current-password"
-              placeholder="Password"
-              value={password}
-              onChange={e => setPassword(e.target.value)}
-              className="w-full px-4 py-3.5 pr-12 rounded-xl border border-gray-200 bg-gray-50 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#6b9e6e] focus:border-transparent transition"
-            />
-            <button
-              type="button"
-              onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition"
-              aria-label={showPassword ? 'Hide password' : 'Show password'}
-            >
-              {showPassword ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
-            </button>
-          </div>
-
-          {error && (
-            <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-xl px-4 py-3">
-              {error}
+    <div className="min-h-screen flex bg-white">
+      {/* ── Left: Form ── */}
+      <div className="flex-1 flex flex-col justify-center px-6 sm:px-12 lg:px-16 py-12">
+        <div className="max-w-md w-full mx-auto">
+          {/* Logo */}
+          <Link href="/" className="inline-flex items-center gap-2.5 mb-10 group">
+            <div className="w-9 h-9 rounded-xl bg-blue-600 flex items-center justify-center shadow-lg shadow-blue-600/30">
+              <svg className="w-4.5 h-4.5 text-white w-[18px] h-[18px]" fill="currentColor" viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z" /></svg>
             </div>
-          )}
+            <span className="text-lg font-extrabold text-gray-900 tracking-tight">Livana</span>
+          </Link>
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full py-3.5 bg-[#6b9e6e] hover:bg-[#5d8f60] disabled:opacity-60 text-white font-semibold rounded-full transition"
-          >
-            {loading ? 'Signing in…' : 'Proceed'}
-          </button>
-
-          <p className="text-center text-sm text-gray-500">
-            New?{' '}
-            <Link href="/register" className="text-[#6b9e6e] hover:underline font-medium">Register here</Link>
-          </p>
-
-          <div className="flex items-center gap-3 my-2">
-            <div className="flex-1 h-px bg-gray-200" />
-            <span className="text-xs text-gray-400 font-medium">or</span>
-            <div className="flex-1 h-px bg-gray-200" />
+          {/* Heading */}
+          <div className="mb-8">
+            <h1 className="text-3xl sm:text-4xl font-extrabold text-gray-900 leading-tight tracking-tight mb-2">
+              Welcome back
+            </h1>
+            <p className="text-gray-500 text-base">Sign in to your Livana account to continue.</p>
           </div>
 
+          {/* Google */}
           <button
             type="button"
             onClick={handleGoogle}
             disabled={googleLoading}
-            className="w-full flex items-center justify-center gap-3 py-3.5 rounded-full border border-gray-200 bg-white hover:bg-gray-50 text-sm font-medium text-gray-700 transition disabled:opacity-60"
+            className="w-full flex items-center justify-center gap-3 py-3.5 rounded-2xl border border-gray-200 bg-white hover:bg-gray-50 hover:border-gray-300 text-sm font-semibold text-gray-700 transition-all disabled:opacity-60 shadow-sm mb-6"
           >
             <svg className="w-5 h-5" viewBox="0 0 24 24">
               <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
@@ -135,7 +87,133 @@ export default function LoginPage() {
             </svg>
             {googleLoading ? 'Redirecting…' : 'Continue with Google'}
           </button>
-        </form>
+
+          {/* Divider */}
+          <div className="flex items-center gap-4 mb-6">
+            <div className="flex-1 h-px bg-gray-100" />
+            <span className="text-xs text-gray-400 font-semibold uppercase tracking-widest">or</span>
+            <div className="flex-1 h-px bg-gray-100" />
+          </div>
+
+          {/* Form */}
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <label className="block text-xs font-semibold text-gray-500 uppercase tracking-widest mb-1.5">Email address</label>
+              <input
+                type="email"
+                required
+                autoComplete="email"
+                placeholder="you@example.com"
+                value={email}
+                onChange={e => setEmail(e.target.value)}
+                className="w-full px-4 py-3.5 rounded-2xl border border-gray-200 bg-gray-50 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:bg-white transition-all"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-gray-500 uppercase tracking-widest mb-1.5">Password</label>
+              <div className="relative">
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  required
+                  autoComplete="current-password"
+                  placeholder="Enter your password"
+                  value={password}
+                  onChange={e => setPassword(e.target.value)}
+                  className="w-full px-4 py-3.5 pr-12 rounded-2xl border border-gray-200 bg-gray-50 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:bg-white transition-all"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition"
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
+                >
+                  {showPassword ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+                </button>
+              </div>
+            </div>
+
+            {error && (
+              <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-2xl px-4 py-3">
+                {error}
+              </div>
+            )}
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full py-3.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white font-bold rounded-2xl transition-all shadow-lg shadow-blue-600/25 text-sm mt-2"
+            >
+              {loading ? 'Signing in…' : 'Sign in'}
+            </button>
+          </form>
+
+          <p className="text-center text-sm text-gray-500 mt-6">
+            Don't have an account?{' '}
+            <Link href="/register" className="text-blue-600 hover:text-blue-700 font-semibold">Create one free</Link>
+          </p>
+        </div>
+      </div>
+
+      {/* ── Right: Brand panel (hidden on mobile) ── */}
+      <div className="hidden lg:flex lg:w-[48%] xl:w-[52%] bg-gray-950 flex-col justify-between p-12 xl:p-16 relative overflow-hidden">
+        {/* Background image */}
+        <img
+          src="https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=1400&q=80"
+          alt="Modern home"
+          className="absolute inset-0 w-full h-full object-cover opacity-20"
+        />
+        <div className="absolute inset-0 bg-gradient-to-br from-blue-900/60 via-gray-950/80 to-gray-950" />
+
+        {/* Top: logo + tagline */}
+        <div className="relative z-10">
+          <div className="flex items-center gap-2.5 mb-16">
+            <div className="w-9 h-9 rounded-xl bg-blue-600 flex items-center justify-center">
+              <svg className="w-[18px] h-[18px] text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z" /></svg>
+            </div>
+            <span className="text-white text-lg font-extrabold tracking-tight">Livana</span>
+          </div>
+
+          <h2 className="text-4xl xl:text-5xl font-extrabold text-white leading-tight tracking-tight mb-4">
+            Nigeria's most<br />trusted property<br />platform.
+          </h2>
+          <p className="text-gray-400 text-base leading-relaxed max-w-xs">
+            Browse verified listings, contact landlords directly, and move in faster — no agent fees.
+          </p>
+        </div>
+
+        {/* Middle: trust badges */}
+        <div className="relative z-10 space-y-4 my-10">
+          {[
+            { icon: ShieldCheck, label: 'Verified landlords only', desc: 'Every landlord reviewed & approved' },
+            { icon: Building2, label: 'Real listings, real prices', desc: 'No fake or inflated listings' },
+            { icon: Users, label: 'Direct contact', desc: 'WhatsApp landlords in one tap' },
+          ].map(({ icon: Icon, label, desc }) => (
+            <div key={label} className="flex items-center gap-4">
+              <div className="w-10 h-10 rounded-xl bg-blue-600/20 border border-blue-500/30 flex items-center justify-center shrink-0">
+                <Icon className="w-5 h-5 text-blue-400" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-white">{label}</p>
+                <p className="text-xs text-gray-500">{desc}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Bottom: social proof */}
+        <div className="relative z-10 grid grid-cols-3 gap-4">
+          {[
+            { num: '902+', label: 'Properties' },
+            { num: '319+', label: 'Landlords' },
+            { num: '₦0', label: 'Agent fees' },
+          ].map(s => (
+            <div key={s.label} className="bg-white/5 border border-white/10 rounded-2xl px-4 py-4 text-center">
+              <p className="text-xl font-extrabold text-white">{s.num}</p>
+              <p className="text-xs text-gray-500 mt-0.5">{s.label}</p>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   )
