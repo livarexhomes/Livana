@@ -570,8 +570,11 @@ export default function PropertyDetailPage() {
               <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
                 <h3 className="font-bold text-gray-900 mb-4 text-sm uppercase tracking-wide text-gray-500">Listed by</h3>
                 <div className="flex items-center gap-3 mb-3">
-                  <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center shrink-0 shadow-sm">
-                    <span className="text-white font-bold text-sm">{landlordInitials}</span>
+                  <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center shrink-0 shadow-sm overflow-hidden">
+                    {landlord.avatar_url
+                      ? <img src={landlord.avatar_url} alt={landlord.full_name ?? ''} className="w-full h-full object-cover" onError={e => { (e.currentTarget as HTMLImageElement).style.display = 'none' }} />
+                      : <span className="text-white font-bold text-sm">{landlordInitials}</span>
+                    }
                   </div>
                   <div className="min-w-0">
                     <div className="flex items-center gap-1.5 flex-wrap">

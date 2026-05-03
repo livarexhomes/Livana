@@ -3,7 +3,7 @@ import { Link } from 'wouter'
 import {
   Building2, Search, LayoutGrid, List,
   MapPin, BedDouble, Bath, Pencil, Trash2, ArrowRight, Plus, Eye,
-  SlidersHorizontal, CheckCircle, Clock, XCircle, X, Save,
+  SlidersHorizontal, CheckCircle, Clock, XCircle, X, Save, Loader2,
 } from 'lucide-react'
 import AdminSidebar from '../../components/AdminSidebar'
 import AdminHeader from '../../components/AdminHeader'
@@ -44,6 +44,17 @@ const STATUS_META: Record<string, { label: string; icon: any; cls: string }> = {
 type EditForm = { title: string; city: string; price: string; type: string; status: string; bedrooms: string; bathrooms: string }
 const emptyEdit: EditForm = { title: '', city: '', price: '', type: 'rent', status: 'available', bedrooms: '', bathrooms: '' }
 
+type AddForm = {
+  landlord_id: string; title: string; city: string; state: string
+  property_type: string; type: string; status: string
+  price: string; bedrooms: string; bathrooms: string; description: string
+}
+const emptyAdd: AddForm = {
+  landlord_id: '', title: '', city: '', state: '',
+  property_type: 'Apartment', type: 'rent', status: 'available',
+  price: '', bedrooms: '', bathrooms: '', description: '',
+}
+
 export default function AdminProperties() {
   const [user, setUser]             = useState<{ email?: string } | null>(null)
   const [properties, setProperties] = useState<any[]>([])
@@ -57,6 +68,10 @@ export default function AdminProperties() {
   const [editingProp, setEditingProp] = useState<any | null>(null)
   const [editForm, setEditForm]     = useState<EditForm>(emptyEdit)
   const [saving, setSaving]         = useState(false)
+  const [addOpen, setAddOpen]       = useState(false)
+  const [addForm, setAddForm]       = useState<AddForm>(emptyAdd)
+  const [addSaving, setAddSaving]   = useState(false)
+  const [landlords, setLandlords]   = useState<{ id: string; full_name: string }[]>([])
 
   useEffect(() => {
     const supabase = createClient()
@@ -70,6 +85,11 @@ export default function AdminProperties() {
         setFiltered(data ?? [])
         setLoading(false)
       })
+    supabase
+      .from('landlords')
+      .select('id, full_name')
+      .order('full_name')
+      .then(({ data }) => setLandlords(data ?? []))
   }, [])
 
   useEffect(() => {
@@ -112,6 +132,34 @@ export default function AdminProperties() {
     })
   }
 
+  async function handleAddSave() {
+    if (!addForm.landlord_id) { alert('Please select a landlord.'); return }
+    if (!addForm.title.trim() || !addForm.city.trim() || !addForm.price) { alert('Title, city and price are required.'); return }
+    setAddSaving(true)
+    const supabase = createClient()
+    const { data, error } = await supabase.from('properties').insert({
+      landlord_id:   addForm.landlord_id,
+      title:         addForm.title.trim(),
+      city:          addForm.city.trim(),
+      state:         addForm.state.trim() || null,
+      property_type: addForm.property_type,
+      type:          addForm.type,
+      status:        addForm.status,
+      price:         Number(addForm.price),
+      bedrooms:      addForm.bedrooms ? Number(addForm.bedrooms) : null,
+      bathrooms:     addForm.bathrooms ? Number(addForm.bathrooms) : null,
+      description:   addForm.description.trim() || null,
+    }).select('*, landlords(full_name, is_verified), property_images(id, storage_path, is_cover, sort_order)').single()
+    setAddSaving(false)
+    if (!error && data) {
+      setProperties(ps => [data, ...ps])
+      setAddForm(emptyAdd)
+      setAddOpen(false)
+    } else {
+      alert(error?.message ?? 'Failed to create listing.')
+    }
+  }
+
   async function handleEditSave() {
     if (!editingProp) return
     setSaving(true)
@@ -148,9 +196,15 @@ export default function AdminProperties() {
 
         <div className="flex-1 flex flex-col min-w-0">
           <AdminHeader
-            title="Properties"
+            title="Listings"
             subtitle={`${properties.length.toLocaleString()} total listings`}
-            action={undefined}
+            action={
+              <button type="button" onClick={() => setAddOpen(true)}
+                className="inline-flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-xl transition-colors shadow-sm shadow-blue-600/20">
+                <Plus className="w-4 h-4" />
+                <span className="hidden sm:inline">Add Listing</span>
+              </button>
+            }
           />
 
           <main className="flex-1 overflow-y-auto p-4 md:p-6 pb-24 md:pb-6 space-y-4">
@@ -452,7 +506,140 @@ export default function AdminProperties() {
           </div>
         )}
       </div>
-    </AuthGuard>
 
+      {/* ── Add Listing Modal ── */}
+      {addOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col">
+            <div className="flex items-center justify-between px-6 py-5 border-b border-gray-100 shrink-0">
+              <div>
+                <h2 className="text-lg font-extrabold text-gray-900">Add New Listing</h2>
+                <p className="text-xs text-gray-400 mt-0.5">Create a property listing on behalf of a landlord</p>
+              </div>
+              <button type="button" onClick={() => { setAddOpen(false); setAddForm(emptyAdd) }}
+                className="w-8 h-8 flex items-center justify-center rounded-xl text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto px-6 py-5 space-y-4">
+              {/* Landlord */}
+              <div>
+                <label className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1.5 block">Landlord *</label>
+                <select value={addForm.landlord_id} onChange={e => setAddForm(f => ({ ...f, landlord_id: e.target.value }))}
+                  className="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
+                  <option value="">Select a landlord…</option>
+                  {landlords.map(l => <option key={l.id} value={l.id}>{l.full_name}</option>)}
+                </select>
+                {landlords.length === 0 && (
+                  <p className="text-xs text-amber-600 mt-1">No landlords found — make sure Supabase is connected.</p>
+                )}
+              </div>
+
+              {/* Title */}
+              <div>
+                <label className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1.5 block">Listing Title *</label>
+                <input value={addForm.title} onChange={e => setAddForm(f => ({ ...f, title: e.target.value }))}
+                  placeholder="e.g. Luxury 3-Bedroom Apartment in Lekki"
+                  className="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+              </div>
+
+              {/* City + State */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1.5 block">City *</label>
+                  <input value={addForm.city} onChange={e => setAddForm(f => ({ ...f, city: e.target.value }))}
+                    placeholder="e.g. Lagos"
+                    className="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                </div>
+                <div>
+                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1.5 block">State</label>
+                  <input value={addForm.state} onChange={e => setAddForm(f => ({ ...f, state: e.target.value }))}
+                    placeholder="e.g. Lagos State"
+                    className="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                </div>
+              </div>
+
+              {/* Type + Property Type */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1.5 block">Listing Type</label>
+                  <select value={addForm.type} onChange={e => setAddForm(f => ({ ...f, type: e.target.value }))}
+                    className="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
+                    <option value="rent">For Rent</option>
+                    <option value="sale">For Sale</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1.5 block">Property Type</label>
+                  <select value={addForm.property_type} onChange={e => setAddForm(f => ({ ...f, property_type: e.target.value }))}
+                    className="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
+                    {['Apartment','Villa','Duplex','Bungalow','Studio','Office','Shop','Land','Townhouse'].map(t =>
+                      <option key={t} value={t}>{t}</option>
+                    )}
+                  </select>
+                </div>
+              </div>
+
+              {/* Price + Status */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1.5 block">Price (₦) *</label>
+                  <input type="number" min="0" value={addForm.price} onChange={e => setAddForm(f => ({ ...f, price: e.target.value }))}
+                    placeholder="e.g. 2500000"
+                    className="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                </div>
+                <div>
+                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1.5 block">Status</label>
+                  <select value={addForm.status} onChange={e => setAddForm(f => ({ ...f, status: e.target.value }))}
+                    className="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
+                    <option value="available">Available</option>
+                    <option value="taken">Taken</option>
+                    <option value="coming_soon">Coming Soon</option>
+                    <option value="under_negotiation">Under Negotiation</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Bedrooms + Bathrooms */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1.5 block">Bedrooms</label>
+                  <input type="number" min="0" value={addForm.bedrooms} onChange={e => setAddForm(f => ({ ...f, bedrooms: e.target.value }))}
+                    placeholder="e.g. 3"
+                    className="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                </div>
+                <div>
+                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1.5 block">Bathrooms</label>
+                  <input type="number" min="0" value={addForm.bathrooms} onChange={e => setAddForm(f => ({ ...f, bathrooms: e.target.value }))}
+                    placeholder="e.g. 2"
+                    className="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                </div>
+              </div>
+
+              {/* Description */}
+              <div>
+                <label className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1.5 block">Description</label>
+                <textarea value={addForm.description} onChange={e => setAddForm(f => ({ ...f, description: e.target.value }))}
+                  rows={3} placeholder="Brief description of the property…"
+                  className="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none" />
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-gray-100 bg-gray-50 rounded-b-3xl shrink-0">
+              <button type="button" onClick={() => { setAddOpen(false); setAddForm(emptyAdd) }}
+                className="px-4 py-2 text-sm font-semibold text-gray-600 hover:text-gray-800 transition-colors">
+                Cancel
+              </button>
+              <button type="button" onClick={handleAddSave} disabled={addSaving}
+                className="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white text-sm font-bold rounded-xl transition-colors shadow-sm shadow-blue-600/20">
+                {addSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
+                {addSaving ? 'Creating…' : 'Create Listing'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </AuthGuard>
   )
 }

@@ -1,12 +1,13 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import {
   Search, MapPin, Calendar, Plus, TrendingUp, Building2,
   Pencil, Trash2, X, CheckCircle, AlertCircle, MoreVertical,
+  Upload, ImageIcon, Loader2,
 } from 'lucide-react'
 import AdminSidebar from '../../components/AdminSidebar'
 import AdminHeader from '../../components/AdminHeader'
 import AuthGuard from '../../components/AuthGuard'
-import { createClient } from '../../lib/supabase'
+import { createClient, getSupabaseProjectImageUrl } from '../../lib/supabase'
 
 type ProjectStatus = 'active' | 'coming_soon' | 'completed' | 'on_hold'
 
@@ -90,6 +91,8 @@ export default function AdminProjects() {
   const [deleteId, setDeleteId]           = useState<string | null>(null)
   const [toast, setToast]                 = useState<{ msg: string; ok: boolean } | null>(null)
   const [saving, setSaving]               = useState(false)
+  const [uploading, setUploading]         = useState(false)
+  const fileInputRef                      = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     const supabase = createClient()
@@ -164,6 +167,31 @@ export default function AdminProjects() {
 
   const F = (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) =>
     setForm(f => ({ ...f, [k]: e.target.type === 'number' ? Number(e.target.value) : e.target.value }))
+
+  async function handleCoverUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setUploading(true)
+    try {
+      const supabase = createClient()
+      const ext = file.name.split('.').pop() ?? 'jpg'
+      const path = `covers/${crypto.randomUUID()}.${ext}`
+      const { error } = await supabase.storage
+        .from('project-images')
+        .upload(path, file, { upsert: true, contentType: file.type })
+      if (error) {
+        showToast(`Upload failed: ${error.message}. Run SUPABASE_MIGRATION_5.sql first.`, false)
+      } else {
+        setForm(f => ({ ...f, image: getSupabaseProjectImageUrl(path) }))
+        showToast('Cover photo uploaded.')
+      }
+    } catch (err: any) {
+      showToast(`Upload error: ${err.message}`, false)
+    } finally {
+      setUploading(false)
+      if (fileInputRef.current) fileInputRef.current.value = ''
+    }
+  }
 
   return (
     <AuthGuard require="admin">
@@ -423,9 +451,42 @@ export default function AdminProjects() {
                     className="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none" />
                 </div>
                 <div className="col-span-2">
-                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1.5 block">Cover Image URL</label>
-                  <input value={form.image} onChange={F('image')} placeholder="https://..."
-                    className="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1.5 block">Cover Picture</label>
+                  <input ref={fileInputRef} type="file" accept="image/*" onChange={handleCoverUpload} className="hidden" />
+                  {form.image ? (
+                    <div className="relative rounded-xl overflow-hidden border border-gray-200 group h-40">
+                      <img src={form.image} alt="Cover" className="w-full h-full object-cover" />
+                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3">
+                        <button type="button" onClick={() => fileInputRef.current?.click()} disabled={uploading}
+                          className="flex items-center gap-1.5 px-3 py-2 bg-white text-gray-800 text-xs font-bold rounded-lg hover:bg-gray-100 transition-colors">
+                          {uploading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Upload className="w-3.5 h-3.5" />}
+                          Replace
+                        </button>
+                        <button type="button" onClick={() => setForm(f => ({ ...f, image: '' }))}
+                          className="flex items-center gap-1.5 px-3 py-2 bg-red-600 text-white text-xs font-bold rounded-lg hover:bg-red-700 transition-colors">
+                          <X className="w-3.5 h-3.5" /> Remove
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <button type="button" onClick={() => fileInputRef.current?.click()} disabled={uploading}
+                      className="w-full h-36 border-2 border-dashed border-gray-200 rounded-xl flex flex-col items-center justify-center gap-2 text-gray-400 hover:border-blue-400 hover:text-blue-500 hover:bg-blue-50/40 transition-all group">
+                      {uploading ? (
+                        <>
+                          <Loader2 className="w-7 h-7 animate-spin text-blue-500" />
+                          <span className="text-xs font-semibold text-blue-500">Uploading…</span>
+                        </>
+                      ) : (
+                        <>
+                          <div className="w-11 h-11 rounded-xl bg-gray-100 group-hover:bg-blue-100 flex items-center justify-center transition-colors">
+                            <ImageIcon className="w-5 h-5" />
+                          </div>
+                          <span className="text-xs font-semibold">Click to upload cover picture</span>
+                          <span className="text-[11px]">JPG, PNG, WebP — recommended 1200×800</span>
+                        </>
+                      )}
+                    </button>
+                  )}
                 </div>
                 <div>
                   <label className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1.5 block">Starting Price (₦)</label>
