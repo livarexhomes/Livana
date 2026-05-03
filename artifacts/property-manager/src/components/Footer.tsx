@@ -6,13 +6,8 @@ export default function Footer() {
       <div className="max-w-7xl mx-auto px-5 sm:px-8 pt-16 pb-10">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-10 pb-12 border-b border-white/8">
           <div className="col-span-2 md:col-span-1">
-            <Link href="/" className="flex items-center gap-2.5 mb-5">
-              <div className="w-9 h-9 rounded-xl bg-blue-600 flex items-center justify-center shadow-lg shadow-blue-600/30">
-                <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z" />
-                </svg>
-              </div>
-              <span className="text-white font-bold text-xl tracking-tight">Livana</span>
+            <Link href="/" className="flex items-center mb-5">
+              <img src="/livana-logo-transparent.png" alt="Livana" className="h-9 w-auto brightness-0 invert" />
             </Link>
             <p className="text-sm leading-relaxed text-gray-400 max-w-xs">
               Nigeria's most trusted property platform. Connecting verified landlords with quality tenants since 2024.

@@ -50,13 +50,8 @@ export default function PublicNavbar() {
       scrolled ? 'shadow-sm' : ''
     }`}>
       <div className="max-w-7xl mx-auto px-5 sm:px-8 h-18 flex items-center gap-8" style={{ height: '72px' }}>
-        <Link href="/" className="flex items-center gap-2.5 shrink-0">
-          <div className="w-9 h-9 rounded-xl bg-blue-600 flex items-center justify-center shadow-lg shadow-blue-600/30">
-            <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z" />
-            </svg>
-          </div>
-          <span className="text-xl font-bold tracking-tight text-gray-900">Livana</span>
+        <Link href="/" className="flex items-center shrink-0">
+          <img src="/livana-logo-transparent.png" alt="Livana" className="h-11 w-auto" />
         </Link>
 
         <div className="hidden md:flex items-center gap-1 flex-1">
