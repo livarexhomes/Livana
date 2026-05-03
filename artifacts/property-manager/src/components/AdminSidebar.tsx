@@ -4,15 +4,17 @@ import { createClient } from '../lib/supabase'
 import {
   LayoutDashboard, Building2, UserPlus, FolderKanban, UserCog,
   Settings, HelpCircle, LogOut, Menu, X,
-  PanelLeftClose, PanelLeftOpen,
+  PanelLeftClose, PanelLeftOpen, ShieldCheck, Activity,
 } from 'lucide-react'
 
 const mainNav = [
-  { label: 'Dashboard',  href: '/admin',            exact: true,  icon: LayoutDashboard },
-  { label: 'Properties', href: '/admin/properties', exact: false, icon: Building2 },
-  { label: 'Clients',    href: '/admin/landlords',  exact: false, icon: UserPlus },
-  { label: 'Projects',   href: '/admin/projects',   exact: false, icon: FolderKanban },
-  { label: 'Users',      href: '/admin/users',      exact: false, icon: UserCog },
+  { label: 'Dashboard',    href: '/admin',            exact: true,  icon: LayoutDashboard },
+  { label: 'Properties',  href: '/admin/properties', exact: false, icon: Building2 },
+  { label: 'Clients',     href: '/admin/landlords',  exact: false, icon: UserPlus },
+  { label: 'KYC Review',  href: '/admin/kyc',        exact: false, icon: ShieldCheck },
+  { label: 'Projects',    href: '/admin/projects',   exact: false, icon: FolderKanban },
+  { label: 'Users',       href: '/admin/users',      exact: false, icon: UserCog },
+  { label: 'Activity Log',href: '/admin/activity',   exact: false, icon: Activity },
 ]
 const supportNav = [
   { label: 'Settings',       href: '/admin/settings', exact: false, icon: Settings },
@@ -148,23 +150,19 @@ export default function AdminSidebar({ userEmail, userName }: Props) {
 
   return (
     <>
-      {/* Desktop sidebar — fixed height, never scrolls */}
       <aside className={`hidden md:flex shrink-0 flex-col h-screen sticky top-0 z-30 transition-all duration-300 ease-in-out ${collapsed ? 'w-16' : 'w-64'}`}>
         <SidebarContent />
       </aside>
 
-      {/* Mobile hamburger */}
       <button type="button" onClick={() => setOpen(true)}
         className="md:hidden fixed top-3 left-3 z-50 w-9 h-9 flex items-center justify-center rounded-xl bg-[#0c0c15] border border-white/10 shadow-lg text-white hover:bg-[#14141f] active:scale-95 transition-all"
         aria-label="Open menu">
         <Menu className="w-4 h-4" />
       </button>
 
-      {/* Mobile backdrop */}
       <div onClick={() => setOpen(false)}
         className={`md:hidden fixed inset-0 z-40 bg-black/70 backdrop-blur-sm transition-opacity duration-300 ${open ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`} />
 
-      {/* Mobile drawer */}
       <div className={`md:hidden fixed top-0 left-0 h-full w-72 max-w-[85vw] z-50 shadow-2xl transition-transform duration-300 ease-in-out ${open ? 'translate-x-0' : '-translate-x-full'}`}>
         <SidebarContent mobile />
       </div>

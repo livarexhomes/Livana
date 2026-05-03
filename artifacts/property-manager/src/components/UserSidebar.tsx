@@ -4,6 +4,7 @@ import { createClient } from '../lib/supabase'
 import {
   LayoutDashboard, Heart, MessageSquare, User,
   LogOut, Menu, X, Building2, PanelLeftClose, PanelLeftOpen,
+  Home, Key, Briefcase, ShoppingBag,
 } from 'lucide-react'
 
 const mainNav = [
@@ -11,6 +12,13 @@ const mainNav = [
   { href: '/user/saved',     label: 'Saved',     icon: Heart,           exact: false },
   { href: '/user/enquiries', label: 'Enquiries', icon: MessageSquare,   exact: false },
   { href: '/user/profile',   label: 'Profile',   icon: User,            exact: false },
+]
+
+const exploreNav = [
+  { href: '/listings?type=rent',       label: 'Rent',       icon: Key       },
+  { href: '/listings?type=sale',       label: 'Buy',        icon: Home      },
+  { href: '/listings?type=lease',      label: 'Lease',      icon: Briefcase },
+  { href: '/listings?type=commercial', label: 'Commercial', icon: ShoppingBag },
 ]
 
 interface Props {
@@ -65,30 +73,36 @@ export default function UserSidebar({ displayName = 'User', userEmail, initials 
     )
   }
 
+  const ExploreItem = ({ item, c }: { item: typeof exploreNav[0]; c: boolean }) => {
+    const Icon = item.icon
+    return (
+      <Link href={item.href} title={c ? item.label : undefined}
+        className={`group flex items-center ${c ? 'justify-center p-2.5 mx-1' : 'gap-3 px-3 py-2.5'} rounded-xl text-sm font-medium text-white/45 hover:text-white/90 hover:bg-white/[0.06] transition-all duration-200`}>
+        <Icon className={`shrink-0 ${c ? 'w-[18px] h-[18px]' : 'w-[17px] h-[17px]'} text-white/40 group-hover:text-white/70`} strokeWidth={1.7} />
+        {!c && <span className="flex-1 truncate">{item.label}</span>}
+      </Link>
+    )
+  }
+
   const SidebarContent = ({ mobile = false }: { mobile?: boolean }) => {
     const c = collapsed && !mobile
     return (
       <div className="flex flex-col h-full bg-[#0c0c15]">
         {/* Logo */}
         <div className={`flex items-center ${c ? 'justify-center px-0 py-[18px]' : 'gap-3 px-5 py-[18px]'} border-b border-white/[0.06] shrink-0`}>
-          <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center shadow-lg shadow-blue-500/30 shrink-0">
-            <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z" />
-            </svg>
-          </div>
+          <img
+            src="/livana-logo-transparent.png"
+            alt="Livana"
+            className={`shrink-0 brightness-0 invert ${c ? 'h-8' : 'h-9'}`}
+          />
           {(!c || mobile) && (
             <>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                  <span className="text-[15px] font-extrabold text-white tracking-tight">Livana</span>
-                  <span className="text-[9px] font-bold bg-white/10 text-white/70 border border-white/[0.12] px-2 py-0.5 rounded-full uppercase tracking-wider">
-                    Tenant
-                  </span>
-                </div>
-              </div>
+              <span className="text-[9px] font-bold bg-white/10 text-white/70 border border-white/[0.12] px-2 py-0.5 rounded-full uppercase tracking-wider">
+                Tenant
+              </span>
               {mobile && (
                 <button type="button" onClick={onClose}
-                  className="w-7 h-7 flex items-center justify-center rounded-lg text-white/40 hover:text-white/80 hover:bg-white/[0.08] transition-colors shrink-0 ml-1">
+                  className="w-7 h-7 flex items-center justify-center rounded-lg text-white/40 hover:text-white/80 hover:bg-white/[0.08] transition-colors shrink-0 ml-auto">
                   <X className="w-4 h-4" />
                 </button>
               )}
@@ -102,14 +116,11 @@ export default function UserSidebar({ displayName = 'User', userEmail, initials 
           {mainNav.map(item => <NavItem key={item.href} item={item} c={c} />)}
 
           <div className={c ? 'py-3' : 'pt-5 pb-1'}>
-            {!c && <p className="px-3 text-[10px] font-bold uppercase tracking-[0.14em] text-white/20">Explore</p>}
+            {!c && <p className="px-3 text-[10px] font-bold uppercase tracking-[0.14em] text-white/20">Browse</p>}
             {c && <div className="mx-2 h-px bg-white/[0.06]" />}
           </div>
-          <Link href="/listings" title={c ? 'Browse Listings' : undefined}
-            className={`group flex items-center ${c ? 'justify-center p-2.5 mx-1' : 'gap-3 px-3 py-2.5'} rounded-xl text-sm font-medium text-white/45 hover:text-white/90 hover:bg-white/[0.06] transition-all duration-200`}>
-            <Building2 className={`shrink-0 ${c ? 'w-[18px] h-[18px]' : 'w-[17px] h-[17px]'} text-white/40 group-hover:text-white/70`} strokeWidth={1.7} />
-            {!c && <span>Browse Listings</span>}
-          </Link>
+
+          {exploreNav.map(item => <ExploreItem key={item.href} item={item} c={c} />)}
         </nav>
 
         {/* Footer */}
@@ -149,12 +160,12 @@ export default function UserSidebar({ displayName = 'User', userEmail, initials 
 
   return (
     <>
-      {/* Desktop sidebar — fixed height, never scrolls */}
+      {/* Desktop sidebar */}
       <aside className={`hidden md:flex shrink-0 flex-col h-screen sticky top-0 z-30 transition-all duration-300 ease-in-out ${collapsed ? 'w-16' : 'w-64'}`}>
         <SidebarContent />
       </aside>
 
-      {/* Mobile hamburger — handled by UserLayout */}
+      {/* Mobile hamburger placeholder — handled by UserLayout */}
       <button type="button" aria-hidden className="md:hidden fixed top-3 left-3 z-50 w-9 h-9 pointer-events-none opacity-0">
         <Menu className="w-4 h-4" />
       </button>
