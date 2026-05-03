@@ -1,0 +1,14 @@
+{
+  "name": "Property Manager",
+  "image": "mcr.microsoft.com/devcontainers/javascript-node:22",
+  "forwardPorts": [3000],
+  "portsAttributes": {
+    "3000": {
+      "label": "Next.js Dev Server",
+      "onAutoForward": "openPreview"
+    }
+  },
+  "remoteEnv": {
+    "PORT": "3000"
+  }
+}

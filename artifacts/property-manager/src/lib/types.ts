@@ -1,0 +1,91 @@
+export type PropertyType = 'sale' | 'rent'
+export type PropertyStatus = 'available' | 'taken' | 'coming_soon' | 'under_negotiation'
+export type LandlordStatus = 'not_submitted' | 'pending' | 'approved' | 'rejected' | 'suspended'
+
+export interface Landlord {
+  id: string
+  user_id: string
+  full_name: string
+  whatsapp: string
+  bio: string | null
+  avatar_url: string | null
+  status: LandlordStatus
+  is_verified: boolean
+  created_at: string
+  updated_at: string
+}
+
+export interface Property {
+  id: string
+  landlord_id: string | null
+  title: string
+  description: string | null
+  address: string
+  city: string
+  price: number
+  bedrooms: number
+  bathrooms: number
+  area_sqft: number | null
+  type: PropertyType
+  status: PropertyStatus
+  featured: boolean
+  created_at: string
+  updated_at: string
+}
+
+export interface PropertyImage {
+  id: string
+  property_id: string
+  storage_path: string
+  alt_text: string | null
+  is_cover: boolean
+  sort_order: number
+  created_at: string
+}
+
+export interface PropertyWithLandlord extends Property {
+  landlords: Pick<Landlord, 'full_name' | 'whatsapp' | 'is_verified'> | null
+  property_images: Pick<PropertyImage, 'id' | 'storage_path' | 'alt_text' | 'is_cover' | 'sort_order'>[]
+}
+
+export interface Tenant {
+  id: string
+  user_id: string
+  full_name: string
+  phone: string | null
+  created_at: string
+  updated_at: string
+}
+
+export type EnquiryStatus = 'open' | 'replied' | 'closed'
+
+export interface SavedProperty {
+  id: string
+  tenant_id: string
+  property_id: string
+  created_at: string
+}
+
+export interface Enquiry {
+  id: string
+  tenant_id: string
+  property_id: string
+  landlord_id: string | null
+  message: string
+  status: EnquiryStatus
+  created_at: string
+  updated_at: string
+}
+
+export interface SavedPropertyWithProperty extends SavedProperty {
+  properties: PropertyWithLandlord
+}
+
+export interface EnquiryWithProperty extends Enquiry {
+  properties: Pick<Property, 'id' | 'title' | 'city' | 'price' | 'type'>
+}
+
+export interface EnquiryWithTenantAndProperty extends Enquiry {
+  properties: Pick<Property, 'id' | 'title' | 'city' | 'price' | 'type'>
+  tenants: Pick<Tenant, 'full_name' | 'phone'> | null
+}
