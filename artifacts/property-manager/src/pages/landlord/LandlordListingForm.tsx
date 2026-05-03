@@ -115,13 +115,19 @@ export default function LandlordListingForm() {
     if (imageFiles.length === 0) return
     const supabase = createClient()
     const hasExistingCover = existingImages.some(i => i.is_cover)
+    const uploadErrors: string[] = []
 
     for (let i = 0; i < imageFiles.length; i++) {
       const file = imageFiles[i]
-      const ext = file.name.split('.').pop()
+      const ext = file.name.split('.').pop() ?? 'jpg'
       const path = `${landlordId}/${propertyId}/${Date.now()}-${i}.${ext}`
-      const { error: uploadErr } = await supabase.storage.from('property-images').upload(path, file, { upsert: false })
-      if (uploadErr) { console.error('Upload error:', uploadErr); continue }
+      const { error: uploadErr } = await supabase.storage
+        .from('property-images')
+        .upload(path, file, { upsert: true, contentType: file.type })
+      if (uploadErr) {
+        uploadErrors.push(`Photo ${i + 1}: ${uploadErr.message}`)
+        continue
+      }
       await supabase.from('property_images').insert({
         property_id: propertyId,
         storage_path: path,
@@ -129,6 +135,10 @@ export default function LandlordListingForm() {
         sort_order: existingImages.length + i,
         alt_text: form.title || null,
       })
+    }
+
+    if (uploadErrors.length > 0) {
+      setError(`Listing saved, but some photos failed to upload:\n${uploadErrors.join('\n')}\n\nPlease make sure the property-images storage bucket is set up in Supabase (run SUPABASE_MIGRATION_4.sql).`)
     }
   }
 

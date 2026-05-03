@@ -7,7 +7,7 @@ import {
 } from 'lucide-react'
 import LandlordSidebar from '../../components/LandlordSidebar'
 import AuthGuard from '../../components/AuthGuard'
-import { createClient } from '../../lib/supabase'
+import { createClient, getSupabaseImageUrl } from '../../lib/supabase'
 import type { Landlord, Property } from '../../lib/types'
 
 const STATUS_STYLE: Record<string, { bg: string; text: string; dot: string; label: string }> = {
@@ -44,7 +44,7 @@ export default function LandlordDashboard() {
       setLandlord(l)
       if (l) {
         const [propsRes, enqsRes] = await Promise.all([
-          supabase.from('properties').select('*').eq('landlord_id', l.id).order('created_at', { ascending: false }).limit(5),
+          supabase.from('properties').select('*, property_images(id, storage_path, alt_text, is_cover, sort_order)').eq('landlord_id', l.id).order('created_at', { ascending: false }).limit(5),
           supabase.from('enquiries').select('*, properties(title)').eq('landlord_id', l.id).order('created_at', { ascending: false }).limit(4),
         ])
         const props = (propsRes.data as Property[] | null) ?? []
@@ -274,8 +274,14 @@ export default function LandlordDashboard() {
                           const st = STATUS_STYLE[p.status] ?? { bg: 'bg-gray-100', text: 'text-gray-600', dot: 'bg-gray-400', label: p.status }
                           return (
                             <div key={p.id} className="flex items-center gap-3 px-5 py-3.5 hover:bg-slate-50/60 transition-colors">
-                              <div className="w-9 h-9 rounded-xl bg-blue-50 flex items-center justify-center shrink-0">
-                                <Building2 className="w-4 h-4 text-blue-600" />
+                              <div className="w-9 h-9 rounded-xl bg-blue-50 flex items-center justify-center shrink-0 overflow-hidden">
+                                {(() => {
+                                  const imgs: any[] = (p as any).property_images ?? []
+                                  const cover = imgs.find((i: any) => i.is_cover) ?? imgs[0]
+                                  return cover
+                                    ? <img src={getSupabaseImageUrl(cover.storage_path)} alt={p.title} className="w-full h-full object-cover" onError={e => { (e.currentTarget as HTMLImageElement).style.display = 'none' }} />
+                                    : <Building2 className="w-4 h-4 text-blue-600" />
+                                })()}
                               </div>
                               <div className="flex-1 min-w-0">
                                 <p className="text-sm font-semibold text-gray-900 truncate">{p.title}</p>
