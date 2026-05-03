@@ -18,9 +18,10 @@ interface Props {
   userName?: string | null
   userEmail?: string | null
   isVerified?: boolean
+  avatarUrl?: string | null
 }
 
-export default function LandlordSidebar({ userName, userEmail, isVerified }: Props) {
+export default function LandlordSidebar({ userName, userEmail, isVerified, avatarUrl }: Props) {
   const [location] = useLocation()
   const [open, setOpen] = useState(false)
   const [collapsed, setCollapsed] = useState(() => {
@@ -120,8 +121,11 @@ export default function LandlordSidebar({ userName, userEmail, isVerified }: Pro
           )}
 
           <div className={`flex items-center ${c ? 'justify-center px-0 py-3.5' : 'gap-3 px-4 py-3'} hover:bg-white/[0.04] transition-colors cursor-default`}>
-            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-violet-400 to-blue-600 flex items-center justify-center shrink-0 shadow-sm">
-              <span className="text-xs font-bold text-white">{initials}</span>
+            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-violet-400 to-blue-600 flex items-center justify-center shrink-0 shadow-sm overflow-hidden">
+              {avatarUrl
+                ? <img src={avatarUrl} alt={displayName} className="w-full h-full object-cover" onError={e => { (e.currentTarget as HTMLImageElement).style.display = 'none' }} />
+                : <span className="text-xs font-bold text-white">{initials}</span>
+              }
             </div>
             {(!c || mobile) && (
               <>
