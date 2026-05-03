@@ -91,7 +91,7 @@ export default function LandlordListingForm() {
   if (loadingData) {
     return (
       <AuthGuard require="landlord">
-        <div className="flex min-h-screen bg-[#F4F6FB]">
+        <div className="flex h-screen overflow-hidden bg-[#F4F6FB]">
           <LandlordSidebar userName={landlord?.full_name} userEmail={user?.email} />
           <div className="flex-1 flex items-center justify-center">
             <div className="animate-spin w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full" />
@@ -103,7 +103,7 @@ export default function LandlordListingForm() {
 
   return (
     <AuthGuard require="landlord">
-      <div className="flex min-h-screen bg-[#F4F6FB]">
+      <div className="flex h-screen overflow-hidden bg-[#F4F6FB]">
         <LandlordSidebar userName={landlord?.full_name} userEmail={user?.email} isVerified={landlord?.is_verified} />
 
         <div className="flex-1 flex flex-col min-w-0">

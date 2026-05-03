@@ -30,7 +30,7 @@ export function UserLayout({ children, title }: { children: React.ReactNode; tit
   const initials = displayName.split(' ').slice(0, 2).map((w: string) => w[0]).join('').toUpperCase() || 'U'
 
   return (
-    <div className="flex min-h-screen bg-[#F4F6FB]">
+    <div className="flex h-screen overflow-hidden bg-[#F4F6FB]">
       <UserSidebar
         displayName={displayName}
         userEmail={user?.email}
