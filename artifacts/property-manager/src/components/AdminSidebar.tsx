@@ -3,7 +3,7 @@ import { Link, useLocation } from 'wouter'
 import { createClient } from '../lib/supabase'
 import {
   LayoutDashboard, Building2, UserPlus, FolderKanban, UserCog,
-  Settings, HelpCircle, LogOut, Menu, X, ChevronRight,
+  Settings, HelpCircle, LogOut, Menu, X,
   PanelLeftClose, PanelLeftOpen,
 } from 'lucide-react'
 
@@ -49,120 +49,120 @@ export default function AdminSidebar({ userEmail, userName }: Props) {
     window.location.href = '/'
   }
 
-  const NavItem = ({ item, collapsed: c }: { item: typeof mainNav[0]; collapsed: boolean }) => {
+  const NavItem = ({ item, c }: { item: typeof mainNav[0]; c: boolean }) => {
     const active = isActive(item)
     const Icon = item.icon
     return (
       <Link href={item.href} title={c ? item.label : undefined}
-        className={`group flex items-center ${c ? 'justify-center px-0 py-2.5 mx-1' : 'gap-3 px-3 py-2.5'} rounded-xl text-sm font-medium transition-all duration-200 ${
+        className={`group relative flex items-center ${c ? 'justify-center p-2.5 mx-1' : 'gap-3 px-3 py-2.5'} rounded-xl text-sm font-medium transition-all duration-200 ${
           active
-            ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/25'
-            : 'text-slate-400 hover:text-white hover:bg-white/8'
+            ? 'bg-white/[0.12] text-white'
+            : 'text-white/45 hover:text-white/90 hover:bg-white/[0.06]'
         }`}>
-        <Icon className={`shrink-0 transition-colors ${c ? 'w-5 h-5' : 'w-[18px] h-[18px]'} ${active ? 'text-white' : 'text-slate-500 group-hover:text-slate-300'}`} strokeWidth={active ? 2 : 1.7} />
+        {active && !c && <span className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-5 bg-white rounded-r-full" />}
+        <Icon className={`shrink-0 ${c ? 'w-[18px] h-[18px]' : 'w-[17px] h-[17px]'} transition-colors ${
+          active ? 'text-white' : 'text-white/40 group-hover:text-white/70'
+        }`} strokeWidth={active ? 2 : 1.7} />
         {!c && <span className="flex-1 truncate">{item.label}</span>}
-        {!c && active && <ChevronRight className="w-3.5 h-3.5 text-blue-300 shrink-0" />}
       </Link>
     )
   }
 
-  const SidebarContent = ({ mobile = false }: { mobile?: boolean }) => (
-    <div className="flex flex-col h-full bg-slate-900">
-      {/* Logo */}
-      <div className={`flex items-center ${collapsed && !mobile ? 'justify-center px-0 py-4' : 'gap-3 px-5 py-4'} border-b border-white/6 shrink-0`}>
-        <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center shadow-lg shadow-blue-600/40 shrink-0">
-          <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 24 24">
-            <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z" />
-          </svg>
-        </div>
-        {(!collapsed || mobile) && (
-          <>
-            <span className="text-base font-extrabold text-white tracking-tight flex-1 min-w-0 truncate">Livana</span>
-            <span className="text-[9px] font-bold bg-blue-600/20 border border-blue-500/30 text-blue-400 px-2 py-0.5 rounded-full uppercase tracking-wide shrink-0">
-              Admin
-            </span>
-          </>
-        )}
-        {mobile && (
-          <button type="button" onClick={() => setOpen(false)}
-            className="w-7 h-7 flex items-center justify-center rounded-lg text-slate-400 hover:text-white hover:bg-white/10 transition-colors ml-1 shrink-0">
-            <X className="w-4 h-4" />
-          </button>
-        )}
-      </div>
-
-      {/* Nav */}
-      <nav className="flex-1 px-2 pt-3 pb-2 space-y-0.5 overflow-y-auto">
-        {(!collapsed || mobile) && (
-          <p className="px-3 mb-2 text-[10px] font-bold uppercase tracking-[0.14em] text-slate-500">Main</p>
-        )}
-        {mainNav.map(item => <NavItem key={item.label} item={item} collapsed={collapsed && !mobile} />)}
-
-        <div className={`${collapsed && !mobile ? 'py-2' : 'pt-4 pb-1'}`}>
-          {(!collapsed || mobile) && (
-            <p className="px-3 text-[10px] font-bold uppercase tracking-[0.14em] text-slate-500">Support</p>
-          )}
-          {collapsed && !mobile && <div className="mx-2 h-px bg-white/8" />}
-        </div>
-        {supportNav.map(item => <NavItem key={item.label} item={item} collapsed={collapsed && !mobile} />)}
-      </nav>
-
-      {/* Profile + Collapse toggle */}
-      <div className="border-t border-white/6 shrink-0">
-        {/* Collapse toggle — desktop only */}
-        {!mobile && (
-          <button type="button" onClick={toggleCollapse}
-            className={`w-full flex items-center ${collapsed ? 'justify-center py-3' : 'gap-2 px-5 py-2.5'} text-slate-500 hover:text-slate-300 hover:bg-white/5 transition-all duration-200`}
-            title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}>
-            {collapsed
-              ? <PanelLeftOpen className="w-4 h-4" />
-              : <>
-                  <PanelLeftClose className="w-4 h-4" />
-                  <span className="text-xs font-medium">Collapse</span>
-                </>
-            }
-          </button>
-        )}
-
-        {/* Profile row */}
-        <div className={`flex items-center ${collapsed && !mobile ? 'justify-center px-0 py-3' : 'gap-3 px-4 py-3'} hover:bg-white/5 transition-colors cursor-default`}>
-          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center shrink-0 shadow-sm">
-            <span className="text-xs font-bold text-white">{initials}</span>
+  const SidebarContent = ({ mobile = false }: { mobile?: boolean }) => {
+    const c = collapsed && !mobile
+    return (
+      <div className="flex flex-col h-full bg-[#0c0c15]">
+        {/* Logo */}
+        <div className={`flex items-center ${c ? 'justify-center px-0 py-[18px]' : 'gap-3 px-5 py-[18px]'} border-b border-white/[0.06] shrink-0`}>
+          <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-indigo-500 to-blue-600 flex items-center justify-center shadow-lg shadow-blue-600/30 shrink-0">
+            <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z" />
+            </svg>
           </div>
-          {(!collapsed || mobile) && (
+          {(!c || mobile) && (
             <>
-              <div className="min-w-0 flex-1">
-                <p className="text-sm font-semibold text-white truncate leading-tight">{displayName}</p>
-                <p className="text-[11px] text-slate-500 truncate mt-0.5">{userEmail ?? 'admin@livana.com'}</p>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <span className="text-[15px] font-extrabold text-white tracking-tight">Livana</span>
+                  <span className="text-[9px] font-bold bg-white/10 text-white/70 border border-white/[0.12] px-2 py-0.5 rounded-full uppercase tracking-wider">
+                    Admin
+                  </span>
+                </div>
               </div>
-              <button type="button" onClick={handleLogout} title="Sign out"
-                className="w-7 h-7 flex items-center justify-center rounded-lg text-slate-500 hover:text-red-400 hover:bg-red-500/10 transition-colors shrink-0">
-                <LogOut className="w-3.5 h-3.5" />
-              </button>
+              {mobile && (
+                <button type="button" onClick={() => setOpen(false)}
+                  className="w-7 h-7 flex items-center justify-center rounded-lg text-white/40 hover:text-white/80 hover:bg-white/[0.08] transition-colors shrink-0 ml-1">
+                  <X className="w-4 h-4" />
+                </button>
+              )}
             </>
           )}
         </div>
+
+        {/* Nav */}
+        <nav className="flex-1 px-2 pt-4 pb-2 space-y-0.5 overflow-y-auto">
+          {!c && <p className="px-3 mb-2 text-[10px] font-bold uppercase tracking-[0.14em] text-white/20">Main</p>}
+          {mainNav.map(item => <NavItem key={item.label} item={item} c={c} />)}
+
+          <div className={c ? 'py-3' : 'pt-5 pb-1'}>
+            {!c && <p className="px-3 text-[10px] font-bold uppercase tracking-[0.14em] text-white/20">Support</p>}
+            {c && <div className="mx-2 h-px bg-white/[0.06]" />}
+          </div>
+          {supportNav.map(item => <NavItem key={item.label} item={item} c={c} />)}
+        </nav>
+
+        {/* Footer */}
+        <div className="border-t border-white/[0.06] shrink-0">
+          {!mobile && (
+            <button type="button" onClick={toggleCollapse}
+              className={`w-full flex items-center ${c ? 'justify-center py-3' : 'gap-2 px-5 py-2.5'} text-white/25 hover:text-white/60 hover:bg-white/[0.04] transition-all duration-200`}
+              title={c ? 'Expand sidebar' : 'Collapse sidebar'}>
+              {c
+                ? <PanelLeftOpen className="w-4 h-4" />
+                : <><PanelLeftClose className="w-4 h-4" /><span className="text-xs font-medium">Collapse</span></>
+              }
+            </button>
+          )}
+
+          <div className={`flex items-center ${c ? 'justify-center px-0 py-3.5' : 'gap-3 px-4 py-3'} hover:bg-white/[0.04] transition-colors cursor-default`}>
+            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-400 to-blue-600 flex items-center justify-center shrink-0 shadow-sm">
+              <span className="text-xs font-bold text-white">{initials}</span>
+            </div>
+            {(!c || mobile) && (
+              <>
+                <div className="min-w-0 flex-1">
+                  <p className="text-[13px] font-semibold text-white/90 truncate leading-tight">{displayName}</p>
+                  <p className="text-[11px] text-white/35 truncate mt-0.5">{userEmail ?? 'admin@livana.com'}</p>
+                </div>
+                <button type="button" onClick={handleLogout} title="Sign out"
+                  className="w-7 h-7 flex items-center justify-center rounded-lg text-white/30 hover:text-red-400 hover:bg-red-500/10 transition-colors shrink-0">
+                  <LogOut className="w-3.5 h-3.5" />
+                </button>
+              </>
+            )}
+          </div>
+        </div>
       </div>
-    </div>
-  )
+    )
+  }
 
   return (
     <>
-      {/* Desktop sidebar */}
-      <aside className={`hidden md:flex shrink-0 flex-col bg-slate-900 min-h-screen sticky top-0 z-30 transition-all duration-300 ease-in-out ${collapsed ? 'w-16' : 'w-64'}`}>
+      {/* Desktop sidebar — fixed height, never scrolls */}
+      <aside className={`hidden md:flex shrink-0 flex-col h-screen sticky top-0 z-30 transition-all duration-300 ease-in-out ${collapsed ? 'w-16' : 'w-64'}`}>
         <SidebarContent />
       </aside>
 
       {/* Mobile hamburger */}
       <button type="button" onClick={() => setOpen(true)}
-        className="md:hidden fixed top-3 left-3 z-50 w-9 h-9 flex items-center justify-center rounded-xl bg-slate-900 border border-white/10 shadow-lg text-white hover:bg-slate-800 active:scale-95 transition-all"
+        className="md:hidden fixed top-3 left-3 z-50 w-9 h-9 flex items-center justify-center rounded-xl bg-[#0c0c15] border border-white/10 shadow-lg text-white hover:bg-[#14141f] active:scale-95 transition-all"
         aria-label="Open menu">
         <Menu className="w-4 h-4" />
       </button>
 
       {/* Mobile backdrop */}
       <div onClick={() => setOpen(false)}
-        className={`md:hidden fixed inset-0 z-40 bg-black/60 backdrop-blur-sm transition-opacity duration-300 ${open ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`} />
+        className={`md:hidden fixed inset-0 z-40 bg-black/70 backdrop-blur-sm transition-opacity duration-300 ${open ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`} />
 
       {/* Mobile drawer */}
       <div className={`md:hidden fixed top-0 left-0 h-full w-72 max-w-[85vw] z-50 shadow-2xl transition-transform duration-300 ease-in-out ${open ? 'translate-x-0' : '-translate-x-full'}`}>
