@@ -64,11 +64,8 @@ export default function LoginPage() {
       <div className="flex-1 flex flex-col justify-center px-6 sm:px-12 lg:px-16 py-12">
         <div className="max-w-md w-full mx-auto">
           {/* Logo */}
-          <Link href="/" className="inline-flex items-center gap-2.5 mb-10 group">
-            <div className="w-9 h-9 rounded-xl bg-blue-600 flex items-center justify-center shadow-lg shadow-blue-600/30">
-              <svg className="w-4.5 h-4.5 text-white w-[18px] h-[18px]" fill="currentColor" viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z" /></svg>
-            </div>
-            <span className="text-lg font-extrabold text-gray-900 tracking-tight">Livana</span>
+          <Link href="/" className="inline-flex items-center mb-10">
+            <img src="/livana-logo-transparent.png" alt="Livana" className="h-10 w-auto" />
           </Link>
 
           {/* Heading */}
@@ -174,11 +171,8 @@ export default function LoginPage() {
 
         {/* Top: logo + tagline */}
         <div className="relative z-10">
-          <div className="flex items-center gap-2.5 mb-16">
-            <div className="w-9 h-9 rounded-xl bg-blue-600 flex items-center justify-center">
-              <svg className="w-[18px] h-[18px] text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z" /></svg>
-            </div>
-            <span className="text-white text-lg font-extrabold tracking-tight">Livana</span>
+          <div className="mb-16">
+            <img src="/livana-logo-transparent.png" alt="Livana" className="h-10 w-auto brightness-0 invert" />
           </div>
 
           <h2 className="text-4xl xl:text-5xl font-extrabold text-white leading-tight tracking-tight mb-4">
