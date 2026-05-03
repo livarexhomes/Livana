@@ -105,9 +105,7 @@ export default function PublicNavbar() {
             </>
           ) : (
             <>
-              <Link href="/login" className={`text-sm font-medium px-4 py-2 rounded-lg transition-all ${
-                scrolled || !isHomePage ? 'text-gray-700 hover:text-gray-900 hover:bg-gray-50' : 'text-white/90 hover:text-white hover:bg-white/10'
-              }`}>
+              <Link href="/login" className="text-sm font-medium px-4 py-2 rounded-lg transition-all text-gray-700 hover:text-gray-900 hover:bg-gray-50">
                 Sign in
               </Link>
               <Link href="/register" className="text-sm font-semibold bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl transition-all shadow-lg shadow-blue-600/25 hover:shadow-blue-600/40">
