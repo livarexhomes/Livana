@@ -64,7 +64,7 @@ export default function LandlordDashboard() {
 
   return (
     <AuthGuard require="landlord">
-      <div className="flex min-h-screen bg-slate-50">
+      <div className="flex min-h-screen bg-[#F4F6FB]">
         <LandlordSidebar userName={landlord?.full_name} userEmail={user?.email} isVerified={landlord?.is_verified} />
 
         <div className="flex-1 flex flex-col min-w-0">

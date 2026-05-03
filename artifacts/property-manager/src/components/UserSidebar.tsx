@@ -2,41 +2,38 @@ import { useState, useEffect } from 'react'
 import { Link, useLocation } from 'wouter'
 import { createClient } from '../lib/supabase'
 import {
-  LayoutDashboard, Building2, MessageSquare, User, Settings,
-  LogOut, Menu, X, CheckCircle, PanelLeftClose, PanelLeftOpen, ExternalLink,
+  LayoutDashboard, Heart, MessageSquare, User,
+  LogOut, Menu, X, Building2, PanelLeftClose, PanelLeftOpen,
 } from 'lucide-react'
 
 const mainNav = [
-  { label: 'Dashboard',   href: '/landlord',           exact: true,  icon: LayoutDashboard },
-  { label: 'My Listings', href: '/landlord/listings',  exact: false, icon: Building2 },
-  { label: 'Enquiries',   href: '/landlord/enquiries', exact: false, icon: MessageSquare },
-  { label: 'Profile',     href: '/landlord/profile',   exact: false, icon: User },
-  { label: 'Settings',    href: '/landlord/settings',  exact: false, icon: Settings },
+  { href: '/user',           label: 'Overview',   icon: LayoutDashboard, exact: true  },
+  { href: '/user/saved',     label: 'Saved',       icon: Heart,           exact: false },
+  { href: '/user/enquiries', label: 'Enquiries',   icon: MessageSquare,   exact: false },
+  { href: '/user/profile',   label: 'Profile',     icon: User,            exact: false },
 ]
 
 interface Props {
-  userName?: string | null
+  displayName?: string
   userEmail?: string | null
-  isVerified?: boolean
+  initials?: string
+  open: boolean
+  onClose: () => void
 }
 
-export default function LandlordSidebar({ userName, userEmail, isVerified }: Props) {
+export default function UserSidebar({ displayName = 'User', userEmail, initials = 'U', open, onClose }: Props) {
   const [location] = useLocation()
-  const [open, setOpen] = useState(false)
   const [collapsed, setCollapsed] = useState(() => {
-    try { return localStorage.getItem('landlord-sidebar-collapsed') === 'true' } catch { return false }
+    try { return localStorage.getItem('user-sidebar-collapsed') === 'true' } catch { return false }
   })
 
-  useEffect(() => { setOpen(false) }, [location])
+  useEffect(() => { onClose() }, [location])
 
   function toggleCollapse() {
     const next = !collapsed
     setCollapsed(next)
-    try { localStorage.setItem('landlord-sidebar-collapsed', String(next)) } catch {}
+    try { localStorage.setItem('user-sidebar-collapsed', String(next)) } catch {}
   }
-
-  const displayName = userName || (userEmail ? userEmail.split('@')[0] : 'Landlord')
-  const initials = displayName.split(' ').slice(0, 2).map((w: string) => w[0]).join('').toUpperCase() || 'LL'
 
   function isActive(item: { href: string; exact: boolean }) {
     return item.exact ? location === item.href : location.startsWith(item.href)
@@ -83,11 +80,11 @@ export default function LandlordSidebar({ userName, userEmail, isVerified }: Pro
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-1.5">
                   <span className="text-base font-extrabold text-gray-900 tracking-tight">Livana</span>
-                  <span className="text-[9px] font-bold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded-md uppercase tracking-wide">Landlord</span>
+                  <span className="text-[9px] font-bold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded-md uppercase tracking-wide">Tenant</span>
                 </div>
               </div>
               {mobile && (
-                <button type="button" onClick={() => setOpen(false)}
+                <button type="button" onClick={onClose}
                   className="w-7 h-7 flex items-center justify-center rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors shrink-0 ml-1">
                   <X className="w-4 h-4" />
                 </button>
@@ -99,7 +96,7 @@ export default function LandlordSidebar({ userName, userEmail, isVerified }: Pro
         {/* Nav */}
         <nav className="flex-1 px-2 pt-3 pb-2 space-y-0.5 overflow-y-auto">
           {!c && <p className="px-3 mb-2 text-[10px] font-bold uppercase tracking-[0.14em] text-gray-400">Navigation</p>}
-          {mainNav.map(item => <NavItem key={item.label} item={item} c={c} />)}
+          {mainNav.map(item => <NavItem key={item.href} item={item} c={c} />)}
 
           {!c && (
             <div className="pt-4 pb-1">
@@ -109,7 +106,7 @@ export default function LandlordSidebar({ userName, userEmail, isVerified }: Pro
           {c && <div className="my-2 mx-2 h-px bg-gray-100" />}
           <Link href="/listings" title={c ? 'Browse Listings' : undefined}
             className={`group flex items-center ${c ? 'justify-center py-2.5 mx-1' : 'gap-3.5 px-3 py-2.5'} rounded-xl text-sm font-medium text-gray-500 hover:text-gray-800 hover:bg-gray-50 transition-all duration-200`}>
-            <ExternalLink className={`shrink-0 ${c ? 'w-5 h-5' : 'w-[18px] h-[18px]'} text-gray-400 group-hover:text-gray-600`} strokeWidth={1.7} />
+            <Building2 className={`shrink-0 ${c ? 'w-5 h-5' : 'w-[18px] h-[18px]'} text-gray-400 group-hover:text-gray-600`} strokeWidth={1.7} />
             {!c && <span>Browse Listings</span>}
           </Link>
         </nav>
@@ -131,11 +128,8 @@ export default function LandlordSidebar({ userName, userEmail, isVerified }: Pro
             {!c && (
               <>
                 <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-1">
-                    <p className="text-sm font-semibold text-gray-900 truncate leading-tight">{displayName}</p>
-                    {isVerified && <CheckCircle className="w-3.5 h-3.5 text-blue-600 shrink-0" />}
-                  </div>
-                  <p className="text-xs text-gray-400 truncate mt-0.5">{userEmail ?? 'landlord@livana.com'}</p>
+                  <p className="text-sm font-semibold text-gray-900 truncate leading-tight">{displayName}</p>
+                  <p className="text-xs text-gray-400 truncate mt-0.5">{userEmail ?? 'Tenant'}</p>
                 </div>
                 <button type="button" onClick={handleLogout} title="Sign out"
                   className="w-7 h-7 flex items-center justify-center rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors shrink-0">
@@ -157,14 +151,14 @@ export default function LandlordSidebar({ userName, userEmail, isVerified }: Pro
       </aside>
 
       {/* Mobile hamburger */}
-      <button type="button" onClick={() => setOpen(true)}
-        className="md:hidden fixed top-3 left-3 z-50 w-9 h-9 flex items-center justify-center rounded-xl bg-white border border-gray-200 shadow-sm text-gray-600 hover:bg-gray-50 active:scale-95 transition-all"
-        aria-label="Open menu">
+      <button type="button" onClick={() => { /* handled by UserLayout */ }}
+        className="md:hidden fixed top-3 left-3 z-50 w-9 h-9 flex items-center justify-center rounded-xl bg-white border border-gray-200 shadow-sm text-gray-600 hover:bg-gray-50 active:scale-95 transition-all pointer-events-none opacity-0"
+        aria-hidden>
         <Menu className="w-4 h-4" />
       </button>
 
       {/* Backdrop */}
-      <div onClick={() => setOpen(false)}
+      <div onClick={onClose}
         className={`md:hidden fixed inset-0 z-40 bg-black/40 backdrop-blur-sm transition-opacity duration-300 ${open ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`} />
 
       {/* Drawer */}
