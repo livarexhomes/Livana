@@ -74,7 +74,7 @@ export default function AdminDashboard() {
 
         <div className="flex-1 flex flex-col min-w-0">
           {/* ── Top Header ── */}
-          <header className="h-14 flex items-center justify-between px-4 md:px-6 bg-white border-b border-gray-100 shrink-0">
+          <header className="h-14 flex items-center justify-between pl-14 pr-4 md:px-6 bg-white border-b border-gray-100 shrink-0">
             <div>
               <h1 className="text-sm font-bold text-gray-900">{greeting()}, {displayName} 👋</h1>
               <p className="text-[11px] text-gray-400 font-medium">Dashboard</p>
