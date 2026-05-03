@@ -60,6 +60,27 @@ export default function HomePage() {
   const [savedIds, setSavedIds] = useState<Set<string>>(new Set())
   const [searchCity, setSearchCity] = useState('')
   const [allProjects, setAllProjects] = useState<Project[]>([])
+  const [heroIdx, setHeroIdx] = useState(0)
+  const [heroVisible, setHeroVisible] = useState(true)
+
+  const HERO_LISTINGS = [
+    { label: 'Just Listed', title: '3 Bed Detached • Lekki', price: '₦4,500,000', suffix: '/yr' },
+    { label: 'New Build',   title: '4 Bed Semi-Detached • Ikoyi', price: '₦85,000,000', suffix: '' },
+    { label: 'Hot Deal',    title: '2 Bed Apartment • VI', price: '₦2,800,000', suffix: '/yr' },
+    { label: 'Off-Plan',   title: '5 Bed Duplex • Abuja', price: '₦120,000,000', suffix: '' },
+    { label: 'Just Listed', title: '3 Bed Terrace • Lekki Phase 2', price: '₦3,200,000', suffix: '/yr' },
+  ]
+
+  useEffect(() => {
+    const id = setInterval(() => {
+      setHeroVisible(false)
+      setTimeout(() => {
+        setHeroIdx(i => (i + 1) % HERO_LISTINGS.length)
+        setHeroVisible(true)
+      }, 350)
+    }, 3500)
+    return () => clearInterval(id)
+  }, [])
 
   useEffect(() => { setAllProjects(loadProjects()) }, [])
 
@@ -204,21 +225,41 @@ export default function HomePage() {
               <CheckCircle className="w-4 h-4 text-green-500" />
               <span className="text-sm font-semibold text-gray-900">Verified Landlord</span>
             </div>
-            {/* Property card */}
+            {/* Property card — auto-cycling */}
             <div className="absolute bottom-12 left-8 bg-white/95 backdrop-blur-md shadow-2xl rounded-2xl p-6 w-72 border border-white/30">
-              <div className="bg-blue-100 text-blue-700 text-xs font-bold uppercase tracking-wider px-3 py-1 rounded-full inline-block mb-3">
-                Just Listed
+              <div
+                className="transition-all duration-350"
+                style={{ opacity: heroVisible ? 1 : 0, transform: heroVisible ? 'translateY(0)' : 'translateY(6px)' }}
+              >
+                <div className="bg-blue-100 text-blue-700 text-xs font-bold uppercase tracking-wider px-3 py-1 rounded-full inline-block mb-3">
+                  {HERO_LISTINGS[heroIdx].label}
+                </div>
+                <h3 className="font-bold text-base text-gray-900 mb-1">{HERO_LISTINGS[heroIdx].title}</h3>
+                <p className="text-blue-600 font-extrabold text-xl mb-4">
+                  {HERO_LISTINGS[heroIdx].price}
+                  {HERO_LISTINGS[heroIdx].suffix && (
+                    <span className="text-sm text-gray-400 font-normal">{HERO_LISTINGS[heroIdx].suffix}</span>
+                  )}
+                </p>
               </div>
-              <h3 className="font-bold text-base text-gray-900 mb-1">3 Bed Detached • Lekki</h3>
-              <p className="text-blue-600 font-extrabold text-xl mb-4">
-                ₦4,500,000<span className="text-sm text-gray-400 font-normal">/yr</span>
-              </p>
               <Link
                 href="/listings"
                 className="w-full bg-gray-900 hover:bg-gray-800 text-white py-3 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 transition-colors"
               >
                 View Listings <ArrowRight className="w-4 h-4" />
               </Link>
+              {/* Dot indicators */}
+              <div className="flex items-center justify-center gap-1.5 mt-3">
+                {HERO_LISTINGS.map((_, i) => (
+                  <button
+                    key={i}
+                    onClick={() => { setHeroVisible(false); setTimeout(() => { setHeroIdx(i); setHeroVisible(true) }, 200) }}
+                    className={`rounded-full transition-all duration-300 ${
+                      i === heroIdx ? 'w-4 h-1.5 bg-blue-600' : 'w-1.5 h-1.5 bg-gray-300 hover:bg-gray-400'
+                    }`}
+                  />
+                ))}
+              </div>
             </div>
           </div>
         </div>
