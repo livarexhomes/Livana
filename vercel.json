@@ -1,7 +1,11 @@
 {
-  "framework": null,
-  "installCommand": "pnpm install",
-  "buildCommand": "pnpm --filter @workspace/property-manager run build",
-  "outputDirectory": "dist",
-  "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]
+  "version": 2,
+  "builds": [
+    {
+      "src": "artifacts/property-manager/package.json",
+      "use": "@vercel/static-build"
+    }
+  ],
+  "outputDirectory": "vercel-out",
+  "routes": [{ "src": "/(.*)", "dest": "/index.html" }]
 }
