@@ -53,10 +53,13 @@ export default function LandlordListings() {
       <div className="flex min-h-screen bg-gray-50">
         <LandlordSidebar userName={landlord?.full_name} userEmail={user?.email} isVerified={landlord?.is_verified} />
         <div className="flex-1 flex flex-col overflow-hidden">
-          <header className="h-16 flex items-center justify-between px-6 bg-white border-b border-gray-100 shrink-0">
-            <h1 className="font-semibold text-gray-900">My Listings</h1>
+          <header className="flex items-center justify-between pl-14 pr-4 md:px-8 py-4 bg-white border-b border-gray-100 shrink-0">
+            <div>
+              <h1 className="text-xl font-extrabold text-gray-900 tracking-tight">My Listings</h1>
+              <p className="text-sm text-gray-400 mt-0.5">{properties.length} total properties</p>
+            </div>
             <Link href="/landlord/listings/new"
-              className="flex items-center gap-2 px-4 py-2 bg-[#6b9e6e] hover:bg-[#4a7f4d] text-white text-sm font-semibold rounded-xl transition-colors">
+              className="inline-flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-xl shadow-sm shadow-blue-600/20 transition-colors">
               <Plus className="w-4 h-4" /> Add Listing
             </Link>
           </header>
