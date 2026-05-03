@@ -104,15 +104,6 @@ export default function LandlordSidebar({ userName, userEmail, isVerified }: Pro
           {!c && <p className="px-3 mb-2 text-[10px] font-bold uppercase tracking-[0.14em] text-white/20">Navigation</p>}
           {mainNav.map(item => <NavItem key={item.label} item={item} c={c} />)}
 
-          <div className={c ? 'py-3' : 'pt-5 pb-1'}>
-            {!c && <p className="px-3 text-[10px] font-bold uppercase tracking-[0.14em] text-white/20">Explore</p>}
-            {c && <div className="mx-2 h-px bg-white/[0.06]" />}
-          </div>
-          <Link href="/listings" title={c ? 'Browse Listings' : undefined}
-            className={`group flex items-center ${c ? 'justify-center p-2.5 mx-1' : 'gap-3 px-3 py-2.5'} rounded-xl text-sm font-medium text-white/45 hover:text-white/90 hover:bg-white/[0.06] transition-all duration-200`}>
-            <ExternalLink className={`shrink-0 ${c ? 'w-[18px] h-[18px]' : 'w-[17px] h-[17px]'} text-white/40 group-hover:text-white/70`} strokeWidth={1.7} />
-            {!c && <span>Browse Listings</span>}
-          </Link>
         </nav>
 
         {/* Footer */}
