@@ -61,9 +61,13 @@ export default function HomePage() {
   const [savedIds, setSavedIds] = useState<Set<string>>(new Set())
   const [searchState, setSearchState] = useState('')
   const [searchArea, setSearchArea] = useState('')
-  const [searchPropertyType, setSearchPropertyType] = useState('')
+  const [selectedPropertyTypes, setSelectedPropertyTypes] = useState<string[]>([])
   const [searchBeds, setSearchBeds] = useState('')
-  const [searchPrice, setSearchPrice] = useState('')
+  const [searchBaths, setSearchBaths] = useState('')
+  const [priceMin, setPriceMin] = useState(0)
+  const [priceMax, setPriceMax] = useState(500_000_000)
+  const [openDropdown, setOpenDropdown] = useState<'propertyType' | 'beds' | 'price' | null>(null)
+  const searchBarRef = useRef<HTMLDivElement>(null)
   const [allProjects, setAllProjects] = useState<Project[]>([])
   const [heroIdx, setHeroIdx] = useState(0)
   const [heroVisible, setHeroVisible] = useState(true)
@@ -88,6 +92,16 @@ export default function HomePage() {
   }, [])
 
   useEffect(() => { setAllProjects(loadProjects()) }, [])
+
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (searchBarRef.current && !searchBarRef.current.contains(e.target as Node)) {
+        setOpenDropdown(null)
+      }
+    }
+    document.addEventListener('mousedown', handleClick)
+    return () => document.removeEventListener('mousedown', handleClick)
+  }, [])
 
   useEffect(() => {
     if (!isSupabaseConfigured()) { setLoading(false); return }
@@ -120,17 +134,47 @@ export default function HomePage() {
       })
   }, [activeTab])
 
-  function handleSearch(e: React.FormEvent) {
-    e.preventDefault()
+  function handleSearch(e?: React.FormEvent) {
+    if (e) e.preventDefault()
+    setOpenDropdown(null)
     const params = new URLSearchParams()
     params.set('type', typeMap[activeTab])
     if (searchState) params.set('city', searchState)
     if (searchArea) params.set('area', searchArea)
-    if (searchPropertyType) params.set('property_type', searchPropertyType)
+    if (selectedPropertyTypes.length) params.set('property_type', selectedPropertyTypes.join(','))
     if (searchBeds) params.set('beds', searchBeds)
-    if (searchPrice) params.set('price', searchPrice)
+    if (searchBaths) params.set('baths', searchBaths)
+    if (priceMin > 0) params.set('price_min', String(priceMin))
+    if (priceMax < 500_000_000) params.set('price_max', String(priceMax))
     window.location.href = `/listings?${params.toString()}`
   }
+
+  function togglePropertyType(val: string) {
+    if (val === '') { setSelectedPropertyTypes([]); return }
+    setSelectedPropertyTypes(prev =>
+      prev.includes(val) ? prev.filter(v => v !== val) : [...prev.filter(v => v !== ''), val]
+    )
+  }
+
+  function fmtPrice(n: number) {
+    if (n >= 1_000_000) return `₦${(n / 1_000_000).toFixed(0)}M`
+    if (n >= 1_000) return `₦${(n / 1_000).toFixed(0)}k`
+    return `₦${n}`
+  }
+
+  const propertyTypeLabel = selectedPropertyTypes.length === 0
+    ? 'Any'
+    : selectedPropertyTypes.length === 1
+      ? selectedPropertyTypes[0]
+      : `${selectedPropertyTypes.length} types`
+
+  const bedsBathsLabel = [searchBeds && `${searchBeds}+ Beds`, searchBaths && `${searchBaths}+ Baths`].filter(Boolean).join(', ') || 'Beds / Baths'
+
+  const priceLabel = (priceMin === 0 && priceMax === 500_000_000)
+    ? 'Any Price'
+    : `${fmtPrice(priceMin)} – ${fmtPrice(priceMax)}`
+
+  const PROPERTY_TYPES = ['Studio Apartment', 'Apartment', 'Detached', 'Semi-Detached', 'Terrace', 'Land', 'Bungalow', 'Maisonette', 'Self Contained', 'Hostel', 'Penthouse']
 
   return (
     <div className="min-h-screen flex flex-col bg-white">
@@ -163,120 +207,211 @@ export default function HomePage() {
             </p>
 
             {/* Search Card */}
-            <div className="mb-12">
+            <div className="mb-12" ref={searchBarRef}>
               {/* Tabs */}
               <div className="flex gap-1 mb-3">
                 {(['Buy', 'Rent', 'Lease', 'Commercial'] as Tab[]).map(t => (
-                  <button
-                    key={t}
-                    onClick={() => setActiveTab(t)}
+                  <button key={t} type="button" onClick={() => setActiveTab(t)}
                     className={`px-4 py-2 rounded-full text-sm font-semibold transition-all ${
                       activeTab === t
                         ? 'bg-blue-600 text-white shadow-sm shadow-blue-600/25'
                         : 'text-gray-500 hover:text-gray-800 hover:bg-gray-100'
-                    }`}
-                  >
+                    }`}>
                     {t}
                   </button>
                 ))}
               </div>
 
-              {/* Pill search bar — desktop */}
-              <form onSubmit={handleSearch}
-                className="hidden sm:flex items-center bg-white rounded-full shadow-[0_4px_30px_rgb(0,0,0,0.12)] border border-gray-100 overflow-hidden">
+              {/* ── Desktop pill bar ── */}
+              <div className="hidden sm:block relative">
+                <div className="flex items-center bg-white rounded-full shadow-[0_4px_30px_rgb(0,0,0,0.12)] border border-gray-100">
 
-                {/* Location */}
-                <div className="relative flex-1 min-w-0 group">
-                  <label className="absolute top-2.5 left-5 text-[10px] font-bold text-gray-400 uppercase tracking-wider pointer-events-none">Location</label>
-                  <div className="absolute left-4 bottom-3 pointer-events-none z-10">
-                    <MapPin className="w-3.5 h-3.5 text-gray-400" />
+                  {/* Location */}
+                  <div className="relative flex-1 min-w-0">
+                    <label className="absolute top-2.5 left-5 text-[10px] font-bold text-gray-400 uppercase tracking-wider pointer-events-none">Location</label>
+                    <MapPin className="absolute left-4 bottom-3 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
+                    <select value={searchState} onChange={e => setSearchState(e.target.value)}
+                      className="w-full pt-7 pb-3 pl-9 pr-5 bg-transparent text-sm text-gray-800 font-medium outline-none appearance-none cursor-pointer rounded-l-full">
+                      <option value="">Any State</option>
+                      {NIGERIAN_STATES.map(s => <option key={s} value={s}>{s}</option>)}
+                    </select>
                   </div>
-                  <select
-                    value={searchState}
-                    onChange={e => setSearchState(e.target.value)}
-                    className="w-full pt-7 pb-3 pl-9 pr-5 bg-transparent text-sm text-gray-800 font-medium outline-none appearance-none cursor-pointer"
-                  >
-                    <option value="">Any State</option>
-                    {NIGERIAN_STATES.map(s => <option key={s} value={s}>{s}</option>)}
-                  </select>
-                  {searchState && (POPULAR_AREAS[searchState]?.length ?? 0) > 0 && (
-                    <datalist id="area-suggestions">
-                      {(POPULAR_AREAS[searchState] ?? []).map(a => <option key={a} value={a} />)}
-                    </datalist>
-                  )}
-                </div>
 
-                <div className="w-px h-10 bg-gray-200 shrink-0" />
+                  <div className="w-px h-10 bg-gray-200 shrink-0" />
 
-                {/* Property Type */}
-                <div className="relative flex-1 min-w-0">
-                  <label className="absolute top-2.5 left-5 text-[10px] font-bold text-gray-400 uppercase tracking-wider pointer-events-none">Property Type</label>
-                  <ChevronDown className="absolute right-4 bottom-3.5 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
-                  <select
-                    value={searchPropertyType}
-                    onChange={e => setSearchPropertyType(e.target.value)}
-                    className="w-full pt-7 pb-3 pl-5 pr-9 bg-transparent text-sm text-gray-800 font-medium outline-none appearance-none cursor-pointer"
-                  >
-                    <option value="">Any</option>
-                    <option value="house">House</option>
-                    <option value="apartment">Apartment</option>
-                    <option value="land">Land</option>
-                    <option value="office">Office</option>
-                    <option value="shop">Shop</option>
-                    <option value="warehouse">Warehouse</option>
-                  </select>
-                </div>
-
-                <div className="w-px h-10 bg-gray-200 shrink-0" />
-
-                {/* Beds & Baths */}
-                <div className="relative flex-1 min-w-0">
-                  <label className="absolute top-2.5 left-5 text-[10px] font-bold text-gray-400 uppercase tracking-wider pointer-events-none">Beds &amp; Baths</label>
-                  <ChevronDown className="absolute right-4 bottom-3.5 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
-                  <select
-                    value={searchBeds}
-                    onChange={e => setSearchBeds(e.target.value)}
-                    className="w-full pt-7 pb-3 pl-5 pr-9 bg-transparent text-sm text-gray-800 font-medium outline-none appearance-none cursor-pointer"
-                  >
-                    <option value="">Beds / Baths</option>
-                    <option value="1">1 Bed</option>
-                    <option value="2">2 Beds</option>
-                    <option value="3">3 Beds</option>
-                    <option value="4">4 Beds</option>
-                    <option value="5">5+ Beds</option>
-                  </select>
-                </div>
-
-                <div className="w-px h-10 bg-gray-200 shrink-0" />
-
-                {/* Price */}
-                <div className="relative flex-1 min-w-0">
-                  <label className="absolute top-2.5 left-5 text-[10px] font-bold text-gray-400 uppercase tracking-wider pointer-events-none">Price</label>
-                  <ChevronDown className="absolute right-4 bottom-3.5 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
-                  <select
-                    value={searchPrice}
-                    onChange={e => setSearchPrice(e.target.value)}
-                    className="w-full pt-7 pb-3 pl-5 pr-9 bg-transparent text-sm text-gray-800 font-medium outline-none appearance-none cursor-pointer"
-                  >
-                    <option value="">Price Range</option>
-                    <option value="0-500000">Under ₦500k</option>
-                    <option value="500000-1500000">₦500k – ₦1.5M</option>
-                    <option value="1500000-5000000">₦1.5M – ₦5M</option>
-                    <option value="5000000-20000000">₦5M – ₦20M</option>
-                    <option value="20000000-999999999">Above ₦20M</option>
-                  </select>
-                </div>
-
-                {/* Search button */}
-                <div className="px-2.5 shrink-0">
-                  <button type="submit"
-                    className="w-12 h-12 rounded-full bg-blue-600 hover:bg-blue-700 flex items-center justify-center shadow-md shadow-blue-600/30 transition-all active:scale-95">
-                    <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+                  {/* Property Type trigger */}
+                  <button type="button"
+                    onClick={() => setOpenDropdown(o => o === 'propertyType' ? null : 'propertyType')}
+                    className="relative flex-1 min-w-0 flex flex-col items-start px-5 py-3 hover:bg-gray-50 transition-colors">
+                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Property Type</span>
+                    <span className={`text-sm font-medium mt-0.5 flex items-center gap-1 ${selectedPropertyTypes.length ? 'text-blue-600' : 'text-gray-500'}`}>
+                      {propertyTypeLabel}
+                      <ChevronDown className={`w-3.5 h-3.5 transition-transform ${openDropdown === 'propertyType' ? 'rotate-180' : ''}`} />
+                    </span>
                   </button>
-                </div>
-              </form>
 
-              {/* Mobile stacked search */}
+                  <div className="w-px h-10 bg-gray-200 shrink-0" />
+
+                  {/* Beds & Baths trigger */}
+                  <button type="button"
+                    onClick={() => setOpenDropdown(o => o === 'beds' ? null : 'beds')}
+                    className="relative flex-1 min-w-0 flex flex-col items-start px-5 py-3 hover:bg-gray-50 transition-colors">
+                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Beds &amp; Baths</span>
+                    <span className={`text-sm font-medium mt-0.5 flex items-center gap-1 ${(searchBeds || searchBaths) ? 'text-blue-600' : 'text-gray-500'}`}>
+                      {bedsBathsLabel}
+                      <ChevronDown className={`w-3.5 h-3.5 transition-transform ${openDropdown === 'beds' ? 'rotate-180' : ''}`} />
+                    </span>
+                  </button>
+
+                  <div className="w-px h-10 bg-gray-200 shrink-0" />
+
+                  {/* Price trigger */}
+                  <button type="button"
+                    onClick={() => setOpenDropdown(o => o === 'price' ? null : 'price')}
+                    className="relative flex-1 min-w-0 flex flex-col items-start px-5 py-3 hover:bg-gray-50 transition-colors">
+                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Price</span>
+                    <span className={`text-sm font-medium mt-0.5 flex items-center gap-1 ${(priceMin > 0 || priceMax < 500_000_000) ? 'text-blue-600' : 'text-gray-500'}`}>
+                      {priceLabel}
+                      <ChevronDown className={`w-3.5 h-3.5 transition-transform ${openDropdown === 'price' ? 'rotate-180' : ''}`} />
+                    </span>
+                  </button>
+
+                  {/* Search button */}
+                  <div className="px-2.5 shrink-0">
+                    <button type="button" onClick={() => handleSearch()}
+                      className="w-12 h-12 rounded-full bg-blue-600 hover:bg-blue-700 flex items-center justify-center shadow-md shadow-blue-600/30 transition-all active:scale-95">
+                      <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+                    </button>
+                  </div>
+                </div>
+
+                {/* ── Property Type Panel ── */}
+                {openDropdown === 'propertyType' && (
+                  <div className="absolute top-[calc(100%+10px)] left-[25%] z-50 bg-white rounded-2xl shadow-xl border border-gray-100 p-5 w-72">
+                    <p className="text-base font-bold text-gray-900 mb-1">Property Type</p>
+                    <p className="text-xs text-gray-400 mb-4">You can select multiple property types</p>
+                    <div className="space-y-2.5 max-h-72 overflow-y-auto pr-1">
+                      {/* Any */}
+                      <label className="flex items-center gap-3 cursor-pointer group">
+                        <div className={`w-5 h-5 rounded flex items-center justify-center border-2 transition-colors shrink-0 ${selectedPropertyTypes.length === 0 ? 'bg-blue-600 border-blue-600' : 'border-gray-300 group-hover:border-blue-400'}`}
+                          onClick={() => togglePropertyType('')}>
+                          {selectedPropertyTypes.length === 0 && (
+                            <svg className="w-3 h-3 text-white" viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                          )}
+                        </div>
+                        <span className="text-sm font-medium text-gray-800">Any</span>
+                      </label>
+                      {PROPERTY_TYPES.map(pt => (
+                        <label key={pt} className="flex items-center gap-3 cursor-pointer group">
+                          <div className={`w-5 h-5 rounded flex items-center justify-center border-2 transition-colors shrink-0 ${selectedPropertyTypes.includes(pt) ? 'bg-blue-600 border-blue-600' : 'border-gray-300 group-hover:border-blue-400'}`}
+                            onClick={() => togglePropertyType(pt)}>
+                            {selectedPropertyTypes.includes(pt) && (
+                              <svg className="w-3 h-3 text-white" viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                            )}
+                          </div>
+                          <span className="text-sm text-gray-700">{pt}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* ── Beds & Baths Panel ── */}
+                {openDropdown === 'beds' && (
+                  <div className="absolute top-[calc(100%+10px)] left-[50%] -translate-x-1/4 z-50 bg-white rounded-2xl shadow-xl border border-gray-100 p-5 w-80">
+                    <div className="mb-5">
+                      <div className="flex items-baseline gap-2 mb-3">
+                        <p className="text-base font-bold text-gray-900">Beds</p>
+                        <p className="text-xs text-gray-400">Tap two numbers to select a range</p>
+                      </div>
+                      <div className="flex gap-2">
+                        {['Any', '1', '2', '3', '4', '5+'].map(v => {
+                          const val = v === 'Any' ? '' : v.replace('+', '')
+                          const active = v === 'Any' ? searchBeds === '' : searchBeds === val
+                          return (
+                            <button key={v} type="button" onClick={() => setSearchBeds(active ? '' : val)}
+                              className={`flex-1 py-2 rounded-lg text-sm font-semibold border transition-all ${
+                                active ? 'bg-blue-600 border-blue-600 text-white' : 'border-gray-200 text-gray-700 hover:border-blue-300 hover:text-blue-600'
+                              }`}>
+                              {v}
+                            </button>
+                          )
+                        })}
+                      </div>
+                    </div>
+                    <div className="mb-5">
+                      <p className="text-base font-bold text-gray-900 mb-3">Baths</p>
+                      <div className="flex gap-2">
+                        {['Any', '1', '2', '3', '4', '5', '6+'].map(v => {
+                          const val = v === 'Any' ? '' : v.replace('+', '')
+                          const active = v === 'Any' ? searchBaths === '' : searchBaths === val
+                          return (
+                            <button key={v} type="button" onClick={() => setSearchBaths(active ? '' : val)}
+                              className={`flex-1 py-2 rounded-lg text-sm font-semibold border transition-all ${
+                                active ? 'bg-blue-600 border-blue-600 text-white' : 'border-gray-200 text-gray-700 hover:border-blue-300 hover:text-blue-600'
+                              }`}>
+                              {v}
+                            </button>
+                          )
+                        })}
+                      </div>
+                    </div>
+                    <button type="button" onClick={() => { setOpenDropdown(null) }}
+                      className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl text-sm transition-all">
+                      Apply Filter
+                    </button>
+                  </div>
+                )}
+
+                {/* ── Price Panel ── */}
+                {openDropdown === 'price' && (
+                  <div className="absolute top-[calc(100%+10px)] right-14 z-50 bg-white rounded-2xl shadow-xl border border-gray-100 p-5 w-80">
+                    <div className="flex items-center justify-between mb-4">
+                      <p className="text-base font-bold text-gray-900">Price</p>
+                      <button type="button" onClick={() => { setPriceMin(0); setPriceMax(500_000_000) }}
+                        className="text-xs font-semibold text-blue-600 hover:text-blue-700">Reset</button>
+                    </div>
+                    <div className="flex gap-3 mb-5">
+                      <div className="flex-1 border border-gray-200 rounded-xl px-3 py-2.5">
+                        <p className="text-[10px] text-gray-400 font-semibold uppercase tracking-wide mb-0.5">Min</p>
+                        <p className="text-sm font-bold text-gray-900">{fmtPrice(priceMin)}</p>
+                      </div>
+                      <div className="flex items-center text-gray-300 font-bold">—</div>
+                      <div className="flex-1 border border-gray-200 rounded-xl px-3 py-2.5">
+                        <p className="text-[10px] text-gray-400 font-semibold uppercase tracking-wide mb-0.5">Max</p>
+                        <p className="text-sm font-bold text-gray-900">{fmtPrice(priceMax)}</p>
+                      </div>
+                    </div>
+                    {/* Dual range slider */}
+                    <div className="relative h-5 mb-2">
+                      <div className="absolute top-1/2 -translate-y-1/2 w-full h-1.5 bg-gray-200 rounded-full" />
+                      <div className="absolute top-1/2 -translate-y-1/2 h-1.5 bg-blue-600 rounded-full"
+                        style={{
+                          left: `${(priceMin / 500_000_000) * 100}%`,
+                          right: `${100 - (priceMax / 500_000_000) * 100}%`
+                        }} />
+                      <input type="range" min={0} max={500_000_000} step={500_000}
+                        value={priceMin}
+                        onChange={e => { const v = Number(e.target.value); if (v < priceMax) setPriceMin(v) }}
+                        className="absolute w-full top-1/2 -translate-y-1/2 appearance-none bg-transparent pointer-events-none [&::-webkit-slider-thumb]:pointer-events-auto [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-blue-600 [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-white [&::-webkit-slider-thumb]:shadow-md [&::-webkit-slider-thumb]:cursor-pointer" />
+                      <input type="range" min={0} max={500_000_000} step={500_000}
+                        value={priceMax}
+                        onChange={e => { const v = Number(e.target.value); if (v > priceMin) setPriceMax(v) }}
+                        className="absolute w-full top-1/2 -translate-y-1/2 appearance-none bg-transparent pointer-events-none [&::-webkit-slider-thumb]:pointer-events-auto [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-blue-600 [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-white [&::-webkit-slider-thumb]:shadow-md [&::-webkit-slider-thumb]:cursor-pointer" />
+                    </div>
+                    <div className="flex justify-between text-xs text-gray-400 font-medium mb-5">
+                      <span>₦0</span>
+                      <span>₦500,000,000</span>
+                    </div>
+                    <button type="button" onClick={() => setOpenDropdown(null)}
+                      className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl text-sm transition-all">
+                      Apply Filter
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {/* ── Mobile stacked search ── */}
               <form onSubmit={handleSearch}
                 className="sm:hidden bg-white rounded-2xl shadow-[0_4px_24px_rgb(0,0,0,0.10)] border border-gray-100 p-3 space-y-2">
                 <div className="relative">
@@ -288,32 +423,34 @@ export default function HomePage() {
                   </select>
                 </div>
                 <div className="grid grid-cols-2 gap-2">
-                  <select value={searchPropertyType} onChange={e => setSearchPropertyType(e.target.value)}
+                  <select value={selectedPropertyTypes[0] ?? ''} onChange={e => setSelectedPropertyTypes(e.target.value ? [e.target.value] : [])}
                     className="w-full px-3 py-3 rounded-xl bg-gray-50 text-sm text-gray-800 outline-none appearance-none">
                     <option value="">Property Type</option>
-                    <option value="house">House</option>
-                    <option value="apartment">Apartment</option>
-                    <option value="land">Land</option>
-                    <option value="office">Office</option>
+                    {PROPERTY_TYPES.map(pt => <option key={pt} value={pt}>{pt}</option>)}
                   </select>
                   <select value={searchBeds} onChange={e => setSearchBeds(e.target.value)}
                     className="w-full px-3 py-3 rounded-xl bg-gray-50 text-sm text-gray-800 outline-none appearance-none">
                     <option value="">Beds</option>
-                    <option value="1">1 Bed</option>
-                    <option value="2">2 Beds</option>
-                    <option value="3">3 Beds</option>
-                    <option value="4">4+ Beds</option>
+                    {['1','2','3','4','5'].map(n => <option key={n} value={n}>{n}+ Beds</option>)}
                   </select>
                 </div>
-                <select value={searchPrice} onChange={e => setSearchPrice(e.target.value)}
-                  className="w-full px-3 py-3 rounded-xl bg-gray-50 text-sm text-gray-800 outline-none appearance-none">
-                  <option value="">Price Range</option>
-                  <option value="0-500000">Under ₦500k</option>
-                  <option value="500000-1500000">₦500k – ₦1.5M</option>
-                  <option value="1500000-5000000">₦1.5M – ₦5M</option>
-                  <option value="5000000-20000000">₦5M – ₦20M</option>
-                  <option value="20000000-999999999">Above ₦20M</option>
-                </select>
+                <div className="grid grid-cols-2 gap-2">
+                  <select value={searchBaths} onChange={e => setSearchBaths(e.target.value)}
+                    className="w-full px-3 py-3 rounded-xl bg-gray-50 text-sm text-gray-800 outline-none appearance-none">
+                    <option value="">Baths</option>
+                    {['1','2','3','4','5','6'].map(n => <option key={n} value={n}>{n}+ Baths</option>)}
+                  </select>
+                  <select
+                    value={priceMax === 500_000_000 ? '' : String(priceMax)}
+                    onChange={e => { const v = e.target.value; setPriceMin(0); setPriceMax(v ? Number(v) : 500_000_000) }}
+                    className="w-full px-3 py-3 rounded-xl bg-gray-50 text-sm text-gray-800 outline-none appearance-none">
+                    <option value="">Price Range</option>
+                    <option value="500000">Under ₦500k</option>
+                    <option value="1500000">Under ₦1.5M</option>
+                    <option value="5000000">Under ₦5M</option>
+                    <option value="20000000">Under ₦20M</option>
+                  </select>
+                </div>
                 <button type="submit"
                   className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3.5 rounded-xl text-sm flex items-center justify-center gap-2 transition-all shadow-sm shadow-blue-600/25">
                   <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
