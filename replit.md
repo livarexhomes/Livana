@@ -106,9 +106,22 @@ Nigerian real estate platform built with React + Vite.
 - `enquiries` — messages from tenants to landlords
 - `contact_messages` — contact form submissions
 
+### Location Search (Nigerian State + Area)
+- `src/lib/nigerianStates.ts` — exports `NIGERIAN_STATES` (37 states) and `POPULAR_AREAS` (neighbourhood suggestions per state)
+- **HomePage** search card: State `<select>` dropdown + Area `<input>` text field with `<datalist>` suggestions; submits to `/listings?type=...&city=STATE&area=AREA`
+- **ListingsPage** sidebar: State `<select>` filter (maps to `city` column via ilike) + Area `<input>` (maps to `address` column via ilike)
+- **LandlordListingForm** Location section: State `<select>` (saves to `city` column) + Area/Neighbourhood `<input>` with datalist suggestions (saves to `address` column)
+
+### Auth Flow
+1. Login → check `app_metadata.role === 'admin'` → redirect to `/admin`
+2. Else check `landlords` table → redirect to `/landlord` (or `/landlord/pending`/`/landlord/rejected`)
+3. Else check `tenants` table → if missing, auto-create from `user_metadata` → redirect to `/user`
+4. **Registration**: if Supabase email confirmation is required (`session === null`), shows "Check your email" screen; if no confirmation needed, creates tenant profile and navigates to `/user`
+
 ### Key Files
 - `src/App.tsx` — Full Wouter router with all routes
 - `src/lib/supabase.ts` — Supabase client factory, `isSupabaseConfigured()`, `getSupabaseImageUrl()`
 - `src/lib/types.ts` — TypeScript database types
 - `src/lib/auth.ts` — `isAdminUser()`, `getCurrentUser()`, `signOut()`
+- `src/lib/nigerianStates.ts` — Nigerian states list + popular areas per state
 - `src/pages/user/UserDashboard.tsx` — Also exports `UserLayout` (used by all user sub-pages)

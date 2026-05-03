@@ -6,13 +6,15 @@ import Footer from '../components/Footer'
 import PropertyCard from '../components/PropertyCard'
 import { createClient, isSupabaseConfigured } from '../lib/supabase'
 import type { PropertyWithLandlord } from '../lib/types'
+import { NIGERIAN_STATES } from '../lib/nigerianStates'
 
 export default function ListingsPage() {
   const search = useSearch()
   const params = new URLSearchParams(search)
 
   const [typeFilter, setTypeFilter] = useState(params.get('type') ?? '')
-  const [cityFilter, setCityFilter] = useState(params.get('city') ?? '')
+  const [stateFilter, setStateFilter] = useState(params.get('city') ?? params.get('state') ?? '')
+  const [areaFilter, setAreaFilter] = useState(params.get('area') ?? '')
   const [minPrice, setMinPrice] = useState(params.get('min_price') ?? '')
   const [maxPrice, setMaxPrice] = useState(params.get('max_price') ?? '')
   const [bedsFilter, setBedsFilter] = useState(params.get('bedrooms') ?? '')
@@ -39,7 +41,7 @@ export default function ListingsPage() {
 
   useEffect(() => {
     fetchProperties()
-  }, [typeFilter, cityFilter, minPrice, maxPrice, bedsFilter])
+  }, [typeFilter, stateFilter, areaFilter, minPrice, maxPrice, bedsFilter])
 
   async function fetchProperties() {
     if (!isSupabaseConfigured()) { setLoading(false); return }
@@ -53,7 +55,8 @@ export default function ListingsPage() {
       .order('created_at', { ascending: false })
 
     if (typeFilter) query = query.eq('type', typeFilter)
-    if (cityFilter) query = (query as any).ilike('city', `%${cityFilter}%`)
+    if (stateFilter) query = (query as any).ilike('city', `%${stateFilter}%`)
+    if (areaFilter) query = (query as any).ilike('address', `%${areaFilter}%`)
     if (minPrice) query = query.gte('price', Number(minPrice))
     if (maxPrice) query = query.lte('price', Number(maxPrice))
     if (bedsFilter) query = query.gte('bedrooms', Number(bedsFilter))
@@ -71,13 +74,14 @@ export default function ListingsPage() {
 
   function clearFilters() {
     setTypeFilter('')
-    setCityFilter('')
+    setStateFilter('')
+    setAreaFilter('')
     setMinPrice('')
     setMaxPrice('')
     setBedsFilter('')
   }
 
-  const hasFilters = typeFilter || cityFilter || minPrice || maxPrice || bedsFilter
+  const hasFilters = typeFilter || stateFilter || areaFilter || minPrice || maxPrice || bedsFilter
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
@@ -135,12 +139,24 @@ export default function ListingsPage() {
               </div>
 
               <div className="space-y-2">
-                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide">Location</label>
+                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide">State</label>
+                <select
+                  value={stateFilter}
+                  onChange={e => setStateFilter(e.target.value)}
+                  className="w-full px-3 py-2 rounded-lg border border-gray-300 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="">All states</option>
+                  {NIGERIAN_STATES.map(s => <option key={s} value={s}>{s}</option>)}
+                </select>
+              </div>
+
+              <div className="space-y-2">
+                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide">Area / Neighbourhood</label>
                 <input
-                  value={cityFilter}
-                  onChange={e => setCityFilter(e.target.value)}
-                  placeholder="Search city..."
-                  className="w-full px-3 py-2 rounded-lg border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-[#6b9e6e]"
+                  value={areaFilter}
+                  onChange={e => setAreaFilter(e.target.value)}
+                  placeholder="e.g. Lekki, Maitama…"
+                  className="w-full px-3 py-2 rounded-lg border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
 

@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link, useLocation } from 'wouter'
-import { Eye, EyeOff, CheckCircle2 } from 'lucide-react'
+import { Eye, EyeOff, CheckCircle2, Mail } from 'lucide-react'
 import { createClient, isSupabaseConfigured } from '../lib/supabase'
 
 export default function RegisterPage() {
@@ -13,6 +13,7 @@ export default function RegisterPage() {
   const [loading, setLoading] = useState(false)
   const [googleLoading, setGoogleLoading] = useState(false)
   const [error, setError] = useState('')
+  const [emailSent, setEmailSent] = useState(false)
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -21,9 +22,19 @@ export default function RegisterPage() {
     setError('')
     const supabase = createClient()
 
-    const { data, error: signUpError } = await supabase.auth.signUp({ email, password })
+    const { data, error: signUpError } = await supabase.auth.signUp({
+      email,
+      password,
+      options: { data: { full_name: fullName, phone: phone || null } },
+    })
     if (signUpError || !data.user) {
       setError(signUpError?.message ?? 'Sign up failed')
+      setLoading(false)
+      return
+    }
+
+    if (!data.session) {
+      setEmailSent(true)
       setLoading(false)
       return
     }
@@ -34,7 +45,7 @@ export default function RegisterPage() {
       phone: phone || null,
     })
 
-    if (profileError) {
+    if (profileError && !profileError.message.includes('duplicate')) {
       setError(profileError.message)
       setLoading(false)
       return
@@ -51,6 +62,34 @@ export default function RegisterPage() {
       provider: 'google',
       options: { redirectTo: `${window.location.origin}/auth/callback` },
     })
+  }
+
+  if (emailSent) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-white px-6">
+        <div className="max-w-md w-full text-center">
+          <div className="w-16 h-16 rounded-2xl bg-blue-50 flex items-center justify-center mx-auto mb-6">
+            <Mail className="w-8 h-8 text-blue-600" />
+          </div>
+          <h1 className="text-2xl font-extrabold text-gray-900 mb-3">Check your email</h1>
+          <p className="text-gray-500 mb-2">We sent a confirmation link to</p>
+          <p className="font-semibold text-gray-900 mb-6">{email}</p>
+          <p className="text-sm text-gray-400 mb-8">
+            Click the link in the email to activate your account. Once confirmed, come back and sign in.
+          </p>
+          <Link
+            href="/login"
+            className="inline-flex items-center justify-center w-full py-3.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-2xl transition-all text-sm shadow-lg shadow-blue-600/25"
+          >
+            Go to Sign In
+          </Link>
+          <p className="text-xs text-gray-400 mt-4">
+            Didn't receive it? Check your spam folder or{' '}
+            <button onClick={() => setEmailSent(false)} className="text-blue-600 hover:underline">try again</button>.
+          </p>
+        </div>
+      </div>
+    )
   }
 
   return (
