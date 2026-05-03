@@ -37,10 +37,11 @@ Nigerian real estate platform built with React + Vite.
 ### Design System
 - **Primary**: Blue-600 (`#2563EB`) throughout all panels
 - **Page background**: `#F4F6FB` (all dashboard pages)
-- **Admin sidebar**: dark `slate-900`
-- **Landlord/User sidebar**: white with `border-r border-gray-100`
+- **Admin sidebar**: dark `#0c0c15`
+- **Landlord/User sidebar**: dark `#0c0c15`
 - **Cards**: white, `rounded-2xl`, `border border-gray-100`, `shadow-sm`
-- Old green palette (`#6b9e6e`, `#aadb5a`) fully removed — use blue everywhere
+- Old green palette (`#6b9e6e`, `#aadb5a`) fully removed — use blue / dark everywhere
+- **AuthGuard spinner**: dark `#0c0c15` (was incorrectly green `#aadb5a`)
 
 ### Sidebar Collapse (all three panels)
 - **Toggle**: `PanelLeftClose` / `PanelLeftOpen` button at sidebar footer
@@ -83,11 +84,11 @@ Nigerian real estate platform built with React + Vite.
 - `/landlord/pending`, `/landlord/rejected` — Holding pages
 
 **Admin (`/admin`):**
-- `/admin` — Full dashboard (5 stat cards, AreaChart, PieChart, activity feed, KPI strip)
+- `/admin` — Full dashboard (glassmorphic hero card + 5 stat cards, AreaChart, PieChart, activity feed)
 - `/admin/properties` — Properties with status tabs, overlay cards, grid/list view
 - `/admin/landlords` — Full-width table, approve/reject, status badges
-- `/admin/projects` — KPI strip, dual progress bars
-- `/admin/users` — Role tabs, expandable permissions
+- `/admin/projects` — Admin-managed CRUD: create/edit/delete/status; localStorage persistence (`livana_admin_projects`); search, category filter, progress bars, units sold
+- `/admin/users` — Invite Team Member modal with role+permissions; localStorage persistence (`livana_team_users`); no fake sample data; per-row permissions expand; active/inactive toggle
 - `/admin/settings` — Settings with side nav (platform/notifications/security/listing/billing)
 - `/admin/help` — FAQ accordion, docs, support ticket form
 

@@ -217,6 +217,51 @@ export default function AdminDashboard() {
                   </div>
                 )}
 
+                {/* ── Hero card ── */}
+                <div className="relative overflow-hidden rounded-3xl h-52 md:h-60 shadow-xl shadow-black/10">
+                  <img
+                    src="https://images.unsplash.com/photo-1486325212027-8081e485255e?w=1400&q=80"
+                    alt="Platform" className="absolute inset-0 w-full h-full object-cover" />
+                  <div className="absolute inset-0 bg-gradient-to-r from-black/85 via-black/60 to-black/20" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+                  <div className="relative h-full flex flex-col justify-between p-5 md:p-7">
+                    <div className="flex items-start justify-between">
+                      <div className="inline-flex items-center gap-1.5 bg-white/10 backdrop-blur-md border border-white/20 text-white/90 text-xs font-bold px-3 py-1.5 rounded-full">
+                        <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+                        Livana Admin
+                      </div>
+                      <div className="hidden sm:flex items-center gap-2.5">
+                        {[
+                          { label: 'Properties', value: stats.properties },
+                          { label: 'Landlords', value: stats.landlords },
+                          { label: 'Pending', value: stats.pendingLandlords },
+                        ].map(s => (
+                          <div key={s.label} className="backdrop-blur-md bg-white/10 border border-white/20 rounded-2xl px-4 py-2 text-center min-w-[60px]">
+                            <p className="text-white text-lg font-extrabold leading-none">{s.value}</p>
+                            <p className="text-white/55 text-[10px] font-medium mt-0.5">{s.label}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                    <div className="flex items-end justify-between gap-4">
+                      <div>
+                        <p className="text-white/60 text-sm font-medium">{greeting()},</p>
+                        <h2 className="text-white text-2xl md:text-3xl font-extrabold tracking-tight leading-tight mt-0.5">{displayName}</h2>
+                        <p className="text-white/50 text-xs mt-1.5">
+                          {stats.pendingLandlords > 0
+                            ? `${stats.pendingLandlords} landlord${stats.pendingLandlords > 1 ? 's' : ''} awaiting approval`
+                            : `${stats.properties.toLocaleString()} total listings · ${occupancyRate}% occupancy`}
+                        </p>
+                      </div>
+                      <Link href="/admin/landlords"
+                        className="shrink-0 flex items-center gap-2 px-5 py-2.5 bg-white hover:bg-gray-50 text-gray-900 text-sm font-bold rounded-2xl transition-colors shadow-lg shadow-black/20">
+                        <ArrowRight className="w-4 h-4" />
+                        <span className="hidden sm:inline">Review Clients</span>
+                      </Link>
+                    </div>
+                  </div>
+                </div>
+
                 {/* Stat cards */}
                 <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 md:gap-4">
                   {STAT_CARDS.map(s => {

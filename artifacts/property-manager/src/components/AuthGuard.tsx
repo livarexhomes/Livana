@@ -48,7 +48,7 @@ export default function AuthGuard({ children, require: req, redirectTo = '/login
   if (status === 'loading') {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin w-8 h-8 border-4 border-[#aadb5a] border-t-transparent rounded-full" />
+        <div className="animate-spin w-8 h-8 border-4 border-[#0c0c15] border-t-transparent rounded-full" />
       </div>
     )
   }
