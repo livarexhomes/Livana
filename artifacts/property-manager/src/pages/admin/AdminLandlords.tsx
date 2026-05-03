@@ -4,6 +4,7 @@ import {
   Building2, CheckCircle, Clock, XCircle, Plus, SlidersHorizontal,
 } from 'lucide-react'
 import AdminSidebar from '../../components/AdminSidebar'
+import AdminHeader from '../../components/AdminHeader'
 import AuthGuard from '../../components/AuthGuard'
 import { createClient } from '../../lib/supabase'
 
@@ -108,20 +109,18 @@ export default function AdminLandlords() {
         <AdminSidebar userEmail={user?.email} userName={displayName} />
 
         <div className="flex-1 flex flex-col min-w-0">
-          <header className="flex items-center justify-between pl-14 pr-4 md:px-8 py-4 bg-white border-b border-gray-100 shrink-0">
-            <div>
-              <h1 className="text-xl font-extrabold text-gray-900 tracking-tight">Clients</h1>
-              <p className="text-sm text-gray-400 mt-0.5">
-                {clients.length.toLocaleString()} landlords
-                {pending > 0 && <span className="ml-2 text-amber-600 font-bold">· {pending} pending</span>}
-              </p>
-            </div>
-            <button type="button"
-              className="inline-flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-xl shadow-sm shadow-blue-600/20 transition-colors">
-              <Plus className="w-4 h-4" />
-              <span className="hidden sm:inline">Invite Client</span>
-            </button>
-          </header>
+          <AdminHeader
+            title="Clients"
+            subtitle={`${clients.length.toLocaleString()} landlords${pending > 0 ? ` · ${pending} pending` : ''}`}
+            pendingCount={pending}
+            action={
+              <button type="button"
+                className="inline-flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-xl shadow-sm shadow-blue-600/20 transition-colors">
+                <Plus className="w-4 h-4" />
+                <span className="hidden sm:inline">Invite Client</span>
+              </button>
+            }
+          />
 
           <main className="flex-1 overflow-y-auto p-4 md:p-6 pb-24 md:pb-6 space-y-4">
             {/* Status tabs */}

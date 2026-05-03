@@ -78,7 +78,7 @@ export default function LandlordDashboard() {
               <h1 className="text-base font-extrabold text-gray-900 tracking-tight leading-tight">{displayName}</h1>
             </div>
             <Link href="/landlord/listings/new"
-              className="inline-flex items-center gap-2 px-4 py-2 bg-[#0c0c15] hover:bg-[#1a1a28] text-white text-sm font-bold rounded-xl shadow-sm transition-colors">
+              className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-xl shadow-sm shadow-blue-600/20 transition-colors">
               <Plus className="w-4 h-4" />
               <span className="hidden sm:inline">Add Listing</span>
             </Link>
@@ -88,7 +88,7 @@ export default function LandlordDashboard() {
           <main className="flex-1 overflow-y-auto p-4 md:p-5 space-y-4">
             {loading ? (
               <div className="flex items-center justify-center py-32">
-                <div className="animate-spin w-8 h-8 border-4 border-[#0c0c15] border-t-transparent rounded-full" />
+                <div className="animate-spin w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full" />
               </div>
             ) : (
               <>
@@ -207,7 +207,7 @@ export default function LandlordDashboard() {
                         <Building2 className="w-10 h-10 text-gray-200 mx-auto mb-3" />
                         <p className="text-sm text-gray-500 font-medium mb-4">No listings yet</p>
                         <Link href="/landlord/listings/new"
-                          className="inline-flex items-center gap-2 px-4 py-2 bg-[#0c0c15] text-white text-sm font-bold rounded-xl">
+                          className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-xl transition-colors">
                           <Plus className="w-4 h-4" /> Add your first listing
                         </Link>
                       </div>
@@ -217,8 +217,8 @@ export default function LandlordDashboard() {
                           const st = STATUS_STYLE[p.status] ?? { bg: 'bg-gray-100', text: 'text-gray-600', dot: 'bg-gray-400', label: p.status }
                           return (
                             <div key={p.id} className="flex items-center gap-3 px-5 py-3.5 hover:bg-slate-50/60 transition-colors">
-                              <div className="w-9 h-9 rounded-xl bg-[#0c0c15]/5 flex items-center justify-center shrink-0">
-                                <Building2 className="w-4 h-4 text-[#0c0c15]/60" />
+                              <div className="w-9 h-9 rounded-xl bg-blue-50 flex items-center justify-center shrink-0">
+                                <Building2 className="w-4 h-4 text-blue-600" />
                               </div>
                               <div className="flex-1 min-w-0">
                                 <p className="text-sm font-semibold text-gray-900 truncate">{p.title}</p>
@@ -288,7 +288,7 @@ export default function LandlordDashboard() {
                   <h2 className="text-sm font-bold text-gray-900 mb-4">Quick Actions</h2>
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                     {[
-                      { href: '/landlord/listings/new', icon: Plus,          label: 'Add Listing',    bg: 'bg-[#0c0c15]', text: 'text-white' },
+                      { href: '/landlord/listings/new', icon: Plus,          label: 'Add Listing',    bg: 'bg-blue-600',   text: 'text-white' },
                       { href: '/landlord/enquiries',    icon: MessageSquare, label: 'View Enquiries', bg: 'bg-violet-50', text: 'text-violet-700' },
                       { href: '/listings',              icon: Eye,           label: 'Browse Market',  bg: 'bg-slate-50',  text: 'text-gray-700' },
                       { href: '/landlord/profile',      icon: Building2,     label: 'Edit Profile',   bg: 'bg-slate-50',  text: 'text-gray-700' },
