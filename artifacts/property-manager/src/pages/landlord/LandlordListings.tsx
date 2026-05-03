@@ -6,7 +6,7 @@ import {
 } from 'lucide-react'
 import LandlordSidebar from '../../components/LandlordSidebar'
 import AuthGuard from '../../components/AuthGuard'
-import { createClient } from '../../lib/supabase'
+import { createClient, getSupabaseImageUrl } from '../../lib/supabase'
 import type { Property, Landlord } from '../../lib/types'
 
 const STATUS: Record<string, { label: string; bg: string; text: string; icon: any }> = {
@@ -47,7 +47,11 @@ export default function LandlordListings() {
     const { data: l } = await supabase.from('landlords').select('*').eq('user_id', user.id).single() as { data: Landlord | null }
     setLandlord(l)
     if (l) {
-      const { data } = await supabase.from('properties').select('*').eq('landlord_id', l.id).order('created_at', { ascending: false }) as unknown as { data: Property[] | null }
+      const { data } = await supabase
+        .from('properties')
+        .select('*, property_images(id, storage_path, alt_text, is_cover, sort_order)')
+        .eq('landlord_id', l.id)
+        .order('created_at', { ascending: false }) as unknown as { data: Property[] | null }
       setProperties(data ?? [])
       setFiltered(data ?? [])
     }
@@ -187,15 +191,21 @@ export default function LandlordListings() {
                   const s = STATUS[p.status] ?? { label: p.status, bg: 'bg-gray-100', text: 'text-gray-600', icon: Clock }
                   const SIcon = s.icon
                   return (
-                    <div key={p.id} className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm hover:shadow-md transition-all">
-                      <div className="flex items-start justify-between gap-2 mb-3">
-                        <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center shrink-0">
-                          <Building2 className="w-5 h-5 text-blue-600" />
-                        </div>
-                        <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-bold ${s.bg} ${s.text}`}>
+                    <div key={p.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-all overflow-hidden">
+                      {/* Cover image */}
+                      <div className="relative aspect-[16/9] bg-gradient-to-br from-gray-50 to-gray-100 overflow-hidden">
+                        {(() => {
+                          const imgs: any[] = (p as any).property_images ?? []
+                          const cover = imgs.find((i: any) => i.is_cover) ?? imgs[0]
+                          return cover
+                            ? <img src={getSupabaseImageUrl(cover.storage_path)} alt={p.title} className="w-full h-full object-cover" onError={e => { (e.currentTarget as HTMLImageElement).style.display = 'none' }} />
+                            : <div className="w-full h-full flex items-center justify-center"><Building2 className="w-8 h-8 text-gray-200" /></div>
+                        })()}
+                        <span className={`absolute top-2 right-2 inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-bold ${s.bg} ${s.text}`}>
                           <SIcon className="w-3 h-3" />{s.label}
                         </span>
                       </div>
+                      <div className="p-5">
                       <h3 className="font-bold text-gray-900 text-sm mb-1 line-clamp-2">{p.title}</h3>
                       <div className="flex items-center gap-1.5 text-xs text-gray-400 mb-2">
                         <MapPin className="w-3.5 h-3.5" />{p.city}
@@ -217,6 +227,7 @@ export default function LandlordListings() {
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>
                       </div>
+                      </div>{/* /p-5 */}
                     </div>
                   )
                 })}
