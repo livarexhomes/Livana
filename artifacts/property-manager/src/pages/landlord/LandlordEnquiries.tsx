@@ -47,13 +47,16 @@ export default function LandlordEnquiries() {
       <div className="flex min-h-screen bg-gray-50">
         <LandlordSidebar userName={landlord?.full_name} userEmail={user?.email} isVerified={landlord?.is_verified} />
         <div className="flex-1 flex flex-col overflow-hidden">
-          <header className="h-16 flex items-center px-6 bg-white border-b border-gray-100 shrink-0">
-            <h1 className="font-semibold text-gray-900">Enquiries</h1>
+          <header className="flex items-center justify-between pl-14 pr-4 md:px-8 py-4 bg-white border-b border-gray-100 shrink-0">
+            <div>
+              <h1 className="text-xl font-extrabold text-gray-900 tracking-tight">Enquiries</h1>
+              <p className="text-sm text-gray-400 mt-0.5">Messages from potential tenants</p>
+            </div>
           </header>
           <main className="flex-1 overflow-y-auto p-4 md:p-6 pb-24 md:pb-6">
             {loading ? (
               <div className="flex items-center justify-center py-20">
-                <div className="animate-spin w-8 h-8 border-4 border-[#aadb5a] border-t-transparent rounded-full" />
+                <div className="animate-spin w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full" />
               </div>
             ) : enquiries.length === 0 ? (
               <div className="bg-white rounded-2xl border border-gray-200 p-16 text-center">
@@ -84,7 +87,7 @@ export default function LandlordEnquiries() {
                       </p>
                       {e.status !== 'replied' && (
                         <button onClick={() => updateStatus(e.id, 'replied')}
-                          className="px-3 py-1.5 text-xs font-semibold bg-[#6b9e6e] text-white rounded-lg hover:bg-[#4a7f4d] transition-colors">
+                          className="px-3 py-1.5 text-xs font-semibold bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
                           Mark Replied
                         </button>
                       )}
