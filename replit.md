@@ -77,34 +77,45 @@ Nigerian real estate platform built with React + Vite.
 **Landlord (`/landlord`):**
 - `/landlord` — Dashboard (4 stat cards, recent listings, recent enquiries, quick actions)
 - `/landlord/listings` — Listings table + grid view, search, status badges
-- `/landlord/listings/new` — Create listing form (multi-section, blue theme)
-- `/landlord/listings/:id/edit` — Edit listing form
+- `/landlord/listings/new` — Create listing form (multi-section + photo upload)
+- `/landlord/listings/:id/edit` — Edit listing form (existing photos + new uploads)
 - `/landlord/enquiries` — Enquiries with filter tabs, WhatsApp link, mark replied/close
 - `/landlord/profile` — Profile editor with avatar card + verification badge
-- `/landlord/pending`, `/landlord/rejected` — Holding pages
+- `/landlord/kyc` — KYC submission form (NIN, DOB, Govt ID, bank details) → sets status to 'pending'
+- `/landlord/pending` — Holding page shown while KYC is under review
+- `/landlord/rejected`, `/landlord/suspended` — Blocked state pages
+- `/partners` — Hidden landlord signup page (not linked publicly)
 
 **Admin (`/admin`):**
 - `/admin` — Full dashboard (glassmorphic hero card + 5 stat cards, AreaChart, PieChart, activity feed)
 - `/admin/properties` — Properties with status tabs, overlay cards, grid/list view
-- `/admin/landlords` — Full-width table, approve/reject, status badges
-- `/admin/projects` — Admin-managed CRUD: create/edit/delete/status; localStorage persistence (`livana_admin_projects`); search, category filter, progress bars, units sold
-- `/admin/users` — Invite Team Member modal with role+permissions; localStorage persistence (`livana_team_users`); no fake sample data; per-row permissions expand; active/inactive toggle
-- `/admin/settings` — Settings with side nav (platform/notifications/security/listing/billing)
+- `/admin/landlords` — Full-width table; approve/suspend/reinstate/delete; KYC status badges
+- `/admin/kyc` — KYC review split panel: list of submissions + detail pane (NIN, DOB, ID, bank); approve/suspend/reject actions
+- `/admin/activity` — Live activity feed: landlord signups, tenant signups, KYC submissions, property listings, enquiries; grouped by day; filterable by type
+- `/admin/projects` — Admin-managed CRUD; localStorage persistence
+- `/admin/users` — Team member management; localStorage persistence
+- `/admin/settings` — Settings with side nav
 - `/admin/help` — FAQ accordion, docs, support ticket form
 
-### Auth Flow
-1. Login → check `app_metadata.role === 'admin'` → redirect to `/admin`
-2. Else check `landlords` table → redirect to `/landlord` (or `/landlord/pending`/`/landlord/rejected`)
-3. Else redirect to `/user` (tenant)
+### KYC Flow
+1. Landlord signs up at `/partners` → `status = 'not_submitted'`
+2. On login, AuthGuard detects `not_submitted` → redirects to `/landlord/kyc`
+3. Landlord fills KYC form (NIN, DOB, ID type/number, bank details) → `status = 'pending'`, `kyc_submitted_at` set
+4. Admin notified (bell icon shows pending KYC count) → reviews at `/admin/kyc`
+5. Admin approves → `status = 'approved'`, `is_verified = true` → landlord can post listings
+6. Admin can also suspend (→ `/landlord/suspended`) or reject (→ `/landlord/rejected`)
 
 ### Supabase Tables
 - `properties` — listings (type, status, price, city, bedrooms, bathrooms, featured, etc.)
 - `property_images` — images linked to properties (Storage bucket: `property-images`)
-- `landlords` — profiles with `status` (pending/approved/rejected) and `is_verified`
+- `landlords` — profiles with `status` (`not_submitted`/`pending`/`approved`/`rejected`/`suspended`) and `is_verified`; KYC fields: `nin`, `dob`, `id_type`, `id_number`, `bank_name`, `account_number`, `state`, `kyc_notes`, `kyc_submitted_at`
 - `tenants` — tenant profiles
 - `saved_properties` — tenant saved property links
 - `enquiries` — messages from tenants to landlords
 - `contact_messages` — contact form submissions
+
+### Supabase Migration
+Run `SUPABASE_MIGRATION.sql` in Supabase SQL Editor to add KYC columns to the `landlords` table.
 
 ### Location Search (Nigerian State + Area)
 - `src/lib/nigerianStates.ts` — exports `NIGERIAN_STATES` (37 states) and `POPULAR_AREAS` (neighbourhood suggestions per state)
@@ -114,7 +125,12 @@ Nigerian real estate platform built with React + Vite.
 
 ### Auth Flow
 1. Login → check `app_metadata.role === 'admin'` → redirect to `/admin`
-2. Else check `landlords` table → redirect to `/landlord` (or `/landlord/pending`/`/landlord/rejected`)
+2. Else check `landlords` table:
+   - `not_submitted` → `/landlord/kyc`
+   - `pending` → `/landlord/pending`
+   - `rejected` → `/landlord/rejected`
+   - `suspended` → `/landlord/suspended`
+   - `approved` → `/landlord` dashboard
 3. Else check `tenants` table → if missing, auto-create from `user_metadata` → redirect to `/user`
 4. **Registration**: if Supabase email confirmation is required (`session === null`), shows "Check your email" screen; if no confirmation needed, creates tenant profile and navigates to `/user`
 

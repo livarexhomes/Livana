@@ -1,12 +1,12 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useParams, useLocation } from 'wouter'
 import {
   Home, FileText, MapPin, DollarSign, BedDouble, Bath,
-  Maximize2, Tag, CheckCircle, ArrowLeft,
+  Maximize2, Tag, CheckCircle, ArrowLeft, ImagePlus, X, Star,
 } from 'lucide-react'
 import LandlordSidebar from '../../components/LandlordSidebar'
 import AuthGuard from '../../components/AuthGuard'
-import { createClient } from '../../lib/supabase'
+import { createClient, getSupabaseImageUrl } from '../../lib/supabase'
 import type { Landlord } from '../../lib/types'
 import { NIGERIAN_STATES, POPULAR_AREAS } from '../../lib/nigerianStates'
 
@@ -14,6 +14,10 @@ type FormData = {
   title: string; description: string; address: string; city: string
   price: string; bedrooms: string; bathrooms: string; area_sqft: string
   type: string; status: string; featured: boolean
+}
+
+type ExistingImage = {
+  id: string; storage_path: string; is_cover: boolean; sort_order: number | null; alt_text: string | null
 }
 
 const emptyForm: FormData = {
@@ -35,6 +39,13 @@ export default function LandlordListingForm() {
   const [loadingData, setLoadingData] = useState(isEdit)
   const [error, setError]       = useState('')
 
+  const [imageFiles, setImageFiles] = useState<File[]>([])
+  const [imagePreviews, setImagePreviews] = useState<string[]>([])
+  const [coverIdx, setCoverIdx] = useState(0)
+  const [existingImages, setExistingImages] = useState<ExistingImage[]>([])
+  const [deletingImg, setDeletingImg] = useState<string | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
   useEffect(() => {
     const supabase = createClient()
     supabase.auth.getUser().then(async ({ data: { user } }) => {
@@ -43,7 +54,10 @@ export default function LandlordListingForm() {
       const { data: l } = await supabase.from('landlords').select('*').eq('user_id', user.id).single() as { data: Landlord | null }
       setLandlord(l)
       if (isEdit && params.id) {
-        const { data: p } = await supabase.from('properties').select('*').eq('id', params.id).single()
+        const [{ data: p }, { data: imgs }] = await Promise.all([
+          supabase.from('properties').select('*').eq('id', params.id).single(),
+          supabase.from('property_images').select('*').eq('property_id', params.id).order('sort_order', { ascending: true }),
+        ])
         if (p) {
           setForm({
             title:       p.title ?? '',
@@ -59,10 +73,64 @@ export default function LandlordListingForm() {
             featured:    p.featured ?? false,
           })
         }
+        if (imgs) setExistingImages(imgs as ExistingImage[])
         setLoadingData(false)
       }
     })
   }, [isEdit, params.id])
+
+  function addFiles(files: FileList | null) {
+    if (!files) return
+    const newFiles = Array.from(files).filter(f => f.type.startsWith('image/'))
+    const newPreviews = newFiles.map(f => URL.createObjectURL(f))
+    setImageFiles(prev => [...prev, ...newFiles])
+    setImagePreviews(prev => [...prev, ...newPreviews])
+  }
+
+  function removeNewImage(idx: number) {
+    URL.revokeObjectURL(imagePreviews[idx])
+    setImageFiles(prev => prev.filter((_, i) => i !== idx))
+    setImagePreviews(prev => prev.filter((_, i) => i !== idx))
+    if (coverIdx === idx) setCoverIdx(0)
+    else if (coverIdx > idx) setCoverIdx(c => c - 1)
+  }
+
+  async function deleteExistingImage(img: ExistingImage) {
+    setDeletingImg(img.id)
+    const supabase = createClient()
+    await supabase.storage.from('property-images').remove([img.storage_path])
+    await supabase.from('property_images').delete().eq('id', img.id)
+    setExistingImages(prev => prev.filter(i => i.id !== img.id))
+    setDeletingImg(null)
+  }
+
+  async function setCoverExisting(imgId: string) {
+    const supabase = createClient()
+    await supabase.from('property_images').update({ is_cover: false }).eq('property_id', params.id!)
+    await supabase.from('property_images').update({ is_cover: true }).eq('id', imgId)
+    setExistingImages(prev => prev.map(i => ({ ...i, is_cover: i.id === imgId })))
+  }
+
+  async function uploadImages(propertyId: string, landlordId: string) {
+    if (imageFiles.length === 0) return
+    const supabase = createClient()
+    const hasExistingCover = existingImages.some(i => i.is_cover)
+
+    for (let i = 0; i < imageFiles.length; i++) {
+      const file = imageFiles[i]
+      const ext = file.name.split('.').pop()
+      const path = `${landlordId}/${propertyId}/${Date.now()}-${i}.${ext}`
+      const { error: uploadErr } = await supabase.storage.from('property-images').upload(path, file, { upsert: false })
+      if (uploadErr) { console.error('Upload error:', uploadErr); continue }
+      await supabase.from('property_images').insert({
+        property_id: propertyId,
+        storage_path: path,
+        is_cover: !hasExistingCover && i === coverIdx,
+        sort_order: existingImages.length + i,
+        alt_text: form.title || null,
+      })
+    }
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -78,10 +146,17 @@ export default function LandlordListingForm() {
       area_sqft: form.area_sqft ? Number(form.area_sqft) : null,
       type: form.type, status: form.status, featured: form.featured,
     }
-    const { error: err } = isEdit && params.id
-      ? await supabase.from('properties').update(data).eq('id', params.id)
-      : await supabase.from('properties').insert(data)
-    if (err) { setError(err.message); setLoading(false); return }
+
+    if (isEdit && params.id) {
+      const { error: err } = await supabase.from('properties').update(data).eq('id', params.id)
+      if (err) { setError(err.message); setLoading(false); return }
+      await uploadImages(params.id, landlord.id)
+    } else {
+      const { data: created, error: err } = await supabase.from('properties').insert(data).select('id').single()
+      if (err || !created) { setError(err?.message ?? 'Failed to create listing'); setLoading(false); return }
+      await uploadImages(created.id, landlord.id)
+    }
+
     navigate('/landlord/listings')
   }
 
@@ -262,7 +337,7 @@ export default function LandlordListingForm() {
 
                   <label className="flex items-center gap-3 p-4 rounded-xl border border-gray-200 hover:border-blue-300 hover:bg-blue-50/40 transition-all cursor-pointer group">
                     <div className="relative">
-                      <input type="checkbox" id="featured" checked={form.featured}
+                      <input type="checkbox" checked={form.featured}
                         onChange={e => set('featured', e.target.checked)}
                         className="sr-only peer" />
                       <div className={`w-5 h-5 rounded flex items-center justify-center border-2 transition-all ${
@@ -276,6 +351,95 @@ export default function LandlordListingForm() {
                       <p className="text-xs text-gray-400 mt-0.5">Featured properties appear prominently in search results</p>
                     </div>
                   </label>
+                </div>
+
+                {/* Images */}
+                <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-4">
+                  <div className="flex items-center gap-2 pb-1 border-b border-gray-100">
+                    <ImagePlus className="w-4 h-4 text-blue-600" />
+                    <h2 className="text-sm font-bold text-gray-900">Photos</h2>
+                    <span className="ml-auto text-xs text-gray-400">First photo will be the cover</span>
+                  </div>
+
+                  {/* Existing images (edit mode) */}
+                  {existingImages.length > 0 && (
+                    <div>
+                      <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Current photos</p>
+                      <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+                        {existingImages.map(img => (
+                          <div key={img.id} className="relative group aspect-square rounded-xl overflow-hidden border border-gray-200">
+                            <img
+                              src={getSupabaseImageUrl(img.storage_path)}
+                              alt={img.alt_text ?? ''}
+                              className="w-full h-full object-cover"
+                            />
+                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-1.5">
+                              <button type="button" onClick={() => setCoverExisting(img.id)}
+                                title="Set as cover"
+                                className={`w-7 h-7 rounded-lg flex items-center justify-center transition-colors ${img.is_cover ? 'bg-amber-400 text-white' : 'bg-white/90 text-gray-700 hover:bg-amber-400 hover:text-white'}`}>
+                                <Star className="w-3.5 h-3.5" fill={img.is_cover ? 'currentColor' : 'none'} />
+                              </button>
+                              <button type="button" onClick={() => deleteExistingImage(img)}
+                                disabled={deletingImg === img.id}
+                                title="Delete"
+                                className="w-7 h-7 rounded-lg bg-white/90 flex items-center justify-center text-red-500 hover:bg-red-500 hover:text-white transition-colors disabled:opacity-50">
+                                {deletingImg === img.id
+                                  ? <div className="w-3 h-3 border-2 border-red-400 border-t-transparent rounded-full animate-spin" />
+                                  : <X className="w-3.5 h-3.5" />
+                                }
+                              </button>
+                            </div>
+                            {img.is_cover && (
+                              <div className="absolute top-1.5 left-1.5 px-1.5 py-0.5 bg-amber-400 rounded-md text-[9px] font-black text-white uppercase tracking-wide">Cover</div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* New image previews */}
+                  {imagePreviews.length > 0 && (
+                    <div>
+                      <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">
+                        New photos to upload ({imagePreviews.length})
+                      </p>
+                      <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+                        {imagePreviews.map((src, i) => (
+                          <div key={i} className="relative group aspect-square rounded-xl overflow-hidden border-2 transition-all cursor-pointer"
+                            style={{ borderColor: i === coverIdx && existingImages.length === 0 ? '#2563eb' : '#e5e7eb' }}
+                            onClick={() => setCoverIdx(i)}>
+                            <img src={src} alt="" className="w-full h-full object-cover" />
+                            <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity" />
+                            {i === coverIdx && existingImages.length === 0 && (
+                              <div className="absolute top-1.5 left-1.5 px-1.5 py-0.5 bg-blue-600 rounded-md text-[9px] font-black text-white uppercase tracking-wide">Cover</div>
+                            )}
+                            <button type="button"
+                              onClick={e => { e.stopPropagation(); removeNewImage(i) }}
+                              className="absolute top-1 right-1 w-6 h-6 bg-white/90 hover:bg-red-500 hover:text-white rounded-lg flex items-center justify-center text-gray-700 transition-colors opacity-0 group-hover:opacity-100">
+                              <X className="w-3 h-3" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Upload area */}
+                  <button type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="w-full border-2 border-dashed border-gray-200 hover:border-blue-400 hover:bg-blue-50/40 rounded-xl py-8 flex flex-col items-center gap-2 text-gray-400 hover:text-blue-600 transition-all">
+                    <ImagePlus className="w-7 h-7" />
+                    <div className="text-center">
+                      <p className="text-sm font-semibold">Click to add photos</p>
+                      <p className="text-xs mt-0.5">JPG, PNG or WEBP · Max 10MB each</p>
+                    </div>
+                  </button>
+                  <input ref={fileInputRef} type="file" accept="image/*" multiple className="hidden"
+                    onChange={e => addFiles(e.target.files)} />
+                  {existingImages.length === 0 && imagePreviews.length > 1 && (
+                    <p className="text-xs text-gray-400 text-center">Click on a photo to set it as the cover image</p>
+                  )}
                 </div>
 
                 {/* Actions */}
