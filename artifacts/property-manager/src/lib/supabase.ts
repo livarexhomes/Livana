@@ -29,3 +29,7 @@ export function getSupabaseImageUrl(storagePath: string) {
 export function getSupabaseAvatarUrl(storagePath: string) {
   return `${url}/storage/v1/object/public/landlord-avatars/${storagePath}`
 }
+
+export function getSupabaseProjectImageUrl(storagePath: string) {
+  return `${url}/storage/v1/object/public/project-images/${storagePath}`
+}
