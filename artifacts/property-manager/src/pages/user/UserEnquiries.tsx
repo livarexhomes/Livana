@@ -81,6 +81,7 @@ export default function UserEnquiriesPage() {
             <div className="space-y-3">
               {visible.map(item => {
                 const s = STATUS[item.status] ?? STATUS.open
+                const prop = item.properties
                 return (
                   <div key={item.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-all overflow-hidden">
                     <div className="flex items-start gap-3 px-5 pt-4 pb-3 border-b border-gray-50">
@@ -89,20 +90,24 @@ export default function UserEnquiriesPage() {
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <Link href={`/listings/${item.properties.id}`}
-                            className="font-bold text-gray-900 text-sm hover:text-blue-600 transition-colors line-clamp-1">
-                            {item.properties.title}
-                          </Link>
+                          {prop ? (
+                            <Link href={`/listings/${prop.id}`}
+                              className="font-bold text-gray-900 text-sm hover:text-blue-600 transition-colors line-clamp-1">
+                              {prop.title}
+                            </Link>
+                          ) : (
+                            <span className="font-bold text-gray-400 text-sm line-clamp-1">Property removed</span>
+                          )}
                           <span className={`shrink-0 inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-bold ${s.bg} ${s.text}`}>
                             <span className={`w-1.5 h-1.5 rounded-full ${s.dot}`} />{s.label}
                           </span>
                         </div>
                         <div className="flex items-center gap-3 mt-0.5 text-xs text-gray-400">
-                          {item.properties.city && (
-                            <span className="flex items-center gap-0.5"><MapPin className="w-3 h-3" />{item.properties.city}</span>
+                          {prop?.city && (
+                            <span className="flex items-center gap-0.5"><MapPin className="w-3 h-3" />{prop.city}</span>
                           )}
-                          {item.properties.price && (
-                            <span className="font-semibold text-gray-600">₦{Number(item.properties.price).toLocaleString()}</span>
+                          {prop?.price && (
+                            <span className="font-semibold text-gray-600">₦{Number(prop.price).toLocaleString()}</span>
                           )}
                         </div>
                       </div>

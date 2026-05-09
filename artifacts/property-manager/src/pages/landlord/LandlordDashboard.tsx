@@ -43,19 +43,20 @@ export default function LandlordDashboard() {
         .from('landlords').select('*').eq('user_id', user.id).single() as { data: Landlord | null }
       setLandlord(l)
       if (l) {
-        const [propsRes, enqsRes] = await Promise.all([
+        const [propsRes, enqsRes, availRes, takenRes, enqCountRes] = await Promise.all([
           supabase.from('properties').select('*, property_images(id, storage_path, alt_text, is_cover, sort_order)').eq('landlord_id', l.id).order('created_at', { ascending: false }).limit(5),
           supabase.from('enquiries').select('*, properties(title)').eq('landlord_id', l.id).order('created_at', { ascending: false }).limit(4),
+          supabase.from('properties').select('id', { count: 'exact', head: true }).eq('landlord_id', l.id).eq('status', 'available'),
+          supabase.from('properties').select('id', { count: 'exact', head: true }).eq('landlord_id', l.id).eq('status', 'taken'),
+          supabase.from('enquiries').select('id', { count: 'exact', head: true }).eq('landlord_id', l.id),
         ])
-        const props = (propsRes.data as Property[] | null) ?? []
-        const enqs  = enqsRes.data ?? []
-        setRecentListings(props)
-        setRecentEnquiries(enqs)
+        setRecentListings((propsRes.data as Property[] | null) ?? [])
+        setRecentEnquiries(enqsRes.data ?? [])
         setStats({
-          listings:  props.length,
-          enquiries: enqs.length,
-          available: props.filter(p => p.status === 'available').length,
-          taken:     props.filter(p => p.status === 'taken').length,
+          listings:  (availRes.count ?? 0) + (takenRes.count ?? 0),
+          enquiries: enqCountRes.count ?? 0,
+          available: availRes.count ?? 0,
+          taken:     takenRes.count ?? 0,
         })
       }
       setLoading(false)

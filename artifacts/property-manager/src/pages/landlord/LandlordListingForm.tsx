@@ -111,16 +111,17 @@ export default function LandlordListingForm() {
     setExistingImages(prev => prev.map(i => ({ ...i, is_cover: i.id === imgId })))
   }
 
-  async function uploadImages(propertyId: string, landlordId: string) {
+  async function uploadImages(propertyId: string) {
     if (imageFiles.length === 0) return
     const supabase = createClient()
+    const { data: { user: cu } } = await supabase.auth.getUser()
     const hasExistingCover = existingImages.some(i => i.is_cover)
     const uploadErrors: string[] = []
 
     for (let i = 0; i < imageFiles.length; i++) {
       const file = imageFiles[i]
       const ext = file.name.split('.').pop() ?? 'jpg'
-      const path = `${landlordId}/${propertyId}/${Date.now()}-${i}.${ext}`
+      const path = `${cu?.id}/${propertyId}/${Date.now()}-${i}.${ext}`
       const { error: uploadErr } = await supabase.storage
         .from('property-images')
         .upload(path, file, { upsert: true, contentType: file.type })
@@ -160,11 +161,11 @@ export default function LandlordListingForm() {
     if (isEdit && params.id) {
       const { error: err } = await supabase.from('properties').update(data).eq('id', params.id)
       if (err) { setError(err.message); setLoading(false); return }
-      await uploadImages(params.id, landlord.id)
+      await uploadImages(params.id)
     } else {
       const { data: created, error: err } = await supabase.from('properties').insert(data).select('id').single()
       if (err || !created) { setError(err?.message ?? 'Failed to create listing'); setLoading(false); return }
-      await uploadImages(created.id, landlord.id)
+      await uploadImages(created.id)
     }
 
     navigate('/landlord/listings')
