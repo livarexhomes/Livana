@@ -146,18 +146,22 @@ export default function LandlordListings() {
                       const SIcon = s.icon
                       const imgs: any[] = p.property_images ?? []
                       const cover = imgs.find((i: any) => i.is_cover) ?? imgs[0]
+                      const coverUrl = cover ? getSupabaseImageUrl(cover.storage_path) : null
                       return (
                         <tr key={p.id} className="hover:bg-slate-50/60 transition-colors">
-                          <td className="px-5 py-4">
+                          <td className="px-5 py-3.5">
                             <div className="flex items-center gap-3">
-                              <div className="w-12 h-12 rounded-xl overflow-hidden bg-gray-100 shrink-0">
-                                {cover
-                                  ? <img src={getSupabaseImageUrl(cover.storage_path)} alt={p.title} className="w-full h-full object-cover" onError={e => { (e.currentTarget as HTMLImageElement).style.display = 'none' }} />
-                                  : <div className="w-full h-full flex items-center justify-center"><Building2 className="w-5 h-5 text-gray-300" /></div>
-                                }
+                              <div className="relative w-12 h-12 rounded-xl overflow-hidden shrink-0 bg-gray-100">
+                                {coverUrl ? (
+                                  <img src={coverUrl} alt={p.title} className="w-full h-full object-cover" />
+                                ) : (
+                                  <div className="w-full h-full flex items-center justify-center text-gray-300">
+                                    <Building2 className="w-5 h-5" />
+                                  </div>
+                                )}
                               </div>
                               <div>
-                                <p className="font-semibold text-gray-900 text-sm leading-tight">{p.title}</p>
+                                <p className="font-semibold text-gray-900 text-sm leading-tight line-clamp-1">{p.title}</p>
                                 <p className="text-xs text-gray-400 mt-0.5">
                                   {p.bedrooms != null && `${p.bedrooms}bd`}{p.bathrooms != null && ` · ${p.bathrooms}ba`}
                                   {p.property_type && ` · ${p.property_type}`}
