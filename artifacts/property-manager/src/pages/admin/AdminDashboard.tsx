@@ -80,7 +80,7 @@ export default function AdminDashboard() {
         supabase.from('properties').select('id', { count: 'exact', head: true }).eq('status', 'available'),
         supabase.from('properties').select('id', { count: 'exact', head: true }).eq('status', 'taken'),
         supabase.from('landlords').select('id', { count: 'exact', head: true }),
-        supabase.from('landlords').select('id', { count: 'exact', head: true }),
+        supabase.from('landlords').select('id', { count: 'exact', head: true }).in('status', ['pending', 'not_submitted']),
         supabase.from('tenants').select('id', { count: 'exact', head: true }),
         supabase.from('enquiries').select('id', { count: 'exact', head: true }),
         supabase.from('enquiries').select('*, properties(title, city), tenants(full_name)').order('created_at', { ascending: false }).limit(5),
@@ -141,7 +141,7 @@ export default function AdminDashboard() {
       bg: 'bg-violet-50',
       trend: '+12%',
       up: true,
-      badge: stats.pendingLandlords > 0 ? `${stats.pendingLandlords} pending` : null,
+      badge: stats.pendingLandlords > 0 ? `${stats.pendingLandlords} need review` : null,
     },
     {
       label: 'Tenants',
