@@ -240,10 +240,11 @@ export default function AdminProperties() {
 
     // 2. Upload images (if any)
     if (imageFiles.length > 0) {
+      const { data: { user: cu } } = await supabase.auth.getUser()
       await Promise.all(
         imageFiles.map(async (file, i) => {
           const ext = file.name.split('.').pop()
-          const path = `${authUid}/properties/${data.id}/${Date.now()}-${i}.${ext}`
+          const path = `${cu?.id}/properties/${data.id}/${Date.now()}-${i}.${ext}`
 
           const { error: upErr } = await supabase.storage
             .from('property-images')
@@ -288,12 +289,13 @@ export default function AdminProperties() {
 
     // Upload any new images
     if (editImageFiles.length > 0) {
+      const { data: { user: cu } } = await supabase.auth.getUser()
       const startOrder = existingImages.length
       const noCoverYet = existingImages.every(img => !img.is_cover)
       await Promise.all(
         editImageFiles.map(async (file, i) => {
           const ext = file.name.split('.').pop()
-          const path = `${authUid}/properties/${editingProp.id}/${Date.now()}-${i}.${ext}`
+          const path = `${cu?.id}/properties/${editingProp.id}/${Date.now()}-${i}.${ext}`
           const { error: upErr } = await supabase.storage
             .from('property-images')
             .upload(path, file, { upsert: true })
