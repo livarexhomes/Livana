@@ -167,7 +167,7 @@ export default function LandlordListingForm() {
       if (err || !created) { setError(err?.message ?? 'Failed to create listing'); setLoading(false); return }
       await uploadImages(created.id)
     }
-
+    setLoading(false)
     navigate('/landlord/listings')
   }
 
