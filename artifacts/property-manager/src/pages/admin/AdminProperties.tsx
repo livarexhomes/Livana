@@ -74,20 +74,23 @@ export default function AdminProperties() {
   const [addSaving, setAddSaving] = useState(false)
   const [landlords, setLandlords] = useState<{ id: string; full_name: string }[]>([])
   const [currentAdminId, setCurrentAdminId] = useState<string | null>(null)
-  // Image Upload State and Refs
+  // Add modal image state
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [imageFiles, setImageFiles] = useState<File[]>([])
   const [imagePreviews, setImagePreviews] = useState<string[]>([])
   const [coverIdx, setCoverIdx] = useState(0)
+
+  // Edit modal image state
+  const editFileInputRef = useRef<HTMLInputElement>(null)
+  const [editImageFiles, setEditImageFiles] = useState<File[]>([])
+  const [editImagePreviews, setEditImagePreviews] = useState<string[]>([])
+  const [editCoverIdx, setEditCoverIdx] = useState(0)
+  const [existingImages, setExistingImages] = useState<any[]>([])
   const [deletingImg, setDeletingImg] = useState<string | null>(null)
-
-  // existingImages only matters in edit mode — for the Add modal it's always empty
-  const existingImages: any[] = []
-
 
   function addFiles(files: FileList | null) {
     if (!files) return
-    const valid = Array.from(files).filter(f => f.size <= 10 * 1024 * 1024) // 10 MB cap
+    const valid = Array.from(files).filter(f => f.size <= 10 * 1024 * 1024)
     setImageFiles(prev => [...prev, ...valid])
     valid.forEach(f => {
       const reader = new FileReader()
@@ -102,9 +105,40 @@ export default function AdminProperties() {
     if (coverIdx >= idx && coverIdx > 0) setCoverIdx(c => c - 1)
   }
 
-  // stubs — only used in edit mode
-  function setCoverExisting(_id: string) { }
-  async function deleteExistingImage(_img: any) { }
+  function addEditFiles(files: FileList | null) {
+    if (!files) return
+    const valid = Array.from(files).filter(f => f.size <= 10 * 1024 * 1024)
+    setEditImageFiles(prev => [...prev, ...valid])
+    valid.forEach(f => {
+      const reader = new FileReader()
+      reader.onload = e => setEditImagePreviews(prev => [...prev, e.target?.result as string])
+      reader.readAsDataURL(f)
+    })
+  }
+
+  function removeEditNewImage(idx: number) {
+    setEditImageFiles(prev => prev.filter((_, i) => i !== idx))
+    setEditImagePreviews(prev => prev.filter((_, i) => i !== idx))
+    if (editCoverIdx >= idx && editCoverIdx > 0) setEditCoverIdx(c => c - 1)
+  }
+
+  async function setCoverExisting(id: string) {
+    if (!editingProp) return
+    const supabase = createClient()
+    // clear all covers then set the chosen one
+    await supabase.from('property_images').update({ is_cover: false }).eq('property_id', editingProp.id)
+    await supabase.from('property_images').update({ is_cover: true }).eq('id', id)
+    setExistingImages(imgs => imgs.map(img => ({ ...img, is_cover: img.id === id })))
+  }
+
+  async function deleteExistingImage(img: any) {
+    setDeletingImg(img.id)
+    const supabase = createClient()
+    await supabase.storage.from('property-images').remove([img.storage_path])
+    await supabase.from('property_images').delete().eq('id', img.id)
+    setExistingImages(imgs => imgs.filter(i => i.id !== img.id))
+    setDeletingImg(null)
+  }
 
   useEffect(() => {
     const supabase = createClient()
@@ -174,6 +208,10 @@ export default function AdminProperties() {
       bedrooms: p.bedrooms != null ? String(p.bedrooms) : '',
       bathrooms: p.bathrooms != null ? String(p.bathrooms) : '',
     })
+    setExistingImages(p.property_images ?? [])
+    setEditImageFiles([])
+    setEditImagePreviews([])
+    setEditCoverIdx(0)
   }
 
   async function handleAddSave() {
@@ -257,7 +295,39 @@ export default function AdminProperties() {
       bathrooms: editForm.bathrooms ? Number(editForm.bathrooms) : null,
     }
     await supabase.from('properties').update(patch).eq('id', editingProp.id)
-    setProperties(ps => ps.map(p => p.id === editingProp.id ? { ...p, ...patch } : p))
+
+    // Upload any new images
+    if (editImageFiles.length > 0) {
+      const startOrder = existingImages.length
+      const noCoverYet = existingImages.every(img => !img.is_cover)
+      await Promise.all(
+        editImageFiles.map(async (file, i) => {
+          const ext = file.name.split('.').pop()
+          const path = `properties/${editingProp.id}/${Date.now()}-${i}.${ext}`
+          const { error: upErr } = await supabase.storage
+            .from('property-images')
+            .upload(path, file, { upsert: false })
+          if (upErr) { console.error('Upload error', upErr); return }
+          await supabase.from('property_images').insert({
+            property_id: editingProp.id,
+            storage_path: path,
+            is_cover: noCoverYet && i === editCoverIdx,
+            sort_order: startOrder + i,
+          })
+        })
+      )
+    }
+
+    // Refresh images for this property in local state
+    const { data: freshImgs } = await supabase
+      .from('property_images')
+      .select('id, storage_path, is_cover, sort_order')
+      .eq('property_id', editingProp.id)
+      .order('sort_order')
+
+    setProperties(ps => ps.map(p =>
+      p.id === editingProp.id ? { ...p, ...patch, property_images: freshImgs ?? [] } : p
+    ))
     setSaving(false)
     setEditingProp(null)
   }
@@ -509,8 +579,8 @@ export default function AdminProperties() {
         {/* Edit modal */}
         {editingProp && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
-            <div className="w-full max-w-lg bg-white rounded-2xl shadow-2xl overflow-hidden">
-              <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+            <div className="w-full max-w-lg bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+              <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 shrink-0">
                 <div>
                   <h2 className="text-base font-bold text-gray-900">Edit Property</h2>
                   <p className="text-xs text-gray-400 mt-0.5 truncate max-w-xs">{editingProp.title}</p>
@@ -519,6 +589,7 @@ export default function AdminProperties() {
                   <X className="w-4 h-4" />
                 </button>
               </div>
+              <div className="flex-1 overflow-y-auto">
               <div className="p-6 space-y-4">
                 <div>
                   <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5 block">Title</label>
@@ -572,7 +643,80 @@ export default function AdminProperties() {
                   </div>
                 </div>
               </div>
-              <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-gray-100 bg-gray-50">
+              {/* Photos */}
+              <div className="px-6 pb-5 space-y-3">
+                <div className="flex items-center gap-2 pb-2 border-b border-gray-100">
+                  <ImagePlus className="w-4 h-4 text-blue-600" />
+                  <h3 className="text-sm font-bold text-gray-900">Photos</h3>
+                </div>
+
+                {/* Existing images */}
+                {existingImages.length > 0 && (
+                  <div>
+                    <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
+                      Current photos ({existingImages.length})
+                    </p>
+                    <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+                      {existingImages.map(img => (
+                        <div key={img.id}
+                          onClick={() => setCoverExisting(img.id)}
+                          className={`relative group aspect-square rounded-xl overflow-hidden border-2 cursor-pointer transition-all ${img.is_cover ? 'border-blue-600' : 'border-gray-200'}`}>
+                          <img src={getSupabaseImageUrl(img.storage_path)} alt="" className="w-full h-full object-cover" />
+                          <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity" />
+                          {img.is_cover && (
+                            <div className="absolute top-1.5 left-1.5 px-1.5 py-0.5 bg-blue-600 rounded-md text-[9px] font-black text-white uppercase tracking-wide">Cover</div>
+                          )}
+                          <button type="button"
+                            onClick={e => { e.stopPropagation(); deleteExistingImage(img) }}
+                            disabled={deletingImg === img.id}
+                            className="absolute top-1 right-1 w-6 h-6 bg-white/90 hover:bg-red-500 hover:text-white rounded-lg flex items-center justify-center text-gray-700 transition-colors opacity-0 group-hover:opacity-100">
+                            {deletingImg === img.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <X className="w-3 h-3" />}
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                    <p className="text-xs text-gray-400 mt-1.5">Click a photo to set it as cover · hover to delete</p>
+                  </div>
+                )}
+
+                {/* New images to upload */}
+                {editImagePreviews.length > 0 && (
+                  <div>
+                    <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
+                      New photos to upload ({editImagePreviews.length})
+                    </p>
+                    <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+                      {editImagePreviews.map((src, i) => (
+                        <div key={i} onClick={() => setEditCoverIdx(i)}
+                          className={`relative group aspect-square rounded-xl overflow-hidden border-2 cursor-pointer transition-all ${i === editCoverIdx && existingImages.every(img => !img.is_cover) ? 'border-blue-600' : 'border-gray-200'}`}>
+                          <img src={src} alt="" className="w-full h-full object-cover" />
+                          <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity" />
+                          {i === editCoverIdx && existingImages.every(img => !img.is_cover) && (
+                            <div className="absolute top-1.5 left-1.5 px-1.5 py-0.5 bg-blue-600 rounded-md text-[9px] font-black text-white uppercase tracking-wide">Cover</div>
+                          )}
+                          <button type="button"
+                            onClick={e => { e.stopPropagation(); removeEditNewImage(i) }}
+                            className="absolute top-1 right-1 w-6 h-6 bg-white/90 hover:bg-red-500 hover:text-white rounded-lg flex items-center justify-center text-gray-700 transition-colors opacity-0 group-hover:opacity-100">
+                            <X className="w-3 h-3" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                <button type="button" onClick={() => editFileInputRef.current?.click()}
+                  className="w-full border-2 border-dashed border-gray-200 hover:border-blue-400 hover:bg-blue-50/40 rounded-xl py-6 flex flex-col items-center gap-2 text-gray-400 hover:text-blue-600 transition-all">
+                  <ImagePlus className="w-6 h-6" />
+                  <p className="text-sm font-semibold">Add more photos</p>
+                  <p className="text-xs">JPG, PNG or WEBP · Max 10MB each</p>
+                </button>
+                <input ref={editFileInputRef} type="file" accept="image/*" multiple className="hidden"
+                  onChange={e => addEditFiles(e.target.files)} />
+              </div>
+              </div> {/* end scrollable */}
+
+              <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-gray-100 bg-gray-50 shrink-0">
                 <button onClick={() => setEditingProp(null)}
                   className="px-4 py-2 text-sm font-semibold text-gray-600 hover:text-gray-800 transition-colors">
                   Cancel
