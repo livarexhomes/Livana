@@ -3,6 +3,7 @@ import { Link } from 'wouter'
 import {
   Plus, Building2, Pencil, Trash2, MapPin, BedDouble, Bath,
   LayoutGrid, List, Search, CheckCircle, Clock, XCircle, AlertCircle,
+  ImagePlus, ArrowRight,
 } from 'lucide-react'
 import LandlordSidebar from '../../components/LandlordSidebar'
 import AuthGuard from '../../components/AuthGuard'
@@ -23,7 +24,7 @@ export default function LandlordListings() {
   const [filtered, setFiltered]   = useState<Property[]>([])
   const [loading, setLoading]     = useState(true)
   const [deleting, setDeleting]   = useState<string | null>(null)
-  const [viewMode, setViewMode]   = useState<'grid' | 'list'>('list')
+  const [viewMode, setViewMode]   = useState<'grid' | 'list'>('grid')
   const [search, setSearch]       = useState('')
 
   useEffect(() => { load() }, [])
@@ -206,44 +207,71 @@ export default function LandlordListings() {
                 {filtered.map((p: any) => {
                   const s = STATUS[p.status] ?? { label: p.status, bg: 'bg-gray-100', text: 'text-gray-600', icon: Clock }
                   const SIcon = s.icon
+                  const imgs: any[] = p.property_images ?? []
+                  const cover = imgs.find((i: any) => i.is_cover) ?? imgs[0]
+                  const coverUrl = cover ? getSupabaseImageUrl(cover.storage_path) : null
+                  const typeLabel: Record<string, string> = { rent: 'For Rent', sale: 'For Sale', lease: 'Lease', commercial: 'Commercial' }
+                  const typeBadge: Record<string, string> = { rent: 'bg-indigo-600 text-white', sale: 'bg-blue-600 text-white', lease: 'bg-violet-600 text-white', commercial: 'bg-slate-700 text-white' }
                   return (
                     <div key={p.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-all overflow-hidden">
                       {/* Cover image */}
-                      <div className="relative aspect-[16/9] bg-gradient-to-br from-gray-50 to-gray-100 overflow-hidden">
-                        {(() => {
-                          const imgs: any[] = (p as any).property_images ?? []
-                          const cover = imgs.find((i: any) => i.is_cover) ?? imgs[0]
-                          return cover
-                            ? <img src={getSupabaseImageUrl(cover.storage_path)} alt={p.title} className="w-full h-full object-cover" onError={e => { (e.currentTarget as HTMLImageElement).style.display = 'none' }} />
-                            : <div className="w-full h-full flex items-center justify-center"><Building2 className="w-8 h-8 text-gray-200" /></div>
-                        })()}
-                        <span className={`absolute top-2 right-2 inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-bold ${s.bg} ${s.text}`}>
-                          <SIcon className="w-3 h-3" />{s.label}
+                      <div className="relative aspect-[4/3] bg-gradient-to-br from-gray-100 to-gray-200 overflow-hidden">
+                        {coverUrl ? (
+                          <img src={coverUrl} alt={p.title} className="w-full h-full object-cover" />
+                        ) : (
+                          <div className="w-full h-full flex flex-col items-center justify-center gap-2 text-gray-300">
+                            <ImagePlus className="w-8 h-8" />
+                            <span className="text-xs font-medium">No photo</span>
+                          </div>
+                        )}
+                        {/* Type badge top-left */}
+                        <span className={`absolute top-3 left-3 px-2.5 py-1 rounded-lg text-[11px] font-bold shadow-sm ${typeBadge[p.type] ?? 'bg-gray-800 text-white'}`}>
+                          {typeLabel[p.type] ?? p.type}
                         </span>
-                      </div>
-                      <div className="p-5">
-                      <h3 className="font-bold text-gray-900 text-sm mb-1 line-clamp-2">{p.title}</h3>
-                      <div className="flex items-center gap-1.5 text-xs text-gray-400 mb-2">
-                        <MapPin className="w-3.5 h-3.5" />{p.city}
-                      </div>
-                      <p className="text-base font-extrabold text-blue-600 mb-3">₦{Number(p.price).toLocaleString()}</p>
-                      {(p.bedrooms != null || p.bathrooms != null) && (
-                        <div className="flex items-center gap-3 text-xs text-gray-500 mb-4 pb-3 border-b border-gray-100">
-                          {p.bedrooms != null && <span className="flex items-center gap-1"><BedDouble className="w-3.5 h-3.5" />{p.bedrooms} Beds</span>}
-                          {p.bathrooms != null && <span className="flex items-center gap-1"><Bath className="w-3.5 h-3.5" />{p.bathrooms} Baths</span>}
+                        {/* Price bottom-left */}
+                        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent px-3 py-3">
+                          <p className="text-sm font-extrabold text-white">₦{Number(p.price).toLocaleString()}</p>
                         </div>
-                      )}
-                      <div className="flex items-center gap-2">
-                        <Link href={`/landlord/listings/${p.id}/edit`}
-                          className="flex-1 flex items-center justify-center gap-1.5 py-2 bg-blue-50 text-blue-700 text-xs font-bold rounded-xl hover:bg-blue-100 transition-colors">
-                          <Pencil className="w-3.5 h-3.5" /> Edit
-                        </Link>
-                        <button onClick={() => handleDelete(p.id)} disabled={deleting === p.id}
-                          className="w-8 h-8 flex items-center justify-center rounded-xl text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors disabled:opacity-40">
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
                       </div>
-                      </div>{/* /p-5 */}
+
+                      <div className="p-4">
+                        {/* Title + status */}
+                        <div className="flex items-start justify-between gap-2 mb-1.5">
+                          <h3 className="font-bold text-gray-900 text-sm leading-snug line-clamp-1 flex-1">{p.title}</h3>
+                          <span className={`shrink-0 inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-bold ${s.bg} ${s.text}`}>
+                            <SIcon className="w-3 h-3" />{s.label}
+                          </span>
+                        </div>
+                        {/* Location */}
+                        <div className="flex items-center gap-1.5 text-xs text-gray-400 mb-3">
+                          <MapPin className="w-3.5 h-3.5 shrink-0" />{p.city}
+                        </div>
+                        {/* Beds / baths / type */}
+                        {(p.bedrooms != null || p.bathrooms != null) && (
+                          <div className="flex items-center gap-3 text-xs text-gray-500 pb-3 mb-3 border-b border-gray-100">
+                            {p.bedrooms != null && <span className="flex items-center gap-1"><BedDouble className="w-3.5 h-3.5" />{p.bedrooms} Beds</span>}
+                            {p.bathrooms != null && <span className="flex items-center gap-1"><Bath className="w-3.5 h-3.5" />{p.bathrooms} Baths</span>}
+                            {p.property_type && <span className="ml-auto text-[10px] font-semibold text-gray-400 uppercase">{p.property_type}</span>}
+                          </div>
+                        )}
+                        {/* Actions */}
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-1">
+                            <Link href={`/landlord/listings/${p.id}/edit`}
+                              className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-colors">
+                              <Pencil className="w-3.5 h-3.5" />
+                            </Link>
+                            <button onClick={() => handleDelete(p.id)} disabled={deleting === p.id}
+                              className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors disabled:opacity-40">
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                          <Link href={`/listings/${p.id}`}
+                            className="flex items-center gap-1 text-xs font-bold text-blue-600 hover:text-blue-700 transition-colors">
+                            View <ArrowRight className="w-3 h-3" />
+                          </Link>
+                        </div>
+                      </div>
                     </div>
                   )
                 })}
