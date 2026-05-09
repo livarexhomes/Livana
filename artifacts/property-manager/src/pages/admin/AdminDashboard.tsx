@@ -80,11 +80,11 @@ export default function AdminDashboard() {
         supabase.from('properties').select('id', { count: 'exact', head: true }).eq('status', 'available'),
         supabase.from('properties').select('id', { count: 'exact', head: true }).eq('status', 'taken'),
         supabase.from('landlords').select('id', { count: 'exact', head: true }),
-        supabase.from('landlords').select('id', { count: 'exact', head: true }).eq('status', 'pending'),
+        supabase.from('landlords').select('id', { count: 'exact', head: true }),
         supabase.from('tenants').select('id', { count: 'exact', head: true }),
         supabase.from('enquiries').select('id', { count: 'exact', head: true }),
         supabase.from('enquiries').select('*, properties(title, city), tenants(full_name)').order('created_at', { ascending: false }).limit(5),
-        supabase.from('landlords').select('id, full_name, city, status, created_at').order('created_at', { ascending: false }).limit(4),
+        supabase.from('landlords').select('id, full_name, created_at').order('created_at', { ascending: false }).limit(4),
         supabase.from('properties').select('city').limit(500),
         supabase.from('properties').select('property_type').limit(500),
       ])
@@ -467,13 +467,8 @@ export default function AdminDashboard() {
                               </div>
                               <div className="flex-1 min-w-0">
                                 <p className="text-sm font-semibold text-gray-900 truncate leading-tight">{l.full_name}</p>
-                                {l.city && <p className="text-xs text-gray-400 truncate">{l.city}</p>}
+                                <p className="text-xs text-gray-400 truncate">Joined {new Date(l.created_at).toLocaleDateString()}</p>
                               </div>
-                              <span className={`shrink-0 px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                                l.status === 'approved' ? 'bg-emerald-100 text-emerald-700'
-                                : l.status === 'pending' ? 'bg-amber-100 text-amber-700'
-                                : 'bg-gray-100 text-gray-500'
-                              }`}>{l.status}</span>
                             </div>
                           )
                         })}

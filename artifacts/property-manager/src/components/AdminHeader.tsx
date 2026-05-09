@@ -46,7 +46,7 @@ export default function AdminHeader({ title, subtitle, action, pendingCount = 0 
 
     Promise.all([
       // Landlords with pending KYC
-      supabase.from('landlords').select('id, full_name, city, status').eq('status', 'pending').order('created_at', { ascending: false }).limit(5),
+      supabase.from('landlords').select('id, full_name').eq('status', 'pending').order('created_at', { ascending: false }).limit(5),
       // Brand-new landlord signups (last 48h, any status)
       supabase.from('landlords').select('id, full_name, created_at').gte('created_at', cutoff).order('created_at', { ascending: false }).limit(5),
       // New tenant signups (last 48h)
@@ -109,7 +109,7 @@ export default function AdminHeader({ title, subtitle, action, pendingCount = 0 
       const q = query.trim()
       const [propRes, llRes] = await Promise.all([
         supabase.from('properties').select('id, title, city, price').ilike('title', `%${q}%`).limit(5),
-        supabase.from('landlords').select('id, full_name, city, status').ilike('full_name', `%${q}%`).limit(4),
+        supabase.from('landlords').select('id, full_name').ilike('full_name', `%${q}%`).limit(4),
       ])
       const out: SearchResult[] = [
         ...(propRes.data ?? []).map((p: any) => ({
@@ -117,7 +117,7 @@ export default function AdminHeader({ title, subtitle, action, pendingCount = 0 
           href: `/admin/properties`, type: 'property' as const,
         })),
         ...(llRes.data ?? []).map((l: any) => ({
-          id: l.id, label: l.full_name, sub: `${l.city ?? ''} · ${l.status}`,
+          id: l.id, label: l.full_name, sub: 'Landlord',
           href: `/admin/landlords`, type: 'landlord' as const,
         })),
       ]
