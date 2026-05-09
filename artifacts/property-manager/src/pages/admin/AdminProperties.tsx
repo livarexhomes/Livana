@@ -73,7 +73,7 @@ export default function AdminProperties() {
   const [addForm, setAddForm] = useState<AddForm>(emptyAdd)
   const [addSaving, setAddSaving] = useState(false)
   const [landlords, setLandlords] = useState<{ id: string; full_name: string }[]>([])
-  const [admins, setAdmins] = useState<{ id: string; email: string }[]>([])
+  const [currentAdminId, setCurrentAdminId] = useState<string | null>(null)
   // Image Upload State and Refs
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [imageFiles, setImageFiles] = useState<File[]>([])
@@ -108,7 +108,17 @@ export default function AdminProperties() {
 
   useEffect(() => {
     const supabase = createClient()
-    supabase.auth.getUser().then(({ data: { user } }) => setUser({ email: user?.email }))
+    supabase.auth.getUser().then(async ({ data: { user } }) => {
+      setUser({ email: user?.email })
+      if (user?.email) {
+        const { data: adminRow } = await supabase
+          .from('admins')
+          .select('id')
+          .eq('email', user.email)
+          .single()
+        if (adminRow?.id) setCurrentAdminId(adminRow.id)
+      }
+    })
     supabase
       .from('properties')
       .select('*, landlords(full_name, is_verified), property_images(id, storage_path, is_cover, sort_order)')
@@ -123,12 +133,6 @@ export default function AdminProperties() {
       .select('id, full_name')
       .order('full_name')
       .then(({ data }) => setLandlords(data ?? []))
-
-    supabase
-      .from('admins')
-      .select('id, email')
-      .order('email')
-      .then(({ data }) => setAdmins(data ?? []))
   }, [])
 
 
@@ -278,7 +282,7 @@ export default function AdminProperties() {
             title="Listings"
             subtitle={`${properties.length.toLocaleString()} total listings`}
             action={
-              <button type="button" onClick={() => setAddOpen(true)}
+              <button type="button" onClick={() => { setAddForm({ ...emptyAdd, assigned_to: currentAdminId ?? '' }); setAddOpen(true) }}
                 className="inline-flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-xl transition-colors shadow-sm shadow-blue-600/20">
                 <Plus className="w-4 h-4" />
                 <span className="hidden sm:inline">Add Listing</span>
@@ -604,36 +608,20 @@ export default function AdminProperties() {
             {/* ── Scrollable body ── */}
             <div className="flex-1 overflow-y-auto px-6 py-5 space-y-4">
 
-              {/* Landlord + Admin */}
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1.5 block">
-                    Landlord <span className="font-normal normal-case">(optional)</span>
-                  </label>
-                  <select value={addForm.landlord_id}
-                    onChange={e => setAddForm(f => ({ ...f, landlord_id: e.target.value }))}
-                    className="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
-                    <option value="">Select landlord…</option>
-                    {landlords.map(l => <option key={l.id} value={l.id}>{l.full_name}</option>)}
-                  </select>
-                  {landlords.length === 0 && (
-                    <p className="text-xs text-amber-600 mt-1">No landlords found.</p>
-                  )}
-                </div>
-                <div>
-                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1.5 block">
-                    Assign Admin <span className="font-normal normal-case">(optional)</span>
-                  </label>
-                  <select value={addForm.assigned_to}
-                    onChange={e => setAddForm(f => ({ ...f, assigned_to: e.target.value }))}
-                    className="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
-                    <option value="">Select admin…</option>
-                    {admins.map(a => <option key={a.id} value={a.id}>{a.email}</option>)}
-                  </select>
-                  {admins.length === 0 && (
-                    <p className="text-xs text-amber-600 mt-1">No admins found.</p>
-                  )}
-                </div>
+              {/* Landlord */}
+              <div>
+                <label className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1.5 block">
+                  Landlord <span className="font-normal normal-case">(optional)</span>
+                </label>
+                <select value={addForm.landlord_id}
+                  onChange={e => setAddForm(f => ({ ...f, landlord_id: e.target.value }))}
+                  className="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
+                  <option value="">Select landlord…</option>
+                  {landlords.map(l => <option key={l.id} value={l.id}>{l.full_name}</option>)}
+                </select>
+                {landlords.length === 0 && (
+                  <p className="text-xs text-amber-600 mt-1">No landlords found.</p>
+                )}
               </div>
 
               {/* Title */}
