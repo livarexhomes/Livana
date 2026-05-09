@@ -1,9 +1,9 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Link } from 'wouter'
 import {
   Building2, Search, LayoutGrid, List,
   MapPin, BedDouble, Bath, Pencil, Trash2, ArrowRight, Plus, Eye,
-  SlidersHorizontal, CheckCircle, Clock, XCircle, X, Save, Loader2,
+  SlidersHorizontal, CheckCircle, Clock, XCircle, X, Save, Loader2, ImagePlus, Star
 } from 'lucide-react'
 import AdminSidebar from '../../components/AdminSidebar'
 import AdminHeader from '../../components/AdminHeader'
@@ -12,14 +12,14 @@ import { createClient, getSupabaseImageUrl } from '../../lib/supabase'
 
 const FALLBACK_IMAGES: Record<string, string> = {
   apartment: 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=600&q=70',
-  villa:     'https://images.unsplash.com/photo-1613977257363-707ba9348227?w=600&q=70',
-  duplex:    'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=600&q=70',
-  bungalow:  'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=600&q=70',
-  studio:    'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=600&q=70',
-  office:    'https://images.unsplash.com/photo-1497366216548-37526070297c?w=600&q=70',
-  shop:      'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=600&q=70',
-  land:      'https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=600&q=70',
-  default:   'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=600&q=70',
+  villa: 'https://images.unsplash.com/photo-1613977257363-707ba9348227?w=600&q=70',
+  duplex: 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=600&q=70',
+  bungalow: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=600&q=70',
+  studio: 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=600&q=70',
+  office: 'https://images.unsplash.com/photo-1497366216548-37526070297c?w=600&q=70',
+  shop: 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=600&q=70',
+  land: 'https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=600&q=70',
+  default: 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=600&q=70',
 }
 
 function getCoverImage(p: any): string {
@@ -35,10 +35,10 @@ const TYPE_BADGE: Record<string, { label: string; cls: string }> = {
 }
 
 const STATUS_META: Record<string, { label: string; icon: any; cls: string }> = {
-  available:         { label: 'Available',    icon: CheckCircle, cls: 'text-emerald-600 bg-emerald-50' },
-  taken:             { label: 'Taken',         icon: XCircle,     cls: 'text-red-500 bg-red-50' },
-  coming_soon:       { label: 'Coming Soon',   icon: Clock,       cls: 'text-blue-600 bg-blue-50' },
-  under_negotiation: { label: 'Negotiating',   icon: Clock,       cls: 'text-amber-600 bg-amber-50' },
+  available: { label: 'Available', icon: CheckCircle, cls: 'text-emerald-600 bg-emerald-50' },
+  taken: { label: 'Taken', icon: XCircle, cls: 'text-red-500 bg-red-50' },
+  coming_soon: { label: 'Coming Soon', icon: Clock, cls: 'text-blue-600 bg-blue-50' },
+  under_negotiation: { label: 'Negotiating', icon: Clock, cls: 'text-amber-600 bg-amber-50' },
 }
 
 type EditForm = { title: string; city: string; price: string; type: string; status: string; bedrooms: string; bathrooms: string }
@@ -56,22 +56,53 @@ const emptyAdd: AddForm = {
 }
 
 export default function AdminProperties() {
-  const [user, setUser]             = useState<{ email?: string } | null>(null)
+  const [user, setUser] = useState<{ email?: string } | null>(null)
   const [properties, setProperties] = useState<any[]>([])
-  const [filtered, setFiltered]     = useState<any[]>([])
-  const [loading, setLoading]       = useState(true)
-  const [search, setSearch]         = useState('')
-  const [viewMode, setViewMode]     = useState<'grid' | 'list'>('grid')
-  const [sort, setSort]             = useState('newest')
+  const [filtered, setFiltered] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+  const [search, setSearch] = useState('')
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
+  const [sort, setSort] = useState('newest')
   const [statusFilter, setStatusFilter] = useState('all')
-  const [deleting, setDeleting]     = useState<string | null>(null)
+  const [deleting, setDeleting] = useState<string | null>(null)
   const [editingProp, setEditingProp] = useState<any | null>(null)
-  const [editForm, setEditForm]     = useState<EditForm>(emptyEdit)
-  const [saving, setSaving]         = useState(false)
-  const [addOpen, setAddOpen]       = useState(false)
-  const [addForm, setAddForm]       = useState<AddForm>(emptyAdd)
-  const [addSaving, setAddSaving]   = useState(false)
-  const [landlords, setLandlords]   = useState<{ id: string; full_name: string }[]>([])
+  const [editForm, setEditForm] = useState<EditForm>(emptyEdit)
+  const [saving, setSaving] = useState(false)
+  const [addOpen, setAddOpen] = useState(false)
+  const [addForm, setAddForm] = useState<AddForm>(emptyAdd)
+  const [addSaving, setAddSaving] = useState(false)
+  const [landlords, setLandlords] = useState<{ id: string; full_name: string }[]>([])
+  // Image Upload State and Refs
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const [imageFiles, setImageFiles] = useState<File[]>([])
+  const [imagePreviews, setImagePreviews] = useState<string[]>([])
+  const [coverIdx, setCoverIdx] = useState(0)
+  const [deletingImg, setDeletingImg] = useState<string | null>(null)
+
+  // existingImages only matters in edit mode — for the Add modal it's always empty
+  const existingImages: any[] = []
+
+
+  function addFiles(files: FileList | null) {
+    if (!files) return
+    const valid = Array.from(files).filter(f => f.size <= 10 * 1024 * 1024) // 10 MB cap
+    setImageFiles(prev => [...prev, ...valid])
+    valid.forEach(f => {
+      const reader = new FileReader()
+      reader.onload = e => setImagePreviews(prev => [...prev, e.target?.result as string])
+      reader.readAsDataURL(f)
+    })
+  }
+
+  function removeNewImage(idx: number) {
+    setImageFiles(prev => prev.filter((_, i) => i !== idx))
+    setImagePreviews(prev => prev.filter((_, i) => i !== idx))
+    if (coverIdx >= idx && coverIdx > 0) setCoverIdx(c => c - 1)
+  }
+
+  // stubs — only used in edit mode
+  function setCoverExisting(_id: string) { }
+  async function deleteExistingImage(_img: any) { }
 
   useEffect(() => {
     const supabase = createClient()
@@ -103,9 +134,9 @@ export default function AdminProperties() {
         p.property_type?.toLowerCase().includes(q)
       )
     }
-    if (sort === 'newest')     list.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-    if (sort === 'oldest')     list.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
-    if (sort === 'price_asc')  list.sort((a, b) => Number(a.price) - Number(b.price))
+    if (sort === 'newest') list.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+    if (sort === 'oldest') list.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
+    if (sort === 'price_asc') list.sort((a, b) => Number(a.price) - Number(b.price))
     if (sort === 'price_desc') list.sort((a, b) => Number(b.price) - Number(a.price))
     setFiltered(list)
   }, [search, sort, statusFilter, properties])
@@ -133,31 +164,69 @@ export default function AdminProperties() {
   }
 
   async function handleAddSave() {
-    if (!addForm.landlord_id) { alert('Please select a landlord.'); return }
-    if (!addForm.title.trim() || !addForm.city.trim() || !addForm.price) { alert('Title, city and price are required.'); return }
+    if (!addForm.title.trim() || !addForm.city.trim() || !addForm.price) {
+      alert('Title, city and price are required.')
+      return
+    }
     setAddSaving(true)
     const supabase = createClient()
-    const { data, error } = await supabase.from('properties').insert({
-      landlord_id:   addForm.landlord_id,
-      title:         addForm.title.trim(),
-      city:          addForm.city.trim(),
-      state:         addForm.state.trim() || null,
-      property_type: addForm.property_type,
-      type:          addForm.type,
-      status:        addForm.status,
-      price:         Number(addForm.price),
-      bedrooms:      addForm.bedrooms ? Number(addForm.bedrooms) : null,
-      bathrooms:     addForm.bathrooms ? Number(addForm.bathrooms) : null,
-      description:   addForm.description.trim() || null,
-    }).select('*, landlords(full_name, is_verified), property_images(id, storage_path, is_cover, sort_order)').single()
-    setAddSaving(false)
-    if (!error && data) {
-      setProperties(ps => [data, ...ps])
-      setAddForm(emptyAdd)
-      setAddOpen(false)
-    } else {
+
+    // 1. Insert property row
+    const { data, error } = await supabase
+      .from('properties')
+      .insert({
+        landlord_id: addForm.landlord_id || null,
+        title: addForm.title.trim(),
+        city: addForm.city.trim(),
+        state: addForm.state.trim() || null,
+        property_type: addForm.property_type,
+        type: addForm.type,
+        status: addForm.status,
+        price: Number(addForm.price),
+        bedrooms: addForm.bedrooms ? Number(addForm.bedrooms) : null,
+        bathrooms: addForm.bathrooms ? Number(addForm.bathrooms) : null,
+        description: addForm.description.trim() || null,
+      })
+      .select('*, landlords(full_name, is_verified), property_images(id, storage_path, is_cover, sort_order)')
+      .single()
+
+    if (error || !data) {
       alert(error?.message ?? 'Failed to create listing.')
+      setAddSaving(false)
+      return
     }
+
+    // 2. Upload images (if any)
+    if (imageFiles.length > 0) {
+      await Promise.all(
+        imageFiles.map(async (file, i) => {
+          const ext = file.name.split('.').pop()
+          const path = `properties/${data.id}/${Date.now()}-${i}.${ext}`
+
+          const { error: upErr } = await supabase.storage
+            .from('property-images')          // ← your bucket name here
+            .upload(path, file, { upsert: false })
+
+          if (upErr) { console.error('Upload error', upErr); return }
+
+          await supabase.from('property_images').insert({
+            property_id: data.id,
+            storage_path: path,
+            is_cover: i === coverIdx,
+            sort_order: i,
+          })
+        })
+      )
+    }
+
+    // 3. Reset & close
+    setProperties(ps => [data, ...ps])
+    setAddForm(emptyAdd)
+    setImageFiles([])
+    setImagePreviews([])
+    setCoverIdx(0)
+    setAddSaving(false)
+    setAddOpen(false)
   }
 
   async function handleEditSave() {
@@ -181,12 +250,12 @@ export default function AdminProperties() {
 
   const displayName = user?.email ? user.email.split('@')[0] : 'Admin'
   const available = properties.filter(p => p.status === 'available').length
-  const taken     = properties.filter(p => p.status === 'taken').length
+  const taken = properties.filter(p => p.status === 'taken').length
 
   const STATUS_TABS = [
-    { key: 'all',       label: 'All',       count: properties.length },
-    { key: 'available', label: 'Available',  count: available },
-    { key: 'taken',     label: 'Taken',      count: taken },
+    { key: 'all', label: 'All', count: properties.length },
+    { key: 'available', label: 'Available', count: available },
+    { key: 'taken', label: 'Taken', count: taken },
   ]
 
   return (
@@ -213,15 +282,13 @@ export default function AdminProperties() {
               {STATUS_TABS.map(tab => (
                 <button key={tab.key} type="button"
                   onClick={() => setStatusFilter(tab.key)}
-                  className={`shrink-0 flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all border ${
-                    statusFilter === tab.key
+                  className={`shrink-0 flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all border ${statusFilter === tab.key
                       ? 'bg-blue-600 text-white border-blue-600 shadow-sm shadow-blue-600/20'
                       : 'bg-white text-gray-600 border-gray-200 hover:border-blue-300 hover:text-blue-600'
-                  }`}>
+                    }`}>
                   {tab.label}
-                  <span className={`px-1.5 py-0.5 rounded-md text-[11px] font-bold ${
-                    statusFilter === tab.key ? 'bg-white/20 text-white' : 'bg-gray-100 text-gray-500'
-                  }`}>{tab.count}</span>
+                  <span className={`px-1.5 py-0.5 rounded-md text-[11px] font-bold ${statusFilter === tab.key ? 'bg-white/20 text-white' : 'bg-gray-100 text-gray-500'
+                    }`}>{tab.count}</span>
                 </button>
               ))}
             </div>
@@ -269,7 +336,7 @@ export default function AdminProperties() {
             ) : viewMode === 'grid' ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 md:gap-5">
                 {filtered.map(p => {
-                  const badge  = TYPE_BADGE[p.type] ?? TYPE_BADGE.sale
+                  const badge = TYPE_BADGE[p.type] ?? TYPE_BADGE.sale
                   const status = STATUS_META[p.status] ?? STATUS_META.available
                   const StatusIcon = status.icon
                   return (
@@ -356,69 +423,69 @@ export default function AdminProperties() {
             ) : (
               <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-sm">
                 <div className="overflow-x-auto">
-                <table className="w-full min-w-[520px]">
-                  <thead className="bg-slate-50 border-b border-gray-100">
-                    <tr>
-                      <th className="text-left px-5 py-3.5 text-[10px] font-black text-gray-400 uppercase tracking-widest">Property</th>
-                      <th className="text-left px-5 py-3.5 text-[10px] font-black text-gray-400 uppercase tracking-widest hidden md:table-cell">Landlord</th>
-                      <th className="text-left px-5 py-3.5 text-[10px] font-black text-gray-400 uppercase tracking-widest hidden sm:table-cell">Price</th>
-                      <th className="text-left px-5 py-3.5 text-[10px] font-black text-gray-400 uppercase tracking-widest">Status</th>
-                      <th className="text-right px-5 py-3.5 text-[10px] font-black text-gray-400 uppercase tracking-widest">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-50">
-                    {filtered.map(p => {
-                      const badge  = TYPE_BADGE[p.type] ?? TYPE_BADGE.sale
-                      const status = STATUS_META[p.status] ?? STATUS_META.available
-                      const StatusIcon = status.icon
-                      return (
-                        <tr key={p.id} className="hover:bg-slate-50/60 transition-colors">
-                          <td className="px-5 py-3.5">
-                            <div className="flex items-center gap-3">
-                              <div className="relative w-12 h-12 rounded-xl overflow-hidden shrink-0">
-                                <img src={getCoverImage(p)} alt={p.title} className="w-full h-full object-cover"
-                                  onError={(e: any) => { e.currentTarget.src = FALLBACK_IMAGES.default }} />
-                              </div>
-                              <div>
-                                <p className="font-semibold text-gray-900 text-sm leading-tight line-clamp-1">{p.title}</p>
-                                <div className="flex items-center gap-1.5 text-[11px] text-gray-400 mt-0.5">
-                                  <MapPin className="w-3 h-3" />{p.city}
-                                  <span className={`ml-1 px-1.5 py-0.5 rounded-md text-[10px] font-bold ${badge.cls}`}>{badge.label}</span>
+                  <table className="w-full min-w-[520px]">
+                    <thead className="bg-slate-50 border-b border-gray-100">
+                      <tr>
+                        <th className="text-left px-5 py-3.5 text-[10px] font-black text-gray-400 uppercase tracking-widest">Property</th>
+                        <th className="text-left px-5 py-3.5 text-[10px] font-black text-gray-400 uppercase tracking-widest hidden md:table-cell">Landlord</th>
+                        <th className="text-left px-5 py-3.5 text-[10px] font-black text-gray-400 uppercase tracking-widest hidden sm:table-cell">Price</th>
+                        <th className="text-left px-5 py-3.5 text-[10px] font-black text-gray-400 uppercase tracking-widest">Status</th>
+                        <th className="text-right px-5 py-3.5 text-[10px] font-black text-gray-400 uppercase tracking-widest">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-50">
+                      {filtered.map(p => {
+                        const badge = TYPE_BADGE[p.type] ?? TYPE_BADGE.sale
+                        const status = STATUS_META[p.status] ?? STATUS_META.available
+                        const StatusIcon = status.icon
+                        return (
+                          <tr key={p.id} className="hover:bg-slate-50/60 transition-colors">
+                            <td className="px-5 py-3.5">
+                              <div className="flex items-center gap-3">
+                                <div className="relative w-12 h-12 rounded-xl overflow-hidden shrink-0">
+                                  <img src={getCoverImage(p)} alt={p.title} className="w-full h-full object-cover"
+                                    onError={(e: any) => { e.currentTarget.src = FALLBACK_IMAGES.default }} />
+                                </div>
+                                <div>
+                                  <p className="font-semibold text-gray-900 text-sm leading-tight line-clamp-1">{p.title}</p>
+                                  <div className="flex items-center gap-1.5 text-[11px] text-gray-400 mt-0.5">
+                                    <MapPin className="w-3 h-3" />{p.city}
+                                    <span className={`ml-1 px-1.5 py-0.5 rounded-md text-[10px] font-bold ${badge.cls}`}>{badge.label}</span>
+                                  </div>
                                 </div>
                               </div>
-                            </div>
-                          </td>
-                          <td className="px-5 py-3.5 text-sm text-gray-600 hidden md:table-cell">
-                            {p.landlords?.full_name ?? '—'}
-                          </td>
-                          <td className="px-5 py-3.5 text-sm font-bold text-gray-900 hidden sm:table-cell">
-                            ₦{Number(p.price).toLocaleString()}
-                          </td>
-                          <td className="px-5 py-3.5">
-                            <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-bold ${status.cls}`}>
-                              <StatusIcon className="w-3 h-3" />{status.label}
-                            </span>
-                          </td>
-                          <td className="px-5 py-3.5">
-                            <div className="flex items-center justify-end gap-1">
-                              <button onClick={() => openEdit(p)} className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-colors">
-                                <Pencil className="w-3.5 h-3.5" />
-                              </button>
-                              <button onClick={() => handleDelete(p.id)} disabled={deleting === p.id}
-                                className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors disabled:opacity-40">
-                                <Trash2 className="w-3.5 h-3.5" />
-                              </button>
-                              <Link href={`/listings/${p.id}`}
-                                className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-colors">
-                                <Eye className="w-3.5 h-3.5" />
-                              </Link>
-                            </div>
-                          </td>
-                        </tr>
-                      )
-                    })}
-                  </tbody>
-                </table>
+                            </td>
+                            <td className="px-5 py-3.5 text-sm text-gray-600 hidden md:table-cell">
+                              {p.landlords?.full_name ?? '—'}
+                            </td>
+                            <td className="px-5 py-3.5 text-sm font-bold text-gray-900 hidden sm:table-cell">
+                              ₦{Number(p.price).toLocaleString()}
+                            </td>
+                            <td className="px-5 py-3.5">
+                              <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-bold ${status.cls}`}>
+                                <StatusIcon className="w-3 h-3" />{status.label}
+                              </span>
+                            </td>
+                            <td className="px-5 py-3.5">
+                              <div className="flex items-center justify-end gap-1">
+                                <button onClick={() => openEdit(p)} className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-colors">
+                                  <Pencil className="w-3.5 h-3.5" />
+                                </button>
+                                <button onClick={() => handleDelete(p.id)} disabled={deleting === p.id}
+                                  className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors disabled:opacity-40">
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                                <Link href={`/listings/${p.id}`}
+                                  className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-colors">
+                                  <Eye className="w-3.5 h-3.5" />
+                                </Link>
+                              </div>
+                            </td>
+                          </tr>
+                        )
+                      })}
+                    </tbody>
+                  </table>
                 </div>
               </div>
             )}
@@ -525,7 +592,7 @@ export default function AdminProperties() {
             <div className="flex-1 overflow-y-auto px-6 py-5 space-y-4">
               {/* Landlord */}
               <div>
-                <label className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1.5 block">Landlord *</label>
+                <label className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1.5 block">Landlord (optional)</label>
                 <select value={addForm.landlord_id} onChange={e => setAddForm(f => ({ ...f, landlord_id: e.target.value }))}
                   className="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
                   <option value="">Select a landlord…</option>
@@ -574,7 +641,7 @@ export default function AdminProperties() {
                   <label className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1.5 block">Property Type</label>
                   <select value={addForm.property_type} onChange={e => setAddForm(f => ({ ...f, property_type: e.target.value }))}
                     className="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
-                    {['Apartment','Villa','Duplex','Bungalow','Studio','Office','Shop','Land','Townhouse'].map(t =>
+                    {['Apartment', 'Villa', 'Duplex', 'Bungalow', 'Studio', 'Office', 'Shop', 'Land', 'Townhouse'].map(t =>
                       <option key={t} value={t}>{t}</option>
                     )}
                   </select>
@@ -624,6 +691,95 @@ export default function AdminProperties() {
                   rows={3} placeholder="Brief description of the property…"
                   className="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none" />
               </div>
+            </div>
+
+            {/* Images */}
+            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-4">
+              <div className="flex items-center gap-2 pb-1 border-b border-gray-100">
+                <ImagePlus className="w-4 h-4 text-blue-600" />
+                <h2 className="text-sm font-bold text-gray-900">Photos</h2>
+                <span className="ml-auto text-xs text-gray-400">First photo will be the cover</span>
+              </div>
+
+              {/* Existing images (edit mode) */}
+              {existingImages.length > 0 && (
+                <div>
+                  <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Current photos</p>
+                  <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+                    {existingImages.map(img => (
+                      <div key={img.id} className="relative group aspect-square rounded-xl overflow-hidden border border-gray-200">
+                        <img
+                          src={getSupabaseImageUrl(img.storage_path)}
+                          alt={img.alt_text ?? ''}
+                          className="w-full h-full object-cover"
+                        />
+                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-1.5">
+                          <button type="button" onClick={() => setCoverExisting(img.id)}
+                            title="Set as cover"
+                            className={`w-7 h-7 rounded-lg flex items-center justify-center transition-colors ${img.is_cover ? 'bg-amber-400 text-white' : 'bg-white/90 text-gray-700 hover:bg-amber-400 hover:text-white'}`}>
+                            <Star className="w-3.5 h-3.5" fill={img.is_cover ? 'currentColor' : 'none'} />
+                          </button>
+                          <button type="button" onClick={() => deleteExistingImage(img)}
+                            disabled={deletingImg === img.id}
+                            title="Delete"
+                            className="w-7 h-7 rounded-lg bg-white/90 flex items-center justify-center text-red-500 hover:bg-red-500 hover:text-white transition-colors disabled:opacity-50">
+                            {deletingImg === img.id
+                              ? <div className="w-3 h-3 border-2 border-red-400 border-t-transparent rounded-full animate-spin" />
+                              : <X className="w-3.5 h-3.5" />
+                            }
+                          </button>
+                        </div>
+                        {img.is_cover && (
+                          <div className="absolute top-1.5 left-1.5 px-1.5 py-0.5 bg-amber-400 rounded-md text-[9px] font-black text-white uppercase tracking-wide">Cover</div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* New image previews */}
+              {imagePreviews.length > 0 && (
+                <div>
+                  <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">
+                    New photos to upload ({imagePreviews.length})
+                  </p>
+                  <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+                    {imagePreviews.map((src, i) => (
+                      <div key={i} className="relative group aspect-square rounded-xl overflow-hidden border-2 transition-all cursor-pointer"
+                        style={{ borderColor: i === coverIdx && existingImages.length === 0 ? '#2563eb' : '#e5e7eb' }}
+                        onClick={() => setCoverIdx(i)}>
+                        <img src={src} alt="" className="w-full h-full object-cover" />
+                        <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity" />
+                        {i === coverIdx && existingImages.length === 0 && (
+                          <div className="absolute top-1.5 left-1.5 px-1.5 py-0.5 bg-blue-600 rounded-md text-[9px] font-black text-white uppercase tracking-wide">Cover</div>
+                        )}
+                        <button type="button"
+                          onClick={e => { e.stopPropagation(); removeNewImage(i) }}
+                          className="absolute top-1 right-1 w-6 h-6 bg-white/90 hover:bg-red-500 hover:text-white rounded-lg flex items-center justify-center text-gray-700 transition-colors opacity-0 group-hover:opacity-100">
+                          <X className="w-3 h-3" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Upload area */}
+              <button type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="w-full border-2 border-dashed border-gray-200 hover:border-blue-400 hover:bg-blue-50/40 rounded-xl py-8 flex flex-col items-center gap-2 text-gray-400 hover:text-blue-600 transition-all">
+                <ImagePlus className="w-7 h-7" />
+                <div className="text-center">
+                  <p className="text-sm font-semibold">Click to add photos</p>
+                  <p className="text-xs mt-0.5">JPG, PNG or WEBP · Max 10MB each</p>
+                </div>
+              </button>
+              <input ref={fileInputRef} type="file" accept="image/*" multiple className="hidden"
+                onChange={e => addFiles(e.target.files)} />
+              {existingImages.length === 0 && imagePreviews.length > 1 && (
+                <p className="text-xs text-gray-400 text-center">Click on a photo to set it as the cover image</p>
+              )}
             </div>
 
             <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-gray-100 bg-gray-50 rounded-b-3xl shrink-0">
