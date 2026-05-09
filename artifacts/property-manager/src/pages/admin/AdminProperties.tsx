@@ -262,8 +262,14 @@ export default function AdminProperties() {
       )
     }
 
-    // 3. Reset & close
-    setProperties(ps => [data, ...ps])
+    // 3. Fetch fresh property row with images, then update state
+    const { data: freshProp } = await supabase
+      .from('properties')
+      .select('*, landlords(full_name, is_verified), property_images(id, storage_path, is_cover, sort_order)')
+      .eq('id', data.id)
+      .single()
+
+    setProperties(ps => [freshProp ?? data, ...ps])
     setAddForm(emptyAdd)
     setImageFiles([])
     setImagePreviews([])
