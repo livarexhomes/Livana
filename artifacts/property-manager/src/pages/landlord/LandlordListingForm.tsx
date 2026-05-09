@@ -111,17 +111,18 @@ export default function LandlordListingForm() {
     setExistingImages(prev => prev.map(i => ({ ...i, is_cover: i.id === imgId })))
   }
 
-  async function uploadImages(propertyId: string) {
-    if (imageFiles.length === 0) return
+  async function uploadImages(propertyId: string): Promise<boolean> {
+    if (imageFiles.length === 0) return true
     const supabase = createClient()
     const { data: { user: cu } } = await supabase.auth.getUser()
+    if (!cu?.id) { setError('Not authenticated — please refresh and try again.'); return false }
     const hasExistingCover = existingImages.some(i => i.is_cover)
     const uploadErrors: string[] = []
 
     for (let i = 0; i < imageFiles.length; i++) {
       const file = imageFiles[i]
       const ext = file.name.split('.').pop() ?? 'jpg'
-      const path = `${cu?.id}/${propertyId}/${Date.now()}-${i}.${ext}`
+      const path = `${cu.id}/${propertyId}/${Date.now()}-${i}.${ext}`
       const { error: uploadErr } = await supabase.storage
         .from('property-images')
         .upload(path, file, { upsert: true, contentType: file.type })
@@ -129,18 +130,23 @@ export default function LandlordListingForm() {
         uploadErrors.push(`Photo ${i + 1}: ${uploadErr.message}`)
         continue
       }
-      await supabase.from('property_images').insert({
+      const { error: insertErr } = await supabase.from('property_images').insert({
         property_id: propertyId,
         storage_path: path,
         is_cover: !hasExistingCover && i === coverIdx,
         sort_order: existingImages.length + i,
         alt_text: form.title || null,
       })
+      if (insertErr) {
+        uploadErrors.push(`Photo ${i + 1} (db): ${insertErr.message}`)
+      }
     }
 
     if (uploadErrors.length > 0) {
-      setError(`Listing saved, but some photos failed to upload:\n${uploadErrors.join('\n')}\n\nPlease make sure the property-images storage bucket is set up in Supabase (run SUPABASE_MIGRATION_4.sql).`)
+      setError(`Photos failed to upload:\n${uploadErrors.join('\n')}`)
+      return false
     }
+    return true
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -158,17 +164,18 @@ export default function LandlordListingForm() {
       type: form.type, status: form.status, featured: form.featured,
     }
 
+    let ok = true
     if (isEdit && params.id) {
       const { error: err } = await supabase.from('properties').update(data).eq('id', params.id)
       if (err) { setError(err.message); setLoading(false); return }
-      await uploadImages(params.id)
+      ok = await uploadImages(params.id)
     } else {
       const { data: created, error: err } = await supabase.from('properties').insert(data).select('id').single()
       if (err || !created) { setError(err?.message ?? 'Failed to create listing'); setLoading(false); return }
-      await uploadImages(created.id)
+      ok = await uploadImages(created.id)
     }
     setLoading(false)
-    navigate('/landlord/listings')
+    if (ok) navigate('/landlord/listings')
   }
 
   function set(field: keyof FormData, value: string | boolean) {
