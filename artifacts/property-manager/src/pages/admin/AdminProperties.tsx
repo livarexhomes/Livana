@@ -62,6 +62,7 @@ export default function AdminProperties() {
   const [addSaving, setAddSaving] = useState(false)
   const [landlords, setLandlords] = useState<{ id: string; full_name: string }[]>([])
   const [currentAdminId, setCurrentAdminId] = useState<string | null>(null)
+  const [authUid, setAuthUid] = useState<string | null>(null)
   // Add modal image state
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [imageFiles, setImageFiles] = useState<File[]>([])
@@ -132,6 +133,7 @@ export default function AdminProperties() {
     const supabase = createClient()
     supabase.auth.getUser().then(async ({ data: { user } }) => {
       setUser({ email: user?.email })
+      if (user?.id) setAuthUid(user.id)
       if (user?.email) {
         const { data: adminRow } = await supabase
           .from('admins')
@@ -241,10 +243,10 @@ export default function AdminProperties() {
       await Promise.all(
         imageFiles.map(async (file, i) => {
           const ext = file.name.split('.').pop()
-          const path = `properties/${data.id}/${Date.now()}-${i}.${ext}`
+          const path = `${authUid}/properties/${data.id}/${Date.now()}-${i}.${ext}`
 
           const { error: upErr } = await supabase.storage
-            .from('property-images')          // ← your bucket name here
+            .from('property-images')
             .upload(path, file, { upsert: false })
 
           if (upErr) { console.error('Upload error', upErr); return }
@@ -291,7 +293,7 @@ export default function AdminProperties() {
       await Promise.all(
         editImageFiles.map(async (file, i) => {
           const ext = file.name.split('.').pop()
-          const path = `properties/${editingProp.id}/${Date.now()}-${i}.${ext}`
+          const path = `${authUid}/properties/${editingProp.id}/${Date.now()}-${i}.${ext}`
           const { error: upErr } = await supabase.storage
             .from('property-images')
             .upload(path, file, { upsert: true })
