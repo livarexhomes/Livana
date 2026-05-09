@@ -10,23 +10,11 @@ import AdminHeader from '../../components/AdminHeader'
 import AuthGuard from '../../components/AuthGuard'
 import { createClient, getSupabaseImageUrl } from '../../lib/supabase'
 
-const FALLBACK_IMAGES: Record<string, string> = {
-  apartment: 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=600&q=70',
-  villa: 'https://images.unsplash.com/photo-1613977257363-707ba9348227?w=600&q=70',
-  duplex: 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=600&q=70',
-  bungalow: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=600&q=70',
-  studio: 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=600&q=70',
-  office: 'https://images.unsplash.com/photo-1497366216548-37526070297c?w=600&q=70',
-  shop: 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=600&q=70',
-  land: 'https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=600&q=70',
-  default: 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=600&q=70',
-}
-
-function getCoverImage(p: any): string {
+function getCoverImage(p: any): string | null {
   const images = p.property_images ?? []
   const cover = images.find((img: any) => img.is_cover) ?? images[0]
   if (cover?.storage_path) return getSupabaseImageUrl(cover.storage_path)
-  return FALLBACK_IMAGES[p.property_type?.toLowerCase()] ?? FALLBACK_IMAGES.default
+  return null
 }
 
 const TYPE_BADGE: Record<string, { label: string; cls: string }> = {
@@ -425,10 +413,16 @@ export default function AdminProperties() {
                   const StatusIcon = status.icon
                   return (
                     <div key={p.id} className="bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 group">
-                      <div className="relative h-48 overflow-hidden">
-                        <img src={getCoverImage(p)} alt={p.title}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
-                          onError={(e: any) => { e.currentTarget.src = FALLBACK_IMAGES.default }} />
+                      <div className="relative h-48 overflow-hidden bg-gray-100">
+                        {getCoverImage(p) ? (
+                          <img src={getCoverImage(p)!} alt={p.title}
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
+                        ) : (
+                          <div className="w-full h-full flex flex-col items-center justify-center gap-1.5 text-gray-300">
+                            <ImagePlus className="w-8 h-8" />
+                            <span className="text-xs font-medium">No photo</span>
+                          </div>
+                        )}
                         <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent" />
                         <div className="absolute top-3 left-3 flex items-center gap-2">
                           <span className={`px-2.5 py-1 rounded-lg text-xs font-bold shadow-sm ${badge.cls}`}>{badge.label}</span>
@@ -526,9 +520,14 @@ export default function AdminProperties() {
                           <tr key={p.id} className="hover:bg-slate-50/60 transition-colors">
                             <td className="px-5 py-3.5">
                               <div className="flex items-center gap-3">
-                                <div className="relative w-12 h-12 rounded-xl overflow-hidden shrink-0">
-                                  <img src={getCoverImage(p)} alt={p.title} className="w-full h-full object-cover"
-                                    onError={(e: any) => { e.currentTarget.src = FALLBACK_IMAGES.default }} />
+                                <div className="relative w-12 h-12 rounded-xl overflow-hidden shrink-0 bg-gray-100">
+                                  {getCoverImage(p) ? (
+                                    <img src={getCoverImage(p)!} alt={p.title} className="w-full h-full object-cover" />
+                                  ) : (
+                                    <div className="w-full h-full flex items-center justify-center text-gray-300">
+                                      <ImagePlus className="w-5 h-5" />
+                                    </div>
+                                  )}
                                 </div>
                                 <div>
                                   <p className="font-semibold text-gray-900 text-sm leading-tight line-clamp-1">{p.title}</p>
