@@ -292,16 +292,20 @@ export default function AdminProperties() {
         editImageFiles.map(async (file, i) => {
           const ext = file.name.split('.').pop()
           const path = `properties/${editingProp.id}/${Date.now()}-${i}.${ext}`
-          const { error: upErr } = await supabase.storage
+          console.log('[upload] attempting path:', path, 'file:', file.name, file.size)
+          const { data: upData, error: upErr } = await supabase.storage
             .from('property-images')
-            .upload(path, file, { upsert: false })
-          if (upErr) { console.error('Upload error', upErr); return }
-          await supabase.from('property_images').insert({
+            .upload(path, file, { upsert: true })
+          console.log('[upload] result:', { upData, upErr })
+          if (upErr) { alert(`Upload failed: ${upErr.message}`); return }
+          const { data: insData, error: insErr } = await supabase.from('property_images').insert({
             property_id: editingProp.id,
             storage_path: path,
             is_cover: noCoverYet && i === editCoverIdx,
             sort_order: startOrder + i,
           })
+          console.log('[insert property_images]', { insData, insErr })
+          if (insErr) alert(`DB insert failed: ${insErr.message}`)
         })
       )
     }
