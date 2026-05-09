@@ -144,14 +144,26 @@ export default function LandlordListings() {
                     {filtered.map((p: any) => {
                       const s = STATUS[p.status] ?? { label: p.status, bg: 'bg-gray-100', text: 'text-gray-600', icon: Clock }
                       const SIcon = s.icon
+                      const imgs: any[] = p.property_images ?? []
+                      const cover = imgs.find((i: any) => i.is_cover) ?? imgs[0]
                       return (
                         <tr key={p.id} className="hover:bg-slate-50/60 transition-colors">
                           <td className="px-5 py-4">
-                            <p className="font-semibold text-gray-900 text-sm leading-tight">{p.title}</p>
-                            <p className="text-xs text-gray-400 mt-0.5">
-                              {p.bedrooms != null && `${p.bedrooms}bd`}{p.bathrooms != null && ` · ${p.bathrooms}ba`}
-                              {p.property_type && ` · ${p.property_type}`}
-                            </p>
+                            <div className="flex items-center gap-3">
+                              <div className="w-12 h-12 rounded-xl overflow-hidden bg-gray-100 shrink-0">
+                                {cover
+                                  ? <img src={getSupabaseImageUrl(cover.storage_path)} alt={p.title} className="w-full h-full object-cover" onError={e => { (e.currentTarget as HTMLImageElement).style.display = 'none' }} />
+                                  : <div className="w-full h-full flex items-center justify-center"><Building2 className="w-5 h-5 text-gray-300" /></div>
+                                }
+                              </div>
+                              <div>
+                                <p className="font-semibold text-gray-900 text-sm leading-tight">{p.title}</p>
+                                <p className="text-xs text-gray-400 mt-0.5">
+                                  {p.bedrooms != null && `${p.bedrooms}bd`}{p.bathrooms != null && ` · ${p.bathrooms}ba`}
+                                  {p.property_type && ` · ${p.property_type}`}
+                                </p>
+                              </div>
+                            </div>
                           </td>
                           <td className="px-5 py-4 hidden sm:table-cell">
                             <div className="flex items-center gap-1.5 text-sm text-gray-600">
