@@ -1,16 +1,18 @@
 import { useState, useEffect } from 'react'
-import { useSearch } from 'wouter'
+import { useSearch, useLocation } from 'wouter'
 import { SlidersHorizontal, X, Building2, Search, MapPin, ChevronDown } from 'lucide-react'
 import PublicNavbar from '../components/PublicNavbar'
 import Footer from '../components/Footer'
 import PropertyCard from '../components/PropertyCard'
 import { createClient, isSupabaseConfigured } from '../lib/supabase'
+import { isAdminUser } from '../lib/auth'
 import type { PropertyWithLandlord } from '../lib/types'
 import { NIGERIAN_STATES } from '../lib/nigerianStates'
 
 export default function ListingsPage() {
   const search = useSearch()
   const params = new URLSearchParams(search)
+  const [, navigate] = useLocation()
 
   const [typeFilter, setTypeFilter] = useState(params.get('type') ?? '')
   const [stateFilter, setStateFilter] = useState(params.get('city') ?? params.get('state') ?? '')
@@ -29,6 +31,7 @@ export default function ListingsPage() {
     if (!isSupabaseConfigured()) return
     const supabase = createClient()
     supabase.auth.getUser().then(async ({ data: { user } }) => {
+      if (user && isAdminUser(user)) { navigate('/admin'); return }
       setIsAuthenticated(!!user)
       if (user) {
         const { data: tenant } = await supabase.from('tenants').select('id').eq('user_id', user.id).single()
