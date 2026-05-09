@@ -46,11 +46,12 @@ const emptyEdit: EditForm = { title: '', city: '', price: '', type: 'rent', stat
 
 type AddForm = {
   landlord_id: string; title: string; city: string; state: string
+  assigned_to: string
   property_type: string; type: string; status: string
   price: string; bedrooms: string; bathrooms: string; description: string
 }
 const emptyAdd: AddForm = {
-  landlord_id: '', title: '', city: '', state: '',
+  landlord_id: '', title: '', city: '', state: '', assigned_to: '',
   property_type: 'Apartment', type: 'rent', status: 'available',
   price: '', bedrooms: '', bathrooms: '', description: '',
 }
@@ -72,6 +73,7 @@ export default function AdminProperties() {
   const [addForm, setAddForm] = useState<AddForm>(emptyAdd)
   const [addSaving, setAddSaving] = useState(false)
   const [landlords, setLandlords] = useState<{ id: string; full_name: string }[]>([])
+  const [admins, setAdmins] = useState<{ id: string; email: string }[]>([])
   // Image Upload State and Refs
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [imageFiles, setImageFiles] = useState<File[]>([])
@@ -121,7 +123,14 @@ export default function AdminProperties() {
       .select('id, full_name')
       .order('full_name')
       .then(({ data }) => setLandlords(data ?? []))
+    
+    supabase
+    .from('admins')
+    .select('id, email')
+    .order('email')
+    .then(({ data }) => setAdmins(data ?? []))
   }, [])
+  
 
   useEffect(() => {
     let list = [...properties]
@@ -176,6 +185,7 @@ export default function AdminProperties() {
       .from('properties')
       .insert({
         landlord_id: addForm.landlord_id || null,
+        assigned_to:  addForm.assigned_to || null,
         title: addForm.title.trim(),
         city: addForm.city.trim(),
         state: addForm.state.trim() || null,
@@ -589,176 +599,200 @@ export default function AdminProperties() {
               </button>
             </div>
 
-            <div className="flex-1 overflow-y-auto px-6 py-5 space-y-4">
+            <div className="grid grid-cols-2 gap-4">
               {/* Landlord */}
               <div>
-                <label className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1.5 block">Landlord (optional)</label>
-                <select value={addForm.landlord_id} onChange={e => setAddForm(f => ({ ...f, landlord_id: e.target.value }))}
+                <label className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1.5 block">
+                  Landlord <span className="font-normal normal-case">(optional)</span>
+                </label>
+                <select value={addForm.landlord_id}
+                  onChange={e => setAddForm(f => ({ ...f, landlord_id: e.target.value }))}
                   className="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
-                  <option value="">Select a landlord…</option>
-                  {landlords.map(l => <option key={l.id} value={l.id}>{l.full_name}</option>)}
+                  <option value="">Select landlord…</option>
+                  {landlords.map(l => (
+                    <option key={l.id} value={l.id}>{l.full_name}</option>
+                  ))}
                 </select>
                 {landlords.length === 0 && (
-                  <p className="text-xs text-amber-600 mt-1">No landlords found — make sure Supabase is connected.</p>
+                  <p className="text-xs text-amber-600 mt-1">No landlords found.</p>
                 )}
               </div>
 
-              {/* Title */}
+              {/* Admin */}
               <div>
-                <label className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1.5 block">Listing Title *</label>
-                <input value={addForm.title} onChange={e => setAddForm(f => ({ ...f, title: e.target.value }))}
-                  placeholder="e.g. Luxury 3-Bedroom Apartment in Lekki"
+                <label className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1.5 block">
+                  Assign Admin <span className="font-normal normal-case">(optional)</span>
+                </label>
+                <select value={addForm.assigned_to}
+                  onChange={e => setAddForm(f => ({ ...f, assigned_to: e.target.value }))}
+                  className="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
+                  <option value="">Select admin…</option>
+                  {admins.map(a => (
+                    <option key={a.id} value={a.id}>{a.email}</option>
+                  ))}
+                </select>
+                {admins.length === 0 && (
+                  <p className="text-xs text-amber-600 mt-1">No admins found.</p>
+                )}
+              </div>
+            </div>
+
+            {/* Title */}
+            <div>
+              <label className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1.5 block">Listing Title *</label>
+              <input value={addForm.title} onChange={e => setAddForm(f => ({ ...f, title: e.target.value }))}
+                placeholder="e.g. Luxury 3-Bedroom Apartment in Lekki"
+                className="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+            </div>
+
+            {/* City + State */}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1.5 block">City *</label>
+                <input value={addForm.city} onChange={e => setAddForm(f => ({ ...f, city: e.target.value }))}
+                  placeholder="e.g. Lagos"
                   className="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
               </div>
-
-              {/* City + State */}
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1.5 block">City *</label>
-                  <input value={addForm.city} onChange={e => setAddForm(f => ({ ...f, city: e.target.value }))}
-                    placeholder="e.g. Lagos"
-                    className="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
-                </div>
-                <div>
-                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1.5 block">State</label>
-                  <input value={addForm.state} onChange={e => setAddForm(f => ({ ...f, state: e.target.value }))}
-                    placeholder="e.g. Lagos State"
-                    className="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
-                </div>
-              </div>
-
-              {/* Type + Property Type */}
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1.5 block">Listing Type</label>
-                  <select value={addForm.type} onChange={e => setAddForm(f => ({ ...f, type: e.target.value }))}
-                    className="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
-                    <option value="rent">For Rent</option>
-                    <option value="sale">For Sale</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1.5 block">Property Type</label>
-                  <select value={addForm.property_type} onChange={e => setAddForm(f => ({ ...f, property_type: e.target.value }))}
-                    className="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
-                    {['Apartment', 'Villa', 'Duplex', 'Bungalow', 'Studio', 'Office', 'Shop', 'Land', 'Townhouse'].map(t =>
-                      <option key={t} value={t}>{t}</option>
-                    )}
-                  </select>
-                </div>
-              </div>
-
-              {/* Price + Status */}
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1.5 block">Price (₦) *</label>
-                  <input type="number" min="0" value={addForm.price} onChange={e => setAddForm(f => ({ ...f, price: e.target.value }))}
-                    placeholder="e.g. 2500000"
-                    className="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
-                </div>
-                <div>
-                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1.5 block">Status</label>
-                  <select value={addForm.status} onChange={e => setAddForm(f => ({ ...f, status: e.target.value }))}
-                    className="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
-                    <option value="available">Available</option>
-                    <option value="taken">Taken</option>
-                    <option value="coming_soon">Coming Soon</option>
-                    <option value="under_negotiation">Under Negotiation</option>
-                  </select>
-                </div>
-              </div>
-
-              {/* Bedrooms + Bathrooms */}
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1.5 block">Bedrooms</label>
-                  <input type="number" min="0" value={addForm.bedrooms} onChange={e => setAddForm(f => ({ ...f, bedrooms: e.target.value }))}
-                    placeholder="e.g. 3"
-                    className="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
-                </div>
-                <div>
-                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1.5 block">Bathrooms</label>
-                  <input type="number" min="0" value={addForm.bathrooms} onChange={e => setAddForm(f => ({ ...f, bathrooms: e.target.value }))}
-                    placeholder="e.g. 2"
-                    className="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
-                </div>
-              </div>
-
-              {/* Description */}
               <div>
-                <label className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1.5 block">Description</label>
-                <textarea value={addForm.description} onChange={e => setAddForm(f => ({ ...f, description: e.target.value }))}
-                  rows={3} placeholder="Brief description of the property…"
-                  className="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none" />
-              </div>
-
-              {/* ── Photos ── */}
-              <div className="border border-gray-100 rounded-2xl p-4 space-y-4">
-                <div className="flex items-center gap-2 pb-1 border-b border-gray-100">
-                  <ImagePlus className="w-4 h-4 text-blue-600" />
-                  <h2 className="text-sm font-bold text-gray-900">Photos</h2>
-                  <span className="ml-auto text-xs text-gray-400">First photo will be the cover</span>
-                </div>
-
-                {imagePreviews.length > 0 && (
-                  <div>
-                    <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">
-                      New photos to upload ({imagePreviews.length})
-                    </p>
-                    <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
-                      {imagePreviews.map((src, i) => (
-                        <div key={i}
-                          onClick={() => setCoverIdx(i)}
-                          className={`relative group aspect-square rounded-xl overflow-hidden border-2 cursor-pointer transition-all ${i === coverIdx ? 'border-blue-600' : 'border-gray-200'
-                            }`}>
-                          <img src={src} alt="" className="w-full h-full object-cover" />
-                          <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity" />
-                          {i === coverIdx && (
-                            <div className="absolute top-1.5 left-1.5 px-1.5 py-0.5 bg-blue-600 rounded-md text-[9px] font-black text-white uppercase tracking-wide">Cover</div>
-                          )}
-                          <button type="button"
-                            onClick={e => { e.stopPropagation(); removeNewImage(i) }}
-                            className="absolute top-1 right-1 w-6 h-6 bg-white/90 hover:bg-red-500 hover:text-white rounded-lg flex items-center justify-center text-gray-700 transition-colors opacity-0 group-hover:opacity-100">
-                            <X className="w-3 h-3" />
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                    {imagePreviews.length > 1 && (
-                      <p className="text-xs text-gray-400 mt-2 text-center">Click a photo to set it as the cover</p>
-                    )}
-                  </div>
-                )}
-
-                <button type="button"
-                  onClick={() => fileInputRef.current?.click()}
-                  className="w-full border-2 border-dashed border-gray-200 hover:border-blue-400 hover:bg-blue-50/40 rounded-xl py-8 flex flex-col items-center gap-2 text-gray-400 hover:text-blue-600 transition-all">
-                  <ImagePlus className="w-7 h-7" />
-                  <div className="text-center">
-                    <p className="text-sm font-semibold">Click to add photos</p>
-                    <p className="text-xs mt-0.5">JPG, PNG or WEBP · Max 10MB each</p>
-                  </div>
-                </button>
-                <input ref={fileInputRef} type="file" accept="image/*" multiple className="hidden"
-                  onChange={e => addFiles(e.target.files)} />
+                <label className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1.5 block">State</label>
+                <input value={addForm.state} onChange={e => setAddForm(f => ({ ...f, state: e.target.value }))}
+                  placeholder="e.g. Lagos State"
+                  className="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
               </div>
             </div>
 
-            
-            <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-gray-100 bg-gray-50 rounded-b-3xl shrink-0">
-              <button type="button" onClick={() => { setAddOpen(false); setAddForm(emptyAdd) }}
-                className="px-4 py-2 text-sm font-semibold text-gray-600 hover:text-gray-800 transition-colors">
-                Cancel
+            {/* Type + Property Type */}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1.5 block">Listing Type</label>
+                <select value={addForm.type} onChange={e => setAddForm(f => ({ ...f, type: e.target.value }))}
+                  className="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
+                  <option value="rent">For Rent</option>
+                  <option value="sale">For Sale</option>
+                </select>
+              </div>
+              <div>
+                <label className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1.5 block">Property Type</label>
+                <select value={addForm.property_type} onChange={e => setAddForm(f => ({ ...f, property_type: e.target.value }))}
+                  className="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
+                  {['Apartment', 'Villa', 'Duplex', 'Bungalow', 'Studio', 'Office', 'Shop', 'Land', 'Townhouse'].map(t =>
+                    <option key={t} value={t}>{t}</option>
+                  )}
+                </select>
+              </div>
+            </div>
+
+            {/* Price + Status */}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1.5 block">Price (₦) *</label>
+                <input type="number" min="0" value={addForm.price} onChange={e => setAddForm(f => ({ ...f, price: e.target.value }))}
+                  placeholder="e.g. 2500000"
+                  className="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+              </div>
+              <div>
+                <label className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1.5 block">Status</label>
+                <select value={addForm.status} onChange={e => setAddForm(f => ({ ...f, status: e.target.value }))}
+                  className="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
+                  <option value="available">Available</option>
+                  <option value="taken">Taken</option>
+                  <option value="coming_soon">Coming Soon</option>
+                  <option value="under_negotiation">Under Negotiation</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Bedrooms + Bathrooms */}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1.5 block">Bedrooms</label>
+                <input type="number" min="0" value={addForm.bedrooms} onChange={e => setAddForm(f => ({ ...f, bedrooms: e.target.value }))}
+                  placeholder="e.g. 3"
+                  className="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+              </div>
+              <div>
+                <label className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1.5 block">Bathrooms</label>
+                <input type="number" min="0" value={addForm.bathrooms} onChange={e => setAddForm(f => ({ ...f, bathrooms: e.target.value }))}
+                  placeholder="e.g. 2"
+                  className="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+              </div>
+            </div>
+
+            {/* Description */}
+            <div>
+              <label className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1.5 block">Description</label>
+              <textarea value={addForm.description} onChange={e => setAddForm(f => ({ ...f, description: e.target.value }))}
+                rows={3} placeholder="Brief description of the property…"
+                className="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none" />
+            </div>
+
+            {/* ── Photos ── */}
+            <div className="border border-gray-100 rounded-2xl p-4 space-y-4">
+              <div className="flex items-center gap-2 pb-1 border-b border-gray-100">
+                <ImagePlus className="w-4 h-4 text-blue-600" />
+                <h2 className="text-sm font-bold text-gray-900">Photos</h2>
+                <span className="ml-auto text-xs text-gray-400">First photo will be the cover</span>
+              </div>
+
+              {imagePreviews.length > 0 && (
+                <div>
+                  <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">
+                    New photos to upload ({imagePreviews.length})
+                  </p>
+                  <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+                    {imagePreviews.map((src, i) => (
+                      <div key={i}
+                        onClick={() => setCoverIdx(i)}
+                        className={`relative group aspect-square rounded-xl overflow-hidden border-2 cursor-pointer transition-all ${i === coverIdx ? 'border-blue-600' : 'border-gray-200'
+                          }`}>
+                        <img src={src} alt="" className="w-full h-full object-cover" />
+                        <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity" />
+                        {i === coverIdx && (
+                          <div className="absolute top-1.5 left-1.5 px-1.5 py-0.5 bg-blue-600 rounded-md text-[9px] font-black text-white uppercase tracking-wide">Cover</div>
+                        )}
+                        <button type="button"
+                          onClick={e => { e.stopPropagation(); removeNewImage(i) }}
+                          className="absolute top-1 right-1 w-6 h-6 bg-white/90 hover:bg-red-500 hover:text-white rounded-lg flex items-center justify-center text-gray-700 transition-colors opacity-0 group-hover:opacity-100">
+                          <X className="w-3 h-3" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                  {imagePreviews.length > 1 && (
+                    <p className="text-xs text-gray-400 mt-2 text-center">Click a photo to set it as the cover</p>
+                  )}
+                </div>
+              )}
+
+              <button type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="w-full border-2 border-dashed border-gray-200 hover:border-blue-400 hover:bg-blue-50/40 rounded-xl py-8 flex flex-col items-center gap-2 text-gray-400 hover:text-blue-600 transition-all">
+                <ImagePlus className="w-7 h-7" />
+                <div className="text-center">
+                  <p className="text-sm font-semibold">Click to add photos</p>
+                  <p className="text-xs mt-0.5">JPG, PNG or WEBP · Max 10MB each</p>
+                </div>
               </button>
-              <button type="button" onClick={handleAddSave} disabled={addSaving}
-                className="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white text-sm font-bold rounded-xl transition-colors shadow-sm shadow-blue-600/20">
-                {addSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
-                {addSaving ? 'Creating…' : 'Create Listing'}
-              </button>
+              <input ref={fileInputRef} type="file" accept="image/*" multiple className="hidden"
+                onChange={e => addFiles(e.target.files)} />
             </div>
           </div>
+
+
+          <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-gray-100 bg-gray-50 rounded-b-3xl shrink-0">
+            <button type="button" onClick={() => { setAddOpen(false); setAddForm(emptyAdd) }}
+              className="px-4 py-2 text-sm font-semibold text-gray-600 hover:text-gray-800 transition-colors">
+              Cancel
+            </button>
+            <button type="button" onClick={handleAddSave} disabled={addSaving}
+              className="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white text-sm font-bold rounded-xl transition-colors shadow-sm shadow-blue-600/20">
+              {addSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
+              {addSaving ? 'Creating…' : 'Create Listing'}
+            </button>
+          </div>
         </div>
-      )}
-    </AuthGuard>
+  )
+}
+    </AuthGuard >
   )
 }
