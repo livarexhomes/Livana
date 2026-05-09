@@ -316,16 +316,20 @@ export default function AdminProperties() {
       )
     }
 
-    // Refresh images for this property in local state
-    const { data: freshImgs } = await supabase
-      .from('property_images')
-      .select('id, storage_path, is_cover, sort_order')
-      .eq('property_id', editingProp.id)
-      .order('sort_order')
+    // Refresh full property row with images
+    const { data: freshProp } = await supabase
+      .from('properties')
+      .select('*, landlords(full_name, is_verified), property_images(id, storage_path, is_cover, sort_order)')
+      .eq('id', editingProp.id)
+      .single()
 
     setProperties(ps => ps.map(p =>
-      p.id === editingProp.id ? { ...p, ...patch, property_images: freshImgs ?? [] } : p
+      p.id === editingProp.id ? (freshProp ?? { ...p, ...patch }) : p
     ))
+    setEditImageFiles([])
+    setEditImagePreviews([])
+    setExistingImages([])
+    setEditCoverIdx(0)
     setSaving(false)
     setEditingProp(null)
   }
@@ -594,7 +598,7 @@ export default function AdminProperties() {
                   <h2 className="text-base font-bold text-gray-900">Edit Property</h2>
                   <p className="text-xs text-gray-400 mt-0.5 truncate max-w-xs">{editingProp.title}</p>
                 </div>
-                <button onClick={() => setEditingProp(null)} className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors">
+                <button onClick={() => { setEditingProp(null); setEditImageFiles([]); setEditImagePreviews([]); setExistingImages([]); }} className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors">
                   <X className="w-4 h-4" />
                 </button>
               </div>
@@ -726,7 +730,7 @@ export default function AdminProperties() {
               </div> {/* end scrollable */}
 
               <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-gray-100 bg-gray-50 shrink-0">
-                <button onClick={() => setEditingProp(null)}
+                <button onClick={() => { setEditingProp(null); setEditImageFiles([]); setEditImagePreviews([]); setExistingImages([]); }}
                   className="px-4 py-2 text-sm font-semibold text-gray-600 hover:text-gray-800 transition-colors">
                   Cancel
                 </button>
