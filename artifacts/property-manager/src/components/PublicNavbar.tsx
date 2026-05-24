@@ -55,7 +55,7 @@ export default function PublicNavbar() {
     }`}>
       <div className="max-w-7xl mx-auto px-5 sm:px-8 h-18 flex items-center gap-8" style={{ height: '72px' }}>
         <Link href="/" className="flex items-center shrink-0">
-          <img src="/livana-logo-transparent.png" alt="Livana" className="h-11 w-auto" />
+          <img src="/livana-logo-transparent.png" alt="LIVAREX" className="h-11 w-auto" />
         </Link>
 
         <div className="hidden md:flex items-center gap-1 flex-1">

@@ -99,7 +99,7 @@ export default function RegisterPage() {
         <div className="max-w-md w-full mx-auto">
           {/* Logo */}
           <Link href="/" className="inline-flex items-center mb-10">
-            <img src="/livana-logo-transparent.png" alt="Livana" className="h-10 w-auto" />
+            <img src="/livana-logo-transparent.png" alt="LIVAREX" className="h-10 w-auto" />
           </Link>
 
           {/* Heading */}
@@ -107,7 +107,7 @@ export default function RegisterPage() {
             <h1 className="text-3xl sm:text-4xl font-extrabold text-gray-900 leading-tight tracking-tight mb-2">
               Find your next home
             </h1>
-            <p className="text-gray-500 text-base">Create a free Livana account — no agent fees, ever.</p>
+            <p className="text-gray-500 text-base">Create a free LIVAREX account — no agent fees, ever.</p>
           </div>
 
           {/* Google */}
@@ -236,7 +236,7 @@ export default function RegisterPage() {
         {/* Top */}
         <div className="relative z-10">
           <div className="mb-14">
-            <img src="/livana-logo-transparent.png" alt="Livana" className="h-10 w-auto brightness-0 invert" />
+            <img src="/livana-logo-transparent.png" alt="LIVAREX" className="h-10 w-auto brightness-0 invert" />
           </div>
 
           <h2 className="text-4xl xl:text-5xl font-extrabold text-white leading-tight tracking-tight mb-4">
@@ -257,7 +257,7 @@ export default function RegisterPage() {
             ))}
           </div>
           <p className="text-gray-300 text-sm leading-relaxed mb-4">
-            "Found my 3-bedroom in Lekki within a week. The landlord was verified and I moved in without paying any agent fees. Livana is a game changer."
+            "Found my 3-bedroom in Lekki within a week. The landlord was verified and I moved in without paying any agent fees. LIVAREX is a game changer."
           </p>
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-full bg-blue-600 flex items-center justify-center text-white text-xs font-bold shrink-0">AO</div>

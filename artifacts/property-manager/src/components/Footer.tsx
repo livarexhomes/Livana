@@ -7,7 +7,7 @@ export default function Footer() {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-10 pb-12 border-b border-white/8">
           <div className="col-span-2 md:col-span-1">
             <Link href="/" className="flex items-center mb-5">
-              <img src="/livana-logo-transparent.png" alt="Livana" className="h-9 w-auto brightness-0 invert" />
+              <img src="/livana-logo-transparent.png" alt="LIVAREX" className="h-9 w-auto brightness-0 invert" />
             </Link>
             <p className="text-sm leading-relaxed text-gray-400 max-w-xs">
               Nigeria's most trusted property platform. Connecting verified landlords with quality tenants since 2024.
@@ -53,7 +53,7 @@ export default function Footer() {
               </li>
               <li className="flex items-center gap-2">
                 <svg className="w-4 h-4 text-blue-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
-                support@livana.ng
+                support@livarex.ng
               </li>
               <li className="flex items-center gap-2">
                 <svg className="w-4 h-4 text-blue-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" /></svg>
@@ -64,7 +64,7 @@ export default function Footer() {
         </div>
 
         <div className="mt-8 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <p className="text-sm text-gray-500">© {new Date().getFullYear()} Livana. All rights reserved.</p>
+          <p className="text-sm text-gray-500">© {new Date().getFullYear()} LIVAREX. All rights reserved.</p>
           <div className="flex items-center gap-6 text-sm">
             <a href="#" className="text-gray-500 hover:text-white transition-colors">Privacy Policy</a>
             <a href="#" className="text-gray-500 hover:text-white transition-colors">Terms of Service</a>

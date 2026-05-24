@@ -9,9 +9,9 @@ const faqs = [
   { q: 'How do I contact a landlord?', a: 'Every listing has a "Contact on WhatsApp" button that opens a direct chat with the landlord — no account needed. You can ask questions and arrange viewings instantly.' },
   { q: 'Are all landlords verified?', a: 'Yes. Every landlord goes through our review and approval process before any of their listings go live on the platform. Verified badges are only awarded to landlords we\'ve confirmed.' },
   { q: 'How do I list my property?', a: 'Register as a landlord, submit your details for review, and once approved (usually within 24 hours), you can add unlimited listings from your dashboard.' },
-  { q: 'Is there a fee to use Livana?', a: 'No — browsing listings is completely free for renters. Listing properties is also free for landlords. We will never charge agent fees.' },
+  { q: 'Is there a fee to use LIVAREX?', a: 'No — browsing listings is completely free for renters. Listing properties is also free for landlords. We will never charge agent fees.' },
   { q: 'My landlord account was rejected — what now?', a: 'Use the contact form below to reach out and include your registered email. Our team will review your application and respond within 1–2 business days.' },
-  { q: 'Can I list commercial properties?', a: 'Yes. Livana supports residential, commercial, and off-plan property listings. Select the appropriate type when creating your listing from the landlord dashboard.' },
+  { q: 'Can I list commercial properties?', a: 'Yes. LIVAREX supports residential, commercial, and off-plan property listings. Select the appropriate type when creating your listing from the landlord dashboard.' },
 ]
 
 export default function ContactPage() {
@@ -69,7 +69,7 @@ export default function ContactPage() {
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {/* Email */}
             <a
-              href="mailto:support@livana.ng"
+              href="mailto:support@livarex.ng"
               className="group bg-white border border-gray-100 hover:border-blue-200 hover:shadow-lg rounded-3xl p-6 flex flex-col gap-4 transition-all"
             >
               <div className="w-12 h-12 rounded-2xl bg-blue-600 flex items-center justify-center shadow-lg shadow-blue-600/25 group-hover:scale-105 transition-transform">
@@ -77,7 +77,7 @@ export default function ContactPage() {
               </div>
               <div>
                 <p className="font-bold text-gray-900 mb-0.5">Email Us</p>
-                <p className="text-blue-600 text-sm font-semibold">support@livana.ng</p>
+                <p className="text-blue-600 text-sm font-semibold">support@livarex.ng</p>
                 <p className="text-gray-400 text-xs mt-2">We reply within 1–2 business days</p>
               </div>
               <span className="inline-flex items-center gap-1 text-xs font-semibold text-blue-600 group-hover:text-blue-700 transition-colors mt-auto">
@@ -105,7 +105,7 @@ export default function ContactPage() {
 
             {/* WhatsApp */}
             <a
-              href="https://wa.me/2348001234567?text=Hi%20Livana%2C%20I%20need%20some%20help!"
+              href="https://wa.me/2348001234567?text=Hi%20LIVAREX%2C%20I%20need%20some%20help!"
               target="_blank"
               rel="noopener noreferrer"
               className="group bg-white border border-gray-100 hover:border-green-200 hover:shadow-lg rounded-3xl p-6 flex flex-col gap-4 transition-all"
@@ -259,10 +259,10 @@ export default function ContactPage() {
               <div className="mt-8 flex items-center gap-4">
                 <p className="text-sm text-gray-400 font-medium">Also find us on:</p>
                 {[
-                  { Icon: Instagram, href: 'https://instagram.com/livana.ng', label: 'Instagram', color: 'hover:text-pink-600' },
-                  { Icon: Twitter,   href: 'https://twitter.com/livana_ng',   label: 'Twitter / X', color: 'hover:text-sky-500' },
-                  { Icon: Facebook,  href: 'https://facebook.com/livana.ng',  label: 'Facebook', color: 'hover:text-blue-600' },
-                  { Icon: Linkedin,  href: 'https://linkedin.com/company/livana-ng', label: 'LinkedIn', color: 'hover:text-blue-700' },
+                  { Icon: Instagram, href: 'https://instagram.com/livarex.ng', label: 'Instagram', color: 'hover:text-pink-600' },
+                  { Icon: Twitter,   href: 'https://twitter.com/livarex_ng',   label: 'Twitter / X', color: 'hover:text-sky-500' },
+                  { Icon: Facebook,  href: 'https://facebook.com/livarex.ng',  label: 'Facebook', color: 'hover:text-blue-600' },
+                  { Icon: Linkedin,  href: 'https://linkedin.com/company/livarex-ng', label: 'LinkedIn', color: 'hover:text-blue-700' },
                 ].map(({ Icon, href, label, color }) => (
                   <a
                     key={label}
@@ -310,7 +310,7 @@ export default function ContactPage() {
               <div className="bg-gray-950 rounded-3xl p-7 space-y-5">
                 <h3 className="text-white font-bold text-base">Direct Contact</h3>
                 {[
-                  { Icon: Mail,    text: 'support@livana.ng',  href: 'mailto:support@livana.ng', label: 'Email' },
+                  { Icon: Mail,    text: 'support@livarex.ng',  href: 'mailto:support@livarex.ng', label: 'Email' },
                   { Icon: Phone,   text: '+234 800 123 4567',  href: 'tel:+2348001234567', label: 'Phone' },
                   { Icon: MessageCircle, text: 'WhatsApp us now',  href: 'https://wa.me/2348001234567', label: 'WhatsApp' },
                   { Icon: MapPin,  text: 'Victoria Island, Lagos', href: 'https://maps.google.com/?q=Victoria+Island+Lagos', label: 'Location' },
@@ -347,7 +347,7 @@ export default function ContactPage() {
                   {[
                     { label: 'Browse all listings', href: '/listings' },
                     { label: 'Register as a landlord', href: '/register' },
-                    { label: 'About Livana', href: '/about' },
+                    { label: 'About LIVAREX', href: '/about' },
                     { label: 'My account', href: '/user' },
                   ].map(link => (
                     <Link

@@ -86,7 +86,7 @@ export default function AdminSidebar({ userEmail, userName }: Props) {
             <>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
-                  <span className="text-[15px] font-extrabold text-white tracking-tight">Livana</span>
+                  <span className="text-[15px] font-extrabold text-white tracking-tight">LIVAREX</span>
                   <span className="text-[9px] font-bold bg-white/10 text-white/70 border border-white/[0.12] px-2 py-0.5 rounded-full uppercase tracking-wider">
                     Admin
                   </span>
@@ -135,7 +135,7 @@ export default function AdminSidebar({ userEmail, userName }: Props) {
               <>
                 <div className="min-w-0 flex-1">
                   <p className="text-[13px] font-semibold text-white/90 truncate leading-tight">{displayName}</p>
-                  <p className="text-[11px] text-white/35 truncate mt-0.5">{userEmail ?? 'admin@livana.com'}</p>
+                  <p className="text-[11px] text-white/35 truncate mt-0.5">{userEmail ?? 'admin@livarex.com'}</p>
                 </div>
                 <button type="button" onClick={handleLogout} title="Sign out"
                   className="w-7 h-7 flex items-center justify-center rounded-lg text-white/30 hover:text-red-400 hover:bg-red-500/10 transition-colors shrink-0">

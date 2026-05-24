@@ -83,7 +83,7 @@ export default function LandlordKYCPage() {
           </div>
           <h2 className="text-2xl font-bold text-gray-900 mb-3">KYC Under Review</h2>
           <p className="text-gray-500 leading-relaxed mb-6">
-            Your KYC information has been submitted and is being reviewed by our admin team. This usually takes up to 24 hours. You'll be able to list properties once approved.
+            Your KYC information has been submitted and is being reviewed by our Admin team. This usually takes up to 24 hours. You'll be able to list properties once approved.
           </p>
           <div className="space-y-3">
             <Link href="/" className="block px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl transition-colors">
@@ -108,7 +108,7 @@ export default function LandlordKYCPage() {
       <div className="bg-white border-b border-gray-100">
         <div className="max-w-2xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
           <Link href="/">
-            <img src="/livana-logo-transparent.png" alt="Livana" className="h-9 w-auto" />
+            <img src="/livana-logo-transparent.png" alt="LIVAREX" className="h-9 w-auto" />
           </Link>
           <div className="flex items-center gap-2 text-xs font-semibold text-amber-700 bg-amber-50 border border-amber-200 px-3 py-1.5 rounded-full">
             <AlertCircle className="w-3.5 h-3.5" />
@@ -205,7 +205,7 @@ export default function LandlordKYCPage() {
 
             <div>
               <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Additional Notes <span className="text-gray-400 normal-case font-normal">(optional)</span></label>
-              <textarea rows={3} placeholder="Any additional information you'd like to share with the admin..." value={form.kyc_notes} onChange={e => set('kyc_notes', e.target.value)} className={FIELD + ' resize-none'} />
+              <textarea rows={3} placeholder="Any additional information you'd like to share with the Admin..." value={form.kyc_notes} onChange={e => set('kyc_notes', e.target.value)} className={FIELD + ' resize-none'} />
             </div>
           </div>
 
