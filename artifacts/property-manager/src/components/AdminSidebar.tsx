@@ -3,7 +3,7 @@ import { Link, useLocation } from 'wouter'
 import { createClient } from '../lib/supabase'
 import {
   LayoutDashboard, Building2, UserPlus, FolderKanban, UserCog,
-  Settings, HelpCircle, LogOut, Menu, X,
+  Settings, LogOut, Menu, X,
   PanelLeftClose, PanelLeftOpen, ShieldCheck, Activity, List, HeadphonesIcon,
 } from 'lucide-react'
 
@@ -18,8 +18,7 @@ const mainNav = [
   { label: 'Support',      href: '/admin/support',    exact: false, icon: HeadphonesIcon },
 ]
 const supportNav = [
-  { label: 'Settings',       href: '/admin/settings', exact: false, icon: Settings },
-  { label: 'Help & Support', href: '/admin/help',     exact: false, icon: HelpCircle },
+  { label: 'Settings', href: '/admin/settings', exact: false, icon: Settings },
 ]
 
 interface Props { userEmail?: string | null; userName?: string | null }
