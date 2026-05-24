@@ -2,16 +2,16 @@ import { useState, useEffect } from 'react'
 import { Link, useLocation } from 'wouter'
 import { createClient } from '../lib/supabase'
 import {
-  LayoutDashboard, Heart, MessageSquare, User,
+  LayoutDashboard, Heart, HeadphonesIcon, User,
   LogOut, Menu, X, Building2, PanelLeftClose, PanelLeftOpen,
   Home, Key, Briefcase, ShoppingBag,
 } from 'lucide-react'
 
 const mainNav = [
-  { href: '/user',           label: 'Overview',  icon: LayoutDashboard, exact: true  },
-  { href: '/user/saved',     label: 'Saved',     icon: Heart,           exact: false },
-  { href: '/user/enquiries', label: 'Enquiries', icon: MessageSquare,   exact: false },
-  { href: '/user/profile',   label: 'Profile',   icon: User,            exact: false },
+  { href: '/user',           label: 'Overview', icon: LayoutDashboard, exact: true  },
+  { href: '/user/saved',     label: 'Saved',    icon: Heart,           exact: false },
+  { href: '/user/enquiries', label: 'Support',  icon: HeadphonesIcon,  exact: false },
+  { href: '/user/profile',   label: 'Profile',  icon: User,            exact: false },
 ]
 
 const exploreNav = [
