@@ -111,7 +111,8 @@ export default function AdminDashboard() {
     })
   }, [])
 
-  const displayName = user?.email ? user.email.split('@')[0] : 'Admin'
+  const rawName = user?.email ? user.email.split('@')[0] : 'Admin'
+  const displayName = rawName.charAt(0).toUpperCase() + rawName.slice(1)
   const occupancyRate = stats.properties > 0 ? Math.round((stats.occupied / stats.properties) * 100) : 0
 
   const STAT_CARDS = [
