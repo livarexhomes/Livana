@@ -38,9 +38,13 @@ export default function PublicNavbar() {
   const isActive = (path: string) => location === path || location.startsWith(path + '/')
 
   const navLinks = [
-    { href: '/', label: 'Home' },
-    { href: '/about', label: 'About' },
-    { href: '/contact', label: 'Contact' },
+    { href: '/', label: 'Home', comingSoon: false },
+    { href: '/listings?type=rent', label: 'Rent', comingSoon: false },
+    { href: '/listings?type=lease', label: 'Lease', comingSoon: false },
+    { href: null, label: 'Buy', comingSoon: true },
+    { href: null, label: 'Commercial', comingSoon: true },
+    { href: '/about', label: 'About', comingSoon: false },
+    { href: '/contact', label: 'Contact', comingSoon: false },
   ]
 
   const isHomePage = location === '/'
@@ -55,18 +59,26 @@ export default function PublicNavbar() {
         </Link>
 
         <div className="hidden md:flex items-center gap-1 flex-1">
-          {navLinks.map(({ href, label }) => (
-            <Link
-              key={href}
-              href={href}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                (isActive(href) && href !== '/') || (href === '/' && location === '/')
-                  ? 'bg-blue-50 text-blue-600'
-                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
-              }`}
-            >
-              {label}
-            </Link>
+          {navLinks.map(({ href, label, comingSoon }) => (
+            comingSoon ? (
+              <span key={label}
+                className="px-4 py-2 rounded-lg text-sm font-medium text-gray-300 cursor-default select-none flex items-center gap-1.5">
+                {label}
+                <span className="text-[9px] font-bold uppercase tracking-wider bg-gray-100 text-gray-400 px-1.5 py-0.5 rounded-md">Soon</span>
+              </span>
+            ) : (
+              <Link
+                key={href}
+                href={href!}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                  (isActive(href!) && href !== '/') || (href === '/' && location === '/')
+                    ? 'bg-blue-50 text-blue-600'
+                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                }`}
+              >
+                {label}
+              </Link>
+            )
           ))}
         </div>
 
@@ -124,13 +136,21 @@ export default function PublicNavbar() {
 
       {menuOpen && (
         <div className="md:hidden border-t border-gray-100 bg-white/98 nav-blur px-5 py-4 space-y-1 shadow-xl">
-          {navLinks.map(({ href, label }) => (
-            <Link key={href} href={href} onClick={() => setMenuOpen(false)}
-              className={`block px-4 py-3 rounded-xl text-sm font-medium transition-all ${
-                isActive(href) ? 'bg-blue-50 text-blue-600' : 'text-gray-700 hover:bg-gray-50'
-              }`}>
-              {label}
-            </Link>
+          {navLinks.map(({ href, label, comingSoon }) => (
+            comingSoon ? (
+              <span key={label}
+                className="flex items-center gap-2 px-4 py-3 rounded-xl text-sm font-medium text-gray-300 cursor-default select-none">
+                {label}
+                <span className="text-[9px] font-bold uppercase tracking-wider bg-gray-100 text-gray-400 px-1.5 py-0.5 rounded-md">Soon</span>
+              </span>
+            ) : (
+              <Link key={href} href={href!} onClick={() => setMenuOpen(false)}
+                className={`block px-4 py-3 rounded-xl text-sm font-medium transition-all ${
+                  isActive(href!) ? 'bg-blue-50 text-blue-600' : 'text-gray-700 hover:bg-gray-50'
+                }`}>
+                {label}
+              </Link>
+            )
           ))}
           <div className="pt-3 border-t border-gray-100 space-y-1">
             {user ? (

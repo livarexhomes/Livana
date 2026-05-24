@@ -15,10 +15,10 @@ const mainNav = [
 ]
 
 const exploreNav = [
-  { href: '/listings?type=rent',       label: 'Rent',       icon: Key       },
-  { href: '/listings?type=sale',       label: 'Buy',        icon: Home      },
-  { href: '/listings?type=lease',      label: 'Lease',      icon: Briefcase },
-  { href: '/listings?type=commercial', label: 'Commercial', icon: ShoppingBag },
+  { href: '/listings?type=rent',  label: 'Rent',       icon: Key,        comingSoon: false },
+  { href: '/listings?type=lease', label: 'Lease',      icon: Briefcase,  comingSoon: false },
+  { href: null,                   label: 'Buy',        icon: Home,       comingSoon: true  },
+  { href: null,                   label: 'Commercial', icon: ShoppingBag,comingSoon: true  },
 ]
 
 interface Props {
@@ -75,8 +75,22 @@ export default function UserSidebar({ displayName = 'User', userEmail, initials 
 
   const ExploreItem = ({ item, c }: { item: typeof exploreNav[0]; c: boolean }) => {
     const Icon = item.icon
+    if (item.comingSoon) {
+      return (
+        <div title={c ? `${item.label} (Coming Soon)` : undefined}
+          className={`flex items-center ${c ? 'justify-center p-2.5 mx-1' : 'gap-3 px-3 py-2.5'} rounded-xl text-sm font-medium text-white/20 cursor-default select-none`}>
+          <Icon className={`shrink-0 ${c ? 'w-[18px] h-[18px]' : 'w-[17px] h-[17px]'} text-white/20`} strokeWidth={1.7} />
+          {!c && (
+            <span className="flex-1 flex items-center gap-2 truncate">
+              {item.label}
+              <span className="text-[9px] font-bold uppercase tracking-wider bg-white/10 text-white/30 px-1.5 py-0.5 rounded-md shrink-0">Soon</span>
+            </span>
+          )}
+        </div>
+      )
+    }
     return (
-      <Link href={item.href} title={c ? item.label : undefined}
+      <Link href={item.href!} title={c ? item.label : undefined}
         className={`group flex items-center ${c ? 'justify-center p-2.5 mx-1' : 'gap-3 px-3 py-2.5'} rounded-xl text-sm font-medium text-white/45 hover:text-white/90 hover:bg-white/[0.06] transition-all duration-200`}>
         <Icon className={`shrink-0 ${c ? 'w-[18px] h-[18px]' : 'w-[17px] h-[17px]'} text-white/40 group-hover:text-white/70`} strokeWidth={1.7} />
         {!c && <span className="flex-1 truncate">{item.label}</span>}
