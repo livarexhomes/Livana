@@ -39,7 +39,8 @@ export default function AdminSidebar({ userEmail, userName }: Props) {
     try { localStorage.setItem('admin-sidebar-collapsed', String(next)) } catch {}
   }
 
-  const displayName = userName || (userEmail ? userEmail.split('@')[0] : 'Admin')
+  const rawName = userName || (userEmail ? userEmail.split('@')[0] : 'Admin')
+  const displayName = rawName.charAt(0).toUpperCase() + rawName.slice(1)
   const initials = displayName.split(' ').slice(0, 2).map((w: string) => w[0]).join('').toUpperCase() || 'AD'
 
   function isActive(item: { href: string; exact: boolean }) {
