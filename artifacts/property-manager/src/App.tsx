@@ -35,6 +35,7 @@ import AdminSettings from "./pages/admin/AdminSettings";
 import AdminHelp from "./pages/admin/AdminHelp";
 import AdminKYC from "./pages/admin/AdminKYC";
 import AdminActivity from "./pages/admin/AdminActivity";
+import AdminSupport from "./pages/admin/AdminSupport";
 
 function NotFound() {
   return (
@@ -88,6 +89,7 @@ function Router() {
       <Route path="/admin/users" component={AdminUsers} />
       <Route path="/admin/kyc" component={AdminKYC} />
       <Route path="/admin/activity" component={AdminActivity} />
+      <Route path="/admin/support" component={AdminSupport} />
       <Route path="/admin/settings" component={AdminSettings} />
       <Route path="/admin/help" component={AdminHelp} />
 

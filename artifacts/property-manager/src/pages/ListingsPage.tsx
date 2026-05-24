@@ -1,13 +1,25 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef, lazy, Suspense } from 'react'
 import { useSearch, useLocation } from 'wouter'
-import { SlidersHorizontal, X, Building2, Search, MapPin, ChevronDown } from 'lucide-react'
+import {
+  Search, MapPin, ChevronDown, X, SlidersHorizontal,
+  Building2, Map, List,
+} from 'lucide-react'
 import PublicNavbar from '../components/PublicNavbar'
-import Footer from '../components/Footer'
-import PropertyCard from '../components/PropertyCard'
+import ListingCard from '../components/ListingCard'
 import { createClient, isSupabaseConfigured } from '../lib/supabase'
 import { isAdminUser } from '../lib/auth'
 import type { PropertyWithLandlord } from '../lib/types'
-import { NIGERIAN_STATES } from '../lib/nigerianStates'
+
+
+const PropertyMap = lazy(() => import('../components/PropertyMap'))
+
+const TYPE_TABS = [
+  { value: '', label: 'All', icon: '✦' },
+  { value: 'rent', label: 'For Rent', icon: '🏠' },
+  { value: 'sale', label: 'For Sale', icon: '🏢' },
+  { value: 'lease', label: 'Lease', icon: '📋' },
+  { value: 'commercial', label: 'Commercial', icon: '🏪' },
+]
 
 export default function ListingsPage() {
   const search = useSearch()
@@ -20,12 +32,15 @@ export default function ListingsPage() {
   const [minPrice, setMinPrice] = useState(params.get('min_price') ?? '')
   const [maxPrice, setMaxPrice] = useState(params.get('max_price') ?? '')
   const [bedsFilter, setBedsFilter] = useState(params.get('bedrooms') ?? '')
+  const [sortBy, setSortBy] = useState('newest')
+  const [showFilters, setShowFilters] = useState(false)
+  const [showMap, setShowMap] = useState(true)
+  const [hoveredId, setHoveredId] = useState<string | null>(null)
   const [properties, setProperties] = useState<PropertyWithLandlord[]>([])
   const [loading, setLoading] = useState(true)
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [savedIds, setSavedIds] = useState<Set<string>>(new Set())
-  const [showFilters, setShowFilters] = useState(false)
-  const [sortBy, setSortBy] = useState('newest')
+  const listRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     if (!isSupabaseConfigured()) return
@@ -43,9 +58,7 @@ export default function ListingsPage() {
     })
   }, [])
 
-  useEffect(() => {
-    fetchProperties()
-  }, [typeFilter, stateFilter, areaFilter, minPrice, maxPrice, bedsFilter])
+  useEffect(() => { fetchProperties() }, [typeFilter, stateFilter, areaFilter, minPrice, maxPrice, bedsFilter])
 
   async function fetchProperties() {
     if (!isSupabaseConfigured()) { setLoading(false); return }
@@ -70,19 +83,9 @@ export default function ListingsPage() {
     setLoading(false)
   }
 
-  function applyFilters(e: React.FormEvent) {
-    e.preventDefault()
-    setShowFilters(false)
-    fetchProperties()
-  }
-
   function clearFilters() {
-    setTypeFilter('')
-    setStateFilter('')
-    setAreaFilter('')
-    setMinPrice('')
-    setMaxPrice('')
-    setBedsFilter('')
+    setTypeFilter(''); setStateFilter(''); setAreaFilter('')
+    setMinPrice(''); setMaxPrice(''); setBedsFilter('')
   }
 
   const hasFilters = typeFilter || stateFilter || areaFilter || minPrice || maxPrice || bedsFilter
@@ -93,208 +96,263 @@ export default function ListingsPage() {
     return 0
   })
 
-  const TYPE_TABS = [
-    { value: '', label: 'All' },
-    { value: 'rent', label: 'For Rent' },
-    { value: 'sale', label: 'For Sale' },
-    { value: 'lease', label: 'Lease' },
-    { value: 'commercial', label: 'Commercial' },
-  ]
+  function scrollToCard(id: string) {
+    const el = listRef.current?.querySelector(`[data-id="${id}"]`)
+    el?.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+    setHoveredId(id)
+    setTimeout(() => setHoveredId(null), 2000)
+  }
 
   return (
-    <div className="min-h-screen flex flex-col bg-white">
+    <div className="min-h-screen flex flex-col bg-gray-50">
       <PublicNavbar />
 
-      {/* Hero banner */}
-      <section className="bg-gradient-to-br from-gray-900 via-gray-800 to-blue-950 pt-28 pb-14 px-4 sm:px-6">
-        <div className="max-w-7xl mx-auto">
-          <div className="flex items-center gap-2 mb-4">
-            <span className="relative flex h-2.5 w-2.5">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75" />
-              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-blue-500" />
-            </span>
-            <span className="text-xs font-semibold text-blue-400 uppercase tracking-widest">Live Listings</span>
-          </div>
-          <h1 className="text-4xl sm:text-5xl font-extrabold text-white tracking-tight mb-3">
-            Property Listings
-          </h1>
-          <p className="text-gray-400 text-base mb-8 max-w-lg">
-            Browse verified properties across Nigeria. No agent fees.
-          </p>
-          <div className="flex flex-wrap gap-2">
+      {/* Filter bar */}
+      <div className="sticky top-16 z-40 bg-white border-b border-gray-100 shadow-sm">
+        <div className="max-w-screen-2xl mx-auto px-4 sm:px-6">
+          <div className="flex items-center gap-2 py-3 overflow-x-auto no-scrollbar">
+
+            {/* Type tabs */}
             {TYPE_TABS.map(t => (
-              <button key={t.value} type="button"
+              <button
+                key={t.value}
                 onClick={() => setTypeFilter(t.value)}
-                className={`px-4 py-2 rounded-full text-sm font-semibold transition-all ${
+                className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-semibold whitespace-nowrap transition-all border shrink-0 ${
                   typeFilter === t.value
-                    ? 'bg-blue-600 text-white shadow-sm shadow-blue-600/30'
-                    : 'bg-white/10 text-gray-300 hover:bg-white/20 hover:text-white'
-                }`}>
+                    ? 'bg-gray-900 text-white border-gray-900'
+                    : 'bg-white text-gray-600 border-gray-200 hover:border-gray-400'
+                }`}
+              >
+                <span>{t.icon}</span>
                 {t.label}
               </button>
             ))}
-          </div>
-        </div>
-      </section>
 
-      {/* Results bar */}
-      <div className="border-b border-gray-100 bg-white sticky top-16 z-30 shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between gap-4">
-          <p className="text-sm text-gray-500">
-            <span className="font-bold text-gray-900">{properties.length}</span>{' '}
-            {properties.length === 1 ? 'property' : 'properties'} found
-            {hasFilters && <span className="text-blue-600 ml-1">· filtered</span>}
-          </p>
-          <div className="flex items-center gap-3">
-            <div className="relative hidden sm:block">
-              <select value={sortBy} onChange={e => setSortBy(e.target.value)}
-                className="appearance-none pl-3 pr-8 py-2 text-sm border border-gray-200 rounded-xl bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer">
-                <option value="newest">Newest first</option>
-                <option value="price_asc">Price: low to high</option>
-                <option value="price_desc">Price: high to low</option>
+            <div className="w-px h-6 bg-gray-200 mx-1 shrink-0" />
+
+            {/* State */}
+            <div className="relative shrink-0">
+              <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
+              <select
+                value={stateFilter}
+                onChange={e => setStateFilter(e.target.value)}
+                className="appearance-none pl-8 pr-7 py-2 rounded-full border border-gray-200 text-sm bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-900 cursor-pointer"
+              >
+                <option value="">Any State</option>
+                <option value="Lagos">Lagos</option>
+                <option value="Ogun">Ogun</option>
               </select>
               <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
             </div>
-            <button onClick={() => setShowFilters(!showFilters)}
-              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all lg:hidden ${
-                showFilters || hasFilters
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}>
-              <SlidersHorizontal className="w-4 h-4" />
+
+            {/* Beds */}
+            <div className="relative shrink-0">
+              <select
+                value={bedsFilter}
+                onChange={e => setBedsFilter(e.target.value)}
+                className="appearance-none pl-3 pr-7 py-2 rounded-full border border-gray-200 text-sm bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-900 cursor-pointer"
+              >
+                <option value="">Beds / Baths</option>
+                <option value="1">1+ Beds</option>
+                <option value="2">2+ Beds</option>
+                <option value="3">3+ Beds</option>
+                <option value="4">4+ Beds</option>
+                <option value="5">5+ Beds</option>
+              </select>
+              <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
+            </div>
+
+            {/* Price / more filters */}
+            <button
+              onClick={() => setShowFilters(!showFilters)}
+              className={`flex items-center gap-1.5 px-4 py-2 rounded-full border text-sm font-semibold transition-all shrink-0 ${
+                minPrice || maxPrice || areaFilter
+                  ? 'border-gray-900 bg-gray-900 text-white'
+                  : 'border-gray-200 bg-white text-gray-700 hover:border-gray-400'
+              }`}
+            >
+              ₦ Price
+              <ChevronDown className="w-3.5 h-3.5" />
+            </button>
+
+            <button
+              onClick={() => setShowFilters(!showFilters)}
+              className={`flex items-center gap-1.5 px-4 py-2 rounded-full border text-sm font-semibold transition-all shrink-0 ${
+                showFilters
+                  ? 'border-gray-900 bg-gray-900 text-white'
+                  : 'border-gray-200 bg-white text-gray-700 hover:border-gray-400'
+              }`}
+            >
+              <SlidersHorizontal className="w-3.5 h-3.5" />
               Filters
-              {hasFilters && !showFilters && <span className="w-2 h-2 bg-white rounded-full" />}
+              {hasFilters && <span className="w-1.5 h-1.5 bg-green-400 rounded-full" />}
+            </button>
+
+            {hasFilters && (
+              <button
+                onClick={clearFilters}
+                className="flex items-center gap-1 px-3 py-2 rounded-full text-sm text-red-500 hover:bg-red-50 border border-red-100 shrink-0"
+              >
+                <X className="w-3.5 h-3.5" /> Clear
+              </button>
+            )}
+
+            <div className="flex-1 min-w-4" />
+
+            {/* Sort */}
+            <div className="relative shrink-0">
+              <select
+                value={sortBy}
+                onChange={e => setSortBy(e.target.value)}
+                className="appearance-none pl-3 pr-7 py-2 rounded-full border border-gray-200 text-sm bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-900 cursor-pointer"
+              >
+                <option value="newest">Newest Properties</option>
+                <option value="price_asc">Price: Low → High</option>
+                <option value="price_desc">Price: High → Low</option>
+              </select>
+              <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
+            </div>
+
+            {/* Map toggle */}
+            <button
+              onClick={() => setShowMap(!showMap)}
+              className={`flex items-center gap-1.5 px-4 py-2 rounded-full border text-sm font-semibold transition-all shrink-0 ${
+                showMap
+                  ? 'bg-gray-900 text-white border-gray-900'
+                  : 'bg-white text-gray-700 border-gray-200 hover:border-gray-400'
+              }`}
+            >
+              {showMap ? <List className="w-3.5 h-3.5" /> : <Map className="w-3.5 h-3.5" />}
+              {showMap ? 'List only' : 'Show map'}
             </button>
           </div>
+
+          {/* Expanded filters */}
+          {showFilters && (
+            <div className="pb-4 flex flex-wrap gap-4 items-end border-t border-gray-50 pt-4">
+              <div className="flex flex-col gap-1">
+                <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Min Price (₦)</label>
+                <input
+                  type="number"
+                  value={minPrice}
+                  onChange={e => setMinPrice(e.target.value)}
+                  placeholder="e.g. 500,000"
+                  className="px-3.5 py-2 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 w-40"
+                />
+              </div>
+              <div className="flex flex-col gap-1">
+                <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Max Price (₦)</label>
+                <input
+                  type="number"
+                  value={maxPrice}
+                  onChange={e => setMaxPrice(e.target.value)}
+                  placeholder="e.g. 5,000,000"
+                  className="px-3.5 py-2 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 w-40"
+                />
+              </div>
+              <div className="flex flex-col gap-1">
+                <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Area / Neighbourhood</label>
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
+                  <input
+                    value={areaFilter}
+                    onChange={e => setAreaFilter(e.target.value)}
+                    placeholder="e.g. Lekki, Maitama…"
+                    className="pl-9 pr-3.5 py-2 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 w-52"
+                  />
+                </div>
+              </div>
+              <button
+                onClick={() => setShowFilters(false)}
+                className="px-5 py-2 bg-gray-900 text-white text-sm font-semibold rounded-xl hover:bg-gray-800 transition-colors"
+              >
+                Apply
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
       {/* Body */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 flex-1 w-full">
-        <div className="flex flex-col lg:flex-row gap-8">
+      <div className="flex flex-1 overflow-hidden" style={{ height: 'calc(100vh - 113px)' }}>
 
-          {/* Filters sidebar */}
-          <aside className={`lg:w-72 shrink-0 ${showFilters ? 'block' : 'hidden lg:block'}`}>
-            <form onSubmit={applyFilters}
-              className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-6 sticky top-32">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <SlidersHorizontal className="w-4 h-4 text-blue-600" />
-                  <h2 className="text-sm font-bold text-gray-900">Filters</h2>
-                </div>
-                <div className="flex items-center gap-2">
-                  {hasFilters && (
-                    <button type="button" onClick={clearFilters}
-                      className="text-xs text-blue-600 hover:text-blue-700 font-semibold flex items-center gap-1">
-                      <X className="w-3 h-3" /> Clear all
-                    </button>
-                  )}
-                  <button type="button" onClick={() => setShowFilters(false)}
-                    className="lg:hidden p-1 text-gray-400 hover:text-gray-600">
-                    <X className="w-4 h-4" />
-                  </button>
-                </div>
-              </div>
+        {/* List panel */}
+        <div
+          ref={listRef}
+          className={`overflow-y-auto flex flex-col shrink-0 ${
+            showMap ? 'w-full lg:w-[520px] xl:w-[600px]' : 'w-full'
+          }`}
+        >
+          <div className="px-4 py-2.5 bg-white border-b border-gray-100 flex items-center justify-between sticky top-0 z-10">
+            <p className="text-sm text-gray-500">
+              <span className="font-bold text-gray-900">{sorted.length}</span>{' '}
+              {sorted.length === 1 ? 'property' : 'properties'} found
+              {hasFilters && <span className="text-green-600 ml-1 font-medium">· filtered</span>}
+            </p>
+          </div>
 
-              <div className="space-y-2">
-                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider">Type</label>
-                <select value={typeFilter} onChange={e => setTypeFilter(e.target.value)}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-700">
-                  <option value="">All types</option>
-                  <option value="rent">For Rent</option>
-                  <option value="sale">For Sale</option>
-                  <option value="lease">Lease</option>
-                  <option value="commercial">Commercial</option>
-                </select>
-              </div>
-
-              <div className="space-y-2">
-                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider">State</label>
-                <div className="relative">
-                  <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
-                  <select value={stateFilter} onChange={e => setStateFilter(e.target.value)}
-                    className="w-full pl-9 pr-3.5 py-2.5 rounded-xl border border-gray-200 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-700 appearance-none">
-                    <option value="">All states</option>
-                    {NIGERIAN_STATES.map(s => <option key={s} value={s}>{s}</option>)}
-                  </select>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider">Area / Neighbourhood</label>
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
-                  <input value={areaFilter} onChange={e => setAreaFilter(e.target.value)}
-                    placeholder="e.g. Lekki, Maitama…"
-                    className="w-full pl-9 pr-3.5 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-700 placeholder-gray-400" />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider">Price Range (₦)</label>
-                <div className="flex gap-2">
-                  <input type="number" value={minPrice} onChange={e => setMinPrice(e.target.value)}
-                    placeholder="Min"
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-700 placeholder-gray-400" />
-                  <input type="number" value={maxPrice} onChange={e => setMaxPrice(e.target.value)}
-                    placeholder="Max"
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-700 placeholder-gray-400" />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider">Min. Bedrooms</label>
-                <select value={bedsFilter} onChange={e => setBedsFilter(e.target.value)}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-700">
-                  <option value="">Any</option>
-                  <option value="1">1+</option>
-                  <option value="2">2+</option>
-                  <option value="3">3+</option>
-                  <option value="4">4+</option>
-                  <option value="5">5+</option>
-                </select>
-              </div>
-
-              <button type="submit"
-                className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-xl transition-colors shadow-sm shadow-blue-600/20">
-                Apply Filters
-              </button>
-            </form>
-          </aside>
-
-          {/* Results grid */}
-          <div className="flex-1 min-w-0">
+          <div className={`p-4 space-y-3 ${!showMap ? 'max-w-3xl mx-auto w-full' : ''}`}>
             {loading ? (
-              <div className="flex flex-col items-center justify-center min-h-[400px] gap-4">
-                <div className="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
-                <p className="text-sm text-gray-400">Loading properties…</p>
-              </div>
+              Array.from({ length: 5 }).map((_, i) => (
+                <div key={i} className="flex bg-white rounded-2xl overflow-hidden border border-gray-100 h-36 animate-pulse">
+                  <div className="w-44 bg-gray-200 shrink-0" />
+                  <div className="flex-1 p-4 space-y-3">
+                    <div className="h-6 bg-gray-200 rounded w-1/2" />
+                    <div className="h-4 bg-gray-100 rounded w-3/4" />
+                    <div className="h-4 bg-gray-100 rounded w-1/3" />
+                  </div>
+                </div>
+              ))
             ) : sorted.length === 0 ? (
-              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-16 text-center flex flex-col items-center">
+              <div className="bg-white rounded-2xl border border-gray-100 p-16 text-center flex flex-col items-center">
                 <div className="w-16 h-16 bg-gray-50 rounded-2xl flex items-center justify-center mb-4">
                   <Building2 className="w-8 h-8 text-gray-300" />
                 </div>
                 <h3 className="font-bold text-gray-900 mb-1">No properties found</h3>
                 <p className="text-sm text-gray-500 mb-5">Try adjusting or clearing your filters.</p>
                 {hasFilters && (
-                  <button onClick={clearFilters}
-                    className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-xl transition-colors">
+                  <button
+                    onClick={clearFilters}
+                    className="px-5 py-2.5 bg-gray-900 hover:bg-gray-800 text-white text-sm font-semibold rounded-xl transition-colors"
+                  >
                     Clear filters
                   </button>
                 )}
               </div>
             ) : (
-              <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
-                {sorted.map(p => (
-                  <PropertyCard key={p.id} property={p} saved={savedIds.has(p.id)} isAuthenticated={isAuthenticated} />
-                ))}
-              </div>
+              sorted.map(p => (
+                <div key={p.id} data-id={p.id}>
+                  <ListingCard
+                    property={p}
+                    saved={savedIds.has(p.id)}
+                    isAuthenticated={isAuthenticated}
+                    highlighted={hoveredId === p.id}
+                    onMouseEnter={() => setHoveredId(p.id)}
+                    onMouseLeave={() => setHoveredId(null)}
+                  />
+                </div>
+              ))
             )}
           </div>
         </div>
-      </div>
 
-      <Footer />
+        {/* Map panel */}
+        {showMap && (
+          <div className="hidden lg:block flex-1 relative sticky top-0">
+            <Suspense fallback={
+              <div className="w-full h-full bg-gray-100 flex items-center justify-center">
+                <div className="w-8 h-8 border-4 border-gray-400 border-t-transparent rounded-full animate-spin" />
+              </div>
+            }>
+              <PropertyMap
+                properties={sorted}
+                hoveredId={hoveredId}
+                onMarkerClick={scrollToCard}
+              />
+            </Suspense>
+          </div>
+        )}
+      </div>
     </div>
   )
 }

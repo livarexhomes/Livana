@@ -1,12 +1,16 @@
 import { useState, useEffect } from 'react'
 import { Link, useLocation } from 'wouter'
 import {
-  Heart, MessageSquare, User, MapPin, Building2, Menu, Search, BedDouble, Bath, Tag,
+  Menu, Search, ChevronDown, Building2, X,
 } from 'lucide-react'
 import AuthGuard from '../../components/AuthGuard'
 import UserSidebar from '../../components/UserSidebar'
-import { createClient, getSupabaseImageUrl } from '../../lib/supabase'
+import ListingCard from '../../components/ListingCard'
+import { createClient } from '../../lib/supabase'
 import type { Tenant, PropertyWithLandlord } from '../../lib/types'
+
+
+// ── Shared layout ─────────────────────────────────────────────────────────────
 
 export function UserLayout({ children, title }: { children: React.ReactNode; title: string }) {
   const [tenant, setTenant] = useState<Tenant | null>(null)
@@ -39,7 +43,6 @@ export function UserLayout({ children, title }: { children: React.ReactNode; tit
         onClose={() => setSidebarOpen(false)}
       />
 
-      {/* Mobile hamburger */}
       <button type="button" onClick={() => setSidebarOpen(true)}
         className="md:hidden fixed top-3 left-3 z-50 w-9 h-9 flex items-center justify-center rounded-xl bg-white border border-gray-200 shadow-sm text-gray-600 hover:bg-gray-50 active:scale-95 transition-all"
         aria-label="Open menu">
@@ -50,7 +53,7 @@ export function UserLayout({ children, title }: { children: React.ReactNode; tit
         <header className="flex items-center justify-between pl-14 pr-4 md:px-8 py-4 bg-white border-b border-gray-100 shrink-0">
           <h1 className="text-base font-extrabold text-gray-900 tracking-tight">{title}</h1>
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center shadow-sm">
+            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center shadow-sm">
               <span className="text-xs font-bold text-white">{initials}</span>
             </div>
             <span className="text-sm font-semibold text-gray-700 hidden sm:block">{displayName}</span>
@@ -62,90 +65,49 @@ export function UserLayout({ children, title }: { children: React.ReactNode; tit
   )
 }
 
-function PropertyListingCard({ property, savedIds, onToggleSave }: {
-  property: PropertyWithLandlord
-  savedIds: Set<string>
-  onToggleSave: (id: string) => void
-}) {
-  const coverImage = property.property_images?.find(i => i.is_cover) ?? property.property_images?.[0]
-  const imageUrl = coverImage ? getSupabaseImageUrl(coverImage.storage_path) : null
-  const isSaved = savedIds.has(property.id)
+// ── Overview page ─────────────────────────────────────────────────────────────
 
-  return (
-    <Link href={`/listings/${property.id}`}
-      className="bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden flex flex-col group">
-      {/* Image */}
-      <div className="relative h-44 bg-gray-100 shrink-0">
-        {imageUrl
-          ? <img src={imageUrl} alt={property.title} className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-300" />
-          : <div className="w-full h-full flex items-center justify-center"><Building2 className="w-10 h-10 text-gray-200" /></div>
-        }
-        {/* Type badge */}
-        <span className={`absolute top-3 left-3 px-2.5 py-1 rounded-lg text-[11px] font-bold uppercase tracking-wide ${
-          property.type === 'rent' ? 'bg-blue-600 text-white' : 'bg-emerald-600 text-white'
-        }`}>
-          {property.type === 'rent' ? 'Rent' : 'Lease'}
-        </span>
-        {/* Save button */}
-        <button
-          type="button"
-          onClick={e => { e.preventDefault(); onToggleSave(property.id) }}
-          className="absolute top-3 right-3 w-8 h-8 rounded-full bg-white/90 backdrop-blur-sm flex items-center justify-center shadow-sm hover:bg-white transition-colors"
-        >
-          <Heart className={`w-4 h-4 ${isSaved ? 'fill-red-500 text-red-500' : 'text-gray-400'}`} />
-        </button>
-        {property.featured && (
-          <span className="absolute bottom-3 left-3 px-2 py-0.5 bg-amber-400 text-amber-900 text-[10px] font-bold rounded-md uppercase tracking-wide">Featured</span>
-        )}
-      </div>
-
-      {/* Details */}
-      <div className="p-4 flex flex-col flex-1">
-        <p className="text-base font-bold text-gray-900 truncate leading-snug">{property.title}</p>
-        <p className="text-xs text-gray-400 flex items-center gap-1 mt-1 truncate">
-          <MapPin className="w-3 h-3 shrink-0" />
-          {[property.address, property.city].filter(Boolean).join(', ')}
-        </p>
-        <div className="flex items-center gap-3 mt-3 text-xs text-gray-500">
-          <span className="flex items-center gap-1"><BedDouble className="w-3.5 h-3.5" />{property.bedrooms} bed</span>
-          <span className="flex items-center gap-1"><Bath className="w-3.5 h-3.5" />{property.bathrooms} bath</span>
-          {property.area_sqft && <span className="flex items-center gap-1"><Tag className="w-3.5 h-3.5" />{property.area_sqft.toLocaleString()} sqft</span>}
-        </div>
-        <p className="mt-3 text-lg font-extrabold text-gray-900">
-          ₦{Number(property.price).toLocaleString()}
-          {property.type === 'rent' && <span className="text-xs font-medium text-gray-400">/yr</span>}
-        </p>
-      </div>
-    </Link>
-  )
-}
+const TYPE_TABS = [
+  { value: 'all',        label: 'All' },
+  { value: 'rent',       label: 'For Rent' },
+  { value: 'lease',      label: 'Lease' },
+  { value: 'sale',       label: 'For Sale' },
+  { value: 'commercial', label: 'Commercial' },
+]
 
 export default function UserDashboardPage() {
   const [properties, setProperties] = useState<PropertyWithLandlord[]>([])
   const [savedIds, setSavedIds] = useState<Set<string>>(new Set())
   const [tenantId, setTenantId] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
+
   const [search, setSearch] = useState('')
-  const [typeFilter, setTypeFilter] = useState<'all' | 'rent' | 'lease'>('all')
+  const [typeFilter, setTypeFilter] = useState('all')
+  const [stateFilter, setStateFilter] = useState('')
+  const [bedsFilter, setBedsFilter] = useState('')
+  const [sortBy, setSortBy] = useState('newest')
 
   useEffect(() => {
     const supabase = createClient()
     supabase.auth.getUser().then(async ({ data: { user } }) => {
       if (!user) { setLoading(false); return }
-      const { data: tenant } = await supabase.from('tenants').select('id').eq('user_id', user.id).single() as { data: { id: string } | null }
+
+      const { data: tenant } = await supabase
+        .from('tenants').select('id').eq('user_id', user.id).single() as { data: { id: string } | null }
+
       if (tenant) {
         setTenantId(tenant.id)
-        const { data: saved } = await supabase.from('saved_properties').select('property_id').eq('tenant_id', tenant.id)
-        setSavedIds(new Set((saved ?? []).map((r: any) => r.property_id)))
+        const { data: savedRes } = await supabase.from('saved_properties').select('property_id').eq('tenant_id', tenant.id)
+        setSavedIds(new Set((savedRes ?? []).map((r: any) => r.property_id)))
       }
+
       const { data } = await supabase
         .from('properties')
         .select('*, landlords(full_name, whatsapp, is_verified), property_images(id, storage_path, alt_text, is_cover, sort_order)')
         .eq('status', 'available')
-        .in('type', ['rent', 'lease'])
         .order('featured', { ascending: false })
         .order('created_at', { ascending: false })
-        .limit(40)
+        .limit(60)
       setProperties((data as PropertyWithLandlord[]) ?? [])
       setLoading(false)
     })
@@ -163,77 +125,167 @@ export default function UserDashboardPage() {
     }
   }
 
-  const filtered = properties.filter(p => {
-    const matchType = typeFilter === 'all' || p.type === typeFilter
-    const matchSearch = !search || p.title.toLowerCase().includes(search.toLowerCase()) || p.city?.toLowerCase().includes(search.toLowerCase())
-    return matchType && matchSearch
-  })
+  const hasFilters = typeFilter !== 'all' || stateFilter || bedsFilter || search
+
+  function clearFilters() {
+    setSearch(''); setTypeFilter('all'); setStateFilter(''); setBedsFilter('')
+  }
+
+  const filtered = properties
+    .filter(p => {
+      if (typeFilter !== 'all' && p.type !== typeFilter) return false
+      if (stateFilter && !p.city?.toLowerCase().includes(stateFilter.toLowerCase())) return false
+      if (bedsFilter && p.bedrooms < Number(bedsFilter)) return false
+      if (search) {
+        const q = search.toLowerCase()
+        if (
+          !p.title.toLowerCase().includes(q) &&
+          !p.city?.toLowerCase().includes(q) &&
+          !(p.address ?? '').toLowerCase().includes(q)
+        ) return false
+      }
+      return true
+    })
+    .sort((a, b) => {
+      if (sortBy === 'price_asc') return Number(a.price) - Number(b.price)
+      if (sortBy === 'price_desc') return Number(b.price) - Number(a.price)
+      return 0
+    })
 
   return (
     <AuthGuard require="tenant">
       <UserLayout title="Browse Listings">
         <div className="space-y-4">
-          {/* Search + filter bar */}
-          <div className="flex flex-col sm:flex-row gap-3">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-              <input
-                type="text"
-                placeholder="Search by title or city…"
-                value={search}
-                onChange={e => setSearch(e.target.value)}
-                className="w-full pl-9 pr-4 py-2.5 rounded-xl border border-gray-200 bg-white text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-            </div>
-            <div className="flex gap-2 shrink-0">
-              {(['all', 'rent', 'lease'] as const).map(t => (
-                <button key={t} onClick={() => setTypeFilter(t)}
-                  className={`px-4 py-2.5 rounded-xl text-sm font-semibold border transition-all capitalize ${
-                    typeFilter === t
-                      ? 'bg-blue-600 text-white border-blue-600'
-                      : 'bg-white text-gray-600 border-gray-200 hover:border-blue-300'
-                  }`}>
-                  {t === 'all' ? 'All' : t.charAt(0).toUpperCase() + t.slice(1)}
+
+
+
+          {/* Filter bar */}
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-3">
+            <div className="flex flex-wrap items-center gap-2">
+
+              {/* Search */}
+              <div className="relative flex-1 min-w-40">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
+                <input
+                  type="text"
+                  placeholder="Search by title, city or area…"
+                  value={search}
+                  onChange={e => setSearch(e.target.value)}
+                  className="w-full pl-8 pr-3 py-2 rounded-xl border border-gray-200 bg-gray-50 text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-900 focus:bg-white transition-all"
+                />
+              </div>
+
+              {/* Type tabs */}
+              <div className="flex items-center gap-1 overflow-x-auto no-scrollbar">
+                {TYPE_TABS.map(t => (
+                  <button key={t.value} onClick={() => setTypeFilter(t.value)}
+                    className={`px-3 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-all border ${
+                      typeFilter === t.value
+                        ? 'bg-gray-900 text-white border-gray-900'
+                        : 'bg-white text-gray-500 border-gray-200 hover:border-gray-400'
+                    }`}>
+                    {t.label}
+                  </button>
+                ))}
+              </div>
+
+              {/* State */}
+              <div className="relative shrink-0">
+                <select value={stateFilter} onChange={e => setStateFilter(e.target.value)}
+                  className="appearance-none pl-3 pr-7 py-2 rounded-xl border border-gray-200 text-xs bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-900 cursor-pointer">
+                  <option value="">Any State</option>
+                  <option value="Lagos">Lagos</option>
+                  <option value="Ogun">Ogun</option>
+                </select>
+                <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-gray-400 pointer-events-none" />
+              </div>
+
+              {/* Beds */}
+              <div className="relative shrink-0">
+                <select value={bedsFilter} onChange={e => setBedsFilter(e.target.value)}
+                  className="appearance-none pl-3 pr-7 py-2 rounded-xl border border-gray-200 text-xs bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-900 cursor-pointer">
+                  <option value="">Any Beds</option>
+                  <option value="1">1+ Beds</option>
+                  <option value="2">2+ Beds</option>
+                  <option value="3">3+ Beds</option>
+                  <option value="4">4+ Beds</option>
+                </select>
+                <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-gray-400 pointer-events-none" />
+              </div>
+
+              {/* Sort */}
+              <div className="relative shrink-0">
+                <select value={sortBy} onChange={e => setSortBy(e.target.value)}
+                  className="appearance-none pl-3 pr-7 py-2 rounded-xl border border-gray-200 text-xs bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-900 cursor-pointer">
+                  <option value="newest">Newest</option>
+                  <option value="price_asc">Price ↑</option>
+                  <option value="price_desc">Price ↓</option>
+                </select>
+                <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-gray-400 pointer-events-none" />
+              </div>
+
+              {hasFilters && (
+                <button onClick={clearFilters}
+                  className="flex items-center gap-1 px-3 py-2 rounded-xl text-xs text-red-500 hover:bg-red-50 border border-red-100 shrink-0">
+                  <X className="w-3 h-3" /> Clear
                 </button>
+              )}
+            </div>
+          </div>
+
+          {/* Count */}
+          <div className="flex items-center justify-between px-1">
+            <p className="text-sm text-gray-500">
+              <span className="font-bold text-gray-900">{filtered.length}</span>{' '}
+              {filtered.length === 1 ? 'property' : 'properties'}
+              {hasFilters && <span className="text-green-600 ml-1 font-medium">· filtered</span>}
+            </p>
+            <Link href="/listings" className="text-xs font-semibold text-blue-600 hover:text-blue-700 transition-colors">
+              Full listings page →
+            </Link>
+          </div>
+
+          {/* Listings */}
+          {loading ? (
+            <div className="space-y-3">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <div key={i} className="flex bg-white rounded-2xl overflow-hidden border border-gray-100 h-36 animate-pulse">
+                  <div className="w-44 bg-gray-200 shrink-0" />
+                  <div className="flex-1 p-4 space-y-3">
+                    <div className="h-6 bg-gray-200 rounded w-1/2" />
+                    <div className="h-4 bg-gray-100 rounded w-3/4" />
+                    <div className="h-4 bg-gray-100 rounded w-1/3" />
+                  </div>
+                </div>
               ))}
             </div>
-          </div>
-
-          {/* Quick links */}
-          <div className="flex gap-3">
-            <Link href="/user/saved" className="flex items-center gap-2 px-4 py-2 bg-white rounded-xl border border-gray-100 text-sm font-semibold text-gray-600 hover:border-blue-300 transition-all shadow-sm">
-              <Heart className="w-4 h-4 text-red-400" /> Saved
-            </Link>
-            <Link href="/user/enquiries" className="flex items-center gap-2 px-4 py-2 bg-white rounded-xl border border-gray-100 text-sm font-semibold text-gray-600 hover:border-blue-300 transition-all shadow-sm">
-              <MessageSquare className="w-4 h-4 text-blue-500" /> Enquiries
-            </Link>
-            <Link href="/user/profile" className="flex items-center gap-2 px-4 py-2 bg-white rounded-xl border border-gray-100 text-sm font-semibold text-gray-600 hover:border-blue-300 transition-all shadow-sm">
-              <User className="w-4 h-4 text-gray-400" /> Profile
-            </Link>
-          </div>
-
-          {/* Listings grid */}
-          {loading ? (
-            <div className="flex items-center justify-center py-32">
-              <div className="animate-spin w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full" />
-            </div>
           ) : filtered.length === 0 ? (
-            <div className="bg-white rounded-2xl border border-gray-100 p-16 text-center shadow-sm">
-              <Building2 className="w-12 h-12 text-gray-200 mx-auto mb-4" />
-              <p className="text-gray-400 font-medium">No listings found</p>
+            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-16 text-center flex flex-col items-center">
+              <div className="w-14 h-14 bg-gray-50 rounded-2xl flex items-center justify-center mb-4">
+                <Building2 className="w-7 h-7 text-gray-300" />
+              </div>
+              <h3 className="font-bold text-gray-900 mb-1">No properties found</h3>
+              <p className="text-sm text-gray-500 mb-4">Try adjusting your filters.</p>
+              {hasFilters && (
+                <button onClick={clearFilters}
+                  className="px-5 py-2.5 bg-gray-900 hover:bg-gray-800 text-white text-sm font-semibold rounded-xl transition-colors">
+                  Clear filters
+                </button>
+              )}
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+            <div className="space-y-3">
               {filtered.map(p => (
-                <PropertyListingCard
+                <ListingCard
                   key={p.id}
                   property={p}
-                  savedIds={savedIds}
-                  onToggleSave={handleToggleSave}
+                  saved={savedIds.has(p.id)}
+                  isAuthenticated={true}
                 />
               ))}
             </div>
           )}
+
         </div>
       </UserLayout>
     </AuthGuard>
