@@ -849,7 +849,7 @@ export default function HomePage() {
           </div>
           <div className="grid md:grid-cols-3 gap-5">
             {[
-              { name: 'Adebayo O.', role: 'Tenant', city: 'Lagos', text: 'Found my perfect 3-bedroom in Lekki within a week. The landlord verification gave me total peace of mind. Absolutely recommend Livana!', avatar: 'AO', featured: false },
+              { name: 'Adebayo O.', role: 'Tenant', city: 'Lagos', text: 'Found my perfect 3-bedroom in Lekki within a week. The landlord verification gave me total peace of mind. Absolutely recommend LIVAREX!', avatar: 'AO', featured: false },
               { name: 'Chidinma E.', role: 'Landlord', city: 'Abuja', text: 'Listed my property on a Friday, had 3 serious enquiries by Monday. The platform is slick and my tenants are quality people.', avatar: 'CE', featured: true },
               { name: 'Emeka N.', role: 'Tenant', city: 'Port Harcourt', text: 'No agent stress, no fake listings. I contacted the landlord directly on WhatsApp and moved in within two weeks. Game changer.', avatar: 'EN', featured: false },
             ].map((t, i) => (
@@ -906,7 +906,7 @@ export default function HomePage() {
                   Ready to find your<br />perfect home?
                 </h2>
                 <p className="text-gray-400 text-base leading-relaxed mb-8 max-w-md">
-                  Join over 10,000 Nigerians who've found their ideal property on Livana. Start your search today — it's completely free.
+                  Join over 10,000 Nigerians who've found their ideal property on LIVAREX. Start your search today — it's completely free.
                 </p>
                 <ul className="space-y-2 mb-8">
                   {['Verified landlords only', 'Zero agent fees', 'Direct WhatsApp contact'].map(item => (

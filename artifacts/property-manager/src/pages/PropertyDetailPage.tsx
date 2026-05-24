@@ -171,7 +171,7 @@ export default function PropertyDetailPage() {
 
   function handleShare() {
     if (navigator.share) {
-      navigator.share({ title: property?.title ?? 'Livana Listing', url: window.location.href })
+      navigator.share({ title: property?.title ?? 'LIVAREX Listing', url: window.location.href })
     } else {
       navigator.clipboard.writeText(window.location.href)
       setCopied(true)
@@ -210,7 +210,7 @@ export default function PropertyDetailPage() {
   const whatsappUrl = landlord?.whatsapp
     ? `https://wa.me/${landlord.whatsapp.replace(/\D/g, '')}?text=${encodeURIComponent(`Hi, I'm interested in: ${property.title}`)}`
     : null
-  const emailUrl = `mailto:support@livana.com?subject=${encodeURIComponent(`Enquiry: ${property.title}`)}`
+  const emailUrl = `mailto:support@livarex.com?subject=${encodeURIComponent(`Enquiry: ${property.title}`)}`
   const statusCfg = STATUS_CONFIG[property.status] ?? { label: property.status, cls: 'bg-gray-100 text-gray-600' }
   const landlordInitials = landlord?.full_name ? landlord.full_name.split(' ').slice(0, 2).map(w => w[0]).join('').toUpperCase() : '?'
 
@@ -476,7 +476,7 @@ export default function PropertyDetailPage() {
                   </div>
                   <div className="text-left">
                     <p className="text-sm font-bold text-gray-800">Send Email</p>
-                    <p className="text-xs text-gray-400">support@livana.com</p>
+                    <p className="text-xs text-gray-400">support@livarex.com</p>
                   </div>
                 </a>
 
@@ -585,7 +585,7 @@ export default function PropertyDetailPage() {
                         </span>
                       )}
                     </div>
-                    <p className="text-xs text-gray-400 mt-0.5">Landlord on Livana</p>
+                    <p className="text-xs text-gray-400 mt-0.5">Landlord on LIVAREX</p>
                   </div>
                 </div>
                 {landlord.bio && (

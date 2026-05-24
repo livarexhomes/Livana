@@ -215,7 +215,7 @@ export default function AdminDashboard() {
                     <div className="flex items-start justify-between">
                       <div className="inline-flex items-center gap-1.5 bg-white/10 backdrop-blur-md border border-white/20 text-white/90 text-xs font-bold px-3 py-1.5 rounded-full">
                         <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
-                        Livana Admin
+                        LIVAREX Admin
                       </div>
                       <div className="hidden sm:flex items-center gap-2.5">
                         {[

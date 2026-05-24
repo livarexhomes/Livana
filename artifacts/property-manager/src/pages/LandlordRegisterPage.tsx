@@ -70,7 +70,7 @@ export default function LandlordRegisterPage() {
           <p className="text-gray-500 mb-2">We sent a confirmation link to</p>
           <p className="font-semibold text-gray-900 mb-4">{submittedEmail}</p>
           <p className="text-sm text-gray-400 mb-8">
-            Click the link in the email to verify your account. Once confirmed, our admin team will review and approve your application.
+            Click the link in the email to verify your account. Once confirmed, our Admin team will review and approve your application.
           </p>
           <Link href="/" className="inline-flex items-center justify-center w-full py-3.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-2xl transition-all text-sm shadow-lg shadow-blue-600/25">
             Back to Home
@@ -104,7 +104,7 @@ export default function LandlordRegisterPage() {
       <div className="flex-1 flex flex-col justify-center px-6 sm:px-12 lg:px-16 py-12">
         <div className="max-w-md w-full mx-auto">
           <Link href="/" className="inline-flex items-center mb-10">
-            <img src="/livana-logo-transparent.png" alt="Livana" className="h-10 w-auto" />
+            <img src="/livana-logo-transparent.png" alt="LIVAREX" className="h-10 w-auto" />
           </Link>
 
           <div className="mb-8">
@@ -113,7 +113,7 @@ export default function LandlordRegisterPage() {
               <span className="text-xs font-bold text-blue-600 uppercase tracking-wide">Partner Programme</span>
             </div>
             <h1 className="text-3xl sm:text-4xl font-extrabold text-gray-900 leading-tight tracking-tight mb-2">
-              List your property<br />with Livana
+              List your property<br />with LIVAREX
             </h1>
             <p className="text-gray-500 text-base">Join our network of verified landlords. Tenants contact you directly — no agent fees.</p>
           </div>
@@ -178,7 +178,7 @@ export default function LandlordRegisterPage() {
 
         <div className="relative z-10">
           <div className="mb-14">
-            <img src="/livana-logo-transparent.png" alt="Livana" className="h-10 w-auto brightness-0 invert" />
+            <img src="/livana-logo-transparent.png" alt="LIVAREX" className="h-10 w-auto brightness-0 invert" />
           </div>
           <h2 className="text-4xl xl:text-5xl font-extrabold text-white leading-tight tracking-tight mb-4">
             Reach thousands<br />of verified<br />tenants.

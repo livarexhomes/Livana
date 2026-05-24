@@ -84,7 +84,7 @@ export default function LandlordSidebar({ userName, userEmail, isVerified, avata
             <>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
-                  <span className="text-[15px] font-extrabold text-white tracking-tight">Livana</span>
+                  <span className="text-[15px] font-extrabold text-white tracking-tight">LIVAREX</span>
                   <span className="text-[9px] font-bold bg-white/10 text-white/70 border border-white/[0.12] px-2 py-0.5 rounded-full tracking-wider truncate max-w-[80px]">
                     {displayName.split(' ')[0]}
                   </span>
@@ -134,7 +134,7 @@ export default function LandlordSidebar({ userName, userEmail, isVerified, avata
                     <p className="text-[13px] font-semibold text-white/90 truncate leading-tight">{displayName}</p>
                     {isVerified && <CheckCircle className="w-3 h-3 text-blue-400 shrink-0" />}
                   </div>
-                  <p className="text-[11px] text-white/35 truncate mt-0.5">{userEmail ?? 'landlord@livana.com'}</p>
+                  <p className="text-[11px] text-white/35 truncate mt-0.5">{userEmail ?? 'landlord@livarex.com'}</p>
                 </div>
                 <button type="button" onClick={handleLogout} title="Sign out"
                   className="w-7 h-7 flex items-center justify-center rounded-lg text-white/30 hover:text-red-400 hover:bg-red-500/10 transition-colors shrink-0">

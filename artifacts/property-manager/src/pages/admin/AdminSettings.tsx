@@ -21,9 +21,9 @@ export default function AdminSettings() {
   const [saved, setSaved] = useState(false)
 
   const [platform, setPlatform] = useState({
-    name: 'Livana Property Manager',
+    name: 'LIVAREX Property Manager',
     tagline: "Nigeria's most trusted property platform",
-    email: 'support@livana.com',
+    email: 'support@livarex.com',
     phone: '+234 800 548 2621',
     address: '14 Bourdillon Road, Ikoyi, Lagos',
     currency: 'NGN',

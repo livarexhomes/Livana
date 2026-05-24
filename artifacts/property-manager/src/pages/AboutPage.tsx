@@ -32,22 +32,22 @@ const values = [
   {
     icon: Zap,
     title: 'Speed Matters',
-    desc: 'Good properties move fast. We built Livana to help renters act quickly and landlords fill vacancies without delay.',
+    desc: 'Good properties move fast. We built LIVAREX to help renters act quickly and landlords fill vacancies without delay.',
     bg: 'bg-amber-600',
   },
 ]
 
 const milestones = [
-  { year: '2022', title: 'The Problem Was Personal', desc: 'Our founder spent three months and paid two agents to find a 2-bedroom in Lagos. Both deals fell through. The idea for Livana was born out of that frustration.' },
+  { year: '2022', title: 'The Problem Was Personal', desc: 'Our founder spent three months and paid two agents to find a 2-bedroom in Lagos. Both deals fell through. The idea for LIVAREX was born out of that frustration.' },
   { year: '2023', title: 'Building the Foundation', desc: 'We quietly onboarded our first 50 verified landlords across Lagos and Abuja, testing every assumption about what renters actually needed.' },
   { year: '2023', title: 'First 1,000 Listings', desc: 'By the end of our beta, we had over 1,000 active listings with zero agent fees and a landlord verification rate of 100%.' },
-  { year: '2024', title: 'Expanding Nationally', desc: 'Livana expanded to Port Harcourt, Ibadan, Kano, and 32 more cities, making us the most geographically diverse verified property platform in Nigeria.' },
+  { year: '2024', title: 'Expanding Nationally', desc: 'LIVAREX expanded to Port Harcourt, Ibadan, Kano, and 32 more cities, making us the most geographically diverse verified property platform in Nigeria.' },
   { year: '2025', title: 'Off-Plan & Developments', desc: 'We introduced the Projects marketplace, allowing developers to showcase off-plan developments to a pre-qualified audience of serious buyers.' },
-  { year: '2026', title: 'Today & Beyond', desc: 'With 2,400+ active listings and 850+ verified landlords, Livana is Nigeria\'s most trusted property platform. We\'re just getting started.' },
+  { year: '2026', title: 'Today & Beyond', desc: 'With 2,400+ active listings and 850+ verified landlords, LIVAREX is Nigeria\'s most trusted property platform. We\'re just getting started.' },
 ]
 
 const team = [
-  { name: 'Chukwuemeka Obi', role: 'CEO & Co-Founder', bio: 'Former real estate agent who spent 8 years watching good tenants get scammed. Built Livana to fix it.', initials: 'CO', color: 'bg-blue-600' },
+  { name: 'Chukwuemeka Obi', role: 'CEO & Co-Founder', bio: 'Former real estate agent who spent 8 years watching good tenants get scammed. Built LIVAREX to fix it.', initials: 'CO', color: 'bg-blue-600' },
   { name: 'Adaeze Nwosu', role: 'CTO & Co-Founder', bio: 'Full-stack engineer and product thinker. Obsessed with making complex things feel simple.', initials: 'AN', color: 'bg-violet-600' },
   { name: 'Olumide Adesanya', role: 'Head of Operations', bio: 'Runs the landlord verification engine and ensures every listing on the platform meets our standards.', initials: 'OA', color: 'bg-emerald-600' },
   { name: 'Fatima Bello', role: 'Head of Growth', bio: 'Connects landlords and renters. Grew our Lagos coverage from 40 listings to 1,200 in under 18 months.', initials: 'FB', color: 'bg-rose-600' },
@@ -67,14 +67,14 @@ export default function AboutPage() {
           <div className="max-w-3xl">
             <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-blue-600/15 border border-blue-500/20 text-blue-400 text-xs font-bold uppercase tracking-widest mb-8">
               <span className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse" />
-              About Livana
+              About LIVAREX
             </span>
             <h1 className="text-5xl sm:text-6xl md:text-7xl font-extrabold text-white leading-[1.05] tracking-tight mb-7">
               We built the platform<br />
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-violet-400">we wished existed.</span>
             </h1>
             <p className="text-lg text-gray-400 leading-relaxed max-w-2xl mb-10">
-              Livana is Nigeria's most trusted property platform — connecting real renters with verified landlords, no agents, no scams, no hidden fees.
+              LIVAREX is Nigeria's most trusted property platform — connecting real renters with verified landlords, no agents, no scams, no hidden fees.
             </p>
             <div className="flex flex-wrap gap-3">
               <Link href="/listings" className="inline-flex items-center gap-2 px-6 py-3.5 bg-blue-600 hover:bg-blue-500 text-white text-sm font-bold rounded-xl transition-all shadow-lg shadow-blue-600/25">
@@ -119,7 +119,7 @@ export default function AboutPage() {
                   So he did what frustrated engineers do: he built a solution. Not another listing aggregator that recycles outdated content — a platform where every landlord is reviewed before a listing goes live, where renters contact property owners directly, and where transparency is the product, not a feature.
                 </p>
                 <p>
-                  Today, Livana serves thousands of renters and landlords across 36 Nigerian cities. We're growing fast — but we've never lost sight of the single promise we made at the beginning: <strong className="text-gray-900">make property search honest.</strong>
+                  Today, LIVAREX serves thousands of renters and landlords across 36 Nigerian cities. We're growing fast — but we've never lost sight of the single promise we made at the beginning: <strong className="text-gray-900">make property search honest.</strong>
                 </p>
               </div>
             </div>
@@ -133,7 +133,7 @@ export default function AboutPage() {
                 <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
                 <div className="absolute bottom-6 left-6 right-6">
                   <p className="text-white font-bold text-lg">Lagos, Nigeria</p>
-                  <p className="text-blue-300 text-sm">Where Livana was born</p>
+                  <p className="text-blue-300 text-sm">Where LIVAREX was born</p>
                 </div>
               </div>
               {/* Floating badge */}
@@ -229,7 +229,7 @@ export default function AboutPage() {
         <div className="max-w-6xl mx-auto px-5 sm:px-8">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             <div>
-              <p className="text-blue-600 font-bold text-sm uppercase tracking-widest mb-4">Why Livana</p>
+              <p className="text-blue-600 font-bold text-sm uppercase tracking-widest mb-4">Why LIVAREX</p>
               <h2 className="text-4xl font-extrabold text-gray-900 tracking-tight leading-tight mb-8">
                 The honest alternative to Nigerian property agents
               </h2>

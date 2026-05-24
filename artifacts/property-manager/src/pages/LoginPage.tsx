@@ -65,7 +65,7 @@ export default function LoginPage() {
         <div className="max-w-md w-full mx-auto">
           {/* Logo */}
           <Link href="/" className="inline-flex items-center mb-10">
-            <img src="/livana-logo-transparent.png" alt="Livana" className="h-10 w-auto" />
+            <img src="/livana-logo-transparent.png" alt="LIVAREX" className="h-10 w-auto" />
           </Link>
 
           {/* Heading */}
@@ -73,7 +73,7 @@ export default function LoginPage() {
             <h1 className="text-3xl sm:text-4xl font-extrabold text-gray-900 leading-tight tracking-tight mb-2">
               Welcome back
             </h1>
-            <p className="text-gray-500 text-base">Sign in to your Livana account to continue.</p>
+            <p className="text-gray-500 text-base">Sign in to your LIVAREX account to continue.</p>
           </div>
 
           {/* Google */}
@@ -172,7 +172,7 @@ export default function LoginPage() {
         {/* Top: logo + tagline */}
         <div className="relative z-10">
           <div className="mb-16">
-            <img src="/livana-logo-transparent.png" alt="Livana" className="h-10 w-auto brightness-0 invert" />
+            <img src="/livana-logo-transparent.png" alt="LIVAREX" className="h-10 w-auto brightness-0 invert" />
           </div>
 
           <h2 className="text-4xl xl:text-5xl font-extrabold text-white leading-tight tracking-tight mb-4">

@@ -156,7 +156,7 @@ export default function LandlordDashboard() {
                     <AlertCircle className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
                     <div>
                       <p className="text-sm font-bold text-amber-800">Account under review</p>
-                      <p className="text-xs text-amber-600 mt-0.5">Your account is pending admin approval. You'll be notified once verified.</p>
+                      <p className="text-xs text-amber-600 mt-0.5">Your account is pending Admin approval. You'll be notified once verified.</p>
                     </div>
                   </div>
                 )}
@@ -165,7 +165,7 @@ export default function LandlordDashboard() {
                     <AlertCircle className="w-5 h-5 text-red-500 shrink-0 mt-0.5" />
                     <div>
                       <p className="text-sm font-bold text-red-800">Account not approved</p>
-                      <p className="text-xs text-red-600 mt-0.5">Contact support at support@livana.com to resolve this issue.</p>
+                      <p className="text-xs text-red-600 mt-0.5">Contact support at support@livarex.com to resolve this issue.</p>
                     </div>
                   </div>
                 )}
@@ -188,7 +188,7 @@ export default function LandlordDashboard() {
                     <div className="flex items-start justify-between">
                       <div className="inline-flex items-center gap-1.5 bg-white/10 backdrop-blur-md border border-white/20 text-white/90 text-xs font-bold px-3 py-1.5 rounded-full">
                         <Sparkles className="w-3 h-3 text-yellow-400" />
-                        {landlord?.is_verified ? 'Verified Landlord' : 'Livana Landlord'}
+                        {landlord?.is_verified ? 'Verified Landlord' : 'LIVAREX Landlord'}
                       </div>
                       {/* Glassmorphic stat bubbles */}
                       <div className="hidden sm:flex items-center gap-2.5">

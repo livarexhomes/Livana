@@ -12,7 +12,7 @@ const STATUS_META: Record<string, { label: string; bg: string; text: string; dot
 }
 
 const ADMIN_WHATSAPP = '+2348005482621'
-const ADMIN_EMAIL    = 'support@livana.com'
+const ADMIN_EMAIL    = 'support@livarex.com'
 
 const AVATAR_GRADS = [
   'from-violet-500 to-purple-600', 'from-blue-500 to-blue-700',
@@ -118,7 +118,7 @@ export default function LandlordEnquiries() {
                     <Headphones className="w-4 h-4 text-white" />
                   </div>
                   <div>
-                    <p className="font-bold text-gray-900 text-sm">Contact Livana Support</p>
+                    <p className="font-bold text-gray-900 text-sm">Contact LIVAREX Support</p>
                     <p className="text-xs text-gray-400 mt-0.5">We're here to help · Usually reply within 24h</p>
                   </div>
                 </div>
@@ -132,7 +132,7 @@ export default function LandlordEnquiries() {
                 {/* Quick contact links */}
                 <div className="grid grid-cols-2 gap-3 mb-5">
                   <a
-                    href={`https://wa.me/${ADMIN_WHATSAPP.replace(/\D/g, '')}?text=${encodeURIComponent('Hi Livana Support, I need help with my account.')}`}
+                    href={`https://wa.me/${ADMIN_WHATSAPP.replace(/\D/g, '')}?text=${encodeURIComponent('Hi LIVAREX Support, I need help with my account.')}`}
                     target="_blank" rel="noopener noreferrer"
                     className="flex items-center justify-center gap-2.5 py-3 rounded-xl border-2 border-[#25D366]/30 bg-[#25D366]/5 hover:bg-[#25D366]/10 transition-colors group"
                   >

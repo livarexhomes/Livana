@@ -361,7 +361,7 @@ export default function LandlordProfile() {
                           <p className={`text-xs mt-1 leading-relaxed ${landlord.is_verified ? 'text-blue-600' : 'text-gray-500'}`}>
                             {landlord.is_verified
                               ? 'Your verified badge is displayed on all your listings. Tenants see this as a trust signal.'
-                              : 'Complete your profile and email support@livana.com to request verification. Verified landlords get 3× more enquiries.'}
+                              : 'Complete your profile and email support@livarex.com to request verification. Verified landlords get 3× more enquiries.'}
                           </p>
                         </div>
                       </div>

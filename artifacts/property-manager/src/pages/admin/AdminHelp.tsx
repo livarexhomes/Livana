@@ -48,7 +48,7 @@ const DOCS = [
   { title: 'Property Management',      icon: BookOpen, href: '#', desc: 'Listing rules, statuses, and features' },
   { title: 'Video Walkthrough',        icon: Video,    href: '#', desc: 'Full admin panel tour (12 min)' },
   { title: 'API Reference',            icon: ExternalLink, href: '#', desc: 'Supabase schema and edge functions' },
-  { title: 'Release Notes',            icon: ExternalLink, href: '#', desc: 'What\'s new in Livana v2' },
+  { title: 'Release Notes',            icon: ExternalLink, href: '#', desc: 'What\'s new in LIVAREX v2' },
 ]
 
 export default function AdminHelp() {
@@ -96,7 +96,7 @@ export default function AdminHelp() {
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               {[
                 { icon: MessageSquare, title: 'Live Chat', sub: 'Avg. response: 5 min', cta: 'Start chat', color: 'bg-blue-600' },
-                { icon: Mail,          title: 'Email Support', sub: 'support@livana.com', cta: 'Send email', color: 'bg-violet-600' },
+                { icon: Mail,          title: 'Email Support', sub: 'support@livarex.com', cta: 'Send email', color: 'bg-violet-600' },
                 { icon: Phone,         title: 'Phone', sub: '+234 800 548 2621', cta: 'Call now', color: 'bg-emerald-600' },
               ].map(c => {
                 const Icon = c.icon

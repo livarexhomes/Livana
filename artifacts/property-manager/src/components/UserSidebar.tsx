@@ -106,7 +106,7 @@ export default function UserSidebar({ displayName = 'User', userEmail, initials 
         <div className={`flex items-center ${c ? 'justify-center px-0 py-[18px]' : 'gap-3 px-5 py-[18px]'} border-b border-white/[0.06] shrink-0`}>
           <img
             src="/livana-logo-transparent.png"
-            alt="Livana"
+            alt="LIVAREX"
             className={`shrink-0 brightness-0 invert ${c ? 'h-8' : 'h-9'}`}
           />
           {(!c || mobile) && (
