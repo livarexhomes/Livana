@@ -181,9 +181,9 @@ export default function HomePage() {
       <PublicNavbar />
 
       {/* ── HERO ── */}
-      <section className="relative min-h-screen bg-white flex">
+      <section className="relative bg-white flex" style={{ minHeight: 'calc(100vh - 80px)', marginTop: '80px' }}>
         {/* Left Column */}
-        <div className="w-full lg:w-[55%] flex flex-col justify-center px-6 sm:px-10 lg:px-16 xl:px-24 pt-28 pb-16 lg:py-0">
+        <div className="w-full lg:w-[55%] flex flex-col justify-center px-6 sm:px-10 lg:px-16 xl:px-24 pt-12 pb-16">
           <div className="max-w-xl">
             {/* Label */}
             <div className="flex items-center gap-2.5 mb-7">
@@ -493,7 +493,7 @@ export default function HomePage() {
         </div>
 
         {/* Right Column — Image */}
-        <div className="hidden lg:block lg:w-[45%] h-screen relative p-4 pl-0">
+        <div className="hidden lg:block lg:w-[45%] relative p-4 pl-0" style={{ height: 'calc(100vh - 80px)', marginTop: '80px' }}>
           <div className="w-full h-full relative rounded-l-[3rem] overflow-hidden shadow-2xl">
             <img
               src="https://images.unsplash.com/photo-1580587771525-78b9dba3b914?w=1400&q=85"
