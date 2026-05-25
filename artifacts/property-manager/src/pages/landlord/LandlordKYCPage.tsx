@@ -108,7 +108,7 @@ export default function LandlordKYCPage() {
       <div className="bg-white border-b border-gray-100">
         <div className="max-w-2xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
           <Link href="/">
-            <img src="/livana-logo-transparent.png" alt="LIVAREX" className="h-9 w-auto" />
+            <img src="/livarex-logo.png" alt="LIVAREX" className="h-9 w-auto" />
           </Link>
           <div className="flex items-center gap-2 text-xs font-semibold text-amber-700 bg-amber-50 border border-amber-200 px-3 py-1.5 rounded-full">
             <AlertCircle className="w-3.5 h-3.5" />

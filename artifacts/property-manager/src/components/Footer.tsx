@@ -7,7 +7,7 @@ export default function Footer() {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-10 pb-12 border-b border-white/8">
           <div className="col-span-2 md:col-span-1">
             <Link href="/" className="flex items-center mb-5">
-              <img src="/livana-logo-transparent.png" alt="LIVAREX" className="h-9 w-auto brightness-0 invert" />
+              <img src="/livarex-logo.png" alt="LIVAREX" className="h-9 w-auto" />
             </Link>
             <p className="text-sm leading-relaxed text-gray-400 max-w-xs">
               Nigeria's most trusted property platform. Connecting verified landlords with quality tenants since 2024.
