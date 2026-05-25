@@ -74,7 +74,7 @@ export default function LandlordEnquiries() {
       setContactSent(true)
       setContactLoading(false)
       setContactMsg('')
-    }).catch(() => {
+    }, () => {
       setContactLoading(false)
     })
   }
