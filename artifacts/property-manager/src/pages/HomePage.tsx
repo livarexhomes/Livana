@@ -54,7 +54,7 @@ function AnimatedCounter({ target, suffix = '' }: { target: number; suffix?: str
 }
 
 export default function HomePage() {
-  const [activeTab, setActiveTab] = useState<Tab>('Buy')
+  const [activeTab, setActiveTab] = useState<Tab>('Rent')
   const [properties, setProperties] = useState<PropertyWithLandlord[]>([])
   const [loading, setLoading] = useState(true)
   const [isAuthenticated, setIsAuthenticated] = useState(false)
@@ -210,16 +210,24 @@ export default function HomePage() {
             <div className="mb-12" ref={searchBarRef}>
               {/* Tabs */}
               <div className="flex gap-1 mb-3">
-                {(['Buy', 'Rent', 'Lease', 'Commercial'] as Tab[]).map(t => (
-                  <button key={t} type="button" onClick={() => setActiveTab(t)}
-                    className={`px-4 py-2 rounded-full text-sm font-semibold transition-all ${
-                      activeTab === t
-                        ? 'bg-blue-600 text-white shadow-sm shadow-blue-600/25'
-                        : 'text-gray-500 hover:text-gray-800 hover:bg-gray-100'
-                    }`}>
-                    {t}
-                  </button>
-                ))}
+                {(['Buy', 'Rent', 'Lease', 'Commercial'] as Tab[]).map(t => {
+                  const comingSoon = t === 'Buy' || t === 'Lease'
+                  return comingSoon ? (
+                    <span key={t} className="px-4 py-2 rounded-full text-sm font-semibold text-gray-300 cursor-default select-none flex items-center gap-1.5">
+                      {t}
+                      <span className="text-[9px] font-bold uppercase tracking-wider bg-gray-100 text-gray-400 px-1.5 py-0.5 rounded-md">Soon</span>
+                    </span>
+                  ) : (
+                    <button key={t} type="button" onClick={() => setActiveTab(t)}
+                      className={`px-4 py-2 rounded-full text-sm font-semibold transition-all ${
+                        activeTab === t
+                          ? 'bg-blue-600 text-white shadow-sm shadow-blue-600/25'
+                          : 'text-gray-500 hover:text-gray-800 hover:bg-gray-100'
+                      }`}>
+                      {t}
+                    </button>
+                  )
+                })}
               </div>
 
               {/* ── Desktop pill bar ── */}
@@ -591,19 +599,27 @@ export default function HomePage() {
 
           {/* Filter tabs */}
           <div className="flex gap-2 mb-8 overflow-x-auto no-scrollbar">
-            {(['Buy', 'Rent', 'Lease', 'Commercial'] as Tab[]).map(t => (
-              <button
-                key={t}
-                onClick={() => setActiveTab(t)}
-                className={`px-5 py-2.5 rounded-xl text-sm font-semibold whitespace-nowrap transition-all ${
-                  activeTab === t
-                    ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/25'
-                    : 'bg-white text-gray-600 border border-gray-200 hover:border-blue-200 hover:text-blue-600'
-                }`}
-              >
-                {t}
-              </button>
-            ))}
+            {(['Buy', 'Rent', 'Lease', 'Commercial'] as Tab[]).map(t => {
+              const comingSoon = t === 'Buy' || t === 'Lease'
+              return comingSoon ? (
+                <span key={t} className="px-5 py-2.5 rounded-xl text-sm font-semibold whitespace-nowrap bg-white text-gray-300 border border-gray-100 cursor-default select-none flex items-center gap-1.5">
+                  {t}
+                  <span className="text-[9px] font-bold uppercase tracking-wider bg-gray-100 text-gray-400 px-1.5 py-0.5 rounded-md">Soon</span>
+                </span>
+              ) : (
+                <button
+                  key={t}
+                  onClick={() => setActiveTab(t)}
+                  className={`px-5 py-2.5 rounded-xl text-sm font-semibold whitespace-nowrap transition-all ${
+                    activeTab === t
+                      ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/25'
+                      : 'bg-white text-gray-600 border border-gray-200 hover:border-blue-200 hover:text-blue-600'
+                  }`}
+                >
+                  {t}
+                </button>
+              )
+            })}
           </div>
 
           {loading ? (
