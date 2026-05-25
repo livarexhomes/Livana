@@ -99,7 +99,7 @@ export default function RegisterPage() {
         <div className="max-w-md w-full mx-auto">
           {/* Logo */}
           <Link href="/" className="inline-flex items-center mb-10">
-            <img src="/livana-logo-transparent.png" alt="LIVAREX" className="h-10 w-auto" />
+            <img src="/livarex-logo.png" alt="LIVAREX" className="h-10 w-auto" />
           </Link>
 
           {/* Heading */}
@@ -236,7 +236,7 @@ export default function RegisterPage() {
         {/* Top */}
         <div className="relative z-10">
           <div className="mb-14">
-            <img src="/livana-logo-transparent.png" alt="LIVAREX" className="h-10 w-auto brightness-0 invert" />
+            <img src="/livarex-logo.png" alt="LIVAREX" className="h-10 w-auto" />
           </div>
 
           <h2 className="text-4xl xl:text-5xl font-extrabold text-white leading-tight tracking-tight mb-4">
