@@ -22,24 +22,38 @@ export default function AuthCallbackPage() {
 
     const params = new URLSearchParams(window.location.search)
     const code = params.get('code')
+    const errorParam = params.get('error')
     const next = params.get('next')
 
     const redirectTo = isSafePath(next) ? next : '/user'
 
-    if (!code) { navigate('/login?error=auth_callback_failed'); return }
+    // Supabase may return an error directly
+    if (errorParam) { navigate('/login?error=auth_callback_failed'); return }
 
     const supabase = createClient()
+
+    // If no code, try detectSessionInUrl (handles implicit/hash flow)
+    if (!code) {
+      supabase.auth.getSession().then(async ({ data: { session } }) => {
+        if (!session) { navigate('/login?error=auth_callback_failed'); return }
+        await handleUser(session.user)
+      })
+      return
+    }
+
     supabase.auth.exchangeCodeForSession(code).then(async ({ error }) => {
       if (error) { navigate('/login?error=auth_callback_failed'); return }
 
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) { navigate('/login'); return }
+      await handleUser(user)
+    })
 
-      const typedUser: User = user
+    async function handleUser(user: User) {
+      const supabase = createClient()
+      if (isAdminUser(user)) { navigate('/admin'); return }
 
-      if (isAdminUser(typedUser)) { navigate('/admin'); return }
-
-      const { data: landlord } = await supabase.from('landlords').select('status').eq('user_id', typedUser.id).single() as { data: { status: string } | null }
+      const { data: landlord } = await supabase.from('landlords').select('status').eq('user_id', user.id).single() as { data: { status: string } | null }
       if (landlord) {
         if (landlord.status === 'pending') { navigate('/landlord/pending'); return }
         if (landlord.status === 'rejected') { navigate('/landlord/rejected'); return }
@@ -47,13 +61,13 @@ export default function AuthCallbackPage() {
         return
       }
 
-      const { data: tenant } = await supabase.from('tenants').select('id').eq('user_id', typedUser.id).single() as { data: { id: string } | null }
+      const { data: tenant } = await supabase.from('tenants').select('id').eq('user_id', user.id).single() as { data: { id: string } | null }
       if (!tenant) {
-        await supabase.from('tenants').insert({ user_id: typedUser.id, full_name: typedUser.user_metadata?.full_name ?? typedUser.email ?? 'User' })
+        await supabase.from('tenants').insert({ user_id: user.id, full_name: user.user_metadata?.full_name ?? user.email ?? 'User' })
       }
 
       navigate(redirectTo)
-    })
+    }
   }, [])
 
   return (
