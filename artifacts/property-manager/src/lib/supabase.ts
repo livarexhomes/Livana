@@ -17,7 +17,12 @@ export function createClient() {
         'Supabase is not configured. Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.',
       )
     }
-    _client = createSupabaseClient(url, key)
+    _client = createSupabaseClient(url, key, {
+      auth: {
+        detectSessionInUrl: true,
+        flowType: 'pkce',
+      },
+    })
   }
   return _client
 }
