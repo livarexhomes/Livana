@@ -230,65 +230,61 @@ export default function HomePage() {
                 })}
               </div>
 
-              {/* ── Desktop pill bar ── */}
+              {/* ── Desktop search card ── */}
               <div className="hidden sm:block relative">
-                <div className="flex items-center bg-white rounded-full shadow-[0_4px_30px_rgb(0,0,0,0.12)] border border-gray-100">
+                <div className="bg-white rounded-2xl shadow-[0_8px_40px_rgb(0,0,0,0.10)] border border-gray-100 p-3">
+                  <div className="flex items-stretch gap-2">
 
-                  {/* Location */}
-                  <div className="relative flex-1 min-w-0">
-                    <label className="absolute top-2.5 left-5 text-[10px] font-bold text-gray-400 uppercase tracking-wider pointer-events-none">Location</label>
-                    <MapPin className="absolute left-4 bottom-3 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
-                    <select value={searchState} onChange={e => setSearchState(e.target.value)}
-                      className="w-full pt-7 pb-3 pl-9 pr-5 bg-transparent text-sm text-gray-800 font-medium outline-none appearance-none cursor-pointer rounded-l-full">
-                      <option value="">Any State</option>
-                      {NIGERIAN_STATES.map(s => <option key={s} value={s}>{s}</option>)}
-                    </select>
-                  </div>
+                    {/* Location */}
+                    <div className="relative flex-1 min-w-0 bg-gray-50 hover:bg-gray-100 transition-colors rounded-xl px-4 py-3 cursor-pointer">
+                      <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1 pointer-events-none">
+                        <MapPin className="inline w-3 h-3 mr-1 -mt-0.5" />Location
+                      </label>
+                      <select value={searchState} onChange={e => setSearchState(e.target.value)}
+                        className="w-full bg-transparent text-sm text-gray-800 font-semibold outline-none appearance-none cursor-pointer leading-tight">
+                        <option value="">Any Location</option>
+                        {NIGERIAN_STATES.map(s => <option key={s} value={s}>{s}</option>)}
+                      </select>
+                    </div>
 
-                  <div className="w-px h-10 bg-gray-200 shrink-0" />
+                    {/* Property Type trigger */}
+                    <button type="button"
+                      onClick={() => setOpenDropdown(o => o === 'propertyType' ? null : 'propertyType')}
+                      className="relative flex-1 min-w-0 bg-gray-50 hover:bg-gray-100 transition-colors rounded-xl px-4 py-3 text-left">
+                      <span className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Property Type</span>
+                      <span className={`text-sm font-semibold flex items-center gap-1 ${selectedPropertyTypes.length ? 'text-blue-600' : 'text-gray-700'}`}>
+                        <span className="truncate">{propertyTypeLabel}</span>
+                        <ChevronDown className={`w-3.5 h-3.5 shrink-0 transition-transform ${openDropdown === 'propertyType' ? 'rotate-180' : ''}`} />
+                      </span>
+                    </button>
 
-                  {/* Property Type trigger */}
-                  <button type="button"
-                    onClick={() => setOpenDropdown(o => o === 'propertyType' ? null : 'propertyType')}
-                    className="relative flex-1 min-w-0 flex flex-col items-start px-5 py-3 hover:bg-gray-50 transition-colors">
-                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Property Type</span>
-                    <span className={`text-sm font-medium mt-0.5 flex items-center gap-1 ${selectedPropertyTypes.length ? 'text-blue-600' : 'text-gray-500'}`}>
-                      {propertyTypeLabel}
-                      <ChevronDown className={`w-3.5 h-3.5 transition-transform ${openDropdown === 'propertyType' ? 'rotate-180' : ''}`} />
-                    </span>
-                  </button>
+                    {/* Beds & Baths trigger */}
+                    <button type="button"
+                      onClick={() => setOpenDropdown(o => o === 'beds' ? null : 'beds')}
+                      className="relative flex-1 min-w-0 bg-gray-50 hover:bg-gray-100 transition-colors rounded-xl px-4 py-3 text-left">
+                      <span className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Beds &amp; Baths</span>
+                      <span className={`text-sm font-semibold flex items-center gap-1 ${(searchBeds || searchBaths) ? 'text-blue-600' : 'text-gray-700'}`}>
+                        <span className="truncate">{bedsBathsLabel}</span>
+                        <ChevronDown className={`w-3.5 h-3.5 shrink-0 transition-transform ${openDropdown === 'beds' ? 'rotate-180' : ''}`} />
+                      </span>
+                    </button>
 
-                  <div className="w-px h-10 bg-gray-200 shrink-0" />
+                    {/* Price trigger */}
+                    <button type="button"
+                      onClick={() => setOpenDropdown(o => o === 'price' ? null : 'price')}
+                      className="relative flex-1 min-w-0 bg-gray-50 hover:bg-gray-100 transition-colors rounded-xl px-4 py-3 text-left">
+                      <span className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Price</span>
+                      <span className={`text-sm font-semibold flex items-center gap-1 ${(priceMin > 0 || priceMax < 500_000_000) ? 'text-blue-600' : 'text-gray-700'}`}>
+                        <span className="truncate">{priceLabel}</span>
+                        <ChevronDown className={`w-3.5 h-3.5 shrink-0 transition-transform ${openDropdown === 'price' ? 'rotate-180' : ''}`} />
+                      </span>
+                    </button>
 
-                  {/* Beds & Baths trigger */}
-                  <button type="button"
-                    onClick={() => setOpenDropdown(o => o === 'beds' ? null : 'beds')}
-                    className="relative flex-1 min-w-0 flex flex-col items-start px-5 py-3 hover:bg-gray-50 transition-colors">
-                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Beds &amp; Baths</span>
-                    <span className={`text-sm font-medium mt-0.5 flex items-center gap-1 ${(searchBeds || searchBaths) ? 'text-blue-600' : 'text-gray-500'}`}>
-                      {bedsBathsLabel}
-                      <ChevronDown className={`w-3.5 h-3.5 transition-transform ${openDropdown === 'beds' ? 'rotate-180' : ''}`} />
-                    </span>
-                  </button>
-
-                  <div className="w-px h-10 bg-gray-200 shrink-0" />
-
-                  {/* Price trigger */}
-                  <button type="button"
-                    onClick={() => setOpenDropdown(o => o === 'price' ? null : 'price')}
-                    className="relative flex-1 min-w-0 flex flex-col items-start px-5 py-3 hover:bg-gray-50 transition-colors">
-                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Price</span>
-                    <span className={`text-sm font-medium mt-0.5 flex items-center gap-1 ${(priceMin > 0 || priceMax < 500_000_000) ? 'text-blue-600' : 'text-gray-500'}`}>
-                      {priceLabel}
-                      <ChevronDown className={`w-3.5 h-3.5 transition-transform ${openDropdown === 'price' ? 'rotate-180' : ''}`} />
-                    </span>
-                  </button>
-
-                  {/* Search button */}
-                  <div className="px-2.5 shrink-0">
+                    {/* Search button */}
                     <button type="button" onClick={() => handleSearch()}
-                      className="w-12 h-12 rounded-full bg-blue-600 hover:bg-blue-700 flex items-center justify-center shadow-md shadow-blue-600/30 transition-all active:scale-95">
-                      <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+                      className="shrink-0 bg-blue-600 hover:bg-blue-700 text-white px-6 rounded-xl font-semibold text-sm flex items-center gap-2 shadow-lg shadow-blue-600/25 transition-all active:scale-95">
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+                      Search
                     </button>
                   </div>
                 </div>
