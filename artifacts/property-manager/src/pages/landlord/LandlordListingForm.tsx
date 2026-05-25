@@ -17,7 +17,7 @@ type FormData = {
 }
 
 type ExistingImage = {
-  id: string; storage_path: string; is_cover: boolean; sort_order: number | null; alt_text: string | null
+  id: string; property_id: string; storage_path: string; is_cover: boolean; sort_order: number | null; alt_text: string | null
 }
 
 const emptyForm: FormData = {
@@ -54,25 +54,33 @@ export default function LandlordListingForm() {
       const { data: l } = await supabase.from('landlords').select('*').eq('user_id', user.id).single() as { data: Landlord | null }
       setLandlord(l)
       if (isEdit && params.id) {
+        // Ownership check: scope the property fetch to this landlord's id so
+        // navigating to /landlord/listings/{other-id}/edit returns no data.
         const [{ data: p }, { data: imgs }] = await Promise.all([
-          supabase.from('properties').select('*').eq('id', params.id).single(),
+          supabase.from('properties').select('*')
+            .eq('id', params.id)
+            .eq('landlord_id', l?.id ?? '')
+            .single(),
           supabase.from('property_images').select('*').eq('property_id', params.id).order('sort_order', { ascending: true }),
         ])
-        if (p) {
-          setForm({
-            title:       p.title ?? '',
-            description: p.description ?? '',
-            address:     p.address ?? '',
-            city:        p.city ?? '',
-            price:       String(p.price ?? ''),
-            bedrooms:    String(p.bedrooms ?? 1),
-            bathrooms:   String(p.bathrooms ?? 1),
-            area_sqft:   String(p.area_sqft ?? ''),
-            type:        p.type ?? 'rent',
-            status:      p.status ?? 'available',
-            featured:    p.featured ?? false,
-          })
+        if (!p) {
+          // Property not found or belongs to another landlord — redirect away.
+          navigate('/landlord/listings')
+          return
         }
+        setForm({
+          title:       p.title ?? '',
+          description: p.description ?? '',
+          address:     p.address ?? '',
+          city:        p.city ?? '',
+          price:       String(p.price ?? ''),
+          bedrooms:    String(p.bedrooms ?? 1),
+          bathrooms:   String(p.bathrooms ?? 1),
+          area_sqft:   String(p.area_sqft ?? ''),
+          type:        p.type ?? 'rent',
+          status:      p.status ?? 'available',
+          featured:    p.featured ?? false,
+        })
         if (imgs) setExistingImages(imgs as ExistingImage[])
         setLoadingData(false)
       }
@@ -96,8 +104,24 @@ export default function LandlordListingForm() {
   }
 
   async function deleteExistingImage(img: ExistingImage) {
-    setDeletingImg(img.id)
+    // Ownership check: only delete images that belong to a property owned by
+    // this landlord. existingImages is populated only after the ownership-
+    // scoped fetch in useEffect, so img.id is already trusted — but we also
+    // guard the DB delete with a landlord_id join via property_id.
+    if (!landlord) return
     const supabase = createClient()
+    // Verify the image's property belongs to this landlord before mutating.
+    const { data: ownerCheck } = await supabase
+      .from('properties')
+      .select('id')
+      .eq('id', img.property_id ?? params.id!)
+      .eq('landlord_id', landlord.id)
+      .single()
+    if (!ownerCheck) {
+      setError('Permission denied: this image does not belong to your listing.')
+      return
+    }
+    setDeletingImg(img.id)
     await supabase.storage.from('property-images').remove([img.storage_path])
     await supabase.from('property_images').delete().eq('id', img.id)
     setExistingImages(prev => prev.filter(i => i.id !== img.id))
@@ -105,8 +129,21 @@ export default function LandlordListingForm() {
   }
 
   async function setCoverExisting(imgId: string) {
+    if (!landlord || !params.id) return
     const supabase = createClient()
-    await supabase.from('property_images').update({ is_cover: false }).eq('property_id', params.id!)
+    // Ownership check: confirm this property belongs to the current landlord
+    // before updating cover flags.
+    const { data: ownerCheck } = await supabase
+      .from('properties')
+      .select('id')
+      .eq('id', params.id)
+      .eq('landlord_id', landlord.id)
+      .single()
+    if (!ownerCheck) {
+      setError('Permission denied: this listing does not belong to you.')
+      return
+    }
+    await supabase.from('property_images').update({ is_cover: false }).eq('property_id', params.id)
     await supabase.from('property_images').update({ is_cover: true }).eq('id', imgId)
     setExistingImages(prev => prev.map(i => ({ ...i, is_cover: i.id === imgId })))
   }
@@ -166,7 +203,13 @@ export default function LandlordListingForm() {
 
     let ok = true
     if (isEdit && params.id) {
-      const { error: err } = await supabase.from('properties').update(data).eq('id', params.id)
+      // Ownership check: restrict the UPDATE to rows owned by this landlord.
+      // Without this, any landlord could overwrite another's property by id.
+      const { error: err } = await supabase
+        .from('properties')
+        .update(data)
+        .eq('id', params.id)
+        .eq('landlord_id', landlord.id)
       if (err) { setError(err.message); setLoading(false); return }
       ok = await uploadImages(params.id)
     } else {
