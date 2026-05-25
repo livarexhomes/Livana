@@ -22,14 +22,15 @@ export default function AuthCallbackPage() {
     if (!isSupabaseConfigured()) { navigate('/login?error=not_configured'); return }
 
     const supabase = createClient()
-    const params = new URLSearchParams(window.location.search)
-    const errorParam = params.get('error')
-    const errorDesc = params.get('error_description')
-    const code = params.get('code')
-    const next = params.get('next')
+
+    // Check for errors in query params or hash
+    const hashParams = new URLSearchParams(window.location.hash.replace('#', ''))
+    const queryParams = new URLSearchParams(window.location.search)
+    const errorParam = hashParams.get('error') ?? queryParams.get('error')
+    const errorDesc = hashParams.get('error_description') ?? queryParams.get('error_description')
+    const next = queryParams.get('next')
     const redirectTo = isSafePath(next) ? next : '/user'
 
-    // Supabase returned an OAuth error directly
     if (errorParam) {
       setErrorMsg(errorDesc ?? errorParam)
       setTimeout(() => navigate('/login?error=auth_callback_failed'), 3000)
@@ -57,22 +58,7 @@ export default function AuthCallbackPage() {
       navigate(redirectTo)
     }
 
-    // PKCE flow — exchange code for session
-    if (code) {
-      supabase.auth.exchangeCodeForSession(code).then(async ({ data, error }) => {
-        if (error) {
-          setErrorMsg(error.message)
-          setTimeout(() => navigate('/login?error=auth_callback_failed'), 3000)
-          return
-        }
-        const user = data.session?.user
-        if (!user) { navigate('/login'); return }
-        await handleUser(user)
-      })
-      return
-    }
-
-    // Fallback — session may already exist
+    // Implicit flow — session is in the URL hash, getSession() picks it up automatically
     supabase.auth.getSession().then(async ({ data: { session }, error }) => {
       if (error || !session) {
         setErrorMsg(error?.message ?? 'No session found. Please try signing in again.')
