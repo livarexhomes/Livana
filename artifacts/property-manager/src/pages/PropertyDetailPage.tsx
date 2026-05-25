@@ -87,8 +87,8 @@ export default function PropertyDetailPage() {
           setUserRole('admin')
         } else {
           const [{ data: tenant }, { data: landlord }] = await Promise.all([
-            supabase.from('tenants').select('id, full_name').eq('user_id', user.id).single() as Promise<{ data: { id: string; full_name: string } | null }>,
-            supabase.from('landlords').select('id').eq('user_id', user.id).single() as Promise<{ data: { id: string } | null }>,
+            supabase.from('tenants').select('id, full_name').eq('user_id', user.id).single() as unknown as Promise<{ data: { id: string; full_name: string } | null }>,
+            supabase.from('landlords').select('id').eq('user_id', user.id).single() as unknown as Promise<{ data: { id: string } | null }>,
           ])
           if (tenant) {
             setUserRole('tenant')
@@ -113,8 +113,7 @@ export default function PropertyDetailPage() {
       .then(({ data }) => {
         setComments((data as Comment[]) ?? [])
         setCommentsReady(true)
-      })
-      .catch(() => setCommentsReady(true))
+      }, () => setCommentsReady(true))
   }, [params.id])
 
   const images = (property?.property_images ?? [])
