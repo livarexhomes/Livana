@@ -20,7 +20,7 @@ export function createClient() {
     _client = createSupabaseClient(url, key, {
       auth: {
         detectSessionInUrl: true,
-        flowType: 'pkce',
+        flowType: 'implicit',
       },
     })
   }
