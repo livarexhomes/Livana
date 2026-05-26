@@ -113,7 +113,7 @@ export default function AboutPage() {
               </h2>
               <div className="space-y-5 text-gray-500 leading-relaxed">
                 <p>
-                  In 2022, our founder — Chukwuemeka — spent three months and paid two agent fees trying to find a two-bedroom apartment in Lagos. Both deals collapsed. One listing didn't exist. One landlord disappeared after collecting a fee. The experience was embarrassing, expensive, and entirely avoidable.
+                  In 2022, our founder — Shorinmade — spent three months and paid two agent fees trying to find a two-bedroom apartment in Lagos. Both deals collapsed. One listing didn't exist. One landlord disappeared after collecting a fee. The experience was embarrassing, expensive, and entirely avoidable.
                 </p>
                 <p>
                   So he did what frustrated engineers do: he built a solution. Not another listing aggregator that recycles outdated content — a platform where every landlord is reviewed before a listing goes live, where renters contact property owners directly, and where transparency is the product, not a feature.
