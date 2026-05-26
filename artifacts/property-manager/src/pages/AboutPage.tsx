@@ -47,10 +47,10 @@ const milestones = [
 ]
 
 const team = [
-  { name: 'Chukwuemeka Obi', role: 'CEO & Co-Founder', bio: 'Former real estate agent who spent 8 years watching good tenants get scammed. Built LIVAREX to fix it.', initials: 'CO', color: 'bg-blue-600' },
-  { name: 'Adaeze Nwosu', role: 'CTO & Co-Founder', bio: 'Full-stack engineer and product thinker. Obsessed with making complex things feel simple.', initials: 'AN', color: 'bg-violet-600' },
-  { name: 'Olumide Adesanya', role: 'Head of Operations', bio: 'Runs the landlord verification engine and ensures every listing on the platform meets our standards.', initials: 'OA', color: 'bg-emerald-600' },
-  { name: 'Fatima Bello', role: 'Head of Growth', bio: 'Connects landlords and renters. Grew our Lagos coverage from 40 listings to 1,200 in under 18 months.', initials: 'FB', color: 'bg-rose-600' },
+  { name: 'Shorinmade Ibrahim', role: 'CEO & Co-Founder', bio: 'Former real estate agent who spent 8 years watching good tenants get scammed. Built LIVAREX to fix it.', initials: 'SI', color: 'bg-blue-600' },
+  { name: 'Seidu Tesleem', role: 'CTO & Co-Founder', bio: 'Full-stack engineer and product thinker. Obsessed with making complex things feel simple.', initials: 'ST', color: 'bg-violet-600' },
+  { name: 'Micheal Kolawole', role: 'Head of Operations', bio: 'Runs the landlord verification engine and ensures every listing on the platform meets our standards.', initials: 'MK', color: 'bg-emerald-600' },
+  { name: 'Spacze', role: 'Head of Growth', bio: 'Connects landlords and renters. Grew our Lagos coverage from 40 listings to 1,200 in under 18 months.', initials: 'SP', color: 'bg-rose-600' },
 ]
 
 export default function AboutPage() {
