@@ -63,19 +63,7 @@ function progressText(pct: number) {
   return 'text-rose-500'
 }
 
-const STORAGE_KEY = 'livana_admin_projects'
 
-function loadProjects(): Project[] {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY)
-    if (raw) return JSON.parse(raw)
-  } catch {}
-  return []
-}
-
-function saveProjects(projects: Project[]) {
-  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(projects)) } catch {}
-}
 
 export default function AdminProjects() {
   const [user, setUser]         = useState<{ email?: string } | null>(null)
@@ -90,6 +78,7 @@ export default function AdminProjects() {
   const [form, setForm]                   = useState(EMPTY_FORM)
   const [deleteId, setDeleteId]           = useState<string | null>(null)
   const [toast, setToast]                 = useState<{ msg: string; ok: boolean } | null>(null)
+  const [loading, setLoading]             = useState(true)
   const [saving, setSaving]               = useState(false)
   const [uploading, setUploading]         = useState(false)
   const fileInputRef                      = useRef<HTMLInputElement>(null)
@@ -97,7 +86,8 @@ export default function AdminProjects() {
   useEffect(() => {
     const supabase = createClient()
     supabase.auth.getUser().then(({ data: { user } }) => setUser({ email: user?.email }))
-    setProjects(loadProjects())
+    supabase.from('projects').select('*').order('created_at', { ascending: false })
+      .then(({ data }) => { setProjects((data as Project[]) ?? []); setLoading(false) })
   }, [])
 
   function showToast(msg: string, ok = true) {
@@ -123,33 +113,36 @@ export default function AdminProjects() {
       return
     }
     setSaving(true)
-    let updated: Project[]
+    const supabase = createClient()
     if (editing) {
-      updated = projects.map(p => p.id === editing.id ? { ...editing, ...form } : p)
+      const { error } = await supabase.from('projects').update(form).eq('id', editing.id)
+      if (error) { showToast(`Save failed: ${error.message}`, false); setSaving(false); return }
+      setProjects(ps => ps.map(p => p.id === editing.id ? { ...editing, ...form } : p))
     } else {
-      const newProject: Project = { ...form, id: crypto.randomUUID() }
-      updated = [newProject, ...projects]
+      const { data, error } = await supabase.from('projects').insert(form).select().single()
+      if (error) { showToast(`Create failed: ${error.message}`, false); setSaving(false); return }
+      setProjects(ps => [data as Project, ...ps])
     }
-    setProjects(updated)
-    saveProjects(updated)
     setSaving(false)
     setModalOpen(false)
     showToast(editing ? 'Project updated.' : 'Project created.')
   }
 
-  function handleDelete() {
+  async function handleDelete() {
     if (!deleteId) return
-    const updated = projects.filter(p => p.id !== deleteId)
-    setProjects(updated)
-    saveProjects(updated)
+    const supabase = createClient()
+    const { error } = await supabase.from('projects').delete().eq('id', deleteId)
+    if (error) { showToast(`Delete failed: ${error.message}`, false); return }
+    setProjects(ps => ps.filter(p => p.id !== deleteId))
     setDeleteId(null)
     showToast('Project deleted.')
   }
 
-  function changeStatus(id: string, status: ProjectStatus) {
-    const updated = projects.map(p => p.id === id ? { ...p, status } : p)
-    setProjects(updated)
-    saveProjects(updated)
+  async function changeStatus(id: string, status: ProjectStatus) {
+    const supabase = createClient()
+    const { error } = await supabase.from('projects').update({ status }).eq('id', id)
+    if (error) { showToast(`Status update failed: ${error.message}`, false); return }
+    setProjects(ps => ps.map(p => p.id === id ? { ...p, status } : p))
     setMenuOpen(null)
   }
 
@@ -212,6 +205,11 @@ export default function AdminProjects() {
           />
 
           <main className="flex-1 overflow-y-auto p-4 md:p-6 pb-24 md:pb-6 space-y-5" onClick={() => setMenuOpen(null)}>
+            {loading ? (
+              <div className="flex items-center justify-center py-40">
+                <div className="animate-spin w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full" />
+              </div>
+            ) : (<>
             {/* Toast */}
             {toast && (
               <div className={`fixed top-5 right-5 z-50 flex items-center gap-2.5 px-4 py-3 rounded-2xl shadow-xl text-sm font-semibold text-white transition-all ${toast.ok ? 'bg-emerald-600' : 'bg-red-600'}`}>
@@ -412,6 +410,7 @@ export default function AdminProjects() {
                 })}
               </div>
             )}
+          </>)} {/* end loading conditional */}
           </main>
         </div>
       </div>

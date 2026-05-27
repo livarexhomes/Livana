@@ -57,12 +57,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (linkData?.properties?.action_link) {
     confirmationUrl = linkData.properties.action_link
   } else {
-    // User may already exist (unconfirmed) — generate a magic link instead
+    // User may already exist (unconfirmed) — generate a magic link instead.
+    // Pass metadata so user_metadata is preserved on this path too.
     console.warn('[send-confirmation] generateLink signup failed, trying magiclink:', linkError?.message)
     const { data: magicData, error: magicError } = await supabaseAdmin.auth.admin.generateLink({
       type: 'magiclink',
       email,
-      options: { redirectTo: `${appUrl}/auth/callback` },
+      options: {
+        redirectTo: `${appUrl}/auth/callback`,
+        ...(metadata && typeof metadata === 'object' ? { data: metadata } : {}),
+      },
     })
     if (magicError || !magicData?.properties?.action_link) {
       console.error('[send-confirmation] both link types failed:', magicError)
