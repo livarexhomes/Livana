@@ -181,9 +181,9 @@ export default function HomePage() {
       <PublicNavbar />
 
       {/* ── HERO ── */}
-      <section className="relative bg-white flex" style={{ minHeight: 'calc(100vh - 80px)', marginTop: '80px' }}>
+      <section className="relative bg-white flex flex-col lg:flex-row" style={{ minHeight: 'calc(100vh - 80px)', marginTop: '80px' }}>
         {/* Left Column */}
-        <div className="w-full lg:w-[55%] flex flex-col justify-center px-6 sm:px-10 lg:px-16 xl:px-24 pt-12 pb-16">
+        <div className="w-full lg:w-[55%] flex flex-col justify-center px-5 sm:px-10 lg:px-16 xl:px-24 pt-10 pb-12 lg:pt-12 lg:pb-16">
           <div className="max-w-xl">
             {/* Label */}
             <div className="flex items-center gap-2.5 mb-7">
@@ -197,7 +197,7 @@ export default function HomePage() {
             </div>
 
             {/* Headline */}
-            <h1 className="text-5xl sm:text-6xl xl:text-7xl font-extrabold leading-[1.08] mb-6 tracking-tight text-gray-900">
+            <h1 className="text-4xl sm:text-5xl xl:text-6xl font-extrabold leading-[1.08] mb-6 tracking-tight text-gray-900">
               Find Your Next<br />Home in Nigeria
             </h1>
 
@@ -476,16 +476,16 @@ export default function HomePage() {
             </div>
 
             {/* Stats */}
-            <div className="flex items-center gap-8 text-sm text-gray-400">
+            <div className="flex items-center gap-4 sm:gap-8 text-sm text-gray-400 flex-wrap">
               {[
                 { value: 2400, suffix: '+', label: 'Properties' },
                 { value: 850, suffix: '+', label: 'Landlords' },
                 { value: 0, prefix: '₦', label: 'Agent Fees' },
               ].map((s, i) => (
-                <div key={s.label} className="flex items-center gap-8">
-                  {i > 0 && <div className="w-px h-10 bg-gray-200" />}
+                <div key={s.label} className="flex items-center gap-4 sm:gap-8">
+                  {i > 0 && <div className="w-px h-8 bg-gray-200" />}
                   <div className="flex flex-col gap-0.5">
-                    <span className="font-extrabold text-gray-900 text-xl leading-none">
+                    <span className="font-extrabold text-gray-900 text-lg sm:text-xl leading-none">
                       {s.prefix ?? ''}<AnimatedCounter target={s.value} suffix={s.suffix ?? ''} />
                     </span>
                     <span className="text-xs text-gray-400">{s.label}</span>
@@ -497,7 +497,7 @@ export default function HomePage() {
         </div>
 
         {/* Right Column — Image */}
-        <div className="hidden lg:block lg:w-[45%] relative p-4 pl-0" style={{ height: 'calc(100vh - 80px)', marginTop: '80px' }}>
+        <div className="hidden lg:block lg:w-[45%] relative p-4 pl-0" style={{ height: 'calc(100vh - 80px)' }}>
           <div className="w-full h-full relative rounded-l-[3rem] overflow-hidden shadow-2xl">
             <img
               src="https://images.unsplash.com/photo-1580587771525-78b9dba3b914?w=1400&q=85"
@@ -552,14 +552,14 @@ export default function HomePage() {
       {/* ── TRUST BADGES ── */}
       <section className="bg-white border-b border-gray-100">
         <div className="max-w-6xl mx-auto px-5 sm:px-8 py-10">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
             {[
               { icon: ShieldCheck, label: 'Verified Landlords', desc: 'Every landlord reviewed & approved' },
               { icon: Building2, label: 'Genuine Listings', desc: 'Real properties, real prices' },
               { icon: Users, label: 'Direct Contact', desc: 'No middlemen or agent fees' },
               { icon: TrendingUp, label: 'Market Insights', desc: 'Stay ahead with price trends' },
             ].map(({ icon: Icon, label, desc }) => (
-              <div key={label} className="flex items-start gap-4 p-4">
+              <div key={label} className="flex items-start gap-3 p-4">
                 <div className="w-11 h-11 rounded-xl bg-blue-50 flex items-center justify-center shrink-0">
                   <Icon className="w-5 h-5 text-blue-600" />
                 </div>
@@ -764,7 +764,7 @@ export default function HomePage() {
           </div>
 
           {/* Bento grid */}
-          <div className="grid grid-cols-2 md:grid-cols-4 grid-rows-[180px_140px_140px_120px] md:grid-rows-[280px_200px] gap-3 md:gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 auto-rows-[140px] md:grid-rows-[280px_200px] gap-3 md:gap-4">
             {/* Lagos — large feature cell (2 cols × 2 rows) */}
             <Link
               href="/listings?city=Lagos"

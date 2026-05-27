@@ -4,8 +4,8 @@ export default function Footer() {
   return (
     <footer className="bg-gray-950 text-gray-400">
       <div className="max-w-7xl mx-auto px-5 sm:px-8 pt-16 pb-10">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-10 pb-12 border-b border-white/8">
-          <div className="col-span-2 md:col-span-1">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-10 pb-12 border-b border-white/8">
+          <div className="col-span-2 md:col-span-1 mb-2 md:mb-0">
             <Link href="/" className="flex items-center mb-5">
               <img src="/livarex-logo.png" alt="LIVAREX" className="h-9 w-auto" />
             </Link>
@@ -63,9 +63,9 @@ export default function Footer() {
           </div>
         </div>
 
-        <div className="mt-8 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <p className="text-sm text-gray-500">© {new Date().getFullYear()} LIVAREX. All rights reserved.</p>
-          <div className="flex items-center gap-6 text-sm">
+        <div className="mt-8 flex flex-col sm:flex-row items-center justify-between gap-3">
+          <p className="text-xs sm:text-sm text-gray-500 text-center sm:text-left">© {new Date().getFullYear()} LIVAREX. All rights reserved.</p>
+          <div className="flex items-center gap-4 sm:gap-6 text-xs sm:text-sm">
             <a href="#" className="text-gray-500 hover:text-white transition-colors">Privacy Policy</a>
             <a href="#" className="text-gray-500 hover:text-white transition-colors">Terms of Service</a>
           </div>

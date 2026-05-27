@@ -80,7 +80,7 @@ export default function ListingCard({
       onMouseLeave={onMouseLeave}
     >
       {/* Image */}
-      <div className="relative w-44 sm:w-52 shrink-0 bg-gray-100 overflow-hidden">
+      <div className="relative w-28 xs:w-36 sm:w-52 shrink-0 bg-gray-100 overflow-hidden">
         {coverUrl ? (
           <img
             src={coverUrl}
@@ -115,7 +115,7 @@ export default function ListingCard({
           {/* Price + save */}
           <div className="flex items-start justify-between gap-2">
             <div>
-              <span className="text-2xl font-extrabold text-gray-900 tracking-tight">
+              <span className="text-lg sm:text-2xl font-extrabold text-gray-900 tracking-tight">
                 ₦{Number(p.price).toLocaleString()}
               </span>
               {PERIOD[p.type] && (
