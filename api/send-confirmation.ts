@@ -41,32 +41,37 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const appUrl = process.env.APP_URL ?? `https://${req.headers.host}`
   let confirmationUrl: string
 
-  // Try generating a fresh signup link first.
-  // Pass `options.data` so user_metadata (role, whatsapp, etc.) is preserved —
-  // generateLink with type 'signup' resets metadata to an empty object if omitted.
+  // If metadata was provided, explicitly write it onto the existing user record
+  // before generating the link. generateLink does NOT update metadata on an
+  // already-created user — it only sets it during initial creation — so we must
+  // patch it separately to ensure role/whatsapp survive the confirmation flow.
+  if (metadata && typeof metadata === 'object') {
+    const { data: userList } = await supabaseAdmin.auth.admin.listUsers()
+    const existingUser = (userList?.users ?? []).find((u: any) => u.email === email)
+    if (existingUser) {
+      await supabaseAdmin.auth.admin.updateUserById(existingUser.id, {
+        user_metadata: metadata,
+      })
+    }
+  }
+
+  // Generate the signup confirmation link.
   const { data: linkData, error: linkError } = await supabaseAdmin.auth.admin.generateLink({
     type: 'signup',
     email,
     password,
-    options: {
-      redirectTo: `${appUrl}/auth/callback`,
-      ...(metadata && typeof metadata === 'object' ? { data: metadata } : {}),
-    },
+    options: { redirectTo: `${appUrl}/auth/callback` },
   })
 
   if (linkData?.properties?.action_link) {
     confirmationUrl = linkData.properties.action_link
   } else {
-    // User may already exist (unconfirmed) — generate a magic link instead.
-    // Pass metadata so user_metadata is preserved on this path too.
+    // User may already be confirmed or signup link unavailable — fall back to magiclink.
     console.warn('[send-confirmation] generateLink signup failed, trying magiclink:', linkError?.message)
     const { data: magicData, error: magicError } = await supabaseAdmin.auth.admin.generateLink({
       type: 'magiclink',
       email,
-      options: {
-        redirectTo: `${appUrl}/auth/callback`,
-        ...(metadata && typeof metadata === 'object' ? { data: metadata } : {}),
-      },
+      options: { redirectTo: `${appUrl}/auth/callback` },
     })
     if (magicError || !magicData?.properties?.action_link) {
       console.error('[send-confirmation] both link types failed:', magicError)
