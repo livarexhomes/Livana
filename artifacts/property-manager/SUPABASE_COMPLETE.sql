@@ -62,6 +62,12 @@ ALTER TABLE public.landlords ADD COLUMN IF NOT EXISTS linkedin         TEXT;
 ALTER TABLE public.landlords ADD COLUMN IF NOT EXISTS twitter          TEXT;
 ALTER TABLE public.landlords ADD COLUMN IF NOT EXISTS instagram        TEXT;
 
+-- Recreate status check constraint to include all valid values
+-- (older deployments may have a narrower constraint)
+ALTER TABLE public.landlords DROP CONSTRAINT IF EXISTS landlords_status_check;
+ALTER TABLE public.landlords ADD CONSTRAINT landlords_status_check
+  CHECK (status IN ('not_submitted', 'pending', 'approved', 'rejected', 'suspended'));
+
 CREATE OR REPLACE TRIGGER landlords_updated_at
   BEFORE UPDATE ON public.landlords
   FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
