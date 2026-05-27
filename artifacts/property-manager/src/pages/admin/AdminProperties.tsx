@@ -33,13 +33,13 @@ type EditForm = { title: string; city: string; price: string; type: string; stat
 const emptyEdit: EditForm = { title: '', city: '', price: '', type: 'rent', status: 'available', bedrooms: '', bathrooms: '' }
 
 type AddForm = {
-  landlord_id: string; title: string; city: string; state: string
+  landlord_id: string; title: string; address: string; city: string; state: string
   assigned_to: string
   property_type: string; type: string; status: string
   price: string; bedrooms: string; bathrooms: string; description: string
 }
 const emptyAdd: AddForm = {
-  landlord_id: '', title: '', city: '', state: '', assigned_to: '',
+  landlord_id: '', title: '', address: '', city: '', state: '', assigned_to: '',
   property_type: 'Apartment', type: 'rent', status: 'available',
   price: '', bedrooms: '', bathrooms: '', description: '',
 }
@@ -205,8 +205,8 @@ export default function AdminProperties() {
   }
 
   async function handleAddSave() {
-    if (!addForm.title.trim() || !addForm.city.trim() || !addForm.price) {
-      alert('Title, city and price are required.')
+    if (!addForm.title.trim() || !addForm.address.trim() || !addForm.city.trim() || !addForm.price) {
+      alert('Title, area/neighbourhood, city and price are required.')
       return
     }
     setAddSaving(true)
@@ -219,6 +219,7 @@ export default function AdminProperties() {
         landlord_id: addForm.landlord_id || null,
         assigned_to: addForm.assigned_to || null,
         title: addForm.title.trim(),
+        address: addForm.address.trim(),
         city: addForm.city.trim(),
         state: addForm.state.trim() || null,
         property_type: addForm.property_type,
@@ -786,6 +787,14 @@ export default function AdminProperties() {
                 <label className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1.5 block">Listing Title *</label>
                 <input value={addForm.title} onChange={e => setAddForm(f => ({ ...f, title: e.target.value }))}
                   placeholder="e.g. Luxury 3-Bedroom Apartment in Lekki"
+                  className="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+              </div>
+
+              {/* Area / Neighbourhood */}
+              <div>
+                <label className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1.5 block">Area / Neighbourhood *</label>
+                <input value={addForm.address} onChange={e => setAddForm(f => ({ ...f, address: e.target.value }))}
+                  placeholder="e.g. Lekki Phase 1, Maitama, GRA"
                   className="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
               </div>
 
