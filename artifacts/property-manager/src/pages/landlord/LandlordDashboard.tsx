@@ -63,33 +63,45 @@ export default function LandlordDashboard() {
       const { data: l } = await supabase
         .from('landlords').select('*').eq('user_id', user.id).single() as { data: Landlord | null }
       setLandlord(l)
-      if (l) {
-        const [propsRes, enqsRes, availRes, takenRes, enqCountRes] = await Promise.all([
-          supabase
-            .from('properties')
-            .select('*, property_images(id, storage_path, alt_text, is_cover, sort_order)')
-            .eq('landlord_id', l.id)
-            .order('created_at', { ascending: false }),
-          supabase
-            .from('enquiries')
-            .select('*, properties(title), tenants(full_name)')
-            .eq('landlord_id', l.id)
-            .order('created_at', { ascending: false })
-            .limit(5),
-          supabase.from('properties').select('id', { count: 'exact', head: true }).eq('landlord_id', l.id).eq('status', 'available'),
-          supabase.from('properties').select('id', { count: 'exact', head: true }).eq('landlord_id', l.id).eq('status', 'taken'),
-          supabase.from('enquiries').select('id', { count: 'exact', head: true }).eq('landlord_id', l.id),
-        ])
-        const props = (propsRes.data as any[]) ?? []
-        setListings(props)
-        setRecentEnquiries(enqsRes.data ?? [])
-        setStats({
-          total:     props.length,
-          available: availRes.count ?? 0,
-          enquiries: enqCountRes.count ?? 0,
-          taken:     takenRes.count ?? 0,
-        })
-      }
+      // Stats are scoped to this landlord's own properties
+      const [allPropsRes, enqsRes, availRes, takenRes, enqCountRes, myPropsRes] = await Promise.all([
+        // All available platform listings (same as user overview)
+        supabase
+          .from('properties')
+          .select('*, landlords(full_name, whatsapp, is_verified), property_images(id, storage_path, alt_text, is_cover, sort_order)')
+          .eq('status', 'available')
+          .order('featured', { ascending: false })
+          .order('created_at', { ascending: false })
+          .limit(60),
+        // This landlord's recent enquiries
+        l ? supabase
+          .from('enquiries')
+          .select('*, properties(title), tenants(full_name)')
+          .eq('landlord_id', l.id)
+          .order('created_at', { ascending: false })
+          .limit(5)
+          : Promise.resolve({ data: [] }),
+        // Stats: landlord's available count
+        l ? supabase.from('properties').select('id', { count: 'exact', head: true }).eq('landlord_id', l.id).eq('status', 'available')
+          : Promise.resolve({ count: 0 }),
+        // Stats: landlord's taken count
+        l ? supabase.from('properties').select('id', { count: 'exact', head: true }).eq('landlord_id', l.id).eq('status', 'taken')
+          : Promise.resolve({ count: 0 }),
+        // Stats: landlord's enquiry count
+        l ? supabase.from('enquiries').select('id', { count: 'exact', head: true }).eq('landlord_id', l.id)
+          : Promise.resolve({ count: 0 }),
+        // Stats: landlord's total listings count
+        l ? supabase.from('properties').select('id', { count: 'exact', head: true }).eq('landlord_id', l.id)
+          : Promise.resolve({ count: 0 }),
+      ])
+      setListings((allPropsRes.data as any[]) ?? [])
+      setRecentEnquiries((enqsRes as any).data ?? [])
+      setStats({
+        total:     (myPropsRes as any).count ?? 0,
+        available: (availRes as any).count ?? 0,
+        enquiries: (enqCountRes as any).count ?? 0,
+        taken:     (takenRes as any).count ?? 0,
+      })
       setLoading(false)
     })
   }, [])
@@ -272,12 +284,12 @@ export default function LandlordDashboard() {
                 <div className="flex items-center justify-between px-1">
                   <p className="text-sm text-gray-500">
                     <span className="font-bold text-gray-900">{filtered.length}</span>{' '}
-                    {filtered.length === 1 ? 'listing' : 'listings'}
+                    {filtered.length === 1 ? 'property' : 'properties'}
                     {hasFilters && <span className="text-green-600 ml-1 font-medium">· filtered</span>}
                   </p>
-                  <Link href="/landlord/listings"
+                  <Link href="/listings"
                     className="text-xs font-semibold text-blue-600 hover:text-blue-700 transition-colors">
-                    Manage all →
+                    Full listings page →
                   </Link>
                 </div>
 
@@ -287,18 +299,9 @@ export default function LandlordDashboard() {
                     <div className="w-14 h-14 bg-gray-50 rounded-2xl flex items-center justify-center mb-4">
                       <Building2 className="w-7 h-7 text-gray-300" />
                     </div>
-                    <h3 className="font-bold text-gray-900 mb-1">
-                      {listings.length === 0 ? 'No listings yet' : 'No listings match your filters'}
-                    </h3>
-                    <p className="text-sm text-gray-500 mb-4">
-                      {listings.length === 0 ? 'Add your first property to get started.' : 'Try adjusting your search or filters.'}
-                    </p>
-                    {listings.length === 0 ? (
-                      <Link href="/landlord/listings/new"
-                        className="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-xl transition-colors">
-                        <Plus className="w-4 h-4" /> Add your first listing
-                      </Link>
-                    ) : (
+                    <h3 className="font-bold text-gray-900 mb-1">No properties found</h3>
+                    <p className="text-sm text-gray-500 mb-4">Try adjusting your filters.</p>
+                    {hasFilters && (
                       <button onClick={clearFilters}
                         className="px-5 py-2.5 bg-gray-900 hover:bg-gray-800 text-white text-sm font-semibold rounded-xl transition-colors">
                         Clear filters
@@ -308,10 +311,13 @@ export default function LandlordDashboard() {
                 ) : (
                   <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
                     {filtered.map(p => {
-                      const st = STATUS_STYLE[p.status] ?? { bg: 'bg-gray-100', text: 'text-gray-600', dot: 'bg-gray-400', label: p.status }
                       const imgs: any[] = p.property_images ?? []
                       const cover = imgs.find((i: any) => i.is_cover) ?? imgs[0]
                       const coverUrl = cover ? getSupabaseImageUrl(cover.storage_path) : null
+                      const typeBadge: Record<string, string> = {
+                        rent: 'bg-indigo-600', sale: 'bg-blue-600',
+                        lease: 'bg-violet-600', commercial: 'bg-slate-700',
+                      }
 
                       return (
                         <div key={p.id}
@@ -328,16 +334,9 @@ export default function LandlordDashboard() {
                                 <Building2 className="w-12 h-12" />
                               </div>
                             )}
-                            {/* Status badge */}
-                            <div className="absolute top-3 left-3">
-                              <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-bold shadow-sm ${st.bg} ${st.text}`}>
-                                <span className={`w-1.5 h-1.5 rounded-full ${st.dot}`} />
-                                {st.label}
-                              </span>
-                            </div>
                             {/* Type badge */}
-                            <div className="absolute top-3 right-3">
-                              <span className="px-2.5 py-1 bg-gray-900/80 backdrop-blur-sm text-white text-[11px] font-bold rounded-lg">
+                            <div className="absolute top-3 left-3">
+                              <span className={`px-2.5 py-1 ${typeBadge[p.type] ?? 'bg-gray-800'} text-white text-[11px] font-bold rounded-lg shadow-sm`}>
                                 {TYPE_LABEL[p.type] ?? p.type}
                               </span>
                             </div>
@@ -368,9 +367,9 @@ export default function LandlordDashboard() {
                                   <span className="text-sm text-gray-400 ml-1">yr</span>
                                 )}
                               </div>
-                              <Link href={`/landlord/listings/${p.id}/edit`}
+                              <Link href={`/listings/${p.id}`}
                                 className="shrink-0 px-3 py-1.5 text-xs font-bold bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors">
-                                Edit
+                                View
                               </Link>
                             </div>
 
@@ -397,6 +396,17 @@ export default function LandlordDashboard() {
                                 <span className="ml-auto text-xs font-medium text-gray-400 bg-gray-50 px-2 py-0.5 rounded-lg">
                                   {Number(p.area_sqft).toLocaleString()} sqft
                                 </span>
+                              )}
+                            </div>
+                            {/* Verified owner */}
+                            <div className="flex items-center gap-1.5 mt-3 text-xs">
+                              {p.landlords?.is_verified ? (
+                                <>
+                                  <CheckCircle className="w-3.5 h-3.5 text-green-600" />
+                                  <span className="text-green-700 font-semibold">Verified Owner</span>
+                                </>
+                              ) : (
+                                <span className="text-gray-400">Direct to Owner's Agent</span>
                               )}
                             </div>
                           </div>
