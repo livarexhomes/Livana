@@ -40,19 +40,45 @@ export default function AuthCallbackPage() {
     async function handleUser(user: User) {
       if (isAdminUser(user)) { navigate('/admin'); return }
 
-      const { data: landlord } = await supabase.from('landlords').select('status').eq('user_id', user.id).single() as { data: { status: string } | null }
-      if (landlord) {
-        if (landlord.status === 'pending') { navigate('/landlord/pending'); return }
-        if (landlord.status === 'rejected') { navigate('/landlord/rejected'); return }
+      const meta = user.user_metadata ?? {}
+
+      // ── Landlord flow ──────────────────────────────────────────────
+      // Check if a landlord row already exists
+      const { data: existingLandlord } = await supabase
+        .from('landlords').select('status').eq('user_id', user.id).single() as { data: { status: string } | null }
+
+      if (existingLandlord) {
+        if (existingLandlord.status === 'pending')  { navigate('/landlord/pending');  return }
+        if (existingLandlord.status === 'rejected') { navigate('/landlord/rejected'); return }
+        if (existingLandlord.status === 'suspended') { navigate('/landlord/suspended'); return }
         navigate('/landlord')
         return
       }
 
-      const { data: tenant } = await supabase.from('tenants').select('id').eq('user_id', user.id).single() as { data: { id: string } | null }
+      // No landlord row yet — create it now if this user signed up as a landlord.
+      // user_metadata.role === 'landlord' is set during LandlordRegisterPage signUp.
+      // At this point the session is real and auth.users FK is guaranteed.
+      if (meta.role === 'landlord' || meta.whatsapp) {
+        await supabase.from('landlords').insert({
+          user_id:   user.id,
+          full_name: meta.full_name ?? user.email ?? 'Landlord',
+          whatsapp:  meta.whatsapp  ?? '',
+          city:      meta.city      ?? null,
+          bio:       meta.bio       ?? null,
+          status:    'not_submitted',
+          is_verified: false,
+        })
+        navigate('/landlord')
+        return
+      }
+
+      // ── Tenant flow ────────────────────────────────────────────────
+      const { data: tenant } = await supabase
+        .from('tenants').select('id').eq('user_id', user.id).single() as { data: { id: string } | null }
       if (!tenant) {
         await supabase.from('tenants').insert({
-          user_id: user.id,
-          full_name: user.user_metadata?.full_name ?? user.email ?? 'User',
+          user_id:   user.id,
+          full_name: meta.full_name ?? user.email ?? 'User',
         })
       }
       navigate(redirectTo)
