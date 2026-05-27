@@ -4,8 +4,8 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import { Resend } from 'resend'
 
 const resend = new Resend(process.env.RESEND_API_KEY)
-const FROM = process.env.FROM_EMAIL ?? 'Livana <noreply@livana.ng>'
-const APP_NAME = 'Livana'
+const FROM = process.env.FROM_EMAIL ?? 'LIVAREX <noreply@livarex.com.ng>'
+const APP_NAME = 'LIVAREX'
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') {
@@ -39,6 +39,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   // email+password after confirming — magiclink would confirm the account but
   // leave the password unverifiable.
   const appUrl = process.env.APP_URL ?? `https://${req.headers.host}`
+  let confirmationUrl: string
+
+  // Try generating a fresh signup link first
   const { data: linkData, error: linkError } = await supabaseAdmin.auth.admin.generateLink({
     type: 'signup',
     email,
@@ -46,15 +49,25 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     options: { redirectTo: `${appUrl}/auth/callback` },
   })
 
-  if (linkError || !linkData?.properties?.action_link) {
-    console.error('[send-confirmation] generateLink failed:', linkError)
-    return res.status(502).json({
-      error: 'Failed to generate confirmation link',
-      detail: linkError?.message ?? 'action_link missing from response',
+  if (linkData?.properties?.action_link) {
+    confirmationUrl = linkData.properties.action_link
+  } else {
+    // User may already exist (unconfirmed) — generate a magic link instead
+    console.warn('[send-confirmation] generateLink signup failed, trying magiclink:', linkError?.message)
+    const { data: magicData, error: magicError } = await supabaseAdmin.auth.admin.generateLink({
+      type: 'magiclink',
+      email,
+      options: { redirectTo: `${appUrl}/auth/callback` },
     })
+    if (magicError || !magicData?.properties?.action_link) {
+      console.error('[send-confirmation] both link types failed:', magicError)
+      return res.status(502).json({
+        error: 'Failed to generate confirmation link',
+        detail: magicError?.message ?? linkError?.message ?? 'action_link missing',
+      })
+    }
+    confirmationUrl = magicData.properties.action_link
   }
-
-  const confirmationUrl = linkData.properties.action_link
   const firstName = fullName.split(' ')[0]
 
   const { data, error } = await resend.emails.send({
