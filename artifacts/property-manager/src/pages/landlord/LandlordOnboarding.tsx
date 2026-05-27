@@ -49,7 +49,7 @@ export default function LandlordOnboarding() {
 
   // Step 1 — Profile
   const [profile, setProfile] = useState({
-    full_name: '', whatsapp: '', city: '', bio: '',
+    full_name: '', whatsapp: '', city: '', state: '', bio: '',
   })
 
   // Step 2 — KYC
@@ -93,6 +93,7 @@ export default function LandlordOnboarding() {
         full_name: l.full_name ?? '',
         whatsapp:  l.whatsapp  ?? '',
         city:      l.city      ?? '',
+        state:     l.state     ?? '',
         bio:       l.bio       ?? '',
       })
       setKyc({
@@ -131,6 +132,7 @@ export default function LandlordOnboarding() {
       full_name: profile.full_name,
       whatsapp:  profile.whatsapp,
       city:      profile.city  || null,
+      state:     profile.state || null,
       bio:       profile.bio   || null,
     }).eq('id', landlordId)
     setSaving(false)
@@ -394,10 +396,17 @@ export default function LandlordOnboarding() {
                 <input required value={profile.whatsapp} onChange={e => setP('whatsapp', e.target.value)}
                   placeholder="+2348012345678" className={FIELD} />
               </div>
-              <div>
-                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">City</label>
-                <input value={profile.city} onChange={e => setP('city', e.target.value)}
-                  placeholder="e.g. Lagos" className={FIELD} />
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">City</label>
+                  <input value={profile.city} onChange={e => setP('city', e.target.value)}
+                    placeholder="e.g. Lagos" className={FIELD} />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">State</label>
+                  <input value={profile.state} onChange={e => setP('state', e.target.value)}
+                    placeholder="e.g. Lagos State" className={FIELD} />
+                </div>
               </div>
               <div>
                 <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Bio <span className="text-gray-400 normal-case font-normal">(optional)</span></label>
