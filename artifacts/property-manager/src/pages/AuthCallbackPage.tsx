@@ -43,7 +43,9 @@ export default function AuthCallbackPage() {
       const meta = user.user_metadata ?? {}
 
       // ── Landlord flow ──────────────────────────────────────────────
-      // Check if a landlord row already exists
+      // Landlords are created via /api/landlord-register (auto-confirmed, no
+      // email callback). If a landlord row exists here it means they signed in
+      // via Google or a magic link — route them by status.
       const { data: existingLandlord } = await supabase
         .from('landlords').select('status').eq('user_id', user.id).single() as { data: { status: string } | null }
 
@@ -53,23 +55,6 @@ export default function AuthCallbackPage() {
         if (existingLandlord.status === 'rejected')      { navigate('/landlord/rejected');   return }
         if (existingLandlord.status === 'suspended')     { navigate('/landlord/suspended');  return }
         navigate('/landlord')
-        return
-      }
-
-      // No landlord row yet — create it now if this user signed up as a landlord.
-      // user_metadata.role === 'landlord' is set during LandlordRegisterPage signUp.
-      // At this point the session is real and auth.users FK is guaranteed.
-      if (meta.role === 'landlord' || meta.whatsapp) {
-        await supabase.from('landlords').insert({
-          user_id:     user.id,
-          full_name:   meta.full_name ?? user.email ?? 'Landlord',
-          whatsapp:    meta.whatsapp  ?? '',
-          city:        meta.city      ?? null,
-          bio:         meta.bio       ?? null,
-          status:      'not_submitted',
-          is_verified: false,
-        })
-        navigate('/landlord/onboarding')
         return
       }
 

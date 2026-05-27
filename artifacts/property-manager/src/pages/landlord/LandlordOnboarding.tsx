@@ -1,9 +1,9 @@
 import { useState, useEffect, useRef } from 'react'
-import { Link, useLocation } from 'wouter'
+import { useLocation } from 'wouter'
 import {
   User, ShieldCheck, FileText, CheckCircle2,
   Upload, X, AlertCircle, ChevronRight, Loader2,
-  CreditCard, Camera,
+  CreditCard, KeyRound,
 } from 'lucide-react'
 import { createClient } from '../../lib/supabase'
 
@@ -66,12 +66,21 @@ export default function LandlordOnboarding() {
   const [uploading, setUploading] = useState(false)
   const fileRefs = useRef<Record<string, HTMLInputElement | null>>({})
 
+  // OTP verification state
+  const [otpStep, setOtpStep]         = useState(false)   // show OTP entry screen
+  const [otpCode, setOtpCode]         = useState('')
+  const [otpLoading, setOtpLoading]   = useState(false)
+  const [otpError, setOtpError]       = useState('')
+  const [otpResending, setOtpResending] = useState(false)
+  const [userEmail, setUserEmail]     = useState('')
+
   // ── Load landlord ────────────────────────────────────────
   useEffect(() => {
     const supabase = createClient()
     supabase.auth.getUser().then(async ({ data: { user } }) => {
       if (!user) { navigate('/login'); return }
       setUserId(user.id)
+      setUserEmail(user.email ?? '')
       const { data: l } = await supabase
         .from('landlords').select('*').eq('user_id', user.id).single() as { data: any }
       if (!l) { navigate('/'); return }
@@ -150,7 +159,7 @@ export default function LandlordOnboarding() {
     setStep(3)
   }
 
-  // ── Step 3 upload + submit ───────────────────────────────
+  // ── Step 3 upload + send OTP ────────────────────────────
   async function submitAll() {
     if (!landlordId || !userId) return
     const required = DOC_SLOTS.filter(s => s.required)
@@ -172,7 +181,6 @@ export default function LandlordOnboarding() {
         .from('kyc-documents')
         .upload(path, file, { upsert: true })
       if (upErr) { setError(`Upload failed: ${upErr.message}`); setUploading(false); return }
-      // Save reference in kyc_documents table
       await supabase.from('kyc_documents').insert({
         landlord_id:  landlordId,
         doc_type:     slot.key,
@@ -181,14 +189,109 @@ export default function LandlordOnboarding() {
       })
     }
 
-    // Mark as pending
+    setUploading(false)
+
+    // Send OTP to the landlord's email for final verification
+    const res = await fetch('/api/send-otp', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: userEmail, full_name: profile.full_name }),
+    })
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}))
+      setError(body.error ?? 'Failed to send verification code. Please try again.')
+      return
+    }
+
+    setOtpStep(true)
+  }
+
+  // ── OTP verify + finalise ────────────────────────────────
+  async function verifyOtp() {
+    if (!landlordId || otpCode.length !== 6) return
+    setOtpLoading(true); setOtpError('')
+
+    const res = await fetch('/api/verify-otp', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: userEmail, otp: otpCode }),
+    })
+    const body = await res.json().catch(() => ({}))
+
+    if (!res.ok) {
+      setOtpError(body.error ?? 'Incorrect code. Please try again.')
+      setOtpLoading(false); return
+    }
+
+    // OTP verified — mark landlord as pending for admin review
+    const supabase = createClient()
     await supabase.from('landlords').update({
       status: 'pending',
       kyc_submitted_at: new Date().toISOString(),
     }).eq('id', landlordId)
 
-    setUploading(false)
-    setSubmitted(true)
+    setOtpLoading(false)
+    navigate('/landlord/pending')
+  }
+
+  async function resendOtp() {
+    setOtpResending(true); setOtpError('')
+    await fetch('/api/send-otp', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: userEmail, full_name: profile.full_name }),
+    })
+    setOtpResending(false)
+    setOtpCode('')
+  }
+
+  // ── OTP verification screen ──────────────────────────────
+  if (otpStep) {
+    return (
+      <div className="min-h-screen bg-[#FAFAFA] flex items-center justify-center px-4">
+        <div className="max-w-sm w-full bg-white rounded-3xl border border-gray-100 shadow-sm p-8 text-center">
+          <div className="w-16 h-16 rounded-full bg-blue-50 flex items-center justify-center mx-auto mb-5">
+            <KeyRound className="w-8 h-8 text-blue-600" />
+          </div>
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">Verify your email</h2>
+          <p className="text-sm text-gray-500 mb-6 leading-relaxed">
+            We sent a 6-digit code to <span className="font-semibold text-gray-700">{userEmail}</span>.
+            Enter it below to complete your application.
+          </p>
+
+          {otpError && (
+            <div className="mb-4 px-4 py-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-700 text-left">
+              {otpError}
+            </div>
+          )}
+
+          <input
+            type="text"
+            inputMode="numeric"
+            maxLength={6}
+            value={otpCode}
+            onChange={e => setOtpCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+            placeholder="000000"
+            className="w-full text-center text-3xl font-bold tracking-[0.5em] px-4 py-4 rounded-2xl border border-gray-200 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all mb-4"
+          />
+
+          <button
+            onClick={verifyOtp}
+            disabled={otpLoading || otpCode.length !== 6}
+            className="w-full py-3.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-bold rounded-2xl transition-all text-sm flex items-center justify-center gap-2 mb-4">
+            {otpLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <ShieldCheck className="w-4 h-4" />}
+            {otpLoading ? 'Verifying…' : 'Verify & Submit Application'}
+          </button>
+
+          <button
+            onClick={resendOtp}
+            disabled={otpResending}
+            className="text-sm text-blue-600 hover:text-blue-700 font-semibold disabled:opacity-50">
+            {otpResending ? 'Sending…' : "Didn't receive it? Resend code"}
+          </button>
+        </div>
+      </div>
+    )
   }
 
   // ── Submitted screen ─────────────────────────────────────
