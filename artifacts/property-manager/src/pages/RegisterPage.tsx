@@ -37,13 +37,23 @@ export default function RegisterPage() {
       // Supabase built-in email is disabled — send via Resend through our API.
       try {
         const apiUrl = import.meta.env.VITE_API_URL ?? ''
-        await fetch(`${apiUrl}/api/email/send-confirmation`, {
+        const res = await fetch(`${apiUrl}/api/email/send-confirmation`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ email, fullName }),
         })
-      } catch {
-        // Non-fatal: user can still request a resend from the confirmation screen.
+        if (!res.ok) {
+          const body = await res.json().catch(() => ({}))
+          console.error('[send-confirmation] API error:', res.status, body)
+          setError(`Failed to send confirmation email (${res.status}). Please try again.`)
+          setLoading(false)
+          return
+        }
+      } catch (err) {
+        console.error('[send-confirmation] Network error:', err)
+        setError('Could not reach the email service. Please try again.')
+        setLoading(false)
+        return
       }
       setEmailSent(true)
       setLoading(false)
