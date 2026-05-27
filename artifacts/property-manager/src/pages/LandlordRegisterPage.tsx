@@ -63,6 +63,14 @@ export default function LandlordRegisterPage() {
             email:    form.email,
             fullName: form.fullName,
             password: form.password,
+            // Pass user_metadata so generateLink preserves role and landlord fields
+            metadata: {
+              full_name: form.fullName,
+              whatsapp:  form.whatsapp,
+              city:      form.city     || null,
+              bio:       form.bio      || null,
+              role:      'landlord',
+            },
           }),
         })
         if (!res.ok) {
@@ -89,7 +97,18 @@ export default function LandlordRegisterPage() {
       await fetch('/api/send-confirmation', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: submittedEmail, fullName: form.fullName, password: form.password }),
+        body: JSON.stringify({
+          email:    submittedEmail,
+          fullName: form.fullName,
+          password: form.password,
+          metadata: {
+            full_name: form.fullName,
+            whatsapp:  form.whatsapp,
+            city:      form.city     || null,
+            bio:       form.bio      || null,
+            role:      'landlord',
+          },
+        }),
       })
     } catch { /* silent */ }
     setResending(false); setResent(true)
