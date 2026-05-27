@@ -112,9 +112,11 @@ function AdminChatThread({
     setSending(true)
     setInput('')
 
-    // Optimistic
+    const optId = `opt-${Date.now()}`
+
+    // Optimistic insert
     const optimistic: SupportMessage = {
-      id: `opt-${Date.now()}`,
+      id: optId,
       ticket_id: ticket.id,
       sender_role: 'admin',
       body,
@@ -123,11 +125,16 @@ function AdminChatThread({
     setMessages(prev => [...prev, optimistic])
 
     const supabase = createClient()
-    await supabase.from('support_messages').insert({
-      ticket_id: ticket.id,
-      sender_role: 'admin',
-      body,
-    })
+    const { data: inserted } = await supabase
+      .from('support_messages')
+      .insert({ ticket_id: ticket.id, sender_role: 'admin', body })
+      .select()
+      .single()
+
+    // Replace optimistic entry with the real row (avoids Realtime duplicate)
+    if (inserted) {
+      setMessages(prev => prev.map(m => m.id === optId ? inserted as SupportMessage : m))
+    }
 
     // Auto-move to in_progress on first admin reply if still open
     if (ticket.status === 'open') {

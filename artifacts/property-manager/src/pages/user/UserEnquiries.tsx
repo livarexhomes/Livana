@@ -245,9 +245,11 @@ function ChatThread({ ticket, onBack }: { ticket: SupportTicket; onBack: () => v
       clearImage()
     }
 
+    const optId = `opt-${Date.now()}`
+
     // Optimistic insert
     const optimistic: SupportMessage = {
-      id: `opt-${Date.now()}`,
+      id: optId,
       ticket_id: ticket.id,
       sender_role: 'tenant',
       body: body || '',
@@ -256,12 +258,17 @@ function ChatThread({ ticket, onBack }: { ticket: SupportTicket; onBack: () => v
     }
     setMessages(prev => [...prev, optimistic])
 
-    await supabase.from('support_messages').insert({
-      ticket_id: ticket.id,
-      sender_role: 'tenant',
-      body: body || '',
-      image_url: uploadedUrl,
-    })
+    const { data: inserted } = await supabase
+      .from('support_messages')
+      .insert({ ticket_id: ticket.id, sender_role: 'tenant', body: body || '', image_url: uploadedUrl })
+      .select()
+      .single()
+
+    // Replace optimistic entry with the real row (avoids Realtime duplicate)
+    if (inserted) {
+      setMessages(prev => prev.map(m => m.id === optId ? inserted as SupportMessage : m))
+    }
+
     setSending(false)
   }
 
