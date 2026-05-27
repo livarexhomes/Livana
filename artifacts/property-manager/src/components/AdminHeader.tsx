@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, ReactNode } from 'react'
 import { useLocation } from 'wouter'
-import { Search, Bell, X, Building2, Users, MessageSquare, ArrowRight, ChevronRight, ShieldCheck } from 'lucide-react'
+import { Search, Bell, X, Building2, Users, MessageSquare, ArrowRight, ChevronRight, ShieldCheck, Headphones } from 'lucide-react'
 import { createClient } from '../lib/supabase'
 
 type SearchResult = {
@@ -39,55 +39,68 @@ export default function AdminHeader({ title, subtitle, action, pendingCount = 0 
   const notifRef  = useRef<HTMLDivElement>(null)
   const inputRef  = useRef<HTMLInputElement>(null)
 
-  // Load notifications: KYC pending + new signups (last 48h) + open enquiries
-  useEffect(() => {
+  // Load notifications: KYC pending + new signups (last 48h) + open enquiries + open support tickets
+  async function loadNotifs() {
     const supabase = createClient()
     const cutoff = new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString()
 
-    Promise.all([
-      // Landlords with pending KYC
+    const [
+      { data: kycPending },
+      { data: newLandlords },
+      { data: newTenants },
+      { data: enqs },
+      { data: tickets },
+    ] = await Promise.all([
       supabase.from('landlords').select('id, full_name').eq('status', 'pending').order('created_at', { ascending: false }).limit(5),
-      // Brand-new landlord signups (last 48h, any status)
       supabase.from('landlords').select('id, full_name, created_at').gte('created_at', cutoff).order('created_at', { ascending: false }).limit(5),
-      // New tenant signups (last 48h)
       supabase.from('tenants').select('id, full_name, created_at').gte('created_at', cutoff).order('created_at', { ascending: false }).limit(5),
-      // Open enquiries
-      supabase.from('enquiries').select('id, message, status, properties(title)').eq('status', 'open').order('created_at', { ascending: false }).limit(3),
-    ]).then(([{ data: kycPending }, { data: newLandlords }, { data: newTenants }, { data: enqs }]) => {
-      const items: Notif[] = []
-      const seen = new Set<string>()
+      supabase.from('enquiries').select('id, message, status, properties(title)').eq('status', 'open').order('created_at', { ascending: false }).limit(5),
+      supabase.from('support_tickets').select('id, subject, created_at, tenants(full_name)').eq('status', 'open').order('created_at', { ascending: false }).limit(5),
+    ])
 
-      // KYC awaiting review
-      for (const l of kycPending ?? []) {
-        if (!seen.has(l.id)) {
-          seen.add(l.id)
-          items.push({ id: `kyc-${l.id}`, label: `${l.full_name} submitted KYC`, sub: 'Awaiting your review', href: '/admin/kyc', type: 'kyc' })
-        }
+    const items: Notif[] = []
+    const seen = new Set<string>()
+
+    for (const l of kycPending ?? []) {
+      if (!seen.has(l.id)) {
+        seen.add(l.id)
+        items.push({ id: `kyc-${l.id}`, label: `${l.full_name} submitted KYC`, sub: 'Awaiting your review', href: '/admin/kyc', type: 'kyc' })
       }
-
-      // New landlord signups
-      for (const l of newLandlords ?? []) {
-        if (!seen.has(l.id)) {
-          seen.add(l.id)
-          const ago = relAgo(l.created_at)
-          items.push({ id: `ll-${l.id}`, label: `${l.full_name} signed up as landlord`, sub: ago, href: '/admin/kyc', type: 'signup' })
-        }
+    }
+    for (const l of newLandlords ?? []) {
+      if (!seen.has(l.id)) {
+        seen.add(l.id)
+        items.push({ id: `ll-${l.id}`, label: `${l.full_name} signed up as landlord`, sub: relAgo(l.created_at), href: '/admin/kyc', type: 'signup' })
       }
+    }
+    for (const t of newTenants ?? []) {
+      items.push({ id: `tn-${t.id}`, label: `${t.full_name} created an account`, sub: relAgo(t.created_at), href: '/admin/activity', type: 'signup' })
+    }
+    for (const e of enqs ?? []) {
+      items.push({ id: `eq-${e.id}`, label: (e as any).properties?.title ?? 'Property enquiry', sub: (e.message ?? '').slice(0, 55), href: '/admin/properties', type: 'info' })
+    }
+    for (const tk of tickets ?? []) {
+      items.push({ id: `tk-${tk.id}`, label: `Support: ${tk.subject}`, sub: `From ${(tk as any).tenants?.full_name ?? 'tenant'} · ${relAgo(tk.created_at)}`, href: '/admin/support', type: 'info' })
+    }
 
-      // New tenant signups
-      for (const t of newTenants ?? []) {
-        const ago = relAgo(t.created_at)
-        items.push({ id: `tn-${t.id}`, label: `${t.full_name} created an account`, sub: ago, href: '/admin/activity', type: 'signup' })
-      }
+    setNotifs(items)
+    setUnread(items.length)
+  }
 
-      // Open enquiries
-      for (const e of enqs ?? []) {
-        items.push({ id: `eq-${e.id}`, label: (e as any).properties?.title ?? 'Property enquiry', sub: (e.message ?? '').slice(0, 55), href: '/admin/properties', type: 'info' })
-      }
+  useEffect(() => {
+    loadNotifs()
 
-      setNotifs(items)
-      setUnread(items.length)
-    })
+    // Realtime: re-fetch on new enquiry or support ticket
+    const supabase = createClient()
+    const channel = supabase
+      .channel('admin-notif-watch')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'enquiries' }, loadNotifs)
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'support_tickets' }, loadNotifs)
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'tenants' }, loadNotifs)
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'landlords' }, loadNotifs)
+      .subscribe()
+
+    return () => { supabase.removeChannel(channel) }
   }, [])
 
   function relAgo(ts: string) {
@@ -143,7 +156,10 @@ export default function AdminHeader({ title, subtitle, action, pendingCount = 0 
   }
 
   function openNotif() {
-    setShowNotif(v => !v); setShowSearch(false); setUnread(0)
+    setShowNotif(v => !v)
+    setShowSearch(false)
+    // Clear badge once panel is opened
+    setTimeout(() => setUnread(0), 300)
   }
 
   function goTo(href: string) {
@@ -152,11 +168,12 @@ export default function AdminHeader({ title, subtitle, action, pendingCount = 0 
 
   const ICON_MAP = { property: Building2, landlord: Users, enquiry: MessageSquare }
 
-  const notifIconFor = (type: Notif['type']) => {
-    if (type === 'kyc')    return { Icon: ShieldCheck, bg: 'bg-indigo-100', ic: 'text-indigo-600' }
-    if (type === 'signup') return { Icon: Users,       bg: 'bg-blue-100',   ic: 'text-blue-600'   }
-    if (type === 'warning')return { Icon: Users,       bg: 'bg-amber-100',  ic: 'text-amber-600'  }
-    return                        { Icon: MessageSquare,bg: 'bg-blue-100',  ic: 'text-blue-600'   }
+  const notifIconFor = (type: Notif['type'], id?: string) => {
+    if (type === 'kyc')    return { Icon: ShieldCheck,  bg: 'bg-indigo-100', ic: 'text-indigo-600' }
+    if (type === 'signup') return { Icon: Users,        bg: 'bg-blue-100',   ic: 'text-blue-600'   }
+    if (type === 'warning')return { Icon: Users,        bg: 'bg-amber-100',  ic: 'text-amber-600'  }
+    if (id?.startsWith('tk-')) return { Icon: Headphones, bg: 'bg-violet-100', ic: 'text-violet-600' }
+    return                        { Icon: MessageSquare, bg: 'bg-emerald-100', ic: 'text-emerald-600' }
   }
 
   return (
@@ -257,7 +274,7 @@ export default function AdminHeader({ title, subtitle, action, pendingCount = 0 
               ) : (
                 <div className="divide-y divide-gray-50 max-h-80 overflow-y-auto">
                   {notifs.map(n => {
-                    const { Icon, bg, ic } = notifIconFor(n.type)
+                    const { Icon, bg, ic } = notifIconFor(n.type, n.id)
                     return (
                       <button key={n.id} type="button" onClick={() => goTo(n.href)}
                         className="w-full flex items-start gap-3 px-4 py-3.5 hover:bg-blue-50/50 transition-colors text-left group">
