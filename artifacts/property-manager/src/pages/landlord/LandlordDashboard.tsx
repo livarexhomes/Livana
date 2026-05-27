@@ -281,7 +281,7 @@ export default function LandlordDashboard() {
                   </Link>
                 </div>
 
-                {/* Listing cards */}
+                {/* Listing grid */}
                 {filtered.length === 0 ? (
                   <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-16 text-center flex flex-col items-center">
                     <div className="w-14 h-14 bg-gray-50 rounded-2xl flex items-center justify-center mb-4">
@@ -306,7 +306,7 @@ export default function LandlordDashboard() {
                     )}
                   </div>
                 ) : (
-                  <div className="space-y-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
                     {filtered.map(p => {
                       const st = STATUS_STYLE[p.status] ?? { bg: 'bg-gray-100', text: 'text-gray-600', dot: 'bg-gray-400', label: p.status }
                       const imgs: any[] = p.property_images ?? []
@@ -315,9 +315,9 @@ export default function LandlordDashboard() {
 
                       return (
                         <div key={p.id}
-                          className="flex bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-sm hover:shadow-md hover:border-gray-200 transition-all duration-200 group">
+                          className="group bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-sm hover:shadow-md hover:border-gray-200 transition-all duration-200 flex flex-col">
                           {/* Image */}
-                          <div className="relative w-28 xs:w-36 sm:w-52 shrink-0 bg-gray-100 overflow-hidden min-h-[120px]">
+                          <div className="relative aspect-[4/3] bg-gray-100 overflow-hidden">
                             {coverUrl ? (
                               <img src={coverUrl} alt={p.title}
                                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
@@ -325,77 +325,77 @@ export default function LandlordDashboard() {
                               />
                             ) : (
                               <div className="w-full h-full flex items-center justify-center text-gray-300">
-                                <Building2 className="w-10 h-10" />
+                                <Building2 className="w-12 h-12" />
                               </div>
                             )}
-                            <div className="absolute top-2.5 left-2.5">
-                              <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold ${st.bg} ${st.text}`}>
+                            {/* Status badge */}
+                            <div className="absolute top-3 left-3">
+                              <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-bold shadow-sm ${st.bg} ${st.text}`}>
                                 <span className={`w-1.5 h-1.5 rounded-full ${st.dot}`} />
                                 {st.label}
                               </span>
                             </div>
+                            {/* Type badge */}
+                            <div className="absolute top-3 right-3">
+                              <span className="px-2.5 py-1 bg-gray-900/80 backdrop-blur-sm text-white text-[11px] font-bold rounded-lg">
+                                {TYPE_LABEL[p.type] ?? p.type}
+                              </span>
+                            </div>
+                            {/* Listed time */}
+                            <div className="absolute bottom-3 left-3">
+                              <span className="flex items-center gap-1 px-2 py-0.5 bg-black/60 backdrop-blur-sm text-white text-[10px] font-semibold rounded-md">
+                                <Clock className="w-2.5 h-2.5" />
+                                Listed {timeAgo(p.created_at)}
+                              </span>
+                            </div>
+                            {p.featured && (
+                              <div className="absolute bottom-3 right-3">
+                                <span className="px-2 py-0.5 bg-amber-400 text-amber-900 text-[10px] font-bold rounded-md uppercase tracking-wide">
+                                  Featured
+                                </span>
+                              </div>
+                            )}
                           </div>
 
                           {/* Content */}
-                          <div className="flex-1 min-w-0 p-4 flex flex-col justify-between">
-                            <div>
-                              <div className="flex items-start justify-between gap-2">
-                                <div>
-                                  <span className="text-lg sm:text-2xl font-extrabold text-gray-900 tracking-tight">
-                                    ₦{Number(p.price).toLocaleString()}
-                                  </span>
-                                  {(p.type === 'rent' || p.type === 'lease') && (
-                                    <span className="text-sm text-gray-400 ml-1">yr</span>
-                                  )}
-                                </div>
-                                <Link href={`/landlord/listings/${p.id}/edit`}
-                                  className="shrink-0 px-3 py-1.5 text-xs font-bold bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors">
-                                  Edit
-                                </Link>
+                          <div className="p-4 flex flex-col flex-1">
+                            <div className="flex items-start justify-between gap-2 mb-1">
+                              <div>
+                                <span className="text-2xl font-bold text-gray-900 tracking-tight">
+                                  ₦{Number(p.price).toLocaleString()}
+                                </span>
+                                {(p.type === 'rent' || p.type === 'lease') && (
+                                  <span className="text-sm text-gray-400 ml-1">yr</span>
+                                )}
                               </div>
+                              <Link href={`/landlord/listings/${p.id}/edit`}
+                                className="shrink-0 px-3 py-1.5 text-xs font-bold bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors">
+                                Edit
+                              </Link>
+                            </div>
 
-                              <p className="text-sm font-semibold text-gray-800 mt-1 truncate">{p.title}</p>
+                            <p className="text-sm font-semibold text-gray-800 truncate">{p.title}</p>
 
-                              <div className="flex items-center gap-1 mt-1 text-green-600 text-xs font-medium">
-                                <MapPin className="w-3.5 h-3.5 shrink-0" />
-                                <span className="truncate">{p.address ? `${p.address}, ${p.city}` : p.city}</span>
-                              </div>
+                            <div className="flex items-center gap-1 mt-1.5 text-green-600 text-xs font-medium">
+                              <MapPin className="w-3.5 h-3.5 shrink-0" />
+                              <span className="truncate">{p.address ? `${p.address}, ${p.city}` : p.city}</span>
                             </div>
 
                             {/* Specs */}
-                            <div className="flex items-center gap-3 mt-3 flex-wrap">
-                              <span className="flex items-center gap-1.5 text-sm text-gray-600">
-                                <BedDouble className="w-4 h-4 text-gray-400" />
-                                <span className="font-medium">{p.bedrooms}</span>
-                                <span className="text-gray-400">Bed{p.bedrooms !== 1 ? 's' : ''}</span>
+                            <div className="flex items-center gap-4 text-sm text-gray-500 mt-4 pt-4 border-t border-gray-50">
+                              <span className="flex items-center gap-1.5">
+                                <BedDouble className="w-4 h-4 text-blue-400" />
+                                <span className="font-medium text-gray-700">{p.bedrooms}</span>
+                                <span className="text-xs text-gray-400">bed{p.bedrooms !== 1 ? 's' : ''}</span>
                               </span>
-                              <span className="w-px h-4 bg-gray-200" />
-                              <span className="flex items-center gap-1.5 text-sm text-gray-600">
-                                <Bath className="w-4 h-4 text-gray-400" />
-                                <span className="font-medium">{p.bathrooms}</span>
-                                <span className="text-gray-400">Bath</span>
-                              </span>
-                              <span className="w-px h-4 bg-gray-200" />
-                              <span className="px-2 py-0.5 bg-gray-100 text-gray-600 text-xs font-semibold rounded-md">
-                                {TYPE_LABEL[p.type] ?? p.type}
+                              <span className="flex items-center gap-1.5">
+                                <Bath className="w-4 h-4 text-blue-400" />
+                                <span className="font-medium text-gray-700">{p.bathrooms}</span>
+                                <span className="text-xs text-gray-400">bath</span>
                               </span>
                               {p.area_sqft && (
-                                <>
-                                  <span className="w-px h-4 bg-gray-200" />
-                                  <span className="text-xs text-gray-400">{Number(p.area_sqft).toLocaleString()} sqft</span>
-                                </>
-                              )}
-                            </div>
-
-                            {/* Footer */}
-                            <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-50">
-                              <div className="flex items-center gap-1 text-[10px] text-gray-400">
-                                <Clock className="w-3 h-3" />
-                                {timeAgo(p.created_at)}
-                              </div>
-                              {p.featured && (
-                                <span className="px-2 py-0.5 bg-amber-50 text-amber-700 text-[10px] font-bold rounded-md border border-amber-200 uppercase tracking-wide">
-                                  Featured
+                                <span className="ml-auto text-xs font-medium text-gray-400 bg-gray-50 px-2 py-0.5 rounded-lg">
+                                  {Number(p.area_sqft).toLocaleString()} sqft
                                 </span>
                               )}
                             </div>
