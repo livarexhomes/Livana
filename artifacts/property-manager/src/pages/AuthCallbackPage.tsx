@@ -85,14 +85,22 @@ export default function AuthCallbackPage() {
       navigate(redirectTo)
     }
 
-    // Implicit flow — session is in the URL hash, getSession() picks it up automatically
+    // Implicit flow — session is in the URL hash, getSession() picks it up automatically.
+    // We then call getUser() to get the freshest user_metadata from the server,
+    // since session.user may carry stale metadata baked into the confirmation token.
     supabase.auth.getSession().then(async ({ data: { session }, error }) => {
       if (error || !session) {
         setErrorMsg(error?.message ?? 'No session found. Please try signing in again.')
         setTimeout(() => navigate('/login?error=auth_callback_failed'), 3000)
         return
       }
-      await handleUser(session.user)
+      const { data: { user }, error: userError } = await supabase.auth.getUser()
+      if (userError || !user) {
+        setErrorMsg(userError?.message ?? 'Could not load user. Please try signing in again.')
+        setTimeout(() => navigate('/login?error=auth_callback_failed'), 3000)
+        return
+      }
+      await handleUser(user)
     })
   }, [])
 
