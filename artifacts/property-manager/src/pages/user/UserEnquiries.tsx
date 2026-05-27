@@ -3,7 +3,7 @@ import { Link } from 'wouter'
 import {
   HeadphonesIcon, ArrowRight, Plus, Send, ChevronLeft,
   Clock, AlertCircle, CheckCircle2, XCircle, Loader2,
-  MessageSquare, Ticket,
+  MessageSquare, Ticket, ImageIcon, X as XIcon,
 } from 'lucide-react'
 import AuthGuard from '../../components/AuthGuard'
 import { UserLayout } from './UserDashboard'
@@ -26,6 +26,7 @@ interface SupportMessage {
   ticket_id: string
   sender_role: 'tenant' | 'admin'
   body: string
+  image_url?: string | null
   created_at: string
 }
 
@@ -155,13 +156,30 @@ function NewTicketForm({ tenantId, onCreated }: { tenantId: string; onCreated: (
 // ── Chat Thread ───────────────────────────────────────────────────────────────
 
 function ChatThread({ ticket, onBack }: { ticket: SupportTicket; onBack: () => void }) {
-  const [messages, setMessages] = useState<SupportMessage[]>([])
-  const [loading, setLoading]   = useState(true)
-  const [input, setInput]       = useState('')
-  const [sending, setSending]   = useState(false)
-  const bottomRef               = useRef<HTMLDivElement>(null)
+  const [messages, setMessages]     = useState<SupportMessage[]>([])
+  const [loading, setLoading]       = useState(true)
+  const [input, setInput]           = useState('')
+  const [sending, setSending]       = useState(false)
+  const [imageFile, setImageFile]   = useState<File | null>(null)
+  const [imagePreview, setImagePreview] = useState<string | null>(null)
+  const fileInputRef                = useRef<HTMLInputElement>(null)
+  const bottomRef                   = useRef<HTMLDivElement>(null)
   const s = STATUS_META[ticket.status]
   const p = PRIORITY_META[ticket.priority]
+
+  function handleImageSelect(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setImageFile(file)
+    setImagePreview(URL.createObjectURL(file))
+    e.target.value = ''
+  }
+
+  function clearImage() {
+    setImageFile(null)
+    if (imagePreview) URL.revokeObjectURL(imagePreview)
+    setImagePreview(null)
+  }
 
   // Scroll to bottom whenever messages change
   useEffect(() => {
@@ -204,25 +222,45 @@ function ChatThread({ ticket, onBack }: { ticket: SupportTicket; onBack: () => v
   async function sendMessage(e: React.FormEvent) {
     e.preventDefault()
     const body = input.trim()
-    if (!body || sending) return
+    if ((!body && !imageFile) || sending) return
     setSending(true)
     setInput('')
+
+    const supabase = createClient()
+    let uploadedUrl: string | null = null
+
+    // Upload image if present
+    if (imageFile) {
+      const ext = imageFile.name.split('.').pop() ?? 'jpg'
+      const path = `support/${ticket.id}/${Date.now()}.${ext}`
+      const { error: upErr } = await supabase.storage
+        .from('support-attachments')
+        .upload(path, imageFile, { upsert: false })
+      if (!upErr) {
+        const { data: urlData } = supabase.storage
+          .from('support-attachments')
+          .getPublicUrl(path)
+        uploadedUrl = urlData.publicUrl
+      }
+      clearImage()
+    }
 
     // Optimistic insert
     const optimistic: SupportMessage = {
       id: `opt-${Date.now()}`,
       ticket_id: ticket.id,
       sender_role: 'tenant',
-      body,
+      body: body || '',
+      image_url: imagePreview,
       created_at: new Date().toISOString(),
     }
     setMessages(prev => [...prev, optimistic])
 
-    const supabase = createClient()
     await supabase.from('support_messages').insert({
       ticket_id: ticket.id,
       sender_role: 'tenant',
-      body,
+      body: body || '',
+      image_url: uploadedUrl,
     })
     setSending(false)
   }
@@ -278,13 +316,21 @@ function ChatThread({ ticket, onBack }: { ticket: SupportTicket; onBack: () => v
                       <HeadphonesIcon className="w-3.5 h-3.5 text-white" />
                     </div>
                   )}
-                  <div className={`max-w-[75%] ${isTenant ? 'items-end' : 'items-start'} flex flex-col gap-1`}>
-                    <div className={`px-4 py-2.5 rounded-2xl text-sm leading-relaxed ${
+                  <div className={`max-w-[80%] sm:max-w-[75%] ${isTenant ? 'items-end' : 'items-start'} flex flex-col gap-1`}>
+                    <div className={`px-4 py-2.5 rounded-2xl text-sm leading-relaxed break-words overflow-wrap-anywhere ${
                       isTenant
                         ? 'bg-gray-900 text-white rounded-br-sm'
                         : 'bg-gray-100 text-gray-800 rounded-bl-sm'
                     } ${msg.id.startsWith('opt-') ? 'opacity-60' : ''}`}>
-                      {msg.body}
+                      {msg.image_url && (
+                        <img
+                          src={msg.image_url}
+                          alt="attachment"
+                          className="rounded-xl mb-2 max-w-full max-h-48 object-cover cursor-pointer"
+                          onClick={() => window.open(msg.image_url!, '_blank')}
+                        />
+                      )}
+                      {msg.body && <span>{msg.body}</span>}
                     </div>
                     <span className="text-[10px] text-gray-400 px-1">
                       {format(new Date(msg.created_at), 'h:mm a')}
@@ -315,21 +361,51 @@ function ChatThread({ ticket, onBack }: { ticket: SupportTicket; onBack: () => v
 
       {/* Input */}
       {!isClosed ? (
-        <form onSubmit={sendMessage} className="px-4 py-3 border-t border-gray-100 flex items-end gap-2 shrink-0">
-          <textarea
-            rows={1}
-            value={input}
-            onChange={e => setInput(e.target.value)}
-            onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(e as any) } }}
-            placeholder="Type a message… (Enter to send)"
-            className="flex-1 px-4 py-2.5 rounded-xl border border-gray-200 text-sm bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-gray-900 transition-all resize-none"
-          />
-          <button
-            type="submit" disabled={!input.trim() || sending}
-            className="w-10 h-10 rounded-xl bg-gray-900 hover:bg-gray-800 disabled:opacity-40 text-white flex items-center justify-center transition-all shrink-0"
-          >
-            {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-          </button>
+        <form onSubmit={sendMessage} className="px-4 py-3 border-t border-gray-100 shrink-0 space-y-2">
+          {/* Image preview */}
+          {imagePreview && (
+            <div className="relative inline-block">
+              <img src={imagePreview} alt="preview" className="h-20 rounded-xl object-cover border border-gray-200" />
+              <button
+                type="button" onClick={clearImage}
+                className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-gray-900 text-white flex items-center justify-center hover:bg-red-600 transition-colors"
+              >
+                <XIcon className="w-3 h-3" />
+              </button>
+            </div>
+          )}
+          <div className="flex items-end gap-2">
+            {/* Image attach button */}
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              className="w-10 h-10 rounded-xl border border-gray-200 bg-gray-50 hover:bg-gray-100 text-gray-500 flex items-center justify-center transition-colors shrink-0"
+              title="Attach image"
+            >
+              <ImageIcon className="w-4 h-4" />
+            </button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={handleImageSelect}
+            />
+            <textarea
+              rows={1}
+              value={input}
+              onChange={e => setInput(e.target.value)}
+              onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(e as any) } }}
+              placeholder="Type a message… (Enter to send)"
+              className="flex-1 px-4 py-2.5 rounded-xl border border-gray-200 text-sm bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-gray-900 transition-all resize-none"
+            />
+            <button
+              type="submit" disabled={(!input.trim() && !imageFile) || sending}
+              className="w-10 h-10 rounded-xl bg-gray-900 hover:bg-gray-800 disabled:opacity-40 text-white flex items-center justify-center transition-all shrink-0"
+            >
+              {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+            </button>
+          </div>
         </form>
       ) : (
         <div className="px-5 py-3 border-t border-gray-100 text-center text-xs text-gray-400 shrink-0">
@@ -398,10 +474,10 @@ export default function UserSupportPage() {
   return (
     <AuthGuard require="tenant">
       <UserLayout title="Support">
-        <div className="flex gap-5 h-[calc(100vh-130px)]">
+        <div className="flex gap-5 h-[calc(100dvh-130px)] min-h-0">
 
           {/* ── Left: ticket list ── */}
-          <div className={`flex flex-col gap-3 w-full lg:w-80 xl:w-96 shrink-0 ${selected ? 'hidden lg:flex' : 'flex'}`}>
+          <div className={`flex flex-col gap-3 w-full lg:w-80 xl:w-96 shrink-0 min-h-0 ${selected ? 'hidden lg:flex' : 'flex'}`}>
 
             {/* Header */}
             <div className="flex items-center justify-between">
@@ -493,7 +569,7 @@ export default function UserSupportPage() {
           </div>
 
           {/* ── Right: chat thread ── */}
-          <div className={`flex-1 min-w-0 ${selected ? 'flex' : 'hidden lg:flex'} flex-col`}>
+          <div className={`flex-1 min-w-0 min-h-0 ${selected ? 'flex' : 'hidden lg:flex'} flex-col`}>
             {selected ? (
               <ChatThread
                 key={selected.id}

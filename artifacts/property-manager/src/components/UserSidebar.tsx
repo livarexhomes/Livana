@@ -186,10 +186,10 @@ export default function UserSidebar({ displayName = 'User', userEmail, initials 
 
       {/* Backdrop */}
       <div onClick={onClose}
-        className={`md:hidden fixed inset-0 z-40 bg-black/70 backdrop-blur-sm transition-opacity duration-300 ${open ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`} />
+        className={`md:hidden fixed inset-0 z-[55] bg-black/70 backdrop-blur-sm transition-opacity duration-300 ${open ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`} />
 
       {/* Drawer */}
-      <div className={`md:hidden fixed top-0 left-0 h-full w-72 max-w-[85vw] z-50 shadow-2xl transition-transform duration-300 ease-in-out ${open ? 'translate-x-0' : '-translate-x-full'}`}>
+      <div className={`md:hidden fixed top-0 left-0 h-full w-72 max-w-[85vw] z-[60] shadow-2xl transition-transform duration-300 ease-in-out ${open ? 'translate-x-0' : '-translate-x-full'}`}>
         <SidebarContent mobile />
       </div>
     </>
