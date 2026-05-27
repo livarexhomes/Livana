@@ -448,9 +448,13 @@ CREATE TABLE IF NOT EXISTS public.support_messages (
   id          UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
   ticket_id   UUID        NOT NULL REFERENCES public.support_tickets(id) ON DELETE CASCADE,
   sender_role TEXT        NOT NULL CHECK (sender_role IN ('tenant', 'admin')),
-  body        TEXT        NOT NULL,
+  body        TEXT        NOT NULL DEFAULT '',
+  image_url   TEXT,
   created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+-- Add image_url if upgrading an existing database
+ALTER TABLE public.support_messages ADD COLUMN IF NOT EXISTS image_url TEXT;
 
 CREATE INDEX IF NOT EXISTS idx_support_messages_ticket ON public.support_messages(ticket_id);
 
@@ -498,22 +502,20 @@ CREATE TRIGGER trg_support_message_update_ticket
   AFTER INSERT ON public.support_messages
   FOR EACH ROW EXECUTE FUNCTION public.update_ticket_updated_at();
 
--- Enable Realtime for live chat (safe to run even if already added)
+-- Enable Realtime (safe to run even if already added)
 DO $$
+DECLARE
+  tables TEXT[] := ARRAY['support_messages','support_tickets','enquiries','tenants','landlords'];
+  t TEXT;
 BEGIN
-  IF NOT EXISTS (
-    SELECT 1 FROM pg_publication_tables
-    WHERE pubname = 'supabase_realtime' AND tablename = 'support_messages'
-  ) THEN
-    ALTER PUBLICATION supabase_realtime ADD TABLE public.support_messages;
-  END IF;
-
-  IF NOT EXISTS (
-    SELECT 1 FROM pg_publication_tables
-    WHERE pubname = 'supabase_realtime' AND tablename = 'support_tickets'
-  ) THEN
-    ALTER PUBLICATION supabase_realtime ADD TABLE public.support_tickets;
-  END IF;
+  FOREACH t IN ARRAY tables LOOP
+    IF NOT EXISTS (
+      SELECT 1 FROM pg_publication_tables
+      WHERE pubname = 'supabase_realtime' AND tablename = t
+    ) THEN
+      EXECUTE format('ALTER PUBLICATION supabase_realtime ADD TABLE public.%I', t);
+    END IF;
+  END LOOP;
 END;
 $$;
 
@@ -627,3 +629,25 @@ DROP POLICY IF EXISTS "Authenticated delete project images" ON storage.objects;
 CREATE POLICY "Authenticated delete project images"
   ON storage.objects FOR DELETE
   USING (bucket_id = 'project-images' AND auth.role() = 'authenticated');
+
+-- support-attachments (chat image uploads)
+INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+VALUES (
+  'support-attachments', 'support-attachments', true,
+  10485760,
+  ARRAY['image/jpeg','image/jpg','image/png','image/webp','image/gif']
+)
+ON CONFLICT (id) DO UPDATE SET
+  public = true,
+  file_size_limit = 10485760,
+  allowed_mime_types = ARRAY['image/jpeg','image/jpg','image/png','image/webp','image/gif'];
+
+DROP POLICY IF EXISTS "Public support attachment read" ON storage.objects;
+CREATE POLICY "Public support attachment read"
+  ON storage.objects FOR SELECT
+  USING (bucket_id = 'support-attachments');
+
+DROP POLICY IF EXISTS "Authenticated support attachment upload" ON storage.objects;
+CREATE POLICY "Authenticated support attachment upload"
+  ON storage.objects FOR INSERT
+  WITH CHECK (bucket_id = 'support-attachments' AND auth.role() = 'authenticated');
