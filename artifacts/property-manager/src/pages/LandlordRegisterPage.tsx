@@ -53,7 +53,27 @@ export default function LandlordRegisterPage() {
     setSubmittedEmail(form.email)
 
     if (!data.session) {
-      // Email confirmation required — Supabase sends the confirmation email.
+      // No immediate session — email confirmation required.
+      // Send via Resend through our API instead of Supabase's built-in mailer.
+      try {
+        const res = await fetch('/api/send-confirmation', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email:    form.email,
+            fullName: form.fullName,
+            password: form.password,
+          }),
+        })
+        if (!res.ok) {
+          const body = await res.json().catch(() => ({}))
+          setError(`Failed to send confirmation email (${res.status}): ${body.detail ?? body.error ?? 'unknown error'}`)
+          setLoading(false); return
+        }
+      } catch {
+        setError('Could not reach the email service. Please try again.')
+        setLoading(false); return
+      }
       setStep('verify')
     } else {
       setStep('success')
@@ -65,8 +85,13 @@ export default function LandlordRegisterPage() {
   async function handleResend() {
     if (!submittedEmail) return
     setResending(true); setResent(false)
-    const supabase = createClient()
-    await supabase.auth.resend({ type: 'signup', email: submittedEmail })
+    try {
+      await fetch('/api/send-confirmation', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: submittedEmail, fullName: form.fullName, password: form.password }),
+      })
+    } catch { /* silent */ }
     setResending(false); setResent(true)
     setTimeout(() => setResent(false), 30000)
   }
