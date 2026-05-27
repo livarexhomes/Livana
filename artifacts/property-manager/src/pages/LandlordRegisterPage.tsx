@@ -7,6 +7,8 @@ const FIELD = 'w-full px-4 py-3.5 rounded-2xl border border-gray-200 bg-gray-50 
 
 export default function LandlordRegisterPage() {
   const [step, setStep] = useState<'form' | 'verify' | 'success'>('form')
+  const [resending, setResending] = useState(false)
+  const [resent, setResent] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -60,6 +62,15 @@ export default function LandlordRegisterPage() {
     setLoading(false)
   }
 
+  async function handleResend() {
+    if (!submittedEmail) return
+    setResending(true); setResent(false)
+    const supabase = createClient()
+    await supabase.auth.resend({ type: 'signup', email: submittedEmail })
+    setResending(false); setResent(true)
+    setTimeout(() => setResent(false), 30000)
+  }
+
   if (step === 'verify') {
     return (
       <div className="min-h-screen flex items-center justify-center bg-white px-6">
@@ -75,9 +86,17 @@ export default function LandlordRegisterPage() {
           <p className="text-sm text-gray-400 mb-8">
             Click the link in the email to verify your account. Once confirmed, our Admin team will review and approve your application.
           </p>
-          <Link href="/" className="inline-flex items-center justify-center w-full py-3.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-2xl transition-all text-sm shadow-lg shadow-blue-600/25">
+          <Link href="/" className="inline-flex items-center justify-center w-full py-3.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-2xl transition-all text-sm shadow-lg shadow-blue-600/25 mb-3">
             Back to Home
           </Link>
+          {resent ? (
+            <p className="text-sm text-emerald-600 font-semibold">Email resent — check your inbox (and spam folder).</p>
+          ) : (
+            <button onClick={handleResend} disabled={resending}
+              className="text-sm text-gray-400 hover:text-blue-600 transition-colors disabled:opacity-50">
+              {resending ? 'Resending…' : "Didn't receive it? Resend email"}
+            </button>
+          )}
         </div>
       </div>
     )
