@@ -44,7 +44,7 @@ export function UserLayout({ children, title }: { children: React.ReactNode; tit
       />
 
       <button type="button" onClick={() => setSidebarOpen(true)}
-        className="md:hidden fixed top-3 left-3 z-50 w-9 h-9 flex items-center justify-center rounded-xl bg-white border border-gray-200 shadow-sm text-gray-600 hover:bg-gray-50 active:scale-95 transition-all"
+        className="md:hidden fixed top-3 left-3 z-[65] w-9 h-9 flex items-center justify-center rounded-xl bg-white border border-gray-200 shadow-sm text-gray-600 hover:bg-gray-50 active:scale-95 transition-all"
         aria-label="Open menu">
         <Menu className="w-4 h-4" />
       </button>
