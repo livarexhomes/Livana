@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { Search, Phone, Users, MessageSquare, Clock, UserX, MoreVertical, ShieldOff, Trash2, ShieldCheck } from 'lucide-react'
+import { Search, Phone, Users, MessageSquare, Clock, UserX, MoreVertical, ShieldOff, Trash2, ShieldCheck, X, ChevronRight, Home, Calendar } from 'lucide-react'
 import AdminSidebar from '../../components/AdminSidebar'
 import AdminHeader from '../../components/AdminHeader'
 import AuthGuard from '../../components/AuthGuard'
@@ -38,6 +38,140 @@ type Tenant = {
 }
 
 type ConfirmAction = { type: 'suspend' | 'unsuspend' | 'delete'; tenant: Tenant }
+
+type TenantEnquiry = {
+  id: string
+  message: string
+  status: 'open' | 'replied' | 'closed'
+  created_at: string
+  property_title: string | null
+  property_city: string | null
+}
+
+const ENQ_STATUS: Record<string, { label: string; color: string; bg: string; dot: string }> = {
+  open:    { label: 'Open',    color: 'text-amber-700',  bg: 'bg-amber-50',  dot: 'bg-amber-400'  },
+  replied: { label: 'Replied', color: 'text-blue-700',   bg: 'bg-blue-50',   dot: 'bg-blue-500'   },
+  closed:  { label: 'Closed',  color: 'text-gray-500',   bg: 'bg-gray-100',  dot: 'bg-gray-400'   },
+}
+
+function TenantDrawer({ tenant, onClose }: { tenant: Tenant; onClose: () => void }) {
+  const [enquiries, setEnquiries] = useState<TenantEnquiry[]>([])
+  const [loading, setLoading] = useState(true)
+  const grad = avatarGrad(tenant.full_name)
+  const initials = getInitials(tenant.full_name)
+
+  useEffect(() => {
+    const supabase = createClient()
+    supabase
+      .from('enquiries')
+      .select('id, message, status, created_at, properties(title, city)')
+      .eq('tenant_id', tenant.id)
+      .order('created_at', { ascending: false })
+      .then(({ data }) => {
+        setEnquiries(
+          (data ?? []).map((e: any) => ({
+            id: e.id,
+            message: e.message,
+            status: e.status,
+            created_at: e.created_at,
+            property_title: e.properties?.title ?? null,
+            property_city: e.properties?.city ?? null,
+          }))
+        )
+        setLoading(false)
+      })
+  }, [tenant.id])
+
+  return (
+    <>
+      {/* Backdrop */}
+      <div className="fixed inset-0 bg-black/30 backdrop-blur-sm z-40" onClick={onClose} />
+
+      {/* Panel */}
+      <div className="fixed right-0 top-0 h-full w-full max-w-md bg-white shadow-2xl z-50 flex flex-col">
+        {/* Header */}
+        <div className="flex items-center gap-4 px-6 py-5 border-b border-gray-100 shrink-0">
+          <div className={`w-11 h-11 rounded-full bg-gradient-to-br ${grad} flex items-center justify-center shrink-0 shadow-sm`}>
+            <span className="text-sm font-bold text-white">{initials}</span>
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="font-extrabold text-gray-900 text-base truncate">{tenant.full_name}</p>
+            <p className="text-xs text-gray-400 mt-0.5 truncate">{tenant.email ?? tenant.phone ?? 'No contact info'}</p>
+          </div>
+          <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-xl hover:bg-gray-100 text-gray-400 transition-colors shrink-0">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+
+        {/* Stats strip */}
+        <div className="grid grid-cols-3 divide-x divide-gray-100 border-b border-gray-100 shrink-0">
+          {[
+            { label: 'Enquiries', value: enquiries.length },
+            { label: 'Open', value: enquiries.filter(e => e.status === 'open').length },
+            { label: 'Joined', value: timeAgo(tenant.created_at) },
+          ].map(s => (
+            <div key={s.label} className="px-4 py-3 text-center">
+              <p className="text-base font-extrabold text-gray-900">{s.value}</p>
+              <p className="text-[10px] text-gray-400 font-medium uppercase tracking-wider mt-0.5">{s.label}</p>
+            </div>
+          ))}
+        </div>
+
+        {/* Enquiries list */}
+        <div className="flex-1 overflow-y-auto">
+          <div className="px-6 py-4 border-b border-gray-50">
+            <p className="text-xs font-black text-gray-400 uppercase tracking-widest">Enquiries</p>
+          </div>
+
+          {loading ? (
+            <div className="flex items-center justify-center py-16">
+              <div className="animate-spin w-6 h-6 border-4 border-blue-600 border-t-transparent rounded-full" />
+            </div>
+          ) : enquiries.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-16 px-6 text-center">
+              <div className="w-12 h-12 rounded-2xl bg-gray-50 flex items-center justify-center mb-3">
+                <MessageSquare className="w-6 h-6 text-gray-300" />
+              </div>
+              <p className="text-sm font-semibold text-gray-500">No enquiries yet</p>
+              <p className="text-xs text-gray-400 mt-1">This tenant hasn't sent any enquiries.</p>
+            </div>
+          ) : (
+            <div className="divide-y divide-gray-50">
+              {enquiries.map(enq => {
+                const s = ENQ_STATUS[enq.status] ?? ENQ_STATUS.open
+                return (
+                  <div key={enq.id} className="px-6 py-4 hover:bg-gray-50/60 transition-colors">
+                    {/* Property */}
+                    {enq.property_title && (
+                      <div className="flex items-center gap-1.5 mb-2">
+                        <Home className="w-3 h-3 text-gray-400 shrink-0" />
+                        <p className="text-xs font-semibold text-gray-700 truncate">{enq.property_title}</p>
+                        {enq.property_city && <span className="text-xs text-gray-400 shrink-0">· {enq.property_city}</span>}
+                      </div>
+                    )}
+                    {/* Message */}
+                    <p className="text-sm text-gray-700 leading-relaxed line-clamp-3">{enq.message}</p>
+                    {/* Footer */}
+                    <div className="flex items-center justify-between mt-2.5">
+                      <span className={`inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full ${s.bg} ${s.color}`}>
+                        <span className={`w-1.5 h-1.5 rounded-full ${s.dot}`} />
+                        {s.label}
+                      </span>
+                      <div className="flex items-center gap-1 text-[11px] text-gray-400">
+                        <Calendar className="w-3 h-3" />
+                        {timeAgo(enq.created_at)}
+                      </div>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          )}
+        </div>
+      </div>
+    </>
+  )
+}
 
 function ActionMenu({ tenant, onAction }: { tenant: Tenant; onAction: (a: ConfirmAction) => void }) {
   const [open, setOpen] = useState(false)
@@ -155,6 +289,7 @@ export default function AdminUsers() {
   const [confirm, setConfirm]             = useState<ConfirmAction | null>(null)
   const [actionLoading, setActionLoading] = useState(false)
   const [toast, setToast]                 = useState<string | null>(null)
+  const [selectedTenant, setSelectedTenant] = useState<Tenant | null>(null)
 
   useEffect(() => {
     const supabase = createClient()
@@ -293,7 +428,7 @@ export default function AdminUsers() {
                         const initials = getInitials(t.full_name)
                         const isSuspended = t.status === 'suspended'
                         return (
-                          <tr key={t.id} className={`hover:bg-slate-50/60 transition-colors ${isSuspended ? 'opacity-60' : ''}`}>
+                          <tr key={t.id} onClick={() => setSelectedTenant(t)} className={`hover:bg-slate-50/60 transition-colors cursor-pointer ${isSuspended ? 'opacity-60' : ''}`}>
                             <td className="px-5 py-4">
                               <div className="flex items-center gap-3">
                                 <div className={`w-9 h-9 rounded-full bg-gradient-to-br ${grad} flex items-center justify-center shrink-0 shadow-sm`}>
@@ -334,8 +469,11 @@ export default function AdminUsers() {
                             <td className="px-5 py-4 hidden sm:table-cell">
                               <span className="text-xs text-gray-400">{timeAgo(t.created_at)}</span>
                             </td>
-                            <td className="px-3 py-4">
-                              <ActionMenu tenant={t} onAction={setConfirm} />
+                            <td className="px-3 py-4" onClick={e => e.stopPropagation()}>
+                              <div className="flex items-center gap-1">
+                                <ChevronRight className="w-3.5 h-3.5 text-gray-300" />
+                                <ActionMenu tenant={t} onAction={setConfirm} />
+                              </div>
                             </td>
                           </tr>
                         )
@@ -348,6 +486,10 @@ export default function AdminUsers() {
           </main>
         </div>
       </div>
+
+      {selectedTenant && (
+        <TenantDrawer tenant={selectedTenant} onClose={() => setSelectedTenant(null)} />
+      )}
 
       {confirm && (
         <ConfirmModal
