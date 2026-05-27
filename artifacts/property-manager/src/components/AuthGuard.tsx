@@ -32,7 +32,7 @@ export default function AuthGuard({ children, require: req, redirectTo = '/login
       if (req === 'landlord') {
         const { data: landlord } = await supabase.from('landlords').select('id, status').eq('user_id', user.id).single() as { data: { id: string; status: string } | null }
         if (!landlord) { navigate('/'); return }
-        if (landlord.status === 'not_submitted') { navigate('/landlord/kyc'); return }
+        if (landlord.status === 'not_submitted') { navigate('/landlord/onboarding'); return }
         if (landlord.status === 'pending') { navigate('/landlord/pending'); return }
         if (landlord.status === 'rejected') { navigate('/landlord/rejected'); return }
         if (landlord.status === 'suspended') { navigate('/landlord/suspended'); return }

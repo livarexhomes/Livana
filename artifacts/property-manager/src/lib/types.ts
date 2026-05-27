@@ -1,4 +1,4 @@
-export type PropertyType = 'sale' | 'rent'
+export type PropertyType = 'sale' | 'rent' | 'lease' | 'commercial'
 export type PropertyStatus = 'available' | 'taken' | 'coming_soon' | 'under_negotiation'
 export type LandlordStatus = 'not_submitted' | 'pending' | 'approved' | 'rejected' | 'suspended'
 

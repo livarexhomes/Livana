@@ -4,8 +4,8 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import { Resend } from 'resend'
 
 const resend = new Resend(process.env.RESEND_API_KEY)
-const FROM = process.env.FROM_EMAIL ?? 'Livana <noreply@livana.ng>'
-const APP_NAME = 'Livana'
+const FROM = process.env.FROM_EMAIL ?? 'LIVAREX <noreply@livarex.com.ng>'
+const APP_NAME = 'LIVAREX'
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') {

@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect } from 'react'
 import { Link } from 'wouter'
 import {
   TrendingUp, TrendingDown, Building2, Users,
@@ -14,14 +14,6 @@ import AuthGuard from '../../components/AuthGuard'
 import { createClient } from '../../lib/supabase'
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
-
-function makeAreaData() {
-  return MONTHS.map((month, i) => ({
-    month,
-    listings: Math.floor(60 + i * 7 + Math.random() * 20),
-    enquiries: Math.floor(20 + i * 4 + Math.random() * 15),
-  }))
-}
 
 function greeting() {
   const h = new Date().getHours()
@@ -53,9 +45,8 @@ export default function AdminDashboard() {
   const [recentLandlords, setRecentLandlords] = useState<any[]>([])
   const [cityStats, setCityStats] = useState<{ city: string; count: number }[]>([])
   const [typeStats, setTypeStats] = useState<{ name: string; value: number }[]>([])
+  const [areaData, setAreaData] = useState<{ month: string; listings: number; enquiries: number }[]>([])
   const [loading, setLoading] = useState(true)
-
-  const areaData = useMemo(() => makeAreaData(), [])
 
   useEffect(() => {
     const supabase = createClient()
@@ -75,6 +66,8 @@ export default function AdminDashboard() {
         { data: llData },
         { data: cityData },
         { data: typeData },
+        { data: propMonthly },
+        { data: enqMonthly },
       ] = await Promise.all([
         supabase.from('properties').select('id', { count: 'exact', head: true }),
         supabase.from('properties').select('id', { count: 'exact', head: true }).eq('status', 'available'),
@@ -87,6 +80,14 @@ export default function AdminDashboard() {
         supabase.from('landlords').select('id, full_name, created_at').order('created_at', { ascending: false }).limit(4),
         supabase.from('properties').select('city').limit(500),
         supabase.from('properties').select('property_type').limit(500),
+        // Monthly listings for the current year
+        supabase.from('properties').select('created_at')
+          .gte('created_at', `${new Date().getFullYear()}-01-01`)
+          .lte('created_at', `${new Date().getFullYear()}-12-31`),
+        // Monthly enquiries for the current year
+        supabase.from('enquiries').select('created_at')
+          .gte('created_at', `${new Date().getFullYear()}-01-01`)
+          .lte('created_at', `${new Date().getFullYear()}-12-31`),
       ])
 
       setStats({
@@ -106,6 +107,13 @@ export default function AdminDashboard() {
       const typeMap: Record<string, number> = {}
       for (const p of typeData ?? []) if (p.property_type) typeMap[p.property_type] = (typeMap[p.property_type] ?? 0) + 1
       setTypeStats(Object.entries(typeMap).sort((a, b) => b[1] - a[1]).slice(0, 6).map(([name, value]) => ({ name, value })))
+
+      // Monthly chart — bucket real rows by month index
+      const listingsByMonth = new Array(12).fill(0)
+      const enquiriesByMonth = new Array(12).fill(0)
+      for (const p of propMonthly ?? []) listingsByMonth[new Date(p.created_at).getMonth()]++
+      for (const e of enqMonthly ?? []) enquiriesByMonth[new Date(e.created_at).getMonth()]++
+      setAreaData(MONTHS.map((month, i) => ({ month, listings: listingsByMonth[i], enquiries: enquiriesByMonth[i] })))
 
       setLoading(false)
     })
