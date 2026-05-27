@@ -16,9 +16,9 @@ const PropertyMap = lazy(() => import('../components/PropertyMap'))
 const TYPE_TABS = [
   { value: '', label: 'All', icon: '✦' },
   { value: 'rent', label: 'For Rent', icon: '🏠' },
-  { value: 'sale', label: 'For Sale', icon: '🏢' },
   { value: 'lease', label: 'Lease', icon: '📋' },
-  { value: 'commercial', label: 'Commercial', icon: '🏪' },
+  { value: 'sale', label: 'For Sale', icon: '🏢', comingSoon: true },
+  { value: 'commercial', label: 'Commercial', icon: '🏪', comingSoon: true },
 ]
 
 export default function ListingsPage() {
@@ -116,15 +116,23 @@ export default function ListingsPage() {
             {TYPE_TABS.map(t => (
               <button
                 key={t.value}
-                onClick={() => setTypeFilter(t.value)}
+                onClick={() => !t.comingSoon && setTypeFilter(t.value)}
+                disabled={t.comingSoon}
                 className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-semibold whitespace-nowrap transition-all border shrink-0 ${
-                  typeFilter === t.value
+                  t.comingSoon
+                    ? 'bg-white text-gray-400 border-gray-200 cursor-default'
+                    : typeFilter === t.value
                     ? 'bg-gray-900 text-white border-gray-900'
                     : 'bg-white text-gray-600 border-gray-200 hover:border-gray-400'
                 }`}
               >
                 <span>{t.icon}</span>
                 {t.label}
+                {t.comingSoon && (
+                  <span className="text-[9px] font-bold uppercase tracking-wider bg-gray-100 text-gray-400 px-1.5 py-0.5 rounded-md">
+                    Soon
+                  </span>
+                )}
               </button>
             ))}
 
