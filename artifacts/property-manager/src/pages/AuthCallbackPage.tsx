@@ -48,9 +48,10 @@ export default function AuthCallbackPage() {
         .from('landlords').select('status').eq('user_id', user.id).single() as { data: { status: string } | null }
 
       if (existingLandlord) {
-        if (existingLandlord.status === 'pending')  { navigate('/landlord/pending');  return }
-        if (existingLandlord.status === 'rejected') { navigate('/landlord/rejected'); return }
-        if (existingLandlord.status === 'suspended') { navigate('/landlord/suspended'); return }
+        if (existingLandlord.status === 'not_submitted') { navigate('/landlord/onboarding'); return }
+        if (existingLandlord.status === 'pending')       { navigate('/landlord/pending');    return }
+        if (existingLandlord.status === 'rejected')      { navigate('/landlord/rejected');   return }
+        if (existingLandlord.status === 'suspended')     { navigate('/landlord/suspended');  return }
         navigate('/landlord')
         return
       }
@@ -60,15 +61,15 @@ export default function AuthCallbackPage() {
       // At this point the session is real and auth.users FK is guaranteed.
       if (meta.role === 'landlord' || meta.whatsapp) {
         await supabase.from('landlords').insert({
-          user_id:   user.id,
-          full_name: meta.full_name ?? user.email ?? 'Landlord',
-          whatsapp:  meta.whatsapp  ?? '',
-          city:      meta.city      ?? null,
-          bio:       meta.bio       ?? null,
-          status:    'not_submitted',
+          user_id:     user.id,
+          full_name:   meta.full_name ?? user.email ?? 'Landlord',
+          whatsapp:    meta.whatsapp  ?? '',
+          city:        meta.city      ?? null,
+          bio:         meta.bio       ?? null,
+          status:      'not_submitted',
           is_verified: false,
         })
-        navigate('/landlord')
+        navigate('/landlord/onboarding')
         return
       }
 

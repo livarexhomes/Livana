@@ -53,6 +53,13 @@ export default function LandlordListingForm() {
       setUser({ email: user.email })
       const { data: l } = await supabase.from('landlords').select('*').eq('user_id', user.id).single() as { data: Landlord | null }
       setLandlord(l)
+      // Block unapproved landlords from creating/editing listings
+      if (l && l.status !== 'approved') {
+        if (l.status === 'not_submitted') { navigate('/landlord/onboarding'); return }
+        if (l.status === 'pending')       { navigate('/landlord/pending');    return }
+        if (l.status === 'rejected')      { navigate('/landlord/rejected');   return }
+        if (l.status === 'suspended')     { navigate('/landlord/suspended');  return }
+      }
       if (isEdit && params.id) {
         // Ownership check: scope the property fetch to this landlord's id so
         // navigating to /landlord/listings/{other-id}/edit returns no data.
