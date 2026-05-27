@@ -26,7 +26,9 @@ CREATE TABLE IF NOT EXISTS public.landlords (
   whatsapp         TEXT        NOT NULL,
   bio              TEXT,
   avatar_url       TEXT,
-  -- KYC fields (Migration 1)
+  -- Location
+  city             TEXT,
+  -- KYC fields
   nin              TEXT,
   dob              DATE,
   id_type          TEXT,
@@ -36,6 +38,13 @@ CREATE TABLE IF NOT EXISTS public.landlords (
   state            TEXT,
   kyc_notes        TEXT,
   kyc_submitted_at TIMESTAMPTZ,
+  -- Profile extras
+  years_experience TEXT,
+  specialization   TEXT,
+  website          TEXT,
+  linkedin         TEXT,
+  twitter          TEXT,
+  instagram        TEXT,
   -- Status supports full KYC lifecycle
   status           TEXT        NOT NULL DEFAULT 'not_submitted'
                      CHECK (status IN ('not_submitted', 'pending', 'approved', 'rejected', 'suspended')),
@@ -43,6 +52,15 @@ CREATE TABLE IF NOT EXISTS public.landlords (
   created_at       TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at       TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+-- Add columns to existing deployments that predate this schema version
+ALTER TABLE public.landlords ADD COLUMN IF NOT EXISTS city             TEXT;
+ALTER TABLE public.landlords ADD COLUMN IF NOT EXISTS years_experience TEXT;
+ALTER TABLE public.landlords ADD COLUMN IF NOT EXISTS specialization   TEXT;
+ALTER TABLE public.landlords ADD COLUMN IF NOT EXISTS website          TEXT;
+ALTER TABLE public.landlords ADD COLUMN IF NOT EXISTS linkedin         TEXT;
+ALTER TABLE public.landlords ADD COLUMN IF NOT EXISTS twitter          TEXT;
+ALTER TABLE public.landlords ADD COLUMN IF NOT EXISTS instagram        TEXT;
 
 CREATE OR REPLACE TRIGGER landlords_updated_at
   BEFORE UPDATE ON public.landlords
