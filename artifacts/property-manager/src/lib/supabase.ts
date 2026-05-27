@@ -38,3 +38,12 @@ export function getSupabaseAvatarUrl(storagePath: string) {
 export function getSupabaseProjectImageUrl(storagePath: string) {
   return `${url}/storage/v1/object/public/project-images/${storagePath}`
 }
+
+// KYC docs are in a private bucket — use signed URLs via the client
+export async function getKycDocUrl(storagePath: string): Promise<string | null> {
+  const client = createClient()
+  const { data } = await client.storage
+    .from('kyc-documents')
+    .createSignedUrl(storagePath, 60 * 60) // 1 hour
+  return data?.signedUrl ?? null
+}

@@ -2,11 +2,19 @@ import { useState, useEffect } from 'react'
 import {
   ShieldCheck, Search, CheckCircle, Clock, XCircle, Ban,
   ChevronRight, X, User, CreditCard, FileText, MapPin,
+  ExternalLink, ImageIcon,
 } from 'lucide-react'
 import AdminSidebar from '../../components/AdminSidebar'
 import AdminHeader from '../../components/AdminHeader'
 import AuthGuard from '../../components/AuthGuard'
-import { createClient } from '../../lib/supabase'
+import { createClient, getKycDocUrl } from '../../lib/supabase'
+
+const DOC_LABELS: Record<string, string> = {
+  id_front:     'ID Card — Front',
+  id_back:      'ID Card — Back',
+  utility_bill: 'Utility Bill',
+  selfie:       'Selfie with ID',
+}
 
 const STATUS_META: Record<string, { label: string; icon: any; bg: string; text: string; dot: string }> = {
   approved:      { label: 'Approved',  icon: CheckCircle, bg: 'bg-emerald-50', text: 'text-emerald-700', dot: 'bg-emerald-500' },
@@ -44,8 +52,10 @@ export default function AdminKYC() {
   const [loading, setLoading]     = useState(true)
   const [search, setSearch]       = useState('')
   const [statusFilter, setStatusFilter] = useState('pending')
-  const [selected, setSelected]   = useState<any | null>(null)
+  const [selected, setSelected]     = useState<any | null>(null)
   const [processing, setProcessing] = useState<string | null>(null)
+  const [kycDocs, setKycDocs]       = useState<{ doc_type: string; url: string; file_name: string }[]>([])
+  const [docsLoading, setDocsLoading] = useState(false)
 
   useEffect(() => {
     const supabase = createClient()
@@ -70,6 +80,28 @@ export default function AdminKYC() {
     }
     setFiltered(list)
   }, [search, statusFilter, landlords])
+
+  async function loadKycDocs(landlordId: string) {
+    setDocsLoading(true)
+    setKycDocs([])
+    const supabase = createClient()
+    const { data } = await supabase
+      .from('kyc_documents')
+      .select('doc_type, storage_path, file_name')
+      .eq('landlord_id', landlordId)
+      .order('created_at', { ascending: true })
+    if (data && data.length > 0) {
+      const withUrls = await Promise.all(
+        data.map(async (d: any) => ({
+          doc_type:  d.doc_type,
+          file_name: d.file_name ?? d.doc_type,
+          url:       (await getKycDocUrl(d.storage_path)) ?? '',
+        }))
+      )
+      setKycDocs(withUrls.filter(d => d.url))
+    }
+    setDocsLoading(false)
+  }
 
   async function updateStatus(id: string, status: string) {
     setProcessing(id)
@@ -150,7 +182,10 @@ export default function AdminKYC() {
                   const StatusIcon = meta.icon
                   const isSelected = selected?.id === l.id
                   return (
-                    <button key={l.id} type="button" onClick={() => setSelected(isSelected ? null : l)}
+                    <button key={l.id} type="button" onClick={() => {
+                      if (isSelected) { setSelected(null); setKycDocs([]) }
+                      else { setSelected(l); loadKycDocs(l.id) }
+                    }}
                       className={`w-full flex items-center gap-3 p-4 rounded-2xl border transition-all text-left hover:shadow-sm ${
                         isSelected ? 'bg-blue-50 border-blue-300 shadow-sm' : 'bg-white border-gray-100 hover:border-gray-200'
                       }`}>
@@ -260,6 +295,51 @@ export default function AdminKYC() {
                       <div className="bg-gray-50 rounded-xl p-4 text-sm text-gray-700 leading-relaxed">{selected.bio}</div>
                     </div>
                   )}
+
+                  {/* KYC Documents */}
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-gray-400">
+                      <FileText className="w-3.5 h-3.5" /> KYC Documents
+                    </div>
+                    {docsLoading ? (
+                      <div className="flex items-center gap-2 py-4 text-sm text-gray-400">
+                        <div className="animate-spin w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full" />
+                        Loading documents…
+                      </div>
+                    ) : kycDocs.length === 0 ? (
+                      <div className="bg-gray-50 rounded-xl p-4 text-sm text-gray-400 text-center">
+                        No documents uploaded yet.
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-2 gap-3">
+                        {kycDocs.map((doc, i) => {
+                          const isImage = !doc.file_name?.toLowerCase().endsWith('.pdf')
+                          return (
+                            <a key={i} href={doc.url} target="_blank" rel="noopener noreferrer"
+                              className="group relative rounded-xl overflow-hidden border border-gray-200 hover:border-blue-400 transition-all bg-gray-50">
+                              {isImage ? (
+                                <img src={doc.url} alt={DOC_LABELS[doc.doc_type] ?? doc.doc_type}
+                                  className="w-full h-28 object-cover group-hover:scale-105 transition-transform duration-300" />
+                              ) : (
+                                <div className="w-full h-28 flex flex-col items-center justify-center gap-2 text-gray-400">
+                                  <FileText className="w-8 h-8" />
+                                  <span className="text-[10px] font-semibold">PDF</span>
+                                </div>
+                              )}
+                              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all flex items-center justify-center">
+                                <ExternalLink className="w-5 h-5 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                              </div>
+                              <div className="px-2 py-1.5 bg-white border-t border-gray-100">
+                                <p className="text-[10px] font-bold text-gray-600 truncate">
+                                  {DOC_LABELS[doc.doc_type] ?? doc.doc_type}
+                                </p>
+                              </div>
+                            </a>
+                          )
+                        })}
+                      </div>
+                    )}
+                  </div>
                 </div>
 
                 {/* Actions */}

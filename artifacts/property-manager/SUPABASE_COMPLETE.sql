@@ -779,3 +779,97 @@ DROP POLICY IF EXISTS "Authenticated support attachment upload" ON storage.objec
 CREATE POLICY "Authenticated support attachment upload"
   ON storage.objects FOR INSERT
   WITH CHECK (bucket_id = 'support-attachments' AND auth.role() = 'authenticated');
+
+
+-- ── kyc_documents ─────────────────────────────────────────────
+-- Stores references to KYC document uploads (ID card, utility bill, etc.)
+
+CREATE TABLE IF NOT EXISTS public.kyc_documents (
+  id          UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+  landlord_id UUID        NOT NULL REFERENCES public.landlords(id) ON DELETE CASCADE,
+  doc_type    TEXT        NOT NULL,  -- e.g. 'id_front', 'id_back', 'utility_bill', 'selfie'
+  storage_path TEXT       NOT NULL,
+  file_name   TEXT,
+  created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_kyc_documents_landlord ON public.kyc_documents(landlord_id);
+
+ALTER TABLE public.kyc_documents ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Landlord insert own kyc docs" ON public.kyc_documents;
+CREATE POLICY "Landlord insert own kyc docs"
+  ON public.kyc_documents FOR INSERT
+  WITH CHECK (
+    landlord_id = (SELECT id FROM public.landlords WHERE user_id = auth.uid())
+  );
+
+DROP POLICY IF EXISTS "Landlord select own kyc docs" ON public.kyc_documents;
+CREATE POLICY "Landlord select own kyc docs"
+  ON public.kyc_documents FOR SELECT
+  USING (
+    landlord_id = (SELECT id FROM public.landlords WHERE user_id = auth.uid())
+  );
+
+DROP POLICY IF EXISTS "Landlord delete own kyc docs" ON public.kyc_documents;
+CREATE POLICY "Landlord delete own kyc docs"
+  ON public.kyc_documents FOR DELETE
+  USING (
+    landlord_id = (SELECT id FROM public.landlords WHERE user_id = auth.uid())
+  );
+
+DROP POLICY IF EXISTS "Admins full access to kyc_documents" ON public.kyc_documents;
+CREATE POLICY "Admins full access to kyc_documents"
+  ON public.kyc_documents FOR ALL
+  USING (EXISTS (SELECT 1 FROM public.admins WHERE id = auth.uid()));
+
+
+-- ── kyc-documents storage bucket ─────────────────────────────
+-- Private bucket — only the landlord and admins can read
+
+INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+VALUES (
+  'kyc-documents', 'kyc-documents', false,
+  10485760,
+  ARRAY['image/jpeg','image/jpg','image/png','image/webp','application/pdf']
+)
+ON CONFLICT (id) DO UPDATE SET
+  public = false,
+  file_size_limit = 10485760,
+  allowed_mime_types = ARRAY['image/jpeg','image/jpg','image/png','image/webp','application/pdf'];
+
+-- Landlord can upload their own docs (path: {user_id}/{filename})
+DROP POLICY IF EXISTS "Landlord kyc doc upload" ON storage.objects;
+CREATE POLICY "Landlord kyc doc upload"
+  ON storage.objects FOR INSERT
+  WITH CHECK (
+    bucket_id = 'kyc-documents'
+    AND auth.uid()::text = (storage.foldername(name))[1]
+  );
+
+-- Landlord can read their own docs
+DROP POLICY IF EXISTS "Landlord kyc doc read" ON storage.objects;
+CREATE POLICY "Landlord kyc doc read"
+  ON storage.objects FOR SELECT
+  USING (
+    bucket_id = 'kyc-documents'
+    AND auth.uid()::text = (storage.foldername(name))[1]
+  );
+
+-- Landlord can delete their own docs
+DROP POLICY IF EXISTS "Landlord kyc doc delete" ON storage.objects;
+CREATE POLICY "Landlord kyc doc delete"
+  ON storage.objects FOR DELETE
+  USING (
+    bucket_id = 'kyc-documents'
+    AND auth.uid()::text = (storage.foldername(name))[1]
+  );
+
+-- Admins can read all KYC docs
+DROP POLICY IF EXISTS "Admin kyc doc read" ON storage.objects;
+CREATE POLICY "Admin kyc doc read"
+  ON storage.objects FOR SELECT
+  USING (
+    bucket_id = 'kyc-documents'
+    AND EXISTS (SELECT 1 FROM public.admins WHERE id = auth.uid())
+  );
