@@ -1,5 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { createClient } from '@supabase/supabase-js'
+import type { SupabaseClient } from '@supabase/supabase-js'
 import { Resend } from 'resend'
 
 const resend = new Resend(process.env.RESEND_API_KEY)
@@ -28,9 +29,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(503).json({ error: 'Email service is not configured' })
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey, {
     auth: { autoRefreshToken: false, persistSession: false },
-  })
+  }) as SupabaseClient & { auth: { admin: any } }
 
   // Generate a one-time magic link that confirms the email and creates a session
   const appUrl = process.env.APP_URL ?? `https://${req.headers.host}`
