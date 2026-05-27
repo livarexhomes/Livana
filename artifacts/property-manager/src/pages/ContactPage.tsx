@@ -238,7 +238,7 @@ export default function ContactPage() {
                 <div className="space-y-1">
                   {[
                     { label: 'Browse all listings',     href: '/listings' },
-                    { label: 'Register as a landlord',  href: '/register' },
+                    { label: 'Register as a landlord',  href: '/partners' },
                     { label: 'About LIVAREX',           href: '/about'    },
                     { label: 'My account',              href: '/user'     },
                   ].map(link => (
