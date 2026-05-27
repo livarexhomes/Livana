@@ -12,7 +12,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(405).json({ error: 'Method not allowed' })
   }
 
-  const { email, fullName, password } = req.body ?? {}
+  const { email, fullName, password, metadata } = req.body ?? {}
 
   if (!email || !fullName || !password) {
     return res.status(400).json({ error: 'email, fullName and password are required' })
@@ -41,12 +41,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const appUrl = process.env.APP_URL ?? `https://${req.headers.host}`
   let confirmationUrl: string
 
-  // Try generating a fresh signup link first
+  // Try generating a fresh signup link first.
+  // Pass `options.data` so user_metadata (role, whatsapp, etc.) is preserved —
+  // generateLink with type 'signup' resets metadata to an empty object if omitted.
   const { data: linkData, error: linkError } = await supabaseAdmin.auth.admin.generateLink({
     type: 'signup',
     email,
     password,
-    options: { redirectTo: `${appUrl}/auth/callback` },
+    options: {
+      redirectTo: `${appUrl}/auth/callback`,
+      ...(metadata && typeof metadata === 'object' ? { data: metadata } : {}),
+    },
   })
 
   if (linkData?.properties?.action_link) {
