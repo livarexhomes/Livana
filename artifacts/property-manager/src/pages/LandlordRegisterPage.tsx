@@ -55,26 +55,7 @@ export default function LandlordRegisterPage() {
     setSubmittedEmail(form.email)
 
     if (!data.session) {
-      // Supabase built-in email is disabled — send via Resend through our API.
-      try {
-        const res = await fetch('/api/send-confirmation', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email: form.email, fullName: form.fullName }),
-        })
-        if (!res.ok) {
-          const body = await res.json().catch(() => ({}))
-          console.error('[send-confirmation] API error:', res.status, body)
-          setError(`Failed to send confirmation email (${res.status}): ${body.detail ?? body.error ?? 'unknown error'}`)
-          setLoading(false)
-          return
-        }
-      } catch (err) {
-        console.error('[send-confirmation] Network error:', err)
-        setError('Could not reach the email service. Please try again.')
-        setLoading(false)
-        return
-      }
+      // Email confirmation required — Supabase sends the confirmation email.
       setStep('verify')
     } else {
       setStep('success')

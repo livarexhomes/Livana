@@ -104,7 +104,7 @@ export default function ListingsPage() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-gray-50">
+    <div className="min-h-screen flex flex-col bg-gray-50 pt-20">
       <PublicNavbar />
 
       {/* Filter bar */}
