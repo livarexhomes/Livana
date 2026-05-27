@@ -197,29 +197,29 @@ export default function HomePage() {
             </div>
 
             {/* Headline */}
-            <h1 className="text-4xl sm:text-5xl xl:text-6xl font-extrabold leading-[1.08] mb-6 tracking-tight text-gray-900">
+            <h1 className="text-3xl sm:text-5xl xl:text-6xl font-extrabold leading-[1.08] mb-4 sm:mb-6 tracking-tight text-gray-900">
               Find Your Next<br />Home in Nigeria
             </h1>
 
             {/* Subtitle */}
-            <p className="text-lg text-gray-500 mb-10 leading-relaxed max-w-md">
+            <p className="text-base sm:text-lg text-gray-500 mb-7 sm:mb-10 leading-relaxed max-w-md">
               Browse verified listings. Contact landlords directly. No agent fees.
             </p>
 
             {/* Search Card */}
             <div className="mb-12" ref={searchBarRef}>
               {/* Tabs */}
-              <div className="flex gap-1 mb-3">
-                {(['Buy', 'Rent', 'Lease', 'Commercial'] as Tab[]).map(t => {
-                  const comingSoon = t === 'Buy' || t === 'Lease'
+              <div className="flex gap-1 mb-3 overflow-x-auto no-scrollbar">
+                {(['Rent', 'Lease', 'Buy', 'Commercial'] as Tab[]).map(t => {
+                  const comingSoon = t === 'Buy' || t === 'Commercial'
                   return comingSoon ? (
-                    <span key={t} className="px-4 py-2 rounded-full text-sm font-semibold text-gray-300 cursor-default select-none flex items-center gap-1.5">
+                    <span key={t} className="px-3 py-2 rounded-full text-sm font-semibold text-gray-300 cursor-default select-none flex items-center gap-1.5 shrink-0">
                       {t}
                       <span className="text-[9px] font-bold uppercase tracking-wider bg-gray-100 text-gray-400 px-1.5 py-0.5 rounded-md">Soon</span>
                     </span>
                   ) : (
                     <button key={t} type="button" onClick={() => setActiveTab(t)}
-                      className={`px-4 py-2 rounded-full text-sm font-semibold transition-all ${
+                      className={`px-4 py-2 rounded-full text-sm font-semibold transition-all shrink-0 ${
                         activeTab === t
                           ? 'bg-blue-600 text-white shadow-sm shadow-blue-600/25'
                           : 'text-gray-500 hover:text-gray-800 hover:bg-gray-100'
@@ -595,10 +595,10 @@ export default function HomePage() {
 
           {/* Filter tabs */}
           <div className="flex gap-2 mb-8 overflow-x-auto no-scrollbar">
-            {(['Buy', 'Rent', 'Lease', 'Commercial'] as Tab[]).map(t => {
-              const comingSoon = t === 'Buy' || t === 'Lease'
+            {(['Rent', 'Lease', 'Buy', 'Commercial'] as Tab[]).map(t => {
+              const comingSoon = t === 'Buy' || t === 'Commercial'
               return comingSoon ? (
-                <span key={t} className="px-5 py-2.5 rounded-xl text-sm font-semibold whitespace-nowrap bg-white text-gray-300 border border-gray-100 cursor-default select-none flex items-center gap-1.5">
+                <span key={t} className="px-5 py-2.5 rounded-xl text-sm font-semibold whitespace-nowrap bg-white text-gray-300 border border-gray-100 cursor-default select-none flex items-center gap-1.5 shrink-0">
                   {t}
                   <span className="text-[9px] font-bold uppercase tracking-wider bg-gray-100 text-gray-400 px-1.5 py-0.5 rounded-md">Soon</span>
                 </span>
@@ -606,7 +606,7 @@ export default function HomePage() {
                 <button
                   key={t}
                   onClick={() => setActiveTab(t)}
-                  className={`px-5 py-2.5 rounded-xl text-sm font-semibold whitespace-nowrap transition-all ${
+                  className={`px-5 py-2.5 rounded-xl text-sm font-semibold whitespace-nowrap transition-all shrink-0 ${
                     activeTab === t
                       ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/25'
                       : 'bg-white text-gray-600 border border-gray-200 hover:border-blue-200 hover:text-blue-600'
