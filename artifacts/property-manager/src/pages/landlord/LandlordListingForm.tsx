@@ -189,12 +189,19 @@ export default function LandlordListingForm() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!landlord) return
+
+    // Client-side validation before hitting the DB
+    if (!form.title.trim())   { setError('Please enter a property title.'); return }
+    if (!form.city.trim())    { setError('Please select a state.'); return }
+    if (!form.address.trim()) { setError('Please enter an area or neighbourhood.'); return }
+    if (!form.price || Number(form.price) <= 0) { setError('Please enter a valid price.'); return }
+
     setLoading(true); setError('')
     const supabase = createClient()
     const data = {
       landlord_id: landlord.id,
-      title: form.title, description: form.description || null,
-      address: form.address, city: form.city,
+      title: form.title.trim(), description: form.description.trim() || null,
+      address: form.address.trim(), city: form.city.trim(),
       price: Number(form.price),
       bedrooms: Number(form.bedrooms), bathrooms: Number(form.bathrooms),
       area_sqft: form.area_sqft ? Number(form.area_sqft) : null,
