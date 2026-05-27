@@ -95,8 +95,8 @@ CREATE POLICY "Landlord can insert own profile"
   ON public.landlords FOR INSERT
   WITH CHECK (auth.uid() = user_id);
 
--- SECURITY DEFINER function so registration can insert the landlord row
--- even when email confirmation is pending (no active session yet).
+-- SECURITY DEFINER function so registration can insert the landlord row.
+-- Called client-side after signUp; safe because it uses ON CONFLICT DO NOTHING.
 CREATE OR REPLACE FUNCTION public.create_landlord_profile(
   p_user_id    UUID,
   p_full_name  TEXT,
@@ -116,9 +116,40 @@ BEGIN
 END;
 $$;
 
--- Only authenticated users (or service role) can call this function
 REVOKE ALL ON FUNCTION public.create_landlord_profile FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.create_landlord_profile TO anon, authenticated;
+
+-- Trigger-based fallback: auto-create landlord row when a user signs up
+-- via the landlord registration flow (user_metadata contains whatsapp).
+-- This fires inside Supabase's own auth transaction so the FK is always valid.
+CREATE OR REPLACE FUNCTION public.handle_new_landlord()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  IF (NEW.raw_user_meta_data->>'whatsapp') IS NOT NULL THEN
+    INSERT INTO public.landlords (user_id, full_name, whatsapp, city, bio, status, is_verified)
+    VALUES (
+      NEW.id,
+      COALESCE(NEW.raw_user_meta_data->>'full_name', 'Landlord'),
+      NEW.raw_user_meta_data->>'whatsapp',
+      NEW.raw_user_meta_data->>'city',
+      NEW.raw_user_meta_data->>'bio',
+      'not_submitted',
+      false
+    )
+    ON CONFLICT (user_id) DO NOTHING;
+  END IF;
+  RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS on_landlord_signup ON auth.users;
+CREATE TRIGGER on_landlord_signup
+  AFTER INSERT ON auth.users
+  FOR EACH ROW EXECUTE FUNCTION public.handle_new_landlord();
 
 -- Landlord can update their own profile
 DROP POLICY IF EXISTS "Landlord can update own profile" ON public.landlords;

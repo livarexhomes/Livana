@@ -26,10 +26,19 @@ export default function LandlordRegisterPage() {
     setLoading(true); setError('')
     const supabase = createClient()
 
+    // Pass landlord fields in user_metadata so the DB trigger can create
+    // the landlords row inside Supabase's own auth transaction (avoids FK race).
     const { data, error: signUpError } = await supabase.auth.signUp({
       email: form.email,
       password: form.password,
-      options: { data: { full_name: form.fullName } },
+      options: {
+        data: {
+          full_name: form.fullName,
+          whatsapp:  form.whatsapp,
+          city:      form.city || null,
+          bio:       form.bio  || null,
+        },
+      },
     })
 
     if (signUpError || !data.user) {
@@ -37,17 +46,16 @@ export default function LandlordRegisterPage() {
       setLoading(false); return
     }
 
-    const { error: landlordError } = await supabase.rpc('create_landlord_profile', {
-      p_user_id:   data.user.id,
-      p_full_name: form.fullName,
-      p_whatsapp:  form.whatsapp,
-      p_city:      form.city || null,
-      p_bio:       form.bio  || null,
-    })
-
-    if (landlordError) {
-      setError(landlordError.message)
-      setLoading(false); return
+    // If a session exists (email confirmation disabled), also call the RPC
+    // as a belt-and-suspenders fallback — ON CONFLICT DO NOTHING makes it safe.
+    if (data.session) {
+      await supabase.rpc('create_landlord_profile', {
+        p_user_id:   data.user.id,
+        p_full_name: form.fullName,
+        p_whatsapp:  form.whatsapp,
+        p_city:      form.city || null,
+        p_bio:       form.bio  || null,
+      })
     }
 
     setSubmittedEmail(form.email)
