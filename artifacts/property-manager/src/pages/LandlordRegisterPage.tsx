@@ -37,17 +37,15 @@ export default function LandlordRegisterPage() {
       setLoading(false); return
     }
 
-    const { error: landlordError } = await supabase.from('landlords').insert({
-      user_id: data.user.id,
-      full_name: form.fullName,
-      whatsapp: form.whatsapp,
-      city: form.city || null,
-      bio: form.bio || null,
-      status: 'not_submitted',
-      is_verified: false,
+    const { error: landlordError } = await supabase.rpc('create_landlord_profile', {
+      p_user_id:   data.user.id,
+      p_full_name: form.fullName,
+      p_whatsapp:  form.whatsapp,
+      p_city:      form.city || null,
+      p_bio:       form.bio  || null,
     })
 
-    if (landlordError && !landlordError.message.includes('duplicate')) {
+    if (landlordError) {
       setError(landlordError.message)
       setLoading(false); return
     }

@@ -81,10 +81,38 @@ CREATE POLICY "Landlord can read own profile"
   USING (auth.uid() = user_id);
 
 -- Landlord can insert their own profile (registration)
+-- Covers both immediate-session and email-confirmation flows:
+-- auth.uid() works when session exists; the uid() = user_id check
+-- ensures a user can only insert their own row.
 DROP POLICY IF EXISTS "Landlord can insert own profile" ON public.landlords;
 CREATE POLICY "Landlord can insert own profile"
   ON public.landlords FOR INSERT
   WITH CHECK (auth.uid() = user_id);
+
+-- SECURITY DEFINER function so registration can insert the landlord row
+-- even when email confirmation is pending (no active session yet).
+CREATE OR REPLACE FUNCTION public.create_landlord_profile(
+  p_user_id    UUID,
+  p_full_name  TEXT,
+  p_whatsapp   TEXT,
+  p_city       TEXT DEFAULT NULL,
+  p_bio        TEXT DEFAULT NULL
+)
+RETURNS void
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  INSERT INTO public.landlords (user_id, full_name, whatsapp, city, bio, status, is_verified)
+  VALUES (p_user_id, p_full_name, p_whatsapp, p_city, p_bio, 'not_submitted', false)
+  ON CONFLICT (user_id) DO NOTHING;
+END;
+$$;
+
+-- Only authenticated users (or service role) can call this function
+REVOKE ALL ON FUNCTION public.create_landlord_profile FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.create_landlord_profile TO anon, authenticated;
 
 -- Landlord can update their own profile
 DROP POLICY IF EXISTS "Landlord can update own profile" ON public.landlords;
