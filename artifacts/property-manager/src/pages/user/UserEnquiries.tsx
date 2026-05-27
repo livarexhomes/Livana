@@ -436,8 +436,25 @@ export default function UserSupportPage() {
     const supabase = createClient()
     supabase.auth.getUser().then(async ({ data: { user } }) => {
       if (!user) return
-      const { data: tenant } = await supabase
+
+      let { data: tenant } = await supabase
         .from('tenants').select('id').eq('user_id', user.id).single() as { data: { id: string } | null }
+
+      // Auto-create tenant row for users who signed up via OAuth or whose row is missing
+      if (!tenant) {
+        const meta = user.user_metadata ?? {}
+        const { data: created } = await supabase
+          .from('tenants')
+          .insert({
+            user_id: user.id,
+            full_name: meta.full_name ?? meta.name ?? user.email?.split('@')[0] ?? 'User',
+            phone: meta.phone ?? null,
+          })
+          .select('id')
+          .single() as { data: { id: string } | null }
+        tenant = created
+      }
+
       if (!tenant) { setLoading(false); return }
       setTenantId(tenant.id)
 
@@ -505,8 +522,12 @@ export default function UserSupportPage() {
             </div>
 
             {/* New ticket form */}
-            {showNewForm && tenantId && (
-              <NewTicketForm tenantId={tenantId} onCreated={handleTicketCreated} />
+            {showNewForm && (
+              tenantId
+                ? <NewTicketForm tenantId={tenantId} onCreated={handleTicketCreated} />
+                : <div className="flex items-center justify-center py-10">
+                    <Loader2 className="w-5 h-5 animate-spin text-gray-400" />
+                  </div>
             )}
 
             {/* Ticket list */}
