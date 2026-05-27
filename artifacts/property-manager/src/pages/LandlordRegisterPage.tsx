@@ -57,8 +57,7 @@ export default function LandlordRegisterPage() {
     if (!data.session) {
       // Supabase built-in email is disabled — send via Resend through our API.
       try {
-        const apiUrl = import.meta.env.VITE_API_URL ?? ''
-        const res = await fetch(`${apiUrl}/api/email/send-confirmation`, {
+        const res = await fetch('/api/send-confirmation', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ email: form.email, fullName: form.fullName }),
