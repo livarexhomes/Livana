@@ -39,7 +39,7 @@ export default function RegisterPage() {
         const res = await fetch('/api/send-confirmation', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email, fullName }),
+          body: JSON.stringify({ email, fullName, password }),
         })
         if (!res.ok) {
           const body = await res.json().catch(() => ({}))

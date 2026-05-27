@@ -12,10 +12,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(405).json({ error: 'Method not allowed' })
   }
 
-  const { email, fullName, password } = req.body ?? {}
+  const { email } = req.body ?? {}
 
-  if (!email || !fullName || !password) {
-    return res.status(400).json({ error: 'email, fullName and password are required' })
+  if (!email || typeof email !== 'string') {
+    return res.status(400).json({ error: 'email is required' })
   }
 
   const supabaseUrl = process.env.SUPABASE_URL
@@ -34,33 +34,26 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     auth: { autoRefreshToken: false, persistSession: false },
   }) as SupabaseClient & { auth: { admin: any } }
 
-  // Generate a signup confirmation link that preserves the password credential.
-  // Using type 'signup' (not 'magiclink') ensures the user can sign in with
-  // email+password after confirming — magiclink would confirm the account but
-  // leave the password unverifiable.
   const appUrl = process.env.APP_URL ?? `https://${req.headers.host}`
+
   const { data: linkData, error: linkError } = await supabaseAdmin.auth.admin.generateLink({
-    type: 'signup',
+    type: 'recovery',
     email,
-    password,
-    options: { redirectTo: `${appUrl}/auth/callback` },
+    options: { redirectTo: `${appUrl}/reset-password` },
   })
 
   if (linkError || !linkData?.properties?.action_link) {
-    console.error('[send-confirmation] generateLink failed:', linkError)
-    return res.status(502).json({
-      error: 'Failed to generate confirmation link',
-      detail: linkError?.message ?? 'action_link missing from response',
-    })
+    console.error('[send-password-reset] generateLink failed:', linkError)
+    // Return 200 regardless — don't reveal whether the email exists
+    return res.status(200).json({ ok: true })
   }
 
-  const confirmationUrl = linkData.properties.action_link
-  const firstName = fullName.split(' ')[0]
+  const resetUrl = linkData.properties.action_link
 
-  const { data, error } = await resend.emails.send({
+  const { error } = await resend.emails.send({
     from: FROM,
     to: email,
-    subject: `Confirm your ${APP_NAME} account`,
+    subject: `Reset your ${APP_NAME} password`,
     html: `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -80,22 +73,22 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           </tr>
           <tr>
             <td style="padding:40px 40px 32px;">
-              <h2 style="margin:0 0 8px;font-size:20px;font-weight:700;color:#111827;">Hi ${firstName},</h2>
+              <h2 style="margin:0 0 8px;font-size:20px;font-weight:700;color:#111827;">Reset your password</h2>
               <p style="margin:0 0 24px;font-size:15px;color:#6b7280;line-height:1.6;">
-                Thanks for signing up. Click the button below to confirm your email address and activate your account.
+                We received a request to reset the password for your ${APP_NAME} account. Click the button below to choose a new password.
               </p>
               <table width="100%" cellpadding="0" cellspacing="0">
                 <tr>
                   <td align="center">
-                    <a href="${confirmationUrl}"
+                    <a href="${resetUrl}"
                        style="display:inline-block;padding:14px 36px;background:#1d4ed8;color:#ffffff;font-size:15px;font-weight:700;text-decoration:none;border-radius:12px;">
-                      Confirm my account
+                      Reset my password
                     </a>
                   </td>
                 </tr>
               </table>
               <p style="margin:28px 0 0;font-size:13px;color:#9ca3af;line-height:1.6;">
-                This link expires in 24 hours. If you didn't create a ${APP_NAME} account, you can safely ignore this email.
+                This link expires in 1 hour. If you didn't request a password reset, you can safely ignore this email — your password won't change.
               </p>
             </td>
           </tr>
@@ -115,12 +108,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   })
 
   if (error) {
-    console.error('[send-confirmation] Resend error:', error)
-    return res.status(502).json({
-      error: 'Failed to send confirmation email',
-      detail: (error as any)?.message ?? String(error),
-    })
+    console.error('[send-password-reset] Resend error:', error)
+    // Still return 200 — don't leak email existence
+    return res.status(200).json({ ok: true })
   }
 
-  return res.status(200).json({ id: data?.id })
+  return res.status(200).json({ ok: true })
 }
