@@ -21,12 +21,12 @@ const TYPE_LABEL: Record<string, string> = {
   sale: 'For Sale', rent: 'For Rent', lease: 'Lease', commercial: 'Commercial',
 }
 
-const STATUS_TABS = [
-  { value: 'all',               label: 'All' },
-  { value: 'available',         label: 'Available' },
-  { value: 'taken',             label: 'Taken' },
-  { value: 'under_negotiation', label: 'Negotiating' },
-  { value: 'coming_soon',       label: 'Coming Soon' },
+const TYPE_TABS = [
+  { value: 'all',        label: 'All' },
+  { value: 'rent',       label: 'For Rent' },
+  { value: 'lease',      label: 'Lease' },
+  { value: 'sale',       label: 'For Sale' },
+  { value: 'commercial', label: 'Commercial' },
 ]
 
 function timeAgo(iso: string) {
@@ -49,9 +49,11 @@ export default function LandlordDashboard() {
   const [stats, setStats]                     = useState({ total: 0, available: 0, enquiries: 0, taken: 0 })
   const [loading, setLoading]                 = useState(true)
 
-  const [search, setSearch]             = useState('')
-  const [statusFilter, setStatusFilter] = useState('all')
-  const [sortBy, setSortBy]             = useState('newest')
+  const [search, setSearch]         = useState('')
+  const [typeFilter, setTypeFilter] = useState('all')
+  const [stateFilter, setStateFilter] = useState('')
+  const [bedsFilter, setBedsFilter] = useState('')
+  const [sortBy, setSortBy]         = useState('newest')
 
   useEffect(() => {
     const supabase = createClient()
@@ -96,12 +98,14 @@ export default function LandlordDashboard() {
   const initials    = displayName.split(' ').slice(0, 2).map((w: string) => w[0]).join('').toUpperCase() || 'LL'
   const occupancy   = stats.total > 0 ? Math.round((stats.taken / stats.total) * 100) : 0
 
-  const hasFilters = statusFilter !== 'all' || !!search
-  function clearFilters() { setSearch(''); setStatusFilter('all') }
+  const hasFilters = typeFilter !== 'all' || !!stateFilter || !!bedsFilter || !!search
+  function clearFilters() { setSearch(''); setTypeFilter('all'); setStateFilter(''); setBedsFilter('') }
 
   const filtered = listings
     .filter(p => {
-      if (statusFilter !== 'all' && p.status !== statusFilter) return false
+      if (typeFilter !== 'all' && p.type !== typeFilter) return false
+      if (stateFilter && !p.city?.toLowerCase().includes(stateFilter.toLowerCase())) return false
+      if (bedsFilter && p.bedrooms < Number(bedsFilter)) return false
       if (search) {
         const q = search.toLowerCase()
         if (
@@ -191,9 +195,10 @@ export default function LandlordDashboard() {
                   })}
                 </div>
 
-                {/* Filter bar — mirrors user overview */}
+                {/* Filter bar — identical to user overview */}
                 <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-3">
                   <div className="flex flex-wrap items-center gap-2">
+                    {/* Search */}
                     <div className="relative flex-1 min-w-40">
                       <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
                       <input
@@ -205,11 +210,12 @@ export default function LandlordDashboard() {
                       />
                     </div>
 
+                    {/* Type tabs */}
                     <div className="flex items-center gap-1 overflow-x-auto no-scrollbar">
-                      {STATUS_TABS.map(t => (
-                        <button key={t.value} onClick={() => setStatusFilter(t.value)}
+                      {TYPE_TABS.map(t => (
+                        <button key={t.value} onClick={() => setTypeFilter(t.value)}
                           className={`px-3 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-all border ${
-                            statusFilter === t.value
+                            typeFilter === t.value
                               ? 'bg-gray-900 text-white border-gray-900'
                               : 'bg-white text-gray-500 border-gray-200 hover:border-gray-400'
                           }`}>
@@ -218,6 +224,31 @@ export default function LandlordDashboard() {
                       ))}
                     </div>
 
+                    {/* State */}
+                    <div className="relative shrink-0">
+                      <select value={stateFilter} onChange={e => setStateFilter(e.target.value)}
+                        className="appearance-none pl-3 pr-7 py-2 rounded-xl border border-gray-200 text-xs bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-900 cursor-pointer">
+                        <option value="">Any State</option>
+                        <option value="Lagos">Lagos</option>
+                        <option value="Ogun">Ogun</option>
+                      </select>
+                      <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-gray-400 pointer-events-none" />
+                    </div>
+
+                    {/* Beds */}
+                    <div className="relative shrink-0">
+                      <select value={bedsFilter} onChange={e => setBedsFilter(e.target.value)}
+                        className="appearance-none pl-3 pr-7 py-2 rounded-xl border border-gray-200 text-xs bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-900 cursor-pointer">
+                        <option value="">Any Beds</option>
+                        <option value="1">1+ Beds</option>
+                        <option value="2">2+ Beds</option>
+                        <option value="3">3+ Beds</option>
+                        <option value="4">4+ Beds</option>
+                      </select>
+                      <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-gray-400 pointer-events-none" />
+                    </div>
+
+                    {/* Sort */}
                     <div className="relative shrink-0">
                       <select value={sortBy} onChange={e => setSortBy(e.target.value)}
                         className="appearance-none pl-3 pr-7 py-2 rounded-xl border border-gray-200 text-xs bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-900 cursor-pointer">
