@@ -765,7 +765,7 @@ export default function HomePage() {
 
           {/* Bento grid */}
           <div className="grid grid-cols-2 md:grid-cols-4 auto-rows-[140px] md:grid-rows-[280px_200px] gap-3 md:gap-4">
-            {/* Lagos — large feature cell (2 cols × 2 rows) */}
+            {/* Lagos — large feature cell (2 cols × 2 rows) — ACTIVE */}
             <Link
               href="/listings?city=Lagos"
               className="relative group overflow-hidden rounded-3xl col-span-2 row-span-2 shadow-sm hover:shadow-2xl transition-all duration-500"
@@ -782,71 +782,71 @@ export default function HomePage() {
               </div>
             </Link>
 
-            {/* Abuja — top right */}
+            {/* Abuja — coming soon */}
+            <div className="relative overflow-hidden rounded-3xl col-span-1 shadow-sm cursor-default">
+              <img src="https://images.unsplash.com/photo-1567985207911-725f4e7c8926?w=800" alt="Abuja" className="w-full h-full object-cover" />
+              <div className="absolute inset-0 bg-black/60" />
+              <div className="absolute bottom-4 left-4">
+                <h3 className="text-lg font-bold text-white/60">Abuja</h3>
+                <p className="text-white/40 text-xs font-medium mt-0.5">Federal Capital</p>
+              </div>
+              <div className="absolute top-3 right-3 bg-white/15 backdrop-blur-sm border border-white/20 text-white text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full">
+                Coming Soon
+              </div>
+            </div>
+
+            {/* Ogun — ACTIVE */}
             <Link
-              href="/listings?city=Abuja"
+              href="/listings?city=Ogun"
               className="relative group overflow-hidden rounded-3xl col-span-1 shadow-sm hover:shadow-2xl transition-all duration-500"
             >
-              <img src="https://images.unsplash.com/photo-1567985207911-725f4e7c8926?w=800" alt="Abuja" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
+              <img src="https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=800" alt="Ogun" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
               <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/20 to-transparent" />
               <div className="absolute bottom-4 left-4">
-                <h3 className="text-lg font-bold text-white">Abuja</h3>
-                <p className="text-blue-300 text-xs font-medium mt-0.5">Federal Capital</p>
+                <h3 className="text-lg font-bold text-white">Ogun</h3>
+                <p className="text-blue-300 text-xs font-medium mt-0.5">Gateway State</p>
               </div>
-            </Link>
-
-            {/* Ibadan — top far-right */}
-            <Link
-              href="/listings?city=Ibadan"
-              className="relative group overflow-hidden rounded-3xl col-span-1 shadow-sm hover:shadow-2xl transition-all duration-500"
-            >
-              <img src="https://images.unsplash.com/photo-1553194588-ecc5e217ebf0?w=800" alt="Ibadan" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/20 to-transparent" />
-              <div className="absolute bottom-4 left-4">
-                <h3 className="text-lg font-bold text-white">Ibadan</h3>
-                <p className="text-blue-300 text-xs font-medium mt-0.5">Cultural Centre</p>
-              </div>
-            </Link>
-
-            {/* Port Harcourt — bottom center (2 cols) */}
-            <Link
-              href="/listings?city=Port Harcourt"
-              className="relative group overflow-hidden rounded-3xl col-span-2 shadow-sm hover:shadow-2xl transition-all duration-500"
-            >
-              <img src="https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=1000" alt="Port Harcourt" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/20 to-transparent" />
-              <div className="absolute bottom-4 left-5 flex items-end justify-between w-full pr-10">
-                <div>
-                  <h3 className="text-xl font-bold text-white">Port Harcourt</h3>
-                  <p className="text-blue-300 text-xs font-medium mt-0.5">Oil City Hub</p>
-                </div>
-              </div>
-              <div className="absolute top-4 right-4 w-9 h-9 rounded-full bg-white/15 backdrop-blur flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all translate-x-2 group-hover:translate-x-0 duration-300">
+              <div className="absolute top-5 right-5 w-9 h-9 rounded-full bg-white/15 backdrop-blur flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all translate-x-2 group-hover:translate-x-0 duration-300">
                 <ArrowRight className="w-4 h-4 text-white" />
               </div>
             </Link>
+
+            {/* Port Harcourt — coming soon (2 cols) */}
+            <div className="relative overflow-hidden rounded-3xl col-span-2 shadow-sm cursor-default">
+              <img src="https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=1000" alt="Port Harcourt" className="w-full h-full object-cover" />
+              <div className="absolute inset-0 bg-black/60" />
+              <div className="absolute bottom-4 left-5">
+                <h3 className="text-xl font-bold text-white/60">Port Harcourt</h3>
+                <p className="text-white/40 text-xs font-medium mt-0.5">Oil City Hub</p>
+              </div>
+              <div className="absolute top-3 right-3 bg-white/15 backdrop-blur-sm border border-white/20 text-white text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full">
+                Coming Soon
+              </div>
+            </div>
           </div>
 
-          {/* Second row — smaller cities */}
+          {/* Second row — smaller cities, all coming soon */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mt-3 md:mt-4">
             {[
               { name: 'Kano', sub: 'Northern Hub', img: 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=800' },
+              { name: 'Ibadan', sub: 'Cultural Centre', img: 'https://images.unsplash.com/photo-1553194588-ecc5e217ebf0?w=800' },
               { name: 'Enugu', sub: 'Coal City', img: 'https://images.unsplash.com/photo-1448630360428-65456885c650?w=800' },
               { name: 'Benin City', sub: 'Ancient Kingdom', img: 'https://images.unsplash.com/photo-1613545325278-f24b0cae1224?w=800' },
-              { name: 'Kaduna', sub: 'Industrial Centre', img: 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=800' },
             ].map(loc => (
-              <Link
+              <div
                 key={loc.name}
-                href={`/listings?city=${loc.name}`}
-                className="relative group overflow-hidden rounded-2xl h-36 shadow-sm hover:shadow-xl transition-all duration-500"
+                className="relative overflow-hidden rounded-2xl h-36 shadow-sm cursor-default"
               >
-                <img src={loc.img} alt={loc.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+                <img src={loc.img} alt={loc.name} className="w-full h-full object-cover" />
+                <div className="absolute inset-0 bg-black/60" />
                 <div className="absolute bottom-3 left-4">
-                  <h3 className="text-base font-bold text-white">{loc.name}</h3>
-                  <p className="text-blue-300 text-xs font-medium">{loc.sub}</p>
+                  <h3 className="text-base font-bold text-white/60">{loc.name}</h3>
+                  <p className="text-white/40 text-xs font-medium">{loc.sub}</p>
                 </div>
-              </Link>
+                <div className="absolute top-2.5 right-2.5 bg-white/15 backdrop-blur-sm border border-white/20 text-white text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full">
+                  Coming Soon
+                </div>
+              </div>
             ))}
           </div>
         </div>
