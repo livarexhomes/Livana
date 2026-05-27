@@ -34,7 +34,7 @@ export default function ListingsPage() {
   const [bedsFilter, setBedsFilter] = useState(params.get('bedrooms') ?? '')
   const [sortBy, setSortBy] = useState('newest')
   const [showFilters, setShowFilters] = useState(false)
-  const [showMap, setShowMap] = useState(true)
+  const [showMap, setShowMap] = useState(false)
   const [hoveredId, setHoveredId] = useState<string | null>(null)
   const [properties, setProperties] = useState<PropertyWithLandlord[]>([])
   const [loading, setLoading] = useState(true)
@@ -108,7 +108,7 @@ export default function ListingsPage() {
       <PublicNavbar />
 
       {/* Filter bar */}
-      <div className="sticky top-16 z-40 bg-white border-b border-gray-100 shadow-sm">
+      <div className="sticky top-[80px] z-40 bg-white border-b border-gray-100 shadow-sm">
         <div className="max-w-screen-2xl mx-auto px-4 sm:px-6">
           <div className="flex items-center gap-2 py-3 overflow-x-auto no-scrollbar">
 
@@ -229,7 +229,7 @@ export default function ListingsPage() {
 
           {/* Expanded filters */}
           {showFilters && (
-            <div className="pb-4 flex flex-wrap gap-4 items-end border-t border-gray-50 pt-4">
+            <div className="pb-4 grid grid-cols-2 sm:flex sm:flex-wrap gap-3 sm:gap-4 items-end border-t border-gray-50 pt-4">
               <div className="flex flex-col gap-1">
                 <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Min Price (₦)</label>
                 <input
@@ -237,7 +237,7 @@ export default function ListingsPage() {
                   value={minPrice}
                   onChange={e => setMinPrice(e.target.value)}
                   placeholder="e.g. 500,000"
-                  className="px-3.5 py-2 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 w-40"
+                  className="px-3.5 py-2 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 w-full sm:w-40"
                 />
               </div>
               <div className="flex flex-col gap-1">
@@ -247,10 +247,10 @@ export default function ListingsPage() {
                   value={maxPrice}
                   onChange={e => setMaxPrice(e.target.value)}
                   placeholder="e.g. 5,000,000"
-                  className="px-3.5 py-2 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 w-40"
+                  className="px-3.5 py-2 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 w-full sm:w-40"
                 />
               </div>
-              <div className="flex flex-col gap-1">
+              <div className="flex flex-col gap-1 col-span-2 sm:col-span-1">
                 <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Area / Neighbourhood</label>
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
@@ -258,13 +258,13 @@ export default function ListingsPage() {
                     value={areaFilter}
                     onChange={e => setAreaFilter(e.target.value)}
                     placeholder="e.g. Lekki, Maitama…"
-                    className="pl-9 pr-3.5 py-2 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 w-52"
+                    className="pl-9 pr-3.5 py-2 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 w-full sm:w-52"
                   />
                 </div>
               </div>
               <button
                 onClick={() => setShowFilters(false)}
-                className="px-5 py-2 bg-gray-900 text-white text-sm font-semibold rounded-xl hover:bg-gray-800 transition-colors"
+                className="col-span-2 sm:col-span-1 px-5 py-2 bg-gray-900 text-white text-sm font-semibold rounded-xl hover:bg-gray-800 transition-colors"
               >
                 Apply
               </button>
@@ -274,7 +274,7 @@ export default function ListingsPage() {
       </div>
 
       {/* Body */}
-      <div className="flex flex-1 overflow-hidden" style={{ height: 'calc(100vh - 113px)' }}>
+      <div className="flex flex-1 overflow-hidden lg:h-[calc(100vh-113px)]">
 
         {/* List panel */}
         <div

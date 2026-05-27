@@ -236,7 +236,7 @@ export default function PropertyDetailPage() {
         <div className="grid lg:grid-cols-3 gap-6 lg:gap-8">
 
           {/* ── Left column ── */}
-          <div className="lg:col-span-2 space-y-5">
+          <div className="lg:col-span-2 space-y-5 order-1 lg:order-none">
 
             {/* Gallery */}
             <div className="rounded-2xl overflow-hidden bg-gray-200 shadow-sm">
@@ -279,7 +279,7 @@ export default function PropertyDetailPage() {
                 )}
               </div>
               {images.length > 1 && (
-                <div className="flex gap-2 p-3 overflow-x-auto bg-white border-t border-gray-100">
+                <div className="flex gap-2 p-3 overflow-x-auto no-scrollbar bg-white border-t border-gray-100">
                   {images.map((img, i) => (
                     <button key={img.id} onClick={() => setImgIndex(i)}
                       className={`shrink-0 w-16 h-12 rounded-lg overflow-hidden border-2 transition-all ${i === imgIndex ? 'border-blue-600 shadow-sm' : 'border-transparent opacity-60 hover:opacity-100'}`}>
@@ -305,10 +305,10 @@ export default function PropertyDetailPage() {
                 <span>{property.address}, {property.city}</span>
               </div>
               <div className="flex items-end gap-2 mb-5 pb-5 border-b border-gray-100">
-                <p className="text-3xl font-extrabold text-gray-900">₦{Number(property.price).toLocaleString()}</p>
-                {property.type === 'rent' && <span className="text-base font-normal text-gray-400 mb-0.5">/year</span>}
+                <p className="text-2xl sm:text-3xl font-extrabold text-gray-900">₦{Number(property.price).toLocaleString()}</p>
+                {property.type === 'rent' && <span className="text-sm sm:text-base font-normal text-gray-400 mb-0.5">/year</span>}
               </div>
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-3 gap-2 sm:gap-3">
                 <div className="text-center p-3 bg-gray-50 rounded-xl">
                   <BedDouble className="w-5 h-5 text-blue-600 mx-auto mb-1" />
                   <p className="text-lg font-extrabold text-gray-900">{property.bedrooms}</p>
@@ -437,7 +437,7 @@ export default function PropertyDetailPage() {
           </div>
 
           {/* ── Right sidebar ── */}
-          <div className="space-y-4">
+          <div className="space-y-4 order-first lg:order-none">
 
             {/* ── Contact card (redesigned) ── */}
             <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden lg:sticky lg:top-24">
