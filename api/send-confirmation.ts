@@ -44,7 +44,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   if (linkError || !linkData?.properties?.action_link) {
     console.error('[send-confirmation] generateLink failed:', linkError)
-    return res.status(502).json({ error: 'Failed to generate confirmation link' })
+    return res.status(502).json({
+      error: 'Failed to generate confirmation link',
+      detail: linkError?.message ?? 'action_link missing from response',
+    })
   }
 
   const confirmationUrl = linkData.properties.action_link
@@ -109,7 +112,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   if (error) {
     console.error('[send-confirmation] Resend error:', error)
-    return res.status(502).json({ error: 'Failed to send confirmation email' })
+    return res.status(502).json({
+      error: 'Failed to send confirmation email',
+      detail: (error as any)?.message ?? String(error),
+    })
   }
 
   return res.status(200).json({ id: data?.id })

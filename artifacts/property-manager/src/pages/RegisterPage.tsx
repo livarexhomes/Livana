@@ -44,7 +44,7 @@ export default function RegisterPage() {
         if (!res.ok) {
           const body = await res.json().catch(() => ({}))
           console.error('[send-confirmation] API error:', res.status, body)
-          setError(`Failed to send confirmation email (${res.status}). Please try again.`)
+          setError(`Failed to send confirmation email (${res.status}): ${body.detail ?? body.error ?? 'unknown error'}`)
           setLoading(false)
           return
         }
