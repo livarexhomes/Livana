@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link, useLocation } from 'wouter'
-import { Eye, EyeOff, ShieldCheck, Building2, Users } from 'lucide-react'
+import { Eye, EyeOff, ShieldCheck, Building2, Users, Mail } from 'lucide-react'
 import { createClient, isSupabaseConfigured } from '../lib/supabase'
 import { isAdminUser } from '../lib/auth'
 import type { User } from '@supabase/supabase-js'
@@ -13,6 +13,39 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false)
   const [googleLoading, setGoogleLoading] = useState(false)
   const [error, setError] = useState('')
+
+  // Forgot password state
+  const [forgotMode, setForgotMode] = useState(false)
+  const [forgotEmail, setForgotEmail] = useState('')
+  const [forgotLoading, setForgotLoading] = useState(false)
+  const [forgotSent, setForgotSent] = useState(false)
+  const [forgotError, setForgotError] = useState('')
+
+  async function handleForgotPassword(e: React.FormEvent) {
+    e.preventDefault()
+    if (!isSupabaseConfigured()) { setForgotError('Platform is not configured yet.'); return }
+    setForgotLoading(true)
+    setForgotError('')
+    try {
+      const res = await fetch('/api/send-password-reset', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: forgotEmail }),
+      })
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}))
+        setForgotError(body.error ?? 'Something went wrong. Please try again.')
+        setForgotLoading(false)
+        return
+      }
+    } catch {
+      setForgotError('Could not reach the email service. Please try again.')
+      setForgotLoading(false)
+      return
+    }
+    setForgotSent(true)
+    setForgotLoading(false)
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -99,63 +132,131 @@ export default function LoginPage() {
             <div className="flex-1 h-px bg-gray-100" />
           </div>
 
-          {/* Form */}
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="block text-xs font-semibold text-gray-500 uppercase tracking-widest mb-1.5">Email address</label>
-              <input
-                type="email"
-                required
-                autoComplete="email"
-                placeholder="you@example.com"
-                value={email}
-                onChange={e => setEmail(e.target.value)}
-                className="w-full px-4 py-3.5 rounded-2xl border border-gray-200 bg-gray-50 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:bg-white transition-all"
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-semibold text-gray-500 uppercase tracking-widest mb-1.5">Password</label>
-              <div className="relative">
-                <input
-                  type={showPassword ? 'text' : 'password'}
-                  required
-                  autoComplete="current-password"
-                  placeholder="Enter your password"
-                  value={password}
-                  onChange={e => setPassword(e.target.value)}
-                  className="w-full px-4 py-3.5 pr-12 rounded-2xl border border-gray-200 bg-gray-50 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:bg-white transition-all"
-                />
+          {/* Forgot password view */}
+          {forgotMode ? (
+            forgotSent ? (
+              <div className="text-center py-4">
+                <div className="w-14 h-14 rounded-2xl bg-blue-50 flex items-center justify-center mx-auto mb-5">
+                  <Mail className="w-7 h-7 text-blue-600" />
+                </div>
+                <h2 className="text-xl font-bold text-gray-900 mb-2">Check your email</h2>
+                <p className="text-sm text-gray-500 mb-1">We sent a reset link to</p>
+                <p className="font-semibold text-gray-900 mb-5">{forgotEmail}</p>
+                <p className="text-xs text-gray-400 mb-6">Click the link in the email to set a new password. The link expires in 1 hour.</p>
                 <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition"
-                  aria-label={showPassword ? 'Hide password' : 'Show password'}
+                  onClick={() => { setForgotMode(false); setForgotSent(false); setForgotEmail('') }}
+                  className="text-sm text-blue-600 hover:text-blue-700 font-semibold"
                 >
-                  {showPassword ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+                  Back to sign in
                 </button>
               </div>
-            </div>
+            ) : (
+              <form onSubmit={handleForgotPassword} className="space-y-4">
+                <div>
+                  <label className="block text-xs font-semibold text-gray-500 uppercase tracking-widest mb-1.5">Your email address</label>
+                  <input
+                    type="email"
+                    required
+                    autoFocus
+                    autoComplete="email"
+                    placeholder="you@example.com"
+                    value={forgotEmail}
+                    onChange={e => setForgotEmail(e.target.value)}
+                    className="w-full px-4 py-3.5 rounded-2xl border border-gray-200 bg-gray-50 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:bg-white transition-all"
+                  />
+                </div>
 
-            {error && (
-              <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-2xl px-4 py-3">
-                {error}
-              </div>
-            )}
+                {forgotError && (
+                  <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-2xl px-4 py-3">
+                    {forgotError}
+                  </div>
+                )}
 
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full py-3.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white font-bold rounded-2xl transition-all shadow-lg shadow-blue-600/25 text-sm mt-2"
-            >
-              {loading ? 'Signing in…' : 'Sign in'}
-            </button>
-          </form>
+                <button
+                  type="submit"
+                  disabled={forgotLoading}
+                  className="w-full py-3.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white font-bold rounded-2xl transition-all shadow-lg shadow-blue-600/25 text-sm"
+                >
+                  {forgotLoading ? 'Sending…' : 'Send reset link'}
+                </button>
 
-          <p className="text-center text-sm text-gray-500 mt-6">
-            Don't have an account?{' '}
-            <Link href="/register" className="text-blue-600 hover:text-blue-700 font-semibold">Create one free</Link>
-          </p>
+                <p className="text-center text-sm text-gray-500">
+                  <button type="button" onClick={() => { setForgotMode(false); setForgotError('') }} className="text-blue-600 hover:text-blue-700 font-semibold">
+                    Back to sign in
+                  </button>
+                </p>
+              </form>
+            )
+          ) : (
+            <>
+              {/* Sign in form */}
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div>
+                  <label className="block text-xs font-semibold text-gray-500 uppercase tracking-widest mb-1.5">Email address</label>
+                  <input
+                    type="email"
+                    required
+                    autoComplete="email"
+                    placeholder="you@example.com"
+                    value={email}
+                    onChange={e => setEmail(e.target.value)}
+                    className="w-full px-4 py-3.5 rounded-2xl border border-gray-200 bg-gray-50 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:bg-white transition-all"
+                  />
+                </div>
+
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="block text-xs font-semibold text-gray-500 uppercase tracking-widest">Password</label>
+                    <button
+                      type="button"
+                      onClick={() => { setForgotMode(true); setForgotEmail(email); setForgotError('') }}
+                      className="text-xs text-blue-600 hover:text-blue-700 font-semibold"
+                    >
+                      Forgot password?
+                    </button>
+                  </div>
+                  <div className="relative">
+                    <input
+                      type={showPassword ? 'text' : 'password'}
+                      required
+                      autoComplete="current-password"
+                      placeholder="Enter your password"
+                      value={password}
+                      onChange={e => setPassword(e.target.value)}
+                      className="w-full px-4 py-3.5 pr-12 rounded-2xl border border-gray-200 bg-gray-50 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:bg-white transition-all"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition"
+                      aria-label={showPassword ? 'Hide password' : 'Show password'}
+                    >
+                      {showPassword ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+                    </button>
+                  </div>
+                </div>
+
+                {error && (
+                  <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-2xl px-4 py-3">
+                    {error}
+                  </div>
+                )}
+
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full py-3.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white font-bold rounded-2xl transition-all shadow-lg shadow-blue-600/25 text-sm mt-2"
+                >
+                  {loading ? 'Signing in…' : 'Sign in'}
+                </button>
+              </form>
+
+              <p className="text-center text-sm text-gray-500 mt-6">
+                Don't have an account?{' '}
+                <Link href="/register" className="text-blue-600 hover:text-blue-700 font-semibold">Create one free</Link>
+              </p>
+            </>
+          )}
         </div>
       </div>
 
