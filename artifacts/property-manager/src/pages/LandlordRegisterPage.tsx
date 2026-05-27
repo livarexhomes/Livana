@@ -53,7 +53,24 @@ export default function LandlordRegisterPage() {
     }
 
     setSubmittedEmail(form.email)
-    if (!data.session) { setStep('verify') } else { setStep('success') }
+
+    if (!data.session) {
+      // Supabase built-in email is disabled — send via Resend through our API.
+      try {
+        const apiUrl = import.meta.env.VITE_API_URL ?? ''
+        await fetch(`${apiUrl}/api/email/send-confirmation`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: form.email, fullName: form.fullName }),
+        })
+      } catch {
+        // Non-fatal: user can still request a resend from the verify screen.
+      }
+      setStep('verify')
+    } else {
+      setStep('success')
+    }
+
     setLoading(false)
   }
 
