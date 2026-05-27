@@ -1,9 +1,9 @@
 import { useState, useEffect, useRef } from 'react'
-import { useLocation } from 'wouter'
+import { Link, useLocation } from 'wouter'
 import {
   User, ShieldCheck, FileText, CheckCircle2,
   Upload, X, AlertCircle, ChevronRight, Loader2,
-  CreditCard, KeyRound,
+  CreditCard, KeyRound, Camera,
 } from 'lucide-react'
 import { createClient } from '../../lib/supabase'
 
