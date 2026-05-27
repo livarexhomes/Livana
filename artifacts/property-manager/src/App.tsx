@@ -15,6 +15,7 @@ import LandlordDashboard from "./pages/landlord/LandlordDashboard";
 import LandlordListings from "./pages/landlord/LandlordListings";
 import LandlordListingForm from "./pages/landlord/LandlordListingForm";
 import LandlordEnquiries from "./pages/landlord/LandlordEnquiries";
+import LandlordInbox from "./pages/landlord/LandlordInbox";
 import LandlordProfile from "./pages/landlord/LandlordProfile";
 import LandlordPending from "./pages/landlord/LandlordPending";
 import LandlordRejected from "./pages/landlord/LandlordRejected";
@@ -72,6 +73,7 @@ function Router() {
       <Route path="/landlord/listings/new" component={LandlordListingForm} />
       <Route path="/landlord/listings/:id/edit" component={LandlordListingForm} />
       <Route path="/landlord/enquiries" component={LandlordEnquiries} />
+      <Route path="/landlord/inbox" component={LandlordInbox} />
       <Route path="/landlord/profile" component={LandlordProfile} />
       <Route path="/landlord/kyc" component={LandlordKYCPage} />
       <Route path="/landlord/pending" component={LandlordPending} />

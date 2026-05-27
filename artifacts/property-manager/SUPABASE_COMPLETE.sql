@@ -359,6 +359,51 @@ CREATE POLICY "Admins full access to enquiries"
   USING (EXISTS (SELECT 1 FROM public.admins WHERE id = auth.uid()));
 
 
+-- ── enquiry_replies ──────────────────────────────────────────
+-- Stores landlord replies to tenant enquiries
+
+CREATE TABLE IF NOT EXISTS public.enquiry_replies (
+  id          UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+  enquiry_id  UUID        NOT NULL REFERENCES public.enquiries(id) ON DELETE CASCADE,
+  landlord_id UUID        NOT NULL REFERENCES public.landlords(id) ON DELETE CASCADE,
+  message     TEXT        NOT NULL,
+  created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_enquiry_replies_enquiry ON public.enquiry_replies(enquiry_id);
+
+ALTER TABLE public.enquiry_replies ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Landlord insert own replies" ON public.enquiry_replies;
+CREATE POLICY "Landlord insert own replies"
+  ON public.enquiry_replies FOR INSERT
+  WITH CHECK (
+    landlord_id = (SELECT id FROM public.landlords WHERE user_id = auth.uid())
+  );
+
+DROP POLICY IF EXISTS "Landlord select own replies" ON public.enquiry_replies;
+CREATE POLICY "Landlord select own replies"
+  ON public.enquiry_replies FOR SELECT
+  USING (
+    landlord_id = (SELECT id FROM public.landlords WHERE user_id = auth.uid())
+  );
+
+DROP POLICY IF EXISTS "Tenant select replies on own enquiries" ON public.enquiry_replies;
+CREATE POLICY "Tenant select replies on own enquiries"
+  ON public.enquiry_replies FOR SELECT
+  USING (
+    enquiry_id IN (
+      SELECT id FROM public.enquiries
+      WHERE tenant_id = (SELECT id FROM public.tenants WHERE user_id = auth.uid())
+    )
+  );
+
+DROP POLICY IF EXISTS "Admins full access to enquiry_replies" ON public.enquiry_replies;
+CREATE POLICY "Admins full access to enquiry_replies"
+  ON public.enquiry_replies FOR ALL
+  USING (EXISTS (SELECT 1 FROM public.admins WHERE id = auth.uid()));
+
+
 -- ── contact_messages ─────────────────────────────────────────
 
 CREATE TABLE IF NOT EXISTS public.contact_messages (
