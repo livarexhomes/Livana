@@ -27,8 +27,11 @@ router.post('/email/send-confirmation', async (req, res) => {
   }
 
   // Generate a confirmation link using the service-role key.
+  // We use 'magiclink' because 'signup' requires a password parameter.
+  // Both types produce a one-time link that confirms the user's email and
+  // establishes a session on click.
   const { data: linkData, error: linkError } = await supabaseAdmin.auth.admin.generateLink({
-    type: 'signup',
+    type: 'magiclink',
     email,
     options: {
       redirectTo: redirectTo ?? `${process.env.APP_URL ?? ''}/auth/callback`,
