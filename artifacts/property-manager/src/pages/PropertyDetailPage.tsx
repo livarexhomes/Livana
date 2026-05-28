@@ -3,7 +3,7 @@ import { Link, useParams, useLocation } from 'wouter'
 import {
   MapPin, BedDouble, Bath, Maximize, ChevronLeft, ChevronRight,
   Heart, MessageCircle, ArrowLeft, Share2, CheckCircle, Send,
-  LogIn, UserPlus, MessageSquare,
+  LogIn, UserPlus, MessageSquare, Building2, Calendar, Tag,
 } from 'lucide-react'
 import PublicNavbar from '../components/PublicNavbar'
 import Footer from '../components/Footer'
@@ -214,7 +214,7 @@ export default function PropertyDetailPage() {
   const landlordInitials = landlord?.full_name ? landlord.full_name.split(' ').slice(0, 2).map(w => w[0]).join('').toUpperCase() : '?'
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#F8F9FB]">
+    <div className="min-h-screen flex flex-col bg-gray-50">
       <PublicNavbar />
       <div className="h-[72px]" />
 
@@ -223,122 +223,159 @@ export default function PropertyDetailPage() {
         <div className="max-w-6xl mx-auto px-4 sm:px-6 py-3 flex items-center gap-2 text-sm text-gray-500">
           <button onClick={() => navigate('/listings')} className="flex items-center gap-1.5 text-gray-500 hover:text-gray-900 transition-colors shrink-0">
             <ArrowLeft className="w-3.5 h-3.5" />
-            <span>Back</span>
+            <span>Listings</span>
           </button>
-          <span className="text-gray-200">·</span>
-          <Link href="/listings" className="hover:text-gray-900 transition-colors">Listings</Link>
-          <span>/</span>
+          <span className="text-gray-300">/</span>
           <span className="text-gray-900 font-medium truncate max-w-[200px] sm:max-w-xs">{property.title}</span>
         </div>
       </div>
 
+      {/* ── Full-width gallery ── */}
+      <div className="bg-black">
+        <div className="max-w-6xl mx-auto px-0 sm:px-6 py-0 sm:py-4">
+          <div className="relative sm:rounded-2xl overflow-hidden" style={{ aspectRatio: '16/7' }}>
+            {images.length > 0 ? (
+              <>
+                <img
+                  src={getSupabaseImageUrl(images[imgIndex]?.storage_path)}
+                  alt={images[imgIndex]?.alt_text ?? property.title}
+                  className="w-full h-full object-cover"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent pointer-events-none" />
+                {images.length > 1 && (
+                  <>
+                    <button onClick={() => setImgIndex(i => (i - 1 + images.length) % images.length)}
+                      className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 bg-white/90 hover:bg-white rounded-full shadow-lg flex items-center justify-center transition-all hover:scale-105">
+                      <ChevronLeft className="w-5 h-5 text-gray-800" />
+                    </button>
+                    <button onClick={() => setImgIndex(i => (i + 1) % images.length)}
+                      className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 bg-white/90 hover:bg-white rounded-full shadow-lg flex items-center justify-center transition-all hover:scale-105">
+                      <ChevronRight className="w-5 h-5 text-gray-800" />
+                    </button>
+                    <div className="absolute bottom-4 right-4 bg-black/60 text-white text-xs font-semibold px-3 py-1.5 rounded-full backdrop-blur-sm">
+                      {imgIndex + 1} / {images.length}
+                    </div>
+                  </>
+                )}
+              </>
+            ) : (
+              <div className="w-full h-full flex flex-col items-center justify-center bg-gray-100 gap-3">
+                <div className="w-16 h-16 rounded-2xl bg-white/70 flex items-center justify-center">
+                  <Building2 className="w-8 h-8 text-gray-400" strokeWidth={1.5} />
+                </div>
+                <p className="text-sm text-gray-400">No photos yet</p>
+              </div>
+            )}
+          </div>
+          {/* Thumbnail strip */}
+          {images.length > 1 && (
+            <div className="flex gap-2 px-4 sm:px-0 py-3 overflow-x-auto no-scrollbar">
+              {images.map((img, i) => (
+                <button key={img.id} onClick={() => setImgIndex(i)}
+                  className={`shrink-0 w-20 h-14 rounded-xl overflow-hidden border-2 transition-all ${i === imgIndex ? 'border-blue-500 shadow-md' : 'border-transparent opacity-50 hover:opacity-80'}`}>
+                  <img src={getSupabaseImageUrl(img.storage_path)} alt="" className="w-full h-full object-cover" />
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* ── Main content ── */}
       <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 sm:py-8 w-full">
         <div className="grid lg:grid-cols-3 gap-6 lg:gap-8">
 
           {/* ── Left column ── */}
           <div className="lg:col-span-2 space-y-5 order-1 lg:order-none">
 
-            {/* Gallery */}
-            <div className="rounded-2xl overflow-hidden bg-gray-200 shadow-sm">
-              <div className="relative aspect-[16/10]">
-                {images.length > 0 ? (
-                  <>
-                    <img
-                      src={getSupabaseImageUrl(images[imgIndex]?.storage_path)}
-                      alt={images[imgIndex]?.alt_text ?? property.title}
-                      className="w-full h-full object-cover"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent pointer-events-none" />
-                    {images.length > 1 && (
-                      <>
-                        <button onClick={() => setImgIndex(i => (i - 1 + images.length) % images.length)}
-                          className="absolute left-3 top-1/2 -translate-y-1/2 w-10 h-10 bg-white/90 hover:bg-white rounded-full shadow-lg flex items-center justify-center transition-all hover:scale-105">
-                          <ChevronLeft className="w-5 h-5 text-gray-800" />
-                        </button>
-                        <button onClick={() => setImgIndex(i => (i + 1) % images.length)}
-                          className="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 bg-white/90 hover:bg-white rounded-full shadow-lg flex items-center justify-center transition-all hover:scale-105">
-                          <ChevronRight className="w-5 h-5 text-gray-800" />
-                        </button>
-                        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-1.5">
-                          {images.map((_, i) => (
-                            <button key={i} onClick={() => setImgIndex(i)}
-                              className={`rounded-full transition-all ${i === imgIndex ? 'bg-white w-5 h-2' : 'w-2 h-2 bg-white/60 hover:bg-white/90'}`} />
-                          ))}
-                        </div>
-                        <div className="absolute top-3 right-3 bg-black/50 text-white text-xs font-semibold px-2.5 py-1 rounded-full backdrop-blur-sm">
-                          {imgIndex + 1} / {images.length}
-                        </div>
-                      </>
-                    )}
-                  </>
-                ) : (
-                  <div className="w-full h-full flex flex-col items-center justify-center text-gray-400 gap-2">
-                    <MapPin className="w-10 h-10 text-gray-300" />
-                    <p className="text-sm">No photos yet</p>
-                  </div>
-                )}
-              </div>
-              {images.length > 1 && (
-                <div className="flex gap-2 p-3 overflow-x-auto no-scrollbar bg-white border-t border-gray-100">
-                  {images.map((img, i) => (
-                    <button key={img.id} onClick={() => setImgIndex(i)}
-                      className={`shrink-0 w-16 h-12 rounded-lg overflow-hidden border-2 transition-all ${i === imgIndex ? 'border-blue-600 shadow-sm' : 'border-transparent opacity-60 hover:opacity-100'}`}>
-                      <img src={getSupabaseImageUrl(img.storage_path)} alt="" className="w-full h-full object-cover" />
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-
             {/* Title + Key Info */}
             <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 sm:p-6">
-              <div className="flex flex-wrap items-center gap-2 mb-4">
-                <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${statusCfg.cls}`}>{statusCfg.label}</span>
-                <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-blue-50 text-blue-700">{TYPE_LABEL[property.type] ?? property.type}</span>
+              {/* Badges row */}
+              <div className="flex flex-wrap items-center gap-2 mb-3">
+                <span className={`px-2.5 py-1 rounded-lg text-xs font-bold ${statusCfg.cls}`}>{statusCfg.label}</span>
+                <span className="px-2.5 py-1 rounded-lg text-xs font-bold bg-blue-50 text-blue-700">{TYPE_LABEL[property.type] ?? property.type}</span>
                 {property.featured && (
-                  <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-amber-50 text-amber-700">⭐ Featured</span>
+                  <span className="px-2.5 py-1 rounded-lg text-xs font-bold bg-amber-50 text-amber-700">⭐ Featured</span>
+                )}
+                {landlord?.is_verified && (
+                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold bg-emerald-50 text-emerald-700">
+                    <CheckCircle className="w-3 h-3" /> Verified Landlord
+                  </span>
                 )}
               </div>
+
               <h1 className="text-xl sm:text-2xl font-extrabold text-gray-900 leading-snug mb-2">{property.title}</h1>
+
               <div className="flex items-center gap-1.5 text-gray-500 text-sm mb-5">
-                <MapPin className="w-4 h-4 text-blue-600 shrink-0" />
-                <span>{property.address}, {property.city}</span>
+                <MapPin className="w-4 h-4 text-blue-500 shrink-0" />
+                <span>{[property.address, property.city].filter(Boolean).join(', ')}</span>
               </div>
-              <div className="flex items-end gap-2 mb-5 pb-5 border-b border-gray-100">
-                <p className="text-2xl sm:text-3xl font-extrabold text-gray-900">₦{Number(property.price).toLocaleString()}</p>
-                {property.type === 'rent' && <span className="text-sm sm:text-base font-normal text-gray-400 mb-0.5">/year</span>}
+
+              {/* Price + period */}
+              <div className="flex items-baseline gap-2 mb-6 pb-5 border-b border-gray-100">
+                <p className="text-3xl sm:text-4xl font-black text-gray-900 tracking-tight">
+                  ₦{Number(property.price).toLocaleString()}
+                </p>
+                {property.type === 'rent' && (
+                  <span className="text-sm text-gray-400 font-medium">/ year</span>
+                )}
               </div>
-              <div className="grid grid-cols-3 gap-2 sm:gap-3">
-                <div className="text-center p-3 bg-gray-50 rounded-xl">
-                  <BedDouble className="w-5 h-5 text-blue-600 mx-auto mb-1" />
-                  <p className="text-lg font-extrabold text-gray-900">{property.bedrooms}</p>
-                  <p className="text-xs text-gray-500">Bedroom{property.bedrooms !== 1 ? 's' : ''}</p>
+
+              {/* Stats strip */}
+              <div className="grid grid-cols-3 gap-3">
+                <div className="flex flex-col items-center gap-1.5 p-4 bg-gray-50 rounded-2xl">
+                  <BedDouble className="w-5 h-5 text-blue-500" strokeWidth={1.8} />
+                  <p className="text-xl font-black text-gray-900">{property.bedrooms}</p>
+                  <p className="text-[11px] text-gray-400 font-medium uppercase tracking-wide">Bed{property.bedrooms !== 1 ? 's' : ''}</p>
                 </div>
-                <div className="text-center p-3 bg-gray-50 rounded-xl">
-                  <Bath className="w-5 h-5 text-blue-600 mx-auto mb-1" />
-                  <p className="text-lg font-extrabold text-gray-900">{property.bathrooms}</p>
-                  <p className="text-xs text-gray-500">Bathroom{property.bathrooms !== 1 ? 's' : ''}</p>
+                <div className="flex flex-col items-center gap-1.5 p-4 bg-gray-50 rounded-2xl">
+                  <Bath className="w-5 h-5 text-blue-500" strokeWidth={1.8} />
+                  <p className="text-xl font-black text-gray-900">{property.bathrooms}</p>
+                  <p className="text-[11px] text-gray-400 font-medium uppercase tracking-wide">Bath{property.bathrooms !== 1 ? 's' : ''}</p>
                 </div>
                 {property.area_sqft ? (
-                  <div className="text-center p-3 bg-gray-50 rounded-xl">
-                    <Maximize className="w-5 h-5 text-blue-600 mx-auto mb-1" />
-                    <p className="text-lg font-extrabold text-gray-900">{property.area_sqft.toLocaleString()}</p>
-                    <p className="text-xs text-gray-500">sq ft</p>
+                  <div className="flex flex-col items-center gap-1.5 p-4 bg-gray-50 rounded-2xl">
+                    <Maximize className="w-5 h-5 text-blue-500" strokeWidth={1.8} />
+                    <p className="text-xl font-black text-gray-900">{property.area_sqft.toLocaleString()}</p>
+                    <p className="text-[11px] text-gray-400 font-medium uppercase tracking-wide">sq ft</p>
                   </div>
                 ) : (
-                  <div className="text-center p-3 bg-gray-50 rounded-xl">
-                    <MapPin className="w-5 h-5 text-blue-600 mx-auto mb-1" />
-                    <p className="text-sm font-bold text-gray-900 truncate">{property.city}</p>
-                    <p className="text-xs text-gray-500">Location</p>
+                  <div className="flex flex-col items-center gap-1.5 p-4 bg-gray-50 rounded-2xl">
+                    <MapPin className="w-5 h-5 text-blue-500" strokeWidth={1.8} />
+                    <p className="text-sm font-black text-gray-900 truncate max-w-full px-1 text-center">{property.city}</p>
+                    <p className="text-[11px] text-gray-400 font-medium uppercase tracking-wide">Location</p>
                   </div>
                 )}
+              </div>
+            </div>
+
+            {/* Property details grid */}
+            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 sm:p-6">
+              <h2 className="font-bold text-gray-900 mb-4">Property Details</h2>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                {[
+                  { icon: <Tag className="w-4 h-4 text-blue-500" />, label: 'Type', value: TYPE_LABEL[property.type] ?? property.type },
+                  { icon: <BedDouble className="w-4 h-4 text-blue-500" />, label: 'Bedrooms', value: property.bedrooms },
+                  { icon: <Bath className="w-4 h-4 text-blue-500" />, label: 'Bathrooms', value: property.bathrooms },
+                  { icon: <MapPin className="w-4 h-4 text-blue-500" />, label: 'City', value: property.city },
+                  ...(property.area_sqft ? [{ icon: <Maximize className="w-4 h-4 text-blue-500" />, label: 'Area', value: `${property.area_sqft.toLocaleString()} sqft` }] : []),
+                  { icon: <Calendar className="w-4 h-4 text-blue-500" />, label: 'Status', value: statusCfg.label },
+                ].map(({ icon, label, value }) => (
+                  <div key={label} className="flex items-start gap-3 p-3 bg-gray-50 rounded-xl">
+                    <div className="mt-0.5 shrink-0">{icon}</div>
+                    <div>
+                      <p className="text-[10px] text-gray-400 font-semibold uppercase tracking-wide mb-0.5">{label}</p>
+                      <p className="text-sm font-semibold text-gray-800">{value}</p>
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
 
             {/* Description */}
             {property.description && (
               <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 sm:p-6">
-                <h3 className="font-bold text-gray-900 mb-3">About this property</h3>
+                <h2 className="font-bold text-gray-900 mb-3">About this property</h2>
                 <p className="text-gray-600 leading-relaxed text-sm whitespace-pre-line">{property.description}</p>
               </div>
             )}
@@ -346,12 +383,12 @@ export default function PropertyDetailPage() {
             {/* ── Comments Section ── */}
             <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 sm:p-6">
               <div className="flex items-center gap-2 mb-5">
-                <MessageSquare className="w-5 h-5 text-blue-600" />
-                <h3 className="font-bold text-gray-900">
+                <MessageSquare className="w-5 h-5 text-blue-500" />
+                <h2 className="font-bold text-gray-900">
                   Comments {commentsReady && comments.length > 0 && (
-                    <span className="text-gray-400 font-normal">({comments.length})</span>
+                    <span className="text-gray-400 font-normal text-sm">({comments.length})</span>
                   )}
-                </h3>
+                </h2>
               </div>
 
               {/* Post comment — tenants only */}
@@ -439,13 +476,20 @@ export default function PropertyDetailPage() {
           {/* ── Right sidebar ── */}
           <div className="space-y-4 order-first lg:order-none">
 
-            {/* ── Contact card (redesigned) ── */}
+            {/* ── Contact card ── */}
             <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden lg:sticky lg:top-24">
 
-              {/* Price header strip */}
-              <div className="px-5 pt-5 pb-4 border-b border-gray-50">
-                <p className="text-2xl font-extrabold text-gray-900">₦{Number(property.price).toLocaleString()}</p>
-                {property.type === 'rent' && <p className="text-xs text-gray-400 mt-0.5">per year</p>}
+              {/* Price header */}
+              <div className="px-5 pt-5 pb-4 border-b border-gray-100">
+                <p className="text-xs text-gray-400 font-semibold uppercase tracking-widest mb-1">{TYPE_LABEL[property.type] ?? property.type}</p>
+                <div className="flex items-baseline gap-1.5">
+                  <p className="text-2xl font-black text-gray-900">₦{Number(property.price).toLocaleString()}</p>
+                  {property.type === 'rent' && <span className="text-xs text-gray-400 font-medium">/ year</span>}
+                </div>
+                <div className="flex items-center gap-1.5 mt-1.5 text-xs text-gray-400">
+                  <MapPin className="w-3 h-3 text-blue-400 shrink-0" />
+                  <span className="truncate">{property.city}</span>
+                </div>
               </div>
 
               <div className="p-5 space-y-3">
@@ -567,28 +611,27 @@ export default function PropertyDetailPage() {
             {/* Landlord card */}
             {landlord && (
               <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-                <h3 className="font-bold text-gray-900 mb-4 text-sm uppercase tracking-wide text-gray-500">Listed by</h3>
-                <div className="flex items-center gap-3 mb-3">
+                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4">Listed by</p>
+                <div className="flex items-center gap-3">
                   <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center shrink-0 shadow-sm overflow-hidden">
                     {landlord.avatar_url
                       ? <img src={landlord.avatar_url} alt={landlord.full_name ?? ''} className="w-full h-full object-cover" onError={e => { (e.currentTarget as HTMLImageElement).style.display = 'none' }} />
                       : <span className="text-white font-bold text-sm">{landlordInitials}</span>
                     }
                   </div>
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-1.5 flex-wrap">
-                      <p className="font-bold text-gray-900">{landlord.full_name}</p>
-                      {landlord.is_verified && (
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-blue-50 rounded-full text-[11px] font-semibold text-blue-700">
-                          <CheckCircle className="w-3 h-3" /> Verified
-                        </span>
-                      )}
-                    </div>
-                    <p className="text-xs text-gray-400 mt-0.5">Landlord on LIVAREX</p>
+                  <div className="min-w-0 flex-1">
+                    <p className="font-bold text-gray-900 truncate">{landlord.full_name}</p>
+                    {landlord.is_verified ? (
+                      <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-600 mt-0.5">
+                        <CheckCircle className="w-3 h-3" /> Verified landlord
+                      </span>
+                    ) : (
+                      <p className="text-xs text-gray-400 mt-0.5">Landlord on Livana</p>
+                    )}
                   </div>
                 </div>
                 {landlord.bio && (
-                  <p className="text-xs text-gray-500 leading-relaxed mt-2 pt-3 border-t border-gray-100">{landlord.bio}</p>
+                  <p className="text-xs text-gray-500 leading-relaxed mt-3 pt-3 border-t border-gray-100">{landlord.bio}</p>
                 )}
               </div>
             )}
