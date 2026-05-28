@@ -263,13 +263,13 @@ export default function HomePage() {
 
               {/* Desktop search bar */}
               <div className="hidden sm:block relative">
-                <div className="bg-white rounded-2xl shadow-[0_20px_60px_rgba(0,0,0,0.4)] p-2">
-                  <div className="flex items-stretch gap-1.5">
+                <div className="bg-white rounded-2xl shadow-[0_8px_40px_rgba(0,0,0,0.35)] p-1.5">
+                  <div className="flex items-center gap-0">
 
                     {/* Location */}
-                    <div className="flex-1 min-w-0 rounded-xl px-4 py-3 hover:bg-gray-50 transition-colors cursor-pointer">
-                      <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1 pointer-events-none">
-                        <MapPin className="inline w-3 h-3 mr-1 -mt-0.5 text-blue-500" />Location
+                    <div className="flex-1 min-w-0 px-4 py-2.5 hover:bg-gray-50 rounded-xl transition-colors cursor-pointer">
+                      <label className="block text-[9px] font-black text-gray-400 uppercase tracking-widest mb-0.5 pointer-events-none">
+                        <MapPin className="inline w-2.5 h-2.5 mr-0.5 -mt-0.5 text-blue-500" />Location
                       </label>
                       <select value={searchState} onChange={e => setSearchState(e.target.value)}
                         className="w-full bg-transparent text-sm text-gray-900 font-semibold outline-none appearance-none cursor-pointer leading-tight">
@@ -278,48 +278,48 @@ export default function HomePage() {
                       </select>
                     </div>
 
-                    <div className="w-px bg-gray-100 my-2" />
+                    <div className="w-px h-8 bg-gray-200 shrink-0" />
 
                     {/* Property Type */}
                     <button type="button"
                       onClick={() => setOpenDropdown(o => o === 'propertyType' ? null : 'propertyType')}
-                      className="flex-1 min-w-0 rounded-xl px-4 py-3 text-left hover:bg-gray-50 transition-colors">
-                      <span className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Type</span>
+                      className="flex-1 min-w-0 px-4 py-2.5 text-left hover:bg-gray-50 rounded-xl transition-colors">
+                      <span className="block text-[9px] font-black text-gray-400 uppercase tracking-widest mb-0.5">Type</span>
                       <span className={`text-sm font-semibold flex items-center gap-1 ${selectedPropertyTypes.length ? 'text-blue-600' : 'text-gray-800'}`}>
                         <span className="truncate">{propertyTypeLabel}</span>
-                        <ChevronDown className={`w-3.5 h-3.5 shrink-0 transition-transform ${openDropdown === 'propertyType' ? 'rotate-180' : ''}`} />
+                        <ChevronDown className={`w-3 h-3 shrink-0 transition-transform ${openDropdown === 'propertyType' ? 'rotate-180' : ''}`} />
                       </span>
                     </button>
 
-                    <div className="w-px bg-gray-100 my-2" />
+                    <div className="w-px h-8 bg-gray-200 shrink-0" />
 
                     {/* Beds & Baths */}
                     <button type="button"
                       onClick={() => setOpenDropdown(o => o === 'beds' ? null : 'beds')}
-                      className="flex-1 min-w-0 rounded-xl px-4 py-3 text-left hover:bg-gray-50 transition-colors">
-                      <span className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Beds &amp; Baths</span>
+                      className="flex-1 min-w-0 px-4 py-2.5 text-left hover:bg-gray-50 rounded-xl transition-colors">
+                      <span className="block text-[9px] font-black text-gray-400 uppercase tracking-widest mb-0.5">Beds &amp; Baths</span>
                       <span className={`text-sm font-semibold flex items-center gap-1 ${(searchBeds || searchBaths) ? 'text-blue-600' : 'text-gray-800'}`}>
                         <span className="truncate">{bedsBathsLabel}</span>
-                        <ChevronDown className={`w-3.5 h-3.5 shrink-0 transition-transform ${openDropdown === 'beds' ? 'rotate-180' : ''}`} />
+                        <ChevronDown className={`w-3 h-3 shrink-0 transition-transform ${openDropdown === 'beds' ? 'rotate-180' : ''}`} />
                       </span>
                     </button>
 
-                    <div className="w-px bg-gray-100 my-2" />
+                    <div className="w-px h-8 bg-gray-200 shrink-0" />
 
                     {/* Price */}
                     <button type="button"
                       onClick={() => setOpenDropdown(o => o === 'price' ? null : 'price')}
-                      className="flex-1 min-w-0 rounded-xl px-4 py-3 text-left hover:bg-gray-50 transition-colors">
-                      <span className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Price</span>
+                      className="flex-1 min-w-0 px-4 py-2.5 text-left hover:bg-gray-50 rounded-xl transition-colors">
+                      <span className="block text-[9px] font-black text-gray-400 uppercase tracking-widest mb-0.5">Price</span>
                       <span className={`text-sm font-semibold flex items-center gap-1 ${(priceMin > 0 || priceMax < 500_000_000) ? 'text-blue-600' : 'text-gray-800'}`}>
                         <span className="truncate">{priceLabel}</span>
-                        <ChevronDown className={`w-3.5 h-3.5 shrink-0 transition-transform ${openDropdown === 'price' ? 'rotate-180' : ''}`} />
+                        <ChevronDown className={`w-3 h-3 shrink-0 transition-transform ${openDropdown === 'price' ? 'rotate-180' : ''}`} />
                       </span>
                     </button>
 
                     {/* Search button */}
                     <button type="button" onClick={() => handleSearch()}
-                      className="shrink-0 bg-blue-600 hover:bg-blue-500 active:scale-95 text-white px-7 rounded-xl font-black text-sm flex items-center gap-2 shadow-lg shadow-blue-600/40 transition-all">
+                      className="shrink-0 bg-blue-600 hover:bg-blue-500 active:scale-95 text-white px-5 py-2.5 rounded-xl font-bold text-sm flex items-center gap-2 shadow-md shadow-blue-600/30 transition-all ml-1">
                       <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
                       Search
                     </button>
