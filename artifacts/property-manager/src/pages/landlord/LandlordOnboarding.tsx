@@ -3,7 +3,7 @@ import { Link, useLocation } from 'wouter'
 import {
   User, ShieldCheck, FileText, CheckCircle2,
   Upload, X, AlertCircle, ChevronRight, Loader2,
-  CreditCard, KeyRound, Camera,
+  KeyRound, Camera,
 } from 'lucide-react'
 import { createClient } from '../../lib/supabase'
 
@@ -18,11 +18,7 @@ const ID_TYPES = [
   'International Passport',
   'BVN (Bank Verification Number)',
 ]
-const BANKS = [
-  'Access Bank','GTBank','First Bank','Zenith Bank','UBA',
-  'Fidelity Bank','FCMB','Polaris Bank','Stanbic IBTC',
-  'Sterling Bank','Union Bank','Wema Bank','Other',
-]
+
 const DOC_SLOTS = [
   { key: 'id_front',     label: 'ID Card — Front',      required: true  },
   { key: 'id_back',      label: 'ID Card — Back',        required: true  },
@@ -54,8 +50,7 @@ export default function LandlordOnboarding() {
 
   // Step 2 — KYC
   const [kyc, setKyc] = useState({
-    nin: '', dob: '', id_type: '', id_number: '',
-    bank_name: '', account_number: '', kyc_notes: '',
+    id_type: '', id_number: '', kyc_notes: '',
   })
 
   // Step 3 — Documents
@@ -97,13 +92,9 @@ export default function LandlordOnboarding() {
         bio:       l.bio       ?? '',
       })
       setKyc({
-        nin:            l.nin            ?? '',
-        dob:            l.dob            ?? '',
-        id_type:        l.id_type        ?? '',
-        id_number:      l.id_number      ?? '',
-        bank_name:      l.bank_name      ?? '',
-        account_number: l.account_number ?? '',
-        kyc_notes:      l.kyc_notes      ?? '',
+        id_type:   l.id_type   ?? '',
+        id_number: l.id_number ?? '',
+        kyc_notes: l.kyc_notes ?? '',
       })
       setLoading(false)
     })
@@ -146,13 +137,9 @@ export default function LandlordOnboarding() {
     setSaving(true); setError('')
     const supabase = createClient()
     const { error: err } = await supabase.from('landlords').update({
-      nin:            kyc.nin            || null,
-      dob:            kyc.dob            || null,
-      id_type:        kyc.id_type        || null,
-      id_number:      kyc.id_number      || null,
-      bank_name:      kyc.bank_name      || null,
-      account_number: kyc.account_number || null,
-      kyc_notes:      kyc.kyc_notes      || null,
+      id_type:   kyc.id_type   || null,
+      id_number: kyc.id_number || null,
+      kyc_notes: kyc.kyc_notes || null,
     }).eq('id', landlordId)
     setSaving(false)
     if (err) { setError(err.message); return }
@@ -433,17 +420,6 @@ export default function LandlordOnboarding() {
                 <h2 className="text-sm font-bold text-gray-900">Identity Verification</h2>
                 <span className="ml-auto text-xs text-gray-400">Step 2 of 3</span>
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">NIN *</label>
-                  <input required value={kyc.nin} onChange={e => setK('nin', e.target.value)}
-                    placeholder="12345678901" className={FIELD} />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Date of Birth *</label>
-                  <input required type="date" value={kyc.dob} onChange={e => setK('dob', e.target.value)} className={FIELD} />
-                </div>
-              </div>
               <div>
                 <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">ID Type *</label>
                 <select required value={kyc.id_type} onChange={e => setK('id_type', e.target.value)} className={SELECT}>
@@ -455,30 +431,6 @@ export default function LandlordOnboarding() {
                 <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">ID Number *</label>
                 <input required value={kyc.id_number} onChange={e => setK('id_number', e.target.value)}
                   placeholder="Enter your ID number" className={FIELD} />
-              </div>
-            </div>
-
-            {/* Bank */}
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-4">
-              <div className="flex items-center gap-2 pb-3 border-b border-gray-100">
-                <CreditCard className="w-4 h-4 text-blue-600" />
-                <h2 className="text-sm font-bold text-gray-900">Bank Details</h2>
-                <span className="ml-auto text-xs text-gray-400">For payment verification only</span>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Bank Name *</label>
-                  <select required value={kyc.bank_name} onChange={e => setK('bank_name', e.target.value)} className={SELECT}>
-                    <option value="">Select bank…</option>
-                    {BANKS.map(b => <option key={b} value={b}>{b}</option>)}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Account Number *</label>
-                  <input required maxLength={10} value={kyc.account_number}
-                    onChange={e => setK('account_number', e.target.value.replace(/\D/g, '').slice(0, 10))}
-                    placeholder="0123456789" className={FIELD} />
-                </div>
               </div>
               <div>
                 <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Additional Notes <span className="text-gray-400 normal-case font-normal">(optional)</span></label>
@@ -494,7 +446,7 @@ export default function LandlordOnboarding() {
                 Back
               </button>
               <button onClick={saveKyc}
-                disabled={saving || !kyc.nin || !kyc.dob || !kyc.id_type || !kyc.id_number || !kyc.bank_name || !kyc.account_number}
+                disabled={saving || !kyc.id_type || !kyc.id_number}
                 className="flex-1 py-4 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-bold rounded-2xl transition-all shadow-lg shadow-blue-600/20 text-sm flex items-center justify-center gap-2">
                 {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
                 {saving ? 'Saving…' : <>Continue <ChevronRight className="w-4 h-4" /></>}
