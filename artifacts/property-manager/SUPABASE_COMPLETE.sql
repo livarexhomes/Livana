@@ -442,7 +442,11 @@ CREATE POLICY "Landlord update enquiry status"
 DROP POLICY IF EXISTS "Admins full access to enquiries" ON public.enquiries;
 CREATE POLICY "Admins full access to enquiries"
   ON public.enquiries FOR ALL
-  USING (EXISTS (SELECT 1 FROM public.admins WHERE id = auth.uid()));
+  USING (
+    EXISTS (SELECT 1 FROM public.admins WHERE id = auth.uid())
+    OR (auth.jwt() -> 'user_metadata' ->> 'role') = 'admin'
+    OR (auth.jwt() -> 'app_metadata' ->> 'role') = 'admin'
+  );
 
 
 -- ── enquiry_replies ──────────────────────────────────────────

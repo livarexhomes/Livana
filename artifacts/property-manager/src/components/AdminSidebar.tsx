@@ -29,6 +29,20 @@ export default function AdminSidebar({ userEmail, userName }: Props) {
   const [collapsed, setCollapsed] = useState(() => {
     try { return localStorage.getItem('admin-sidebar-collapsed') === 'true' } catch { return false }
   })
+  const [openEnquiries, setOpenEnquiries] = useState(0)
+
+  useEffect(() => {
+    const supabase = createClient()
+    supabase.from('enquiries').select('id', { count: 'exact', head: true }).eq('status', 'open')
+      .then(({ count }) => setOpenEnquiries(count ?? 0))
+    const channel = supabase.channel('sidebar_enquiry_badge')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'enquiries' }, () => {
+        supabase.from('enquiries').select('id', { count: 'exact', head: true }).eq('status', 'open')
+          .then(({ count }) => setOpenEnquiries(count ?? 0))
+      })
+      .subscribe()
+    return () => { supabase.removeChannel(channel) }
+  }, [])
 
   useEffect(() => { setOpen(false) }, [location])
 
@@ -55,6 +69,8 @@ export default function AdminSidebar({ userEmail, userName }: Props) {
   const NavItem = ({ item, c }: { item: typeof mainNav[0]; c: boolean }) => {
     const active = isActive(item)
     const Icon = item.icon
+    const isSupport = item.href === '/admin/support'
+    const badge = isSupport && openEnquiries > 0 ? openEnquiries : 0
     return (
       <Link href={item.href} title={c ? item.label : undefined}
         className={`group relative flex items-center ${c ? 'justify-center p-2.5 mx-1' : 'gap-3 px-3 py-2.5'} rounded-xl text-sm font-medium transition-all duration-200 ${
@@ -63,10 +79,22 @@ export default function AdminSidebar({ userEmail, userName }: Props) {
             : 'text-white/45 hover:text-white/90 hover:bg-white/[0.06]'
         }`}>
         {active && !c && <span className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-5 bg-white rounded-r-full" />}
-        <Icon className={`shrink-0 ${c ? 'w-[18px] h-[18px]' : 'w-[17px] h-[17px]'} transition-colors ${
-          active ? 'text-white' : 'text-white/40 group-hover:text-white/70'
-        }`} strokeWidth={active ? 2 : 1.7} />
+        <div className="relative shrink-0">
+          <Icon className={`${c ? 'w-[18px] h-[18px]' : 'w-[17px] h-[17px]'} transition-colors ${
+            active ? 'text-white' : 'text-white/40 group-hover:text-white/70'
+          }`} strokeWidth={active ? 2 : 1.7} />
+          {badge > 0 && c && (
+            <span className="absolute -top-1.5 -right-1.5 min-w-[14px] h-[14px] px-0.5 rounded-full bg-blue-500 text-white text-[9px] font-bold flex items-center justify-center">
+              {badge > 99 ? '99+' : badge}
+            </span>
+          )}
+        </div>
         {!c && <span className="flex-1 truncate">{item.label}</span>}
+        {!c && badge > 0 && (
+          <span className="ml-auto min-w-[18px] h-[18px] px-1 rounded-full bg-blue-500 text-white text-[10px] font-bold flex items-center justify-center">
+            {badge > 99 ? '99+' : badge}
+          </span>
+        )}
       </Link>
     )
   }
