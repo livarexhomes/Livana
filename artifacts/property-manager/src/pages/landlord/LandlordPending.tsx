@@ -14,7 +14,7 @@ export default function LandlordPending() {
           Your landlord account is pending approval from our admin team. This usually takes within 24 hours. You'll be notified once your account is approved.
         </p>
         <div className="space-y-3">
-          <Link href="/" className="block px-6 py-3 bg-[#6b9e6e] hover:bg-[#4a7f4d] text-white font-semibold rounded-xl transition-colors">
+          <Link href="/" className="block px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl transition-colors">
             Back to Home
           </Link>
           <Link href="/contact" className="block px-6 py-3 border border-gray-200 text-gray-700 font-medium rounded-xl hover:bg-gray-50 transition-colors">
