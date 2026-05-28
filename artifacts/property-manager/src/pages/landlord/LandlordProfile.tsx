@@ -163,28 +163,28 @@ export default function LandlordProfile() {
                     </button>
                   </div>
 
-                  {/* Identity row */}
+                  {/* Identity row — avatar overlaps banner, text sits below */}
                   <div className="px-6 md:px-8 pb-6">
-                    <div className="flex flex-col sm:flex-row sm:items-end gap-4 -mt-10 md:-mt-12 mb-4">
-                      {/* Avatar */}
-                      <div className="relative shrink-0 group w-fit">
-                        <div className="w-20 h-20 md:w-24 md:h-24 rounded-2xl ring-4 ring-white shadow-xl overflow-hidden bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center">
-                          {avatarUrl
-                            ? <img src={avatarUrl} alt={displayName} className="w-full h-full object-cover" onError={() => setAvatarUrl(null)} />
-                            : <span className="text-2xl md:text-3xl font-extrabold text-white">{initials}</span>
-                          }
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => avatarInputRef.current?.click()}
-                          disabled={avatarUploading}
-                          className="absolute inset-0 rounded-2xl bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white transition-opacity">
-                          {avatarUploading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Camera className="w-5 h-5" />}
-                        </button>
+                    {/* Avatar floats up over the banner */}
+                    <div className="relative shrink-0 group w-fit -mt-10 md:-mt-12 mb-4">
+                      <div className="w-20 h-20 md:w-24 md:h-24 rounded-2xl ring-4 ring-white shadow-xl overflow-hidden bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center">
+                        {avatarUrl
+                          ? <img src={avatarUrl} alt={displayName} className="w-full h-full object-cover" onError={() => setAvatarUrl(null)} />
+                          : <span className="text-2xl md:text-3xl font-extrabold text-white">{initials}</span>
+                        }
                       </div>
+                      <button
+                        type="button"
+                        onClick={() => avatarInputRef.current?.click()}
+                        disabled={avatarUploading}
+                        className="absolute inset-0 rounded-2xl bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white transition-opacity">
+                        {avatarUploading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Camera className="w-5 h-5" />}
+                      </button>
+                    </div>
 
-                      {/* Name + meta */}
-                      <div className="flex-1 pb-1 pt-2 sm:pt-0">
+                    {/* Name, meta, social — all below the banner */}
+                    <div className="flex flex-col sm:flex-row sm:items-start gap-3">
+                      <div className="flex-1">
                         <div className="flex flex-wrap items-center gap-2">
                           <h2 className="text-xl md:text-2xl font-extrabold text-gray-900 leading-tight">{displayName}</h2>
                           {landlord?.is_verified && (
@@ -202,7 +202,7 @@ export default function LandlordProfile() {
                       </div>
 
                       {/* Social quick-links */}
-                      <div className="flex items-center gap-2 pb-1 shrink-0">
+                      <div className="flex items-center gap-2 shrink-0">
                         {form.website   && <a href={form.website}   target="_blank" rel="noopener noreferrer" className="w-8 h-8 rounded-lg bg-gray-100 hover:bg-blue-50 hover:text-blue-600 flex items-center justify-center text-gray-400 transition-colors"><Globe     className="w-4 h-4" /></a>}
                         {form.linkedin  && <a href={form.linkedin}  target="_blank" rel="noopener noreferrer" className="w-8 h-8 rounded-lg bg-gray-100 hover:bg-blue-50 hover:text-blue-600 flex items-center justify-center text-gray-400 transition-colors"><Linkedin  className="w-4 h-4" /></a>}
                         {form.twitter   && <a href={form.twitter}   target="_blank" rel="noopener noreferrer" className="w-8 h-8 rounded-lg bg-gray-100 hover:bg-blue-50 hover:text-blue-600 flex items-center justify-center text-gray-400 transition-colors"><Twitter   className="w-4 h-4" /></a>}
@@ -210,7 +210,7 @@ export default function LandlordProfile() {
                       </div>
                     </div>
 
-                    <p className="text-xs text-gray-400 flex items-center gap-1.5">
+                    <p className="text-xs text-gray-400 mt-3 flex items-center gap-1.5">
                       <Camera className="w-3 h-3" />
                       Click your photo or the camera icon to upload a profile picture
                     </p>
