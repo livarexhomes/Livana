@@ -432,12 +432,7 @@ export default function LandlordOnboarding() {
                 <input required value={kyc.id_number} onChange={e => setK('id_number', e.target.value)}
                   placeholder="Enter your ID number" className={FIELD} />
               </div>
-              <div>
-                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Additional Notes <span className="text-gray-400 normal-case font-normal">(optional)</span></label>
-                <textarea rows={2} value={kyc.kyc_notes} onChange={e => setK('kyc_notes', e.target.value)}
-                  placeholder="Any extra info for the admin…"
-                  className={FIELD + ' resize-none'} />
-              </div>
+
             </div>
 
             <div className="flex gap-3">
