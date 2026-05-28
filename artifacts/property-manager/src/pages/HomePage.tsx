@@ -182,11 +182,11 @@ export default function HomePage() {
 
       {/* ── HERO ── */}
       <section
-        className="relative overflow-hidden"
+        className="relative"
         style={{ minHeight: 'calc(100vh - 80px)', marginTop: '80px' }}
       >
         {/* Full-bleed background image */}
-        <div className="absolute inset-0">
+        <div className="absolute inset-0 overflow-hidden">
           <img
             src="https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=1800&q=90"
             alt=""
