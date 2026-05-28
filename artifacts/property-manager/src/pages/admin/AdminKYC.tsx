@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import {
   ShieldCheck, Search, CheckCircle, Clock, XCircle, Ban,
-  ChevronRight, X, User, CreditCard, FileText, MapPin,
+  ChevronRight, X, User, FileText, MapPin,
   ExternalLink, ImageIcon,
 } from 'lucide-react'
 import AdminSidebar from '../../components/AdminSidebar'
@@ -249,7 +249,6 @@ export default function AdminKYC() {
                     <div className="bg-gray-50 rounded-2xl p-4 grid grid-cols-2 gap-3">
                       <div><p className="text-[10px] font-bold text-gray-400 uppercase mb-0.5">Full Name</p><p className="text-sm font-semibold text-gray-900">{selected.full_name || '—'}</p></div>
                       <div><p className="text-[10px] font-bold text-gray-400 uppercase mb-0.5">NIN</p><p className="text-sm font-semibold text-gray-900">{selected.nin || '—'}</p></div>
-                      <div><p className="text-[10px] font-bold text-gray-400 uppercase mb-0.5">Date of Birth</p><p className="text-sm font-semibold text-gray-900">{selected.dob ? fmtDate(selected.dob) : '—'}</p></div>
                       <div><p className="text-[10px] font-bold text-gray-400 uppercase mb-0.5">State</p><p className="text-sm font-semibold text-gray-900">{selected.state || selected.city || '—'}</p></div>
                       <div><p className="text-[10px] font-bold text-gray-400 uppercase mb-0.5">WhatsApp</p><p className="text-sm font-semibold text-gray-900">{selected.whatsapp || '—'}</p></div>
                       <div><p className="text-[10px] font-bold text-gray-400 uppercase mb-0.5">Joined</p><p className="text-sm font-semibold text-gray-900">{fmtDate(selected.created_at)}</p></div>
@@ -264,17 +263,6 @@ export default function AdminKYC() {
                     <div className="bg-gray-50 rounded-2xl p-4 grid grid-cols-2 gap-3">
                       <div><p className="text-[10px] font-bold text-gray-400 uppercase mb-0.5">ID Type</p><p className="text-sm font-semibold text-gray-900">{selected.id_type || '—'}</p></div>
                       <div><p className="text-[10px] font-bold text-gray-400 uppercase mb-0.5">ID Number</p><p className="text-sm font-semibold text-gray-900">{selected.id_number || '—'}</p></div>
-                    </div>
-                  </div>
-
-                  {/* Bank Details */}
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-gray-400">
-                      <CreditCard className="w-3.5 h-3.5" /> Bank Details
-                    </div>
-                    <div className="bg-gray-50 rounded-2xl p-4 grid grid-cols-2 gap-3">
-                      <div><p className="text-[10px] font-bold text-gray-400 uppercase mb-0.5">Bank Name</p><p className="text-sm font-semibold text-gray-900">{selected.bank_name || '—'}</p></div>
-                      <div><p className="text-[10px] font-bold text-gray-400 uppercase mb-0.5">Account Number</p><p className="text-sm font-semibold text-gray-900">{selected.account_number || '—'}</p></div>
                     </div>
                   </div>
 

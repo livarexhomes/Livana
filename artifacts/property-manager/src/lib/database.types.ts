@@ -11,7 +11,20 @@ export interface Database {
           whatsapp: string
           bio: string | null
           avatar_url: string | null
-          status: 'pending' | 'approved' | 'rejected'
+          city: string | null
+          nin: string | null
+          id_type: string | null
+          id_number: string | null
+          state: string | null
+          kyc_notes: string | null
+          kyc_submitted_at: string | null
+          years_experience: string | null
+          specialization: string | null
+          website: string | null
+          linkedin: string | null
+          twitter: string | null
+          instagram: string | null
+          status: 'not_submitted' | 'pending' | 'approved' | 'rejected' | 'suspended'
           is_verified: boolean
           created_at: string
           updated_at: string
@@ -23,7 +36,20 @@ export interface Database {
           whatsapp: string
           bio?: string | null
           avatar_url?: string | null
-          status?: 'pending' | 'approved' | 'rejected'
+          city?: string | null
+          nin?: string | null
+          id_type?: string | null
+          id_number?: string | null
+          state?: string | null
+          kyc_notes?: string | null
+          kyc_submitted_at?: string | null
+          years_experience?: string | null
+          specialization?: string | null
+          website?: string | null
+          linkedin?: string | null
+          twitter?: string | null
+          instagram?: string | null
+          status?: 'not_submitted' | 'pending' | 'approved' | 'rejected' | 'suspended'
           is_verified?: boolean
           created_at?: string
           updated_at?: string
@@ -35,7 +61,20 @@ export interface Database {
           whatsapp?: string
           bio?: string | null
           avatar_url?: string | null
-          status?: 'pending' | 'approved' | 'rejected'
+          city?: string | null
+          nin?: string | null
+          id_type?: string | null
+          id_number?: string | null
+          state?: string | null
+          kyc_notes?: string | null
+          kyc_submitted_at?: string | null
+          years_experience?: string | null
+          specialization?: string | null
+          website?: string | null
+          linkedin?: string | null
+          twitter?: string | null
+          instagram?: string | null
+          status?: 'not_submitted' | 'pending' | 'approved' | 'rejected' | 'suspended'
           is_verified?: boolean
           created_at?: string
           updated_at?: string
