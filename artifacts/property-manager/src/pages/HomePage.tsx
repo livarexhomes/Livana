@@ -181,62 +181,79 @@ export default function HomePage() {
       <PublicNavbar />
 
       {/* ── HERO ── */}
-      <section className="relative overflow-hidden bg-[#0a0f1e]" style={{ minHeight: 'calc(100vh - 80px)', marginTop: '80px' }}>
-        {/* Background gradient blobs */}
-        <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute -top-40 -left-40 w-[700px] h-[700px] rounded-full bg-blue-600/20 blur-[120px]" />
-          <div className="absolute top-1/2 -right-40 w-[500px] h-[500px] rounded-full bg-indigo-600/15 blur-[100px]" />
-          <div className="absolute bottom-0 left-1/3 w-[400px] h-[400px] rounded-full bg-blue-500/10 blur-[80px]" />
+      <section
+        className="relative overflow-hidden"
+        style={{ minHeight: 'calc(100vh - 80px)', marginTop: '80px' }}
+      >
+        {/* Full-bleed background image */}
+        <div className="absolute inset-0">
+          <img
+            src="https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=1800&q=90"
+            alt=""
+            className="w-full h-full object-cover object-center"
+          />
+          {/* Multi-layer overlay: dark left, lighter right */}
+          <div className="absolute inset-0 bg-gradient-to-r from-black/85 via-black/60 to-black/30" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
         </div>
 
-        {/* Grid overlay */}
-        <div className="absolute inset-0 pointer-events-none opacity-[0.04]"
-          style={{ backgroundImage: 'linear-gradient(#fff 1px,transparent 1px),linear-gradient(90deg,#fff 1px,transparent 1px)', backgroundSize: '60px 60px' }} />
+        {/* Subtle noise texture */}
+        <div className="absolute inset-0 opacity-[0.03]"
+          style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=\'0 0 256 256\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'noise\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.9\' numOctaves=\'4\' stitchTiles=\'stitch\'/%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23noise)\'/%3E%3C/svg%3E")' }} />
 
-        <div className="relative max-w-7xl mx-auto px-5 sm:px-8 lg:px-12 flex flex-col lg:flex-row items-center gap-12 lg:gap-8 py-16 lg:py-0" style={{ minHeight: 'calc(100vh - 80px)' }}>
+        {/* Content */}
+        <div className="relative max-w-7xl mx-auto px-5 sm:px-8 lg:px-12 flex flex-col justify-center"
+          style={{ minHeight: 'calc(100vh - 80px)' }}>
 
-          {/* ── Left ── */}
-          <div className="w-full lg:w-[52%] flex flex-col justify-center" ref={searchBarRef}>
+          <div className="max-w-2xl pt-12 pb-16 lg:pt-0 lg:pb-0" ref={searchBarRef}>
 
-            {/* Badge */}
-            <div className="inline-flex items-center gap-2 bg-blue-500/10 border border-blue-500/20 rounded-full px-4 py-1.5 mb-8 w-fit">
-              <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75" />
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-400" />
-              </span>
-              <span className="text-xs font-semibold text-blue-300 uppercase tracking-widest">Nigeria's Leading Property Platform</span>
+            {/* Eyebrow */}
+            <div className="inline-flex items-center gap-2.5 mb-8">
+              <div className="flex items-center gap-1.5 bg-white/10 backdrop-blur-sm border border-white/20 rounded-full px-4 py-1.5">
+                <span className="relative flex h-2 w-2">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75" />
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-400" />
+                </span>
+                <span className="text-xs font-bold text-white/80 uppercase tracking-[0.15em]">Nigeria's #1 Property Platform</span>
+              </div>
             </div>
 
             {/* Headline */}
-            <h1 className="text-4xl sm:text-5xl xl:text-6xl font-extrabold leading-[1.06] mb-5 tracking-tight text-white">
-              Find Your Perfect<br />
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-indigo-400">
-                Home in Nigeria
+            <h1 className="text-5xl sm:text-6xl xl:text-7xl font-black leading-[1.0] tracking-tight text-white mb-6">
+              Find Your<br />
+              <span className="relative inline-block">
+                <span className="relative z-10 text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-blue-300 to-indigo-400">
+                  Dream Home
+                </span>
+                <span className="absolute -bottom-1 left-0 right-0 h-[3px] bg-gradient-to-r from-blue-400 to-indigo-400 rounded-full opacity-60" />
               </span>
+              <br />
+              <span className="text-white/90">in Nigeria</span>
             </h1>
 
             {/* Subtitle */}
-            <p className="text-base sm:text-lg text-white/50 mb-10 leading-relaxed max-w-lg">
-              Browse verified listings. Contact landlords directly. Zero agent fees.
+            <p className="text-lg text-white/60 mb-10 leading-relaxed max-w-lg font-light">
+              Verified listings. Direct landlord contact.<br className="hidden sm:block" />
+              <span className="text-white/80 font-medium">Zero agent fees, ever.</span>
             </p>
 
             {/* Search card */}
-            <div className="mb-10">
+            <div className="mb-12">
               {/* Tabs */}
               <div className="flex gap-1 mb-4 overflow-x-auto no-scrollbar">
                 {(['Rent', 'Lease', 'Buy', 'Commercial'] as Tab[]).map(t => {
                   const comingSoon = t === 'Buy' || t === 'Commercial'
                   return comingSoon ? (
-                    <span key={t} className="px-3 py-2 rounded-full text-sm font-semibold text-white/20 cursor-default select-none flex items-center gap-1.5 shrink-0">
+                    <span key={t} className="px-3 py-2 rounded-full text-sm font-semibold text-white/25 cursor-default select-none flex items-center gap-1.5 shrink-0">
                       {t}
                       <span className="text-[9px] font-bold uppercase tracking-wider bg-white/10 text-white/30 px-1.5 py-0.5 rounded-md">Soon</span>
                     </span>
                   ) : (
                     <button key={t} type="button" onClick={() => setActiveTab(t)}
-                      className={`px-4 py-2 rounded-full text-sm font-semibold transition-all shrink-0 ${
+                      className={`px-5 py-2 rounded-full text-sm font-bold transition-all shrink-0 ${
                         activeTab === t
-                          ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/30'
-                          : 'text-white/40 hover:text-white/80 hover:bg-white/10'
+                          ? 'bg-white text-gray-900 shadow-lg'
+                          : 'text-white/50 hover:text-white hover:bg-white/10'
                       }`}>
                       {t}
                     </button>
@@ -244,50 +261,57 @@ export default function HomePage() {
                 })}
               </div>
 
-              {/* Desktop search card */}
+              {/* Desktop search bar */}
               <div className="hidden sm:block relative">
-                <div className="bg-white/[0.07] backdrop-blur-xl border border-white/10 rounded-2xl p-2.5 shadow-2xl">
-                  <div className="flex items-stretch gap-2">
+                <div className="bg-white rounded-2xl shadow-[0_20px_60px_rgba(0,0,0,0.4)] p-2">
+                  <div className="flex items-stretch gap-1.5">
+
                     {/* Location */}
-                    <div className="relative flex-1 min-w-0 bg-white/[0.06] hover:bg-white/10 transition-colors rounded-xl px-4 py-3 cursor-pointer">
-                      <label className="block text-[10px] font-bold text-white/40 uppercase tracking-wider mb-1 pointer-events-none">
-                        <MapPin className="inline w-3 h-3 mr-1 -mt-0.5" />Location
+                    <div className="flex-1 min-w-0 rounded-xl px-4 py-3 hover:bg-gray-50 transition-colors cursor-pointer">
+                      <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1 pointer-events-none">
+                        <MapPin className="inline w-3 h-3 mr-1 -mt-0.5 text-blue-500" />Location
                       </label>
                       <select value={searchState} onChange={e => setSearchState(e.target.value)}
-                        className="w-full bg-transparent text-sm text-white font-semibold outline-none appearance-none cursor-pointer leading-tight">
-                        <option value="" className="text-gray-900">Any Location</option>
-                        {NIGERIAN_STATES.map(s => <option key={s} value={s} className="text-gray-900">{s}</option>)}
+                        className="w-full bg-transparent text-sm text-gray-900 font-semibold outline-none appearance-none cursor-pointer leading-tight">
+                        <option value="">Any Location</option>
+                        {NIGERIAN_STATES.map(s => <option key={s} value={s}>{s}</option>)}
                       </select>
                     </div>
+
+                    <div className="w-px bg-gray-100 my-2" />
 
                     {/* Property Type */}
                     <button type="button"
                       onClick={() => setOpenDropdown(o => o === 'propertyType' ? null : 'propertyType')}
-                      className="relative flex-1 min-w-0 bg-white/[0.06] hover:bg-white/10 transition-colors rounded-xl px-4 py-3 text-left">
-                      <span className="block text-[10px] font-bold text-white/40 uppercase tracking-wider mb-1">Property Type</span>
-                      <span className={`text-sm font-semibold flex items-center gap-1 ${selectedPropertyTypes.length ? 'text-blue-400' : 'text-white'}`}>
+                      className="flex-1 min-w-0 rounded-xl px-4 py-3 text-left hover:bg-gray-50 transition-colors">
+                      <span className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Type</span>
+                      <span className={`text-sm font-semibold flex items-center gap-1 ${selectedPropertyTypes.length ? 'text-blue-600' : 'text-gray-800'}`}>
                         <span className="truncate">{propertyTypeLabel}</span>
                         <ChevronDown className={`w-3.5 h-3.5 shrink-0 transition-transform ${openDropdown === 'propertyType' ? 'rotate-180' : ''}`} />
                       </span>
                     </button>
 
+                    <div className="w-px bg-gray-100 my-2" />
+
                     {/* Beds & Baths */}
                     <button type="button"
                       onClick={() => setOpenDropdown(o => o === 'beds' ? null : 'beds')}
-                      className="relative flex-1 min-w-0 bg-white/[0.06] hover:bg-white/10 transition-colors rounded-xl px-4 py-3 text-left">
-                      <span className="block text-[10px] font-bold text-white/40 uppercase tracking-wider mb-1">Beds &amp; Baths</span>
-                      <span className={`text-sm font-semibold flex items-center gap-1 ${(searchBeds || searchBaths) ? 'text-blue-400' : 'text-white'}`}>
+                      className="flex-1 min-w-0 rounded-xl px-4 py-3 text-left hover:bg-gray-50 transition-colors">
+                      <span className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Beds &amp; Baths</span>
+                      <span className={`text-sm font-semibold flex items-center gap-1 ${(searchBeds || searchBaths) ? 'text-blue-600' : 'text-gray-800'}`}>
                         <span className="truncate">{bedsBathsLabel}</span>
                         <ChevronDown className={`w-3.5 h-3.5 shrink-0 transition-transform ${openDropdown === 'beds' ? 'rotate-180' : ''}`} />
                       </span>
                     </button>
 
+                    <div className="w-px bg-gray-100 my-2" />
+
                     {/* Price */}
                     <button type="button"
                       onClick={() => setOpenDropdown(o => o === 'price' ? null : 'price')}
-                      className="relative flex-1 min-w-0 bg-white/[0.06] hover:bg-white/10 transition-colors rounded-xl px-4 py-3 text-left">
-                      <span className="block text-[10px] font-bold text-white/40 uppercase tracking-wider mb-1">Price</span>
-                      <span className={`text-sm font-semibold flex items-center gap-1 ${(priceMin > 0 || priceMax < 500_000_000) ? 'text-blue-400' : 'text-white'}`}>
+                      className="flex-1 min-w-0 rounded-xl px-4 py-3 text-left hover:bg-gray-50 transition-colors">
+                      <span className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Price</span>
+                      <span className={`text-sm font-semibold flex items-center gap-1 ${(priceMin > 0 || priceMax < 500_000_000) ? 'text-blue-600' : 'text-gray-800'}`}>
                         <span className="truncate">{priceLabel}</span>
                         <ChevronDown className={`w-3.5 h-3.5 shrink-0 transition-transform ${openDropdown === 'price' ? 'rotate-180' : ''}`} />
                       </span>
@@ -295,7 +319,7 @@ export default function HomePage() {
 
                     {/* Search button */}
                     <button type="button" onClick={() => handleSearch()}
-                      className="shrink-0 bg-blue-600 hover:bg-blue-500 text-white px-6 rounded-xl font-bold text-sm flex items-center gap-2 shadow-lg shadow-blue-600/30 transition-all active:scale-95">
+                      className="shrink-0 bg-blue-600 hover:bg-blue-500 active:scale-95 text-white px-7 rounded-xl font-black text-sm flex items-center gap-2 shadow-lg shadow-blue-600/40 transition-all">
                       <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
                       Search
                     </button>
@@ -304,16 +328,14 @@ export default function HomePage() {
 
                 {/* Property Type Panel */}
                 {openDropdown === 'propertyType' && (
-                  <div className="absolute top-[calc(100%+10px)] left-[25%] z-50 bg-white rounded-2xl shadow-xl border border-gray-100 p-5 w-72">
+                  <div className="absolute top-[calc(100%+10px)] left-0 z-50 bg-white rounded-2xl shadow-2xl border border-gray-100 p-5 w-72">
                     <p className="text-base font-bold text-gray-900 mb-1">Property Type</p>
-                    <p className="text-xs text-gray-400 mb-4">You can select multiple property types</p>
+                    <p className="text-xs text-gray-400 mb-4">Select one or more types</p>
                     <div className="space-y-2.5 max-h-72 overflow-y-auto pr-1">
                       <label className="flex items-center gap-3 cursor-pointer group">
                         <div className={`w-5 h-5 rounded flex items-center justify-center border-2 transition-colors shrink-0 ${selectedPropertyTypes.length === 0 ? 'bg-blue-600 border-blue-600' : 'border-gray-300 group-hover:border-blue-400'}`}
                           onClick={() => togglePropertyType('')}>
-                          {selectedPropertyTypes.length === 0 && (
-                            <svg className="w-3 h-3 text-white" viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>
-                          )}
+                          {selectedPropertyTypes.length === 0 && <svg className="w-3 h-3 text-white" viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>}
                         </div>
                         <span className="text-sm font-medium text-gray-800">Any</span>
                       </label>
@@ -321,9 +343,7 @@ export default function HomePage() {
                         <label key={pt} className="flex items-center gap-3 cursor-pointer group">
                           <div className={`w-5 h-5 rounded flex items-center justify-center border-2 transition-colors shrink-0 ${selectedPropertyTypes.includes(pt) ? 'bg-blue-600 border-blue-600' : 'border-gray-300 group-hover:border-blue-400'}`}
                             onClick={() => togglePropertyType(pt)}>
-                            {selectedPropertyTypes.includes(pt) && (
-                              <svg className="w-3 h-3 text-white" viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>
-                            )}
+                            {selectedPropertyTypes.includes(pt) && <svg className="w-3 h-3 text-white" viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>}
                           </div>
                           <span className="text-sm text-gray-700">{pt}</span>
                         </label>
@@ -334,197 +354,157 @@ export default function HomePage() {
 
                 {/* Beds & Baths Panel */}
                 {openDropdown === 'beds' && (
-                  <div className="absolute top-[calc(100%+10px)] left-[50%] -translate-x-1/4 z-50 bg-white rounded-2xl shadow-xl border border-gray-100 p-5 w-80">
+                  <div className="absolute top-[calc(100%+10px)] left-[30%] z-50 bg-white rounded-2xl shadow-2xl border border-gray-100 p-5 w-80">
                     <div className="mb-5">
-                      <p className="text-base font-bold text-gray-900 mb-3">Beds</p>
+                      <p className="text-base font-bold text-gray-900 mb-3">Bedrooms</p>
                       <div className="flex gap-2">
-                        {['Any', '1', '2', '3', '4', '5+'].map(v => {
-                          const val = v === 'Any' ? '' : v.replace('+', '')
+                        {['Any','1','2','3','4','5+'].map(v => {
+                          const val = v === 'Any' ? '' : v.replace('+','')
                           const active = v === 'Any' ? searchBeds === '' : searchBeds === val
-                          return (
-                            <button key={v} type="button" onClick={() => setSearchBeds(active ? '' : val)}
-                              className={`flex-1 py-2 rounded-lg text-sm font-semibold border transition-all ${active ? 'bg-blue-600 border-blue-600 text-white' : 'border-gray-200 text-gray-700 hover:border-blue-300 hover:text-blue-600'}`}>
-                              {v}
-                            </button>
-                          )
+                          return <button key={v} type="button" onClick={() => setSearchBeds(active ? '' : val)}
+                            className={`flex-1 py-2 rounded-lg text-sm font-semibold border transition-all ${active ? 'bg-blue-600 border-blue-600 text-white' : 'border-gray-200 text-gray-700 hover:border-blue-300'}`}>{v}</button>
                         })}
                       </div>
                     </div>
                     <div className="mb-5">
-                      <p className="text-base font-bold text-gray-900 mb-3">Baths</p>
+                      <p className="text-base font-bold text-gray-900 mb-3">Bathrooms</p>
                       <div className="flex gap-2">
-                        {['Any', '1', '2', '3', '4', '5', '6+'].map(v => {
-                          const val = v === 'Any' ? '' : v.replace('+', '')
+                        {['Any','1','2','3','4','5','6+'].map(v => {
+                          const val = v === 'Any' ? '' : v.replace('+','')
                           const active = v === 'Any' ? searchBaths === '' : searchBaths === val
-                          return (
-                            <button key={v} type="button" onClick={() => setSearchBaths(active ? '' : val)}
-                              className={`flex-1 py-2 rounded-lg text-sm font-semibold border transition-all ${active ? 'bg-blue-600 border-blue-600 text-white' : 'border-gray-200 text-gray-700 hover:border-blue-300 hover:text-blue-600'}`}>
-                              {v}
-                            </button>
-                          )
+                          return <button key={v} type="button" onClick={() => setSearchBaths(active ? '' : val)}
+                            className={`flex-1 py-2 rounded-lg text-sm font-semibold border transition-all ${active ? 'bg-blue-600 border-blue-600 text-white' : 'border-gray-200 text-gray-700 hover:border-blue-300'}`}>{v}</button>
                         })}
                       </div>
                     </div>
                     <button type="button" onClick={() => setOpenDropdown(null)}
-                      className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl text-sm transition-all">
-                      Apply Filter
-                    </button>
+                      className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl text-sm">Apply</button>
                   </div>
                 )}
 
                 {/* Price Panel */}
                 {openDropdown === 'price' && (
-                  <div className="absolute top-[calc(100%+10px)] right-14 z-50 bg-white rounded-2xl shadow-xl border border-gray-100 p-5 w-80">
+                  <div className="absolute top-[calc(100%+10px)] right-14 z-50 bg-white rounded-2xl shadow-2xl border border-gray-100 p-5 w-80">
                     <div className="flex items-center justify-between mb-4">
-                      <p className="text-base font-bold text-gray-900">Price</p>
-                      <button type="button" onClick={() => { setPriceMin(0); setPriceMax(500_000_000) }}
-                        className="text-xs font-semibold text-blue-600 hover:text-blue-700">Reset</button>
+                      <p className="text-base font-bold text-gray-900">Price Range</p>
+                      <button type="button" onClick={() => { setPriceMin(0); setPriceMax(500_000_000) }} className="text-xs font-semibold text-blue-600">Reset</button>
                     </div>
                     <div className="flex gap-3 mb-5">
-                      <div className="flex-1 border border-gray-200 rounded-xl px-3 py-2 focus-within:border-blue-400 focus-within:ring-2 focus-within:ring-blue-100 transition-all">
+                      <div className="flex-1 border border-gray-200 rounded-xl px-3 py-2 focus-within:border-blue-400 focus-within:ring-2 focus-within:ring-blue-100">
                         <p className="text-[10px] text-gray-400 font-semibold uppercase tracking-wide mb-0.5">Min (₦)</p>
-                        <input type="number" min={0} max={priceMax - 500_000} step={100_000}
-                          value={priceMin === 0 ? '' : priceMin} placeholder="0"
-                          onChange={e => { const v = Number(e.target.value) || 0; if (v < priceMax) setPriceMin(v) }}
+                        <input type="number" min={0} max={priceMax - 500_000} step={100_000} value={priceMin === 0 ? '' : priceMin} placeholder="0"
+                          onChange={e => { const v = Number(e.target.value)||0; if(v<priceMax) setPriceMin(v) }}
                           className="w-full text-sm font-bold text-gray-900 outline-none bg-transparent" />
                       </div>
                       <div className="flex items-center text-gray-300 font-bold">—</div>
-                      <div className="flex-1 border border-gray-200 rounded-xl px-3 py-2 focus-within:border-blue-400 focus-within:ring-2 focus-within:ring-blue-100 transition-all">
+                      <div className="flex-1 border border-gray-200 rounded-xl px-3 py-2 focus-within:border-blue-400 focus-within:ring-2 focus-within:ring-blue-100">
                         <p className="text-[10px] text-gray-400 font-semibold uppercase tracking-wide mb-0.5">Max (₦)</p>
-                        <input type="number" min={priceMin + 500_000} max={500_000_000} step={100_000}
-                          value={priceMax === 500_000_000 ? '' : priceMax} placeholder="500,000,000"
-                          onChange={e => { const v = Number(e.target.value) || 500_000_000; if (v > priceMin) setPriceMax(v) }}
+                        <input type="number" min={priceMin+500_000} max={500_000_000} step={100_000} value={priceMax===500_000_000?'':priceMax} placeholder="500,000,000"
+                          onChange={e => { const v=Number(e.target.value)||500_000_000; if(v>priceMin) setPriceMax(v) }}
                           className="w-full text-sm font-bold text-gray-900 outline-none bg-transparent" />
                       </div>
                     </div>
                     <div className="relative h-5 mb-2">
                       <div className="absolute top-1/2 -translate-y-1/2 w-full h-1.5 bg-gray-200 rounded-full" />
                       <div className="absolute top-1/2 -translate-y-1/2 h-1.5 bg-blue-600 rounded-full"
-                        style={{ left: `${(priceMin / 500_000_000) * 100}%`, right: `${100 - (priceMax / 500_000_000) * 100}%` }} />
+                        style={{ left:`${(priceMin/500_000_000)*100}%`, right:`${100-(priceMax/500_000_000)*100}%` }} />
                       <input type="range" min={0} max={500_000_000} step={500_000} value={priceMin}
-                        onChange={e => { const v = Number(e.target.value); if (v < priceMax) setPriceMin(v) }}
+                        onChange={e=>{const v=Number(e.target.value);if(v<priceMax)setPriceMin(v)}}
                         className="absolute w-full top-1/2 -translate-y-1/2 appearance-none bg-transparent pointer-events-none [&::-webkit-slider-thumb]:pointer-events-auto [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-blue-600 [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-white [&::-webkit-slider-thumb]:shadow-md [&::-webkit-slider-thumb]:cursor-pointer" />
                       <input type="range" min={0} max={500_000_000} step={500_000} value={priceMax}
-                        onChange={e => { const v = Number(e.target.value); if (v > priceMin) setPriceMax(v) }}
+                        onChange={e=>{const v=Number(e.target.value);if(v>priceMin)setPriceMax(v)}}
                         className="absolute w-full top-1/2 -translate-y-1/2 appearance-none bg-transparent pointer-events-none [&::-webkit-slider-thumb]:pointer-events-auto [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-blue-600 [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-white [&::-webkit-slider-thumb]:shadow-md [&::-webkit-slider-thumb]:cursor-pointer" />
                     </div>
-                    <div className="flex justify-between text-xs text-gray-400 font-medium mb-5">
-                      <span>₦0</span><span>₦500,000,000</span>
-                    </div>
+                    <div className="flex justify-between text-xs text-gray-400 font-medium mb-5"><span>₦0</span><span>₦500M</span></div>
                     <button type="button" onClick={() => setOpenDropdown(null)}
-                      className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl text-sm transition-all">
-                      Apply Filter
-                    </button>
+                      className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl text-sm">Apply</button>
                   </div>
                 )}
               </div>
 
-              {/* Mobile stacked search */}
-              <form onSubmit={handleSearch}
-                className="sm:hidden bg-white/[0.07] backdrop-blur-xl border border-white/10 rounded-2xl p-3 space-y-2">
+              {/* Mobile search */}
+              <form onSubmit={handleSearch} className="sm:hidden bg-white rounded-2xl shadow-2xl p-3 space-y-2">
                 <div className="relative">
-                  <MapPin className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40 pointer-events-none" />
+                  <MapPin className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-blue-500 pointer-events-none" />
                   <select value={searchState} onChange={e => setSearchState(e.target.value)}
-                    className="w-full pl-10 pr-4 py-3 rounded-xl bg-white/10 text-sm text-white outline-none appearance-none">
-                    <option value="" className="text-gray-900">Location — Any State</option>
-                    {NIGERIAN_STATES.map(s => <option key={s} value={s} className="text-gray-900">{s}</option>)}
+                    className="w-full pl-10 pr-4 py-3 rounded-xl bg-gray-50 text-sm text-gray-800 outline-none appearance-none">
+                    <option value="">Location — Any State</option>
+                    {NIGERIAN_STATES.map(s => <option key={s} value={s}>{s}</option>)}
                   </select>
                 </div>
                 <div className="grid grid-cols-2 gap-2">
-                  <select value={selectedPropertyTypes[0] ?? ''} onChange={e => setSelectedPropertyTypes(e.target.value ? [e.target.value] : [])}
-                    className="w-full px-3 py-3 rounded-xl bg-white/10 text-sm text-white outline-none appearance-none">
-                    <option value="" className="text-gray-900">Property Type</option>
-                    {PROPERTY_TYPES.map(pt => <option key={pt} value={pt} className="text-gray-900">{pt}</option>)}
+                  <select value={selectedPropertyTypes[0]??''} onChange={e=>setSelectedPropertyTypes(e.target.value?[e.target.value]:[])}
+                    className="w-full px-3 py-3 rounded-xl bg-gray-50 text-sm text-gray-800 outline-none appearance-none">
+                    <option value="">Property Type</option>
+                    {PROPERTY_TYPES.map(pt=><option key={pt} value={pt}>{pt}</option>)}
                   </select>
-                  <select value={searchBeds} onChange={e => setSearchBeds(e.target.value)}
-                    className="w-full px-3 py-3 rounded-xl bg-white/10 text-sm text-white outline-none appearance-none">
-                    <option value="" className="text-gray-900">Beds</option>
-                    {['1','2','3','4','5'].map(n => <option key={n} value={n} className="text-gray-900">{n}+ Beds</option>)}
+                  <select value={searchBeds} onChange={e=>setSearchBeds(e.target.value)}
+                    className="w-full px-3 py-3 rounded-xl bg-gray-50 text-sm text-gray-800 outline-none appearance-none">
+                    <option value="">Beds</option>
+                    {['1','2','3','4','5'].map(n=><option key={n} value={n}>{n}+ Beds</option>)}
                   </select>
                 </div>
                 <button type="submit"
-                  className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3.5 rounded-xl text-sm flex items-center justify-center gap-2 transition-all shadow-lg shadow-blue-600/30">
+                  className="w-full bg-blue-600 hover:bg-blue-500 text-white font-black py-3.5 rounded-xl text-sm flex items-center justify-center gap-2 shadow-lg shadow-blue-600/30">
                   <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
                   Search Properties
                 </button>
               </form>
             </div>
 
-            {/* Stats */}
-            <div className="flex items-center gap-6 sm:gap-10">
+            {/* Stats row */}
+            <div className="flex items-center gap-8">
               {[
                 { value: 2400, suffix: '+', label: 'Properties' },
                 { value: 850,  suffix: '+', label: 'Landlords'  },
                 { value: 0,    prefix: '₦', label: 'Agent Fees' },
               ].map((s, i) => (
-                <div key={s.label} className="flex items-center gap-6 sm:gap-10">
-                  {i > 0 && <div className="w-px h-8 bg-white/10" />}
+                <div key={s.label} className="flex items-center gap-8">
+                  {i > 0 && <div className="w-px h-8 bg-white/20" />}
                   <div>
-                    <p className="font-extrabold text-white text-xl leading-none">
+                    <p className="font-black text-white text-2xl leading-none tracking-tight">
                       {s.prefix ?? ''}<AnimatedCounter target={s.value} suffix={s.suffix ?? ''} />
                     </p>
-                    <p className="text-xs text-white/40 mt-1">{s.label}</p>
+                    <p className="text-xs text-white/40 mt-1 font-medium">{s.label}</p>
                   </div>
                 </div>
               ))}
             </div>
           </div>
 
-          {/* ── Right — image + floating card ── */}
-          <div className="hidden lg:flex lg:w-[48%] items-center justify-center relative">
-            {/* Glow ring */}
-            <div className="absolute inset-8 rounded-3xl bg-blue-600/10 blur-2xl" />
-
-            {/* Main image */}
-            <div className="relative w-full rounded-3xl overflow-hidden shadow-[0_40px_80px_rgba(0,0,0,0.6)] border border-white/10" style={{ height: 'calc(100vh - 160px)', maxHeight: '680px' }}>
-              <img
-                src="https://images.unsplash.com/photo-1580587771525-78b9dba3b914?w=1400&q=85"
-                alt="Modern Nigerian home"
-                className="w-full h-full object-cover"
-              />
-              {/* Dark gradient overlay */}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />
-
-              {/* Verified badge */}
-              <div className="absolute top-5 right-5 bg-white/95 backdrop-blur-sm shadow-xl rounded-full px-4 py-2 flex items-center gap-2">
-                <CheckCircle className="w-4 h-4 text-blue-600" />
-                <span className="text-sm font-semibold text-gray-900">Verified Landlord</span>
-              </div>
-
-              {/* Floating property card */}
-              <div className="absolute bottom-6 left-5 right-5 bg-white/95 backdrop-blur-md shadow-2xl rounded-2xl p-5 border border-white/30">
-                <div
-                  className="transition-all duration-350"
-                  style={{ opacity: heroVisible ? 1 : 0, transform: heroVisible ? 'translateY(0)' : 'translateY(8px)' }}
-                >
-                  <div className="flex items-start justify-between mb-3">
-                    <span className="bg-blue-600 text-white text-[10px] font-bold uppercase tracking-wider px-3 py-1 rounded-full">
-                      {HERO_LISTINGS[heroIdx].label}
-                    </span>
-                    <span className="text-xs text-gray-400 font-medium">Lagos, Nigeria</span>
+          {/* Floating property card — bottom right */}
+          <div className="hidden lg:block absolute bottom-10 right-10 w-72">
+            <div className="bg-white rounded-2xl shadow-2xl p-5 border border-white/20">
+              <div
+                className="transition-all duration-300"
+                style={{ opacity: heroVisible ? 1 : 0, transform: heroVisible ? 'translateY(0)' : 'translateY(8px)' }}
+              >
+                <div className="flex items-center justify-between mb-3">
+                  <span className="bg-blue-600 text-white text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full">
+                    {HERO_LISTINGS[heroIdx].label}
+                  </span>
+                  <div className="flex items-center gap-1 text-amber-400">
+                    {[...Array(5)].map((_,i) => <Star key={i} className="w-3 h-3 fill-current" />)}
                   </div>
-                  <h3 className="font-bold text-base text-gray-900 mb-1">{HERO_LISTINGS[heroIdx].title}</h3>
-                  <p className="text-blue-600 font-extrabold text-2xl mb-4">
-                    {HERO_LISTINGS[heroIdx].price}
-                    {HERO_LISTINGS[heroIdx].suffix && (
-                      <span className="text-sm text-gray-400 font-normal ml-1">{HERO_LISTINGS[heroIdx].suffix}</span>
-                    )}
-                  </p>
                 </div>
-                <div className="flex items-center gap-3">
-                  <Link href="/listings"
-                    className="flex-1 bg-gray-900 hover:bg-gray-800 text-white py-2.5 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 transition-colors">
-                    View Listings <ArrowRight className="w-4 h-4" />
-                  </Link>
-                  {/* Dot indicators */}
-                  <div className="flex items-center gap-1.5">
-                    {HERO_LISTINGS.map((_, i) => (
-                      <button key={i}
-                        onClick={() => { setHeroVisible(false); setTimeout(() => { setHeroIdx(i); setHeroVisible(true) }, 200) }}
-                        className={`rounded-full transition-all duration-300 ${i === heroIdx ? 'w-4 h-1.5 bg-blue-600' : 'w-1.5 h-1.5 bg-gray-300 hover:bg-gray-400'}`}
-                      />
-                    ))}
-                  </div>
+                <h3 className="font-bold text-gray-900 text-sm mb-1 leading-snug">{HERO_LISTINGS[heroIdx].title}</h3>
+                <p className="text-blue-600 font-black text-xl mb-4">
+                  {HERO_LISTINGS[heroIdx].price}
+                  {HERO_LISTINGS[heroIdx].suffix && <span className="text-xs text-gray-400 font-normal ml-1">{HERO_LISTINGS[heroIdx].suffix}</span>}
+                </p>
+              </div>
+              <div className="flex items-center gap-3">
+                <Link href="/listings"
+                  className="flex-1 bg-gray-900 hover:bg-gray-800 text-white py-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-colors">
+                  View Listings <ArrowRight className="w-3.5 h-3.5" />
+                </Link>
+                <div className="flex items-center gap-1">
+                  {HERO_LISTINGS.map((_,i) => (
+                    <button key={i}
+                      onClick={() => { setHeroVisible(false); setTimeout(() => { setHeroIdx(i); setHeroVisible(true) }, 200) }}
+                      className={`rounded-full transition-all duration-300 ${i===heroIdx ? 'w-4 h-1.5 bg-blue-600' : 'w-1.5 h-1.5 bg-gray-300 hover:bg-gray-400'}`}
+                    />
+                  ))}
                 </div>
               </div>
             </div>
