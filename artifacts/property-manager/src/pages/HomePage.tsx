@@ -66,7 +66,8 @@ export default function HomePage() {
   const [searchBaths, setSearchBaths] = useState('')
   const [priceMin, setPriceMin] = useState(0)
   const [priceMax, setPriceMax] = useState(500_000_000)
-  const [openDropdown, setOpenDropdown] = useState<'propertyType' | 'beds' | 'price' | null>(null)
+  const [openDropdown, setOpenDropdown] = useState<'location' | 'propertyType' | 'beds' | 'price' | null>(null)
+  const [locationQuery, setLocationQuery] = useState('')
   const searchBarRef = useRef<HTMLDivElement>(null)
   const [allProjects, setAllProjects] = useState<Project[]>([])
   const [heroIdx, setHeroIdx] = useState(0)
@@ -267,16 +268,17 @@ export default function HomePage() {
                   <div className="flex items-center gap-0">
 
                     {/* Location */}
-                    <div className="flex-1 min-w-0 px-4 py-2.5 hover:bg-gray-50 rounded-xl transition-colors cursor-pointer">
-                      <label className="block text-[9px] font-black text-gray-400 uppercase tracking-widest mb-0.5 pointer-events-none">
+                    <button type="button"
+                      onClick={() => setOpenDropdown(o => o === 'location' ? null : 'location')}
+                      className="flex-1 min-w-0 px-4 py-2.5 text-left hover:bg-gray-50 rounded-xl transition-colors">
+                      <span className="block text-[9px] font-black text-gray-400 uppercase tracking-widest mb-0.5">
                         <MapPin className="inline w-2.5 h-2.5 mr-0.5 -mt-0.5 text-blue-500" />Location
-                      </label>
-                      <select value={searchState} onChange={e => setSearchState(e.target.value)}
-                        className="w-full bg-transparent text-sm text-gray-900 font-semibold outline-none appearance-none cursor-pointer leading-tight">
-                        <option value="">Any Location</option>
-                        {NIGERIAN_STATES.map(s => <option key={s} value={s}>{s}</option>)}
-                      </select>
-                    </div>
+                      </span>
+                      <span className={`text-sm font-semibold flex items-center gap-1 ${searchState ? 'text-blue-600' : 'text-gray-800'}`}>
+                        <span className="truncate">{searchState || 'Any Location'}</span>
+                        <ChevronDown className={`w-3 h-3 shrink-0 transition-transform ${openDropdown === 'location' ? 'rotate-180' : ''}`} />
+                      </span>
+                    </button>
 
                     <div className="w-px h-8 bg-gray-200 shrink-0" />
 
@@ -325,6 +327,87 @@ export default function HomePage() {
                     </button>
                   </div>
                 </div>
+
+                {/* Location Panel */}
+                {openDropdown === 'location' && (() => {
+                  const q = locationQuery.trim().toLowerCase()
+                  const filteredStates = NIGERIAN_STATES.filter(s => s.toLowerCase().includes(q))
+                  const filteredAreas = Object.entries(POPULAR_AREAS).flatMap(([state, areas]) =>
+                    areas.filter(a => a.toLowerCase().includes(q)).map(a => ({ area: a, state }))
+                  )
+                  return (
+                    <div className="absolute top-[calc(100%+10px)] left-0 z-50 bg-white rounded-2xl shadow-2xl border border-gray-100 w-80">
+                      {/* Search input */}
+                      <div className="p-3 border-b border-gray-100">
+                        <div className="relative">
+                          <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-blue-500 pointer-events-none" />
+                          <input
+                            autoFocus
+                            type="text"
+                            placeholder="Search state or area…"
+                            value={locationQuery}
+                            onChange={e => setLocationQuery(e.target.value)}
+                            className="w-full pl-9 pr-3 py-2 text-sm bg-gray-50 rounded-xl outline-none focus:ring-2 focus:ring-blue-500/30 text-gray-800 placeholder:text-gray-400"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="max-h-72 overflow-y-auto p-2">
+                        {/* Any Location */}
+                        {!q && (
+                          <button type="button"
+                            onClick={() => { setSearchState(''); setOpenDropdown(null); setLocationQuery('') }}
+                            className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-colors ${!searchState ? 'bg-blue-50 text-blue-600 font-semibold' : 'text-gray-700 hover:bg-gray-50'}`}>
+                            <span className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 ${!searchState ? 'bg-blue-600 border-blue-600' : 'border-gray-300'}`}>
+                              {!searchState && <svg className="w-3 h-3 text-white" viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>}
+                            </span>
+                            Any Location
+                          </button>
+                        )}
+
+                        {/* States */}
+                        {filteredStates.length > 0 && (
+                          <>
+                            <p className="px-3 pt-2 pb-1 text-[10px] font-black text-gray-400 uppercase tracking-widest">States</p>
+                            {filteredStates.map(s => (
+                              <button key={s} type="button"
+                                onClick={() => { setSearchState(s); setOpenDropdown(null); setLocationQuery('') }}
+                                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-colors ${searchState === s ? 'bg-blue-50 text-blue-600 font-semibold' : 'text-gray-700 hover:bg-gray-50'}`}>
+                                <span className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 ${searchState === s ? 'bg-blue-600 border-blue-600' : 'border-gray-300'}`}>
+                                  {searchState === s && <svg className="w-3 h-3 text-white" viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>}
+                                </span>
+                                {s}
+                              </button>
+                            ))}
+                          </>
+                        )}
+
+                        {/* Popular Areas */}
+                        {filteredAreas.length > 0 && (
+                          <>
+                            <p className="px-3 pt-3 pb-1 text-[10px] font-black text-gray-400 uppercase tracking-widest">Popular Areas</p>
+                            {filteredAreas.map(({ area, state }) => (
+                              <button key={`${state}-${area}`} type="button"
+                                onClick={() => { setSearchState(area); setOpenDropdown(null); setLocationQuery('') }}
+                                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-colors ${searchState === area ? 'bg-blue-50 text-blue-600 font-semibold' : 'text-gray-700 hover:bg-gray-50'}`}>
+                                <span className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 ${searchState === area ? 'bg-blue-600 border-blue-600' : 'border-gray-300'}`}>
+                                  {searchState === area && <svg className="w-3 h-3 text-white" viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>}
+                                </span>
+                                <span className="flex-1 text-left">{area}</span>
+                                <span className="text-[10px] text-gray-400 font-medium">{state}</span>
+                              </button>
+                            ))}
+                          </>
+                        )}
+
+                        {/* No results */}
+                        {q && filteredStates.length === 0 && filteredAreas.length === 0 && (
+                          <p className="px-3 py-6 text-sm text-gray-400 text-center">No locations match "{locationQuery}"</p>
+                        )}
+                      </div>
+                    </div>
+                  )
+                })()}
 
                 {/* Property Type Panel */}
                 {openDropdown === 'propertyType' && (
@@ -538,42 +621,47 @@ export default function HomePage() {
       </section>
 
       {/* ── PROPERTIES ── */}
-      <section className="bg-gray-50 py-20 md:py-28">
+      <section className="bg-white py-20 md:py-28">
         <div className="max-w-7xl mx-auto px-5 sm:px-8">
-          <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-12 gap-4">
+
+          {/* Header */}
+          <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-10 gap-6">
             <div>
-              <p className="text-blue-600 font-semibold text-sm uppercase tracking-widest mb-2">Fresh Listings</p>
-              <h2 className="text-3xl md:text-4xl font-extrabold text-gray-900 tracking-tight">
+              <div className="inline-flex items-center gap-2 mb-3">
+                <span className="w-1.5 h-1.5 rounded-full bg-blue-600" />
+                <span className="text-blue-600 font-bold text-xs uppercase tracking-widest">Fresh Listings</span>
+              </div>
+              <h2 className="text-3xl md:text-4xl font-extrabold text-gray-900 tracking-tight leading-tight">
                 Newly Listed Properties
               </h2>
-              <p className="text-gray-500 mt-2 text-base">Hand-picked opportunities from verified landlords.</p>
+              <p className="text-gray-400 mt-2 text-sm">Hand-picked from verified landlords across Nigeria.</p>
             </div>
             <Link
               href={`/listings?type=${typeMap[activeTab]}`}
-              className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white border border-gray-200 text-sm font-semibold text-gray-700 hover:bg-gray-50 hover:border-gray-300 transition-all whitespace-nowrap shadow-sm"
+              className="group inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gray-900 text-white text-sm font-semibold hover:bg-blue-600 transition-colors whitespace-nowrap shrink-0 shadow-sm"
             >
-              View all
-              <ArrowRight className="w-4 h-4" />
+              View all listings
+              <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
             </Link>
           </div>
 
           {/* Filter tabs */}
-          <div className="flex gap-2 mb-8 overflow-x-auto no-scrollbar">
+          <div className="flex gap-2 mb-10 overflow-x-auto no-scrollbar">
             {(['Rent', 'Lease', 'Buy', 'Commercial'] as Tab[]).map(t => {
               const comingSoon = t === 'Buy' || t === 'Commercial'
               return comingSoon ? (
-                <span key={t} className="px-5 py-2.5 rounded-xl text-sm font-semibold whitespace-nowrap bg-white text-gray-300 border border-gray-100 cursor-default select-none flex items-center gap-1.5 shrink-0">
+                <span key={t} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold whitespace-nowrap bg-gray-50 text-gray-300 border border-gray-100 cursor-default select-none shrink-0">
                   {t}
-                  <span className="text-[9px] font-bold uppercase tracking-wider bg-gray-100 text-gray-400 px-1.5 py-0.5 rounded-md">Soon</span>
+                  <span className="text-[9px] font-black uppercase tracking-wider bg-gray-100 text-gray-300 px-1.5 py-0.5 rounded-md">Soon</span>
                 </span>
               ) : (
                 <button
                   key={t}
                   onClick={() => setActiveTab(t)}
-                  className={`px-5 py-2.5 rounded-xl text-sm font-semibold whitespace-nowrap transition-all shrink-0 ${
+                  className={`px-5 py-2 rounded-xl text-sm font-semibold whitespace-nowrap transition-all shrink-0 ${
                     activeTab === t
-                      ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/25'
-                      : 'bg-white text-gray-600 border border-gray-200 hover:border-blue-200 hover:text-blue-600'
+                      ? 'bg-blue-600 text-white shadow-md shadow-blue-600/20'
+                      : 'bg-gray-50 text-gray-500 hover:bg-gray-100 hover:text-gray-800'
                   }`}
                 >
                   {t}
@@ -588,17 +676,17 @@ export default function HomePage() {
               <span className="text-gray-500 text-sm font-medium">Loading properties...</span>
             </div>
           ) : properties.length > 0 ? (
-            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
               {properties.map(p => (
                 <PropertyCard key={p.id} property={p} saved={savedIds.has(p.id)} isAuthenticated={isAuthenticated} />
               ))}
             </div>
           ) : (
-            <div className="bg-white rounded-3xl border border-gray-100 py-24 text-center flex flex-col items-center shadow-sm">
-              <div className="w-16 h-16 rounded-2xl bg-blue-50 flex items-center justify-center mb-4">
-                <Building2 className="w-8 h-8 text-blue-400" strokeWidth={1.5} />
+            <div className="bg-gray-50 rounded-3xl border border-gray-100 py-24 text-center flex flex-col items-center">
+              <div className="w-16 h-16 rounded-2xl bg-white border border-gray-100 shadow-sm flex items-center justify-center mb-4">
+                <Building2 className="w-8 h-8 text-gray-300" strokeWidth={1.5} />
               </div>
-              <h3 className="text-lg font-bold text-gray-900">No properties yet</h3>
+              <h3 className="text-base font-bold text-gray-700">No properties yet</h3>
               <p className="text-gray-400 mt-1 text-sm max-w-xs">Check back soon — new listings are added regularly.</p>
             </div>
           )}
