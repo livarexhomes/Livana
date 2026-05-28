@@ -30,11 +30,8 @@ CREATE TABLE IF NOT EXISTS public.landlords (
   city             TEXT,
   -- KYC fields
   nin              TEXT,
-  dob              DATE,
   id_type          TEXT,
   id_number        TEXT,
-  bank_name        TEXT,
-  account_number   TEXT,
   state            TEXT,
   kyc_notes        TEXT,
   kyc_submitted_at TIMESTAMPTZ,
@@ -55,6 +52,12 @@ CREATE TABLE IF NOT EXISTS public.landlords (
 
 -- Add columns to existing deployments that predate this schema version
 ALTER TABLE public.landlords ADD COLUMN IF NOT EXISTS city             TEXT;
+ALTER TABLE public.landlords ADD COLUMN IF NOT EXISTS nin              TEXT;
+ALTER TABLE public.landlords ADD COLUMN IF NOT EXISTS id_type          TEXT;
+ALTER TABLE public.landlords ADD COLUMN IF NOT EXISTS id_number        TEXT;
+ALTER TABLE public.landlords ADD COLUMN IF NOT EXISTS state            TEXT;
+ALTER TABLE public.landlords ADD COLUMN IF NOT EXISTS kyc_notes        TEXT;
+ALTER TABLE public.landlords ADD COLUMN IF NOT EXISTS kyc_submitted_at TIMESTAMPTZ;
 ALTER TABLE public.landlords ADD COLUMN IF NOT EXISTS years_experience TEXT;
 ALTER TABLE public.landlords ADD COLUMN IF NOT EXISTS specialization   TEXT;
 ALTER TABLE public.landlords ADD COLUMN IF NOT EXISTS website          TEXT;
