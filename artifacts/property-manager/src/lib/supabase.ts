@@ -42,8 +42,9 @@ export function getSupabaseProjectImageUrl(storagePath: string) {
 // KYC docs are in a private bucket — use signed URLs via the client
 export async function getKycDocUrl(storagePath: string): Promise<string | null> {
   const client = createClient()
-  const { data } = await client.storage
+  const { data, error } = await client.storage
     .from('kyc-documents')
     .createSignedUrl(storagePath, 60 * 60) // 1 hour
+  if (error) console.error('[KYC] createSignedUrl error:', error.message, 'path:', storagePath)
   return data?.signedUrl ?? null
 }
