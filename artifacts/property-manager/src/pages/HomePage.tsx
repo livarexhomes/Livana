@@ -181,48 +181,62 @@ export default function HomePage() {
       <PublicNavbar />
 
       {/* ── HERO ── */}
-      <section className="relative bg-white flex flex-col lg:flex-row" style={{ minHeight: 'calc(100vh - 80px)', marginTop: '80px' }}>
-        {/* Left Column */}
-        <div className="w-full lg:w-[55%] flex flex-col justify-center px-5 sm:px-10 lg:px-16 xl:px-24 pt-10 pb-12 lg:pt-12 lg:pb-16">
-          <div className="max-w-xl">
-            {/* Label */}
-            <div className="flex items-center gap-2.5 mb-7">
-              <span className="relative flex h-3 w-3">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-500 opacity-75" />
-                <span className="relative inline-flex rounded-full h-3 w-3 bg-blue-600" />
+      <section className="relative overflow-hidden bg-[#0a0f1e]" style={{ minHeight: 'calc(100vh - 80px)', marginTop: '80px' }}>
+        {/* Background gradient blobs */}
+        <div className="absolute inset-0 pointer-events-none">
+          <div className="absolute -top-40 -left-40 w-[700px] h-[700px] rounded-full bg-blue-600/20 blur-[120px]" />
+          <div className="absolute top-1/2 -right-40 w-[500px] h-[500px] rounded-full bg-indigo-600/15 blur-[100px]" />
+          <div className="absolute bottom-0 left-1/3 w-[400px] h-[400px] rounded-full bg-blue-500/10 blur-[80px]" />
+        </div>
+
+        {/* Grid overlay */}
+        <div className="absolute inset-0 pointer-events-none opacity-[0.04]"
+          style={{ backgroundImage: 'linear-gradient(#fff 1px,transparent 1px),linear-gradient(90deg,#fff 1px,transparent 1px)', backgroundSize: '60px 60px' }} />
+
+        <div className="relative max-w-7xl mx-auto px-5 sm:px-8 lg:px-12 flex flex-col lg:flex-row items-center gap-12 lg:gap-8 py-16 lg:py-0" style={{ minHeight: 'calc(100vh - 80px)' }}>
+
+          {/* ── Left ── */}
+          <div className="w-full lg:w-[52%] flex flex-col justify-center" ref={searchBarRef}>
+
+            {/* Badge */}
+            <div className="inline-flex items-center gap-2 bg-blue-500/10 border border-blue-500/20 rounded-full px-4 py-1.5 mb-8 w-fit">
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75" />
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-400" />
               </span>
-              <span className="text-sm font-semibold text-blue-600 uppercase tracking-wider">
-                Nigeria's Leading Property Platform
-              </span>
+              <span className="text-xs font-semibold text-blue-300 uppercase tracking-widest">Nigeria's Leading Property Platform</span>
             </div>
 
             {/* Headline */}
-            <h1 className="text-3xl sm:text-5xl xl:text-6xl font-extrabold leading-[1.08] mb-4 sm:mb-6 tracking-tight text-gray-900">
-              Find Your Next<br />Home in Nigeria
+            <h1 className="text-4xl sm:text-5xl xl:text-6xl font-extrabold leading-[1.06] mb-5 tracking-tight text-white">
+              Find Your Perfect<br />
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-indigo-400">
+                Home in Nigeria
+              </span>
             </h1>
 
             {/* Subtitle */}
-            <p className="text-base sm:text-lg text-gray-500 mb-7 sm:mb-10 leading-relaxed max-w-md">
-              Browse verified listings. Contact landlords directly. No agent fees.
+            <p className="text-base sm:text-lg text-white/50 mb-10 leading-relaxed max-w-lg">
+              Browse verified listings. Contact landlords directly. Zero agent fees.
             </p>
 
-            {/* Search Card */}
-            <div className="mb-12" ref={searchBarRef}>
+            {/* Search card */}
+            <div className="mb-10">
               {/* Tabs */}
-              <div className="flex gap-1 mb-3 overflow-x-auto no-scrollbar">
+              <div className="flex gap-1 mb-4 overflow-x-auto no-scrollbar">
                 {(['Rent', 'Lease', 'Buy', 'Commercial'] as Tab[]).map(t => {
                   const comingSoon = t === 'Buy' || t === 'Commercial'
                   return comingSoon ? (
-                    <span key={t} className="px-3 py-2 rounded-full text-sm font-semibold text-gray-300 cursor-default select-none flex items-center gap-1.5 shrink-0">
+                    <span key={t} className="px-3 py-2 rounded-full text-sm font-semibold text-white/20 cursor-default select-none flex items-center gap-1.5 shrink-0">
                       {t}
-                      <span className="text-[9px] font-bold uppercase tracking-wider bg-gray-100 text-gray-400 px-1.5 py-0.5 rounded-md">Soon</span>
+                      <span className="text-[9px] font-bold uppercase tracking-wider bg-white/10 text-white/30 px-1.5 py-0.5 rounded-md">Soon</span>
                     </span>
                   ) : (
                     <button key={t} type="button" onClick={() => setActiveTab(t)}
                       className={`px-4 py-2 rounded-full text-sm font-semibold transition-all shrink-0 ${
                         activeTab === t
-                          ? 'bg-blue-600 text-white shadow-sm shadow-blue-600/25'
-                          : 'text-gray-500 hover:text-gray-800 hover:bg-gray-100'
+                          ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/30'
+                          : 'text-white/40 hover:text-white/80 hover:bg-white/10'
                       }`}>
                       {t}
                     </button>
@@ -230,51 +244,50 @@ export default function HomePage() {
                 })}
               </div>
 
-              {/* ── Desktop search card ── */}
+              {/* Desktop search card */}
               <div className="hidden sm:block relative">
-                <div className="bg-white rounded-2xl shadow-[0_8px_40px_rgb(0,0,0,0.10)] border border-gray-100 p-3">
+                <div className="bg-white/[0.07] backdrop-blur-xl border border-white/10 rounded-2xl p-2.5 shadow-2xl">
                   <div className="flex items-stretch gap-2">
-
                     {/* Location */}
-                    <div className="relative flex-1 min-w-0 bg-gray-50 hover:bg-gray-100 transition-colors rounded-xl px-4 py-3 cursor-pointer">
-                      <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1 pointer-events-none">
+                    <div className="relative flex-1 min-w-0 bg-white/[0.06] hover:bg-white/10 transition-colors rounded-xl px-4 py-3 cursor-pointer">
+                      <label className="block text-[10px] font-bold text-white/40 uppercase tracking-wider mb-1 pointer-events-none">
                         <MapPin className="inline w-3 h-3 mr-1 -mt-0.5" />Location
                       </label>
                       <select value={searchState} onChange={e => setSearchState(e.target.value)}
-                        className="w-full bg-transparent text-sm text-gray-800 font-semibold outline-none appearance-none cursor-pointer leading-tight">
-                        <option value="">Any Location</option>
-                        {NIGERIAN_STATES.map(s => <option key={s} value={s}>{s}</option>)}
+                        className="w-full bg-transparent text-sm text-white font-semibold outline-none appearance-none cursor-pointer leading-tight">
+                        <option value="" className="text-gray-900">Any Location</option>
+                        {NIGERIAN_STATES.map(s => <option key={s} value={s} className="text-gray-900">{s}</option>)}
                       </select>
                     </div>
 
-                    {/* Property Type trigger */}
+                    {/* Property Type */}
                     <button type="button"
                       onClick={() => setOpenDropdown(o => o === 'propertyType' ? null : 'propertyType')}
-                      className="relative flex-1 min-w-0 bg-gray-50 hover:bg-gray-100 transition-colors rounded-xl px-4 py-3 text-left">
-                      <span className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Property Type</span>
-                      <span className={`text-sm font-semibold flex items-center gap-1 ${selectedPropertyTypes.length ? 'text-blue-600' : 'text-gray-700'}`}>
+                      className="relative flex-1 min-w-0 bg-white/[0.06] hover:bg-white/10 transition-colors rounded-xl px-4 py-3 text-left">
+                      <span className="block text-[10px] font-bold text-white/40 uppercase tracking-wider mb-1">Property Type</span>
+                      <span className={`text-sm font-semibold flex items-center gap-1 ${selectedPropertyTypes.length ? 'text-blue-400' : 'text-white'}`}>
                         <span className="truncate">{propertyTypeLabel}</span>
                         <ChevronDown className={`w-3.5 h-3.5 shrink-0 transition-transform ${openDropdown === 'propertyType' ? 'rotate-180' : ''}`} />
                       </span>
                     </button>
 
-                    {/* Beds & Baths trigger */}
+                    {/* Beds & Baths */}
                     <button type="button"
                       onClick={() => setOpenDropdown(o => o === 'beds' ? null : 'beds')}
-                      className="relative flex-1 min-w-0 bg-gray-50 hover:bg-gray-100 transition-colors rounded-xl px-4 py-3 text-left">
-                      <span className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Beds &amp; Baths</span>
-                      <span className={`text-sm font-semibold flex items-center gap-1 ${(searchBeds || searchBaths) ? 'text-blue-600' : 'text-gray-700'}`}>
+                      className="relative flex-1 min-w-0 bg-white/[0.06] hover:bg-white/10 transition-colors rounded-xl px-4 py-3 text-left">
+                      <span className="block text-[10px] font-bold text-white/40 uppercase tracking-wider mb-1">Beds &amp; Baths</span>
+                      <span className={`text-sm font-semibold flex items-center gap-1 ${(searchBeds || searchBaths) ? 'text-blue-400' : 'text-white'}`}>
                         <span className="truncate">{bedsBathsLabel}</span>
                         <ChevronDown className={`w-3.5 h-3.5 shrink-0 transition-transform ${openDropdown === 'beds' ? 'rotate-180' : ''}`} />
                       </span>
                     </button>
 
-                    {/* Price trigger */}
+                    {/* Price */}
                     <button type="button"
                       onClick={() => setOpenDropdown(o => o === 'price' ? null : 'price')}
-                      className="relative flex-1 min-w-0 bg-gray-50 hover:bg-gray-100 transition-colors rounded-xl px-4 py-3 text-left">
-                      <span className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Price</span>
-                      <span className={`text-sm font-semibold flex items-center gap-1 ${(priceMin > 0 || priceMax < 500_000_000) ? 'text-blue-600' : 'text-gray-700'}`}>
+                      className="relative flex-1 min-w-0 bg-white/[0.06] hover:bg-white/10 transition-colors rounded-xl px-4 py-3 text-left">
+                      <span className="block text-[10px] font-bold text-white/40 uppercase tracking-wider mb-1">Price</span>
+                      <span className={`text-sm font-semibold flex items-center gap-1 ${(priceMin > 0 || priceMax < 500_000_000) ? 'text-blue-400' : 'text-white'}`}>
                         <span className="truncate">{priceLabel}</span>
                         <ChevronDown className={`w-3.5 h-3.5 shrink-0 transition-transform ${openDropdown === 'price' ? 'rotate-180' : ''}`} />
                       </span>
@@ -282,20 +295,19 @@ export default function HomePage() {
 
                     {/* Search button */}
                     <button type="button" onClick={() => handleSearch()}
-                      className="shrink-0 bg-blue-600 hover:bg-blue-700 text-white px-6 rounded-xl font-semibold text-sm flex items-center gap-2 shadow-lg shadow-blue-600/25 transition-all active:scale-95">
+                      className="shrink-0 bg-blue-600 hover:bg-blue-500 text-white px-6 rounded-xl font-bold text-sm flex items-center gap-2 shadow-lg shadow-blue-600/30 transition-all active:scale-95">
                       <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
                       Search
                     </button>
                   </div>
                 </div>
 
-                {/* ── Property Type Panel ── */}
+                {/* Property Type Panel */}
                 {openDropdown === 'propertyType' && (
                   <div className="absolute top-[calc(100%+10px)] left-[25%] z-50 bg-white rounded-2xl shadow-xl border border-gray-100 p-5 w-72">
                     <p className="text-base font-bold text-gray-900 mb-1">Property Type</p>
                     <p className="text-xs text-gray-400 mb-4">You can select multiple property types</p>
                     <div className="space-y-2.5 max-h-72 overflow-y-auto pr-1">
-                      {/* Any */}
                       <label className="flex items-center gap-3 cursor-pointer group">
                         <div className={`w-5 h-5 rounded flex items-center justify-center border-2 transition-colors shrink-0 ${selectedPropertyTypes.length === 0 ? 'bg-blue-600 border-blue-600' : 'border-gray-300 group-hover:border-blue-400'}`}
                           onClick={() => togglePropertyType('')}>
@@ -320,23 +332,18 @@ export default function HomePage() {
                   </div>
                 )}
 
-                {/* ── Beds & Baths Panel ── */}
+                {/* Beds & Baths Panel */}
                 {openDropdown === 'beds' && (
                   <div className="absolute top-[calc(100%+10px)] left-[50%] -translate-x-1/4 z-50 bg-white rounded-2xl shadow-xl border border-gray-100 p-5 w-80">
                     <div className="mb-5">
-                      <div className="flex items-baseline gap-2 mb-3">
-                        <p className="text-base font-bold text-gray-900">Beds</p>
-                        <p className="text-xs text-gray-400">Tap two numbers to select a range</p>
-                      </div>
+                      <p className="text-base font-bold text-gray-900 mb-3">Beds</p>
                       <div className="flex gap-2">
                         {['Any', '1', '2', '3', '4', '5+'].map(v => {
                           const val = v === 'Any' ? '' : v.replace('+', '')
                           const active = v === 'Any' ? searchBeds === '' : searchBeds === val
                           return (
                             <button key={v} type="button" onClick={() => setSearchBeds(active ? '' : val)}
-                              className={`flex-1 py-2 rounded-lg text-sm font-semibold border transition-all ${
-                                active ? 'bg-blue-600 border-blue-600 text-white' : 'border-gray-200 text-gray-700 hover:border-blue-300 hover:text-blue-600'
-                              }`}>
+                              className={`flex-1 py-2 rounded-lg text-sm font-semibold border transition-all ${active ? 'bg-blue-600 border-blue-600 text-white' : 'border-gray-200 text-gray-700 hover:border-blue-300 hover:text-blue-600'}`}>
                               {v}
                             </button>
                           )
@@ -351,23 +358,21 @@ export default function HomePage() {
                           const active = v === 'Any' ? searchBaths === '' : searchBaths === val
                           return (
                             <button key={v} type="button" onClick={() => setSearchBaths(active ? '' : val)}
-                              className={`flex-1 py-2 rounded-lg text-sm font-semibold border transition-all ${
-                                active ? 'bg-blue-600 border-blue-600 text-white' : 'border-gray-200 text-gray-700 hover:border-blue-300 hover:text-blue-600'
-                              }`}>
+                              className={`flex-1 py-2 rounded-lg text-sm font-semibold border transition-all ${active ? 'bg-blue-600 border-blue-600 text-white' : 'border-gray-200 text-gray-700 hover:border-blue-300 hover:text-blue-600'}`}>
                               {v}
                             </button>
                           )
                         })}
                       </div>
                     </div>
-                    <button type="button" onClick={() => { setOpenDropdown(null) }}
+                    <button type="button" onClick={() => setOpenDropdown(null)}
                       className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl text-sm transition-all">
                       Apply Filter
                     </button>
                   </div>
                 )}
 
-                {/* ── Price Panel ── */}
+                {/* Price Panel */}
                 {openDropdown === 'price' && (
                   <div className="absolute top-[calc(100%+10px)] right-14 z-50 bg-white rounded-2xl shadow-xl border border-gray-100 p-5 w-80">
                     <div className="flex items-center justify-between mb-4">
@@ -378,46 +383,33 @@ export default function HomePage() {
                     <div className="flex gap-3 mb-5">
                       <div className="flex-1 border border-gray-200 rounded-xl px-3 py-2 focus-within:border-blue-400 focus-within:ring-2 focus-within:ring-blue-100 transition-all">
                         <p className="text-[10px] text-gray-400 font-semibold uppercase tracking-wide mb-0.5">Min (₦)</p>
-                        <input
-                          type="number" min={0} max={priceMax - 500_000} step={100_000}
-                          value={priceMin === 0 ? '' : priceMin}
-                          placeholder="0"
+                        <input type="number" min={0} max={priceMax - 500_000} step={100_000}
+                          value={priceMin === 0 ? '' : priceMin} placeholder="0"
                           onChange={e => { const v = Number(e.target.value) || 0; if (v < priceMax) setPriceMin(v) }}
-                          className="w-full text-sm font-bold text-gray-900 outline-none bg-transparent"
-                        />
+                          className="w-full text-sm font-bold text-gray-900 outline-none bg-transparent" />
                       </div>
                       <div className="flex items-center text-gray-300 font-bold">—</div>
                       <div className="flex-1 border border-gray-200 rounded-xl px-3 py-2 focus-within:border-blue-400 focus-within:ring-2 focus-within:ring-blue-100 transition-all">
                         <p className="text-[10px] text-gray-400 font-semibold uppercase tracking-wide mb-0.5">Max (₦)</p>
-                        <input
-                          type="number" min={priceMin + 500_000} max={500_000_000} step={100_000}
-                          value={priceMax === 500_000_000 ? '' : priceMax}
-                          placeholder="500,000,000"
+                        <input type="number" min={priceMin + 500_000} max={500_000_000} step={100_000}
+                          value={priceMax === 500_000_000 ? '' : priceMax} placeholder="500,000,000"
                           onChange={e => { const v = Number(e.target.value) || 500_000_000; if (v > priceMin) setPriceMax(v) }}
-                          className="w-full text-sm font-bold text-gray-900 outline-none bg-transparent"
-                        />
+                          className="w-full text-sm font-bold text-gray-900 outline-none bg-transparent" />
                       </div>
                     </div>
-                    {/* Dual range slider */}
                     <div className="relative h-5 mb-2">
                       <div className="absolute top-1/2 -translate-y-1/2 w-full h-1.5 bg-gray-200 rounded-full" />
                       <div className="absolute top-1/2 -translate-y-1/2 h-1.5 bg-blue-600 rounded-full"
-                        style={{
-                          left: `${(priceMin / 500_000_000) * 100}%`,
-                          right: `${100 - (priceMax / 500_000_000) * 100}%`
-                        }} />
-                      <input type="range" min={0} max={500_000_000} step={500_000}
-                        value={priceMin}
+                        style={{ left: `${(priceMin / 500_000_000) * 100}%`, right: `${100 - (priceMax / 500_000_000) * 100}%` }} />
+                      <input type="range" min={0} max={500_000_000} step={500_000} value={priceMin}
                         onChange={e => { const v = Number(e.target.value); if (v < priceMax) setPriceMin(v) }}
                         className="absolute w-full top-1/2 -translate-y-1/2 appearance-none bg-transparent pointer-events-none [&::-webkit-slider-thumb]:pointer-events-auto [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-blue-600 [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-white [&::-webkit-slider-thumb]:shadow-md [&::-webkit-slider-thumb]:cursor-pointer" />
-                      <input type="range" min={0} max={500_000_000} step={500_000}
-                        value={priceMax}
+                      <input type="range" min={0} max={500_000_000} step={500_000} value={priceMax}
                         onChange={e => { const v = Number(e.target.value); if (v > priceMin) setPriceMax(v) }}
                         className="absolute w-full top-1/2 -translate-y-1/2 appearance-none bg-transparent pointer-events-none [&::-webkit-slider-thumb]:pointer-events-auto [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-blue-600 [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-white [&::-webkit-slider-thumb]:shadow-md [&::-webkit-slider-thumb]:cursor-pointer" />
                     </div>
                     <div className="flex justify-between text-xs text-gray-400 font-medium mb-5">
-                      <span>₦0</span>
-                      <span>₦500,000,000</span>
+                      <span>₦0</span><span>₦500,000,000</span>
                     </div>
                     <button type="button" onClick={() => setOpenDropdown(null)}
                       className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl text-sm transition-all">
@@ -427,48 +419,31 @@ export default function HomePage() {
                 )}
               </div>
 
-              {/* ── Mobile stacked search ── */}
+              {/* Mobile stacked search */}
               <form onSubmit={handleSearch}
-                className="sm:hidden bg-white rounded-2xl shadow-[0_4px_24px_rgb(0,0,0,0.10)] border border-gray-100 p-3 space-y-2">
+                className="sm:hidden bg-white/[0.07] backdrop-blur-xl border border-white/10 rounded-2xl p-3 space-y-2">
                 <div className="relative">
-                  <MapPin className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+                  <MapPin className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40 pointer-events-none" />
                   <select value={searchState} onChange={e => setSearchState(e.target.value)}
-                    className="w-full pl-10 pr-4 py-3 rounded-xl bg-gray-50 text-sm text-gray-800 outline-none appearance-none">
-                    <option value="">Location — Any State</option>
-                    {NIGERIAN_STATES.map(s => <option key={s} value={s}>{s}</option>)}
+                    className="w-full pl-10 pr-4 py-3 rounded-xl bg-white/10 text-sm text-white outline-none appearance-none">
+                    <option value="" className="text-gray-900">Location — Any State</option>
+                    {NIGERIAN_STATES.map(s => <option key={s} value={s} className="text-gray-900">{s}</option>)}
                   </select>
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                   <select value={selectedPropertyTypes[0] ?? ''} onChange={e => setSelectedPropertyTypes(e.target.value ? [e.target.value] : [])}
-                    className="w-full px-3 py-3 rounded-xl bg-gray-50 text-sm text-gray-800 outline-none appearance-none">
-                    <option value="">Property Type</option>
-                    {PROPERTY_TYPES.map(pt => <option key={pt} value={pt}>{pt}</option>)}
+                    className="w-full px-3 py-3 rounded-xl bg-white/10 text-sm text-white outline-none appearance-none">
+                    <option value="" className="text-gray-900">Property Type</option>
+                    {PROPERTY_TYPES.map(pt => <option key={pt} value={pt} className="text-gray-900">{pt}</option>)}
                   </select>
                   <select value={searchBeds} onChange={e => setSearchBeds(e.target.value)}
-                    className="w-full px-3 py-3 rounded-xl bg-gray-50 text-sm text-gray-800 outline-none appearance-none">
-                    <option value="">Beds</option>
-                    {['1','2','3','4','5'].map(n => <option key={n} value={n}>{n}+ Beds</option>)}
-                  </select>
-                </div>
-                <div className="grid grid-cols-2 gap-2">
-                  <select value={searchBaths} onChange={e => setSearchBaths(e.target.value)}
-                    className="w-full px-3 py-3 rounded-xl bg-gray-50 text-sm text-gray-800 outline-none appearance-none">
-                    <option value="">Baths</option>
-                    {['1','2','3','4','5','6'].map(n => <option key={n} value={n}>{n}+ Baths</option>)}
-                  </select>
-                  <select
-                    value={priceMax === 500_000_000 ? '' : String(priceMax)}
-                    onChange={e => { const v = e.target.value; setPriceMin(0); setPriceMax(v ? Number(v) : 500_000_000) }}
-                    className="w-full px-3 py-3 rounded-xl bg-gray-50 text-sm text-gray-800 outline-none appearance-none">
-                    <option value="">Price Range</option>
-                    <option value="500000">Under ₦500k</option>
-                    <option value="1500000">Under ₦1.5M</option>
-                    <option value="5000000">Under ₦5M</option>
-                    <option value="20000000">Under ₦20M</option>
+                    className="w-full px-3 py-3 rounded-xl bg-white/10 text-sm text-white outline-none appearance-none">
+                    <option value="" className="text-gray-900">Beds</option>
+                    {['1','2','3','4','5'].map(n => <option key={n} value={n} className="text-gray-900">{n}+ Beds</option>)}
                   </select>
                 </div>
                 <button type="submit"
-                  className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3.5 rounded-xl text-sm flex items-center justify-center gap-2 transition-all shadow-sm shadow-blue-600/25">
+                  className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3.5 rounded-xl text-sm flex items-center justify-center gap-2 transition-all shadow-lg shadow-blue-600/30">
                   <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
                   Search Properties
                 </button>
@@ -476,76 +451,85 @@ export default function HomePage() {
             </div>
 
             {/* Stats */}
-            <div className="flex items-center gap-4 sm:gap-8 text-sm text-gray-400 flex-wrap">
+            <div className="flex items-center gap-6 sm:gap-10">
               {[
                 { value: 2400, suffix: '+', label: 'Properties' },
-                { value: 850, suffix: '+', label: 'Landlords' },
-                { value: 0, prefix: '₦', label: 'Agent Fees' },
+                { value: 850,  suffix: '+', label: 'Landlords'  },
+                { value: 0,    prefix: '₦', label: 'Agent Fees' },
               ].map((s, i) => (
-                <div key={s.label} className="flex items-center gap-4 sm:gap-8">
-                  {i > 0 && <div className="w-px h-8 bg-gray-200" />}
-                  <div className="flex flex-col gap-0.5">
-                    <span className="font-extrabold text-gray-900 text-lg sm:text-xl leading-none">
+                <div key={s.label} className="flex items-center gap-6 sm:gap-10">
+                  {i > 0 && <div className="w-px h-8 bg-white/10" />}
+                  <div>
+                    <p className="font-extrabold text-white text-xl leading-none">
                       {s.prefix ?? ''}<AnimatedCounter target={s.value} suffix={s.suffix ?? ''} />
-                    </span>
-                    <span className="text-xs text-gray-400">{s.label}</span>
+                    </p>
+                    <p className="text-xs text-white/40 mt-1">{s.label}</p>
                   </div>
                 </div>
               ))}
             </div>
           </div>
-        </div>
 
-        {/* Right Column — Image */}
-        <div className="hidden lg:block lg:w-[45%] relative p-4 pl-0" style={{ height: 'calc(100vh - 80px)' }}>
-          <div className="w-full h-full relative rounded-l-[3rem] overflow-hidden shadow-2xl">
-            <img
-              src="https://images.unsplash.com/photo-1580587771525-78b9dba3b914?w=1400&q=85"
-              alt="Modern Nigerian home"
-              className="w-full h-full object-cover"
-            />
-            {/* Verified badge */}
-            <div className="absolute top-8 right-8 bg-white/95 backdrop-blur-sm shadow-xl rounded-full px-4 py-2 flex items-center gap-2">
-              <CheckCircle className="w-4 h-4 text-green-500" />
-              <span className="text-sm font-semibold text-gray-900">Verified Landlord</span>
-            </div>
-            {/* Property card — auto-cycling */}
-            <div className="absolute bottom-12 left-8 bg-white/95 backdrop-blur-md shadow-2xl rounded-2xl p-6 w-72 border border-white/30">
-              <div
-                className="transition-all duration-350"
-                style={{ opacity: heroVisible ? 1 : 0, transform: heroVisible ? 'translateY(0)' : 'translateY(6px)' }}
-              >
-                <div className="bg-blue-100 text-blue-700 text-xs font-bold uppercase tracking-wider px-3 py-1 rounded-full inline-block mb-3">
-                  {HERO_LISTINGS[heroIdx].label}
-                </div>
-                <h3 className="font-bold text-base text-gray-900 mb-1">{HERO_LISTINGS[heroIdx].title}</h3>
-                <p className="text-blue-600 font-extrabold text-xl mb-4">
-                  {HERO_LISTINGS[heroIdx].price}
-                  {HERO_LISTINGS[heroIdx].suffix && (
-                    <span className="text-sm text-gray-400 font-normal">{HERO_LISTINGS[heroIdx].suffix}</span>
-                  )}
-                </p>
+          {/* ── Right — image + floating card ── */}
+          <div className="hidden lg:flex lg:w-[48%] items-center justify-center relative">
+            {/* Glow ring */}
+            <div className="absolute inset-8 rounded-3xl bg-blue-600/10 blur-2xl" />
+
+            {/* Main image */}
+            <div className="relative w-full rounded-3xl overflow-hidden shadow-[0_40px_80px_rgba(0,0,0,0.6)] border border-white/10" style={{ height: 'calc(100vh - 160px)', maxHeight: '680px' }}>
+              <img
+                src="https://images.unsplash.com/photo-1580587771525-78b9dba3b914?w=1400&q=85"
+                alt="Modern Nigerian home"
+                className="w-full h-full object-cover"
+              />
+              {/* Dark gradient overlay */}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />
+
+              {/* Verified badge */}
+              <div className="absolute top-5 right-5 bg-white/95 backdrop-blur-sm shadow-xl rounded-full px-4 py-2 flex items-center gap-2">
+                <CheckCircle className="w-4 h-4 text-blue-600" />
+                <span className="text-sm font-semibold text-gray-900">Verified Landlord</span>
               </div>
-              <Link
-                href="/listings"
-                className="w-full bg-gray-900 hover:bg-gray-800 text-white py-3 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 transition-colors"
-              >
-                View Listings <ArrowRight className="w-4 h-4" />
-              </Link>
-              {/* Dot indicators */}
-              <div className="flex items-center justify-center gap-1.5 mt-3">
-                {HERO_LISTINGS.map((_, i) => (
-                  <button
-                    key={i}
-                    onClick={() => { setHeroVisible(false); setTimeout(() => { setHeroIdx(i); setHeroVisible(true) }, 200) }}
-                    className={`rounded-full transition-all duration-300 ${
-                      i === heroIdx ? 'w-4 h-1.5 bg-blue-600' : 'w-1.5 h-1.5 bg-gray-300 hover:bg-gray-400'
-                    }`}
-                  />
-                ))}
+
+              {/* Floating property card */}
+              <div className="absolute bottom-6 left-5 right-5 bg-white/95 backdrop-blur-md shadow-2xl rounded-2xl p-5 border border-white/30">
+                <div
+                  className="transition-all duration-350"
+                  style={{ opacity: heroVisible ? 1 : 0, transform: heroVisible ? 'translateY(0)' : 'translateY(8px)' }}
+                >
+                  <div className="flex items-start justify-between mb-3">
+                    <span className="bg-blue-600 text-white text-[10px] font-bold uppercase tracking-wider px-3 py-1 rounded-full">
+                      {HERO_LISTINGS[heroIdx].label}
+                    </span>
+                    <span className="text-xs text-gray-400 font-medium">Lagos, Nigeria</span>
+                  </div>
+                  <h3 className="font-bold text-base text-gray-900 mb-1">{HERO_LISTINGS[heroIdx].title}</h3>
+                  <p className="text-blue-600 font-extrabold text-2xl mb-4">
+                    {HERO_LISTINGS[heroIdx].price}
+                    {HERO_LISTINGS[heroIdx].suffix && (
+                      <span className="text-sm text-gray-400 font-normal ml-1">{HERO_LISTINGS[heroIdx].suffix}</span>
+                    )}
+                  </p>
+                </div>
+                <div className="flex items-center gap-3">
+                  <Link href="/listings"
+                    className="flex-1 bg-gray-900 hover:bg-gray-800 text-white py-2.5 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 transition-colors">
+                    View Listings <ArrowRight className="w-4 h-4" />
+                  </Link>
+                  {/* Dot indicators */}
+                  <div className="flex items-center gap-1.5">
+                    {HERO_LISTINGS.map((_, i) => (
+                      <button key={i}
+                        onClick={() => { setHeroVisible(false); setTimeout(() => { setHeroIdx(i); setHeroVisible(true) }, 200) }}
+                        className={`rounded-full transition-all duration-300 ${i === heroIdx ? 'w-4 h-1.5 bg-blue-600' : 'w-1.5 h-1.5 bg-gray-300 hover:bg-gray-400'}`}
+                      />
+                    ))}
+                  </div>
+                </div>
               </div>
             </div>
           </div>
+
         </div>
       </section>
 
