@@ -868,11 +868,15 @@ CREATE POLICY "Landlord kyc doc delete"
     AND auth.uid()::text = (storage.foldername(name))[1]
   );
 
--- Admins can read all KYC docs
+-- Admins can read all KYC docs (matches both admins table and user_metadata role)
 DROP POLICY IF EXISTS "Admin kyc doc read" ON storage.objects;
 CREATE POLICY "Admin kyc doc read"
   ON storage.objects FOR SELECT
   USING (
     bucket_id = 'kyc-documents'
-    AND EXISTS (SELECT 1 FROM public.admins WHERE id = auth.uid())
+    AND (
+      EXISTS (SELECT 1 FROM public.admins WHERE id = auth.uid())
+      OR (auth.jwt() -> 'user_metadata' ->> 'role') = 'admin'
+      OR (auth.jwt() -> 'app_metadata' ->> 'role') = 'admin'
+    )
   );

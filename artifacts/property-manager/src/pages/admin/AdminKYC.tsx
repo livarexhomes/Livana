@@ -55,6 +55,7 @@ export default function AdminKYC() {
   const [selected, setSelected]     = useState<any | null>(null)
   const [processing, setProcessing] = useState<string | null>(null)
   const [kycDocs, setKycDocs]       = useState<{ doc_type: string; url: string; file_name: string }[]>([])
+  const [imgErrors, setImgErrors]   = useState<Record<string, boolean>>({})
   const [docsLoading, setDocsLoading] = useState(false)
 
   useEffect(() => {
@@ -84,21 +85,27 @@ export default function AdminKYC() {
   async function loadKycDocs(landlordId: string) {
     setDocsLoading(true)
     setKycDocs([])
+    setImgErrors({})
     const supabase = createClient()
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('kyc_documents')
       .select('doc_type, storage_path, file_name')
       .eq('landlord_id', landlordId)
       .order('created_at', { ascending: true })
+    if (error) console.error('[KYC] fetch docs error:', error)
     if (data && data.length > 0) {
       const withUrls = await Promise.all(
-        data.map(async (d: any) => ({
-          doc_type:  d.doc_type,
-          file_name: d.file_name ?? d.doc_type,
-          url:       (await getKycDocUrl(d.storage_path)) ?? '',
-        }))
+        data.map(async (d: any) => {
+          const url = await getKycDocUrl(d.storage_path)
+          if (!url) console.warn('[KYC] signed URL failed for path:', d.storage_path)
+          return {
+            doc_type:  d.doc_type,
+            file_name: d.file_name ?? d.doc_type,
+            url:       url ?? '',
+          }
+        })
       )
-      setKycDocs(withUrls.filter(d => d.url))
+      setKycDocs(withUrls)
     }
     setDocsLoading(false)
   }
@@ -183,7 +190,7 @@ export default function AdminKYC() {
                   const isSelected = selected?.id === l.id
                   return (
                     <button key={l.id} type="button" onClick={() => {
-                      if (isSelected) { setSelected(null); setKycDocs([]) }
+                      if (isSelected) { setSelected(null); setKycDocs([]); setImgErrors({}) }
                       else { setSelected(l); loadKycDocs(l.id) }
                     }}
                       className={`w-full flex items-center gap-3 p-4 rounded-2xl border transition-all text-left hover:shadow-sm ${
@@ -301,28 +308,48 @@ export default function AdminKYC() {
                     ) : (
                       <div className="grid grid-cols-2 gap-3">
                         {kycDocs.map((doc, i) => {
-                          const isImage = !doc.file_name?.toLowerCase().endsWith('.pdf')
+                          const isPdf    = doc.file_name?.toLowerCase().endsWith('.pdf')
+                          const hasUrl   = Boolean(doc.url)
+                          const imgError = imgErrors[doc.doc_type]
+                          const showImg  = hasUrl && !isPdf && !imgError
+                          const Wrapper  = hasUrl ? 'a' : 'div'
+                          const wrapperProps = hasUrl
+                            ? { href: doc.url, target: '_blank', rel: 'noopener noreferrer' }
+                            : {}
                           return (
-                            <a key={i} href={doc.url} target="_blank" rel="noopener noreferrer"
+                            <Wrapper key={i} {...(wrapperProps as any)}
                               className="group relative rounded-xl overflow-hidden border border-gray-200 hover:border-blue-400 transition-all bg-gray-50">
-                              {isImage ? (
-                                <img src={doc.url} alt={DOC_LABELS[doc.doc_type] ?? doc.doc_type}
-                                  className="w-full h-28 object-cover group-hover:scale-105 transition-transform duration-300" />
-                              ) : (
-                                <div className="w-full h-28 flex flex-col items-center justify-center gap-2 text-gray-400">
+                              {showImg ? (
+                                <img
+                                  src={doc.url}
+                                  alt={DOC_LABELS[doc.doc_type] ?? doc.doc_type}
+                                  className="w-full h-28 object-cover group-hover:scale-105 transition-transform duration-300"
+                                  onError={() => setImgErrors(prev => ({ ...prev, [doc.doc_type]: true }))}
+                                />
+                              ) : isPdf && hasUrl ? (
+                                <div className="w-full h-28 flex flex-col items-center justify-center gap-2 text-blue-500">
                                   <FileText className="w-8 h-8" />
-                                  <span className="text-[10px] font-semibold">PDF</span>
+                                  <span className="text-[10px] font-semibold">PDF — click to open</span>
+                                </div>
+                              ) : (
+                                <div className="w-full h-28 flex flex-col items-center justify-center gap-2 text-gray-300">
+                                  <ImageIcon className="w-8 h-8" />
+                                  <span className="text-[10px] font-semibold text-gray-400">
+                                    {!hasUrl ? 'Not uploaded' : 'Failed to load'}
+                                  </span>
                                 </div>
                               )}
-                              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all flex items-center justify-center">
-                                <ExternalLink className="w-5 h-5 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
-                              </div>
+                              {hasUrl && (
+                                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all flex items-center justify-center">
+                                  <ExternalLink className="w-5 h-5 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                                </div>
+                              )}
                               <div className="px-2 py-1.5 bg-white border-t border-gray-100">
                                 <p className="text-[10px] font-bold text-gray-600 truncate">
                                   {DOC_LABELS[doc.doc_type] ?? doc.doc_type}
                                 </p>
                               </div>
-                            </a>
+                            </Wrapper>
                           )
                         })}
                       </div>
