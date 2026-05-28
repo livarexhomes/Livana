@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react'
 import { Link, useParams, useLocation } from 'wouter'
+import { motion, AnimatePresence } from 'framer-motion'
 import {
-  MapPin, BedDouble, Bath, Maximize, ChevronLeft, ChevronRight,
+  MapPin, BedDouble, Bath, Maximize,
   Heart, MessageCircle, ArrowLeft, Share2, CheckCircle, Send,
-  LogIn, UserPlus, MessageSquare, Building2, Calendar, Tag,
+  LogIn, UserPlus, MessageSquare, Building2, Calendar,
+  ShieldCheck, Info, Mail,
 } from 'lucide-react'
 import PublicNavbar from '../components/PublicNavbar'
 import Footer from '../components/Footer'
@@ -213,201 +215,173 @@ export default function PropertyDetailPage() {
   const statusCfg = STATUS_CONFIG[property.status] ?? { label: property.status, cls: 'bg-gray-100 text-gray-600' }
   const landlordInitials = landlord?.full_name ? landlord.full_name.split(' ').slice(0, 2).map(w => w[0]).join('').toUpperCase() : '?'
 
+
   return (
-    <div className="min-h-screen flex flex-col bg-white">
+    <div className="min-h-screen bg-[#FDFDFD] selection:bg-blue-100 selection:text-blue-900">
       <PublicNavbar />
-      <div className="h-[72px]" />
 
       {/* ── HERO GALLERY ── */}
-      <div className="relative bg-gray-950" style={{ height: 480 }}>
-        {images.length > 0 ? (
-          <img src={getSupabaseImageUrl(images[imgIndex]?.storage_path)} alt={property.title}
-            className="w-full h-full object-cover opacity-90" />
-        ) : (
-          <div className="w-full h-full flex items-center justify-center">
-            <Building2 className="w-16 h-16 text-gray-700" strokeWidth={1} />
-          </div>
-        )}
-        <div className="absolute inset-0 bg-gradient-to-t from-gray-950/80 via-gray-950/20 to-transparent" />
+      <section className="pt-[72px] px-4 md:px-6 max-w-[1440px] mx-auto">
+        <div className="grid grid-cols-1 md:grid-cols-4 grid-rows-2 gap-3 h-[400px] md:h-[550px] rounded-3xl overflow-hidden mt-4 relative">
 
-        {/* Top bar */}
-        <div className="absolute top-0 left-0 right-0 flex items-center justify-between px-6 py-5">
-          <button onClick={() => navigate('/listings')}
-            className="flex items-center gap-2 text-white/80 hover:text-white text-sm font-medium transition-colors bg-black/20 backdrop-blur-sm px-3 py-1.5 rounded-full">
-            <ArrowLeft className="w-4 h-4" /> Listings
-          </button>
-          <div className="flex items-center gap-2">
+          {/* Main large image */}
+          <div className="md:col-span-2 md:row-span-2 relative overflow-hidden bg-gray-100">
+            {images[0] ? (
+              <motion.img
+                initial={{ scale: 1.05 }} animate={{ scale: 1 }} transition={{ duration: 0.8 }}
+                src={getSupabaseImageUrl(images[0].storage_path)}
+                className="w-full h-full object-cover hover:scale-105 transition-transform duration-700 cursor-pointer"
+                alt="Property main"
+              />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center bg-gray-100">
+                <Building2 className="w-12 h-12 text-gray-300" strokeWidth={1} />
+              </div>
+            )}
+          </div>
+
+          {/* Grid images */}
+          <div className="hidden md:block col-span-1 row-span-1 relative overflow-hidden bg-gray-100">
+            {images[1] && <img src={getSupabaseImageUrl(images[1].storage_path)} className="w-full h-full object-cover hover:opacity-90 transition-opacity cursor-pointer" alt="" />}
+          </div>
+          <div className="hidden md:block col-span-1 row-span-1 relative overflow-hidden bg-gray-100 rounded-tr-3xl">
+            {images[2] && <img src={getSupabaseImageUrl(images[2].storage_path)} className="w-full h-full object-cover hover:opacity-90 transition-opacity cursor-pointer" alt="" />}
+          </div>
+          <div className="hidden md:block col-span-1 row-span-1 relative overflow-hidden bg-gray-100">
+            {images[3] && <img src={getSupabaseImageUrl(images[3].storage_path)} className="w-full h-full object-cover hover:opacity-90 transition-opacity cursor-pointer" alt="" />}
+          </div>
+          <div className="hidden md:block col-span-1 row-span-1 relative overflow-hidden bg-gray-100 rounded-br-3xl">
+            {images[4] ? (
+              <>
+                <img src={getSupabaseImageUrl(images[4].storage_path)} className="w-full h-full object-cover" alt="" />
+                {images.length > 5 && (
+                  <div className="absolute inset-0 bg-black/40 flex items-center justify-center backdrop-blur-[2px] cursor-pointer">
+                    <span className="text-white font-bold text-lg">+{images.length - 4} photos</span>
+                  </div>
+                )}
+              </>
+            ) : <div className="w-full h-full bg-gray-50" />}
+          </div>
+
+          {/* Floating back button */}
+          <div className="absolute top-6 left-6">
+            <button onClick={() => navigate('/listings')}
+              className="p-3 bg-white/90 backdrop-blur-md rounded-2xl shadow-sm hover:bg-white transition-all active:scale-95 group">
+              <ArrowLeft className="w-5 h-5 text-gray-700 group-hover:-translate-x-1 transition-transform" />
+            </button>
+          </div>
+
+          {/* Floating share/save */}
+          <div className="absolute top-6 right-6 flex gap-2">
             <button onClick={handleShare}
-              className="flex items-center gap-1.5 text-white/80 hover:text-white text-sm font-medium bg-black/20 backdrop-blur-sm px-3 py-1.5 rounded-full transition-colors">
-              <Share2 className="w-3.5 h-3.5" /> {copied ? 'Copied!' : 'Share'}
+              className="p-3 bg-white/90 backdrop-blur-md rounded-2xl shadow-sm hover:bg-white transition-all active:scale-95">
+              <Share2 className="w-5 h-5 text-gray-700" />
             </button>
             {userRole === 'tenant' && (
-              <button onClick={handleSave} disabled={saving}
-                className={`flex items-center gap-1.5 text-sm font-medium px-3 py-1.5 rounded-full transition-all backdrop-blur-sm ${saved ? 'bg-red-500 text-white' : 'bg-black/20 text-white/80 hover:text-white'}`}>
-                <Heart className={`w-3.5 h-3.5 ${saved ? 'fill-current' : ''}`} /> {saved ? 'Saved' : 'Save'}
+              <button onClick={handleSave}
+                className={`p-3 backdrop-blur-md rounded-2xl shadow-sm transition-all active:scale-95 ${saved ? 'bg-rose-500 text-white' : 'bg-white/90 text-gray-700 hover:bg-white'}`}>
+                <Heart className={`w-5 h-5 ${saved ? 'fill-current' : ''}`} />
               </button>
             )}
           </div>
         </div>
-
-        {/* Thumbnail strip bottom */}
-        {images.length > 1 && (
-          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
-            {images.slice(0, 6).map((img, i) => (
-              <button key={img.id} onClick={() => setImgIndex(i)}
-                className={`w-12 h-8 rounded-lg overflow-hidden border-2 transition-all ${i === imgIndex ? 'border-white scale-110' : 'border-white/30 opacity-60 hover:opacity-90'}`}>
-                <img src={getSupabaseImageUrl(img.storage_path)} alt="" className="w-full h-full object-cover" />
-              </button>
-            ))}
-            {images.length > 6 && (
-              <div className="w-12 h-8 rounded-lg bg-black/50 border-2 border-white/30 flex items-center justify-center text-white text-[10px] font-bold">
-                +{images.length - 6}
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Nav arrows */}
-        {images.length > 1 && (
-          <>
-            <button onClick={() => setImgIndex(i => (i - 1 + images.length) % images.length)}
-              className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 bg-black/30 hover:bg-black/50 backdrop-blur-sm rounded-full flex items-center justify-center text-white transition-colors">
-              <ChevronLeft className="w-5 h-5" />
-            </button>
-            <button onClick={() => setImgIndex(i => (i + 1) % images.length)}
-              className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 bg-black/30 hover:bg-black/50 backdrop-blur-sm rounded-full flex items-center justify-center text-white transition-colors">
-              <ChevronRight className="w-5 h-5" />
-            </button>
-          </>
-        )}
-
-        {/* Title overlay */}
-        <div className="absolute bottom-16 left-0 right-0 px-6 sm:px-10">
-          <div className="max-w-6xl mx-auto">
-            <div className="flex flex-wrap gap-2 mb-2">
-              <span className={`px-2.5 py-1 rounded-full text-[11px] font-bold ${statusCfg.cls}`}>{statusCfg.label}</span>
-              <span className="px-2.5 py-1 rounded-full text-[11px] font-bold bg-blue-600 text-white">{TYPE_LABEL[property.type] ?? property.type}</span>
-              {property.featured && <span className="px-2.5 py-1 rounded-full text-[11px] font-bold bg-amber-400 text-amber-900">⭐ Featured</span>}
-              {landlord?.is_verified && <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-500 text-white"><CheckCircle className="w-3 h-3" /> Verified</span>}
-            </div>
-            <h1 className="text-2xl sm:text-3xl font-extrabold text-white leading-tight drop-shadow-lg">{property.title}</h1>
-            <div className="flex items-center gap-1.5 mt-1.5 text-white/70 text-sm">
-              <MapPin className="w-3.5 h-3.5 text-blue-400 shrink-0" />
-              {[property.address, property.city].filter(Boolean).join(', ')}
-            </div>
-          </div>
-        </div>
-      </div>
+      </section>
 
       {/* ── MAIN CONTENT ── */}
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8 w-full">
-        <div className="grid lg:grid-cols-[1fr_360px] gap-8">
+      <main className="max-w-7xl mx-auto px-4 md:px-6 py-10 pb-28 lg:pb-10">
+        <div className="grid lg:grid-cols-[1fr_380px] gap-12">
 
-          {/* LEFT */}
-          <div className="min-w-0 space-y-6">
-
-            {/* Price + stats bar */}
-            <div className="flex flex-wrap items-center gap-4 pb-6 border-b border-gray-100">
-              <div>
-                <div className="flex items-baseline gap-2">
-                  <span className="text-4xl font-black text-gray-900 tracking-tight">₦{Number(property.price).toLocaleString()}</span>
-                  {property.type === 'rent' && <span className="text-base text-gray-400 font-medium">/ year</span>}
-                </div>
-              </div>
-              <div className="flex items-center gap-4 ml-auto text-sm text-gray-500">
-                <span className="flex items-center gap-1.5 bg-gray-50 px-3 py-2 rounded-xl border border-gray-100">
-                  <BedDouble className="w-4 h-4 text-blue-500" strokeWidth={1.8} />
-                  <span className="font-bold text-gray-900">{property.bedrooms}</span>
-                  <span className="text-gray-400">bed{property.bedrooms !== 1 ? 's' : ''}</span>
-                </span>
-                <span className="flex items-center gap-1.5 bg-gray-50 px-3 py-2 rounded-xl border border-gray-100">
-                  <Bath className="w-4 h-4 text-blue-500" strokeWidth={1.8} />
-                  <span className="font-bold text-gray-900">{property.bathrooms}</span>
-                  <span className="text-gray-400">bath{property.bathrooms !== 1 ? 's' : ''}</span>
-                </span>
-                {property.area_sqft && (
-                  <span className="flex items-center gap-1.5 bg-gray-50 px-3 py-2 rounded-xl border border-gray-100">
-                    <Maximize className="w-4 h-4 text-blue-500" strokeWidth={1.8} />
-                    <span className="font-bold text-gray-900">{property.area_sqft.toLocaleString()}</span>
-                    <span className="text-gray-400">sqft</span>
+          {/* LEFT COLUMN */}
+          <motion.div
+            initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.2 }}
+            className="space-y-10"
+          >
+            {/* Header */}
+            <section>
+              <div className="flex flex-wrap items-center gap-2 mb-4">
+                <span className={`px-3 py-1 rounded-full text-xs font-bold border ${statusCfg.cls}`}>{statusCfg.label.toUpperCase()}</span>
+                <span className="px-3 py-1 rounded-full text-xs font-bold bg-blue-50 text-blue-700 border border-blue-100 uppercase">{TYPE_LABEL[property.type]}</span>
+                {landlord?.is_verified && (
+                  <span className="px-3 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-100 flex items-center gap-1 uppercase">
+                    <ShieldCheck className="w-3.5 h-3.5" /> Verified Listing
                   </span>
                 )}
+                {property.featured && (
+                  <span className="px-3 py-1 rounded-full text-xs font-bold bg-amber-50 text-amber-700 border border-amber-100 uppercase">⭐ Featured</span>
+                )}
               </div>
+              <h1 className="text-4xl md:text-5xl font-black text-gray-900 tracking-tight leading-[1.1] mb-4">{property.title}</h1>
+              <div className="flex items-center gap-3 text-gray-500 text-base">
+                <div className="w-9 h-9 rounded-full bg-blue-50 flex items-center justify-center shrink-0">
+                  <MapPin className="w-4 h-4 text-blue-600" />
+                </div>
+                {[property.address, property.city].filter(Boolean).join(', ')}
+              </div>
+            </section>
+
+            {/* Stats grid */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {[
+                { icon: <BedDouble className="w-6 h-6 text-blue-600" strokeWidth={1.5} />, value: property.bedrooms, label: 'Bedrooms' },
+                { icon: <Bath className="w-6 h-6 text-blue-600" strokeWidth={1.5} />, value: property.bathrooms, label: 'Bathrooms' },
+                ...(property.area_sqft ? [{ icon: <Maximize className="w-6 h-6 text-blue-600" strokeWidth={1.5} />, value: property.area_sqft.toLocaleString(), label: 'Sq. Ft.' }] : []),
+                { icon: <Calendar className="w-6 h-6 text-blue-600" strokeWidth={1.5} />, value: new Date(property.created_at).getFullYear(), label: 'Listed' },
+              ].map(({ icon, value, label }) => (
+                <div key={label} className="bg-white p-5 rounded-3xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
+                  {icon}
+                  <p className="text-2xl font-bold text-gray-900 mt-2">{value}</p>
+                  <p className="text-sm text-gray-400 font-medium">{label}</p>
+                </div>
+              ))}
             </div>
 
-            {/* About */}
+            {/* Description */}
             {property.description && (
-              <div>
-                <h2 className="text-lg font-bold text-gray-900 mb-3">About this property</h2>
-                <p className="text-gray-600 text-sm leading-relaxed whitespace-pre-line">{property.description}</p>
-              </div>
+              <section>
+                <h2 className="text-2xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+                  About this home <Info className="w-5 h-5 text-gray-300" />
+                </h2>
+                <p className="text-gray-600 leading-relaxed text-base whitespace-pre-line max-w-3xl">{property.description}</p>
+              </section>
             )}
 
-            {/* Details grid */}
-            <div>
-              <h2 className="text-lg font-bold text-gray-900 mb-4">Property Details</h2>
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                {[
-                  { icon: <Tag className="w-4 h-4 text-blue-500" />, label: 'Type', value: TYPE_LABEL[property.type] ?? property.type },
-                  { icon: <BedDouble className="w-4 h-4 text-blue-500" />, label: 'Bedrooms', value: String(property.bedrooms) },
-                  { icon: <Bath className="w-4 h-4 text-blue-500" />, label: 'Bathrooms', value: String(property.bathrooms) },
-                  { icon: <MapPin className="w-4 h-4 text-blue-500" />, label: 'City', value: property.city },
-                  ...(property.area_sqft ? [{ icon: <Maximize className="w-4 h-4 text-blue-500" />, label: 'Area', value: `${property.area_sqft.toLocaleString()} sqft` }] : []),
-                  { icon: <Calendar className="w-4 h-4 text-blue-500" />, label: 'Status', value: statusCfg.label },
-                ].map(({ icon, label, value }) => (
-                  <div key={label} className="group flex items-start gap-3 p-4 rounded-2xl border border-gray-100 hover:border-blue-100 hover:bg-blue-50/30 transition-all">
-                    <div className="w-8 h-8 rounded-xl bg-blue-50 flex items-center justify-center shrink-0 group-hover:bg-blue-100 transition-colors">{icon}</div>
-                    <div>
-                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-0.5">{label}</p>
-                      <p className="text-sm font-semibold text-gray-800">{value}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Divider */}
-            <div className="border-t border-gray-100" />
+            <hr className="border-gray-100" />
 
             {/* Comments */}
-            <div>
-              <div className="flex items-center gap-2 mb-5">
-                <MessageSquare className="w-5 h-5 text-blue-500" />
-                <h2 className="text-lg font-bold text-gray-900">
-                  Comments {commentsReady && comments.length > 0 && <span className="text-gray-400 font-normal text-base">({comments.length})</span>}
-                </h2>
-              </div>
+            <section className="space-y-6">
+              <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
+                Community Talk <span className="text-gray-300 font-normal text-xl">({comments.length})</span>
+              </h2>
 
               {userRole === 'tenant' && (
-                <form onSubmit={handleComment} className="flex gap-3 mb-6">
-                  <div className="w-9 h-9 rounded-full bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center shrink-0 text-xs font-bold text-white shadow-sm">
-                    {tenantName ? tenantName.split(' ').slice(0,2).map(w=>w[0]).join('').toUpperCase() : 'T'}
+                <div className="flex gap-4 bg-gray-50 p-6 rounded-[32px] border border-gray-100">
+                  <div className="w-12 h-12 rounded-2xl bg-blue-600 flex items-center justify-center shrink-0 text-white font-bold shadow-lg shadow-blue-200 text-lg">
+                    {tenantName ? tenantName[0].toUpperCase() : 'T'}
                   </div>
-                  <div className="flex-1 flex gap-2">
-                    <input type="text" value={commentText} onChange={e => setCommentText(e.target.value)}
-                      placeholder="Ask a question or share your experience…" required
-                      className="flex-1 px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50 focus:bg-white transition-all" />
-                    <button type="submit" disabled={commentLoading || commentText.trim().length < 3}
-                      className="w-10 h-10 flex items-center justify-center bg-blue-600 hover:bg-blue-700 disabled:opacity-40 text-white rounded-xl transition-colors shrink-0">
-                      <Send className="w-4 h-4" />
-                    </button>
-                  </div>
-                </form>
+                  <form onSubmit={handleComment} className="flex-1 flex flex-col gap-3">
+                    <textarea value={commentText} onChange={e => setCommentText(e.target.value)}
+                      placeholder="Ask a question or share your thoughts..."
+                      className="w-full bg-transparent border-none focus:ring-0 text-gray-800 placeholder:text-gray-400 resize-none py-2 outline-none"
+                      rows={2} />
+                    <div className="flex justify-end">
+                      <button disabled={commentLoading || !commentText.trim()}
+                        className="px-6 py-2 bg-gray-900 text-white rounded-xl font-bold text-sm disabled:opacity-50 hover:bg-gray-800 transition-all flex items-center gap-2">
+                        Post <Send className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </form>
+                </div>
               )}
 
               {userRole === 'guest' && (
-                <div className="mb-5 flex items-center gap-3 p-4 bg-blue-50 rounded-2xl border border-blue-100">
+                <div className="flex items-center gap-3 p-5 bg-blue-50 rounded-2xl border border-blue-100">
                   <MessageCircle className="w-5 h-5 text-blue-500 shrink-0" />
-                  <p className="text-sm text-blue-700 flex-1">Sign in to leave a comment.</p>
+                  <p className="text-sm text-blue-700 flex-1">Sign in to join the conversation.</p>
                   <div className="flex gap-2">
                     <Link href="/login" className="flex items-center gap-1 px-3 py-1.5 text-xs font-bold bg-white border border-blue-200 text-blue-700 rounded-lg hover:bg-blue-50 transition-colors"><LogIn className="w-3 h-3" /> Sign in</Link>
                     <Link href="/register" className="flex items-center gap-1 px-3 py-1.5 text-xs font-bold bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"><UserPlus className="w-3 h-3" /> Join</Link>
                   </div>
                 </div>
-              )}
-
-              {(userRole === 'landlord' || userRole === 'admin') && (
-                <div className="mb-5 p-3 bg-gray-50 rounded-xl text-xs text-gray-400 text-center">Only tenants can post comments.</div>
               )}
 
               {!commentsReady ? (
@@ -418,191 +392,156 @@ export default function PropertyDetailPage() {
                   <p className="text-sm">No comments yet. Be the first!</p>
                 </div>
               ) : (
-                <div className="space-y-5">
-                  {comments.map(c => {
-                    const initials = c.tenant_name.split(' ').slice(0,2).map((w:string)=>w[0]).join('').toUpperCase()
-                    return (
-                      <div key={c.id} className="flex gap-3">
-                        <div className="w-9 h-9 rounded-full bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center shrink-0 text-[10px] font-bold text-white">{initials}</div>
+                <div className="space-y-6">
+                  <AnimatePresence mode="popLayout">
+                    {comments.map((c, i) => (
+                      <motion.div key={c.id}
+                        initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.05 }}
+                        className="flex gap-4">
+                        <div className="w-10 h-10 rounded-xl bg-violet-100 text-violet-600 flex items-center justify-center shrink-0 font-bold text-sm">
+                          {c.tenant_name[0]?.toUpperCase()}
+                        </div>
                         <div className="flex-1">
                           <div className="flex items-center gap-2 mb-1.5">
-                            <span className="text-sm font-semibold text-gray-900">{c.tenant_name}</span>
-                            <span className="text-[11px] text-gray-400">{timeAgo(c.created_at)}</span>
+                            <span className="font-bold text-gray-900 text-sm">{c.tenant_name}</span>
+                            <span className="text-xs text-gray-400">· {timeAgo(c.created_at)}</span>
                           </div>
-                          <p className="text-sm text-gray-600 leading-relaxed bg-gray-50 rounded-2xl px-4 py-3 border border-gray-100">{c.message}</p>
+                          <div className="bg-white border border-gray-100 p-4 rounded-2xl rounded-tl-none shadow-sm text-gray-600 leading-relaxed text-sm">{c.message}</div>
                         </div>
-                      </div>
-                    )
-                  })}
+                      </motion.div>
+                    ))}
+                  </AnimatePresence>
                 </div>
               )}
-            </div>
-          </div>
+            </section>
+          </motion.div>
 
           {/* RIGHT SIDEBAR */}
-          <div className="space-y-4">
-            <div className="lg:sticky lg:top-24 space-y-4">
+          <aside>
+            <div className="sticky top-24 space-y-5">
 
-              {/* Contact card */}
-              <div className="rounded-2xl border border-gray-200 shadow-xl shadow-gray-200/60 overflow-hidden bg-white">
-                {/* Blue accent header */}
-                <div className="bg-gradient-to-r from-blue-600 to-blue-500 px-5 py-4">
-                  <p className="text-blue-100 text-[11px] font-bold uppercase tracking-widest mb-0.5">{TYPE_LABEL[property.type] ?? property.type}</p>
-                  <div className="flex items-baseline gap-2">
-                    <span className="text-2xl font-black text-white">₦{Number(property.price).toLocaleString()}</span>
-                    {property.type === 'rent' && <span className="text-blue-200 text-xs font-medium">/ year</span>}
+              {/* Pricing & contact card */}
+              <div className="bg-white rounded-[32px] border border-gray-100 shadow-2xl shadow-gray-200/50 overflow-hidden">
+                <div className="p-7">
+                  <div className="flex items-baseline gap-1 mb-6">
+                    <span className="text-4xl font-black text-gray-900 tracking-tight">₦{Number(property.price).toLocaleString()}</span>
+                    {property.type === 'rent' && <span className="text-gray-400 font-medium ml-1">/yr</span>}
                   </div>
-                  <div className="flex items-center gap-1.5 mt-1 text-blue-200 text-xs">
-                    <MapPin className="w-3 h-3 shrink-0" />{property.city}
-                  </div>
-                </div>
 
-                {/* Landlord row */}
-                {landlord && (
-                  <div className="flex items-center gap-3 px-5 py-3.5 border-b border-gray-100 bg-gray-50/50">
-                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center shrink-0 overflow-hidden shadow-sm">
-                      {landlord.avatar_url
-                        ? <img src={landlord.avatar_url} alt={landlord.full_name ?? ''} className="w-full h-full object-cover" onError={e => { (e.currentTarget as HTMLImageElement).style.display='none' }} />
-                        : <span className="text-white font-bold text-sm">{landlordInitials}</span>
-                      }
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="font-bold text-gray-900 text-sm truncate">{landlord.full_name}</p>
-                      {landlord.is_verified
-                        ? <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-600"><CheckCircle className="w-3 h-3" /> Verified landlord</span>
-                        : <p className="text-xs text-gray-400">Landlord on Livana</p>
-                      }
-                    </div>
+                  <div className="space-y-3">
+                    {landlord?.whatsapp && (
+                      <a href={`https://wa.me/${landlord.whatsapp.replace(/\D/g, '')}?text=${encodeURIComponent(`Hi, I'm interested in: ${property.title}`)}`}
+                        target="_blank" rel="noopener noreferrer"
+                        className="flex items-center justify-center gap-3 w-full py-4 bg-[#25D366] text-white rounded-2xl font-bold hover:shadow-lg hover:shadow-green-200 transition-all active:scale-[0.98]">
+                        <MessageSquare className="w-5 h-5" /> Chat on WhatsApp
+                      </a>
+                    )}
+                    <button onClick={() => { setEnquiryOpen(!enquiryOpen); setEnquirySuccess(false) }}
+                      className="flex items-center justify-center gap-3 w-full py-4 bg-gray-900 text-white rounded-2xl font-bold hover:bg-gray-800 transition-all active:scale-[0.98]">
+                      <Mail className="w-5 h-5" /> {enquiryOpen ? 'Close Enquiry' : 'Direct Enquiry'}
+                    </button>
                   </div>
-                )}
 
-                <div className="p-5 space-y-3">
-                  {/* WhatsApp */}
-                  {whatsappUrl && (
-                    <a href={whatsappUrl} target="_blank" rel="noopener noreferrer"
-                      className="flex items-center gap-3 w-full px-4 py-3.5 rounded-xl bg-[#25D366] hover:bg-[#20bc5a] text-white font-bold text-sm transition-all shadow-md shadow-[#25D366]/30 active:scale-[0.98]">
-                      <svg className="w-5 h-5 shrink-0" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
-                      Chat on WhatsApp
-                    </a>
+                  {enquiryOpen && (
+                    <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }}
+                      className="mt-4 pt-4 border-t border-gray-100 overflow-hidden">
+                      {enquirySuccess ? (
+                        <div className="p-4 bg-emerald-50 text-emerald-700 rounded-2xl text-center font-medium text-sm border border-emerald-100 flex items-center justify-center gap-2">
+                          <CheckCircle className="w-4 h-4" /> Enquiry sent! The landlord will contact you shortly.
+                        </div>
+                      ) : (
+                        <form onSubmit={handleEnquiry} className="space-y-3">
+                          <textarea required value={enquiryMsg} onChange={e => setEnquiryMsg(e.target.value)}
+                            placeholder="Tell the landlord why you're interested..."
+                            className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 min-h-[100px] resize-none" />
+                          <button disabled={enquiryLoading || enquiryMsg.length < 10}
+                            className="w-full py-3 bg-blue-600 text-white rounded-xl font-bold text-sm hover:bg-blue-700 disabled:opacity-50 transition-colors">
+                            {enquiryLoading ? 'Sending…' : 'Send Message'}
+                          </button>
+                        </form>
+                      )}
+                    </motion.div>
                   )}
 
-                  {/* Email */}
-                  <a href={emailUrl}
-                    className="flex items-center gap-3 w-full px-4 py-3.5 rounded-xl border-2 border-gray-200 hover:border-blue-300 hover:bg-blue-50/40 text-gray-700 font-semibold text-sm transition-all active:scale-[0.98]">
-                    <svg className="w-5 h-5 text-blue-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
-                    Send Email
-                  </a>
-
-                  <div className="flex items-center gap-3"><div className="flex-1 h-px bg-gray-100" /><span className="text-xs text-gray-400">or</span><div className="flex-1 h-px bg-gray-100" /></div>
-
-                  {userRole === 'tenant' ? (
-                    <>
-                      <button onClick={() => { setEnquiryOpen(!enquiryOpen); setEnquirySuccess(false) }}
-                        className="w-full py-3.5 rounded-xl bg-gray-900 hover:bg-gray-800 text-white font-bold text-sm flex items-center justify-center gap-2 transition-all active:scale-[0.98]">
-                        <MessageCircle className="w-4 h-4" />
-                        {enquiryOpen ? 'Close' : 'Send Enquiry'}
-                      </button>
-                      {enquiryOpen && (
-                        enquirySuccess ? (
-                          <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4 text-sm text-emerald-700 text-center flex flex-col items-center gap-1.5">
-                            <CheckCircle className="w-5 h-5 text-emerald-500" /> Enquiry sent successfully!
-                          </div>
-                        ) : (
-                          <form onSubmit={handleEnquiry} className="space-y-2.5">
-                            <textarea value={enquiryMsg} onChange={e => setEnquiryMsg(e.target.value)} required rows={4}
-                              placeholder="Write your message to the landlord…"
-                              className="w-full px-3.5 py-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none bg-gray-50 focus:bg-white transition-all" />
-                            <button type="submit" disabled={enquiryLoading || enquiryMsg.length < 10}
-                              className="w-full py-3 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white text-sm font-bold rounded-xl transition-colors">
-                              {enquiryLoading ? 'Sending…' : 'Send message'}
-                            </button>
-                          </form>
-                        )
-                      )}
+                  {userRole === 'guest' && (
+                    <div className="mt-4 rounded-2xl border border-gray-100 bg-gray-50 p-4 text-center space-y-3">
+                      <p className="text-sm text-gray-600 font-medium">Sign up to send enquiries</p>
                       <div className="flex gap-2">
-                        <button onClick={handleSave} disabled={saving}
-                          className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl font-semibold text-sm border transition-all ${saved ? 'bg-red-50 text-red-600 border-red-200 hover:bg-red-100' : 'bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100'}`}>
-                          <Heart className={`w-4 h-4 ${saved ? 'fill-current' : ''}`} /> {saved ? 'Saved' : 'Save'}
-                        </button>
-                        <button onClick={handleShare}
-                          className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl bg-gray-50 border border-gray-200 hover:bg-gray-100 text-gray-600 font-semibold text-sm transition-all">
-                          <Share2 className="w-4 h-4" /> {copied ? 'Copied!' : 'Share'}
-                        </button>
+                        <Link href="/login" className="flex-1 flex items-center justify-center gap-1.5 py-2.5 border border-gray-200 rounded-xl text-xs font-bold text-gray-700 hover:bg-gray-100 transition-colors">
+                          <LogIn className="w-3.5 h-3.5" /> Sign in
+                        </Link>
+                        <Link href="/register" className="flex-1 flex items-center justify-center gap-1.5 py-2.5 bg-blue-600 text-white rounded-xl text-xs font-bold hover:bg-blue-700 transition-colors">
+                          <UserPlus className="w-3.5 h-3.5" /> Register
+                        </Link>
                       </div>
-                    </>
-                  ) : userRole === 'guest' ? (
-                    <>
-                      <div className="rounded-xl bg-gray-50 border border-gray-100 p-4 text-center space-y-3">
-                        <p className="text-sm text-gray-600 font-medium">Sign up to send enquiries</p>
-                        <div className="flex gap-2">
-                          <Link href="/login" className="flex-1 flex items-center justify-center gap-1.5 py-2.5 border border-gray-200 rounded-xl text-xs font-bold text-gray-700 hover:bg-gray-100 transition-colors">
-                            <LogIn className="w-3.5 h-3.5" /> Sign in
-                          </Link>
-                          <Link href="/register" className="flex-1 flex items-center justify-center gap-1.5 py-2.5 bg-blue-600 text-white rounded-xl text-xs font-bold hover:bg-blue-700 transition-colors">
-                            <UserPlus className="w-3.5 h-3.5" /> Register
-                          </Link>
+                    </div>
+                  )}
+
+                  {userRole === 'tenant' && (
+                    <div className="flex gap-2 mt-3">
+                      <button onClick={handleSave} disabled={saving}
+                        className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl font-semibold text-sm border transition-all ${saved ? 'bg-rose-50 text-rose-600 border-rose-200 hover:bg-rose-100' : 'bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100'}`}>
+                        <Heart className={`w-4 h-4 ${saved ? 'fill-current' : ''}`} /> {saved ? 'Saved' : 'Save'}
+                      </button>
+                      <button onClick={handleShare}
+                        className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl bg-gray-50 border border-gray-200 hover:bg-gray-100 text-gray-600 font-semibold text-sm transition-all">
+                        <Share2 className="w-4 h-4" /> {copied ? 'Copied!' : 'Share'}
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Landlord */}
+                  {landlord && (
+                    <div className="mt-7 pt-7 border-t border-gray-100">
+                      <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">Listed By</p>
+                      <div className="flex items-center gap-4">
+                        <div className="w-12 h-12 rounded-full bg-blue-50 overflow-hidden ring-4 ring-blue-50/50 shrink-0">
+                          {landlord.avatar_url
+                            ? <img src={landlord.avatar_url} className="w-full h-full object-cover" alt={landlord.full_name ?? ''} onError={e => { (e.currentTarget as HTMLImageElement).style.display='none' }} />
+                            : <div className="w-full h-full flex items-center justify-center text-blue-600 font-bold text-sm">{landlordInitials}</div>
+                          }
+                        </div>
+                        <div>
+                          <p className="font-bold text-gray-900">{landlord.full_name}</p>
+                          {landlord.is_verified
+                            ? <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-600"><CheckCircle className="w-3 h-3" /> Verified landlord</span>
+                            : <p className="text-xs text-gray-400">Landlord on Livana</p>
+                          }
                         </div>
                       </div>
-                      <button onClick={handleShare}
-                        className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-gray-50 border border-gray-200 hover:bg-gray-100 text-gray-600 font-semibold text-sm transition-all">
-                        <Share2 className="w-4 h-4" /> {copied ? 'Copied!' : 'Share listing'}
-                      </button>
-                    </>
-                  ) : null}
+                      {landlord.bio && <p className="text-xs text-gray-500 leading-relaxed mt-3 pt-3 border-t border-gray-100">{landlord.bio}</p>}
+                    </div>
+                  )}
                 </div>
               </div>
 
-              {/* Location card */}
-              <div className="rounded-2xl border border-gray-100 shadow-sm overflow-hidden bg-white">
-                <div className="h-36 bg-gradient-to-br from-blue-600/10 via-blue-50 to-indigo-100 flex flex-col items-center justify-center gap-2">
-                  <div className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center shadow-lg shadow-blue-600/30">
-                    <MapPin className="w-5 h-5 text-white" />
+              {/* Safety card */}
+              <div className="bg-blue-50/60 rounded-[32px] p-6 border border-blue-100/60">
+                <div className="flex gap-3">
+                  <ShieldCheck className="w-5 h-5 text-blue-600 shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-sm font-bold text-blue-900 mb-1">Livana Safety Tip</p>
+                    <p className="text-xs text-blue-700/70 leading-relaxed">Always inspect the property in person before making any payments. We never ask for money via the platform.</p>
                   </div>
-                  <p className="text-sm font-semibold text-gray-700 text-center px-4">{[property.address, property.city].filter(Boolean).join(', ')}</p>
-                </div>
-                <div className="px-4 py-3 border-t border-gray-100 flex items-center justify-between">
-                  <p className="text-xs text-gray-500">{property.city}, Nigeria</p>
-                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${statusCfg.cls}`}>{statusCfg.label}</span>
                 </div>
               </div>
 
             </div>
-          </div>
+          </aside>
 
         </div>
-      </div>
+      </main>
 
-      {/* Similar properties */}
-      <div className="bg-gray-50 border-t border-gray-100 py-14">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6">
-          <div className="flex items-end justify-between mb-7">
-            <div>
-              <p className="text-xs font-bold text-blue-600 uppercase tracking-widest mb-1">Explore More</p>
-              <h2 className="text-2xl font-extrabold text-gray-900">Similar properties</h2>
-            </div>
-            <Link href={`/listings?type=${property.type}`}
-              className="flex items-center gap-1.5 text-sm font-semibold text-blue-600 hover:text-blue-700 transition-colors">
-              View all <ArrowLeft className="w-4 h-4 rotate-180" />
-            </Link>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
-            {[0,1,2].map(i => (
-              <Link key={i} href={`/listings?type=${property.type}`}
-                className="group bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 overflow-hidden">
-                <div className="h-44 bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center relative overflow-hidden">
-                  <Building2 className="w-12 h-12 text-blue-200 group-hover:scale-110 transition-transform duration-500" strokeWidth={1} />
-                  <div className="absolute top-3 left-3">
-                    <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-blue-600 text-white">{TYPE_LABEL[property.type] ?? property.type}</span>
-                  </div>
-                </div>
-                <div className="p-4">
-                  <p className="text-sm font-semibold text-gray-800 mb-1">Browse more in {property.city}</p>
-                  <p className="text-xs text-gray-400 flex items-center gap-1"><MapPin className="w-3 h-3 text-blue-400" />{property.city}, Nigeria</p>
-                </div>
-              </Link>
-            ))}
-          </div>
+      {/* Mobile action bar */}
+      <div className="lg:hidden fixed bottom-0 left-0 right-0 p-4 bg-white/80 backdrop-blur-xl border-t border-gray-100 z-50 flex items-center justify-between gap-4">
+        <div>
+          <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block">Price</span>
+          <span className="text-xl font-black text-gray-900">₦{Number(property.price).toLocaleString()}</span>
         </div>
+        <button onClick={() => { setEnquiryOpen(true); window.scrollTo({ top: 0, behavior: 'smooth' }) }}
+          className="bg-gray-900 text-white px-8 py-3.5 rounded-2xl font-bold text-sm shadow-xl shadow-gray-200 hover:bg-gray-800 transition-colors">
+          Contact Now
+        </button>
       </div>
 
       <Footer />
