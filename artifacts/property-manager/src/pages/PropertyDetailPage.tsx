@@ -5,13 +5,45 @@ import {
   MapPin, BedDouble, Bath, Maximize,
   Heart, MessageCircle, ArrowLeft, Share2, CheckCircle, Send,
   LogIn, UserPlus, MessageSquare, Building2, Calendar,
-  ShieldCheck, Info, Mail,
+  ShieldCheck, Info, Mail, Wifi, Car, Dumbbell, Waves,
+  Wind, Shield, Zap, Droplets, TreePine, UtensilsCrossed,
+  Tv, Lock, Sun, Package,
 } from 'lucide-react'
+import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet'
+import 'leaflet/dist/leaflet.css'
+import L from 'leaflet'
 import PublicNavbar from '../components/PublicNavbar'
 import Footer from '../components/Footer'
 import { createClient, isSupabaseConfigured, getSupabaseImageUrl } from '../lib/supabase'
 import { isAdminUser } from '../lib/auth'
 import type { PropertyWithLandlord, PropertyImage, Landlord } from '../lib/types'
+
+// Fix leaflet default marker icons broken by bundlers
+delete (L.Icon.Default.prototype as unknown as Record<string, unknown>)._getIconUrl
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
+  iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
+  shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
+})
+
+const AMENITIES = [
+  { icon: Wifi,            label: 'High-Speed WiFi' },
+  { icon: Car,             label: 'Parking Space' },
+  { icon: Dumbbell,        label: 'Gym / Fitness' },
+  { icon: Waves,           label: 'Swimming Pool' },
+  { icon: Wind,            label: 'Air Conditioning' },
+  { icon: Shield,          label: '24/7 Security' },
+  { icon: Zap,             label: 'Backup Power' },
+  { icon: Droplets,        label: 'Running Water' },
+  { icon: TreePine,        label: 'Garden / Lawn' },
+  { icon: UtensilsCrossed, label: 'Modern Kitchen' },
+  { icon: Tv,              label: 'Smart TV' },
+  { icon: Lock,            label: 'Smart Lock' },
+  { icon: Sun,             label: 'Solar Panels' },
+  { icon: Package,         label: 'Storage Room' },
+]
+
+type ActiveTab = 'overview' | 'amenities' | 'location'
 
 type FullProperty = PropertyWithLandlord & {
   landlords: Pick<Landlord, 'id' | 'full_name' | 'whatsapp' | 'bio' | 'avatar_url' | 'is_verified'> | null
@@ -63,6 +95,8 @@ export default function PropertyDetailPage() {
   const [enquiryMsg, setEnquiryMsg]         = useState('')
   const [enquiryLoading, setEnquiryLoading] = useState(false)
   const [enquirySuccess, setEnquirySuccess] = useState(false)
+
+  const [activeTab, setActiveTab] = useState<ActiveTab>('overview')
 
   const [copied, setCopied]   = useState(false)
   const [comments, setComments] = useState<Comment[]>([])
@@ -335,15 +369,158 @@ export default function PropertyDetailPage() {
               ))}
             </div>
 
-            {/* Description */}
-            {property.description && (
-              <section>
-                <h2 className="text-2xl font-bold text-gray-900 mb-4 flex items-center gap-2">
-                  About this home <Info className="w-5 h-5 text-gray-300" />
-                </h2>
-                <p className="text-gray-600 leading-relaxed text-base whitespace-pre-line max-w-3xl">{property.description}</p>
-              </section>
-            )}
+            {/* ── TABS ── */}
+            <div className="rounded-3xl border border-gray-100 bg-white overflow-hidden shadow-sm">
+
+              {/* Tab bar */}
+              <div className="border-b border-gray-100 px-2">
+                <div className="flex gap-0">
+                  {(['overview', 'amenities', 'location'] as const).map(tab => (
+                    <button
+                      key={tab}
+                      onClick={() => setActiveTab(tab)}
+                      className={`px-5 py-4 text-sm font-bold capitalize relative transition-colors ${
+                        activeTab === tab ? 'text-gray-900' : 'text-gray-400 hover:text-gray-600'
+                      }`}
+                    >
+                      {tab}
+                      {activeTab === tab && (
+                        <motion.div
+                          layoutId="tab-indicator"
+                          className="absolute bottom-0 left-0 right-0 h-[3px] bg-blue-600 rounded-t-full"
+                        />
+                      )}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Tab content */}
+              <div className="p-6 md:p-8">
+                <AnimatePresence mode="wait">
+
+                  {activeTab === 'overview' && (
+                    <motion.section
+                      key="overview"
+                      initial={{ opacity: 0, y: 8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -8 }}
+                      transition={{ duration: 0.2 }}
+                      className="space-y-4"
+                    >
+                      <h2 className="text-xl md:text-2xl font-bold text-gray-900 flex items-center gap-2.5">
+                        About this home
+                        <Info className="w-5 h-5 text-gray-300" />
+                      </h2>
+                      <p className="text-gray-600 leading-relaxed text-base md:text-[17px] whitespace-pre-line max-w-3xl">
+                        {property.description || 'No description provided for this listing.'}
+                      </p>
+
+                      {/* Quick highlights */}
+                      <div className="grid grid-cols-2 gap-3 pt-2">
+                        {[
+                          { label: 'Property type', value: property.type.charAt(0).toUpperCase() + property.type.slice(1) },
+                          { label: 'Status', value: property.status.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) },
+                          { label: 'City', value: property.city },
+                          { label: 'Listed', value: new Date(property.created_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) },
+                        ].map(({ label, value }) => (
+                          <div key={label} className="bg-gray-50 rounded-2xl px-4 py-3">
+                            <p className="text-xs text-gray-400 font-semibold uppercase tracking-wide mb-0.5">{label}</p>
+                            <p className="text-sm font-bold text-gray-800">{value}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </motion.section>
+                  )}
+
+                  {activeTab === 'amenities' && (
+                    <motion.section
+                      key="amenities"
+                      initial={{ opacity: 0, y: 8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -8 }}
+                      transition={{ duration: 0.2 }}
+                      className="space-y-5"
+                    >
+                      <h2 className="text-xl md:text-2xl font-bold text-gray-900">Amenities & Features</h2>
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                        {AMENITIES.map((amenity, i) => (
+                          <motion.div
+                            key={amenity.label}
+                            initial={{ opacity: 0, scale: 0.92 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            transition={{ delay: i * 0.04, duration: 0.2 }}
+                            className="flex items-center gap-3 p-4 bg-gray-50 rounded-2xl border border-gray-100 hover:border-blue-200 hover:bg-blue-50/40 transition-all group"
+                          >
+                            <div className="w-9 h-9 rounded-xl bg-white border border-gray-100 group-hover:border-blue-200 group-hover:bg-blue-50 flex items-center justify-center shrink-0 transition-all shadow-sm">
+                              <amenity.icon className="w-4.5 h-4.5 text-blue-600" strokeWidth={1.5} />
+                            </div>
+                            <span className="text-sm font-semibold text-gray-700">{amenity.label}</span>
+                          </motion.div>
+                        ))}
+                      </div>
+                    </motion.section>
+                  )}
+
+                  {activeTab === 'location' && (
+                    <motion.section
+                      key="location"
+                      initial={{ opacity: 0, y: 8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -8 }}
+                      transition={{ duration: 0.2 }}
+                      className="space-y-5"
+                    >
+                      <div className="flex items-start justify-between gap-4">
+                        <div>
+                          <h2 className="text-xl md:text-2xl font-bold text-gray-900">Location</h2>
+                          <p className="text-gray-500 text-sm mt-1 flex items-center gap-1.5">
+                            <MapPin className="w-3.5 h-3.5 text-blue-500" />
+                            {[property.address, property.city].filter(Boolean).join(', ')}, Nigeria
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Leaflet map */}
+                      <div className="rounded-2xl overflow-hidden border border-gray-100 shadow-sm h-[320px] md:h-[380px]">
+                        <MapContainer
+                          center={[6.5244, 3.3792]}
+                          zoom={13}
+                          scrollWheelZoom={false}
+                          className="w-full h-full"
+                        >
+                          <TileLayer
+                            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+                            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                          />
+                          <Marker position={[6.5244, 3.3792]}>
+                            <Popup>
+                              <span className="font-semibold text-gray-900">{property.title}</span><br />
+                              <span className="text-gray-500 text-xs">{property.address}, {property.city}</span>
+                            </Popup>
+                          </Marker>
+                        </MapContainer>
+                      </div>
+
+                      {/* Nearby distances */}
+                      <div className="grid grid-cols-3 gap-3">
+                        {[
+                          { time: '5 min',  place: 'Falomo Bridge' },
+                          { time: '10 min', place: 'Victoria Island' },
+                          { time: '15 min', place: 'Lekki Phase 1' },
+                        ].map(({ time, place }) => (
+                          <div key={place} className="bg-gray-50 rounded-2xl p-4 text-center border border-gray-100">
+                            <p className="text-sm font-bold text-gray-900">{time}</p>
+                            <p className="text-xs text-gray-400 mt-0.5">{place}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </motion.section>
+                  )}
+
+                </AnimatePresence>
+              </div>
+            </div>
 
             <hr className="border-gray-100" />
 
