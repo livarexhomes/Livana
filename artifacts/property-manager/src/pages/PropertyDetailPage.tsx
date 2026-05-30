@@ -54,6 +54,8 @@ type Comment = {
   tenant_name: string
   message: string
   created_at: string
+  parent_id: string | null
+  author_role: 'tenant' | 'landlord' | 'admin'
 }
 
 const STATUS_CONFIG: Record<string, { label: string; dot: string; bg: string; text: string }> = {
@@ -98,9 +100,12 @@ export default function PropertyDetailPage() {
   const [activeTab, setActiveTab] = useState<ActiveTab>('overview')
   const [copied, setCopied]       = useState(false)
   const [comments, setComments]   = useState<Comment[]>([])
-  const [commentText, setCommentText]     = useState('')
+  const [commentText, setCommentText]       = useState('')
   const [commentLoading, setCommentLoading] = useState(false)
   const [commentsReady, setCommentsReady]   = useState(false)
+  const [replyingTo, setReplyingTo]         = useState<string | null>(null)
+  const [replyText, setReplyText]           = useState('')
+  const [replyLoading, setReplyLoading]     = useState(false)
 
   useEffect(() => {
     if (!isSupabaseConfigured() || !params.id) { setLoading(false); return }
@@ -151,9 +156,9 @@ export default function PropertyDetailPage() {
     init()
     supabase
       .from('property_comments')
-      .select('id, tenant_name, message, created_at')
+      .select('id, tenant_name, message, created_at, parent_id, author_role')
       .eq('property_id', params.id)
-      .order('created_at', { ascending: false })
+      .order('created_at', { ascending: true })
       .then(({ data }) => {
         setComments((data as Comment[]) ?? [])
         setCommentsReady(true)
@@ -210,6 +215,31 @@ export default function PropertyDetailPage() {
       setCommentText('')
     }
     setCommentLoading(false)
+  }
+
+  async function handleReply(e: React.FormEvent, parentId: string) {
+    e.preventDefault()
+    if (!replyText.trim()) return
+    // landlord replies use landlord name; admin uses "Admin"
+    const supabase = createClient()
+    const replyerName = userRole === 'landlord'
+      ? (property?.landlords?.full_name ?? 'Landlord')
+      : 'Admin'
+    setReplyLoading(true)
+    const { data, error } = await supabase.from('property_comments').insert({
+      property_id: params.id!,
+      tenant_id: tenantId ?? null,
+      tenant_name: replyerName,
+      message: replyText.trim(),
+      parent_id: parentId,
+      author_role: userRole === 'admin' ? 'admin' : 'landlord',
+    }).select().single()
+    if (!error && data) {
+      setComments(prev => [...prev, data as Comment])
+      setReplyText('')
+      setReplyingTo(null)
+    }
+    setReplyLoading(false)
   }
 
   function handleShare() {
@@ -565,10 +595,14 @@ export default function PropertyDetailPage() {
               <div className="flex items-center justify-between">
                 <h2 className="text-lg font-bold text-gray-900">
                   Community
-                  <span className="ml-2 text-sm font-semibold text-gray-300">({comments.length})</span>
+                  {/* count only top-level comments */}
+                  <span className="ml-2 text-sm font-semibold text-gray-300">
+                    ({comments.filter(c => !c.parent_id).length})
+                  </span>
                 </h2>
               </div>
 
+              {/* Tenant compose box */}
               {userRole === 'tenant' && (
                 <div className="bg-white rounded-2xl border border-gray-100 p-5">
                   <div className="flex gap-3">
@@ -596,6 +630,7 @@ export default function PropertyDetailPage() {
                 </div>
               )}
 
+              {/* Guest prompt */}
               {userRole === 'guest' && (
                 <div className="bg-white rounded-2xl border border-gray-100 p-5 flex items-center gap-4">
                   <div className="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center shrink-0">
@@ -613,20 +648,12 @@ export default function PropertyDetailPage() {
                 </div>
               )}
 
-              {(userRole === 'landlord' || userRole === 'admin') && (
-                <div className="bg-white rounded-2xl border border-gray-100 p-5 flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center shrink-0">
-                    <MessageCircle className="w-4 h-4 text-gray-400" />
-                  </div>
-                  <p className="text-sm text-gray-400">Comments are for tenants. Switch to a tenant account to participate.</p>
-                </div>
-              )}
-
+              {/* Comment thread */}
               {!commentsReady ? (
                 <div className="flex justify-center py-10">
                   <div className="w-5 h-5 rounded-full border-2 border-gray-200 border-t-gray-600 animate-spin" />
                 </div>
-              ) : comments.length === 0 ? (
+              ) : comments.filter(c => !c.parent_id).length === 0 ? (
                 <div className="text-center py-12 bg-white rounded-2xl border border-gray-100">
                   <MessageSquare className="w-8 h-8 mx-auto mb-3 text-gray-200" />
                   <p className="text-sm text-gray-400 font-medium">No comments yet. Be the first!</p>
@@ -634,27 +661,114 @@ export default function PropertyDetailPage() {
               ) : (
                 <div className="space-y-3">
                   <AnimatePresence mode="popLayout">
-                    {comments.map((c, i) => (
-                      <motion.div
-                        key={c.id}
-                        initial={{ opacity: 0, y: 8 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: i * 0.04 }}
-                        className="bg-white rounded-2xl border border-gray-100 p-5 flex gap-3"
-                      >
-                        <div className="w-9 h-9 rounded-full bg-gradient-to-br from-violet-100 to-blue-100 text-violet-600 flex items-center justify-center shrink-0 font-bold text-sm">
-                          {c.tenant_name[0]?.toUpperCase()}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-1.5">
-                            <span className="font-bold text-gray-900 text-sm">{c.tenant_name}</span>
-                            <span className="text-xs text-gray-300">·</span>
-                            <span className="text-xs text-gray-400">{timeAgo(c.created_at)}</span>
+                    {comments.filter(c => !c.parent_id).map((c, i) => {
+                      const replies = comments.filter(r => r.parent_id === c.id)
+                      const isOwner = userRole === 'landlord' || userRole === 'admin'
+                      const isReplying = replyingTo === c.id
+
+                      return (
+                        <motion.div
+                          key={c.id}
+                          initial={{ opacity: 0, y: 8 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: i * 0.04 }}
+                          className="bg-white rounded-2xl border border-gray-100 overflow-hidden"
+                        >
+                          {/* Top-level comment */}
+                          <div className="p-5 flex gap-3">
+                            <div className="w-9 h-9 rounded-full bg-gradient-to-br from-violet-100 to-blue-100 text-violet-600 flex items-center justify-center shrink-0 font-bold text-sm">
+                              {c.tenant_name[0]?.toUpperCase()}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 mb-1.5">
+                                <span className="font-bold text-gray-900 text-sm">{c.tenant_name}</span>
+                                <span className="text-xs text-gray-300">·</span>
+                                <span className="text-xs text-gray-400">{timeAgo(c.created_at)}</span>
+                              </div>
+                              <p className="text-sm text-gray-600 leading-relaxed">{c.message}</p>
+
+                              {/* Reply button — only for landlord/admin who owns this property */}
+                              {isOwner && (
+                                <button
+                                  onClick={() => {
+                                    setReplyingTo(isReplying ? null : c.id)
+                                    setReplyText('')
+                                  }}
+                                  className="mt-2.5 flex items-center gap-1.5 text-xs font-bold text-blue-600 hover:text-blue-700 transition-colors"
+                                >
+                                  <MessageCircle className="w-3.5 h-3.5" />
+                                  {isReplying ? 'Cancel' : 'Reply'}
+                                </button>
+                              )}
+                            </div>
                           </div>
-                          <p className="text-sm text-gray-600 leading-relaxed">{c.message}</p>
-                        </div>
-                      </motion.div>
-                    ))}
+
+                          {/* Existing replies */}
+                          {replies.length > 0 && (
+                            <div className="border-t border-gray-50 bg-gray-50/60">
+                              {replies.map(r => (
+                                <div key={r.id} className="flex gap-3 px-5 py-4 border-b border-gray-100/60 last:border-0">
+                                  {/* Owner avatar */}
+                                  <div className="w-7 h-7 rounded-full bg-gray-900 flex items-center justify-center shrink-0 text-white font-bold text-xs">
+                                    {r.tenant_name[0]?.toUpperCase()}
+                                  </div>
+                                  <div className="flex-1 min-w-0">
+                                    <div className="flex items-center gap-2 mb-1">
+                                      <span className="font-bold text-gray-900 text-xs">{r.tenant_name}</span>
+                                      <span className="inline-flex items-center px-1.5 py-0.5 rounded-md bg-blue-50 text-blue-600 text-[10px] font-bold">
+                                        {r.author_role === 'admin' ? 'Admin' : 'Owner'}
+                                      </span>
+                                      <span className="text-[11px] text-gray-300">·</span>
+                                      <span className="text-[11px] text-gray-400">{timeAgo(r.created_at)}</span>
+                                    </div>
+                                    <p className="text-sm text-gray-600 leading-relaxed">{r.message}</p>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+
+                          {/* Inline reply compose box */}
+                          <AnimatePresence>
+                            {isReplying && (
+                              <motion.div
+                                initial={{ height: 0, opacity: 0 }}
+                                animate={{ height: 'auto', opacity: 1 }}
+                                exit={{ height: 0, opacity: 0 }}
+                                transition={{ duration: 0.2 }}
+                                className="overflow-hidden border-t border-gray-100"
+                              >
+                                <div className="p-4 bg-blue-50/40">
+                                  <div className="flex gap-3">
+                                    <div className="w-7 h-7 rounded-full bg-gray-900 flex items-center justify-center shrink-0 text-white font-bold text-xs">
+                                      {(property?.landlords?.full_name ?? 'L')[0].toUpperCase()}
+                                    </div>
+                                    <form
+                                      onSubmit={e => handleReply(e, c.id)}
+                                      className="flex-1 flex gap-2"
+                                    >
+                                      <textarea
+                                        value={replyText}
+                                        onChange={e => setReplyText(e.target.value)}
+                                        placeholder={`Reply to ${c.tenant_name}…`}
+                                        rows={2}
+                                        className="flex-1 bg-white border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-gray-800 placeholder:text-gray-400 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-300 transition-all"
+                                      />
+                                      <button
+                                        disabled={replyLoading || !replyText.trim()}
+                                        className="self-end flex items-center gap-1.5 px-4 py-2.5 bg-gray-900 text-white rounded-xl text-xs font-bold disabled:opacity-40 hover:bg-gray-800 transition-all active:scale-95 shrink-0"
+                                      >
+                                        Send <Send className="w-3 h-3" />
+                                      </button>
+                                    </form>
+                                  </div>
+                                </div>
+                              </motion.div>
+                            )}
+                          </AnimatePresence>
+                        </motion.div>
+                      )
+                    })}
                   </AnimatePresence>
                 </div>
               )}
