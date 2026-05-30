@@ -178,11 +178,75 @@ CREATE TABLE IF NOT EXISTS public.tenants (
   full_name  TEXT        NOT NULL,
   phone      TEXT,
   email      TEXT,                          -- displayed in admin user list
+  avatar_url TEXT,                          -- populated from Google OAuth picture
+  provider   TEXT        NOT NULL DEFAULT 'email', -- 'email' | 'google' | etc.
   status     TEXT        NOT NULL DEFAULT 'active'
                CHECK (status IN ('active', 'suspended')),
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+-- Migration: add columns if table already exists
+ALTER TABLE public.tenants ADD COLUMN IF NOT EXISTS avatar_url TEXT;
+ALTER TABLE public.tenants ADD COLUMN IF NOT EXISTS provider   TEXT NOT NULL DEFAULT 'email';
+
+-- ── Auto-create tenant row on new auth.users signup ──────────────────────────
+-- This is the safety net: catches Google OAuth users even if the client-side
+-- AuthCallbackPage upsert fails (network error, tab closed, etc.).
+-- It also backfills existing auth.users who have no tenant row.
+CREATE OR REPLACE FUNCTION public.handle_new_user()
+RETURNS TRIGGER LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+DECLARE
+  v_provider   TEXT;
+  v_full_name  TEXT;
+  v_email      TEXT;
+  v_avatar_url TEXT;
+BEGIN
+  v_provider   := COALESCE(NEW.raw_app_meta_data->>'provider', 'email');
+  v_full_name  := COALESCE(
+                    NEW.raw_user_meta_data->>'full_name',
+                    NEW.raw_user_meta_data->>'name',
+                    split_part(NEW.email, '@', 1),
+                    'User'
+                  );
+  v_email      := NEW.email;
+  v_avatar_url := COALESCE(
+                    NEW.raw_user_meta_data->>'avatar_url',
+                    NEW.raw_user_meta_data->>'picture'
+                  );
+
+  INSERT INTO public.tenants (user_id, full_name, email, avatar_url, provider)
+  VALUES (NEW.id, v_full_name, v_email, v_avatar_url, v_provider)
+  ON CONFLICT (user_id) DO UPDATE SET
+    full_name  = EXCLUDED.full_name,
+    email      = EXCLUDED.email,
+    avatar_url = COALESCE(EXCLUDED.avatar_url, tenants.avatar_url),
+    provider   = EXCLUDED.provider,
+    updated_at = NOW();
+
+  RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
+CREATE TRIGGER on_auth_user_created
+  AFTER INSERT ON auth.users
+  FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
+
+-- Backfill: create tenant rows for any existing auth.users with no tenant row
+INSERT INTO public.tenants (user_id, full_name, email, avatar_url, provider)
+SELECT
+  u.id,
+  COALESCE(u.raw_user_meta_data->>'full_name', u.raw_user_meta_data->>'name', split_part(u.email,'@',1), 'User'),
+  u.email,
+  COALESCE(u.raw_user_meta_data->>'avatar_url', u.raw_user_meta_data->>'picture'),
+  COALESCE(u.raw_app_meta_data->>'provider', 'email')
+FROM auth.users u
+WHERE NOT EXISTS (SELECT 1 FROM public.tenants t WHERE t.user_id = u.id)
+  -- exclude admin and landlord accounts
+  AND NOT EXISTS (SELECT 1 FROM public.landlords l WHERE l.user_id = u.id)
+  AND (u.raw_app_meta_data->>'role' IS NULL OR u.raw_app_meta_data->>'role' != 'admin')
+ON CONFLICT (user_id) DO NOTHING;
 
 CREATE OR REPLACE TRIGGER tenants_updated_at
   BEFORE UPDATE ON public.tenants

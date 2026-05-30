@@ -59,14 +59,16 @@ export default function AuthCallbackPage() {
       }
 
       // ── Tenant flow ────────────────────────────────────────────────
-      const { data: tenant } = await supabase
-        .from('tenants').select('id').eq('user_id', user.id).single() as { data: { id: string } | null }
-      if (!tenant) {
-        await supabase.from('tenants').insert({
-          user_id:   user.id,
-          full_name: meta.full_name ?? user.email ?? 'User',
-        })
-      }
+      // Upsert so that re-logins (especially Google OAuth) always keep
+      // the tenant row in sync with the latest name, email, avatar and provider.
+      const provider = user.app_metadata?.provider ?? 'email'
+      await supabase.from('tenants').upsert({
+        user_id:    user.id,
+        full_name:  meta.full_name ?? meta.name ?? user.email?.split('@')[0] ?? 'User',
+        email:      user.email ?? null,
+        avatar_url: meta.avatar_url ?? meta.picture ?? null,
+        provider,
+      }, { onConflict: 'user_id', ignoreDuplicates: false })
       navigate(redirectTo)
     }
 
