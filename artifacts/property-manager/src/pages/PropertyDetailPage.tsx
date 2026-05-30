@@ -105,16 +105,22 @@ export default function PropertyDetailPage() {
   useEffect(() => {
     if (!isSupabaseConfigured() || !params.id) { setLoading(false); return }
     const supabase = createClient()
-    Promise.all([
-      supabase
+
+    async function init() {
+      // getSession reads from local cache — no network round-trip, never returns
+      // null for an already-authenticated user the way getUser() can on navigation.
+      const { data: { session } } = await supabase.auth.getSession()
+      const user = session?.user ?? null
+
+      const { data: prop } = await supabase
         .from('properties')
         .select('*, landlords(id, full_name, whatsapp, bio, avatar_url, is_verified), property_images(id, storage_path, alt_text, is_cover, sort_order)')
-        .eq('id', params.id)
-        .single(),
-      supabase.auth.getUser(),
-    ]).then(async ([{ data: prop }, { data: { user } }]) => {
+        .eq('id', params.id!)
+        .single()
+
       if (!prop) { setNotFound(true); setLoading(false); return }
       setProperty(prop as FullProperty)
+
       if (user) {
         if (isAdminUser(user)) {
           setUserRole('admin')
@@ -132,10 +138,17 @@ export default function PropertyDetailPage() {
           } else if (landlord) {
             setUserRole('landlord')
           }
+          // If neither tenant nor landlord row exists yet, the user is still
+          // authenticated — treat as tenant so they don't see the sign-in prompt.
+          else {
+            setUserRole('tenant')
+          }
         }
       }
       setLoading(false)
-    })
+    }
+
+    init()
     supabase
       .from('property_comments')
       .select('id, tenant_name, message, created_at')
@@ -597,6 +610,15 @@ export default function PropertyDetailPage() {
                       <UserPlus className="w-3 h-3" /> Join
                     </Link>
                   </div>
+                </div>
+              )}
+
+              {(userRole === 'landlord' || userRole === 'admin') && (
+                <div className="bg-white rounded-2xl border border-gray-100 p-5 flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center shrink-0">
+                    <MessageCircle className="w-4 h-4 text-gray-400" />
+                  </div>
+                  <p className="text-sm text-gray-400">Comments are for tenants. Switch to a tenant account to participate.</p>
                 </div>
               )}
 
