@@ -26,9 +26,7 @@ const STATUS_DOT: Record<string, string> = {
 }
 
 function formatPrice(n: number) {
-  if (n >= 1_000_000) return `₦${(n / 1_000_000).toFixed(n % 1_000_000 === 0 ? 0 : 1)}M`
-  if (n >= 1_000)     return `₦${(n / 1_000).toFixed(0)}K`
-  return `₦${n.toLocaleString()}`
+  return `₦${n.toLocaleString('en-NG')}`
 }
 
 export default function PropertyCard({ property: p, saved: initialSaved = false, isAuthenticated = false }: PropertyCardProps) {
