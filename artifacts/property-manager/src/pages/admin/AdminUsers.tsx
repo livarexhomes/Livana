@@ -32,6 +32,8 @@ type Tenant = {
   full_name: string
   phone?: string | null
   email?: string | null
+  avatar_url?: string | null
+  provider?: string | null
   created_at: string
   enquiry_count: number
   status: 'active' | 'suspended'
@@ -91,11 +93,23 @@ function TenantDrawer({ tenant, onClose }: { tenant: Tenant; onClose: () => void
       <div className="fixed right-0 top-0 h-full w-full max-w-md bg-white shadow-2xl z-50 flex flex-col">
         {/* Header */}
         <div className="flex items-center gap-4 px-6 py-5 border-b border-gray-100 shrink-0">
-          <div className={`w-11 h-11 rounded-full bg-gradient-to-br ${grad} flex items-center justify-center shrink-0 shadow-sm`}>
-            <span className="text-sm font-bold text-white">{initials}</span>
-          </div>
+          {tenant.avatar_url ? (
+            <img src={tenant.avatar_url} alt={tenant.full_name} className="w-11 h-11 rounded-full object-cover shrink-0 shadow-sm ring-2 ring-gray-100" />
+          ) : (
+            <div className={`w-11 h-11 rounded-full bg-gradient-to-br ${grad} flex items-center justify-center shrink-0 shadow-sm`}>
+              <span className="text-sm font-bold text-white">{initials}</span>
+            </div>
+          )}
           <div className="flex-1 min-w-0">
-            <p className="font-extrabold text-gray-900 text-base truncate">{tenant.full_name}</p>
+            <div className="flex items-center gap-2">
+              <p className="font-extrabold text-gray-900 text-base truncate">{tenant.full_name}</p>
+              {tenant.provider === 'google' && (
+                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-red-50 text-red-500 text-[10px] font-bold border border-red-100 shrink-0">
+                  <svg className="w-2.5 h-2.5" viewBox="0 0 24 24" fill="currentColor"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
+                  Google
+                </span>
+              )}
+            </div>
             <p className="text-xs text-gray-400 mt-0.5 truncate">{tenant.email ?? tenant.phone ?? 'No contact info'}</p>
           </div>
           <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-xl hover:bg-gray-100 text-gray-400 transition-colors shrink-0">
@@ -305,6 +319,8 @@ export default function AdminUsers() {
           full_name: t.full_name ?? 'Unknown Tenant',
           phone: t.phone ?? null,
           email: t.email ?? null,
+          avatar_url: t.avatar_url ?? null,
+          provider: t.provider ?? 'email',
           created_at: t.created_at,
           enquiry_count: t.enquiries?.[0]?.count ?? 0,
           status: t.status ?? 'active',
@@ -415,6 +431,7 @@ export default function AdminUsers() {
                     <thead className="bg-slate-50 border-b border-gray-100">
                       <tr>
                         <th className="text-left px-5 py-3.5 text-[10px] font-black text-gray-400 uppercase tracking-widest">Tenant</th>
+                        <th className="text-left px-5 py-3.5 text-[10px] font-black text-gray-400 uppercase tracking-widest hidden lg:table-cell">Sign-up</th>
                         <th className="text-left px-5 py-3.5 text-[10px] font-black text-gray-400 uppercase tracking-widest hidden md:table-cell">Phone</th>
                         <th className="text-left px-5 py-3.5 text-[10px] font-black text-gray-400 uppercase tracking-widest">Enquiries</th>
                         <th className="text-left px-5 py-3.5 text-[10px] font-black text-gray-400 uppercase tracking-widest hidden sm:table-cell">Status</th>
@@ -431,14 +448,43 @@ export default function AdminUsers() {
                           <tr key={t.id} onClick={() => setSelectedTenant(t)} className={`hover:bg-slate-50/60 transition-colors cursor-pointer ${isSuspended ? 'opacity-60' : ''}`}>
                             <td className="px-5 py-4">
                               <div className="flex items-center gap-3">
-                                <div className={`w-9 h-9 rounded-full bg-gradient-to-br ${grad} flex items-center justify-center shrink-0 shadow-sm`}>
-                                  <span className="text-xs font-bold text-white">{initials}</span>
-                                </div>
+                                {/* Avatar: use Google picture if available, else gradient initials */}
+                                {t.avatar_url ? (
+                                  <img
+                                    src={t.avatar_url}
+                                    alt={t.full_name}
+                                    className="w-9 h-9 rounded-full object-cover shrink-0 shadow-sm ring-2 ring-white"
+                                    onError={e => { (e.currentTarget as HTMLImageElement).style.display = 'none' }}
+                                  />
+                                ) : (
+                                  <div className={`w-9 h-9 rounded-full bg-gradient-to-br ${grad} flex items-center justify-center shrink-0 shadow-sm`}>
+                                    <span className="text-xs font-bold text-white">{initials}</span>
+                                  </div>
+                                )}
                                 <div>
                                   <p className="font-semibold text-gray-900 text-sm leading-tight">{t.full_name}</p>
                                   {t.email && <p className="text-[11px] text-gray-400 mt-0.5">{t.email}</p>}
                                 </div>
                               </div>
+                            </td>
+                            {/* Provider badge */}
+                            <td className="px-5 py-4 hidden lg:table-cell">
+                              {t.provider === 'google' ? (
+                                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-bold bg-red-50 text-red-600 border border-red-100">
+                                  <svg className="w-3 h-3" viewBox="0 0 24 24" fill="currentColor">
+                                    <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+                                    <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+                                    <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/>
+                                    <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+                                  </svg>
+                                  Google
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-bold bg-gray-50 text-gray-500 border border-gray-100">
+                                  <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+                                  Email
+                                </span>
+                              )}
                             </td>
                             <td className="px-5 py-4 hidden md:table-cell">
                               {t.phone ? (

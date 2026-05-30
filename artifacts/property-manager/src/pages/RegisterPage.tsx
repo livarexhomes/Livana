@@ -59,11 +59,13 @@ export default function RegisterPage() {
       return
     }
 
-    const { error: profileError } = await supabase.from('tenants').insert({
-      user_id: data.user.id,
+    const { error: profileError } = await supabase.from('tenants').upsert({
+      user_id:  data.user.id,
       full_name: fullName,
-      phone: phone || null,
-    })
+      phone:    phone || null,
+      email:    email || null,
+      provider: 'email',
+    }, { onConflict: 'user_id', ignoreDuplicates: false })
 
     if (profileError && !profileError.message.includes('duplicate')) {
       setError(profileError.message)
