@@ -621,24 +621,26 @@ export default function HomePage() {
       </section>
 
       {/* ── PROPERTIES ── */}
-      <section className="bg-white py-20 md:py-28">
+      <section className="bg-[#F8F8F6] py-20 md:py-28">
         <div className="max-w-7xl mx-auto px-5 sm:px-8">
 
           {/* Header */}
-          <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-10 gap-6">
+          <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-12 gap-6">
             <div>
-              <div className="inline-flex items-center gap-2 mb-3">
-                <span className="w-1.5 h-1.5 rounded-full bg-blue-600" />
-                <span className="text-blue-600 font-bold text-xs uppercase tracking-widest">Fresh Listings</span>
+              <div className="inline-flex items-center gap-2 mb-4">
+                <span className="w-1.5 h-1.5 rounded-full bg-blue-600 animate-pulse" />
+                <span className="text-blue-600 font-bold text-[11px] uppercase tracking-[0.15em]">Fresh Listings</span>
               </div>
-              <h2 className="text-3xl md:text-4xl font-extrabold text-gray-900 tracking-tight leading-tight">
+              <h2 className="text-3xl md:text-[2.6rem] font-black text-gray-900 tracking-tight leading-[1.1]">
                 Newly Listed Properties
               </h2>
-              <p className="text-gray-400 mt-2 text-sm">Hand-picked from verified landlords across Nigeria.</p>
+              <p className="text-gray-400 mt-2.5 text-sm font-medium">
+                Hand-picked from verified landlords across Nigeria.
+              </p>
             </div>
             <Link
               href={`/listings?type=${typeMap[activeTab]}`}
-              className="group inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gray-900 text-white text-sm font-semibold hover:bg-blue-600 transition-colors whitespace-nowrap shrink-0 shadow-sm"
+              className="group inline-flex items-center gap-2.5 px-6 py-3 rounded-2xl bg-gray-900 text-white text-sm font-bold hover:bg-gray-800 transition-all whitespace-nowrap shrink-0 shadow-lg shadow-gray-900/10 active:scale-95"
             >
               View all listings
               <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
@@ -646,11 +648,14 @@ export default function HomePage() {
           </div>
 
           {/* Filter tabs */}
-          <div className="flex gap-2 mb-10 overflow-x-auto no-scrollbar">
+          <div className="flex gap-2 mb-10 overflow-x-auto no-scrollbar pb-1">
             {(['Rent', 'Lease', 'Buy', 'Commercial'] as Tab[]).map(t => {
               const comingSoon = t === 'Buy' || t === 'Commercial'
               return comingSoon ? (
-                <span key={t} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold whitespace-nowrap bg-gray-50 text-gray-300 border border-gray-100 cursor-default select-none shrink-0">
+                <span
+                  key={t}
+                  className="inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl text-sm font-semibold whitespace-nowrap bg-white text-gray-300 border border-gray-100 cursor-default select-none shrink-0"
+                >
                   {t}
                   <span className="text-[9px] font-black uppercase tracking-wider bg-gray-100 text-gray-300 px-1.5 py-0.5 rounded-md">Soon</span>
                 </span>
@@ -658,10 +663,10 @@ export default function HomePage() {
                 <button
                   key={t}
                   onClick={() => setActiveTab(t)}
-                  className={`px-5 py-2 rounded-xl text-sm font-semibold whitespace-nowrap transition-all shrink-0 ${
+                  className={`px-5 py-2.5 rounded-2xl text-sm font-bold whitespace-nowrap transition-all duration-200 shrink-0 ${
                     activeTab === t
-                      ? 'bg-blue-600 text-white shadow-md shadow-blue-600/20'
-                      : 'bg-gray-50 text-gray-500 hover:bg-gray-100 hover:text-gray-800'
+                      ? 'bg-gray-900 text-white shadow-lg shadow-gray-900/15'
+                      : 'bg-white text-gray-500 border border-gray-100 hover:border-gray-200 hover:text-gray-800 hover:shadow-sm'
                   }`}
                 >
                   {t}
@@ -671,9 +676,21 @@ export default function HomePage() {
           </div>
 
           {loading ? (
-            <div className="flex items-center justify-center min-h-[300px] gap-3">
-              <div className="animate-spin w-6 h-6 border-3 border-blue-600 border-t-transparent rounded-full" style={{ borderWidth: '3px' }}></div>
-              <span className="text-gray-500 text-sm font-medium">Loading properties...</span>
+            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+              {[...Array(4)].map((_, i) => (
+                <div key={i} className="bg-white rounded-3xl overflow-hidden border border-gray-100 animate-pulse">
+                  <div className="h-56 bg-gray-100" />
+                  <div className="p-4 space-y-3">
+                    <div className="h-4 bg-gray-100 rounded-lg w-3/4" />
+                    <div className="h-3 bg-gray-100 rounded-lg w-1/2" />
+                    <div className="h-px bg-gray-50" />
+                    <div className="flex gap-3">
+                      <div className="h-3 bg-gray-100 rounded w-16" />
+                      <div className="h-3 bg-gray-100 rounded w-16" />
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
           ) : properties.length > 0 ? (
             <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
@@ -682,8 +699,8 @@ export default function HomePage() {
               ))}
             </div>
           ) : (
-            <div className="bg-gray-50 rounded-3xl border border-gray-100 py-24 text-center flex flex-col items-center">
-              <div className="w-16 h-16 rounded-2xl bg-white border border-gray-100 shadow-sm flex items-center justify-center mb-4">
+            <div className="bg-white rounded-3xl border border-gray-100 py-24 text-center flex flex-col items-center shadow-sm">
+              <div className="w-16 h-16 rounded-2xl bg-gray-50 border border-gray-100 flex items-center justify-center mb-4">
                 <Building2 className="w-8 h-8 text-gray-300" strokeWidth={1.5} />
               </div>
               <h3 className="text-base font-bold text-gray-700">No properties yet</h3>
