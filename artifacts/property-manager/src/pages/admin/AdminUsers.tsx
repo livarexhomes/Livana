@@ -374,37 +374,29 @@ export default function AdminUsers() {
       <div className="flex h-screen overflow-hidden bg-[#F4F6FB]">
         <AdminSidebar userEmail={user?.email} userName={displayName} />
         <div className="flex-1 flex flex-col min-w-0">
-          <AdminHeader title="Tenants" subtitle={`${tenants.length} registered tenants`} />
-          <main className="flex-1 overflow-y-auto p-4 md:p-6 pb-24 md:pb-6 space-y-4">
+          <AdminHeader title="Users" subtitle={`${tenants.length} registered tenants`} />
+          <main className="flex-1 overflow-y-auto p-4 md:p-6 pb-24 md:pb-6 space-y-5">
 
             {/* KPIs */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               {[
-                { label: 'Total Tenants',   value: tenants.length,  icon: Users,         color: 'text-blue-600',    bg: 'bg-blue-50'    },
-                { label: 'Total Enquiries', value: totalEnquiries,  icon: MessageSquare, color: 'text-emerald-600', bg: 'bg-emerald-50' },
-                { label: 'This Month',      value: tenants.filter(t => new Date(t.created_at) > new Date(Date.now() - 30 * 86400000)).length, icon: Clock, color: 'text-violet-600', bg: 'bg-violet-50' },
-                { label: 'Suspended',       value: suspendedCount,  icon: ShieldOff,     color: 'text-amber-600',   bg: 'bg-amber-50'   },
-              ].map(s => {
-                const Icon = s.icon
-                return (
-                  <div key={s.label} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 flex items-center gap-3">
-                    <div className={`w-10 h-10 rounded-xl ${s.bg} flex items-center justify-center shrink-0`}>
-                      <Icon className={`w-5 h-5 ${s.color}`} strokeWidth={1.7} />
-                    </div>
-                    <div>
-                      <p className="text-xl font-extrabold text-gray-900 leading-tight">{s.value}</p>
-                      <p className="text-xs text-gray-400 font-medium mt-0.5">{s.label}</p>
-                    </div>
-                  </div>
-                )
-              })}
+                { label: 'Total Users',     value: tenants.length },
+                { label: 'Total Enquiries', value: totalEnquiries },
+                { label: 'This Month',      value: tenants.filter(t => new Date(t.created_at) > new Date(Date.now() - 30 * 86400000)).length },
+                { label: 'Suspended',       value: suspendedCount },
+              ].map(s => (
+                <div key={s.label} className="bg-white rounded-2xl border border-gray-100 shadow-sm px-4 py-3.5">
+                  <p className="text-2xl font-extrabold text-gray-900">{s.value}</p>
+                  <p className="text-xs text-gray-400 mt-0.5">{s.label}</p>
+                </div>
+              ))}
             </div>
 
             {/* Search */}
-            <div className="flex items-center gap-2 bg-white border border-gray-200 rounded-xl px-4 py-2.5 shadow-sm focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-blue-500 transition-all">
+            <div className="flex items-center gap-2 bg-white border border-gray-200 rounded-xl px-3.5 py-2.5 shadow-sm focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-blue-500 transition-all">
               <Search className="w-4 h-4 text-gray-400 shrink-0" />
               <input value={search} onChange={e => setSearch(e.target.value)}
-                placeholder="Search by name, phone…"
+                placeholder="Search by name, email, phone…"
                 className="flex-1 text-sm text-gray-700 placeholder-gray-400 focus:outline-none bg-transparent" />
             </div>
 
@@ -428,15 +420,15 @@ export default function AdminUsers() {
               <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
                 <div className="overflow-x-auto">
                   <table className="w-full min-w-[560px]">
-                    <thead className="bg-slate-50 border-b border-gray-100">
-                      <tr>
-                        <th className="text-left px-5 py-3.5 text-[10px] font-black text-gray-400 uppercase tracking-widest">Tenant</th>
-                        <th className="text-left px-5 py-3.5 text-[10px] font-black text-gray-400 uppercase tracking-widest hidden lg:table-cell">Sign-up</th>
-                        <th className="text-left px-5 py-3.5 text-[10px] font-black text-gray-400 uppercase tracking-widest hidden md:table-cell">Phone</th>
-                        <th className="text-left px-5 py-3.5 text-[10px] font-black text-gray-400 uppercase tracking-widest">Enquiries</th>
-                        <th className="text-left px-5 py-3.5 text-[10px] font-black text-gray-400 uppercase tracking-widest hidden sm:table-cell">Status</th>
-                        <th className="text-left px-5 py-3.5 text-[10px] font-black text-gray-400 uppercase tracking-widest hidden sm:table-cell">Joined</th>
-                        <th className="px-3 py-3.5" />
+                    <thead>
+                      <tr className="border-b border-gray-100 bg-gray-50/70">
+                        <th className="text-left px-5 py-3 text-[10px] font-black text-gray-400 uppercase tracking-widest">User</th>
+                        <th className="text-left px-5 py-3 text-[10px] font-black text-gray-400 uppercase tracking-widest hidden lg:table-cell">Sign-up</th>
+                        <th className="text-left px-5 py-3 text-[10px] font-black text-gray-400 uppercase tracking-widest hidden md:table-cell">Phone</th>
+                        <th className="text-left px-5 py-3 text-[10px] font-black text-gray-400 uppercase tracking-widest">Enquiries</th>
+                        <th className="text-left px-5 py-3 text-[10px] font-black text-gray-400 uppercase tracking-widest hidden sm:table-cell">Status</th>
+                        <th className="text-left px-5 py-3 text-[10px] font-black text-gray-400 uppercase tracking-widest hidden sm:table-cell">Joined</th>
+                        <th className="px-3 py-3" />
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-50">
@@ -445,32 +437,28 @@ export default function AdminUsers() {
                         const initials = getInitials(t.full_name)
                         const isSuspended = t.status === 'suspended'
                         return (
-                          <tr key={t.id} onClick={() => setSelectedTenant(t)} className={`hover:bg-slate-50/60 transition-colors cursor-pointer ${isSuspended ? 'opacity-60' : ''}`}>
-                            <td className="px-5 py-4">
+                          <tr key={t.id} onClick={() => setSelectedTenant(t)}
+                            className={`hover:bg-gray-50/60 transition-colors cursor-pointer ${isSuspended ? 'opacity-60' : ''}`}>
+                            <td className="px-5 py-3.5">
                               <div className="flex items-center gap-3">
-                                {/* Avatar: use Google picture if available, else gradient initials */}
                                 {t.avatar_url ? (
-                                  <img
-                                    src={t.avatar_url}
-                                    alt={t.full_name}
-                                    className="w-9 h-9 rounded-full object-cover shrink-0 shadow-sm ring-2 ring-white"
-                                    onError={e => { (e.currentTarget as HTMLImageElement).style.display = 'none' }}
-                                  />
+                                  <img src={t.avatar_url} alt={t.full_name}
+                                    className="w-9 h-9 rounded-full object-cover shrink-0 ring-2 ring-white shadow-sm"
+                                    onError={e => { (e.currentTarget as HTMLImageElement).style.display = 'none' }} />
                                 ) : (
-                                  <div className={`w-9 h-9 rounded-full bg-gradient-to-br ${grad} flex items-center justify-center shrink-0 shadow-sm`}>
+                                  <div className={`w-9 h-9 rounded-full bg-gradient-to-br ${grad} flex items-center justify-center shrink-0`}>
                                     <span className="text-xs font-bold text-white">{initials}</span>
                                   </div>
                                 )}
                                 <div>
                                   <p className="font-semibold text-gray-900 text-sm leading-tight">{t.full_name}</p>
-                                  {t.email && <p className="text-[11px] text-gray-400 mt-0.5">{t.email}</p>}
+                                  {t.email && <p className="text-[11px] text-gray-400 mt-0.5 truncate max-w-[160px]">{t.email}</p>}
                                 </div>
                               </div>
                             </td>
-                            {/* Provider badge */}
-                            <td className="px-5 py-4 hidden lg:table-cell">
+                            <td className="px-5 py-3.5 hidden lg:table-cell">
                               {t.provider === 'google' ? (
-                                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-bold bg-red-50 text-red-600 border border-red-100">
+                                <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-lg text-[11px] font-semibold bg-red-50 text-red-600 border border-red-100">
                                   <svg className="w-3 h-3" viewBox="0 0 24 24" fill="currentColor">
                                     <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
                                     <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
@@ -480,42 +468,29 @@ export default function AdminUsers() {
                                   Google
                                 </span>
                               ) : (
-                                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-bold bg-gray-50 text-gray-500 border border-gray-100">
-                                  <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
-                                  Email
-                                </span>
+                                <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-lg text-[11px] font-semibold bg-gray-50 text-gray-500 border border-gray-100">Email</span>
                               )}
                             </td>
-                            <td className="px-5 py-4 hidden md:table-cell">
-                              {t.phone ? (
-                                <div className="flex items-center gap-1.5">
-                                  <Phone className="w-3 h-3 text-gray-400" />
-                                  <span className="text-sm text-gray-600">{t.phone}</span>
-                                </div>
-                              ) : (
-                                <span className="text-xs text-gray-300 italic">No phone</span>
-                              )}
+                            <td className="px-5 py-3.5 hidden md:table-cell">
+                              {t.phone
+                                ? <div className="flex items-center gap-1.5"><Phone className="w-3 h-3 text-gray-400" /><span className="text-sm text-gray-600">{t.phone}</span></div>
+                                : <span className="text-xs text-gray-300">—</span>}
                             </td>
-                            <td className="px-5 py-4">
-                              <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold ${
-                                t.enquiry_count > 0 ? 'bg-blue-50 text-blue-700' : 'bg-gray-100 text-gray-400'
-                              }`}>
-                                <MessageSquare className="w-3 h-3" />
-                                {t.enquiry_count} {t.enquiry_count === 1 ? 'enquiry' : 'enquiries'}
+                            <td className="px-5 py-3.5">
+                              <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-xs font-semibold ${t.enquiry_count > 0 ? 'bg-blue-50 text-blue-700' : 'bg-gray-100 text-gray-400'}`}>
+                                <MessageSquare className="w-3 h-3" />{t.enquiry_count}
                               </span>
                             </td>
-                            <td className="px-5 py-4 hidden sm:table-cell">
-                              <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold ${
-                                isSuspended ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-700'
-                              }`}>
+                            <td className="px-5 py-3.5 hidden sm:table-cell">
+                              <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-semibold ${isSuspended ? 'bg-amber-50 text-amber-700' : 'bg-emerald-50 text-emerald-700'}`}>
                                 <span className={`w-1.5 h-1.5 rounded-full ${isSuspended ? 'bg-amber-500' : 'bg-emerald-500'}`} />
                                 {isSuspended ? 'Suspended' : 'Active'}
                               </span>
                             </td>
-                            <td className="px-5 py-4 hidden sm:table-cell">
+                            <td className="px-5 py-3.5 hidden sm:table-cell">
                               <span className="text-xs text-gray-400">{timeAgo(t.created_at)}</span>
                             </td>
-                            <td className="px-3 py-4" onClick={e => e.stopPropagation()}>
+                            <td className="px-3 py-3.5" onClick={e => e.stopPropagation()}>
                               <div className="flex items-center gap-1">
                                 <ChevronRight className="w-3.5 h-3.5 text-gray-300" />
                                 <ActionMenu tenant={t} onAction={setConfirm} />

@@ -372,16 +372,14 @@ function SupportTab() {
     <div className="flex flex-1 overflow-hidden gap-0">
       {/* Ticket list */}
       <div className={`flex flex-col border-r border-gray-100 bg-white w-full lg:w-80 xl:w-96 shrink-0 ${selected ? 'hidden lg:flex' : 'flex'}`}>
-        <div className="flex items-center gap-1 px-3 py-3 border-b border-gray-50 overflow-x-auto">
+        <div className="flex items-center gap-1.5 px-3 py-3 border-b border-gray-100 overflow-x-auto no-scrollbar">
           {(['all', 'open', 'in_progress', 'resolved', 'closed'] as const).map(key => (
             <button key={key} onClick={() => setFilterStatus(key)}
-              className={`shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-all border ${
+              className={`shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all ${
                 filterStatus === key ? 'bg-gray-900 text-white border-gray-900' : 'bg-white text-gray-500 border-gray-200 hover:border-gray-400'
               }`}>
               {key === 'all' ? 'All' : STATUS_META[key].label}
-              <span className={`text-[10px] font-bold px-1 rounded ${filterStatus === key ? 'text-white/70' : 'text-gray-400'}`}>
-                {counts[key]}
-              </span>
+              <span className={`text-[10px] font-bold ${filterStatus === key ? 'text-white/70' : 'text-gray-400'}`}>{counts[key]}</span>
             </button>
           ))}
         </div>
@@ -497,16 +495,14 @@ function InboxTab() {
     <div className="flex flex-1 overflow-hidden gap-0">
       {/* Enquiry list */}
       <div className={`flex flex-col border-r border-gray-100 bg-white w-full lg:w-80 xl:w-96 shrink-0 ${selected ? 'hidden lg:flex' : 'flex'}`}>
-        <div className="flex items-center gap-1 px-3 py-3 border-b border-gray-50 overflow-x-auto">
+        <div className="flex items-center gap-1.5 px-3 py-3 border-b border-gray-100 overflow-x-auto no-scrollbar">
           {(['all', 'open', 'replied', 'closed'] as const).map(key => (
             <button key={key} onClick={() => setFilterStatus(key)}
-              className={`shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-all border ${
-                filterStatus === key ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-500 border-gray-200 hover:border-blue-300'
+              className={`shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all ${
+                filterStatus === key ? 'bg-gray-900 text-white border-gray-900' : 'bg-white text-gray-500 border-gray-200 hover:border-gray-400'
               }`}>
               {key === 'all' ? 'All' : ENQUIRY_STATUS_META[key].label}
-              <span className={`text-[10px] font-bold px-1 rounded ${filterStatus === key ? 'text-white/70' : 'text-gray-400'}`}>
-                {counts[key]}
-              </span>
+              <span className={`text-[10px] font-bold ${filterStatus === key ? 'text-white/70' : 'text-gray-400'}`}>{counts[key]}</span>
             </button>
           ))}
         </div>
@@ -599,42 +595,31 @@ export default function AdminSupportPage() {
 
         <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
           {/* Page header */}
-          <header className="flex items-center justify-between px-6 py-4 bg-white border-b border-gray-100 shrink-0">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-xl bg-blue-50 flex items-center justify-center">
-                <HeadphonesIcon className="w-4 h-4 text-blue-600" />
-              </div>
-              <div>
-                <h1 className="text-base font-extrabold text-gray-900">Support & Inbox</h1>
-                <p className="text-xs text-gray-400">Manage support tickets and property enquiries</p>
-              </div>
+          <header className="flex items-center justify-between pl-14 pr-4 md:px-6 py-3.5 bg-white border-b border-gray-100 shrink-0">
+            <div>
+              <h1 className="text-base font-extrabold text-gray-900">Support & Inbox</h1>
+              <p className="text-xs text-gray-400 mt-0.5">Manage tickets and property enquiries</p>
             </div>
           </header>
 
           {/* Tabs */}
-          <div className="flex items-center gap-1 px-6 py-3 bg-white border-b border-gray-100 shrink-0">
-            <button
-              onClick={() => setTab('support')}
+          <div className="flex items-center gap-1.5 px-4 md:px-6 py-3 bg-white border-b border-gray-100 shrink-0">
+            <button onClick={() => setTab('support')}
               className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all ${
-                tab === 'support'
-                  ? 'bg-gray-900 text-white'
-                  : 'text-gray-500 hover:text-gray-900 hover:bg-gray-100'
+                tab === 'support' ? 'bg-gray-900 text-white' : 'text-gray-500 hover:text-gray-900 hover:bg-gray-100'
               }`}>
               <HeadphonesIcon className="w-4 h-4" />
               Support
             </button>
-            <button
-              onClick={() => setTab('inbox')}
+            <button onClick={() => setTab('inbox')}
               className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all relative ${
-                tab === 'inbox'
-                  ? 'bg-blue-600 text-white'
-                  : 'text-gray-500 hover:text-gray-900 hover:bg-gray-100'
+                tab === 'inbox' ? 'bg-gray-900 text-white' : 'text-gray-500 hover:text-gray-900 hover:bg-gray-100'
               }`}>
               <Inbox className="w-4 h-4" />
-              Enquiries Inbox
+              Enquiries
               {openCount > 0 && (
                 <span className={`inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full text-[10px] font-bold ${
-                  tab === 'inbox' ? 'bg-white text-blue-600' : 'bg-blue-600 text-white'
+                  tab === 'inbox' ? 'bg-white text-gray-900' : 'bg-blue-600 text-white'
                 }`}>
                   {openCount > 99 ? '99+' : openCount}
                 </span>
