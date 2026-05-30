@@ -22,11 +22,11 @@ const TYPE_BADGE: Record<string, { label: string; cls: string }> = {
   rent: { label: 'For Rent', cls: 'bg-emerald-500 text-white' },
 }
 
-const STATUS_META: Record<string, { label: string; icon: any; cls: string }> = {
-  available: { label: 'Available', icon: CheckCircle, cls: 'text-emerald-600 bg-emerald-50' },
-  taken: { label: 'Taken', icon: XCircle, cls: 'text-red-500 bg-red-50' },
-  coming_soon: { label: 'Coming Soon', icon: Clock, cls: 'text-blue-600 bg-blue-50' },
-  under_negotiation: { label: 'Negotiating', icon: Clock, cls: 'text-amber-600 bg-amber-50' },
+const STATUS_META: Record<string, { label: string; icon: any; cls: string; dot: string }> = {
+  available:         { label: 'Available',  icon: CheckCircle, cls: 'text-emerald-600 bg-emerald-50', dot: 'bg-emerald-500' },
+  taken:             { label: 'Taken',       icon: XCircle,     cls: 'text-red-500 bg-red-50',         dot: 'bg-red-500'     },
+  coming_soon:       { label: 'Coming Soon', icon: Clock,       cls: 'text-blue-600 bg-blue-50',       dot: 'bg-blue-500'    },
+  under_negotiation: { label: 'Negotiating', icon: Clock,       cls: 'text-amber-600 bg-amber-50',     dot: 'bg-amber-500'   },
 }
 
 type EditForm = { title: string; city: string; price: string; type: string; status: string; bedrooms: string; bathrooms: string }
