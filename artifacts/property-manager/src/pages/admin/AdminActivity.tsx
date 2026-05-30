@@ -113,14 +113,15 @@ export default function AdminActivity() {
             subtitle={`${items.length.toLocaleString()} total events`}
           />
 
-          <div className="flex-1 overflow-y-auto p-4 md:p-6 pb-24 md:pb-6 space-y-4">
-            {/* Type filter chips */}
-            <div className="flex items-center gap-2 overflow-x-auto pb-1">
+          <div className="flex-1 overflow-y-auto p-4 md:p-6 pb-24 md:pb-6 space-y-5">
+
+            {/* Filter chips */}
+            <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar">
               <button onClick={() => setTypeFilter('all')}
-                className={`shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all ${
-                  typeFilter === 'all' ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-600 border-gray-200 hover:border-blue-300'
+                className={`shrink-0 flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-semibold border transition-all ${
+                  typeFilter === 'all' ? 'bg-gray-900 text-white border-gray-900' : 'bg-white text-gray-600 border-gray-200 hover:border-gray-400'
                 }`}>
-                <Filter className="w-3 h-3" /> All
+                All
                 <span className={`px-1.5 py-0.5 rounded-md text-[10px] font-bold ${typeFilter === 'all' ? 'bg-white/20 text-white' : 'bg-gray-100 text-gray-500'}`}>{items.length}</span>
               </button>
               {ALL_TYPES.map(t => {
@@ -129,10 +130,10 @@ export default function AdminActivity() {
                 const count = items.filter(i => i.type === t).length
                 return (
                   <button key={t} onClick={() => setTypeFilter(t)}
-                    className={`shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all ${
-                      typeFilter === t ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-600 border-gray-200 hover:border-blue-300'
+                    className={`shrink-0 flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-semibold border transition-all ${
+                      typeFilter === t ? 'bg-gray-900 text-white border-gray-900' : 'bg-white text-gray-600 border-gray-200 hover:border-gray-400'
                     }`}>
-                    <Icon className="w-3 h-3" /> {meta.label}
+                    <Icon className="w-3 h-3" />{meta.label}
                     <span className={`px-1.5 py-0.5 rounded-md text-[10px] font-bold ${typeFilter === t ? 'bg-white/20 text-white' : 'bg-gray-100 text-gray-500'}`}>{count}</span>
                   </button>
                 )
@@ -149,25 +150,27 @@ export default function AdminActivity() {
                 <p className="text-gray-400 font-medium">No activity yet</p>
               </div>
             ) : (
-              <div className="space-y-6">
+              <div className="space-y-5">
                 {groups.map(group => (
                   <div key={group.label}>
-                    <p className="text-xs font-black uppercase tracking-widest text-gray-400 mb-3 px-1">{group.label}</p>
+                    <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-2.5 px-1">{group.label}</p>
                     <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden divide-y divide-gray-50">
                       {group.items.map(item => {
                         const meta = TYPE_META[item.type]
                         const Icon = meta.icon
                         return (
-                          <div key={item.id} className="flex items-start gap-3 px-5 py-3.5 hover:bg-gray-50/60 transition-colors">
-                            <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 mt-0.5 ${meta.bg}`}>
+                          <div key={item.id} className="flex items-center gap-3 px-5 py-3 hover:bg-gray-50/60 transition-colors">
+                            <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${meta.bg}`}>
                               <Icon className={`w-4 h-4 ${meta.text}`} />
                             </div>
                             <div className="flex-1 min-w-0">
                               <p className="text-sm font-semibold text-gray-900 leading-snug truncate">{item.title}</p>
                               {item.sub && <p className="text-xs text-gray-400 mt-0.5 truncate">{item.sub}</p>}
-                              <span className="inline-block mt-1 text-[10px] font-semibold text-gray-300 uppercase tracking-wide">{meta.label}</span>
                             </div>
-                            <span className="text-[11px] text-gray-400 shrink-0 mt-0.5">{relativeTime(item.ts)}</span>
+                            <div className="shrink-0 text-right">
+                              <span className="text-[10px] font-semibold text-gray-300 uppercase tracking-wide block">{meta.label}</span>
+                              <span className="text-[11px] text-gray-400">{relativeTime(item.ts)}</span>
+                            </div>
                           </div>
                         )
                       })}

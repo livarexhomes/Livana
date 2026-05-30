@@ -3,7 +3,7 @@ import { Link } from 'wouter'
 import {
   Building2, Search, LayoutGrid, List,
   MapPin, BedDouble, Bath, Pencil, Trash2, ArrowRight, Plus, Eye,
-  SlidersHorizontal, CheckCircle, Clock, XCircle, X, Save, Loader2, ImagePlus, Star
+  CheckCircle, Clock, XCircle, X, Save, Loader2, ImagePlus, Star
 } from 'lucide-react'
 import AdminSidebar from '../../components/AdminSidebar'
 import AdminHeader from '../../components/AdminHeader'
@@ -356,49 +356,64 @@ export default function AdminProperties() {
             subtitle={`${properties.length.toLocaleString()} total listings`}
             action={
               <button type="button" onClick={() => { setAddForm({ ...emptyAdd, assigned_to: currentAdminId ?? '' }); setAddOpen(true) }}
-                className="inline-flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-xl transition-colors shadow-sm shadow-blue-600/20">
+                className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-xl transition-colors shadow-sm">
                 <Plus className="w-4 h-4" />
                 <span className="hidden sm:inline">Add Listing</span>
               </button>
             }
           />
 
-          <main className="flex-1 overflow-y-auto p-4 md:p-6 pb-24 md:pb-6 space-y-4">
-            {/* Summary chips */}
-            <div className="flex items-center gap-2 overflow-x-auto pb-1">
+          <main className="flex-1 overflow-y-auto p-4 md:p-6 pb-24 md:pb-6 space-y-5">
+
+            {/* Stat cards */}
+            <div className="grid grid-cols-3 gap-3">
+              {[
+                { label: 'Total', value: properties.length, icon: Building2, color: 'text-blue-600', bg: 'bg-blue-50' },
+                { label: 'Available', value: available, icon: CheckCircle, color: 'text-emerald-600', bg: 'bg-emerald-50' },
+                { label: 'Taken', value: taken, icon: XCircle, color: 'text-red-500', bg: 'bg-red-50' },
+              ].map(s => (
+                <div key={s.label} className="bg-white rounded-2xl border border-gray-100 px-4 py-3.5 flex items-center gap-3 shadow-sm">
+                  <div className={`w-9 h-9 rounded-xl ${s.bg} flex items-center justify-center shrink-0`}>
+                    <s.icon className={`w-4.5 h-4.5 ${s.color}`} />
+                  </div>
+                  <div>
+                    <p className="text-xl font-extrabold text-gray-900 leading-none">{s.value}</p>
+                    <p className="text-xs text-gray-400 mt-0.5">{s.label}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Filters row */}
+            <div className="flex items-center gap-2 flex-wrap">
               {STATUS_TABS.map(tab => (
-                <button key={tab.key} type="button"
-                  onClick={() => setStatusFilter(tab.key)}
-                  className={`shrink-0 flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all border ${statusFilter === tab.key
-                    ? 'bg-blue-600 text-white border-blue-600 shadow-sm shadow-blue-600/20'
-                    : 'bg-white text-gray-600 border-gray-200 hover:border-blue-300 hover:text-blue-600'
-                    }`}>
+                <button key={tab.key} type="button" onClick={() => setStatusFilter(tab.key)}
+                  className={`shrink-0 flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-semibold border transition-all ${
+                    statusFilter === tab.key
+                      ? 'bg-gray-900 text-white border-gray-900'
+                      : 'bg-white text-gray-600 border-gray-200 hover:border-gray-400'
+                  }`}>
                   {tab.label}
-                  <span className={`px-1.5 py-0.5 rounded-md text-[11px] font-bold ${statusFilter === tab.key ? 'bg-white/20 text-white' : 'bg-gray-100 text-gray-500'
-                    }`}>{tab.count}</span>
+                  <span className={`px-1.5 py-0.5 rounded-md text-[10px] font-bold ${statusFilter === tab.key ? 'bg-white/20 text-white' : 'bg-gray-100 text-gray-500'}`}>{tab.count}</span>
                 </button>
               ))}
             </div>
 
             {/* Search + controls */}
-            <div className="flex items-center gap-2 md:gap-3">
-              <div className="flex-1 flex items-center gap-2 bg-white border border-gray-200 rounded-xl px-4 py-2.5 shadow-sm focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-blue-500 transition-all">
+            <div className="flex items-center gap-2">
+              <div className="flex-1 flex items-center gap-2 bg-white border border-gray-200 rounded-xl px-3.5 py-2.5 shadow-sm focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-blue-500 transition-all">
                 <Search className="w-4 h-4 text-gray-400 shrink-0" />
                 <input value={search} onChange={e => setSearch(e.target.value)}
                   placeholder="Search by title, city, type…"
                   className="flex-1 text-sm text-gray-700 placeholder-gray-400 focus:outline-none bg-transparent" />
               </div>
-              <button className="flex items-center gap-2 px-3 py-2.5 bg-white border border-gray-200 rounded-xl text-sm font-semibold text-gray-600 hover:bg-gray-50 transition-colors shadow-sm">
-                <SlidersHorizontal className="w-4 h-4" />
-                <span className="hidden sm:inline">Filter</span>
-              </button>
               <div className="flex items-center bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
                 <button type="button" onClick={() => setViewMode('grid')}
-                  className={`p-2.5 transition-colors ${viewMode === 'grid' ? 'bg-blue-600 text-white' : 'text-gray-400 hover:bg-gray-50'}`}>
+                  className={`p-2.5 transition-colors ${viewMode === 'grid' ? 'bg-gray-900 text-white' : 'text-gray-400 hover:bg-gray-50'}`}>
                   <LayoutGrid className="w-4 h-4" />
                 </button>
                 <button type="button" onClick={() => setViewMode('list')}
-                  className={`p-2.5 transition-colors ${viewMode === 'list' ? 'bg-blue-600 text-white' : 'text-gray-400 hover:bg-gray-50'}`}>
+                  className={`p-2.5 transition-colors ${viewMode === 'list' ? 'bg-gray-900 text-white' : 'text-gray-400 hover:bg-gray-50'}`}>
                   <List className="w-4 h-4" />
                 </button>
               </div>
@@ -421,79 +436,55 @@ export default function AdminProperties() {
                 <p className="text-gray-500 font-medium">{search ? 'No properties match your search.' : 'No properties found.'}</p>
               </div>
             ) : viewMode === 'grid' ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 md:gap-5">
+              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
                 {filtered.map(p => {
                   const badge = TYPE_BADGE[p.type] ?? TYPE_BADGE.sale
                   const status = STATUS_META[p.status] ?? STATUS_META.available
                   const StatusIcon = status.icon
+                  const cover = getCoverImage(p)
                   return (
-                    <div key={p.id} className="bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 group">
-                      <div className="relative h-48 overflow-hidden bg-gray-100">
-                        {getCoverImage(p) ? (
-                          <img src={getCoverImage(p)!} alt={p.title}
-                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
+                    <div key={p.id} className="bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-sm hover:shadow-md transition-all duration-200 group flex flex-col">
+                      {/* Image */}
+                      <div className="relative h-44 overflow-hidden bg-gray-100 shrink-0">
+                        {cover ? (
+                          <img src={cover} alt={p.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                         ) : (
-                          <div className="w-full h-full flex flex-col items-center justify-center gap-1.5 text-gray-300">
-                            <ImagePlus className="w-8 h-8" />
-                            <span className="text-xs font-medium">No photo</span>
+                          <div className="w-full h-full flex flex-col items-center justify-center gap-2 text-gray-300">
+                            <Building2 className="w-8 h-8" />
+                            <span className="text-xs">No photo</span>
                           </div>
                         )}
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent" />
-                        <div className="absolute top-3 left-3 flex items-center gap-2">
-                          <span className={`px-2.5 py-1 rounded-lg text-xs font-bold shadow-sm ${badge.cls}`}>{badge.label}</span>
-                          {p.featured && (
-                            <span className="px-2 py-0.5 bg-amber-400 text-gray-900 text-[10px] font-black rounded-lg uppercase tracking-wide shadow-sm">
-                              Featured
-                            </span>
-                          )}
-                        </div>
-                        <div className="absolute bottom-3 left-3">
-                          <p className="text-xs font-bold text-white/90 bg-black/30 backdrop-blur-sm px-2 py-1 rounded-lg">
-                            ₦{Number(p.price).toLocaleString()}
-                          </p>
-                        </div>
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
+                        <span className={`absolute top-3 left-3 px-2 py-0.5 rounded-lg text-[11px] font-bold ${badge.cls}`}>{badge.label}</span>
+                        {p.featured && <span className="absolute top-3 right-3 px-2 py-0.5 bg-amber-400 text-gray-900 text-[10px] font-black rounded-lg">★ Featured</span>}
+                        <p className="absolute bottom-3 left-3 text-sm font-extrabold text-white drop-shadow">₦{Number(p.price).toLocaleString()}</p>
                       </div>
 
-                      <div className="p-4">
-                        <div className="flex items-start justify-between gap-2 mb-2.5">
+                      {/* Body */}
+                      <div className="p-4 flex flex-col flex-1">
+                        <div className="flex items-start justify-between gap-2 mb-1.5">
                           <h3 className="font-bold text-gray-900 text-sm leading-snug line-clamp-1 flex-1">{p.title}</h3>
-                          <div className={`shrink-0 flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-bold ${status.cls}`}>
-                            <StatusIcon className="w-3 h-3" />
+                          <span className={`shrink-0 inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-bold ${status.cls}`}>
+                            <span className={`w-1.5 h-1.5 rounded-full ${status.dot}`} />
                             {status.label}
-                          </div>
+                          </span>
                         </div>
 
-                        <div className="flex items-center gap-1.5 text-xs text-gray-400 mb-3">
-                          <MapPin className="w-3.5 h-3.5 shrink-0" />
-                          {p.city}
-                          {p.landlords?.full_name && (
-                            <span className="text-gray-300 mx-1">·</span>
-                          )}
-                          {p.landlords?.full_name && (
-                            <span className="truncate">{p.landlords.full_name}</span>
-                          )}
+                        <div className="flex items-center gap-1 text-xs text-gray-400 mb-3">
+                          <MapPin className="w-3 h-3 shrink-0" />
+                          <span className="truncate">{p.city}{p.landlords?.full_name ? ` · ${p.landlords.full_name}` : ''}</span>
                         </div>
 
                         {(p.bedrooms != null || p.bathrooms != null) && (
                           <div className="flex items-center gap-3 text-xs text-gray-500 mb-3 pb-3 border-b border-gray-100">
-                            {p.bedrooms != null && (
-                              <span className="flex items-center gap-1">
-                                <BedDouble className="w-3.5 h-3.5 text-gray-400" />
-                                {p.bedrooms} Beds
-                              </span>
-                            )}
-                            {p.bathrooms != null && (
-                              <span className="flex items-center gap-1">
-                                <Bath className="w-3.5 h-3.5 text-gray-400" />
-                                {p.bathrooms} Baths
-                              </span>
-                            )}
+                            {p.bedrooms != null && <span className="flex items-center gap-1"><BedDouble className="w-3.5 h-3.5 text-gray-400" />{p.bedrooms} Beds</span>}
+                            {p.bathrooms != null && <span className="flex items-center gap-1"><Bath className="w-3.5 h-3.5 text-gray-400" />{p.bathrooms} Baths</span>}
                             <span className="ml-auto text-[10px] font-semibold text-gray-400 uppercase">{p.property_type ?? p.type}</span>
                           </div>
                         )}
 
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-1">
+                        <div className="flex items-center justify-between mt-auto pt-1">
+                          <div className="flex items-center gap-0.5">
                             <button title="Edit" onClick={() => openEdit(p)}
                               className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-colors">
                               <Pencil className="w-3.5 h-3.5" />
@@ -504,7 +495,7 @@ export default function AdminProperties() {
                             </button>
                           </div>
                           <Link href={`/listings/${p.id}`}
-                            className="flex items-center gap-1 text-xs font-bold text-blue-600 hover:text-blue-700 transition-colors">
+                            className="flex items-center gap-1 text-xs font-semibold text-blue-600 hover:text-blue-700 transition-colors">
                             View <ArrowRight className="w-3 h-3" />
                           </Link>
                         </div>
@@ -516,52 +507,45 @@ export default function AdminProperties() {
             ) : (
               <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-sm">
                 <div className="overflow-x-auto">
-                  <table className="w-full min-w-[520px]">
-                    <thead className="bg-slate-50 border-b border-gray-100">
-                      <tr>
-                        <th className="text-left px-5 py-3.5 text-[10px] font-black text-gray-400 uppercase tracking-widest">Property</th>
-                        <th className="text-left px-5 py-3.5 text-[10px] font-black text-gray-400 uppercase tracking-widest hidden md:table-cell">Landlord</th>
-                        <th className="text-left px-5 py-3.5 text-[10px] font-black text-gray-400 uppercase tracking-widest hidden sm:table-cell">Price</th>
-                        <th className="text-left px-5 py-3.5 text-[10px] font-black text-gray-400 uppercase tracking-widest">Status</th>
-                        <th className="text-right px-5 py-3.5 text-[10px] font-black text-gray-400 uppercase tracking-widest">Actions</th>
+                  <table className="w-full min-w-[560px]">
+                    <thead>
+                      <tr className="border-b border-gray-100 bg-gray-50/70">
+                        <th className="text-left px-5 py-3 text-[10px] font-black text-gray-400 uppercase tracking-widest">Property</th>
+                        <th className="text-left px-5 py-3 text-[10px] font-black text-gray-400 uppercase tracking-widest hidden md:table-cell">Landlord</th>
+                        <th className="text-left px-5 py-3 text-[10px] font-black text-gray-400 uppercase tracking-widest hidden sm:table-cell">Price</th>
+                        <th className="text-left px-5 py-3 text-[10px] font-black text-gray-400 uppercase tracking-widest">Status</th>
+                        <th className="text-right px-5 py-3 text-[10px] font-black text-gray-400 uppercase tracking-widest">Actions</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-50">
                       {filtered.map(p => {
                         const badge = TYPE_BADGE[p.type] ?? TYPE_BADGE.sale
                         const status = STATUS_META[p.status] ?? STATUS_META.available
-                        const StatusIcon = status.icon
+                        const cover = getCoverImage(p)
                         return (
-                          <tr key={p.id} className="hover:bg-slate-50/60 transition-colors">
+                          <tr key={p.id} className="hover:bg-gray-50/60 transition-colors group">
                             <td className="px-5 py-3.5">
                               <div className="flex items-center gap-3">
-                                <div className="relative w-12 h-12 rounded-xl overflow-hidden shrink-0 bg-gray-100">
-                                  {getCoverImage(p) ? (
-                                    <img src={getCoverImage(p)!} alt={p.title} className="w-full h-full object-cover" />
-                                  ) : (
-                                    <div className="w-full h-full flex items-center justify-center text-gray-300">
-                                      <ImagePlus className="w-5 h-5" />
-                                    </div>
-                                  )}
+                                <div className="w-11 h-11 rounded-xl overflow-hidden shrink-0 bg-gray-100">
+                                  {cover
+                                    ? <img src={cover} alt={p.title} className="w-full h-full object-cover" />
+                                    : <div className="w-full h-full flex items-center justify-center text-gray-300"><Building2 className="w-4 h-4" /></div>
+                                  }
                                 </div>
-                                <div>
-                                  <p className="font-semibold text-gray-900 text-sm leading-tight line-clamp-1">{p.title}</p>
+                                <div className="min-w-0">
+                                  <p className="font-semibold text-gray-900 text-sm leading-tight truncate max-w-[180px]">{p.title}</p>
                                   <div className="flex items-center gap-1.5 text-[11px] text-gray-400 mt-0.5">
-                                    <MapPin className="w-3 h-3" />{p.city}
-                                    <span className={`ml-1 px-1.5 py-0.5 rounded-md text-[10px] font-bold ${badge.cls}`}>{badge.label}</span>
+                                    <MapPin className="w-3 h-3 shrink-0" />{p.city}
+                                    <span className={`px-1.5 py-0.5 rounded-md text-[10px] font-bold ${badge.cls}`}>{badge.label}</span>
                                   </div>
                                 </div>
                               </div>
                             </td>
-                            <td className="px-5 py-3.5 text-sm text-gray-600 hidden md:table-cell">
-                              {p.landlords?.full_name ?? '—'}
-                            </td>
-                            <td className="px-5 py-3.5 text-sm font-bold text-gray-900 hidden sm:table-cell">
-                              ₦{Number(p.price).toLocaleString()}
-                            </td>
+                            <td className="px-5 py-3.5 text-sm text-gray-600 hidden md:table-cell">{p.landlords?.full_name ?? <span className="text-gray-300">—</span>}</td>
+                            <td className="px-5 py-3.5 text-sm font-bold text-gray-900 hidden sm:table-cell">₦{Number(p.price).toLocaleString()}</td>
                             <td className="px-5 py-3.5">
-                              <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-bold ${status.cls}`}>
-                                <StatusIcon className="w-3 h-3" />{status.label}
+                              <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold ${status.cls}`}>
+                                <span className={`w-1.5 h-1.5 rounded-full ${status.dot}`} />{status.label}
                               </span>
                             </td>
                             <td className="px-5 py-3.5">
