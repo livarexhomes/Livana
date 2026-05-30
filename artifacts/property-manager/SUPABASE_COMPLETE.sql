@@ -522,15 +522,24 @@ CREATE POLICY "Admins read contact messages"
 -- ── property_comments ────────────────────────────────────────
 
 CREATE TABLE IF NOT EXISTS public.property_comments (
-  id          UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
-  property_id UUID        NOT NULL REFERENCES public.properties(id) ON DELETE CASCADE,
-  tenant_id   UUID        REFERENCES public.tenants(id) ON DELETE SET NULL,
-  tenant_name TEXT        NOT NULL,
-  message     TEXT        NOT NULL,
-  created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  id           UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+  property_id  UUID        NOT NULL REFERENCES public.properties(id) ON DELETE CASCADE,
+  tenant_id    UUID        REFERENCES public.tenants(id) ON DELETE SET NULL,
+  tenant_name  TEXT        NOT NULL,
+  message      TEXT        NOT NULL,
+  -- reply support: parent_id links a reply to its parent comment
+  parent_id    UUID        REFERENCES public.property_comments(id) ON DELETE CASCADE,
+  -- author_role distinguishes tenant comments from landlord/admin replies
+  author_role  TEXT        NOT NULL DEFAULT 'tenant' CHECK (author_role IN ('tenant', 'landlord', 'admin')),
+  created_at   TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+-- Migration: add columns if table already exists
+ALTER TABLE public.property_comments ADD COLUMN IF NOT EXISTS parent_id   UUID REFERENCES public.property_comments(id) ON DELETE CASCADE;
+ALTER TABLE public.property_comments ADD COLUMN IF NOT EXISTS author_role TEXT NOT NULL DEFAULT 'tenant' CHECK (author_role IN ('tenant', 'landlord', 'admin'));
+
 CREATE INDEX IF NOT EXISTS idx_property_comments_property_id ON public.property_comments(property_id);
+CREATE INDEX IF NOT EXISTS idx_property_comments_parent_id   ON public.property_comments(parent_id);
 
 ALTER TABLE public.property_comments ENABLE ROW LEVEL SECURITY;
 
