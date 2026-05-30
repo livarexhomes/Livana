@@ -186,7 +186,8 @@ CREATE TABLE IF NOT EXISTS public.tenants (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
--- Migration: add columns if table already exists
+-- Migration: add columns if table already exists (safe to re-run)
+ALTER TABLE public.tenants ADD COLUMN IF NOT EXISTS email      TEXT;
 ALTER TABLE public.tenants ADD COLUMN IF NOT EXISTS avatar_url TEXT;
 ALTER TABLE public.tenants ADD COLUMN IF NOT EXISTS provider   TEXT NOT NULL DEFAULT 'email';
 
