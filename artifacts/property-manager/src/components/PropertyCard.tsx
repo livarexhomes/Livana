@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link, useLocation } from 'wouter'
-import { MapPin, BedDouble, Bath, Heart, Building2, ArrowUpRight } from 'lucide-react'
+import { MapPin, BedDouble, Bath, Heart, Building2, Maximize2, ShieldCheck } from 'lucide-react'
 import type { PropertyWithLandlord } from '../lib/types'
 import { getSupabaseImageUrl } from '../lib/supabase'
 import { createClient } from '../lib/supabase'
@@ -11,11 +11,18 @@ interface PropertyCardProps {
   isAuthenticated?: boolean
 }
 
-const TYPE_CONFIG: Record<string, { label: string; bg: string; text: string }> = {
-  sale:       { label: 'For Sale',   bg: 'bg-blue-600',    text: 'text-white' },
-  rent:       { label: 'For Rent',   bg: 'bg-violet-600',  text: 'text-white' },
-  lease:      { label: 'Lease',      bg: 'bg-emerald-600', text: 'text-white' },
-  commercial: { label: 'Commercial', bg: 'bg-slate-700',   text: 'text-white' },
+const TYPE_CONFIG: Record<string, { label: string; cls: string }> = {
+  sale:       { label: 'For Sale',   cls: 'bg-blue-600 text-white' },
+  rent:       { label: 'For Rent',   cls: 'bg-violet-600 text-white' },
+  lease:      { label: 'Lease',      cls: 'bg-emerald-600 text-white' },
+  commercial: { label: 'Commercial', cls: 'bg-slate-700 text-white' },
+}
+
+const STATUS_DOT: Record<string, string> = {
+  available:         'bg-emerald-400',
+  taken:             'bg-red-400',
+  coming_soon:       'bg-blue-400',
+  under_negotiation: 'bg-amber-400',
 }
 
 function formatPrice(n: number) {
@@ -32,6 +39,8 @@ export default function PropertyCard({ property: p, saved: initialSaved = false,
   const cover = p.property_images?.find(i => i.is_cover) ?? p.property_images?.[0]
   const coverUrl = cover ? getSupabaseImageUrl(cover.storage_path) : null
   const cfg = TYPE_CONFIG[p.type] ?? TYPE_CONFIG.sale
+  const statusDot = STATUS_DOT[p.status] ?? 'bg-gray-400'
+  const statusLabel = p.status.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
 
   async function handleSave(e: React.MouseEvent) {
     e.preventDefault()
@@ -57,32 +66,32 @@ export default function PropertyCard({ property: p, saved: initialSaved = false,
   }
 
   return (
-    <Link href={`/listings/${p.id}`} className="block group">
-      <div className="bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
+    <Link href={`/listings/${p.id}`} className="block group outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded-3xl">
+      <article className="bg-white rounded-3xl overflow-hidden border border-gray-100/80 shadow-sm hover:shadow-2xl hover:shadow-gray-200/70 hover:-translate-y-1.5 transition-all duration-300 ease-out">
 
-        {/* Image */}
-        <div className="relative h-52 bg-gray-100 overflow-hidden">
+        {/* IMAGE */}
+        <div className="relative h-56 bg-gray-100 overflow-hidden">
           {coverUrl ? (
             <img
               src={coverUrl}
               alt={p.title}
-              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+              className="w-full h-full object-cover group-hover:scale-[1.06] transition-transform duration-700 ease-out"
             />
           ) : (
-            <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200 gap-3">
-              <div className="w-14 h-14 rounded-2xl bg-white/70 flex items-center justify-center shadow-sm">
-                <Building2 className="w-7 h-7 text-gray-400" strokeWidth={1.5} />
+            <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 gap-2">
+              <div className="w-12 h-12 rounded-2xl bg-white shadow-sm flex items-center justify-center">
+                <Building2 className="w-6 h-6 text-gray-300" strokeWidth={1.5} />
               </div>
-              <span className="text-xs font-medium text-gray-400">No photo yet</span>
+              <span className="text-[11px] font-medium text-gray-300">No photo</span>
             </div>
           )}
 
           {/* Gradient scrim */}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-black/10 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/65 via-black/5 to-transparent" />
 
           {/* Type badge — top left */}
-          <div className="absolute top-3 left-3">
-            <span className={`inline-flex items-center px-2.5 py-1 rounded-lg text-[11px] font-bold uppercase tracking-wide shadow-sm ${cfg.bg} ${cfg.text}`}>
+          <div className="absolute top-3.5 left-3.5">
+            <span className={`inline-flex items-center px-2.5 py-1 rounded-xl text-[10px] font-black uppercase tracking-wider shadow-lg ${cfg.cls}`}>
               {cfg.label}
             </span>
           </div>
@@ -91,66 +100,87 @@ export default function PropertyCard({ property: p, saved: initialSaved = false,
           <button
             onClick={handleSave}
             disabled={saving}
-            aria-label={saved ? 'Unsave' : 'Save'}
-            className={`absolute top-3 right-3 w-8 h-8 rounded-xl flex items-center justify-center shadow-md transition-all duration-200 ${
+            aria-label={saved ? 'Unsave property' : 'Save property'}
+            className={`absolute top-3.5 right-3.5 w-8 h-8 rounded-xl flex items-center justify-center shadow-lg transition-all duration-200 active:scale-90 ${
               saved
-                ? 'bg-red-500 text-white shadow-red-500/30 scale-110'
-                : 'bg-white/90 backdrop-blur-sm text-gray-400 hover:text-red-500 hover:scale-110'
+                ? 'bg-rose-500 text-white shadow-rose-500/40'
+                : 'bg-white/90 backdrop-blur-sm text-gray-400 hover:text-rose-500 hover:bg-white'
             }`}
           >
             <Heart className={`w-3.5 h-3.5 ${saved ? 'fill-current' : ''}`} />
           </button>
 
-          {/* Bottom row: verified + price */}
-          <div className="absolute bottom-3 left-3 right-3 flex items-end justify-between">
-            {p.landlords?.is_verified ? (
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-white/95 backdrop-blur-sm text-blue-600 text-[10px] font-bold rounded-lg shadow-sm">
-                <svg className="w-3 h-3" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                </svg>
-                Verified
+          {/* Bottom overlay: verified + price */}
+          <div className="absolute bottom-0 left-0 right-0 px-4 pb-4 flex items-end justify-between gap-2">
+            <div className="flex flex-col gap-1">
+              {p.landlords?.is_verified && (
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-white/95 backdrop-blur-sm text-emerald-600 text-[10px] font-bold rounded-lg shadow-sm w-fit">
+                  <ShieldCheck className="w-3 h-3" /> Verified
+                </span>
+              )}
+              <span className="inline-flex items-center gap-1.5 px-2 py-0.5 bg-black/30 backdrop-blur-sm text-white/80 text-[10px] font-semibold rounded-lg w-fit">
+                <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${statusDot}`} />
+                {statusLabel}
               </span>
-            ) : <span />}
-            <span className="text-white font-black text-xl leading-none drop-shadow-lg">
+            </div>
+            <span className="text-white font-black text-[22px] leading-none tracking-tight drop-shadow-lg shrink-0">
               {formatPrice(Number(p.price))}
             </span>
           </div>
         </div>
 
-        {/* Body */}
+        {/* BODY */}
         <div className="p-4">
-          <p className="font-semibold text-gray-900 text-sm leading-snug line-clamp-1 mb-1">{p.title}</p>
+          <h3 className="font-bold text-gray-900 text-[15px] leading-snug line-clamp-1 mb-1 group-hover:text-blue-600 transition-colors duration-200">
+            {p.title}
+          </h3>
           <div className="flex items-center gap-1 text-gray-400 text-xs mb-4">
-            <MapPin className="w-3.5 h-3.5 shrink-0 text-blue-400" />
+            <MapPin className="w-3 h-3 shrink-0 text-blue-400" />
             <span className="truncate">{p.city}</span>
           </div>
 
-          {/* Stats */}
+          {/* Stats row */}
           <div className="flex items-center gap-3 pt-3 border-t border-gray-50">
-            <span className="flex items-center gap-1.5 text-xs text-gray-500">
-              <BedDouble className="w-3.5 h-3.5 text-gray-400" />
-              <span className="font-semibold text-gray-700">{p.bedrooms}</span>
-              <span>bed{p.bedrooms !== 1 ? 's' : ''}</span>
-            </span>
-            <span className="w-px h-3 bg-gray-200" />
-            <span className="flex items-center gap-1.5 text-xs text-gray-500">
-              <Bath className="w-3.5 h-3.5 text-gray-400" />
-              <span className="font-semibold text-gray-700">{p.bathrooms}</span>
-              <span>bath</span>
-            </span>
+            <div className="flex items-center gap-1.5">
+              <div className="w-6 h-6 rounded-lg bg-gray-50 flex items-center justify-center shrink-0">
+                <BedDouble className="w-3 h-3 text-gray-400" strokeWidth={1.5} />
+              </div>
+              <span className="text-xs font-bold text-gray-700">{p.bedrooms}</span>
+              <span className="text-xs text-gray-400">bed{p.bedrooms !== 1 ? 's' : ''}</span>
+            </div>
+
+            <span className="w-px h-3 bg-gray-100" />
+
+            <div className="flex items-center gap-1.5">
+              <div className="w-6 h-6 rounded-lg bg-gray-50 flex items-center justify-center shrink-0">
+                <Bath className="w-3 h-3 text-gray-400" strokeWidth={1.5} />
+              </div>
+              <span className="text-xs font-bold text-gray-700">{p.bathrooms}</span>
+              <span className="text-xs text-gray-400">bath</span>
+            </div>
+
             {p.area_sqft && (
               <>
-                <span className="w-px h-3 bg-gray-200" />
-                <span className="text-xs text-gray-400 font-medium">{p.area_sqft.toLocaleString()} sqft</span>
+                <span className="w-px h-3 bg-gray-100" />
+                <div className="flex items-center gap-1.5">
+                  <div className="w-6 h-6 rounded-lg bg-gray-50 flex items-center justify-center shrink-0">
+                    <Maximize2 className="w-3 h-3 text-gray-400" strokeWidth={1.5} />
+                  </div>
+                  <span className="text-xs text-gray-500 font-medium">{p.area_sqft.toLocaleString()} sqft</span>
+                </div>
               </>
             )}
-            <span className="ml-auto w-7 h-7 rounded-lg bg-gray-50 group-hover:bg-blue-600 flex items-center justify-center transition-colors duration-300 shrink-0">
-              <ArrowUpRight className="w-3.5 h-3.5 text-gray-400 group-hover:text-white transition-colors duration-300" />
-            </span>
+
+            {/* Arrow CTA */}
+            <div className="ml-auto w-7 h-7 rounded-xl bg-gray-50 group-hover:bg-gray-900 flex items-center justify-center transition-all duration-300 shrink-0">
+              <svg className="w-3.5 h-3.5 text-gray-400 group-hover:text-white transition-colors duration-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M7 17L17 7M17 7H7M17 7v10" />
+              </svg>
+            </div>
           </div>
         </div>
 
-      </div>
+      </article>
     </Link>
   )
 }
