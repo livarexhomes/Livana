@@ -623,17 +623,23 @@ CREATE POLICY "Tenants can post comments"
 
 CREATE TABLE IF NOT EXISTS public.support_tickets (
   id         UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
-  tenant_id  UUID        NOT NULL REFERENCES public.tenants(id) ON DELETE CASCADE,
+  tenant_id  UUID        REFERENCES public.tenants(id) ON DELETE CASCADE,
+  landlord_id UUID       REFERENCES public.landlords(id) ON DELETE CASCADE,
   subject    TEXT        NOT NULL,
   priority   TEXT        NOT NULL DEFAULT 'normal'
                CHECK (priority IN ('low', 'normal', 'high', 'urgent')),
   status     TEXT        NOT NULL DEFAULT 'open'
                CHECK (status IN ('open', 'in_progress', 'resolved', 'closed')),
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  CONSTRAINT chk_tenant_or_landlord CHECK (
+    (tenant_id IS NOT NULL AND landlord_id IS NULL) OR
+    (tenant_id IS NULL AND landlord_id IS NOT NULL)
+  )
 );
 
 CREATE INDEX IF NOT EXISTS idx_support_tickets_tenant ON public.support_tickets(tenant_id);
+CREATE INDEX IF NOT EXISTS idx_support_tickets_landlord ON public.support_tickets(landlord_id);
 CREATE INDEX IF NOT EXISTS idx_support_tickets_status ON public.support_tickets(status);
 
 ALTER TABLE public.support_tickets ENABLE ROW LEVEL SECURITY;
@@ -643,6 +649,13 @@ CREATE POLICY "Tenants manage own tickets"
   ON public.support_tickets FOR ALL
   USING (
     tenant_id IN (SELECT id FROM public.tenants WHERE user_id = auth.uid())
+  );
+
+DROP POLICY IF EXISTS "Landlords manage own tickets" ON public.support_tickets;
+CREATE POLICY "Landlords manage own tickets"
+  ON public.support_tickets FOR ALL
+  USING (
+    landlord_id IN (SELECT id FROM public.landlords WHERE user_id = auth.uid())
   );
 
 DROP POLICY IF EXISTS "Admins full access to tickets" ON public.support_tickets;
@@ -656,7 +669,7 @@ CREATE POLICY "Admins full access to tickets"
 CREATE TABLE IF NOT EXISTS public.support_messages (
   id          UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
   ticket_id   UUID        NOT NULL REFERENCES public.support_tickets(id) ON DELETE CASCADE,
-  sender_role TEXT        NOT NULL CHECK (sender_role IN ('tenant', 'admin')),
+  sender_role TEXT        NOT NULL CHECK (sender_role IN ('tenant', 'landlord', 'admin')),
   body        TEXT        NOT NULL DEFAULT '',
   image_url   TEXT,
   created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
@@ -689,6 +702,29 @@ CREATE POLICY "Tenants send messages on own tickets"
       SELECT st.id FROM public.support_tickets st
       JOIN public.tenants t ON t.id = st.tenant_id
       WHERE t.user_id = auth.uid()
+    )
+  );
+
+DROP POLICY IF EXISTS "Landlords read own ticket messages" ON public.support_messages;
+CREATE POLICY "Landlords read own ticket messages"
+  ON public.support_messages FOR SELECT
+  USING (
+    ticket_id IN (
+      SELECT st.id FROM public.support_tickets st
+      JOIN public.landlords l ON l.id = st.landlord_id
+      WHERE l.user_id = auth.uid()
+    )
+  );
+
+DROP POLICY IF EXISTS "Landlords send messages on own tickets" ON public.support_messages;
+CREATE POLICY "Landlords send messages on own tickets"
+  ON public.support_messages FOR INSERT
+  WITH CHECK (
+    sender_role = 'landlord'
+    AND ticket_id IN (
+      SELECT st.id FROM public.support_tickets st
+      JOIN public.landlords l ON l.id = st.landlord_id
+      WHERE l.user_id = auth.uid()
     )
   );
 

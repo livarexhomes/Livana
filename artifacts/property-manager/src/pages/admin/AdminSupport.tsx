@@ -16,13 +16,16 @@ interface SupportTicket {
   status: 'open' | 'in_progress' | 'resolved' | 'closed'
   created_at: string
   updated_at: string
+  tenant_id?: string | null
+  landlord_id?: string | null
   tenants?: { full_name: string | null; phone: string | null } | null
+  landlords?: { full_name: string | null; phone: string | null; email: string | null } | null
 }
 
 interface SupportMessage {
   id: string
   ticket_id: string
-  sender_role: 'tenant' | 'admin'
+  sender_role: 'tenant' | 'landlord' | 'admin'
   body: string
   created_at: string
 }
@@ -77,8 +80,11 @@ function AdminChatThread({
 
   const s = STATUS_META[ticket.status]
   const p = PRIORITY_META[ticket.priority]
-  const tenantName    = ticket.tenants?.full_name ?? 'Tenant'
-  const tenantInitial = tenantName[0]?.toUpperCase() ?? 'T'
+  const isLandlordTicket = !!ticket.landlord_id
+  const senderName = isLandlordTicket
+    ? (ticket.landlords?.full_name ?? 'Landlord')
+    : (ticket.tenants?.full_name ?? 'Tenant')
+  const senderInitial = senderName[0]?.toUpperCase() ?? (isLandlordTicket ? 'L' : 'T')
 
   useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: 'smooth' }) }, [messages])
 
@@ -126,8 +132,8 @@ function AdminChatThread({
         <button onClick={onBack} className="lg:hidden p-1.5 rounded-lg hover:bg-gray-100 text-gray-500 transition-colors">
           <ChevronLeft className="w-4 h-4" />
         </button>
-        <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center shrink-0 shadow-sm">
-          <span className="text-sm font-bold text-white">{tenantInitial}</span>
+        <div className={`w-9 h-9 rounded-xl bg-gradient-to-br flex items-center justify-center shrink-0 shadow-sm ${isLandlordTicket ? 'from-violet-500 to-purple-600' : 'from-blue-500 to-cyan-500'}`}>
+          <span className="text-sm font-bold text-white">{senderInitial}</span>
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
@@ -138,8 +144,10 @@ function AdminChatThread({
             <span className={`shrink-0 text-[10px] font-bold px-2 py-0.5 rounded-full ${p.bg} ${p.color}`}>{p.label}</span>
           </div>
           <p className="text-xs text-gray-400 mt-0.5">
-            From <span className="font-semibold text-gray-600">{tenantName}</span>
-            {ticket.tenants?.phone && <span> · {ticket.tenants.phone}</span>}
+            From <span className="font-semibold text-gray-600">{senderName}</span>
+            {isLandlordTicket
+              ? (ticket.landlords?.phone && <span> · {ticket.landlords.phone}</span>)
+              : (ticket.tenants?.phone && <span> · {ticket.tenants.phone}</span>)}
             <span> · {formatDistanceToNow(new Date(ticket.created_at), { addSuffix: true })}</span>
           </p>
         </div>
@@ -167,11 +175,12 @@ function AdminChatThread({
             </div>
             {messages.map(msg => {
               const isAdmin = msg.sender_role === 'admin'
+              const isFromLandlord = msg.sender_role === 'landlord'
               return (
                 <div key={msg.id} className={`flex items-end gap-2 ${isAdmin ? 'justify-end' : 'justify-start'}`}>
                   {!isAdmin && (
-                    <div className="w-7 h-7 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center shrink-0 shadow-sm">
-                      <span className="text-xs font-bold text-white">{tenantInitial}</span>
+                    <div className={`w-7 h-7 rounded-full bg-gradient-to-br flex items-center justify-center shrink-0 shadow-sm ${isFromLandlord ? 'from-violet-500 to-purple-600' : 'from-blue-500 to-cyan-500'}`}>
+                      <span className="text-xs font-bold text-white">{senderInitial}</span>
                     </div>
                   )}
                   <div className={`max-w-[75%] flex flex-col gap-1 ${isAdmin ? 'items-end' : 'items-start'}`}>
@@ -179,7 +188,7 @@ function AdminChatThread({
                       {msg.body}
                     </div>
                     <span className="text-[10px] text-gray-400 px-1">
-                      {isAdmin ? 'You' : tenantName} · {format(new Date(msg.created_at), 'h:mm a')}
+                      {isAdmin ? 'You' : senderName} · {format(new Date(msg.created_at), 'h:mm a')}
                     </span>
                   </div>
                   {isAdmin && (
@@ -206,7 +215,7 @@ function AdminChatThread({
         <form onSubmit={sendReply} className="px-4 py-3 border-t border-gray-100 flex items-end gap-2 shrink-0">
           <textarea rows={1} value={input} onChange={e => setInput(e.target.value)}
             onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendReply(e as any) } }}
-            placeholder="Reply to tenant… (Enter to send)"
+            placeholder={`Reply to ${isLandlordTicket ? 'landlord' : 'tenant'}… (Enter to send)`}
             className="flex-1 px-4 py-2.5 rounded-xl border border-gray-200 text-sm bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-gray-900 transition-all resize-none" />
           <button type="submit" disabled={!input.trim() || sending}
             className="w-10 h-10 rounded-xl bg-gray-900 hover:bg-gray-800 disabled:opacity-40 text-white flex items-center justify-center transition-all shrink-0">
@@ -341,7 +350,7 @@ function SupportTab() {
 
   useEffect(() => {
     const supabase = createClient()
-    supabase.from('support_tickets').select('*, tenants(full_name, phone)')
+    supabase.from('support_tickets').select('*, tenants(full_name, phone), landlords(full_name, phone, email)')
       .order('updated_at', { ascending: false })
       .then(({ data }) => { setTickets((data as SupportTicket[]) ?? []); setLoading(false) })
 
@@ -402,7 +411,10 @@ function SupportTab() {
             const s = STATUS_META[ticket.status]
             const p = PRIORITY_META[ticket.priority]
             const isActive = selectedId === ticket.id
-            const tenantName = ticket.tenants?.full_name ?? 'Tenant'
+            const isLandlordTicket = !!ticket.landlord_id
+            const senderName = isLandlordTicket
+              ? (ticket.landlords?.full_name ?? 'Landlord')
+              : (ticket.tenants?.full_name ?? 'Tenant')
             return (
               <button key={ticket.id} onClick={() => setSelectedId(ticket.id)}
                 className={`w-full text-left px-4 py-3.5 border-b border-gray-50 transition-all ${isActive ? 'bg-gray-900' : 'hover:bg-gray-50'}`}>
@@ -414,11 +426,13 @@ function SupportTab() {
                 </div>
                 <div className="flex items-center gap-2 mt-1">
                   <div className={`flex items-center gap-1 text-xs ${isActive ? 'text-white/70' : 'text-gray-500'}`}>
-                    <User className="w-3 h-3" />{tenantName}
+                    <User className="w-3 h-3" />
+                    {isLandlordTicket && <span className="text-[10px] px-1 py-0.5 rounded bg-violet-100 text-violet-700 mr-1">LL</span>}
+                    {senderName}
                   </div>
                   <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-md ${isActive ? 'bg-white/15 text-white/80' : `${p.bg} ${p.color}`}`}>{p.label}</span>
                   <span className={`text-[11px] ml-auto ${isActive ? 'text-white/50' : 'text-gray-400'}`}>
-                    {formatDistanceToNow(new Date(ticket.updated_at), { addSuffix: true })}
+                    {formatDistanceToNow(new Date(ticket.updated_at), { addSuffix: true })}</span>
                   </span>
                 </div>
               </button>

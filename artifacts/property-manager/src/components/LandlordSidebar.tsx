@@ -2,14 +2,13 @@ import { useState, useEffect } from 'react'
 import { Link, useLocation } from 'wouter'
 import { createClient } from '../lib/supabase'
 import {
-  LayoutDashboard, Building2, Inbox, User, Settings, MessageSquare,
+  LayoutDashboard, Building2, Inbox, User, Settings,
   LogOut, Menu, X, CheckCircle, PanelLeftClose, PanelLeftOpen, ExternalLink,
 } from 'lucide-react'
 
 const mainNav = [
   { label: 'Dashboard',   href: '/landlord',             exact: true,  icon: LayoutDashboard },
   { label: 'My Listings', href: '/landlord/listings',    exact: false, icon: Building2 },
-  { label: 'Enquiries',   href: '/landlord/enquiries',   exact: false, icon: MessageSquare },
   { label: 'Inbox',       href: '/landlord/inbox',       exact: false, icon: Inbox },
   { label: 'Profile',     href: '/landlord/profile',     exact: false, icon: User },
   { label: 'Settings',    href: '/landlord/settings',    exact: false, icon: Settings },
