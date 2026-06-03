@@ -432,7 +432,7 @@ function SupportTab() {
                   </div>
                   <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-md ${isActive ? 'bg-white/15 text-white/80' : `${p.bg} ${p.color}`}`}>{p.label}</span>
                   <span className={`text-[11px] ml-auto ${isActive ? 'text-white/50' : 'text-gray-400'}`}>
-                    {formatDistanceToNow(new Date(ticket.updated_at), { addSuffix: true })}</span>
+                    {formatDistanceToNow(new Date(ticket.updated_at), { addSuffix: true })}
                   </span>
                 </div>
               </button>
