@@ -86,18 +86,32 @@ function AdminChatThread({
     : (ticket.tenants?.full_name ?? 'Tenant')
   const senderInitial = senderName[0]?.toUpperCase() ?? (isLandlordTicket ? 'L' : 'T')
 
-  useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: 'smooth' }) }, [messages])
+  useEffect(() => { 
+    console.log('Messages updated, count:', messages.length)
+    bottomRef.current?.scrollIntoView({ behavior: 'smooth' }) 
+  }, [messages])
 
   useEffect(() => {
     const supabase = createClient()
+    console.log('Loading messages for ticket:', ticket.id)
     supabase.from('support_messages').select('*').eq('ticket_id', ticket.id)
       .order('created_at', { ascending: true })
-      .then(({ data }) => { setMessages((data as SupportMessage[]) ?? []); setLoading(false) })
+      .then(({ data, error }) => { 
+        if (error) console.error('Error loading messages:', error)
+        console.log('Initial messages loaded:', data?.length || 0, data)
+        setMessages((data as SupportMessage[]) ?? []); 
+        setLoading(false) 
+      })
 
     const channel = supabase.channel(`admin_chat:${ticket.id}`)
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'support_messages', filter: `ticket_id=eq.${ticket.id}` },
-        (payload) => setMessages(prev => prev.find(m => m.id === payload.new.id) ? prev : [...prev, payload.new as SupportMessage]))
-      .subscribe()
+        (payload) => {
+          console.log('New message received:', payload.new)
+          setMessages(prev => prev.find(m => m.id === payload.new.id) ? prev : [...prev, payload.new as SupportMessage])
+        })
+      .subscribe((status) => {
+        console.log('Realtime subscription status:', status)
+      })
     return () => { supabase.removeChannel(channel) }
   }, [ticket.id])
 
@@ -350,9 +364,15 @@ function SupportTab() {
 
   useEffect(() => {
     const supabase = createClient()
+    console.log('Loading tickets...')
     supabase.from('support_tickets').select('*, tenants(full_name, phone), landlords(full_name, phone, email)')
       .order('updated_at', { ascending: false })
-      .then(({ data }) => { setTickets((data as SupportTicket[]) ?? []); setLoading(false) })
+      .then(({ data, error }) => { 
+        if (error) console.error('Error loading tickets:', error)
+        console.log('Tickets loaded:', data?.length || 0, data)
+        setTickets((data as SupportTicket[]) ?? []); 
+        setLoading(false) 
+      })
 
     const channel = supabase.channel('admin_tickets_list')
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'support_tickets' },

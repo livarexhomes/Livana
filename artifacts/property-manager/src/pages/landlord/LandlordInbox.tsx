@@ -125,7 +125,7 @@ function ChatThread({
     ])
 
     const supabase = createClient()
-    const { data: inserted } = await supabase
+    const { data: inserted, error } = await supabase
       .from('support_messages')
       .insert({
         ticket_id: ticket.id,
@@ -135,7 +135,12 @@ function ChatThread({
       .select()
       .single()
 
+    if (error) {
+      console.error('Error sending message:', error)
+    }
+
     if (inserted) {
+      console.log('Message sent:', inserted)
       setMessages((prev) =>
         prev.map((m) => (m.id === optId ? (inserted as SupportMessage) : m))
       )

@@ -207,6 +207,7 @@ function ChatThread({ ticket, onBack }: { ticket: SupportTicket; onBack: () => v
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'support_messages', filter: `ticket_id=eq.${ticket.id}` },
         (payload) => {
+          console.log('New message received:', payload.new)
           setMessages(prev => {
             // Avoid duplicates (optimistic insert already added it)
             if (prev.find(m => m.id === payload.new.id)) return prev
@@ -214,7 +215,9 @@ function ChatThread({ ticket, onBack }: { ticket: SupportTicket; onBack: () => v
           })
         }
       )
-      .subscribe()
+      .subscribe((status) => {
+        console.log('Realtime subscription status:', status)
+      })
 
     return () => { supabase.removeChannel(channel) }
   }, [ticket.id])
@@ -258,14 +261,19 @@ function ChatThread({ ticket, onBack }: { ticket: SupportTicket; onBack: () => v
     }
     setMessages(prev => [...prev, optimistic])
 
-    const { data: inserted } = await supabase
+    const { data: inserted, error: insertErr } = await supabase
       .from('support_messages')
       .insert({ ticket_id: ticket.id, sender_role: 'tenant', body: body || '', image_url: uploadedUrl })
       .select()
       .single()
 
+    if (insertErr) {
+      console.error('Error sending message:', insertErr)
+    }
+
     // Replace optimistic entry with the real row (avoids Realtime duplicate)
     if (inserted) {
+      console.log('Message sent:', inserted)
       setMessages(prev => prev.map(m => m.id === optId ? inserted as SupportMessage : m))
     }
 
