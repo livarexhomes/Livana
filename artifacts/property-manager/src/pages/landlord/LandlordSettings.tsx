@@ -9,7 +9,7 @@ import LandlordSidebar from '../../components/LandlordSidebar'
 import AuthGuard from '../../components/AuthGuard'
 import { createClient } from '../../lib/supabase'
 import type { Landlord } from '../../lib/types'
-import { useToast } from '../../components/ui/use-toast'
+import { useToast } from '../../hooks/use-toast'
 
 const SECTIONS = [
   { id: 'notifications', label: 'Notifications', icon: Bell },
