@@ -247,7 +247,6 @@ export default function LandlordSettings() {
       setLandlord(l)
       if (l) {
         setDisplayName(l.full_name ?? '')
-        setPhone(l.phone ?? '')
         
         // Load or create settings
         const { data: settings } = await supabase
@@ -343,7 +342,6 @@ export default function LandlordSettings() {
       .from('landlords')
       .update({ 
         full_name: displayName,
-        phone: phone,
       })
       .eq('id', landlord.id)
 
@@ -536,7 +534,7 @@ export default function LandlordSettings() {
                         </div>
                       </div>
 
-                      <CardHead title="Account Details" desc="Manage your display name and phone number." />
+                      <CardHead title="Account Details" desc="Manage your display name." />
 
                       <div style={{ marginBottom: 18 }}>
                         <FieldLabel>Email address</FieldLabel>
@@ -560,19 +558,6 @@ export default function LandlordSettings() {
                             onChange={e => setDisplayName(e.target.value)}
                             placeholder="Your full name"
                             style={inputStyle}
-                          />
-                        </InputWrap>
-                      </div>
-
-                      <div style={{ marginBottom: 4 }}>
-                        <FieldLabel>Phone number</FieldLabel>
-                        <InputWrap>
-                          <Phone style={iconStyle} strokeWidth={1.7} />
-                          <input 
-                            value={phone}
-                            onChange={e => setPhone(e.target.value)}
-                            placeholder="+234 800 000 0000" 
-                            style={inputStyle} 
                           />
                         </InputWrap>
                       </div>
