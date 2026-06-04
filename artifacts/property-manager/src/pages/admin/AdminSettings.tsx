@@ -382,13 +382,9 @@ export default function AdminSettings() {
     setTestEmailResult(null)
 
     try {
-      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-admin-email`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
-        },
-        body: JSON.stringify({
+      const supabase = createClient()
+      const { data, error } = await supabase.functions.invoke('send-admin-email', {
+        body: {
           to: notifications.adminEmail,
           subject: 'Test Email from Livana Admin',
           html: `
@@ -398,17 +394,21 @@ export default function AdminSettings() {
               <p style="color: #666; font-size: 14px;">Sent from Livana Admin Settings</p>
             </div>
           `,
-        }),
+        },
       })
 
-      const result = await response.json()
-      if (result.success) {
+      if (error) {
+        throw new Error(error.message || 'Failed to send test email')
+      }
+
+      if (data?.success) {
         setTestEmailResult({ success: true, message: 'Test email sent successfully!' })
       } else {
-        setTestEmailResult({ success: false, message: result.error || 'Failed to send test email' })
+        setTestEmailResult({ success: false, message: data?.error || 'Failed to send test email' })
       }
     } catch (err: any) {
-      setTestEmailResult({ success: false, message: err.message || 'Network error' })
+      console.error('Test email error:', err)
+      setTestEmailResult({ success: false, message: err.message || 'Network error - ensure the edge function is deployed' })
     } finally {
       setTestEmailLoading(false)
     }
