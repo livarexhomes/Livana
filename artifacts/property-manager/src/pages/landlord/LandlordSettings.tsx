@@ -3,13 +3,13 @@ import {
   Bell, Shield, Phone, Mail, Save, CheckCircle,
   MessageSquare, Eye, EyeOff, Key, ChevronRight,
   Globe, User, Lock, Laptop, Sparkles, ShieldCheck,
-  LayoutDashboard, Building2, MessageCircle, Users,
-  BarChart3, Settings, Trash2,
+  MessageCircle, Trash2, Loader2,
 } from 'lucide-react'
 import LandlordSidebar from '../../components/LandlordSidebar'
 import AuthGuard from '../../components/AuthGuard'
 import { createClient } from '../../lib/supabase'
 import type { Landlord } from '../../lib/types'
+import { useToast } from '@/components/ui/use-toast'
 
 const SECTIONS = [
   { id: 'notifications', label: 'Notifications', icon: Bell },
@@ -20,7 +20,6 @@ const SECTIONS = [
 
 const NOTIF_ITEMS = [
   { key: 'enquiryEmail',    label: 'New enquiry (Email)',      desc: 'Get an email when a tenant enquires about your listing',       icon: Mail,           color: '#EFF6FF', iconColor: '#2563EB' },
-  { key: 'enquiryWhatsApp', label: 'New enquiry (WhatsApp)',  desc: 'Get a WhatsApp message for new tenant enquiries',              icon: Phone,          color: '#F0FDF4', iconColor: '#16A34A' },
   { key: 'statusEmail',     label: 'Listing status updates',  desc: 'Email when your listing is approved or needs changes',         icon: CheckCircle,    color: '#EFF6FF', iconColor: '#2563EB' },
   { key: 'reviewEmail',     label: 'Review & feedback alerts', desc: 'Email when a tenant leaves feedback on your property',        icon: MessageSquare,  color: '#FFF7ED', iconColor: '#EA580C' },
   { key: 'weeklyDigest',    label: 'Weekly summary digest',   desc: 'Receive a weekly report of your listing views and enquiries',  icon: Globe,          color: '#F5F3FF', iconColor: '#7C3AED' },
@@ -144,19 +143,19 @@ function CardHead({ title, desc }: { title: string; desc: string }) {
 }
 
 // ── Submit button ─────────────────────────────────────────────────────────────
-function SubmitBtn({ onClick, children }: { onClick: () => void; children: React.ReactNode }) {
+function SubmitBtn({ onClick, children, loading }: { onClick: () => void; children: React.ReactNode; loading?: boolean }) {
   return (
-    <button type="button" onClick={onClick} style={{
+    <button type="button" onClick={onClick} disabled={loading} style={{
       width: '100%', padding: 11, fontSize: 14, fontWeight: 600,
-      color: '#fff', background: '#2563EB', border: 'none',
-      borderRadius: 8, cursor: 'pointer', display: 'flex',
+      color: '#fff', background: loading ? '#93C5FD' : '#2563EB', border: 'none',
+      borderRadius: 8, cursor: loading ? 'not-allowed' : 'pointer', display: 'flex',
       alignItems: 'center', justifyContent: 'center', gap: 8, marginTop: 4,
       fontFamily: 'inherit', transition: 'background .18s',
     }}
-      onMouseEnter={e => (e.currentTarget.style.background = '#1d4ed8')}
-      onMouseLeave={e => (e.currentTarget.style.background = '#2563EB')}
+      onMouseEnter={e => { if (!loading) e.currentTarget.style.background = '#1d4ed8' }}
+      onMouseLeave={e => { if (!loading) e.currentTarget.style.background = '#2563EB' }}
     >
-      {children}
+      {loading ? <><Loader2 style={{ width: 16, height: 16, animation: 'spin 1s linear infinite' }} /> Saving...</> : children}
     </button>
   )
 }
@@ -203,24 +202,26 @@ function PasswordField({
 // Main page
 // ─────────────────────────────────────────────────────────────────────────────
 export default function LandlordSettings() {
+  const { toast } = useToast()
   const [user, setUser] = useState<{ email?: string; id?: string } | null>(null)
   const [landlord, setLandlord] = useState<Landlord | null>(null)
   const [active, setActive] = useState('notifications')
   const [saved, setSaved] = useState(false)
+  const [saving, setSaving] = useState(false)
   const [displayName, setDisplayName] = useState('')
+  const [phone, setPhone] = useState('')
+  const [settingsId, setSettingsId] = useState<string | null>(null)
 
   const [notifs, setNotifs] = useState({
     enquiryEmail:    true,
-    enquiryWhatsApp: false,
     statusEmail:     true,
     reviewEmail:     true,
     weeklyDigest:    false,
     newMessage:      true,
   })
 
-  const [account, setAccount] = useState({ email: '', currentPass: '', newPass: '', confirmPass: '' })
-  const [newPass, setNewPass] = useState('')
   const [currentPass, setCurrentPass] = useState('')
+  const [newPass, setNewPass] = useState('')
   const [confirmPass, setConfirmPass] = useState('')
 
   const [whatsapp, setWhatsapp] = useState({
@@ -230,24 +231,158 @@ export default function LandlordSettings() {
     showOnListing: true,
   })
 
+  // Load data
   useEffect(() => {
     const supabase = createClient()
     supabase.auth.getUser().then(async ({ data: { user } }) => {
       if (!user) return
       setUser({ email: user.email, id: user.id })
-      setAccount(a => ({ ...a, email: user.email ?? '' }))
-      const { data: l } = await supabase.from('landlords').select('*').eq('user_id', user.id).single() as { data: Landlord | null }
+      
+      // Load landlord data
+      const { data: l } = await supabase
+        .from('landlords')
+        .select('*')
+        .eq('user_id', user.id)
+        .single() as { data: Landlord | null }
+      
       setLandlord(l)
       if (l) {
         setDisplayName(l.full_name ?? '')
-        setWhatsapp(w => ({ ...w, number: l.whatsapp ?? '' }))
+        setPhone(l.phone ?? '')
+        
+        // Load or create settings
+        const { data: settings } = await supabase
+          .from('landlord_settings')
+          .select('*')
+          .eq('landlord_id', l.id)
+          .single()
+        
+        if (settings) {
+          setSettingsId(settings.id)
+          if (settings.notifications) {
+            setNotifs(settings.notifications)
+          }
+          if (settings.whatsapp) {
+            setWhatsapp(settings.whatsapp)
+          }
+        } else {
+          // Create default settings
+          const { data: newSettings } = await supabase
+            .from('landlord_settings')
+            .insert({ landlord_id: l.id })
+            .select()
+            .single()
+          if (newSettings) {
+            setSettingsId(newSettings.id)
+          }
+        }
       }
     })
   }, [])
 
-  function handleSave() {
-    setSaved(true)
-    setTimeout(() => setSaved(false), 2500)
+  // Save notification settings
+  async function saveNotifications() {
+    if (!landlord?.id) return
+    setSaving(true)
+    const supabase = createClient()
+    
+    const { error } = await supabase
+      .from('landlord_settings')
+      .upsert({ 
+        id: settingsId,
+        landlord_id: landlord.id,
+        notifications: notifs,
+      }, { onConflict: 'landlord_id' })
+
+    setSaving(false)
+    if (error) {
+      toast({ title: 'Error', description: error.message, variant: 'destructive' })
+    } else {
+      toast({ title: 'Success', description: 'Notification settings saved' })
+      setSaved(true)
+      setTimeout(() => setSaved(false), 2000)
+    }
+  }
+
+  // Save WhatsApp settings
+  async function saveWhatsapp() {
+    if (!landlord?.id) return
+    setSaving(true)
+    const supabase = createClient()
+    
+    const { error } = await supabase
+      .from('landlord_settings')
+      .upsert({ 
+        id: settingsId,
+        landlord_id: landlord.id,
+        whatsapp: whatsapp,
+      }, { onConflict: 'landlord_id' })
+
+    setSaving(false)
+    if (error) {
+      toast({ title: 'Error', description: error.message, variant: 'destructive' })
+    } else {
+      // Also update landlord whatsapp number
+      await supabase
+        .from('landlords')
+        .update({ whatsapp: whatsapp.number })
+        .eq('id', landlord.id)
+      
+      toast({ title: 'Success', description: 'WhatsApp settings saved' })
+      setSaved(true)
+      setTimeout(() => setSaved(false), 2000)
+    }
+  }
+
+  // Save account details
+  async function saveAccount() {
+    if (!landlord?.id) return
+    setSaving(true)
+    const supabase = createClient()
+    
+    const { error } = await supabase
+      .from('landlords')
+      .update({ 
+        full_name: displayName,
+        phone: phone,
+      })
+      .eq('id', landlord.id)
+
+    setSaving(false)
+    if (error) {
+      toast({ title: 'Error', description: error.message, variant: 'destructive' })
+    } else {
+      toast({ title: 'Success', description: 'Account details saved' })
+      setSaved(true)
+      setTimeout(() => setSaved(false), 2000)
+    }
+  }
+
+  // Change password
+  async function changePassword() {
+    if (!newPass || newPass !== confirmPass) {
+      toast({ title: 'Error', description: 'Passwords do not match', variant: 'destructive' })
+      return
+    }
+    if (newPass.length < 8) {
+      toast({ title: 'Error', description: 'Password must be at least 8 characters', variant: 'destructive' })
+      return
+    }
+    
+    setSaving(true)
+    const supabase = createClient()
+    
+    const { error } = await supabase.auth.updateUser({ password: newPass })
+    
+    setSaving(false)
+    if (error) {
+      toast({ title: 'Error', description: error.message, variant: 'destructive' })
+    } else {
+      toast({ title: 'Success', description: 'Password updated successfully' })
+      setCurrentPass('')
+      setNewPass('')
+      setConfirmPass('')
+    }
   }
 
   const strength = getPasswordStrength(newPass)
@@ -260,17 +395,14 @@ export default function LandlordSettings() {
     <AuthGuard require="landlord">
       <div style={{ display: 'flex', height: '100vh', overflow: 'hidden', background: '#F8FAFC', fontFamily: 'inherit' }}>
 
-        {/* ── Original sidebar (untouched for API) ── */}
         <LandlordSidebar
           userName={landlord?.full_name}
           userEmail={user?.email}
           isVerified={landlord?.is_verified}
         />
 
-        {/* ── Main ── */}
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, overflow: 'hidden' }}>
 
-          {/* Topbar */}
           <header style={{
             display: 'flex', alignItems: 'center', justifyContent: 'space-between',
             padding: '18px 28px', background: '#fff',
@@ -284,55 +416,12 @@ export default function LandlordSettings() {
                 Manage your preferences and account details
               </p>
             </div>
-
-            <button
-              type="button"
-              onClick={handleSave}
-              style={{
-                display: 'inline-flex', alignItems: 'center', gap: 7,
-                padding: '9px 18px', fontSize: 13.5, fontWeight: 600,
-                borderRadius: 8, border: 'none', cursor: 'pointer',
-                fontFamily: 'inherit', transition: 'all .18s',
-                background: saved ? '#059669' : '#2563EB',
-                color: '#fff',
-                boxShadow: saved ? '0 4px 12px rgba(5,150,105,.25)' : '0 4px 12px rgba(37,99,235,.25)',
-              }}
-            >
-              {saved
-                ? <><CheckCircle style={{ width: 15, height: 15 }} /> Saved!</>
-                : <><Save style={{ width: 15, height: 15 }} /> Save Changes</>
-              }
-            </button>
           </header>
 
-          {/* Content */}
           <main style={{ flex: 1, overflowY: 'auto', padding: '24px 28px 40px' }}>
-
-            {/* Mobile tabs */}
-            <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 12, marginBottom: 4 }}
-              className="sm:hidden">
-              {SECTIONS.map(s => {
-                const Icon = s.icon
-                return (
-                  <button key={s.id} type="button" onClick={() => setActive(s.id)}
-                    style={{
-                      flexShrink: 0, display: 'flex', alignItems: 'center', gap: 6,
-                      padding: '8px 14px', borderRadius: 10, fontSize: 13, fontWeight: 600,
-                      border: `1px solid ${active === s.id ? '#2563EB' : '#E2E8F0'}`,
-                      background: active === s.id ? '#2563EB' : '#fff',
-                      color: active === s.id ? '#fff' : '#475569',
-                      cursor: 'pointer', fontFamily: 'inherit',
-                    }}>
-                    <Icon style={{ width: 14, height: 14 }} strokeWidth={2} />
-                    {s.label}
-                  </button>
-                )
-              })}
-            </div>
 
             <div style={{ display: 'flex', gap: 20, maxWidth: 860 }}>
 
-              {/* Desktop left nav */}
               <div style={{ width: 200, flexShrink: 0 }} className="hidden sm:block">
                 <nav style={{
                   background: '#fff', border: '1px solid #E2E8F0',
@@ -374,10 +463,8 @@ export default function LandlordSettings() {
                 </nav>
               </div>
 
-              {/* Panels */}
               <div style={{ flex: 1, minWidth: 0 }}>
 
-                {/* ── Notifications ── */}
                 {active === 'notifications' && (
                   <div>
                     <SectionLabel>Notifications</SectionLabel>
@@ -416,16 +503,19 @@ export default function LandlordSettings() {
                           )
                         })}
                       </div>
+                      <div style={{ marginTop: 20, paddingTop: 16, borderTop: '1px solid #E2E8F0' }}>
+                        <SubmitBtn onClick={saveNotifications} loading={saving}>
+                          {saved ? <><CheckCircle style={{ width: 16, height: 16 }} /> Saved!</> : <><Save style={{ width: 16, height: 16 }} /> Save Changes</>}
+                        </SubmitBtn>
+                      </div>
                     </Card>
                   </div>
                 )}
 
-                {/* ── Account ── */}
                 {active === 'account' && (
                   <div>
                     <SectionLabel>Account</SectionLabel>
 
-                    {/* Profile snapshot */}
                     <Card>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 20, paddingBottom: 20, borderBottom: '1px solid #E2E8F0' }}>
                         <div style={{
@@ -447,19 +537,19 @@ export default function LandlordSettings() {
                         </div>
                       </div>
 
-                      <CardHead title="Account Details" desc="Manage your login email and display name." />
+                      <CardHead title="Account Details" desc="Manage your display name and phone number." />
 
                       <div style={{ marginBottom: 18 }}>
                         <FieldLabel>Email address</FieldLabel>
                         <InputWrap>
                           <Mail style={iconStyle} strokeWidth={1.7} />
                           <input
-                            value={account.email}
-                            onChange={e => setAccount(a => ({ ...a, email: e.target.value }))}
-                            style={inputStyle}
+                            value={user?.email || ''}
+                            disabled
+                            style={{ ...inputStyle, opacity: 0.6 }}
                           />
                         </InputWrap>
-                        <p style={{ fontSize: 12, color: '#94A3B8', marginTop: 6 }}>Changing your email requires re-verification.</p>
+                        <p style={{ fontSize: 12, color: '#94A3B8', marginTop: 6 }}>Email cannot be changed here. Contact support to update.</p>
                       </div>
 
                       <div style={{ marginBottom: 18 }}>
@@ -479,11 +569,16 @@ export default function LandlordSettings() {
                         <FieldLabel>Phone number</FieldLabel>
                         <InputWrap>
                           <Phone style={iconStyle} strokeWidth={1.7} />
-                          <input placeholder="+234 800 000 0000" style={inputStyle} />
+                          <input 
+                            value={phone}
+                            onChange={e => setPhone(e.target.value)}
+                            placeholder="+234 800 000 0000" 
+                            style={inputStyle} 
+                          />
                         </InputWrap>
                       </div>
 
-                      <SubmitBtn onClick={handleSave}>
+                      <SubmitBtn onClick={saveAccount} loading={saving}>
                         <CheckCircle style={{ width: 16, height: 16 }} /> Save Account Details
                       </SubmitBtn>
                     </Card>
@@ -514,7 +609,6 @@ export default function LandlordSettings() {
                   </div>
                 )}
 
-                {/* ── Security ── */}
                 {active === 'security' && (
                   <div>
                     <SectionLabel>Security</SectionLabel>
@@ -540,7 +634,6 @@ export default function LandlordSettings() {
                             style={inputStyle}
                           />
                         </InputWrap>
-                        {/* Strength bar */}
                         {newPass.length > 0 && (
                           <div>
                             <div style={{ display: 'flex', gap: 4, marginTop: 8 }}>
@@ -566,14 +659,13 @@ export default function LandlordSettings() {
                         onChange={setConfirmPass}
                       />
 
-                      {/* Match hint */}
                       {confirmPass.length > 0 && newPass !== confirmPass && (
                         <p style={{ fontSize: 12, color: '#EF4444', marginTop: -10, marginBottom: 14 }}>
                           Passwords do not match
                         </p>
                       )}
 
-                      <SubmitBtn onClick={handleSave}>
+                      <SubmitBtn onClick={changePassword} loading={saving}>
                         <Shield style={{ width: 16, height: 16 }} /> Update Password
                       </SubmitBtn>
                     </Card>
@@ -607,7 +699,6 @@ export default function LandlordSettings() {
                   </div>
                 )}
 
-                {/* ── WhatsApp ── */}
                 {active === 'whatsapp' && (
                   <div>
                     <SectionLabel>WhatsApp</SectionLabel>
@@ -669,12 +760,11 @@ export default function LandlordSettings() {
                         </div>
                       )}
 
-                      <SubmitBtn onClick={handleSave}>
+                      <SubmitBtn onClick={saveWhatsapp} loading={saving}>
                         <Phone style={{ width: 16, height: 16 }} /> Save WhatsApp Settings
                       </SubmitBtn>
                     </Card>
 
-                    {/* Tip card */}
                     <div style={{
                       background: '#F0FDF4', border: '1px solid #BBF7D0',
                       borderRadius: 16, padding: '18px 20px',
