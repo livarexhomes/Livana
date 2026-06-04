@@ -29,6 +29,9 @@ export interface Property {
   type: PropertyType
   status: PropertyStatus
   featured: boolean
+  amenities: string[]
+  latitude: number | null
+  longitude: number | null
   created_at: string
   updated_at: string
 }

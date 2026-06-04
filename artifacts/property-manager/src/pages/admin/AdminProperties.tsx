@@ -3,7 +3,9 @@ import { Link } from 'wouter'
 import {
   Building2, Search, LayoutGrid, List,
   MapPin, BedDouble, Bath, Pencil, Trash2, ArrowRight, Plus, Eye,
-  CheckCircle, Clock, XCircle, X, Save, Loader2, ImagePlus, Star
+  CheckCircle, Clock, XCircle, X, Save, Loader2, ImagePlus, Star,
+  Wifi, Car, Dumbbell, Waves, Wind, Shield, Zap,
+  Droplets, TreePine, UtensilsCrossed, Tv, Lock, Sun, Package,
 } from 'lucide-react'
 import AdminSidebar from '../../components/AdminSidebar'
 import AdminHeader from '../../components/AdminHeader'
@@ -29,19 +31,38 @@ const STATUS_META: Record<string, { label: string; icon: any; cls: string; dot: 
   under_negotiation: { label: 'Negotiating', icon: Clock,       cls: 'text-amber-600 bg-amber-50',     dot: 'bg-amber-500'   },
 }
 
-type EditForm = { title: string; city: string; price: string; type: string; status: string; bedrooms: string; bathrooms: string }
-const emptyEdit: EditForm = { title: '', city: '', price: '', type: 'rent', status: 'available', bedrooms: '', bathrooms: '' }
+const AMENITIES = [
+  { icon: Wifi, label: 'High-Speed WiFi' },
+  { icon: Car, label: 'Parking Space' },
+  { icon: Dumbbell, label: 'Gym / Fitness' },
+  { icon: Waves, label: 'Swimming Pool' },
+  { icon: Wind, label: 'Air Conditioning' },
+  { icon: Shield, label: '24/7 Security' },
+  { icon: Zap, label: 'Backup Power' },
+  { icon: Droplets, label: 'Running Water' },
+  { icon: TreePine, label: 'Garden / Lawn' },
+  { icon: UtensilsCrossed, label: 'Modern Kitchen' },
+  { icon: Tv, label: 'Smart TV' },
+  { icon: Lock, label: 'Smart Lock' },
+  { icon: Sun, label: 'Solar Panels' },
+  { icon: Package, label: 'Storage Room' },
+]
+
+type EditForm = { title: string; city: string; price: string; type: string; status: string; bedrooms: string; bathrooms: string; amenities: string[]; latitude: string; longitude: string }
+const emptyEdit: EditForm = { title: '', city: '', price: '', type: 'rent', status: 'available', bedrooms: '', bathrooms: '', amenities: [], latitude: '', longitude: '' }
 
 type AddForm = {
   landlord_id: string; title: string; address: string; city: string; state: string
   assigned_to: string
   property_type: string; type: string; status: string
   price: string; bedrooms: string; bathrooms: string; description: string
+  amenities: string[]; latitude: string; longitude: string
 }
 const emptyAdd: AddForm = {
   landlord_id: '', title: '', address: '', city: '', state: '', assigned_to: '',
   property_type: 'Apartment', type: 'rent', status: 'available',
   price: '', bedrooms: '', bathrooms: '', description: '',
+  amenities: [], latitude: '', longitude: '',
 }
 
 export default function AdminProperties() {
@@ -197,6 +218,9 @@ export default function AdminProperties() {
       status: p.status ?? 'available',
       bedrooms: p.bedrooms != null ? String(p.bedrooms) : '',
       bathrooms: p.bathrooms != null ? String(p.bathrooms) : '',
+      amenities: p.amenities ?? [],
+      latitude: p.latitude ? String(p.latitude) : '',
+      longitude: p.longitude ? String(p.longitude) : '',
     })
     setExistingImages(p.property_images ?? [])
     setEditImageFiles([])
@@ -229,6 +253,9 @@ export default function AdminProperties() {
         bedrooms: addForm.bedrooms ? Number(addForm.bedrooms) : null,
         bathrooms: addForm.bathrooms ? Number(addForm.bathrooms) : null,
         description: addForm.description.trim() || null,
+        amenities: addForm.amenities,
+        latitude: addForm.latitude ? Number(addForm.latitude) : null,
+        longitude: addForm.longitude ? Number(addForm.longitude) : null,
       })
       .select('*, landlords(full_name, is_verified), property_images(id, storage_path, is_cover, sort_order)')
       .single()
@@ -291,6 +318,9 @@ export default function AdminProperties() {
       status: editForm.status,
       bedrooms: editForm.bedrooms ? Number(editForm.bedrooms) : null,
       bathrooms: editForm.bathrooms ? Number(editForm.bathrooms) : null,
+      amenities: editForm.amenities,
+      latitude: editForm.latitude ? Number(editForm.latitude) : null,
+      longitude: editForm.longitude ? Number(editForm.longitude) : null,
     }
     await supabase.from('properties').update(patch).eq('id', editingProp.id)
 
@@ -640,6 +670,57 @@ export default function AdminProperties() {
                       className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50 focus:bg-white transition-all" />
                   </div>
                 </div>
+
+                {/* Amenities */}
+                <div>
+                  <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2 block">Amenities</label>
+                  <div className="grid grid-cols-2 gap-2">
+                    {AMENITIES.map((amenity) => {
+                      const Icon = amenity.icon
+                      const isSelected = editForm.amenities.includes(amenity.label)
+                      return (
+                        <button
+                          key={amenity.label}
+                          type="button"
+                          onClick={() => {
+                            setEditForm(f => ({
+                              ...f,
+                              amenities: isSelected
+                                ? f.amenities.filter(a => a !== amenity.label)
+                                : [...f.amenities, amenity.label]
+                            }))
+                          }}
+                          className={`flex items-center gap-2 p-2 rounded-lg border text-left transition-all ${
+                            isSelected
+                              ? 'border-blue-500 bg-blue-50 text-blue-900'
+                              : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                          }`}
+                        >
+                          <Icon className={`w-3.5 h-3.5 ${isSelected ? 'text-blue-600' : 'text-gray-400'}`} />
+                          <span className="text-xs font-medium">{amenity.label}</span>
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+
+                {/* Coordinates */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5 block">Latitude</label>
+                    <input type="number" step="any" value={editForm.latitude}
+                      onChange={e => setEditForm(f => ({ ...f, latitude: e.target.value }))}
+                      placeholder="e.g. 6.5244"
+                      className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50 focus:bg-white transition-all" />
+                  </div>
+                  <div>
+                    <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5 block">Longitude</label>
+                    <input type="number" step="any" value={editForm.longitude}
+                      onChange={e => setEditForm(f => ({ ...f, longitude: e.target.value }))}
+                      placeholder="e.g. 3.3792"
+                      className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50 focus:bg-white transition-all" />
+                  </div>
+                </div>
               </div>
               {/* Photos */}
               <div className="px-6 pb-5 space-y-3">
@@ -862,6 +943,58 @@ export default function AdminProperties() {
                   rows={3} placeholder="Brief description of the property…"
                   className="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none" />
               </div>
+
+              {/* Amenities */}
+              <div>
+                <label className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-2 block">Amenities</label>
+                <div className="grid grid-cols-2 gap-2">
+                  {AMENITIES.map((amenity) => {
+                    const Icon = amenity.icon
+                    const isSelected = addForm.amenities.includes(amenity.label)
+                    return (
+                      <button
+                        key={amenity.label}
+                        type="button"
+                        onClick={() => {
+                          setAddForm(f => ({
+                            ...f,
+                            amenities: isSelected
+                              ? f.amenities.filter(a => a !== amenity.label)
+                              : [...f.amenities, amenity.label]
+                          }))
+                        }}
+                        className={`flex items-center gap-2 p-2.5 rounded-lg border text-left transition-all ${
+                          isSelected
+                            ? 'border-blue-500 bg-blue-50 text-blue-900'
+                            : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                        }`}
+                      >
+                        <Icon className={`w-3.5 h-3.5 ${isSelected ? 'text-blue-600' : 'text-gray-400'}`} />
+                        <span className="text-xs font-medium">{amenity.label}</span>
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+
+              {/* Coordinates */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1.5 block">Latitude</label>
+                  <input type="number" step="any" value={addForm.latitude}
+                    onChange={e => setAddForm(f => ({ ...f, latitude: e.target.value }))}
+                    placeholder="e.g. 6.5244"
+                    className="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                </div>
+                <div>
+                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1.5 block">Longitude</label>
+                  <input type="number" step="any" value={addForm.longitude}
+                    onChange={e => setAddForm(f => ({ ...f, longitude: e.target.value }))}
+                    placeholder="e.g. 3.3792"
+                    className="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                </div>
+              </div>
+              <p className="text-xs text-gray-400 -mt-3">Optional: Add coordinates for map location. Find on <a href="https://maps.google.com" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">Google Maps</a>.</p>
 
               {/* ── Photos ── */}
               <div className="border border-gray-100 rounded-2xl p-4 space-y-4">

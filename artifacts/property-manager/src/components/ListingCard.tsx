@@ -12,6 +12,7 @@ interface Props {
   highlighted?: boolean
   onMouseEnter?: () => void
   onMouseLeave?: () => void
+  layout?: 'list' | 'grid'
 }
 
 const TYPE_LABEL: Record<string, string> = {
@@ -35,7 +36,9 @@ export default function ListingCard({
   highlighted = false,
   onMouseEnter,
   onMouseLeave,
+  layout = 'list',
 }: Props) {
+  const isGrid = layout === 'grid'
   const [, navigate] = useLocation()
   const [saved, setSaved] = useState(initialSaved)
   const [saving, setSaving] = useState(false)
@@ -71,7 +74,7 @@ export default function ListingCard({
   return (
     <Link
       href={`/listings/${p.id}`}
-      className={`flex gap-0 bg-white rounded-2xl overflow-hidden border transition-all duration-200 cursor-pointer group ${
+      className={`${isGrid ? 'flex-col' : 'flex'} gap-0 bg-white rounded-2xl overflow-hidden border transition-all duration-200 cursor-pointer group h-full ${
         highlighted
           ? 'border-green-500 shadow-lg shadow-green-500/10 ring-1 ring-green-500/30'
           : 'border-gray-100 shadow-sm hover:shadow-md hover:border-gray-200'
@@ -80,7 +83,7 @@ export default function ListingCard({
       onMouseLeave={onMouseLeave}
     >
       {/* Image */}
-      <div className="relative w-28 xs:w-36 sm:w-52 shrink-0 bg-gray-100 overflow-hidden">
+      <div className={`relative ${isGrid ? 'w-full h-48' : 'w-28 xs:w-36 sm:w-52'} shrink-0 bg-gray-100 overflow-hidden`}>
         {coverUrl ? (
           <img
             src={coverUrl}
@@ -90,7 +93,7 @@ export default function ListingCard({
         ) : (
           <div className="w-full h-full flex items-center justify-center text-gray-300">
             <svg className="w-10 h-10" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              <path strokeLinecap="round" stroke-linejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
             </svg>
           </div>
         )}
@@ -101,12 +104,14 @@ export default function ListingCard({
             Listed {timeAgo} ago
           </span>
         </div>
-        {/* Map pin button */}
-        <div className="absolute bottom-2.5 right-2.5">
-          <span className="flex items-center justify-center w-7 h-7 bg-white/90 rounded-full shadow">
-            <MapPin className="w-3.5 h-3.5 text-gray-600" />
-          </span>
-        </div>
+        {/* Map pin button - hide in grid mode */}
+        {!isGrid && (
+          <div className="absolute bottom-2.5 right-2.5">
+            <span className="flex items-center justify-center w-7 h-7 bg-white/90 rounded-full shadow">
+              <MapPin className="w-3.5 h-3.5 text-gray-600" />
+            </span>
+          </div>
+        )}
       </div>
 
       {/* Content */}
@@ -114,8 +119,8 @@ export default function ListingCard({
         <div>
           {/* Price + save */}
           <div className="flex items-start justify-between gap-2">
-            <div>
-              <span className="text-lg sm:text-2xl font-extrabold text-gray-900 tracking-tight">
+            <div className="min-w-0">
+              <span className={`font-extrabold text-gray-900 tracking-tight ${isGrid ? 'text-base sm:text-lg' : 'text-lg sm:text-2xl'}`}>
                 ₦{Number(p.price).toLocaleString()}
               </span>
               {PERIOD[p.type] && (
@@ -143,23 +148,23 @@ export default function ListingCard({
         </div>
 
         {/* Specs row */}
-        <div className="flex items-center gap-3 mt-3 flex-wrap">
-          <span className="flex items-center gap-1.5 text-sm text-gray-600">
-            <BedDouble className="w-4 h-4 text-gray-400" />
+        <div className={`flex items-center gap-3 mt-3 flex-wrap ${isGrid ? 'text-xs' : ''}`}>
+          <span className="flex items-center gap-1 text-gray-600">
+            <BedDouble className={`text-gray-400 ${isGrid ? 'w-3.5 h-3.5' : 'w-4 h-4'}`} />
             <span className="font-medium">{p.bedrooms}</span>
-            <span className="text-gray-400">Bed{p.bedrooms !== 1 ? 's' : ''}</span>
+            <span className="text-gray-400">{isGrid ? 'Beds' : `Bed${p.bedrooms !== 1 ? 's' : ''}`}</span>
           </span>
-          <span className="w-px h-4 bg-gray-200" />
-          <span className="flex items-center gap-1.5 text-sm text-gray-600">
-            <Bath className="w-4 h-4 text-gray-400" />
+          {!isGrid && <span className="w-px h-4 bg-gray-200" />}
+          <span className="flex items-center gap-1 text-gray-600">
+            <Bath className={`text-gray-400 ${isGrid ? 'w-3.5 h-3.5' : 'w-4 h-4'}`} />
             <span className="font-medium">{p.bathrooms}</span>
-            <span className="text-gray-400">Bath</span>
+            <span className="text-gray-400">{isGrid ? 'Baths' : 'Bath'}</span>
           </span>
-          <span className="w-px h-4 bg-gray-200" />
-          <span className="px-2 py-0.5 bg-gray-100 text-gray-600 text-xs font-semibold rounded-md capitalize">
+          {!isGrid && <span className="w-px h-4 bg-gray-200" />}
+          <span className={`bg-gray-100 text-gray-600 font-semibold rounded-md capitalize ${isGrid ? 'px-1.5 py-0.5 text-[10px]' : 'px-2 py-0.5 text-xs'}`}>
             {TYPE_LABEL[p.type] ?? p.type}
           </span>
-          {p.area_sqft && (
+          {!isGrid && p.area_sqft && (
             <>
               <span className="w-px h-4 bg-gray-200" />
               <span className="text-xs text-gray-400">{p.area_sqft.toLocaleString()} sqft</span>
@@ -168,15 +173,15 @@ export default function ListingCard({
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-50">
-          <div className="flex items-center gap-1.5 text-xs text-gray-500">
+        <div className={`flex items-center justify-between ${isGrid ? 'mt-2 pt-2' : 'mt-3 pt-3'} border-t border-gray-50`}>
+          <div className={`flex items-center gap-1.5 text-gray-500 ${isGrid ? 'text-[10px]' : 'text-xs'}`}>
             {p.landlords?.is_verified ? (
               <>
                 <ShieldCheck className="w-3.5 h-3.5 text-green-600" />
-                <span className="text-green-700 font-semibold">Verified Owner</span>
+                <span className="text-green-700 font-semibold">{isGrid ? 'Verified' : 'Verified Owner'}</span>
               </>
             ) : (
-              <span>Direct to Owner's Agent</span>
+              <span>{isGrid ? 'Owner Agent' : "Direct to Owner's Agent"}</span>
             )}
           </div>
           {p.featured && (

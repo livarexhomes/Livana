@@ -2,9 +2,9 @@ import { useState, useEffect } from 'react'
 import { Link, useParams, useLocation } from 'wouter'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
-  MapPin, BedDouble, Bath, Maximize, Heart, MessageCircle,
+  MapPin, BedDouble, Bath, Maximize, Heart,
   ArrowLeft, Share2, CheckCircle, Send, LogIn, UserPlus,
-  MessageSquare, Building2, Calendar, ShieldCheck, Info,
+  Building2, Calendar, ShieldCheck, Info,
   Mail, Wifi, Car, Dumbbell, Waves, Wind, Shield, Zap,
   Droplets, TreePine, UtensilsCrossed, Tv, Lock, Sun, Package,
   Eye,
@@ -47,15 +47,9 @@ type ActiveTab = 'overview' | 'amenities' | 'location'
 type FullProperty = PropertyWithLandlord & {
   landlords: Pick<Landlord, 'id' | 'full_name' | 'whatsapp' | 'bio' | 'avatar_url' | 'is_verified'> | null
   property_images: (Pick<PropertyImage, 'id' | 'storage_path' | 'alt_text' | 'is_cover' | 'sort_order'>)[]
-}
-
-type Comment = {
-  id: string
-  tenant_name: string
-  message: string
-  created_at: string
-  parent_id: string | null
-  author_role: 'tenant' | 'landlord' | 'admin'
+  amenities: string[]
+  latitude: number | null
+  longitude: number | null
 }
 
 const STATUS_CONFIG: Record<string, { label: string; dot: string; bg: string; text: string }> = {
@@ -90,7 +84,6 @@ export default function PropertyDetailPage() {
 
   const [userRole, setUserRole] = useState<'guest' | 'tenant' | 'landlord' | 'admin'>('guest')
   const [tenantId, setTenantId] = useState<string | null>(null)
-  const [tenantName, setTenantName] = useState<string>('')
 
   const [enquiryOpen, setEnquiryOpen]       = useState(false)
   const [enquiryMsg, setEnquiryMsg]         = useState('')
@@ -99,13 +92,6 @@ export default function PropertyDetailPage() {
 
   const [activeTab, setActiveTab] = useState<ActiveTab>('overview')
   const [copied, setCopied]       = useState(false)
-  const [comments, setComments]   = useState<Comment[]>([])
-  const [commentText, setCommentText]       = useState('')
-  const [commentLoading, setCommentLoading] = useState(false)
-  const [commentsReady, setCommentsReady]   = useState(false)
-  const [replyingTo, setReplyingTo]         = useState<string | null>(null)
-  const [replyText, setReplyText]           = useState('')
-  const [replyLoading, setReplyLoading]     = useState(false)
 
   useEffect(() => {
     if (!isSupabaseConfigured() || !params.id) { setLoading(false); return }
@@ -131,13 +117,12 @@ export default function PropertyDetailPage() {
           setUserRole('admin')
         } else {
           const [{ data: tenant }, { data: landlord }] = await Promise.all([
-            supabase.from('tenants').select('id, full_name').eq('user_id', user.id).single() as unknown as Promise<{ data: { id: string; full_name: string } | null }>,
+            supabase.from('tenants').select('id').eq('user_id', user.id).single() as unknown as Promise<{ data: { id: string } | null }>,
             supabase.from('landlords').select('id').eq('user_id', user.id).single() as unknown as Promise<{ data: { id: string } | null }>,
           ])
           if (tenant) {
             setUserRole('tenant')
             setTenantId(tenant.id)
-            setTenantName(tenant.full_name)
             const { data: sv } = await supabase.from('saved_properties').select('id').eq('tenant_id', tenant.id).eq('property_id', params.id!).single() as { data: { id: string } | null }
             setSaved(!!sv)
           } else if (landlord) {
@@ -154,15 +139,6 @@ export default function PropertyDetailPage() {
     }
 
     init()
-    supabase
-      .from('property_comments')
-      .select('id, tenant_name, message, created_at, parent_id, author_role')
-      .eq('property_id', params.id)
-      .order('created_at', { ascending: true })
-      .then(({ data }) => {
-        setComments((data as Comment[]) ?? [])
-        setCommentsReady(true)
-      }, () => setCommentsReady(true))
   }, [params.id])
 
   const images = (property?.property_images ?? [])
@@ -191,55 +167,12 @@ export default function PropertyDetailPage() {
     await supabase.from('enquiries').insert({
       tenant_id: tenantId,
       property_id: params.id!,
-      landlord_id: property.landlords?.id ?? null,
+      landlord_id: null,
       message: enquiryMsg,
     })
     setEnquirySuccess(true)
     setEnquiryLoading(false)
     setEnquiryMsg('')
-  }
-
-  async function handleComment(e: React.FormEvent) {
-    e.preventDefault()
-    if (!tenantId || !commentText.trim()) return
-    setCommentLoading(true)
-    const supabase = createClient()
-    const { data, error } = await supabase.from('property_comments').insert({
-      property_id: params.id!,
-      tenant_id: tenantId,
-      tenant_name: tenantName,
-      message: commentText.trim(),
-    }).select().single()
-    if (!error && data) {
-      setComments(prev => [data as Comment, ...prev])
-      setCommentText('')
-    }
-    setCommentLoading(false)
-  }
-
-  async function handleReply(e: React.FormEvent, parentId: string) {
-    e.preventDefault()
-    if (!replyText.trim()) return
-    // landlord replies use landlord name; admin uses "Admin"
-    const supabase = createClient()
-    const replyerName = userRole === 'landlord'
-      ? (property?.landlords?.full_name ?? 'Landlord')
-      : 'Admin'
-    setReplyLoading(true)
-    const { data, error } = await supabase.from('property_comments').insert({
-      property_id: params.id!,
-      tenant_id: tenantId ?? null,
-      tenant_name: replyerName,
-      message: replyText.trim(),
-      parent_id: parentId,
-      author_role: userRole === 'admin' ? 'admin' : 'landlord',
-    }).select().single()
-    if (!error && data) {
-      setComments(prev => [...prev, data as Comment])
-      setReplyText('')
-      setReplyingTo(null)
-    }
-    setReplyLoading(false)
   }
 
   function handleShare() {
@@ -516,22 +449,26 @@ export default function PropertyDetailPage() {
                       className="space-y-5"
                     >
                       <h2 className="text-lg font-bold text-gray-900">What this place offers</h2>
-                      <div className="grid grid-cols-2 md:grid-cols-3 gap-2.5">
-                        {AMENITIES.map((amenity, i) => (
-                          <motion.div
-                            key={amenity.label}
-                            initial={{ opacity: 0, y: 8 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: i * 0.03, duration: 0.2 }}
-                            className="group flex items-center gap-3 p-3.5 rounded-2xl border border-gray-100 bg-gray-50 hover:bg-white hover:border-gray-200 hover:shadow-sm transition-all cursor-default"
-                          >
-                            <div className="w-8 h-8 rounded-xl bg-white border border-gray-100 group-hover:border-blue-100 group-hover:bg-blue-50 flex items-center justify-center shrink-0 transition-all shadow-sm">
-                              <amenity.icon className="w-4 h-4 text-gray-400 group-hover:text-blue-600 transition-colors" strokeWidth={1.5} />
-                            </div>
-                            <span className="text-[13px] font-semibold text-gray-600 group-hover:text-gray-800 transition-colors">{amenity.label}</span>
-                          </motion.div>
-                        ))}
-                      </div>
+                      {property.amenities && property.amenities.length > 0 ? (
+                        <div className="grid grid-cols-2 md:grid-cols-3 gap-2.5">
+                          {AMENITIES.filter(a => property.amenities?.includes(a.label)).map((amenity, i) => (
+                            <motion.div
+                              key={amenity.label}
+                              initial={{ opacity: 0, y: 8 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              transition={{ delay: i * 0.03, duration: 0.2 }}
+                              className="group flex items-center gap-3 p-3.5 rounded-2xl border border-gray-100 bg-gray-50 hover:bg-white hover:border-gray-200 hover:shadow-sm transition-all cursor-default"
+                            >
+                              <div className="w-8 h-8 rounded-xl bg-white border border-gray-100 group-hover:border-blue-100 group-hover:bg-blue-50 flex items-center justify-center shrink-0 transition-all shadow-sm">
+                                <amenity.icon className="w-4 h-4 text-gray-400 group-hover:text-blue-600 transition-colors" strokeWidth={1.5} />
+                              </div>
+                              <span className="text-[13px] font-semibold text-gray-600 group-hover:text-gray-800 transition-colors">{amenity.label}</span>
+                            </motion.div>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-sm text-gray-400">No amenities listed for this property.</p>
+                      )}
                     </motion.div>
                   )}
 
@@ -552,226 +489,36 @@ export default function PropertyDetailPage() {
                         </p>
                       </div>
 
-                      <div className="rounded-2xl overflow-hidden border border-gray-100 h-[300px] md:h-[360px] shadow-sm">
-                        <MapContainer
-                          center={[6.5244, 3.3792]}
-                          zoom={13}
-                          scrollWheelZoom={false}
-                          className="w-full h-full"
-                        >
-                          <TileLayer
-                            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-                            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                          />
-                          <Marker position={[6.5244, 3.3792]}>
-                            <Popup>
-                              <span className="font-semibold text-gray-900 text-xs">{property.title}</span><br />
-                              <span className="text-gray-400 text-xs">{property.address}, {property.city}</span>
-                            </Popup>
-                          </Marker>
-                        </MapContainer>
-                      </div>
-
-                      <div className="grid grid-cols-3 gap-3">
-                        {[
-                          { time: '5 min',  place: 'Falomo Bridge' },
-                          { time: '10 min', place: 'Victoria Island' },
-                          { time: '15 min', place: 'Lekki Phase 1' },
-                        ].map(({ time, place }) => (
-                          <div key={place} className="bg-gray-50 border border-gray-100 rounded-2xl p-4 text-center">
-                            <p className="text-sm font-black text-gray-900">{time}</p>
-                            <p className="text-[11px] text-gray-400 mt-0.5 font-medium">{place}</p>
-                          </div>
-                        ))}
-                      </div>
+                      {property.latitude && property.longitude ? (
+                        <div className="rounded-2xl overflow-hidden border border-gray-100 h-[300px] md:h-[360px] shadow-sm">
+                          <MapContainer
+                            center={[property.latitude, property.longitude]}
+                            zoom={15}
+                            scrollWheelZoom={false}
+                            className="w-full h-full"
+                          >
+                            <TileLayer
+                              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+                              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                            />
+                            <Marker position={[property.latitude, property.longitude]}>
+                              <Popup>
+                                <span className="font-semibold text-gray-900 text-xs">{property.title}</span><br />
+                                <span className="text-gray-400 text-xs">{property.address}, {property.city}</span>
+                              </Popup>
+                            </Marker>
+                          </MapContainer>
+                        </div>
+                      ) : (
+                        <div className="rounded-2xl border border-gray-100 h-[200px] flex items-center justify-center bg-gray-50">
+                          <p className="text-sm text-gray-400">Map location not available for this property.</p>
+                        </div>
+                      )}
                     </motion.div>
                   )}
 
                 </AnimatePresence>
               </div>
-            </div>
-            {/* Community */}
-            <div className="space-y-5">
-              <div className="flex items-center justify-between">
-                <h2 className="text-lg font-bold text-gray-900">
-                  Community
-                  {/* count only top-level comments */}
-                  <span className="ml-2 text-sm font-semibold text-gray-300">
-                    ({comments.filter(c => !c.parent_id).length})
-                  </span>
-                </h2>
-              </div>
-
-              {/* Tenant compose box */}
-              {userRole === 'tenant' && (
-                <div className="bg-white rounded-2xl border border-gray-100 p-5">
-                  <div className="flex gap-3">
-                    <div className="w-9 h-9 rounded-full bg-gray-900 flex items-center justify-center shrink-0 text-white font-bold text-sm">
-                      {tenantName ? tenantName[0].toUpperCase() : 'T'}
-                    </div>
-                    <form onSubmit={handleComment} className="flex-1 space-y-3">
-                      <textarea
-                        value={commentText}
-                        onChange={e => setCommentText(e.target.value)}
-                        placeholder="Share your thoughts or ask a question…"
-                        className="w-full bg-gray-50 border border-gray-100 rounded-xl px-4 py-3 text-sm text-gray-800 placeholder:text-gray-400 resize-none focus:outline-none focus:ring-2 focus:ring-gray-900/10 focus:border-gray-300 transition-all"
-                        rows={2}
-                      />
-                      <div className="flex justify-end">
-                        <button
-                          disabled={commentLoading || !commentText.trim()}
-                          className="flex items-center gap-2 px-5 py-2 bg-gray-900 text-white rounded-xl text-sm font-bold disabled:opacity-40 hover:bg-gray-800 transition-all active:scale-95"
-                        >
-                          Post <Send className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    </form>
-                  </div>
-                </div>
-              )}
-
-              {/* Guest prompt */}
-              {userRole === 'guest' && (
-                <div className="bg-white rounded-2xl border border-gray-100 p-5 flex items-center gap-4">
-                  <div className="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center shrink-0">
-                    <MessageCircle className="w-4 h-4 text-gray-400" />
-                  </div>
-                  <p className="text-sm text-gray-500 flex-1">Sign in to join the conversation.</p>
-                  <div className="flex gap-2 shrink-0">
-                    <Link href="/login" className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors">
-                      <LogIn className="w-3 h-3" /> Sign in
-                    </Link>
-                    <Link href="/register" className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors">
-                      <UserPlus className="w-3 h-3" /> Join
-                    </Link>
-                  </div>
-                </div>
-              )}
-
-              {/* Comment thread */}
-              {!commentsReady ? (
-                <div className="flex justify-center py-10">
-                  <div className="w-5 h-5 rounded-full border-2 border-gray-200 border-t-gray-600 animate-spin" />
-                </div>
-              ) : comments.filter(c => !c.parent_id).length === 0 ? (
-                <div className="text-center py-12 bg-white rounded-2xl border border-gray-100">
-                  <MessageSquare className="w-8 h-8 mx-auto mb-3 text-gray-200" />
-                  <p className="text-sm text-gray-400 font-medium">No comments yet. Be the first!</p>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  <AnimatePresence mode="popLayout">
-                    {comments.filter(c => !c.parent_id).map((c, i) => {
-                      const replies = comments.filter(r => r.parent_id === c.id)
-                      const isOwner = userRole === 'landlord' || userRole === 'admin'
-                      const isReplying = replyingTo === c.id
-
-                      return (
-                        <motion.div
-                          key={c.id}
-                          initial={{ opacity: 0, y: 8 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ delay: i * 0.04 }}
-                          className="bg-white rounded-2xl border border-gray-100 overflow-hidden"
-                        >
-                          {/* Top-level comment */}
-                          <div className="p-5 flex gap-3">
-                            <div className="w-9 h-9 rounded-full bg-gradient-to-br from-violet-100 to-blue-100 text-violet-600 flex items-center justify-center shrink-0 font-bold text-sm">
-                              {c.tenant_name[0]?.toUpperCase()}
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-2 mb-1.5">
-                                <span className="font-bold text-gray-900 text-sm">{c.tenant_name}</span>
-                                <span className="text-xs text-gray-300">·</span>
-                                <span className="text-xs text-gray-400">{timeAgo(c.created_at)}</span>
-                              </div>
-                              <p className="text-sm text-gray-600 leading-relaxed">{c.message}</p>
-
-                              {/* Reply button — only for landlord/admin who owns this property */}
-                              {isOwner && (
-                                <button
-                                  onClick={() => {
-                                    setReplyingTo(isReplying ? null : c.id)
-                                    setReplyText('')
-                                  }}
-                                  className="mt-2.5 flex items-center gap-1.5 text-xs font-bold text-blue-600 hover:text-blue-700 transition-colors"
-                                >
-                                  <MessageCircle className="w-3.5 h-3.5" />
-                                  {isReplying ? 'Cancel' : 'Reply'}
-                                </button>
-                              )}
-                            </div>
-                          </div>
-
-                          {/* Existing replies */}
-                          {replies.length > 0 && (
-                            <div className="border-t border-gray-50 bg-gray-50/60">
-                              {replies.map(r => (
-                                <div key={r.id} className="flex gap-3 px-5 py-4 border-b border-gray-100/60 last:border-0">
-                                  {/* Owner avatar */}
-                                  <div className="w-7 h-7 rounded-full bg-gray-900 flex items-center justify-center shrink-0 text-white font-bold text-xs">
-                                    {r.tenant_name[0]?.toUpperCase()}
-                                  </div>
-                                  <div className="flex-1 min-w-0">
-                                    <div className="flex items-center gap-2 mb-1">
-                                      <span className="font-bold text-gray-900 text-xs">{r.tenant_name}</span>
-                                      <span className="inline-flex items-center px-1.5 py-0.5 rounded-md bg-blue-50 text-blue-600 text-[10px] font-bold">
-                                        {r.author_role === 'admin' ? 'Admin' : 'Owner'}
-                                      </span>
-                                      <span className="text-[11px] text-gray-300">·</span>
-                                      <span className="text-[11px] text-gray-400">{timeAgo(r.created_at)}</span>
-                                    </div>
-                                    <p className="text-sm text-gray-600 leading-relaxed">{r.message}</p>
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                          )}
-
-                          {/* Inline reply compose box */}
-                          <AnimatePresence>
-                            {isReplying && (
-                              <motion.div
-                                initial={{ height: 0, opacity: 0 }}
-                                animate={{ height: 'auto', opacity: 1 }}
-                                exit={{ height: 0, opacity: 0 }}
-                                transition={{ duration: 0.2 }}
-                                className="overflow-hidden border-t border-gray-100"
-                              >
-                                <div className="p-4 bg-blue-50/40">
-                                  <div className="flex gap-3">
-                                    <div className="w-7 h-7 rounded-full bg-gray-900 flex items-center justify-center shrink-0 text-white font-bold text-xs">
-                                      {(property?.landlords?.full_name ?? 'L')[0].toUpperCase()}
-                                    </div>
-                                    <form
-                                      onSubmit={e => handleReply(e, c.id)}
-                                      className="flex-1 flex gap-2"
-                                    >
-                                      <textarea
-                                        value={replyText}
-                                        onChange={e => setReplyText(e.target.value)}
-                                        placeholder={`Reply to ${c.tenant_name}…`}
-                                        rows={2}
-                                        className="flex-1 bg-white border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-gray-800 placeholder:text-gray-400 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-300 transition-all"
-                                      />
-                                      <button
-                                        disabled={replyLoading || !replyText.trim()}
-                                        className="self-end flex items-center gap-1.5 px-4 py-2.5 bg-gray-900 text-white rounded-xl text-xs font-bold disabled:opacity-40 hover:bg-gray-800 transition-all active:scale-95 shrink-0"
-                                      >
-                                        Send <Send className="w-3 h-3" />
-                                      </button>
-                                    </form>
-                                  </div>
-                                </div>
-                              </motion.div>
-                            )}
-                          </AnimatePresence>
-                        </motion.div>
-                      )
-                    })}
-                  </AnimatePresence>
-                </div>
-              )}
             </div>
           </motion.div>
 
@@ -797,17 +544,15 @@ export default function PropertyDetailPage() {
                 </div>
 
                 <div className="p-5 space-y-3">
-                  {/* WhatsApp */}
-                  {landlord?.whatsapp && (
-                    <a
-                      href={`https://wa.me/${landlord.whatsapp.replace(/\D/g, '')}?text=${encodeURIComponent(`Hi, I'm interested in: ${property.title}`)}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center justify-center gap-2.5 w-full py-3.5 bg-[#25D366] text-white rounded-2xl font-bold text-sm hover:bg-[#20c05c] transition-all active:scale-[0.98] shadow-lg shadow-green-100"
-                    >
-                      <MessageSquare className="w-4 h-4" /> Chat on WhatsApp
-                    </a>
-                  )}
+                  {/* WhatsApp - connects to admin */}
+                  <a
+                    href={`https://wa.me/2348001234567?text=${encodeURIComponent(`Hi, I'm interested in: ${property.title} (${property.address}, ${property.city})`)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center justify-center gap-2.5 w-full py-3.5 bg-[#25D366] text-white rounded-2xl font-bold text-sm hover:bg-[#20c05c] transition-all active:scale-[0.98] shadow-lg shadow-green-100"
+                  >
+                    <MessageSquare className="w-4 h-4" /> Chat on WhatsApp
+                  </a>
 
                   {/* Enquiry toggle */}
                   <button
@@ -832,7 +577,7 @@ export default function PropertyDetailPage() {
                           {enquirySuccess ? (
                             <div className="flex items-center gap-2.5 p-4 bg-emerald-50 text-emerald-700 rounded-2xl text-sm font-medium border border-emerald-100">
                               <CheckCircle className="w-4 h-4 shrink-0" />
-                              Enquiry sent! The landlord will contact you shortly.
+                              Enquiry sent! Our team will contact you shortly.
                             </div>
                           ) : (
                             <form onSubmit={handleEnquiry} className="space-y-3">
@@ -840,7 +585,7 @@ export default function PropertyDetailPage() {
                                 required
                                 value={enquiryMsg}
                                 onChange={e => setEnquiryMsg(e.target.value)}
-                                placeholder="Tell the landlord why you're interested…"
+                                placeholder="Tell us why you're interested in this property…"
                                 className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-gray-900/10 focus:border-gray-300 min-h-[90px] resize-none transition-all"
                               />
                               <button

@@ -3,6 +3,8 @@ import { useParams, useLocation } from 'wouter'
 import {
   Home, FileText, MapPin, DollarSign, BedDouble, Bath,
   Maximize2, Tag, CheckCircle, ArrowLeft, ImagePlus, X, Star,
+  Wifi, Car, Dumbbell, Waves, Wind, Shield, Zap,
+  Droplets, TreePine, UtensilsCrossed, Tv, Lock, Sun, Package,
 } from 'lucide-react'
 import LandlordSidebar from '../../components/LandlordSidebar'
 import AuthGuard from '../../components/AuthGuard'
@@ -14,15 +16,36 @@ type FormData = {
   title: string; description: string; address: string; city: string
   price: string; bedrooms: string; bathrooms: string; area_sqft: string
   type: string; status: string; featured: boolean
+  amenities: string[]
+  latitude: string
+  longitude: string
 }
 
 type ExistingImage = {
   id: string; property_id: string; storage_path: string; is_cover: boolean; sort_order: number | null; alt_text: string | null
 }
 
+const AMENITIES = [
+  { icon: Wifi, label: 'High-Speed WiFi' },
+  { icon: Car, label: 'Parking Space' },
+  { icon: Dumbbell, label: 'Gym / Fitness' },
+  { icon: Waves, label: 'Swimming Pool' },
+  { icon: Wind, label: 'Air Conditioning' },
+  { icon: Shield, label: '24/7 Security' },
+  { icon: Zap, label: 'Backup Power' },
+  { icon: Droplets, label: 'Running Water' },
+  { icon: TreePine, label: 'Garden / Lawn' },
+  { icon: UtensilsCrossed, label: 'Modern Kitchen' },
+  { icon: Tv, label: 'Smart TV' },
+  { icon: Lock, label: 'Smart Lock' },
+  { icon: Sun, label: 'Solar Panels' },
+  { icon: Package, label: 'Storage Room' },
+]
+
 const emptyForm: FormData = {
   title: '', description: '', address: '', city: '', price: '',
   bedrooms: '1', bathrooms: '1', area_sqft: '', type: 'rent', status: 'available', featured: false,
+  amenities: [], latitude: '', longitude: '',
 }
 
 const FIELD_CLASS = 'w-full px-4 py-3 rounded-xl border border-gray-200 text-sm text-gray-900 bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all'
@@ -87,6 +110,9 @@ export default function LandlordListingForm() {
           type:        p.type ?? 'rent',
           status:      p.status ?? 'available',
           featured:    p.featured ?? false,
+          amenities:   p.amenities ?? [],
+          latitude:    p.latitude ? String(p.latitude) : '',
+          longitude:   p.longitude ? String(p.longitude) : '',
         })
         if (imgs) setExistingImages(imgs as ExistingImage[])
         setLoadingData(false)
@@ -213,6 +239,9 @@ export default function LandlordListingForm() {
       bedrooms: Number(form.bedrooms), bathrooms: Number(form.bathrooms),
       area_sqft: form.area_sqft ? Number(form.area_sqft) : null,
       type: form.type, status: form.status, featured: form.featured,
+      amenities: form.amenities,
+      latitude: form.latitude ? Number(form.latitude) : null,
+      longitude: form.longitude ? Number(form.longitude) : null,
     }
 
     let ok = true
@@ -363,6 +392,65 @@ export default function LandlordListingForm() {
                         placeholder="1200"
                         className={FIELD_CLASS} />
                     </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-sm font-semibold text-gray-700 mb-2 block">Latitude</label>
+                      <input type="number" step="any" value={form.latitude}
+                        onChange={e => set('latitude', e.target.value)}
+                        placeholder="e.g. 6.5244"
+                        className={FIELD_CLASS} />
+                    </div>
+                    <div>
+                      <label className="text-sm font-semibold text-gray-700 mb-2 block">Longitude</label>
+                      <input type="number" step="any" value={form.longitude}
+                        onChange={e => set('longitude', e.target.value)}
+                        placeholder="e.g. 3.3792"
+                        className={FIELD_CLASS} />
+                    </div>
+                  </div>
+                  <p className="text-xs text-gray-400">Optional: Add coordinates for precise map location. Find coordinates on <a href="https://maps.google.com" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">Google Maps</a>.</p>
+                </div>
+
+                {/* Amenities */}
+                <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-5">
+                  <div className="flex items-center gap-2 pb-1 border-b border-gray-100">
+                    <Tag className="w-4 h-4 text-blue-600" />
+                    <h2 className="text-sm font-bold text-gray-900">Amenities</h2>
+                  </div>
+
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                    {AMENITIES.map((amenity) => {
+                      const Icon = amenity.icon
+                      const isSelected = form.amenities.includes(amenity.label)
+                      return (
+                        <button
+                          key={amenity.label}
+                          type="button"
+                          onClick={() => {
+                            setForm(f => ({
+                              ...f,
+                              amenities: isSelected
+                                ? f.amenities.filter(a => a !== amenity.label)
+                                : [...f.amenities, amenity.label]
+                            }))
+                          }}
+                          className={`flex items-center gap-3 p-3 rounded-xl border text-left transition-all ${
+                            isSelected
+                              ? 'border-blue-500 bg-blue-50 text-blue-900'
+                              : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                          }`}
+                        >
+                          <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
+                            isSelected ? 'bg-blue-100' : 'bg-gray-100'
+                          }`}>
+                            <Icon className={`w-4 h-4 ${isSelected ? 'text-blue-600' : 'text-gray-400'}`} />
+                          </div>
+                          <span className="text-xs font-medium">{amenity.label}</span>
+                        </button>
+                      )
+                    })}
                   </div>
                 </div>
 
