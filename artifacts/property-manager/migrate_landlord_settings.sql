@@ -3,22 +3,11 @@
 
 -- Landlord Settings Table
 CREATE TABLE IF NOT EXISTS public.landlord_settings (
-  id          UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
-  landlord_id UUID        NOT NULL REFERENCES public.landlords(id) ON DELETE CASCADE,
-  notifications JSONB     NOT NULL DEFAULT '{
-    "enquiryEmail": true,
-    "statusEmail": true,
-    "reviewEmail": true,
-    "weeklyDigest": false,
-    "newMessage": true
-  }',
-  whatsapp    JSONB       NOT NULL DEFAULT '{
-    "number": "",
-    "autoReply": false,
-    "autoReplyMsg": "Hello! Thanks for your enquiry. I will get back to you shortly.",
-    "showOnListing": true
-  }',
-  updated_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  landlord_id UUID NOT NULL REFERENCES public.landlords(id) ON DELETE CASCADE,
+  notifications JSONB NOT NULL DEFAULT '{"enquiryEmail": true, "statusEmail": true, "reviewEmail": true, "weeklyDigest": false, "newMessage": true}'::jsonb,
+  whatsapp JSONB NOT NULL DEFAULT '{"number": "", "autoReply": false, "autoReplyMsg": "Hello! Thanks for your enquiry. I will get back to you shortly.", "showOnListing": true}'::jsonb,
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   UNIQUE(landlord_id)
 );
 

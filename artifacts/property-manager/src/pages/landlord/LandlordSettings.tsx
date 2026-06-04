@@ -3,8 +3,16 @@ import {
   Bell, Shield, Phone, Mail, Save, CheckCircle,
   MessageSquare, Eye, EyeOff, Key, ChevronRight,
   Globe, User, Lock, Laptop, Sparkles, ShieldCheck,
-  MessageCircle, Trash2, Loader2,
+  MessageCircle, Trash2, Loader2, AlertTriangle, X,
 } from 'lucide-react'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '../../components/ui/dialog'
 import LandlordSidebar from '../../components/LandlordSidebar'
 import AuthGuard from '../../components/AuthGuard'
 import { createClient } from '../../lib/supabase'
@@ -229,6 +237,73 @@ export default function LandlordSettings() {
     autoReplyMsg: 'Hello! Thanks for your enquiry. I will get back to you shortly.',
     showOnListing: true,
   })
+
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [deleteConfirmText, setDeleteConfirmText] = useState('')
+  const [deleting, setDeleting] = useState(false)
+
+  // Add spin animation styles
+  useEffect(() => {
+    const style = document.createElement('style')
+    style.textContent = `
+      @keyframes spin {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+      }
+    `
+    document.head.appendChild(style)
+    return () => { document.head.removeChild(style) }
+  }, [])
+
+  // Delete account handler
+  async function deleteAccount() {
+    if (deleteConfirmText !== 'DELETE') {
+      toast({ title: 'Error', description: 'Please type DELETE to confirm', variant: 'destructive' })
+      return
+    }
+    if (!landlord?.id || !user?.id) return
+
+    setDeleting(true)
+    const supabase = createClient()
+
+    try {
+      // 1. Delete landlord's properties (and their images via cascade)
+      const { error: propsError } = await supabase
+        .from('properties')
+        .delete()
+        .eq('landlord_id', landlord.id)
+
+      if (propsError) throw propsError
+
+      // 2. Delete landlord settings
+      const { error: settingsError } = await supabase
+        .from('landlord_settings')
+        .delete()
+        .eq('landlord_id', landlord.id)
+
+      if (settingsError) throw settingsError
+
+      // 3. Delete landlord record
+      const { error: landlordError } = await supabase
+        .from('landlords')
+        .delete()
+        .eq('id', landlord.id)
+
+      if (landlordError) throw landlordError
+
+      // 4. Sign out
+      await supabase.auth.signOut()
+
+      // 5. Redirect to home
+      window.location.href = '/'
+
+      toast({ title: 'Account Deleted', description: 'Your account has been permanently deleted.' })
+    } catch (err: any) {
+      console.error('Delete account error:', err)
+      toast({ title: 'Error', description: err.message || 'Failed to delete account', variant: 'destructive' })
+      setDeleting(false)
+    }
+  }
 
   // Load data
   useEffect(() => {
@@ -578,7 +653,7 @@ export default function LandlordSettings() {
                       <p style={{ fontSize: 13, color: '#B91C1C', marginBottom: 14 }}>
                         Permanently delete your account and all your listings. This action cannot be undone.
                       </p>
-                      <button type="button" style={{
+                      <button type="button" onClick={() => setDeleteDialogOpen(true)} style={{
                         padding: '8px 16px', border: '1px solid #FCA5A5', color: '#DC2626',
                         fontSize: 13, fontWeight: 600, background: 'transparent',
                         borderRadius: 8, cursor: 'pointer', fontFamily: 'inherit',
@@ -590,6 +665,72 @@ export default function LandlordSettings() {
                         Delete my account
                       </button>
                     </div>
+
+                    {/* Delete Account Dialog */}
+                    <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+                      <DialogContent style={{ maxWidth: 420 }}>
+                        <DialogHeader>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8 }}>
+                            <div style={{
+                              width: 40, height: 40, borderRadius: 8, background: '#FEE2E2',
+                              display: 'flex', alignItems: 'center', justifyContent: 'center'
+                            }}>
+                              <AlertTriangle style={{ width: 20, height: 20, color: '#DC2626' }} />
+                            </div>
+                            <DialogTitle style={{ margin: 0 }}>Delete Account</DialogTitle>
+                          </div>
+                          <DialogDescription style={{ fontSize: 13, color: '#64748B', lineHeight: 1.6 }}>
+                            This will permanently delete your account and all your listings. 
+                            This action <strong>cannot be undone</strong>. Type <strong>DELETE</strong> below to confirm.
+                          </DialogDescription>
+                        </DialogHeader>
+
+                        <div style={{ marginTop: 16 }}>
+                          <input
+                            type="text"
+                            value={deleteConfirmText}
+                            onChange={e => setDeleteConfirmText(e.target.value)}
+                            placeholder="Type DELETE to confirm"
+                            style={{
+                              width: '100%', padding: '10px 12px', borderRadius: 8,
+                              border: '1px solid #E2E8F0', fontSize: 14,
+                              fontFamily: 'inherit', outline: 'none',
+                            }}
+                            onFocus={e => (e.currentTarget.style.borderColor = '#DC2626')}
+                            onBlur={e => (e.currentTarget.style.borderColor = '#E2E8F0')}
+                          />
+                        </div>
+
+                        <DialogFooter style={{ marginTop: 20, gap: 8 }}>
+                          <button
+                            type="button"
+                            onClick={() => { setDeleteDialogOpen(false); setDeleteConfirmText('') }}
+                            disabled={deleting}
+                            style={{
+                              padding: '8px 16px', border: '1px solid #E2E8F0', background: '#fff',
+                              color: '#475569', fontSize: 13, fontWeight: 600,
+                              borderRadius: 8, cursor: deleting ? 'not-allowed' : 'pointer',
+                              fontFamily: 'inherit'
+                            }}
+                          >
+                            Cancel
+                          </button>
+                          <button
+                            type="button"
+                            onClick={deleteAccount}
+                            disabled={deleting || deleteConfirmText !== 'DELETE'}
+                            style={{
+                              padding: '8px 16px', border: 'none', background: deleting || deleteConfirmText !== 'DELETE' ? '#FCA5A5' : '#DC2626',
+                              color: '#fff', fontSize: 13, fontWeight: 600,
+                              borderRadius: 8, cursor: deleting || deleteConfirmText !== 'DELETE' ? 'not-allowed' : 'pointer',
+                              fontFamily: 'inherit', display: 'flex', alignItems: 'center', gap: 6
+                            }}
+                          >
+                            {deleting ? <><Loader2 style={{ width: 14, height: 14, animation: 'spin 1s linear infinite' }} /> Deleting...</> : 'Delete Account'}
+                          </button>
+                        </DialogFooter>
+                      </DialogContent>
+                    </Dialog>
                   </div>
                 )}
 
