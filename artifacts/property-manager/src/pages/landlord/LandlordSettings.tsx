@@ -462,12 +462,18 @@ export default function LandlordSettings() {
   const strength = getPasswordStrength(newPass)
   const strengthColors = ['#EF4444', '#F97316', '#EAB308', '#22C55E']
 
-  const initials = (landlord?.full_name ?? displayName ?? user?.email ?? 'U')
-    .split(' ').map((w: string) => w[0]).join('').toUpperCase().slice(0, 2)
+  const displayNameFallback = landlord?.full_name || displayName || user?.email || 'Your profile'
+  const initials = displayNameFallback
+    .split(' ')
+    .filter(Boolean)
+    .map((w: string) => w[0])
+    .join('')
+    .toUpperCase()
+    .slice(0, 2)
 
   return (
     <AuthGuard require="landlord">
-      <div style={{ display: 'flex', height: '100vh', overflow: 'hidden', background: '#F8FAFC', fontFamily: 'inherit' }}>
+      <div style={{ display: 'flex', minHeight: '100vh', overflow: 'hidden', background: '#F8FAFC', fontFamily: 'inherit' }}>
 
         <LandlordSidebar
           userName={landlord?.full_name}
@@ -478,7 +484,7 @@ export default function LandlordSettings() {
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, overflow: 'hidden' }}>
 
           <header style={{ padding: '24px 28px 0', background: '#F8FAFC' }}>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 320px', gap: 20, alignItems: 'center' }}>
+            <div style={{ width: '100%', maxWidth: 1140, margin: '0 auto', display: 'grid', gridTemplateColumns: '1fr minmax(280px, 320px)', gap: 20, alignItems: 'center' }}>
               <div>
                 <p style={{ fontSize: 13, fontWeight: 600, color: '#2563EB', marginBottom: 8, letterSpacing: '.18em', textTransform: 'uppercase' }}>
                   Landlord Settings
@@ -496,7 +502,7 @@ export default function LandlordSettings() {
                     {initials}
                   </div>
                   <div style={{ minWidth: 0 }}>
-                    <p style={{ fontSize: 14, fontWeight: 700, color: '#0F172A', margin: 0 }}>{landlord?.full_name || displayName || 'Your profile'}</p>
+                    <p style={{ fontSize: 14, fontWeight: 700, color: '#0F172A', margin: 0 }}>{displayNameFallback}</p>
                     <p style={{ fontSize: 13, color: '#64748B', margin: '6px 0 0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{user?.email || 'No email available'}</p>
                   </div>
                 </div>
@@ -515,10 +521,10 @@ export default function LandlordSettings() {
           </header>
 
           <main style={{ flex: 1, overflowY: 'auto', padding: '24px 28px 40px' }}>
+            <div style={{ width: '100%', maxWidth: 1140, margin: '0 auto' }}>
+              <div style={{ display: 'flex', gap: 20, maxWidth: 860, flexWrap: 'wrap' }}>
 
-            <div style={{ display: 'flex', gap: 20, maxWidth: 860 }}>
-
-              <div style={{ width: 220, flexShrink: 0 }} className="hidden sm:block">
+              <div style={{ width: 220, flexShrink: 0 }}>
                 <nav style={{
                   display: 'grid', gap: 10,
                   background: '#F8FAFC', border: '1px solid #E5E7EB',
@@ -939,6 +945,7 @@ export default function LandlordSettings() {
                 )}
 
               </div>
+            </div>
             </div>
           </main>
         </div>
