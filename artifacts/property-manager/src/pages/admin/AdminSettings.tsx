@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import {
-  Building2, Bell, Shield, Globe, Save,
-  CheckCircle, Mail, Phone, MapPin,
+  Building2, Bell, Shield, Globe, Save, CreditCard,
+  CheckCircle, Mail, Phone, MapPin, User, Wifi,
   Lock, Timer, BellRing, Zap, Image,
   FileText, DollarSign, Hash, Users, BarChart3,
   ArrowUpRight, AlertCircle,
