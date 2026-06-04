@@ -209,7 +209,6 @@ export default function LandlordSettings() {
   const [saved, setSaved] = useState(false)
   const [saving, setSaving] = useState(false)
   const [displayName, setDisplayName] = useState('')
-  const [phone, setPhone] = useState('')
   const [settingsId, setSettingsId] = useState<string | null>(null)
 
   const [notifs, setNotifs] = useState({
