@@ -1,127 +1,94 @@
 import { useState, useEffect } from 'react'
 import {
   Building2, Bell, Shield, Globe, CreditCard, Save,
-  CheckCircle, Mail, Phone, MapPin, ChevronRight,
-  ToggleLeft, ToggleRight, AlertCircle, Zap, Users,
-  BarChart3, Lock, Timer, BellRing, Wifi, Eye,
-  Hash, Image, FileText, DollarSign, RefreshCw,
-  ArrowUpRight, Sparkles, Activity,
+  CheckCircle, Mail, Phone, MapPin, RefreshCw,
+  Lock, Timer, BellRing, Wifi, Zap, Image,
+  FileText, DollarSign, Hash, Users, BarChart3,
+  ArrowUpRight, Activity, TrendingUp,
 } from 'lucide-react'
 import AdminSidebar from '../../components/AdminSidebar'
 import AuthGuard from '../../components/AuthGuard'
 import { createClient } from '../../lib/supabase'
 
 const SECTIONS = [
-  { id: 'platform',      label: 'Platform',       icon: Building2,  desc: 'Basic info' },
-  { id: 'notifications', label: 'Notifications',   icon: Bell,       desc: 'Alerts & emails' },
-  { id: 'security',      label: 'Security',         icon: Shield,     desc: 'Access control' },
-  { id: 'listing',       label: 'Listing Rules',    icon: Globe,      desc: 'Publishing rules' },
-  { id: 'billing',       label: 'Billing',          icon: CreditCard, desc: 'Plan & usage' },
+  { id: 'platform',      label: 'Platform',       icon: Building2  },
+  { id: 'notifications', label: 'Notifications',   icon: Bell       },
+  { id: 'security',      label: 'Security',         icon: Shield     },
+  { id: 'listing',       label: 'Listing Rules',    icon: Globe      },
+  { id: 'billing',       label: 'Billing',          icon: CreditCard },
 ]
 
-type ToggleProps = {
-  enabled: boolean
-  onChange: () => void
-  size?: 'sm' | 'md'
-}
-
-function Toggle({ enabled, onChange, size = 'md' }: ToggleProps) {
-  const w = size === 'sm' ? 'w-9' : 'w-11'
-  const h = size === 'sm' ? 'h-5' : 'h-6'
-  const knob = size === 'sm' ? 'w-3.5 h-3.5' : 'w-4 h-4'
-  const onTx = size === 'sm' ? 'translate-x-4' : 'translate-x-6'
+function Toggle({ enabled, onChange }: { enabled: boolean; onChange: () => void }) {
   return (
     <button
       type="button"
       role="switch"
       aria-checked={enabled}
       onClick={onChange}
-      className={`relative ${w} ${h} rounded-full transition-all duration-300 shrink-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 ${
-        enabled
-          ? 'bg-gradient-to-r from-blue-500 to-blue-600 shadow-inner shadow-blue-700/30'
-          : 'bg-gray-200 dark:bg-gray-700'
+      className={`relative w-10 h-[22px] rounded-full transition-colors duration-200 shrink-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#C8A96E] focus-visible:ring-offset-2 focus-visible:ring-offset-[#FAFAF7] ${
+        enabled ? 'bg-[#C8A96E]' : 'bg-[#D8D5CC]'
       }`}
     >
-      <span className={`absolute top-1 ${knob} rounded-full bg-white shadow-md transition-transform duration-300 ${enabled ? onTx : 'translate-x-1'}`} />
+      <span className={`absolute top-[3px] w-4 h-4 rounded-full bg-white shadow-sm transition-transform duration-200 ${enabled ? 'translate-x-5' : 'translate-x-[3px]'}`} />
     </button>
   )
 }
 
-type FieldConfig = { key: string; label: string; icon: React.ElementType; span?: string }
-
-type InputFieldProps = {
-  field: FieldConfig
-  value: string
-  onChange: (val: string) => void
-}
-
-function InputField({ field, value, onChange }: InputFieldProps) {
+function FieldInput({
+  label, value, onChange, icon: Icon, mono = false,
+}: {
+  label: string; value: string; onChange: (v: string) => void; icon: React.ElementType; mono?: boolean
+}) {
   const [focused, setFocused] = useState(false)
-  const Icon = field.icon
   return (
-    <div className={field.span || ''}>
-      <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-[0.12em] mb-2">
-        {field.label}
-      </label>
-      <div className={`relative flex items-center gap-2.5 rounded-xl px-3.5 py-2.5 border transition-all duration-200 bg-white ${
-        focused
-          ? 'border-blue-400 ring-3 ring-blue-500/10 shadow-sm'
-          : 'border-gray-200 hover:border-gray-300'
+    <div>
+      <label className="block text-[10px] font-bold tracking-[0.14em] text-[#9B9589] uppercase mb-1.5">{label}</label>
+      <div className={`flex items-center gap-2.5 border rounded-lg px-3 py-2.5 bg-white transition-all ${
+        focused ? 'border-[#C8A96E] ring-2 ring-[#C8A96E]/15' : 'border-[#E2DDD6] hover:border-[#C9C4BB]'
       }`}>
-        <Icon className={`w-4 h-4 shrink-0 transition-colors ${focused ? 'text-blue-500' : 'text-gray-350'}`} strokeWidth={1.7} />
+        <Icon className={`w-3.5 h-3.5 shrink-0 transition-colors ${focused ? 'text-[#C8A96E]' : 'text-[#B0AAA0]'}`} strokeWidth={1.8} />
         <input
           value={value}
           onChange={e => onChange(e.target.value)}
           onFocus={() => setFocused(true)}
           onBlur={() => setFocused(false)}
-          className="flex-1 text-sm text-gray-800 font-medium placeholder:text-gray-300 focus:outline-none bg-transparent"
+          className={`flex-1 text-sm text-[#2C2A25] placeholder:text-[#C8C3BB] focus:outline-none bg-transparent ${mono ? 'font-mono' : ''}`}
         />
       </div>
     </div>
   )
 }
 
-type ToggleRowProps = {
-  label: string
-  desc: string
-  enabled: boolean
-  onChange: () => void
-  icon?: React.ElementType
-  badge?: string
-  badgeColor?: string
-}
-
-function ToggleRow({ label, desc, enabled, onChange, icon: Icon, badge, badgeColor = 'blue' }: ToggleRowProps) {
-  const badgeMap: Record<string, string> = {
-    blue: 'bg-blue-50 text-blue-600',
-    green: 'bg-emerald-50 text-emerald-600',
-    amber: 'bg-amber-50 text-amber-700',
-    red: 'bg-red-50 text-red-600',
-  }
+function ToggleRow({
+  label, desc, enabled, onChange, icon: Icon, tag,
+}: {
+  label: string; desc: string; enabled: boolean; onChange: () => void; icon?: React.ElementType; tag?: string
+}) {
   return (
-    <div className={`group flex items-center justify-between gap-4 p-4 rounded-2xl border transition-all duration-200 cursor-pointer ${
-      enabled
-        ? 'border-blue-100 bg-blue-50/40'
-        : 'border-gray-100 bg-white hover:bg-gray-50/70 hover:border-gray-200'
-    }`} onClick={onChange}>
-      <div className="flex items-start gap-3 min-w-0">
+    <div
+      className={`flex items-center justify-between gap-4 px-4 py-3.5 rounded-xl border cursor-pointer transition-all duration-150 ${
+        enabled
+          ? 'bg-[#FEFCF7] border-[#E8D9BB]'
+          : 'bg-white border-[#E8E4DE] hover:border-[#D4CFC7] hover:bg-[#FDFCFA]'
+      }`}
+      onClick={onChange}
+    >
+      <div className="flex items-center gap-3 min-w-0">
         {Icon && (
-          <div className={`mt-0.5 w-8 h-8 rounded-xl flex items-center justify-center shrink-0 transition-colors ${
-            enabled ? 'bg-blue-100' : 'bg-gray-100 group-hover:bg-gray-200'
+          <div className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${
+            enabled ? 'bg-[#F5ECD9]' : 'bg-[#F0EDE8]'
           }`}>
-            <Icon className={`w-4 h-4 transition-colors ${enabled ? 'text-blue-600' : 'text-gray-400'}`} strokeWidth={1.7} />
+            <Icon className={`w-3.5 h-3.5 ${enabled ? 'text-[#A87C3A]' : 'text-[#A09890]'}`} strokeWidth={1.8} />
           </div>
         )}
         <div className="min-w-0">
-          <div className="flex items-center gap-2 flex-wrap">
-            <p className={`text-sm font-semibold transition-colors ${enabled ? 'text-blue-900' : 'text-gray-800'}`}>{label}</p>
-            {badge && (
-              <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wide ${badgeMap[badgeColor]}`}>
-                {badge}
-              </span>
+          <div className="flex items-center gap-2">
+            <span className={`text-sm font-semibold ${enabled ? 'text-[#2C2A25]' : 'text-[#5C5750]'}`}>{label}</span>
+            {tag && (
+              <span className="text-[9px] font-bold tracking-widest uppercase px-1.5 py-0.5 rounded bg-[#F0EDE8] text-[#9B9589]">{tag}</span>
             )}
           </div>
-          <p className={`text-xs mt-0.5 transition-colors ${enabled ? 'text-blue-700/60' : 'text-gray-400'}`}>{desc}</p>
+          <p className="text-xs text-[#9B9589] mt-0.5 truncate">{desc}</p>
         </div>
       </div>
       <div onClick={e => e.stopPropagation()}>
@@ -131,20 +98,17 @@ function ToggleRow({ label, desc, enabled, onChange, icon: Icon, badge, badgeCol
   )
 }
 
-type SectionHeaderProps = { title: string; desc: string; icon: React.ElementType }
-
-function SectionHeader({ title, desc, icon: Icon }: SectionHeaderProps) {
+function SectionTitle({ title, sub }: { title: string; sub: string }) {
   return (
-    <div className="flex items-start gap-4 pb-5 border-b border-gray-100">
-      <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-blue-50 to-blue-100 flex items-center justify-center shrink-0">
-        <Icon className="w-5 h-5 text-blue-600" strokeWidth={1.7} />
-      </div>
-      <div>
-        <h2 className="text-base font-extrabold text-gray-900 tracking-tight">{title}</h2>
-        <p className="text-xs text-gray-400 mt-0.5">{desc}</p>
-      </div>
+    <div className="mb-6">
+      <h2 className="text-lg font-extrabold text-[#1E1C18] tracking-tight">{title}</h2>
+      <p className="text-xs text-[#9B9589] mt-0.5">{sub}</p>
     </div>
   )
+}
+
+function Divider() {
+  return <div className="h-px bg-[#EDE9E2] my-6" />
 }
 
 export default function AdminSettings() {
@@ -191,530 +155,383 @@ export default function AdminSettings() {
       setSaving(false)
       setSaved(true)
       setTimeout(() => setSaved(false), 3000)
-    }, 900)
+    }, 800)
   }
 
   const displayName = user?.email ? user.email.split('@')[0] : 'Admin'
-  const activeSection = SECTIONS.find(s => s.id === active)!
 
   return (
     <AuthGuard require="admin">
-      <div className="flex h-screen overflow-hidden bg-[#F4F6FB]">
+      <div className="flex h-screen overflow-hidden bg-[#F4F2ED]">
         <AdminSidebar userEmail={user?.email} userName={displayName} />
 
         <div className="flex-1 flex flex-col min-w-0">
 
-          {/* ── Header ── */}
-          <header className="flex items-center justify-between pl-14 pr-4 md:px-8 py-4 bg-white/80 backdrop-blur-md border-b border-gray-100/80 shrink-0 sticky top-0 z-20">
+          {/* ── Top bar ── */}
+          <header className="flex items-center justify-between pl-14 pr-6 md:pl-8 md:pr-8 py-3.5 bg-[#F4F2ED] border-b border-[#E2DDD6] shrink-0">
             <div className="flex items-center gap-3">
-              <div className="hidden sm:flex flex-col">
-                <h1 className="text-lg font-extrabold text-gray-900 tracking-tight leading-tight">Settings</h1>
-                <p className="text-xs text-gray-400 leading-tight">{activeSection.desc}</p>
-              </div>
-              <div className="sm:hidden">
-                <h1 className="text-lg font-extrabold text-gray-900">Settings</h1>
-              </div>
+              <p className="text-xs font-mono text-[#A09890] hidden sm:block">livana / admin /</p>
+              <h1 className="text-sm font-bold text-[#1E1C18] tracking-tight">settings</h1>
             </div>
-
-            <div className="flex items-center gap-2">
-              {/* Status pill */}
-              <div className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-50 border border-emerald-100">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                <span className="text-xs font-semibold text-emerald-700">All systems normal</span>
-              </div>
-
-              <button
-                type="button"
-                onClick={handleSave}
-                disabled={saving}
-                className={`inline-flex items-center gap-2 px-4 py-2 text-sm font-bold rounded-xl transition-all duration-300 shadow-sm ${
-                  saved
-                    ? 'bg-emerald-500 text-white shadow-emerald-400/30'
-                    : saving
-                    ? 'bg-blue-400 text-white cursor-not-allowed'
-                    : 'bg-blue-600 hover:bg-blue-700 active:scale-95 text-white shadow-blue-600/25'
-                }`}
-              >
-                {saved ? (
-                  <><CheckCircle className="w-4 h-4" /> Saved!</>
-                ) : saving ? (
-                  <><RefreshCw className="w-4 h-4 animate-spin" /> Saving…</>
-                ) : (
-                  <><Save className="w-4 h-4" /> Save Changes</>
-                )}
-              </button>
-            </div>
+            <button
+              type="button"
+              onClick={handleSave}
+              disabled={saving}
+              className={`inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold tracking-wide rounded-lg transition-all duration-200 ${
+                saved
+                  ? 'bg-[#3B6D11] text-white'
+                  : saving
+                  ? 'bg-[#C8A96E]/60 text-white cursor-not-allowed'
+                  : 'bg-[#1E1C18] hover:bg-[#2C2A25] active:scale-95 text-white'
+              }`}
+            >
+              {saved
+                ? <><CheckCircle className="w-3.5 h-3.5" /> saved</>
+                : saving
+                ? <><RefreshCw className="w-3.5 h-3.5 animate-spin" /> saving…</>
+                : <><Save className="w-3.5 h-3.5" /> save changes</>
+              }
+            </button>
           </header>
 
-          <main className="flex-1 overflow-y-auto p-4 md:p-6 pb-28 md:pb-8">
+          {/* ── Tab bar ── */}
+          <div className="flex items-end gap-0 pl-14 md:pl-8 border-b border-[#E2DDD6] bg-[#F4F2ED] shrink-0 overflow-x-auto scrollbar-none">
+            {SECTIONS.map(s => {
+              const Icon = s.icon
+              const isActive = active === s.id
+              return (
+                <button
+                  key={s.id}
+                  type="button"
+                  onClick={() => setActive(s.id)}
+                  className={`relative flex items-center gap-2 px-4 py-3 text-xs font-semibold whitespace-nowrap transition-all duration-150 border-b-2 -mb-px ${
+                    isActive
+                      ? 'border-[#C8A96E] text-[#1E1C18]'
+                      : 'border-transparent text-[#9B9589] hover:text-[#5C5750]'
+                  }`}
+                >
+                  <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-[#C8A96E]' : ''}`} strokeWidth={1.8} />
+                  {s.label}
+                </button>
+              )
+            })}
+          </div>
 
-            {/* ── Mobile tabs ── */}
-            <div className="sm:hidden flex gap-2 overflow-x-auto pb-3 mb-5 scrollbar-none -mx-1 px-1">
-              {SECTIONS.map(s => {
-                const Icon = s.icon
-                return (
-                  <button key={s.id} type="button" onClick={() => setActive(s.id)}
-                    className={`flex items-center gap-1.5 px-3 py-2 rounded-full text-xs font-bold whitespace-nowrap shrink-0 transition-all ${
-                      active === s.id
-                        ? 'bg-blue-600 text-white shadow-sm shadow-blue-600/30'
-                        : 'bg-white border border-gray-200 text-gray-500 hover:border-gray-300'
-                    }`}>
-                    <Icon className="w-3.5 h-3.5" strokeWidth={1.7} />
-                    {s.label}
-                  </button>
-                )
-              })}
-            </div>
+          {/* ── Main content ── */}
+          <main className="flex-1 overflow-y-auto">
+            <div className="max-w-3xl mx-auto px-4 md:px-8 py-8">
 
-            <div className="flex gap-6 max-w-5xl mx-auto">
-
-              {/* ── Left nav ── */}
-              <div className="hidden sm:block w-52 shrink-0">
-                <nav className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-                  <div className="px-4 py-3 border-b border-gray-50">
-                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-[0.1em]">Configuration</p>
+              {/* ─── PLATFORM ─── */}
+              {active === 'platform' && (
+                <div>
+                  <SectionTitle title="Platform information" sub="Public-facing details about your real estate platform." />
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                    <FieldInput label="Platform name" value={platform.name} onChange={v => setPlatform(p => ({ ...p, name: v }))} icon={Building2} />
+                    <FieldInput label="Tagline" value={platform.tagline} onChange={v => setPlatform(p => ({ ...p, tagline: v }))} icon={Globe} />
+                    <FieldInput label="Support email" value={platform.email} onChange={v => setPlatform(p => ({ ...p, email: v }))} icon={Mail} mono />
+                    <FieldInput label="Phone" value={platform.phone} onChange={v => setPlatform(p => ({ ...p, phone: v }))} icon={Phone} mono />
+                    <div className="sm:col-span-2">
+                      <FieldInput label="Address" value={platform.address} onChange={v => setPlatform(p => ({ ...p, address: v }))} icon={MapPin} />
+                    </div>
+                    <FieldInput label="Currency" value={platform.currency} onChange={v => setPlatform(p => ({ ...p, currency: v }))} icon={CreditCard} mono />
+                    <FieldInput label="Country" value={platform.country} onChange={v => setPlatform(p => ({ ...p, country: v }))} icon={Globe} />
+                    <div className="sm:col-span-2">
+                      <FieldInput label="Website" value={platform.website} onChange={v => setPlatform(p => ({ ...p, website: v }))} icon={ArrowUpRight} mono />
+                    </div>
                   </div>
-                  {SECTIONS.map((s, i) => {
-                    const Icon = s.icon
-                    const isActive = active === s.id
-                    return (
-                      <button key={s.id} type="button" onClick={() => setActive(s.id)}
-                        className={`w-full flex items-center justify-between gap-3 px-4 py-3.5 text-sm transition-all duration-150 border-b border-gray-50 last:border-0 ${
-                          isActive
-                            ? 'bg-blue-600 text-white'
-                            : 'text-gray-600 hover:bg-gray-50/80'
-                        }`}>
-                        <div className="flex items-center gap-3">
-                          <div className={`w-7 h-7 rounded-lg flex items-center justify-center transition-colors ${
-                            isActive ? 'bg-white/20' : 'bg-gray-100'
-                          }`}>
-                            <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-white' : 'text-gray-500'}`} strokeWidth={1.8} />
-                          </div>
-                          <div className="text-left">
-                            <p className={`text-sm font-semibold leading-tight ${isActive ? 'text-white' : 'text-gray-700'}`}>{s.label}</p>
-                            <p className={`text-[10px] leading-tight mt-0.5 ${isActive ? 'text-blue-200' : 'text-gray-400'}`}>{s.desc}</p>
-                          </div>
-                        </div>
-                        <ChevronRight className={`w-3.5 h-3.5 shrink-0 transition-transform ${isActive ? 'text-blue-200 translate-x-0.5' : 'text-gray-300'}`} />
-                      </button>
-                    )
-                  })}
-                </nav>
-
-                {/* Quick info card */}
-                <div className="mt-4 bg-gradient-to-br from-blue-600 to-blue-700 rounded-2xl p-4 text-white shadow-lg shadow-blue-600/20">
-                  <div className="flex items-center gap-2 mb-2">
-                    <Sparkles className="w-3.5 h-3.5 text-blue-200" strokeWidth={2} />
-                    <p className="text-[10px] font-bold text-blue-200 uppercase tracking-wider">Pro Tip</p>
+                  <Divider />
+                  <div className="flex items-start gap-3 p-4 rounded-xl bg-[#FEFCF7] border border-[#E8D9BB]">
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#C8A96E] mt-1.5 shrink-0" />
+                    <p className="text-xs text-[#7A6A44] leading-relaxed">
+                      Platform name and support email are used in all outgoing emails and SMS notifications. Save changes to apply globally.
+                    </p>
                   </div>
-                  <p className="text-xs text-blue-100 leading-relaxed">Enable auto-approve to speed up listing time for verified landlords.</p>
-                  <button
-                    type="button"
-                    onClick={() => setActive('listing')}
-                    className="mt-3 text-xs font-bold text-white/80 hover:text-white flex items-center gap-1 transition-colors"
-                  >
-                    Go to Listing Rules <ArrowUpRight className="w-3 h-3" />
-                  </button>
                 </div>
-              </div>
+              )}
 
-              {/* ── Content ── */}
-              <div className="flex-1 min-w-0 space-y-4">
-
-                {/* ─── PLATFORM ─── */}
-                {active === 'platform' && (
-                  <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-6">
-                    <SectionHeader title="Platform Information" desc="Basic details about your real estate platform." icon={Building2} />
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      {([
-                        { key: 'name',     label: 'Platform Name',  icon: Building2  },
-                        { key: 'tagline',  label: 'Tagline',         icon: Sparkles   },
-                        { key: 'email',    label: 'Support Email',   icon: Mail       },
-                        { key: 'phone',    label: 'Phone',           icon: Phone      },
-                        { key: 'address',  label: 'Address',         icon: MapPin,    span: 'sm:col-span-2' },
-                        { key: 'currency', label: 'Currency',        icon: CreditCard },
-                        { key: 'country',  label: 'Country',         icon: Globe      },
-                        { key: 'website',  label: 'Website URL',     icon: ArrowUpRight },
-                      ] as FieldConfig[]).map(f => (
-                        <InputField
-                          key={f.key}
-                          field={f}
-                          value={(platform as any)[f.key]}
-                          onChange={val => setPlatform(p => ({ ...p, [f.key]: val }))}
-                        />
-                      ))}
-                    </div>
-
-                    {/* Info banner */}
-                    <div className="flex items-start gap-3 p-4 rounded-xl bg-amber-50 border border-amber-100">
-                      <AlertCircle className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" strokeWidth={2} />
-                      <p className="text-xs text-amber-700 leading-relaxed">
-                        Changes to platform name and email will reflect on all outgoing emails and SMS notifications. Remember to save.
-                      </p>
-                    </div>
+              {/* ─── NOTIFICATIONS ─── */}
+              {active === 'notifications' && (
+                <div>
+                  <SectionTitle title="Notification preferences" sub="Control which events trigger alerts and how they are delivered." />
+                  <div className="space-y-2">
+                    <ToggleRow
+                      label="New landlord registration" desc="Triggered when a new landlord completes sign-up"
+                      enabled={notifications.newLandlord} onChange={() => setNotifications(n => ({ ...n, newLandlord: !n.newLandlord }))}
+                      icon={Users} tag="email"
+                    />
+                    <ToggleRow
+                      label="New enquiry received" desc="Alert when a tenant submits a property enquiry"
+                      enabled={notifications.newEnquiry} onChange={() => setNotifications(n => ({ ...n, newEnquiry: !n.newEnquiry }))}
+                      icon={BellRing} tag="email"
+                    />
+                    <ToggleRow
+                      label="New property listed" desc="Alert when a landlord publishes a new listing"
+                      enabled={notifications.newProperty} onChange={() => setNotifications(n => ({ ...n, newProperty: !n.newProperty }))}
+                      icon={Building2} tag="email"
+                    />
+                    <ToggleRow
+                      label="Weekly summary report" desc="Analytics digest delivered every Monday morning"
+                      enabled={notifications.weeklyReport} onChange={() => setNotifications(n => ({ ...n, weeklyReport: !n.weeklyReport }))}
+                      icon={BarChart3} tag="digest"
+                    />
+                    <ToggleRow
+                      label="SMS alerts" desc="Critical platform alerts sent via SMS (Twilio)"
+                      enabled={notifications.smsAlerts} onChange={() => setNotifications(n => ({ ...n, smsAlerts: !n.smsAlerts }))}
+                      icon={Wifi} tag="paid"
+                    />
                   </div>
-                )}
-
-                {/* ─── NOTIFICATIONS ─── */}
-                {active === 'notifications' && (
-                  <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-6">
-                    <SectionHeader title="Notification Preferences" desc="Choose what alerts you receive and how." icon={Bell} />
-
-                    <div className="space-y-2.5">
-                      <ToggleRow
-                        label="New landlord registration"
-                        desc="Get notified when a new landlord registers"
-                        enabled={notifications.newLandlord}
-                        onChange={() => setNotifications(ns => ({ ...ns, newLandlord: !ns.newLandlord }))}
-                        icon={Users}
-                        badge="Email"
-                        badgeColor="blue"
-                      />
-                      <ToggleRow
-                        label="New enquiry received"
-                        desc="Alert when a tenant sends a property enquiry"
-                        enabled={notifications.newEnquiry}
-                        onChange={() => setNotifications(ns => ({ ...ns, newEnquiry: !ns.newEnquiry }))}
-                        icon={BellRing}
-                        badge="Email"
-                        badgeColor="blue"
-                      />
-                      <ToggleRow
-                        label="New property listed"
-                        desc="Alert when a landlord adds a new listing"
-                        enabled={notifications.newProperty}
-                        onChange={() => setNotifications(ns => ({ ...ns, newProperty: !ns.newProperty }))}
-                        icon={Building2}
-                        badge="Email"
-                        badgeColor="blue"
-                      />
-                      <ToggleRow
-                        label="Weekly summary report"
-                        desc="Receive a weekly analytics digest every Monday"
-                        enabled={notifications.weeklyReport}
-                        onChange={() => setNotifications(ns => ({ ...ns, weeklyReport: !ns.weeklyReport }))}
-                        icon={BarChart3}
-                        badge="Digest"
-                        badgeColor="green"
-                      />
-                      <ToggleRow
-                        label="SMS alerts"
-                        desc="Send critical platform alerts via SMS"
-                        enabled={notifications.smsAlerts}
-                        onChange={() => setNotifications(ns => ({ ...ns, smsAlerts: !ns.smsAlerts }))}
-                        icon={Wifi}
-                        badge="Paid"
-                        badgeColor="amber"
-                      />
-                    </div>
-
-                    {/* Channel summary */}
-                    <div className="grid grid-cols-3 gap-3 pt-2">
-                      {[
-                        { label: 'Email alerts', count: [notifications.newLandlord, notifications.newEnquiry, notifications.newProperty, notifications.weeklyReport].filter(Boolean).length, total: 4, color: 'blue' },
-                        { label: 'SMS alerts', count: notifications.smsAlerts ? 1 : 0, total: 1, color: 'amber' },
-                        { label: 'Active total', count: Object.values(notifications).filter(Boolean).length, total: 5, color: 'green' },
-                      ].map(c => (
-                        <div key={c.label} className="bg-gray-50 rounded-xl p-3 border border-gray-100 text-center">
-                          <p className={`text-xl font-extrabold ${
-                            c.color === 'blue' ? 'text-blue-600' : c.color === 'amber' ? 'text-amber-600' : 'text-emerald-600'
-                          }`}>{c.count}<span className="text-sm font-semibold text-gray-300">/{c.total}</span></p>
-                          <p className="text-[10px] text-gray-400 font-medium mt-0.5">{c.label}</p>
-                        </div>
-                      ))}
-                    </div>
+                  <Divider />
+                  <div className="grid grid-cols-3 gap-3">
+                    {[
+                      { label: 'Email on', val: [notifications.newLandlord, notifications.newEnquiry, notifications.newProperty, notifications.weeklyReport].filter(Boolean).length, of: 4 },
+                      { label: 'SMS on', val: notifications.smsAlerts ? 1 : 0, of: 1 },
+                      { label: 'Total active', val: Object.values(notifications).filter(Boolean).length, of: 5 },
+                    ].map(s => (
+                      <div key={s.label} className="bg-white border border-[#E2DDD6] rounded-xl p-4 text-center">
+                        <p className="text-2xl font-extrabold text-[#1E1C18] font-mono">{s.val}<span className="text-sm text-[#C4BFBA]">/{s.of}</span></p>
+                        <p className="text-[10px] uppercase tracking-widest text-[#9B9589] font-bold mt-1">{s.label}</p>
+                      </div>
+                    ))}
                   </div>
-                )}
+                </div>
+              )}
 
-                {/* ─── SECURITY ─── */}
-                {active === 'security' && (
-                  <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-6">
-                    <SectionHeader title="Security Settings" desc="Manage authentication and access control." icon={Shield} />
-
-                    <div className="space-y-2.5">
-                      {[
-                        {
-                          title: 'Two-Factor Authentication',
-                          desc: 'Require 2FA for all admin logins',
-                          enabled: true,
-                          icon: Lock,
-                          badge: 'Critical',
-                          badgeColor: 'red' as const,
-                        },
-                        {
-                          title: 'Session Timeout',
-                          desc: 'Auto-logout after 30 minutes of inactivity',
-                          enabled: true,
-                          icon: Timer,
-                          badge: 'Active',
-                          badgeColor: 'green' as const,
-                        },
-                        {
-                          title: 'Login Notifications',
-                          desc: 'Email alert on every new admin login',
-                          enabled: false,
-                          icon: BellRing,
-                          badge: undefined,
-                          badgeColor: 'blue' as const,
-                        },
-                        {
-                          title: 'IP Allowlist',
-                          desc: 'Restrict admin access to specific IP ranges',
-                          enabled: false,
-                          icon: Wifi,
-                          badge: 'Enterprise',
-                          badgeColor: 'amber' as const,
-                        },
-                      ].map(s => (
-                        <div key={s.title} className={`flex items-center justify-between gap-4 p-4 rounded-2xl border transition-colors ${
-                          s.enabled ? 'border-emerald-100 bg-emerald-50/40' : 'border-gray-100 bg-white'
-                        }`}>
-                          <div className="flex items-center gap-3">
-                            <div className={`w-8 h-8 rounded-xl flex items-center justify-center ${
-                              s.enabled ? 'bg-emerald-100' : 'bg-gray-100'
-                            }`}>
-                              <s.icon className={`w-4 h-4 ${s.enabled ? 'text-emerald-600' : 'text-gray-400'}`} strokeWidth={1.7} />
-                            </div>
-                            <div>
-                              <div className="flex items-center gap-2 flex-wrap">
-                                <p className={`text-sm font-semibold ${s.enabled ? 'text-emerald-900' : 'text-gray-700'}`}>{s.title}</p>
-                                {s.badge && (
-                                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wide ${
-                                    s.badgeColor === 'red' ? 'bg-red-50 text-red-600'
-                                    : s.badgeColor === 'green' ? 'bg-emerald-50 text-emerald-600'
-                                    : s.badgeColor === 'amber' ? 'bg-amber-50 text-amber-700'
-                                    : 'bg-blue-50 text-blue-600'
-                                  }`}>{s.badge}</span>
-                                )}
-                              </div>
-                              <p className={`text-xs mt-0.5 ${s.enabled ? 'text-emerald-700/60' : 'text-gray-400'}`}>{s.desc}</p>
-                            </div>
+              {/* ─── SECURITY ─── */}
+              {active === 'security' && (
+                <div>
+                  <SectionTitle title="Security settings" sub="Manage authentication, session control, and access restrictions." />
+                  <div className="space-y-2">
+                    {[
+                      { title: '2FA for all admins', desc: 'Require two-factor auth on every admin login', enabled: true, icon: Lock, tag: 'critical' },
+                      { title: 'Session timeout (30 min)', desc: 'Auto-logout after 30 minutes of inactivity', enabled: true, icon: Timer, tag: 'active' },
+                      { title: 'Login notifications', desc: 'Email alert triggered on every new admin login', enabled: false, icon: BellRing, tag: undefined },
+                      { title: 'IP allowlist', desc: 'Restrict admin access to specific IP ranges', enabled: false, icon: Wifi, tag: 'enterprise' },
+                    ].map(s => (
+                      <div key={s.title} className={`flex items-center justify-between gap-4 px-4 py-3.5 rounded-xl border ${
+                        s.enabled ? 'bg-[#F7FBF4] border-[#C8DDB0]' : 'bg-white border-[#E8E4DE]'
+                      }`}>
+                        <div className="flex items-center gap-3">
+                          <div className={`w-7 h-7 rounded-lg flex items-center justify-center ${
+                            s.enabled ? 'bg-[#DDF0CB]' : 'bg-[#F0EDE8]'
+                          }`}>
+                            <s.icon className={`w-3.5 h-3.5 ${s.enabled ? 'text-[#3B6D11]' : 'text-[#A09890]'}`} strokeWidth={1.8} />
                           </div>
-                          <span className={`shrink-0 px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-wider ${
-                            s.enabled
-                              ? 'bg-emerald-100 text-emerald-700'
-                              : 'bg-gray-100 text-gray-400'
-                          }`}>{s.enabled ? 'On' : 'Off'}</span>
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <span className={`text-sm font-semibold ${s.enabled ? 'text-[#1E2C15]' : 'text-[#5C5750]'}`}>{s.title}</span>
+                              {s.tag && (
+                                <span className={`text-[9px] font-bold tracking-widest uppercase px-1.5 py-0.5 rounded ${
+                                  s.tag === 'critical' ? 'bg-[#FCEBEB] text-[#A32D2D]'
+                                  : s.tag === 'active' ? 'bg-[#EAF3DE] text-[#3B6D11]'
+                                  : 'bg-[#F0EDE8] text-[#9B9589]'
+                                }`}>{s.tag}</span>
+                              )}
+                            </div>
+                            <p className={`text-xs mt-0.5 ${s.enabled ? 'text-[#5A7A45]' : 'text-[#9B9589]'}`}>{s.desc}</p>
+                          </div>
                         </div>
-                      ))}
+                        <span className={`text-[10px] font-mono font-bold px-2 py-1 rounded-md border ${
+                          s.enabled
+                            ? 'bg-[#EAF3DE] border-[#C8DDB0] text-[#3B6D11]'
+                            : 'bg-[#F4F2ED] border-[#E2DDD6] text-[#A09890]'
+                        }`}>{s.enabled ? 'ON' : 'OFF'}</span>
+                      </div>
+                    ))}
+                  </div>
+                  <Divider />
+                  {/* Score bar */}
+                  <div className="flex items-center gap-5 p-5 rounded-xl bg-[#1E1C18] text-white">
+                    <div className="shrink-0">
+                      <p className="text-[10px] font-bold uppercase tracking-widest text-[#6E6A62] mb-1">Security score</p>
+                      <p className="text-4xl font-extrabold font-mono text-white">75<span className="text-xl text-[#6E6A62]">/100</span></p>
                     </div>
+                    <div className="flex-1 space-y-2">
+                      <div className="h-2 rounded-full bg-[#2C2A25] overflow-hidden">
+                        <div className="h-full rounded-full bg-[#C8A96E]" style={{ width: '75%' }} />
+                      </div>
+                      <p className="text-xs text-[#6E6A62]">Enable Login Notifications + IP Allowlist to reach 100</p>
+                    </div>
+                  </div>
+                </div>
+              )}
 
-                    {/* Security score */}
-                    <div className="flex items-center gap-5 p-4 rounded-2xl bg-gradient-to-r from-slate-800 to-slate-900 text-white">
-                      <div className="relative w-14 h-14 shrink-0">
-                        <svg className="w-14 h-14 -rotate-90" viewBox="0 0 56 56">
-                          <circle cx="28" cy="28" r="22" fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth="4" />
-                          <circle cx="28" cy="28" r="22" fill="none" stroke="#22d3ee" strokeWidth="4"
-                            strokeDasharray={`${2 * Math.PI * 22 * 0.75} ${2 * Math.PI * 22 * 0.25}`}
-                            strokeLinecap="round" />
-                        </svg>
-                        <div className="absolute inset-0 flex items-center justify-center">
-                          <span className="text-sm font-extrabold">75</span>
-                        </div>
+              {/* ─── LISTING RULES ─── */}
+              {active === 'listing' && (
+                <div>
+                  <SectionTitle title="Listing rules" sub="Control publishing constraints and requirements for landlord listings." />
+                  <div className="space-y-2">
+                    <ToggleRow
+                      label="Auto-approve listings" desc="Bypass admin review and publish listings immediately"
+                      enabled={listing.autoApprove} onChange={() => setListing(l => ({ ...l, autoApprove: !l.autoApprove }))}
+                      icon={Zap} tag={listing.autoApprove ? 'on' : undefined}
+                    />
+                    <ToggleRow
+                      label="Require property images" desc="Landlords must upload at least one photo"
+                      enabled={listing.requireImages} onChange={() => setListing(l => ({ ...l, requireImages: !l.requireImages }))}
+                      icon={Image}
+                    />
+                    <ToggleRow
+                      label="Require description" desc="Text description is mandatory on all listings"
+                      enabled={listing.requireDescription} onChange={() => setListing(l => ({ ...l, requireDescription: !l.requireDescription }))}
+                      icon={FileText}
+                    />
+                    <ToggleRow
+                      label="Allow price negotiation" desc='Enables "under negotiation" status on listings'
+                      enabled={listing.allowNegotiation} onChange={() => setListing(l => ({ ...l, allowNegotiation: !l.allowNegotiation }))}
+                      icon={DollarSign}
+                    />
+                  </div>
+                  <Divider />
+                  {/* Max per landlord */}
+                  <div className="bg-white border border-[#E2DDD6] rounded-xl p-5">
+                    <div className="flex items-center gap-2.5 mb-4">
+                      <div className="w-7 h-7 rounded-lg bg-[#F0EDE8] flex items-center justify-center">
+                        <Hash className="w-3.5 h-3.5 text-[#A09890]" strokeWidth={1.8} />
                       </div>
                       <div>
-                        <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-0.5">Security Score</p>
-                        <p className="text-base font-extrabold text-white">Good — 2 settings inactive</p>
-                        <p className="text-xs text-slate-400 mt-0.5">Enable Login Notifications & IP Allowlist to reach 100</p>
+                        <p className="text-sm font-semibold text-[#1E1C18]">Max listings per landlord</p>
+                        <p className="text-xs text-[#9B9589]">Cap on simultaneous active listings per account</p>
                       </div>
                     </div>
-                  </div>
-                )}
-
-                {/* ─── LISTING RULES ─── */}
-                {active === 'listing' && (
-                  <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-6">
-                    <SectionHeader title="Listing Rules" desc="Control how landlords can publish property listings." icon={Globe} />
-
-                    <div className="space-y-2.5">
-                      <ToggleRow
-                        label="Auto-approve listings"
-                        desc="Publish new listings without admin review"
-                        enabled={listing.autoApprove}
-                        onChange={() => setListing(l => ({ ...l, autoApprove: !l.autoApprove }))}
-                        icon={Zap}
-                        badge={listing.autoApprove ? 'On' : undefined}
-                        badgeColor="amber"
+                    <div className="flex items-center gap-4">
+                      <input
+                        type="range" min={1} max={100} step={1}
+                        value={listing.maxPerLandlord}
+                        onChange={e => setListing(l => ({ ...l, maxPerLandlord: Number(e.target.value) }))}
+                        style={{ accentColor: '#C8A96E' }}
+                        className="flex-1 h-1.5 rounded-full"
                       />
-                      <ToggleRow
-                        label="Require property images"
-                        desc="Landlords must upload at least one image"
-                        enabled={listing.requireImages}
-                        onChange={() => setListing(l => ({ ...l, requireImages: !l.requireImages }))}
-                        icon={Image}
-                      />
-                      <ToggleRow
-                        label="Require description"
-                        desc="A text description is mandatory on all listings"
-                        enabled={listing.requireDescription}
-                        onChange={() => setListing(l => ({ ...l, requireDescription: !l.requireDescription }))}
-                        icon={FileText}
-                      />
-                      <ToggleRow
-                        label="Allow price negotiation"
-                        desc='Enable "under negotiation" status on listings'
-                        enabled={listing.allowNegotiation}
-                        onChange={() => setListing(l => ({ ...l, allowNegotiation: !l.allowNegotiation }))}
-                        icon={DollarSign}
-                      />
-                    </div>
-
-                    {/* Max per landlord */}
-                    <div className="p-4 rounded-2xl border border-gray-100 bg-gray-50/60">
-                      <div className="flex items-start gap-3 mb-4">
-                        <div className="w-8 h-8 rounded-xl bg-gray-100 flex items-center justify-center shrink-0">
-                          <Hash className="w-4 h-4 text-gray-500" strokeWidth={1.7} />
-                        </div>
-                        <div>
-                          <p className="text-sm font-semibold text-gray-800">Max listings per landlord</p>
-                          <p className="text-xs text-gray-400 mt-0.5">Limit how many active listings a single landlord can have at once</p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-4">
+                      <div className="flex items-center gap-2">
                         <input
-                          type="range" min={1} max={100} step={1}
+                          type="number" min={1} max={100}
                           value={listing.maxPerLandlord}
                           onChange={e => setListing(l => ({ ...l, maxPerLandlord: Number(e.target.value) }))}
-                          className="flex-1 accent-blue-600 h-1.5 rounded-full"
+                          className="w-14 border border-[#E2DDD6] rounded-lg px-2 py-1.5 text-sm font-mono font-bold text-[#1E1C18] text-center focus:outline-none focus:ring-2 focus:ring-[#C8A96E]/40 bg-white"
                         />
-                        <div className="flex items-center gap-1">
-                          <input
-                            type="number" min={1} max={100}
-                            value={listing.maxPerLandlord}
-                            onChange={e => setListing(l => ({ ...l, maxPerLandlord: Number(e.target.value) }))}
-                            className="w-16 border border-gray-200 rounded-xl px-2.5 py-2 text-sm font-bold text-gray-800 text-center focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
-                          />
-                          <span className="text-xs text-gray-400 whitespace-nowrap">max</span>
-                        </div>
-                      </div>
-                      <div className="flex justify-between text-[10px] text-gray-300 mt-1.5 px-0.5">
-                        <span>1</span><span>25</span><span>50</span><span>75</span><span>100</span>
+                        <span className="text-xs text-[#9B9589]">max</span>
                       </div>
                     </div>
-
-                    {/* Active rules summary */}
-                    <div className="flex items-center gap-2 p-3 rounded-xl bg-blue-50 border border-blue-100">
-                      <CheckCircle className="w-4 h-4 text-blue-500 shrink-0" strokeWidth={2} />
-                      <p className="text-xs text-blue-700 font-medium">
-                        {[listing.autoApprove, listing.requireImages, listing.requireDescription, listing.allowNegotiation].filter(Boolean).length} of 4 listing rules active · Max {listing.maxPerLandlord} listings per landlord
-                      </p>
+                    <div className="flex justify-between text-[10px] text-[#C4BFBA] font-mono mt-2 px-0.5">
+                      {['1','25','50','75','100'].map(v => <span key={v}>{v}</span>)}
                     </div>
                   </div>
-                )}
+                  <div className="mt-3 flex items-center gap-2 px-4 py-2.5 rounded-lg bg-[#FEFCF7] border border-[#E8D9BB]">
+                    <CheckCircle className="w-3.5 h-3.5 text-[#C8A96E] shrink-0" strokeWidth={2} />
+                    <p className="text-xs text-[#7A6A44]">
+                      {[listing.autoApprove, listing.requireImages, listing.requireDescription, listing.allowNegotiation].filter(Boolean).length} of 4 rules active · {listing.maxPerLandlord} listings max per landlord
+                    </p>
+                  </div>
+                </div>
+              )}
 
-                {/* ─── BILLING ─── */}
-                {active === 'billing' && (
-                  <div className="space-y-4">
-                    {/* Plan card */}
-                    <div className="relative bg-gradient-to-br from-blue-700 via-blue-600 to-blue-500 rounded-2xl p-6 text-white overflow-hidden shadow-xl shadow-blue-600/25">
-                      {/* Decorative rings */}
-                      <div className="absolute -top-10 -right-10 w-48 h-48 rounded-full border border-white/10" />
-                      <div className="absolute -top-4 -right-4 w-32 h-32 rounded-full border border-white/10" />
-                      <div className="absolute bottom-0 left-0 w-24 h-24 rounded-full border border-white/10 translate-y-1/2 -translate-x-1/2" />
-
-                      <div className="relative">
-                        <div className="flex items-start justify-between mb-6">
-                          <div>
-                            <div className="flex items-center gap-2 mb-1">
-                              <span className="text-[10px] font-bold uppercase tracking-[0.15em] text-blue-200">Current Plan</span>
-                              <span className="px-2 py-0.5 bg-white/20 rounded-full text-[10px] font-bold">Active</span>
-                            </div>
-                            <p className="text-3xl font-extrabold tracking-tight">Enterprise</p>
-                            <p className="text-sm text-blue-200 mt-1">Unlimited listings · Priority support · API access</p>
-                          </div>
-                          <div className="w-12 h-12 rounded-2xl bg-white/15 flex items-center justify-center">
-                            <Sparkles className="w-6 h-6 text-white" strokeWidth={1.7} />
-                          </div>
+              {/* ─── BILLING ─── */}
+              {active === 'billing' && (
+                <div className="space-y-5">
+                  {/* Plan block */}
+                  <div className="bg-[#1E1C18] rounded-2xl p-6 text-white relative overflow-hidden">
+                    {/* subtle grid texture */}
+                    <div className="absolute inset-0 opacity-[0.04]"
+                      style={{ backgroundImage: 'repeating-linear-gradient(0deg, #fff 0, #fff 1px, transparent 0, transparent 50%), repeating-linear-gradient(90deg, #fff 0, #fff 1px, transparent 0, transparent 50%)', backgroundSize: '32px 32px' }} />
+                    <div className="relative">
+                      <div className="flex items-start justify-between mb-5">
+                        <div>
+                          <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#6E6A62] mb-1">Current plan</p>
+                          <p className="text-3xl font-extrabold tracking-tight text-white">Enterprise</p>
+                          <p className="text-sm text-[#6E6A62] mt-1">Unlimited listings · Priority support · API access</p>
                         </div>
-
-                        <div className="grid grid-cols-3 gap-3 mb-5">
-                          {[
-                            { label: 'Listings', value: '∞', sub: 'unlimited' },
-                            { label: 'Team seats', value: '25', sub: 'admin users' },
-                            { label: 'Uptime SLA', value: '99.9%', sub: 'guaranteed' },
-                          ].map(f => (
-                            <div key={f.label} className="bg-white/10 rounded-xl p-3 text-center">
-                              <p className="text-lg font-extrabold text-white">{f.value}</p>
-                              <p className="text-[10px] text-blue-200 font-medium mt-0.5">{f.sub}</p>
-                            </div>
-                          ))}
-                        </div>
-
-                        <div className="flex items-center justify-between pt-4 border-t border-white/20">
-                          <div className="flex items-center gap-2">
-                            <Activity className="w-3.5 h-3.5 text-blue-200" strokeWidth={2} />
-                            <p className="text-sm text-blue-200">Renews <span className="text-white font-bold">1 June 2027</span></p>
+                        <span className="px-2.5 py-1 rounded-md bg-[#C8A96E]/20 text-[#C8A96E] text-[10px] font-bold tracking-widest uppercase border border-[#C8A96E]/30">Active</span>
+                      </div>
+                      <div className="grid grid-cols-3 gap-3 mb-5">
+                        {[
+                          { label: 'Listings', val: '∞' },
+                          { label: 'Admin seats', val: '25' },
+                          { label: 'SLA uptime', val: '99.9%' },
+                        ].map(f => (
+                          <div key={f.label} className="border border-[#2C2A25] rounded-xl p-3 text-center bg-[#252320]">
+                            <p className="text-xl font-extrabold font-mono text-white">{f.val}</p>
+                            <p className="text-[10px] text-[#6E6A62] mt-0.5 uppercase tracking-wider">{f.label}</p>
                           </div>
-                          <button type="button" className="text-sm font-bold text-white/80 hover:text-white transition-colors flex items-center gap-1">
-                            Manage Plan <ArrowUpRight className="w-3.5 h-3.5" />
-                          </button>
+                        ))}
+                      </div>
+                      <div className="flex items-center justify-between pt-4 border-t border-[#2C2A25]">
+                        <div className="flex items-center gap-2">
+                          <Activity className="w-3.5 h-3.5 text-[#6E6A62]" strokeWidth={1.8} />
+                          <p className="text-xs text-[#6E6A62]">Renews <span className="text-[#C8A96E] font-bold">1 June 2027</span></p>
                         </div>
+                        <button type="button" className="text-xs font-bold text-[#C8A96E] hover:text-white transition-colors flex items-center gap-1">
+                          Manage plan <ArrowUpRight className="w-3 h-3" />
+                        </button>
                       </div>
                     </div>
+                  </div>
 
-                    {/* Usage stats */}
-                    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-5">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <h2 className="text-base font-extrabold text-gray-900 tracking-tight">Usage Overview</h2>
-                          <p className="text-xs text-gray-400 mt-0.5">Billing cycle: May – June 2026</p>
-                        </div>
-                        <span className="px-2.5 py-1 bg-emerald-50 text-emerald-700 text-xs font-bold rounded-full">Healthy</span>
+                  {/* Usage */}
+                  <div className="bg-white border border-[#E2DDD6] rounded-2xl p-5">
+                    <div className="flex items-center justify-between mb-4">
+                      <div>
+                        <p className="text-sm font-bold text-[#1E1C18]">Usage — May 2026</p>
+                        <p className="text-xs text-[#9B9589]">Billing cycle overview</p>
                       </div>
-
-                      <div className="grid grid-cols-3 gap-3">
-                        {[
-                          { label: 'Active Listings', value: '902+', pct: 90, color: 'blue' },
-                          { label: 'Landlords', value: '319+', pct: 64, color: 'violet' },
-                          { label: 'Monthly Visits', value: '12,400', pct: 42, color: 'emerald' },
-                        ].map(s => (
-                          <div key={s.label} className="rounded-xl border border-gray-100 p-4 space-y-2.5">
-                            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">{s.label}</p>
-                            <p className="text-2xl font-extrabold text-gray-900">{s.value}</p>
-                            <div className="w-full h-1.5 rounded-full bg-gray-100 overflow-hidden">
+                      <span className="px-2 py-1 rounded-md bg-[#EAF3DE] text-[#3B6D11] text-[10px] font-bold uppercase tracking-widest border border-[#C8DDB0]">Healthy</span>
+                    </div>
+                    <div className="space-y-4">
+                      {[
+                        { label: 'Active Listings', val: '902', cap: 1000, unit: '' },
+                        { label: 'Landlords', val: '319', cap: 500, unit: '' },
+                        { label: 'Monthly Visits', val: '12,400', cap: 30000, unit: '' },
+                      ].map(s => {
+                        const raw = parseInt(s.val.replace(',', ''))
+                        const pct = Math.round((raw / s.cap) * 100)
+                        return (
+                          <div key={s.label}>
+                            <div className="flex items-center justify-between mb-1.5">
+                              <p className="text-xs font-semibold text-[#5C5750]">{s.label}</p>
+                              <div className="flex items-center gap-2">
+                                <p className="text-sm font-bold font-mono text-[#1E1C18]">{s.val}</p>
+                                <span className="text-[10px] text-[#9B9589] font-mono">{pct}%</span>
+                              </div>
+                            </div>
+                            <div className="h-1.5 rounded-full bg-[#F0EDE8] overflow-hidden">
                               <div
-                                className={`h-full rounded-full ${
-                                  s.color === 'blue' ? 'bg-blue-500'
-                                  : s.color === 'violet' ? 'bg-violet-500'
-                                  : 'bg-emerald-500'
-                                }`}
-                                style={{ width: `${s.pct}%` }}
+                                className="h-full rounded-full bg-[#C8A96E] transition-all"
+                                style={{ width: `${pct}%` }}
                               />
                             </div>
-                            <p className="text-[10px] text-gray-400">{s.pct}% capacity used</p>
                           </div>
-                        ))}
-                      </div>
-
-                      {/* Invoice row */}
-                      <div className="pt-2 border-t border-gray-50 space-y-2">
-                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-3">Recent Invoices</p>
-                        {[
-                          { period: 'May 2026', amount: '₦240,000', status: 'Paid' },
-                          { period: 'April 2026', amount: '₦240,000', status: 'Paid' },
-                          { period: 'March 2026', amount: '₦240,000', status: 'Paid' },
-                        ].map(inv => (
-                          <div key={inv.period} className="flex items-center justify-between py-2.5 px-3 rounded-xl hover:bg-gray-50 transition-colors cursor-pointer group">
-                            <div className="flex items-center gap-3">
-                              <div className="w-7 h-7 rounded-lg bg-gray-100 flex items-center justify-center">
-                                <CreditCard className="w-3.5 h-3.5 text-gray-400" strokeWidth={1.7} />
-                              </div>
-                              <p className="text-sm font-semibold text-gray-700">{inv.period}</p>
-                            </div>
-                            <div className="flex items-center gap-3">
-                              <p className="text-sm font-bold text-gray-900">{inv.amount}</p>
-                              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-600">{inv.status}</span>
-                              <ArrowUpRight className="w-3.5 h-3.5 text-gray-300 group-hover:text-gray-500 transition-colors" />
-                            </div>
-                          </div>
-                        ))}
-                      </div>
+                        )
+                      })}
                     </div>
                   </div>
-                )}
 
-              </div>
+                  {/* Invoices */}
+                  <div className="bg-white border border-[#E2DDD6] rounded-2xl overflow-hidden">
+                    <div className="px-5 py-3.5 border-b border-[#EDE9E2] flex items-center justify-between">
+                      <p className="text-xs font-bold text-[#1E1C18] uppercase tracking-widest">Recent invoices</p>
+                      <TrendingUp className="w-3.5 h-3.5 text-[#9B9589]" strokeWidth={1.8} />
+                    </div>
+                    {[
+                      { period: 'May 2026', amount: '₦240,000' },
+                      { period: 'April 2026', amount: '₦240,000' },
+                      { period: 'March 2026', amount: '₦240,000' },
+                    ].map((inv, i) => (
+                      <div key={inv.period} className={`flex items-center justify-between px-5 py-3.5 hover:bg-[#FAFAF7] cursor-pointer group transition-colors ${i < 2 ? 'border-b border-[#EDE9E2]' : ''}`}>
+                        <div className="flex items-center gap-3">
+                          <div className="w-7 h-7 rounded-lg bg-[#F0EDE8] flex items-center justify-center">
+                            <CreditCard className="w-3.5 h-3.5 text-[#A09890]" strokeWidth={1.8} />
+                          </div>
+                          <p className="text-sm font-semibold text-[#5C5750]">{inv.period}</p>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <p className="text-sm font-bold font-mono text-[#1E1C18]">{inv.amount}</p>
+                          <span className="text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-md bg-[#EAF3DE] text-[#3B6D11] border border-[#C8DDB0]">Paid</span>
+                          <ArrowUpRight className="w-3.5 h-3.5 text-[#C4BFBA] group-hover:text-[#9B9589] transition-colors" />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
             </div>
           </main>
         </div>
