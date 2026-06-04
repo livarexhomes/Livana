@@ -19,7 +19,7 @@ interface SupportTicket {
   tenant_id?: string | null
   landlord_id?: string | null
   tenants?: { full_name: string | null; phone: string | null } | null
-  landlords?: { full_name: string | null; phone: string | null; email: string | null } | null
+  landlords?: { full_name: string | null; whatsapp: string | null; email: string | null } | null
 }
 
 interface SupportMessage {
@@ -160,7 +160,7 @@ function AdminChatThread({
           <p className="text-xs text-gray-400 mt-0.5">
             From <span className="font-semibold text-gray-600">{senderName}</span>
             {isLandlordTicket
-              ? (ticket.landlords?.phone && <span> · {ticket.landlords.phone}</span>)
+              ? (ticket.landlords?.whatsapp && <span> · {ticket.landlords.whatsapp}</span>)
               : (ticket.tenants?.phone && <span> · {ticket.tenants.phone}</span>)}
             <span> · {formatDistanceToNow(new Date(ticket.created_at), { addSuffix: true })}</span>
           </p>
@@ -365,7 +365,7 @@ function SupportTab() {
   useEffect(() => {
     const supabase = createClient()
     console.log('Loading tickets...')
-    supabase.from('support_tickets').select('*, tenants(full_name, phone), landlords(full_name, phone, email)')
+    supabase.from('support_tickets').select('*, tenants(full_name, phone), landlords(full_name, whatsapp, email)')
       .order('updated_at', { ascending: false })
       .then(({ data, error }) => { 
         if (error) console.error('Error loading tickets:', error)
