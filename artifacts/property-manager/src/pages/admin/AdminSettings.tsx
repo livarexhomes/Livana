@@ -24,12 +24,12 @@ function Toggle({ enabled, onChange }: { enabled: boolean; onChange: () => void 
       type="button"
       role="switch"
       aria-checked={enabled}
-      onClick={onChange}
-      className={`relative w-10 h-[22px] rounded-full transition-colors duration-200 shrink-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#C8A96E] focus-visible:ring-offset-2 focus-visible:ring-offset-[#FAFAF7] ${
-        enabled ? 'bg-[#C8A96E]' : 'bg-[#D8D5CC]'
+      onClick={e => { e.stopPropagation(); onChange() }}
+      className={`relative w-11 h-6 rounded-full transition-colors duration-200 shrink-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 ${
+        enabled ? 'bg-blue-600' : 'bg-[#D8D5CC]'
       }`}
     >
-      <span className={`absolute top-[3px] w-4 h-4 rounded-full bg-white shadow-sm transition-transform duration-200 ${enabled ? 'translate-x-5' : 'translate-x-[3px]'}`} />
+      <span className={`absolute top-1 left-1 w-4 h-4 rounded-full bg-white shadow-sm transition-transform duration-200 ${enabled ? 'translate-x-5' : 'translate-x-0'}`} />
     </button>
   )
 }
@@ -42,17 +42,17 @@ function FieldInput({
   const [focused, setFocused] = useState(false)
   return (
     <div>
-      <label className="block text-[10px] font-bold tracking-[0.14em] text-[#9B9589] uppercase mb-1.5">{label}</label>
+      <label className="block text-[10px] font-bold tracking-[0.14em] text-gray-400 uppercase mb-1.5">{label}</label>
       <div className={`flex items-center gap-2.5 border rounded-lg px-3 py-2.5 bg-white transition-all ${
-        focused ? 'border-[#C8A96E] ring-2 ring-[#C8A96E]/15' : 'border-[#E2DDD6] hover:border-[#C9C4BB]'
+        focused ? 'border-blue-500 ring-2 ring-blue-500/15' : 'border-gray-200 hover:border-gray-300'
       }`}>
-        <Icon className={`w-3.5 h-3.5 shrink-0 transition-colors ${focused ? 'text-[#C8A96E]' : 'text-[#B0AAA0]'}`} strokeWidth={1.8} />
+        <Icon className={`w-3.5 h-3.5 shrink-0 transition-colors ${focused ? 'text-blue-600' : 'text-gray-400'}`} strokeWidth={1.8} />
         <input
           value={value}
           onChange={e => onChange(e.target.value)}
           onFocus={() => setFocused(true)}
           onBlur={() => setFocused(false)}
-          className={`flex-1 text-sm text-[#2C2A25] placeholder:text-[#C8C3BB] focus:outline-none bg-transparent ${mono ? 'font-mono' : ''}`}
+          className={`flex-1 text-sm text-gray-800 placeholder:text-gray-300 focus:outline-none bg-transparent ${mono ? 'font-mono' : ''}`}
         />
       </div>
     </div>
@@ -68,32 +68,30 @@ function ToggleRow({
     <div
       className={`flex items-center justify-between gap-4 px-4 py-3.5 rounded-xl border cursor-pointer transition-all duration-150 ${
         enabled
-          ? 'bg-[#FEFCF7] border-[#E8D9BB]'
-          : 'bg-white border-[#E8E4DE] hover:border-[#D4CFC7] hover:bg-[#FDFCFA]'
+          ? 'bg-blue-50/40 border-blue-100'
+          : 'bg-white border-gray-200 hover:border-gray-300 hover:bg-gray-50'
       }`}
       onClick={onChange}
     >
       <div className="flex items-center gap-3 min-w-0">
         {Icon && (
           <div className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${
-            enabled ? 'bg-[#F5ECD9]' : 'bg-[#F0EDE8]'
+            enabled ? 'bg-blue-100' : 'bg-gray-100'
           }`}>
-            <Icon className={`w-3.5 h-3.5 ${enabled ? 'text-[#A87C3A]' : 'text-[#A09890]'}`} strokeWidth={1.8} />
+            <Icon className={`w-3.5 h-3.5 ${enabled ? 'text-blue-600' : 'text-gray-400'}`} strokeWidth={1.8} />
           </div>
         )}
         <div className="min-w-0">
           <div className="flex items-center gap-2">
-            <span className={`text-sm font-semibold ${enabled ? 'text-[#2C2A25]' : 'text-[#5C5750]'}`}>{label}</span>
+            <span className={`text-sm font-semibold ${enabled ? 'text-gray-800' : 'text-gray-600'}`}>{label}</span>
             {tag && (
-              <span className="text-[9px] font-bold tracking-widest uppercase px-1.5 py-0.5 rounded bg-[#F0EDE8] text-[#9B9589]">{tag}</span>
+              <span className="text-[9px] font-bold tracking-widest uppercase px-1.5 py-0.5 rounded bg-gray-100 text-gray-400">{tag}</span>
             )}
           </div>
-          <p className="text-xs text-[#9B9589] mt-0.5 truncate">{desc}</p>
+          <p className="text-xs text-gray-400 mt-0.5 truncate">{desc}</p>
         </div>
       </div>
-      <div onClick={e => e.stopPropagation()}>
-        <Toggle enabled={enabled} onChange={onChange} />
-      </div>
+      <Toggle enabled={enabled} onChange={onChange} />
     </div>
   )
 }
@@ -101,14 +99,14 @@ function ToggleRow({
 function SectionTitle({ title, sub }: { title: string; sub: string }) {
   return (
     <div className="mb-6">
-      <h2 className="text-lg font-extrabold text-[#1E1C18] tracking-tight">{title}</h2>
-      <p className="text-xs text-[#9B9589] mt-0.5">{sub}</p>
+      <h2 className="text-lg font-extrabold text-gray-900 tracking-tight">{title}</h2>
+      <p className="text-xs text-gray-400 mt-0.5">{sub}</p>
     </div>
   )
 }
 
 function Divider() {
-  return <div className="h-px bg-[#EDE9E2] my-6" />
+  return <div className="h-px bg-gray-100 my-6" />
 }
 
 export default function AdminSettings() {
@@ -162,16 +160,16 @@ export default function AdminSettings() {
 
   return (
     <AuthGuard require="admin">
-      <div className="flex h-screen overflow-hidden bg-[#F4F2ED]">
+      <div className="flex h-screen overflow-hidden bg-[#F4F6FB]">
         <AdminSidebar userEmail={user?.email} userName={displayName} />
 
         <div className="flex-1 flex flex-col min-w-0">
 
           {/* ── Top bar ── */}
-          <header className="flex items-center justify-between pl-14 pr-6 md:pl-8 md:pr-8 py-3.5 bg-[#F4F2ED] border-b border-[#E2DDD6] shrink-0">
+          <header className="flex items-center justify-between pl-14 pr-6 md:pl-8 md:pr-8 py-3.5 bg-[#F4F6FB] border-b border-gray-200 shrink-0">
             <div className="flex items-center gap-3">
-              <p className="text-xs font-mono text-[#A09890] hidden sm:block">livana / admin /</p>
-              <h1 className="text-sm font-bold text-[#1E1C18] tracking-tight">settings</h1>
+              <p className="text-xs font-mono text-gray-400 hidden sm:block">livana / admin /</p>
+              <h1 className="text-sm font-bold text-gray-900 tracking-tight">settings</h1>
             </div>
             <button
               type="button"
@@ -181,8 +179,8 @@ export default function AdminSettings() {
                 saved
                   ? 'bg-[#3B6D11] text-white'
                   : saving
-                  ? 'bg-[#C8A96E]/60 text-white cursor-not-allowed'
-                  : 'bg-[#1E1C18] hover:bg-[#2C2A25] active:scale-95 text-white'
+                  ? 'bg-blue-600/60 text-white cursor-not-allowed'
+                  : 'bg-blue-600 hover:bg-blue-700 active:scale-95 text-white'
               }`}
             >
               {saved
@@ -195,7 +193,7 @@ export default function AdminSettings() {
           </header>
 
           {/* ── Tab bar ── */}
-          <div className="flex items-end gap-0 pl-14 md:pl-8 border-b border-[#E2DDD6] bg-[#F4F2ED] shrink-0 overflow-x-auto scrollbar-none">
+          <div className="flex items-end gap-0 pl-14 md:pl-8 border-b border-gray-200 bg-[#F4F6FB] shrink-0 overflow-x-auto scrollbar-none">
             {SECTIONS.map(s => {
               const Icon = s.icon
               const isActive = active === s.id
@@ -206,11 +204,11 @@ export default function AdminSettings() {
                   onClick={() => setActive(s.id)}
                   className={`relative flex items-center gap-2 px-4 py-3 text-xs font-semibold whitespace-nowrap transition-all duration-150 border-b-2 -mb-px ${
                     isActive
-                      ? 'border-[#C8A96E] text-[#1E1C18]'
-                      : 'border-transparent text-[#9B9589] hover:text-[#5C5750]'
+                      ? 'border-blue-500 text-gray-900'
+                      : 'border-transparent text-gray-400 hover:text-gray-600'
                   }`}
                 >
-                  <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-[#C8A96E]' : ''}`} strokeWidth={1.8} />
+                  <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-blue-600' : ''}`} strokeWidth={1.8} />
                   {s.label}
                 </button>
               )
@@ -240,9 +238,9 @@ export default function AdminSettings() {
                     </div>
                   </div>
                   <Divider />
-                  <div className="flex items-start gap-3 p-4 rounded-xl bg-[#FEFCF7] border border-[#E8D9BB]">
-                    <span className="w-1.5 h-1.5 rounded-full bg-[#C8A96E] mt-1.5 shrink-0" />
-                    <p className="text-xs text-[#7A6A44] leading-relaxed">
+                  <div className="flex items-start gap-3 p-4 rounded-xl bg-blue-50/40 border border-blue-100">
+                    <span className="w-1.5 h-1.5 rounded-full bg-blue-600 mt-1.5 shrink-0" />
+                    <p className="text-xs text-blue-700 leading-relaxed">
                       Platform name and support email are used in all outgoing emails and SMS notifications. Save changes to apply globally.
                     </p>
                   </div>
@@ -287,9 +285,9 @@ export default function AdminSettings() {
                       { label: 'SMS on', val: notifications.smsAlerts ? 1 : 0, of: 1 },
                       { label: 'Total active', val: Object.values(notifications).filter(Boolean).length, of: 5 },
                     ].map(s => (
-                      <div key={s.label} className="bg-white border border-[#E2DDD6] rounded-xl p-4 text-center">
-                        <p className="text-2xl font-extrabold text-[#1E1C18] font-mono">{s.val}<span className="text-sm text-[#C4BFBA]">/{s.of}</span></p>
-                        <p className="text-[10px] uppercase tracking-widest text-[#9B9589] font-bold mt-1">{s.label}</p>
+                      <div key={s.label} className="bg-white border border-gray-200 rounded-xl p-4 text-center">
+                        <p className="text-2xl font-extrabold text-gray-900 font-mono">{s.val}<span className="text-sm text-gray-300">/{s.of}</span></p>
+                        <p className="text-[10px] uppercase tracking-widest text-gray-400 font-bold mt-1">{s.label}</p>
                       </div>
                     ))}
                   </div>
@@ -308,32 +306,32 @@ export default function AdminSettings() {
                       { title: 'IP allowlist', desc: 'Restrict admin access to specific IP ranges', enabled: false, icon: Wifi, tag: 'enterprise' },
                     ].map(s => (
                       <div key={s.title} className={`flex items-center justify-between gap-4 px-4 py-3.5 rounded-xl border ${
-                        s.enabled ? 'bg-[#F7FBF4] border-[#C8DDB0]' : 'bg-white border-[#E8E4DE]'
+                        s.enabled ? 'bg-[#F7FBF4] border-[#C8DDB0]' : 'bg-white border-gray-200'
                       }`}>
                         <div className="flex items-center gap-3">
                           <div className={`w-7 h-7 rounded-lg flex items-center justify-center ${
-                            s.enabled ? 'bg-[#DDF0CB]' : 'bg-[#F0EDE8]'
+                            s.enabled ? 'bg-[#DDF0CB]' : 'bg-gray-100'
                           }`}>
-                            <s.icon className={`w-3.5 h-3.5 ${s.enabled ? 'text-[#3B6D11]' : 'text-[#A09890]'}`} strokeWidth={1.8} />
+                            <s.icon className={`w-3.5 h-3.5 ${s.enabled ? 'text-[#3B6D11]' : 'text-gray-400'}`} strokeWidth={1.8} />
                           </div>
                           <div>
                             <div className="flex items-center gap-2">
-                              <span className={`text-sm font-semibold ${s.enabled ? 'text-[#1E2C15]' : 'text-[#5C5750]'}`}>{s.title}</span>
+                              <span className={`text-sm font-semibold ${s.enabled ? 'text-gray-900' : 'text-gray-600'}`}>{s.title}</span>
                               {s.tag && (
                                 <span className={`text-[9px] font-bold tracking-widest uppercase px-1.5 py-0.5 rounded ${
                                   s.tag === 'critical' ? 'bg-[#FCEBEB] text-[#A32D2D]'
                                   : s.tag === 'active' ? 'bg-[#EAF3DE] text-[#3B6D11]'
-                                  : 'bg-[#F0EDE8] text-[#9B9589]'
+                                  : 'bg-gray-100 text-gray-400'
                                 }`}>{s.tag}</span>
                               )}
                             </div>
-                            <p className={`text-xs mt-0.5 ${s.enabled ? 'text-[#5A7A45]' : 'text-[#9B9589]'}`}>{s.desc}</p>
+                            <p className={`text-xs mt-0.5 ${s.enabled ? 'text-[#5A7A45]' : 'text-gray-400'}`}>{s.desc}</p>
                           </div>
                         </div>
                         <span className={`text-[10px] font-mono font-bold px-2 py-1 rounded-md border ${
                           s.enabled
                             ? 'bg-[#EAF3DE] border-[#C8DDB0] text-[#3B6D11]'
-                            : 'bg-[#F4F2ED] border-[#E2DDD6] text-[#A09890]'
+                            : 'bg-[#F4F6FB] border-gray-200 text-gray-400'
                         }`}>{s.enabled ? 'ON' : 'OFF'}</span>
                       </div>
                     ))}
@@ -346,8 +344,8 @@ export default function AdminSettings() {
                       <p className="text-4xl font-extrabold font-mono text-white">75<span className="text-xl text-[#6E6A62]">/100</span></p>
                     </div>
                     <div className="flex-1 space-y-2">
-                      <div className="h-2 rounded-full bg-[#2C2A25] overflow-hidden">
-                        <div className="h-full rounded-full bg-[#C8A96E]" style={{ width: '75%' }} />
+                      <div className="h-2 rounded-full bg-gray-800 overflow-hidden">
+                        <div className="h-full rounded-full bg-blue-600" style={{ width: '75%' }} />
                       </div>
                       <p className="text-xs text-[#6E6A62]">Enable Login Notifications + IP Allowlist to reach 100</p>
                     </div>
@@ -383,14 +381,14 @@ export default function AdminSettings() {
                   </div>
                   <Divider />
                   {/* Max per landlord */}
-                  <div className="bg-white border border-[#E2DDD6] rounded-xl p-5">
+                  <div className="bg-white border border-gray-200 rounded-xl p-5">
                     <div className="flex items-center gap-2.5 mb-4">
-                      <div className="w-7 h-7 rounded-lg bg-[#F0EDE8] flex items-center justify-center">
-                        <Hash className="w-3.5 h-3.5 text-[#A09890]" strokeWidth={1.8} />
+                      <div className="w-7 h-7 rounded-lg bg-gray-100 flex items-center justify-center">
+                        <Hash className="w-3.5 h-3.5 text-gray-400" strokeWidth={1.8} />
                       </div>
                       <div>
-                        <p className="text-sm font-semibold text-[#1E1C18]">Max listings per landlord</p>
-                        <p className="text-xs text-[#9B9589]">Cap on simultaneous active listings per account</p>
+                        <p className="text-sm font-semibold text-gray-900">Max listings per landlord</p>
+                        <p className="text-xs text-gray-400">Cap on simultaneous active listings per account</p>
                       </div>
                     </div>
                     <div className="flex items-center gap-4">
@@ -398,7 +396,7 @@ export default function AdminSettings() {
                         type="range" min={1} max={100} step={1}
                         value={listing.maxPerLandlord}
                         onChange={e => setListing(l => ({ ...l, maxPerLandlord: Number(e.target.value) }))}
-                        style={{ accentColor: '#C8A96E' }}
+                        style={{ accentColor: '#2563eb' }}
                         className="flex-1 h-1.5 rounded-full"
                       />
                       <div className="flex items-center gap-2">
@@ -406,18 +404,18 @@ export default function AdminSettings() {
                           type="number" min={1} max={100}
                           value={listing.maxPerLandlord}
                           onChange={e => setListing(l => ({ ...l, maxPerLandlord: Number(e.target.value) }))}
-                          className="w-14 border border-[#E2DDD6] rounded-lg px-2 py-1.5 text-sm font-mono font-bold text-[#1E1C18] text-center focus:outline-none focus:ring-2 focus:ring-[#C8A96E]/40 bg-white"
+                          className="w-14 border border-gray-200 rounded-lg px-2 py-1.5 text-sm font-mono font-bold text-gray-900 text-center focus:outline-none focus:ring-2 focus:ring-blue-500/40 bg-white"
                         />
-                        <span className="text-xs text-[#9B9589]">max</span>
+                        <span className="text-xs text-gray-400">max</span>
                       </div>
                     </div>
-                    <div className="flex justify-between text-[10px] text-[#C4BFBA] font-mono mt-2 px-0.5">
+                    <div className="flex justify-between text-[10px] text-gray-300 font-mono mt-2 px-0.5">
                       {['1','25','50','75','100'].map(v => <span key={v}>{v}</span>)}
                     </div>
                   </div>
-                  <div className="mt-3 flex items-center gap-2 px-4 py-2.5 rounded-lg bg-[#FEFCF7] border border-[#E8D9BB]">
-                    <CheckCircle className="w-3.5 h-3.5 text-[#C8A96E] shrink-0" strokeWidth={2} />
-                    <p className="text-xs text-[#7A6A44]">
+                  <div className="mt-3 flex items-center gap-2 px-4 py-2.5 rounded-lg bg-blue-50/40 border border-blue-100">
+                    <CheckCircle className="w-3.5 h-3.5 text-blue-600 shrink-0" strokeWidth={2} />
+                    <p className="text-xs text-blue-700">
                       {[listing.autoApprove, listing.requireImages, listing.requireDescription, listing.allowNegotiation].filter(Boolean).length} of 4 rules active · {listing.maxPerLandlord} listings max per landlord
                     </p>
                   </div>
@@ -439,7 +437,7 @@ export default function AdminSettings() {
                           <p className="text-3xl font-extrabold tracking-tight text-white">Enterprise</p>
                           <p className="text-sm text-[#6E6A62] mt-1">Unlimited listings · Priority support · API access</p>
                         </div>
-                        <span className="px-2.5 py-1 rounded-md bg-[#C8A96E]/20 text-[#C8A96E] text-[10px] font-bold tracking-widest uppercase border border-[#C8A96E]/30">Active</span>
+                        <span className="px-2.5 py-1 rounded-md bg-blue-500/20 text-blue-300 text-[10px] font-bold tracking-widest uppercase border border-blue-400/30">Active</span>
                       </div>
                       <div className="grid grid-cols-3 gap-3 mb-5">
                         {[
@@ -447,18 +445,18 @@ export default function AdminSettings() {
                           { label: 'Admin seats', val: '25' },
                           { label: 'SLA uptime', val: '99.9%' },
                         ].map(f => (
-                          <div key={f.label} className="border border-[#2C2A25] rounded-xl p-3 text-center bg-[#252320]">
+                          <div key={f.label} className="border border-blue-900/40 rounded-xl p-3 text-center bg-blue-900/30">
                             <p className="text-xl font-extrabold font-mono text-white">{f.val}</p>
                             <p className="text-[10px] text-[#6E6A62] mt-0.5 uppercase tracking-wider">{f.label}</p>
                           </div>
                         ))}
                       </div>
-                      <div className="flex items-center justify-between pt-4 border-t border-[#2C2A25]">
+                      <div className="flex items-center justify-between pt-4 border-t border-blue-900/30">
                         <div className="flex items-center gap-2">
                           <Activity className="w-3.5 h-3.5 text-[#6E6A62]" strokeWidth={1.8} />
-                          <p className="text-xs text-[#6E6A62]">Renews <span className="text-[#C8A96E] font-bold">1 June 2027</span></p>
+                          <p className="text-xs text-[#6E6A62]">Renews <span className="text-blue-300 font-bold">1 June 2027</span></p>
                         </div>
-                        <button type="button" className="text-xs font-bold text-[#C8A96E] hover:text-white transition-colors flex items-center gap-1">
+                        <button type="button" className="text-xs font-bold text-blue-300 hover:text-white transition-colors flex items-center gap-1">
                           Manage plan <ArrowUpRight className="w-3 h-3" />
                         </button>
                       </div>
@@ -466,11 +464,11 @@ export default function AdminSettings() {
                   </div>
 
                   {/* Usage */}
-                  <div className="bg-white border border-[#E2DDD6] rounded-2xl p-5">
+                  <div className="bg-white border border-gray-200 rounded-2xl p-5">
                     <div className="flex items-center justify-between mb-4">
                       <div>
-                        <p className="text-sm font-bold text-[#1E1C18]">Usage — May 2026</p>
-                        <p className="text-xs text-[#9B9589]">Billing cycle overview</p>
+                        <p className="text-sm font-bold text-gray-900">Usage — May 2026</p>
+                        <p className="text-xs text-gray-400">Billing cycle overview</p>
                       </div>
                       <span className="px-2 py-1 rounded-md bg-[#EAF3DE] text-[#3B6D11] text-[10px] font-bold uppercase tracking-widest border border-[#C8DDB0]">Healthy</span>
                     </div>
@@ -485,15 +483,15 @@ export default function AdminSettings() {
                         return (
                           <div key={s.label}>
                             <div className="flex items-center justify-between mb-1.5">
-                              <p className="text-xs font-semibold text-[#5C5750]">{s.label}</p>
+                              <p className="text-xs font-semibold text-gray-600">{s.label}</p>
                               <div className="flex items-center gap-2">
-                                <p className="text-sm font-bold font-mono text-[#1E1C18]">{s.val}</p>
-                                <span className="text-[10px] text-[#9B9589] font-mono">{pct}%</span>
+                                <p className="text-sm font-bold font-mono text-gray-900">{s.val}</p>
+                                <span className="text-[10px] text-gray-400 font-mono">{pct}%</span>
                               </div>
                             </div>
-                            <div className="h-1.5 rounded-full bg-[#F0EDE8] overflow-hidden">
+                            <div className="h-1.5 rounded-full bg-gray-100 overflow-hidden">
                               <div
-                                className="h-full rounded-full bg-[#C8A96E] transition-all"
+                                className="h-full rounded-full bg-blue-600 transition-all"
                                 style={{ width: `${pct}%` }}
                               />
                             </div>
@@ -504,27 +502,27 @@ export default function AdminSettings() {
                   </div>
 
                   {/* Invoices */}
-                  <div className="bg-white border border-[#E2DDD6] rounded-2xl overflow-hidden">
-                    <div className="px-5 py-3.5 border-b border-[#EDE9E2] flex items-center justify-between">
-                      <p className="text-xs font-bold text-[#1E1C18] uppercase tracking-widest">Recent invoices</p>
-                      <TrendingUp className="w-3.5 h-3.5 text-[#9B9589]" strokeWidth={1.8} />
+                  <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden">
+                    <div className="px-5 py-3.5 border-b border-gray-100 flex items-center justify-between">
+                      <p className="text-xs font-bold text-gray-900 uppercase tracking-widest">Recent invoices</p>
+                      <TrendingUp className="w-3.5 h-3.5 text-gray-400" strokeWidth={1.8} />
                     </div>
                     {[
                       { period: 'May 2026', amount: '₦240,000' },
                       { period: 'April 2026', amount: '₦240,000' },
                       { period: 'March 2026', amount: '₦240,000' },
                     ].map((inv, i) => (
-                      <div key={inv.period} className={`flex items-center justify-between px-5 py-3.5 hover:bg-[#FAFAF7] cursor-pointer group transition-colors ${i < 2 ? 'border-b border-[#EDE9E2]' : ''}`}>
+                      <div key={inv.period} className={`flex items-center justify-between px-5 py-3.5 hover:bg-gray-50 cursor-pointer group transition-colors ${i < 2 ? 'border-b border-gray-100' : ''}`}>
                         <div className="flex items-center gap-3">
-                          <div className="w-7 h-7 rounded-lg bg-[#F0EDE8] flex items-center justify-center">
-                            <CreditCard className="w-3.5 h-3.5 text-[#A09890]" strokeWidth={1.8} />
+                          <div className="w-7 h-7 rounded-lg bg-gray-100 flex items-center justify-center">
+                            <CreditCard className="w-3.5 h-3.5 text-gray-400" strokeWidth={1.8} />
                           </div>
-                          <p className="text-sm font-semibold text-[#5C5750]">{inv.period}</p>
+                          <p className="text-sm font-semibold text-gray-600">{inv.period}</p>
                         </div>
                         <div className="flex items-center gap-3">
-                          <p className="text-sm font-bold font-mono text-[#1E1C18]">{inv.amount}</p>
+                          <p className="text-sm font-bold font-mono text-gray-900">{inv.amount}</p>
                           <span className="text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-md bg-[#EAF3DE] text-[#3B6D11] border border-[#C8DDB0]">Paid</span>
-                          <ArrowUpRight className="w-3.5 h-3.5 text-[#C4BFBA] group-hover:text-[#9B9589] transition-colors" />
+                          <ArrowUpRight className="w-3.5 h-3.5 text-gray-300 group-hover:text-gray-400 transition-colors" />
                         </div>
                       </div>
                     ))}
