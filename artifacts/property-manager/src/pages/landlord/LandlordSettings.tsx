@@ -95,13 +95,14 @@ function Toggle({ on, onChange }: { on: boolean; onChange: () => void }) {
 function InputWrap({ children }: { children: React.ReactNode }) {
   return (
     <div style={{
-      display: 'flex', alignItems: 'center', gap: 8,
-      border: '1px solid #E2E8F0', borderRadius: 8,
-      padding: '0 14px', height: 42, background: '#fff',
-      transition: 'all .15s',
+      display: 'flex', alignItems: 'center', gap: 10,
+      border: '1px solid #E5E7EB', borderRadius: 16,
+      padding: '0 16px', height: 46, background: '#FFFFFF',
+      transition: 'box-shadow .2s ease, border-color .2s ease',
+      boxShadow: '0 1px 2px rgba(15,23,42,0.04)',
     }}
-      onFocus={e => (e.currentTarget.style.boxShadow = '0 0 0 3px rgba(37,99,235,.12)', e.currentTarget.style.borderColor = '#2563EB')}
-      onBlur={e => (e.currentTarget.style.boxShadow = 'none', e.currentTarget.style.borderColor = '#E2E8F0')}
+      onFocus={e => (e.currentTarget.style.boxShadow = '0 0 0 3px rgba(59,130,246,0.12)', e.currentTarget.style.borderColor = '#93C5FD')}
+      onBlur={e => (e.currentTarget.style.boxShadow = '0 1px 2px rgba(15,23,42,0.04)', e.currentTarget.style.borderColor = '#E5E7EB')}
     >
       {children}
     </div>
@@ -110,8 +111,8 @@ function InputWrap({ children }: { children: React.ReactNode }) {
 
 const inputStyle: React.CSSProperties = {
   flex: 1, border: 'none', outline: 'none',
-  fontSize: 14, color: '#0F172A', background: 'transparent',
-  fontFamily: 'inherit',
+  fontSize: 15, color: '#0F172A', background: 'transparent',
+  fontFamily: 'inherit', minWidth: 0,
 }
 
 const iconStyle: React.CSSProperties = { width: 16, height: 16, color: '#94A3B8', flexShrink: 0 }
@@ -132,9 +133,9 @@ function FieldLabel({ children }: { children: React.ReactNode }) {
 function Card({ children, style }: { children: React.ReactNode; style?: React.CSSProperties }) {
   return (
     <div style={{
-      background: '#fff', border: '1px solid #E2E8F0',
-      borderRadius: 16, padding: 24,
-      boxShadow: '0 1px 3px rgba(0,0,0,.06)', marginBottom: 16, ...style,
+      background: '#FFFFFF', border: '1px solid rgba(226,232,240,0.7)',
+      borderRadius: 24, padding: 28,
+      boxShadow: '0 20px 50px rgba(15,23,42,0.06)', marginBottom: 24, ...style,
     }}>
       {children}
     </div>
@@ -143,9 +144,9 @@ function Card({ children, style }: { children: React.ReactNode; style?: React.CS
 
 function CardHead({ title, desc }: { title: string; desc: string }) {
   return (
-    <div style={{ marginBottom: 20, paddingBottom: 16, borderBottom: '1px solid #E2E8F0' }}>
-      <p style={{ fontSize: 15, fontWeight: 600, color: '#0F172A' }}>{title}</p>
-      <p style={{ fontSize: 13, color: '#94A3B8', marginTop: 3 }}>{desc}</p>
+    <div style={{ marginBottom: 24, paddingBottom: 18, borderBottom: '1px solid #E5E7EB' }}>
+      <p style={{ fontSize: 16, fontWeight: 700, color: '#0F172A' }}>{title}</p>
+      <p style={{ fontSize: 14, color: '#64748B', marginTop: 6, lineHeight: 1.6 }}>{desc}</p>
     </div>
   )
 }
@@ -154,11 +155,12 @@ function CardHead({ title, desc }: { title: string; desc: string }) {
 function SubmitBtn({ onClick, children, loading }: { onClick: () => void; children: React.ReactNode; loading?: boolean }) {
   return (
     <button type="button" onClick={onClick} disabled={loading} style={{
-      width: '100%', padding: 11, fontSize: 14, fontWeight: 600,
+      width: '100%', padding: '14px 18px', fontSize: 15, fontWeight: 700,
       color: '#fff', background: loading ? '#93C5FD' : '#2563EB', border: 'none',
-      borderRadius: 8, cursor: loading ? 'not-allowed' : 'pointer', display: 'flex',
-      alignItems: 'center', justifyContent: 'center', gap: 8, marginTop: 4,
-      fontFamily: 'inherit', transition: 'background .18s',
+      borderRadius: 14, cursor: loading ? 'not-allowed' : 'pointer', display: 'flex',
+      alignItems: 'center', justifyContent: 'center', gap: 10, marginTop: 10,
+      fontFamily: 'inherit', transition: 'background .18s ease, transform .18s ease',
+      boxShadow: loading ? 'none' : '0 15px 30px rgba(37,99,235,0.18)',
     }}
       onMouseEnter={e => { if (!loading) e.currentTarget.style.background = '#1d4ed8' }}
       onMouseLeave={e => { if (!loading) e.currentTarget.style.background = '#2563EB' }}
@@ -171,9 +173,9 @@ function SubmitBtn({ onClick, children, loading }: { onClick: () => void; childr
 // ── Section breadcrumb ────────────────────────────────────────────────────────
 function SectionLabel({ children }: { children: string }) {
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 20 }}>
-      <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#2563EB' }} />
-      <span style={{ fontSize: 12, fontWeight: 600, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '.7px' }}>
+    <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 22 }}>
+      <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#2563EB' }} />
+      <span style={{ fontSize: 12, fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '.18em' }}>
         {children}
       </span>
     </div>
@@ -475,18 +477,40 @@ export default function LandlordSettings() {
 
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, overflow: 'hidden' }}>
 
-          <header style={{
-            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-            padding: '18px 28px', background: '#fff',
-            borderBottom: '1px solid #E2E8F0',
-          }}>
-            <div>
-              <h1 style={{ fontSize: 18, fontWeight: 600, color: '#0F172A', letterSpacing: '-.3px' }}>
-                Account Settings
-              </h1>
-              <p style={{ fontSize: 13, color: '#94A3B8', marginTop: 2 }}>
-                Manage your preferences and account details
-              </p>
+          <header style={{ padding: '24px 28px 0', background: '#F8FAFC' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 320px', gap: 20, alignItems: 'center' }}>
+              <div>
+                <p style={{ fontSize: 13, fontWeight: 600, color: '#2563EB', marginBottom: 8, letterSpacing: '.18em', textTransform: 'uppercase' }}>
+                  Landlord Settings
+                </p>
+                <h1 style={{ fontSize: 32, fontWeight: 700, color: '#0F172A', margin: 0, lineHeight: 1.1 }}>
+                  Manage your landlord account and preferences
+                </h1>
+                <p style={{ fontSize: 15, color: '#64748B', marginTop: 12, maxWidth: 580, lineHeight: 1.8 }}>
+                  Update your profile, notification preferences, security settings, and WhatsApp contact options from one modern dashboard.
+                </p>
+              </div>
+              <div style={{ background: '#fff', border: '1px solid #E5E7EB', borderRadius: 24, padding: 24, boxShadow: '0 20px 50px rgba(15,23,42,0.06)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 20 }}>
+                  <div style={{ width: 54, height: 54, borderRadius: 18, background: '#EFF6FF', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, fontWeight: 700, color: '#2563EB' }}>
+                    {initials}
+                  </div>
+                  <div style={{ minWidth: 0 }}>
+                    <p style={{ fontSize: 14, fontWeight: 700, color: '#0F172A', margin: 0 }}>{landlord?.full_name || displayName || 'Your profile'}</p>
+                    <p style={{ fontSize: 13, color: '#64748B', margin: '6px 0 0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{user?.email || 'No email available'}</p>
+                  </div>
+                </div>
+                <div style={{ display: 'grid', gap: 12 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', color: '#475569', fontSize: 13 }}>
+                    <span>Status</span>
+                    <span style={{ fontWeight: 700, color: landlord?.is_verified ? '#16A34A' : '#D97706' }}>{landlord?.is_verified ? 'Verified' : 'Unverified'}</span>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', color: '#475569', fontSize: 13 }}>
+                    <span>Joined</span>
+                    <span style={{ fontWeight: 700, color: '#0F172A' }}>{landlord?.created_at ? new Date(landlord.created_at).toLocaleDateString() : '—'}</span>
+                  </div>
+                </div>
+              </div>
             </div>
           </header>
 
@@ -494,12 +518,13 @@ export default function LandlordSettings() {
 
             <div style={{ display: 'flex', gap: 20, maxWidth: 860 }}>
 
-              <div style={{ width: 200, flexShrink: 0 }} className="hidden sm:block">
+              <div style={{ width: 220, flexShrink: 0 }} className="hidden sm:block">
                 <nav style={{
-                  background: '#fff', border: '1px solid #E2E8F0',
-                  borderRadius: 12, overflow: 'hidden',
-                  boxShadow: '0 1px 3px rgba(0,0,0,.06)',
-                  position: 'sticky', top: 0,
+                  display: 'grid', gap: 10,
+                  background: '#F8FAFC', border: '1px solid #E5E7EB',
+                  borderRadius: 24, padding: 16,
+                  boxShadow: '0 20px 50px rgba(15,23,42,0.08)',
+                  position: 'sticky', top: 24,
                 }}>
                   {SECTIONS.map(s => {
                     const Icon = s.icon
@@ -508,27 +533,26 @@ export default function LandlordSettings() {
                       <button key={s.id} type="button" onClick={() => setActive(s.id)}
                         style={{
                           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                          width: '100%', padding: '13px 16px', fontSize: 13.5, fontWeight: 500,
+                          width: '100%', padding: '14px 18px', fontSize: 14, fontWeight: 600,
                           color: isActive ? '#2563EB' : '#475569',
-                          background: isActive ? '#EFF6FF' : 'transparent',
-                          border: 'none', borderBottom: '1px solid #E2E8F0',
-                          cursor: 'pointer', transition: 'all .15s', fontFamily: 'inherit',
+                          background: isActive ? '#FFFFFF' : '#F8FAFC',
+                          border: '1px solid', borderColor: isActive ? '#C7D2FE' : 'transparent',
+                          borderRadius: 18, boxShadow: isActive ? '0 10px 25px rgba(37,99,235,0.12)' : 'none',
+                          cursor: 'pointer', transition: 'all .2s ease', fontFamily: 'inherit',
                           textAlign: 'left',
                         }}
-                        onMouseEnter={e => { if (!isActive) e.currentTarget.style.background = '#F8FAFC' }}
-                        onMouseLeave={e => { if (!isActive) e.currentTarget.style.background = 'transparent' }}
                       >
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                           <div style={{
-                            width: 30, height: 30, borderRadius: 8,
+                            width: 34, height: 34, borderRadius: 12,
                             display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-                            background: isActive ? 'rgba(37,99,235,.15)' : '#F1F5F9',
+                            background: isActive ? 'rgba(37,99,235,.12)' : '#EEF2FF',
                           }}>
-                            <Icon style={{ width: 15, height: 15, color: isActive ? '#2563EB' : '#94A3B8' }} strokeWidth={1.7} />
+                            <Icon style={{ width: 16, height: 16, color: isActive ? '#2563EB' : '#7C3AED' }} strokeWidth={1.7} />
                           </div>
                           {s.label}
                         </div>
-                        <ChevronRight style={{ width: 13, height: 13, color: isActive ? '#93C5FD' : '#CBD5E1' }} />
+                        <ChevronRight style={{ width: 14, height: 14, color: isActive ? '#2563EB' : '#CBD5E1' }} />
                       </button>
                     )
                   })}
