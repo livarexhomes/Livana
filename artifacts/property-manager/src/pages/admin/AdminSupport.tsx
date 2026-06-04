@@ -19,7 +19,7 @@ interface SupportTicket {
   tenant_id?: string | null
   landlord_id?: string | null
   tenants?: { full_name: string | null; phone: string | null } | null
-  landlords?: { full_name: string | null; whatsapp: string | null; email: string | null } | null
+  landlords?: { full_name: string | null; whatsapp: string | null } | null
 }
 
 interface SupportMessage {
@@ -365,7 +365,7 @@ function SupportTab() {
   useEffect(() => {
     const supabase = createClient()
     console.log('Loading tickets...')
-    supabase.from('support_tickets').select('*, tenants(full_name, phone), landlords(full_name, whatsapp, email)')
+    supabase.from('support_tickets').select('*, tenants(full_name, phone), landlords(full_name, whatsapp)')
       .order('updated_at', { ascending: false })
       .then(({ data, error }) => { 
         if (error) console.error('Error loading tickets:', error)
