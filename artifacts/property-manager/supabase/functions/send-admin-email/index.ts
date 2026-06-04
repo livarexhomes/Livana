@@ -1,6 +1,5 @@
 import { serve } from 'https://deno.land/std@0.177.0/http/server.ts'
 import { Resend } from 'npm:resend@3.2.0'
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.0'
 
 const corsHeaders: Record<string, string> = {
   'Access-Control-Allow-Origin': '*',
@@ -13,64 +12,51 @@ serve(async (req) => {
   }
 
   try {
-    const supabaseClient = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    )
-
-    const { data: configData } = await supabaseClient
-      .from('admin_settings')
-      .select('value')
-      .eq('key', 'email_config')
-      .single()
-
-    const emailConfig = configData?.value || {}
-    const resendApiKey = emailConfig.resendApiKey || Deno.env.get('RESEND_API_KEY')
-    const fromEmail = emailConfig.fromEmail || 'noreply@livana.ng'
-    const fromName = emailConfig.fromName || 'Livana'
-    const enabled = emailConfig.enabled !== false
-
-    if (!enabled) {
+    const body = await req.json().catch(() => ({}))
+    
+    // Get Resend API key from environment
+    const resendApiKey = Deno.env.get('RESEND_API_KEY')
+    
+    if (!resendApiKey) {
       return new Response(
-        JSON.stringify({ success: false, error: 'Email notifications are disabled' }),
+        JSON.stringify({ success: false, error: 'RESEND_API_KEY not configured in secrets' }),
         { headers: corsHeaders, status: 400 }
       )
     }
 
-    if (!resendApiKey) {
+    if (!body.to || !body.subject || !body.html) {
       return new Response(
-        JSON.stringify({ success: false, error: 'Resend API key not configured' }),
+        JSON.stringify({ success: false, error: 'Missing required fields: to, subject, html' }),
         { headers: corsHeaders, status: 400 }
       )
     }
 
     const resend = new Resend(resendApiKey)
-    const body = await req.json().catch(() => ({}))
+    
+    const { data, error } = await resend.emails.send({
+      from: body.from || 'Livana <noreply@livana.ng>',
+      to: body.to,
+      subject: body.subject,
+      html: body.html,
+      text: body.text,
+    })
 
-    if (body.to && body.subject) {
-      const { data, error } = await resend.emails.send({
-        from: `${fromName} <${fromEmail}>`,
-        to: body.to,
-        subject: body.subject,
-        html: body.html,
-        text: body.text,
-      })
-
-      if (error) throw error
-
+    if (error) {
+      console.error('Resend error:', error)
       return new Response(
-        JSON.stringify({ success: true, id: data?.id }),
-        { headers: corsHeaders }
+        JSON.stringify({ success: false, error: error.message || 'Failed to send email' }),
+        { headers: corsHeaders, status: 500 }
       )
     }
 
     return new Response(
-      JSON.stringify({ success: false, error: 'Invalid request' }),
-      { headers: corsHeaders, status: 400 }
+      JSON.stringify({ success: true, id: data?.id }),
+      { headers: corsHeaders }
     )
   } catch (error: any) {
+    console.error('Edge function error:', error)
     return new Response(
-      JSON.stringify({ success: false, error: error.message }),
+      JSON.stringify({ success: false, error: error.message || 'Internal server error' }),
       { headers: corsHeaders, status: 500 }
     )
   }
