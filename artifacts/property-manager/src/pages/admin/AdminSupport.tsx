@@ -36,8 +36,19 @@ interface Enquiry {
   status: 'open' | 'replied' | 'closed'
   created_at: string
   updated_at: string
+  tenant_id?: string
   tenants?: { full_name: string | null; phone: string | null } | null
   properties?: { title: string | null; city: string | null; address: string | null } | null
+}
+
+interface EnquiryReply {
+  id: string
+  enquiry_id: string
+  message: string
+  created_at: string
+  sender_role: 'landlord' | 'admin'
+  landlords?: { full_name: string | null } | null
+  admins?: { email: string | null } | null
 }
 
 const PRIORITY_META = {
@@ -252,12 +263,98 @@ function EnquiryDetail({ enquiry, onBack, onStatusChange }: {
   onBack: () => void
   onStatusChange: (id: string, status: Enquiry['status']) => void
 }) {
+  const [replies, setReplies]   = useState<EnquiryReply[]>([])
+  const [loading, setLoading]   = useState(true)
+  const [input, setInput]       = useState('')
+  const [sending, setSending]   = useState(false)
   const [updating, setUpdating] = useState(false)
+  const bottomRef = useRef<HTMLDivElement>(null)
+  
   const s = ENQUIRY_STATUS_META[enquiry.status]
   const tenantName    = enquiry.tenants?.full_name ?? 'Tenant'
   const tenantInitial = tenantName[0]?.toUpperCase() ?? 'T'
   const propertyTitle = enquiry.properties?.title ?? 'Property'
   const propertyCity  = enquiry.properties?.city  ?? ''
+  const isClosed = enquiry.status === 'closed'
+
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [replies])
+
+  useEffect(() => {
+    const supabase = createClient()
+    // Load replies
+    supabase
+      .from('enquiry_replies')
+      .select('*, landlords(full_name), admins(email)')
+      .eq('enquiry_id', enquiry.id)
+      .order('created_at', { ascending: true })
+      .then(({ data, error }) => {
+        if (error) console.error('Error loading replies:', error)
+        setReplies((data as EnquiryReply[]) ?? [])
+        setLoading(false)
+      })
+
+    // Realtime subscription for new replies
+    const channel = supabase.channel(`enquiry_replies:${enquiry.id}`)
+      .on('postgres_changes', 
+        { event: 'INSERT', schema: 'public', table: 'enquiry_replies', filter: `enquiry_id=eq.${enquiry.id}` },
+        async (payload) => {
+          // Fetch full reply with sender info
+          const { data } = await supabase
+            .from('enquiry_replies')
+            .select('*, landlords(full_name), admins(email)')
+            .eq('id', payload.new.id)
+            .single()
+          if (data) {
+            setReplies(prev => [...prev, data as EnquiryReply])
+          }
+        }
+      )
+      .subscribe()
+
+    return () => { supabase.removeChannel(channel) }
+  }, [enquiry.id])
+
+  async function sendReply(e: React.FormEvent) {
+    e.preventDefault()
+    const body = input.trim()
+    if (!body || sending) return
+    
+    setSending(true)
+    setInput('')
+    
+    const supabase = createClient()
+    
+    // Insert reply as admin
+    const { data: inserted, error } = await supabase
+      .from('enquiry_replies')
+      .insert({ 
+        enquiry_id: enquiry.id, 
+        message: body,
+        sender_role: 'admin'
+      })
+      .select('*, landlords(full_name), admins(email)')
+      .single()
+    
+    if (error) {
+      console.error('Error sending reply:', error)
+      setSending(false)
+      return
+    }
+    
+    if (inserted) {
+      setReplies(prev => [...prev, inserted as EnquiryReply])
+    }
+    
+    // Update status to replied if it was open
+    if (enquiry.status === 'open') {
+      await supabase.from('enquiries').update({ status: 'replied' }).eq('id', enquiry.id)
+      onStatusChange(enquiry.id, 'replied')
+    }
+    
+    setSending(false)
+  }
 
   async function changeStatus(newStatus: Enquiry['status']) {
     setUpdating(true)
@@ -303,53 +400,109 @@ function EnquiryDetail({ enquiry, onBack, onStatusChange }: {
         </div>
       </div>
 
-      {/* Body */}
-      <div className="flex-1 overflow-y-auto px-6 py-5 space-y-5">
-        {/* Property info */}
-        <div className="flex items-start gap-3 p-4 bg-blue-50 border border-blue-100 rounded-xl">
-          <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center shrink-0">
-            <Building2 className="w-4 h-4 text-white" />
+      {/* Body - Chat Thread */}
+      <div className="flex-1 overflow-y-auto px-5 py-4 space-y-3">
+        {loading ? (
+          <div className="flex items-center justify-center h-full">
+            <Loader2 className="w-6 h-6 animate-spin text-gray-300" />
           </div>
-          <div>
-            <p className="text-sm font-bold text-blue-900">{propertyTitle}</p>
-            {propertyCity && <p className="text-xs text-blue-600 mt-0.5">{propertyCity}</p>}
-          </div>
-        </div>
-
-        {/* Message */}
-        <div>
-          <p className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-2">Enquiry Message</p>
-          <div className="bg-gray-50 border border-gray-100 rounded-xl p-4 text-sm text-gray-800 leading-relaxed">
-            {enquiry.message}
-          </div>
-        </div>
-
-        {/* Tenant info */}
-        <div>
-          <p className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-2">Tenant Details</p>
-          <div className="bg-gray-50 border border-gray-100 rounded-xl p-4 space-y-2">
-            <div className="flex items-center gap-2 text-sm">
-              <User className="w-4 h-4 text-gray-400 shrink-0" />
-              <span className="font-semibold text-gray-800">{tenantName}</span>
+        ) : (
+          <>
+            {/* Property info */}
+            <div className="flex items-start gap-3 p-3 bg-blue-50 border border-blue-100 rounded-xl mb-4">
+              <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center shrink-0">
+                <Building2 className="w-4 h-4 text-white" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-sm font-bold text-blue-900 truncate">{propertyTitle}</p>
+                {propertyCity && <p className="text-xs text-blue-600 mt-0.5">{propertyCity}</p>}
+              </div>
             </div>
-            {enquiry.tenants?.phone && (
-              <div className="flex items-center gap-2 text-sm text-gray-600">
-                <span className="w-4 h-4 shrink-0" />
-                {enquiry.tenants.phone}
+
+            <div className="flex justify-center">
+              <span className="text-[11px] text-gray-400 bg-gray-50 border border-gray-100 px-3 py-1 rounded-full">
+                Enquiry received · {format(new Date(enquiry.created_at), 'dd MMM yyyy, h:mm a')}
+              </span>
+            </div>
+
+            {/* Original enquiry message */}
+            <div className="flex items-end gap-2 justify-start">
+              <div className="w-7 h-7 rounded-full bg-gradient-to-br from-blue-500 to-indigo-500 flex items-center justify-center shrink-0 shadow-sm">
+                <span className="text-xs font-bold text-white">{tenantInitial}</span>
+              </div>
+              <div className="max-w-[75%] flex flex-col gap-1 items-start">
+                <div className="px-4 py-2.5 rounded-2xl text-sm leading-relaxed bg-gray-100 text-gray-800 rounded-bl-sm">
+                  {enquiry.message}
+                </div>
+                <span className="text-[10px] text-gray-400 px-1">
+                  {tenantName} · {format(new Date(enquiry.created_at), 'h:mm a')}
+                </span>
+              </div>
+            </div>
+
+            {/* Replies */}
+            {replies.map(reply => {
+              const isAdmin = reply.sender_role === 'admin'
+              const senderName = isAdmin 
+                ? (reply.admins?.email?.split('@')[0] ?? 'Admin')
+                : (reply.landlords?.full_name ?? 'Landlord')
+              return (
+                <div key={reply.id} className={`flex items-end gap-2 ${isAdmin ? 'justify-end' : 'justify-start'}`}>
+                  {!isAdmin && (
+                    <div className="w-7 h-7 rounded-full bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center shrink-0 shadow-sm">
+                      <span className="text-xs font-bold text-white">L</span>
+                    </div>
+                  )}
+                  <div className={`max-w-[75%] flex flex-col gap-1 ${isAdmin ? 'items-end' : 'items-start'}`}>
+                    <div className={`px-4 py-2.5 rounded-2xl text-sm leading-relaxed ${isAdmin ? 'bg-gray-900 text-white rounded-br-sm' : 'bg-gray-100 text-gray-800 rounded-bl-sm'}`}>
+                      {reply.message}
+                    </div>
+                    <span className="text-[10px] text-gray-400 px-1">
+                      {isAdmin ? 'You' : senderName} · {format(new Date(reply.created_at), 'h:mm a')}
+                    </span>
+                  </div>
+                  {isAdmin && (
+                    <div className="w-7 h-7 rounded-full bg-gray-900 flex items-center justify-center shrink-0 shadow-sm">
+                      <HeadphonesIcon className="w-3.5 h-3.5 text-white" />
+                    </div>
+                  )}
+                </div>
+              )
+            })}
+
+            {isClosed && (
+              <div className="flex justify-center">
+                <span className="text-[11px] text-green-700 bg-green-50 border border-green-100 px-3 py-1 rounded-full">
+                  ✓ This enquiry has been closed
+                </span>
               </div>
             )}
-          </div>
-        </div>
-
-        <div className="text-xs text-gray-400">
-          Received {format(new Date(enquiry.created_at), 'dd MMM yyyy, h:mm a')}
-        </div>
+            <div ref={bottomRef} />
+          </>
+        )}
       </div>
 
-      {/* Read-only notice */}
-      <div className="px-5 py-3 border-t border-gray-100 bg-gray-50 text-center text-xs text-gray-400 shrink-0">
-        Enquiries are view-only. Contact the tenant directly via their phone number.
-      </div>
+      {/* Reply input */}
+      {!isClosed ? (
+        <form onSubmit={sendReply} className="px-4 py-3 border-t border-gray-100 flex items-end gap-2 shrink-0">
+          <textarea 
+            rows={1} 
+            value={input} 
+            onChange={e => setInput(e.target.value)}
+            onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendReply(e as any) } }}
+            placeholder="Type your reply... (Enter to send)"
+            className="flex-1 px-4 py-2.5 rounded-xl border border-gray-200 text-sm bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all resize-none" 
+          />
+          <button type="submit" disabled={!input.trim() || sending}
+            className="w-10 h-10 rounded-xl bg-gray-900 hover:bg-gray-800 disabled:opacity-40 text-white flex items-center justify-center transition-all shrink-0">
+            {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+          </button>
+        </form>
+      ) : (
+        <div className="px-5 py-3 border-t border-gray-100 text-center text-xs text-gray-400 shrink-0">
+          This enquiry is closed. Change status to reopen.
+        </div>
+      )}
     </div>
   )
 }
