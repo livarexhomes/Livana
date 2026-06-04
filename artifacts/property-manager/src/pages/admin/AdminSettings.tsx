@@ -373,8 +373,8 @@ export default function AdminSettings() {
 
   // Test Resend email configuration
   const handleTestEmail = async () => {
-    if (!emailConfig.resendApiKey || !notifications.adminEmail) {
-      setTestEmailResult({ success: false, message: 'Please configure Resend API key and admin email first' })
+    if (!notifications.adminEmail) {
+      setTestEmailResult({ success: false, message: 'Please set admin email in Notifications tab first' })
       return
     }
 
@@ -383,6 +383,8 @@ export default function AdminSettings() {
 
     try {
       const supabase = createClient()
+      
+      // First check if edge function is accessible
       const { data, error } = await supabase.functions.invoke('send-admin-email', {
         body: {
           to: notifications.adminEmail,
@@ -394,21 +396,26 @@ export default function AdminSettings() {
               <p style="color: #666; font-size: 14px;">Sent from Livana Admin Settings</p>
             </div>
           `,
+          from: `${emailConfig.fromName} <${emailConfig.fromEmail}>`,
         },
       })
 
       if (error) {
-        throw new Error(error.message || 'Failed to send test email')
+        console.error('Edge function error:', error)
+        throw new Error(error.message || `Edge function error: ${error}`)
       }
 
       if (data?.success) {
-        setTestEmailResult({ success: true, message: 'Test email sent successfully!' })
+        setTestEmailResult({ success: true, message: 'Test email sent successfully! Check your inbox.' })
       } else {
-        setTestEmailResult({ success: false, message: data?.error || 'Failed to send test email' })
+        setTestEmailResult({ success: false, message: data?.error || 'Unknown error from edge function' })
       }
     } catch (err: any) {
       console.error('Test email error:', err)
-      setTestEmailResult({ success: false, message: err.message || 'Network error - ensure the edge function is deployed' })
+      setTestEmailResult({ 
+        success: false, 
+        message: err.message || 'Failed to connect to edge function. Make sure RESEND_API_KEY secret is set in Supabase.' 
+      })
     } finally {
       setTestEmailLoading(false)
     }
