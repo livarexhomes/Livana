@@ -4,36 +4,42 @@ import PublicNavbar from '../components/PublicNavbar'
 import Footer from '../components/Footer'
 
 const stats = [
-  { value: '2,400+', label: 'Active Listings' },
-  { value: '850+',   label: 'Verified Landlords' },
-  { value: '36',     label: 'Cities Covered' },
-  { value: '₦0',     label: 'Agent Fees' },
+  { value: '100+', label: 'Active Listings' },
+  { value: '50+',  label: 'Verified Landlords' },
+  { value: '36',   label: 'Cities Covered' },
+  { value: '₦0',   label: 'Agent Fees' },
 ]
 
 const values = [
   {
     icon: Shield,
     title: 'Verified First',
-    desc: 'Every landlord is reviewed and approved before a single listing goes live. No exceptions. No shortcuts.',
+    desc: 'Every landlord completes identity verification before listings appear on the platform.',
     bg: 'bg-blue-600',
   },
   {
     icon: Eye,
     title: 'Radical Transparency',
-    desc: 'Real prices. Real availability. Real people. We remove the opacity that makes Nigerian property search so frustrating.',
+    desc: 'Real prices. Real availability. Real landlords. No hidden costs and no opaque middlemen.',
     bg: 'bg-violet-600',
   },
   {
     icon: Users,
     title: 'Direct Connection',
-    desc: 'No middlemen sitting between you and the landlord. One tap on WhatsApp and you\'re talking to the property owner directly.',
+    desc: 'Renters connect directly to landlords through WhatsApp without agents in the middle.',
     bg: 'bg-emerald-600',
   },
   {
     icon: Zap,
     title: 'Speed Matters',
-    desc: 'Good properties move fast. We built LIVAREX to help renters act quickly and landlords fill vacancies without delay.',
+    desc: 'We help landlords fill vacancies quickly and renters move faster when properties are real.',
     bg: 'bg-amber-600',
+  },
+  {
+    icon: CheckCircle,
+    title: 'Trust by Default',
+    desc: 'Verified identities, transparent listings, and a platform designed for honest property search.',
+    bg: 'bg-slate-600',
   },
 ]
 
@@ -70,11 +76,10 @@ export default function AboutPage() {
               About LIVAREX
             </span>
             <h1 className="text-5xl sm:text-6xl md:text-7xl font-extrabold text-white leading-[1.05] tracking-tight mb-7">
-              We built the platform<br />
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-violet-400">we wished existed.</span>
+              Building Trust in Nigerian Real Estate
             </h1>
             <p className="text-lg text-gray-400 leading-relaxed max-w-2xl mb-10">
-              LIVAREX is Nigeria's most trusted property platform — connecting real renters with verified landlords, no agents, no scams, no hidden fees.
+              LIVAREX was founded to eliminate agent exploitation, fake listings, and property scams by creating a transparent marketplace where renters and buyers connect directly with verified landlords.
             </p>
             <div className="flex flex-wrap gap-3">
               <Link href="/listings" className="inline-flex items-center gap-2 px-6 py-3.5 bg-blue-600 hover:bg-blue-500 text-white text-sm font-bold rounded-xl transition-all shadow-lg shadow-blue-600/25">
@@ -102,100 +107,46 @@ export default function AboutPage() {
         </div>
       </section>
 
-      {/* ── STORY — white ── */}
+      {/* ── MISSION & VISION — white ── */}
       <section className="bg-white py-24">
         <div className="max-w-6xl mx-auto px-5 sm:px-8">
-          <div className="grid lg:grid-cols-2 gap-16 items-center">
+          <div className="grid gap-16 lg:grid-cols-2 items-start">
             <div>
-              <p className="text-blue-600 font-bold text-sm uppercase tracking-widest mb-4">Our Story</p>
-              <h2 className="text-4xl font-extrabold text-gray-900 tracking-tight leading-tight mb-6">
-                Born out of frustration.<br />Built with purpose.
-              </h2>
-              <div className="space-y-5 text-gray-500 leading-relaxed">
-                <p>
-                  In 2022, our founder — Shorinmade — spent three months and paid two agent fees trying to find a two-bedroom apartment in Lagos. Both deals collapsed. One listing didn't exist. One landlord disappeared after collecting a fee. The experience was embarrassing, expensive, and entirely avoidable.
-                </p>
-                <p>
-                  So he did what frustrated engineers do: he built a solution. Not another listing aggregator that recycles outdated content — a platform where every landlord is reviewed before a listing goes live, where renters contact property owners directly, and where transparency is the product, not a feature.
-                </p>
-                <p>
-                  Today, LIVAREX serves thousands of renters and landlords across 36 Nigerian cities. We're growing fast — but we've never lost sight of the single promise we made at the beginning: <strong className="text-gray-900">make property search honest.</strong>
-                </p>
-              </div>
+              <p className="text-blue-600 font-bold text-sm uppercase tracking-widest mb-4">Mission</p>
+              <h2 className="text-3xl font-extrabold text-gray-950 mb-4">To build a transparent, accessible, and exploitation-free property marketplace.</h2>
+              <p className="text-gray-600 leading-relaxed">We want every Nigerian to rent or buy directly from verified landlords without unnecessary fees.</p>
             </div>
-            <div className="relative">
-              <div className="relative rounded-3xl overflow-hidden shadow-2xl aspect-[4/3]">
-                <img
-                  src="https://images.unsplash.com/photo-1560472355-536de3962603?w=900&q=80"
-                  alt="Lagos skyline"
-                  className="w-full h-full object-cover"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
-                <div className="absolute bottom-6 left-6 right-6">
-                  <p className="text-white font-bold text-lg">Lagos, Nigeria</p>
-                  <p className="text-blue-300 text-sm">Where LIVAREX was born</p>
-                </div>
-              </div>
-              {/* Floating badge */}
-              <div className="absolute -top-5 -right-5 bg-blue-600 text-white rounded-2xl p-5 shadow-2xl shadow-blue-600/30">
-                <Building2 className="w-7 h-7 mb-1" />
-                <p className="text-2xl font-extrabold leading-none">2,400+</p>
-                <p className="text-blue-200 text-xs mt-0.5">Live listings</p>
-              </div>
+            <div>
+              <p className="text-blue-600 font-bold text-sm uppercase tracking-widest mb-4">Vision</p>
+              <h2 className="text-3xl font-extrabold text-gray-950 mb-4">To become the most trusted property platform across West Africa.</h2>
+              <p className="text-gray-600 leading-relaxed">Every listing is real, every landlord is verified, and every transaction is transparent.</p>
             </div>
           </div>
         </div>
       </section>
 
-      {/* ── VALUES — dark ── */}
+      {/* ── BRAND VALUES — dark ── */}
       <section className="bg-gray-950 py-24 relative overflow-hidden">
         <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'radial-gradient(circle at 1px 1px, white 1px, transparent 0)', backgroundSize: '32px 32px' }} />
         <div className="relative z-10 max-w-6xl mx-auto px-5 sm:px-8">
           <div className="text-center mb-16">
-            <p className="text-blue-400 font-bold text-sm uppercase tracking-widest mb-4">What We Stand For</p>
-            <h2 className="text-4xl font-extrabold text-white tracking-tight">Our core values</h2>
-            <p className="text-gray-400 mt-3 max-w-lg mx-auto">These aren't aspirations on a wall. They're the decisions we make every day.</p>
+            <p className="text-blue-400 font-bold text-sm uppercase tracking-widest mb-4">Brand Values</p>
+            <h2 className="text-4xl font-extrabold text-white tracking-tight">What guides LIVAREX every day</h2>
+            <p className="text-gray-400 mt-3 max-w-lg mx-auto">Our values shape the way we screen landlords, publish listings, and support every customer.</p>
           </div>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
+          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
             {values.map(v => {
               const Icon = v.icon
               return (
-                <div key={v.title} className="bg-white/5 border border-white/8 rounded-3xl p-7 hover:bg-white/8 transition-all group">
+                <div key={v.title} className="bg-white/5 border border-white/10 rounded-3xl p-7 hover:bg-white/10 transition-all group">
                   <div className={`w-12 h-12 ${v.bg} rounded-2xl flex items-center justify-center mb-5 shadow-lg group-hover:scale-105 transition-transform`}>
                     <Icon className="w-6 h-6 text-white" />
                   </div>
-                  <h3 className="text-white font-bold text-base mb-3">{v.title}</h3>
+                  <h3 className="text-white font-semibold text-base mb-3">{v.title}</h3>
                   <p className="text-gray-400 text-sm leading-relaxed">{v.desc}</p>
                 </div>
               )
             })}
-          </div>
-        </div>
-      </section>
-
-      {/* ── TIMELINE — white ── */}
-      <section className="bg-white py-24">
-        <div className="max-w-6xl mx-auto px-5 sm:px-8">
-          <div className="text-center mb-16">
-            <p className="text-blue-600 font-bold text-sm uppercase tracking-widest mb-4">Our Journey</p>
-            <h2 className="text-4xl font-extrabold text-gray-900 tracking-tight">How we got here</h2>
-          </div>
-          <div className="relative">
-            <div className="absolute left-8 top-0 bottom-0 w-px bg-gradient-to-b from-blue-600 via-blue-300 to-transparent hidden md:block" />
-            <div className="space-y-10">
-              {milestones.map((m, i) => (
-                <div key={m.year + i} className="md:flex items-start gap-8">
-                  <div className="hidden md:flex flex-col items-center shrink-0 w-16">
-                    <div className="w-4 h-4 rounded-full bg-blue-600 border-4 border-white shadow-lg shadow-blue-600/25 mt-1.5 z-10" />
-                  </div>
-                  <div className="flex-1 bg-gray-50 hover:bg-blue-50/40 border border-gray-100 hover:border-blue-100 rounded-2xl p-6 transition-all">
-                    <span className="inline-block px-3 py-1 bg-blue-600 text-white text-xs font-bold rounded-full mb-3">{m.year}</span>
-                    <h3 className="text-gray-900 font-bold text-lg mb-2">{m.title}</h3>
-                    <p className="text-gray-500 text-sm leading-relaxed">{m.desc}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
           </div>
         </div>
       </section>

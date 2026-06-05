@@ -5,6 +5,8 @@ import ListingsPage from "./pages/ListingsPage";
 import PropertyDetailPage from "./pages/PropertyDetailPage";
 import AboutPage from "./pages/AboutPage";
 import ContactPage from "./pages/ContactPage";
+import FaqPage from "./pages/FaqPage";
+import ForLandlordsPage from "./pages/ForLandlordsPage";
 import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
 import AuthCallbackPage from "./pages/AuthCallbackPage";
@@ -63,6 +65,8 @@ function Router() {
       <Route path="/listings/:id" component={PropertyDetailPage} />
       <Route path="/about" component={AboutPage} />
       <Route path="/contact" component={ContactPage} />
+      <Route path="/faq" component={FaqPage} />
+      <Route path="/for-landlords" component={ForLandlordsPage} />
       <Route path="/login" component={LoginPage} />
       <Route path="/register" component={RegisterPage} />
       <Route path="/auth/callback" component={AuthCallbackPage} />

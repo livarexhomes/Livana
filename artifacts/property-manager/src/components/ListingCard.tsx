@@ -47,6 +47,9 @@ export default function ListingCard({
   const coverUrl = cover ? getSupabaseImageUrl(cover.storage_path) : null
 
   const timeAgo = formatDistanceToNow(new Date(p.created_at), { addSuffix: false })
+  const whatsappUrl = p.landlords?.whatsapp
+    ? `https://wa.me/${p.landlords.whatsapp.replace(/\D/g, '')}`
+    : null
 
   async function handleSave(e: React.MouseEvent) {
     e.preventDefault()
@@ -190,6 +193,21 @@ export default function ListingCard({
             </span>
           )}
         </div>
+        {whatsappUrl && (
+          <div className="mt-4 pt-4 border-t border-gray-100">
+            <button
+              type="button"
+              onClick={e => {
+                e.preventDefault();
+                e.stopPropagation();
+                window.open(whatsappUrl, '_blank')
+              }}
+              className="w-full inline-flex items-center justify-center gap-2 rounded-2xl bg-green-500 hover:bg-green-600 text-white text-sm font-semibold px-4 py-3 transition-all"
+            >
+              <span>Contact on WhatsApp</span>
+            </button>
+          </div>
+        )}
       </div>
     </Link>
   )

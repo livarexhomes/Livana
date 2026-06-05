@@ -14,11 +14,11 @@ import type { PropertyWithLandlord } from '../lib/types'
 const PropertyMap = lazy(() => import('../components/PropertyMap'))
 
 const TYPE_TABS = [
-  { value: '', label: 'All', icon: '✦' },
-  { value: 'rent', label: 'For Rent', icon: '🏠' },
-  { value: 'lease', label: 'Lease', icon: '📋' },
-  { value: 'sale', label: 'For Sale', icon: '🏢', comingSoon: true },
-  { value: 'commercial', label: 'Commercial', icon: '🏪', comingSoon: true },
+  { value: '', label: 'All', icon: '✦', comingSoon: false },
+  { value: 'rent', label: 'For Rent', icon: '🏠', comingSoon: false },
+  { value: 'lease', label: 'Lease', icon: '📋', comingSoon: false },
+  { value: 'sale', label: 'For Sale', icon: '🏢', comingSoon: false },
+  { value: 'commercial', label: 'Commercial', icon: '🏪', comingSoon: false },
 ]
 
 export default function ListingsPage() {
@@ -32,6 +32,7 @@ export default function ListingsPage() {
   const [minPrice, setMinPrice] = useState(params.get('min_price') ?? '')
   const [maxPrice, setMaxPrice] = useState(params.get('max_price') ?? '')
   const [bedsFilter, setBedsFilter] = useState(params.get('bedrooms') ?? '')
+  const [bathsFilter, setBathsFilter] = useState(params.get('bathrooms') ?? '')
   const [sortBy, setSortBy] = useState('newest')
   const [showFilters, setShowFilters] = useState(false)
   const [showMap, setShowMap] = useState(false)
@@ -58,7 +59,7 @@ export default function ListingsPage() {
     })
   }, [])
 
-  useEffect(() => { fetchProperties() }, [typeFilter, stateFilter, areaFilter, minPrice, maxPrice, bedsFilter])
+  useEffect(() => { fetchProperties() }, [typeFilter, stateFilter, areaFilter, minPrice, maxPrice, bedsFilter, bathsFilter])
 
   async function fetchProperties() {
     if (!isSupabaseConfigured()) { setLoading(false); return }
@@ -77,6 +78,7 @@ export default function ListingsPage() {
     if (minPrice) query = query.gte('price', Number(minPrice))
     if (maxPrice) query = query.lte('price', Number(maxPrice))
     if (bedsFilter) query = query.gte('bedrooms', Number(bedsFilter))
+    if (bathsFilter) query = query.gte('bathrooms', Number(bathsFilter))
 
     const { data } = await query
     setProperties((data as PropertyWithLandlord[]) ?? [])
@@ -85,10 +87,10 @@ export default function ListingsPage() {
 
   function clearFilters() {
     setTypeFilter(''); setStateFilter(''); setAreaFilter('')
-    setMinPrice(''); setMaxPrice(''); setBedsFilter('')
+    setMinPrice(''); setMaxPrice(''); setBedsFilter(''); setBathsFilter('')
   }
 
-  const hasFilters = typeFilter || stateFilter || areaFilter || minPrice || maxPrice || bedsFilter
+  const hasFilters = typeFilter || stateFilter || areaFilter || minPrice || maxPrice || bedsFilter || bathsFilter
 
   const sorted = [...properties].sort((a, b) => {
     if (sortBy === 'price_asc') return Number(a.price) - Number(b.price)
@@ -160,7 +162,7 @@ export default function ListingsPage() {
                 onChange={e => setBedsFilter(e.target.value)}
                 className="appearance-none pl-3 pr-7 py-2 rounded-full border border-gray-200 text-sm bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-900 cursor-pointer"
               >
-                <option value="">Beds / Baths</option>
+                <option value="">Bedrooms</option>
                 <option value="1">1+ Beds</option>
                 <option value="2">2+ Beds</option>
                 <option value="3">3+ Beds</option>
@@ -170,11 +172,28 @@ export default function ListingsPage() {
               <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
             </div>
 
+            {/* Baths */}
+            <div className="relative shrink-0">
+              <select
+                value={bathsFilter}
+                onChange={e => setBathsFilter(e.target.value)}
+                className="appearance-none pl-3 pr-7 py-2 rounded-full border border-gray-200 text-sm bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-900 cursor-pointer"
+              >
+                <option value="">Bathrooms</option>
+                <option value="1">1+ Baths</option>
+                <option value="2">2+ Baths</option>
+                <option value="3">3+ Baths</option>
+                <option value="4">4+ Baths</option>
+                <option value="5">5+ Baths</option>
+              </select>
+              <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
+            </div>
+
             {/* Price / more filters */}
             <button
               onClick={() => setShowFilters(!showFilters)}
               className={`flex items-center gap-1.5 px-4 py-2 rounded-full border text-sm font-semibold transition-all shrink-0 ${
-                minPrice || maxPrice || areaFilter
+                minPrice || maxPrice || areaFilter || bedsFilter || bathsFilter
                   ? 'border-gray-900 bg-gray-900 text-white'
                   : 'border-gray-200 bg-white text-gray-700 hover:border-gray-400'
               }`}

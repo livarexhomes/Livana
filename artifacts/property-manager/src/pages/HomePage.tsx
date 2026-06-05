@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { Link } from 'wouter'
-import { ArrowRight, ShieldCheck, Building2, Users, TrendingUp, Star, CheckCircle2, CheckCircle, MapPin, ChevronRight, Calendar, ChevronDown } from 'lucide-react'
+import { ArrowRight, ShieldCheck, Building2, Users, MessageCircle, TrendingUp, Star, CheckCircle2, CheckCircle, MapPin, ChevronRight, Calendar, ChevronDown } from 'lucide-react'
 import PublicNavbar from '../components/PublicNavbar'
 import Footer from '../components/Footer'
 import PropertyCard from '../components/PropertyCard'
@@ -177,6 +177,33 @@ export default function HomePage() {
 
   const PROPERTY_TYPES = ['Studio Apartment', 'Apartment', 'Detached', 'Semi-Detached', 'Terrace', 'Land', 'Bungalow', 'Maisonette', 'Self Contained', 'Hostel', 'Penthouse']
 
+  const HOME_STATS = [
+    { value: 100, suffix: '+', label: 'Active Listings' },
+    { value: 50, suffix: '+', label: 'Verified Landlords' },
+    { value: 36, label: 'Cities Covered' },
+    { value: 0, prefix: '₦', label: 'Agent Fees' },
+  ]
+
+  const WHY_CARDS = [
+    { title: 'Verified Landlords', description: 'Every landlord completes identity verification before listings go live.' },
+    { title: 'Direct Connection', description: 'Contact landlords directly through WhatsApp for faster responses.' },
+    { title: 'Zero Agent Fees', description: 'No commission, no middlemen, and no hidden charges.' },
+    { title: 'Real Listings Only', description: 'Every property is tied to a verified identity.' },
+  ]
+
+  const WORK_STEPS = [
+    { title: 'Browse Verified Properties', description: 'Search listings from landlords who are already verified by LIVAREX.' },
+    { title: 'Contact Landlord Directly', description: 'Open WhatsApp and start a direct conversation with the property owner.' },
+    { title: 'Inspect Property', description: 'Schedule a viewing and verify the property in person before you commit.' },
+    { title: 'Move In Without Agent Fees', description: 'Complete the lease or purchase directly with the landlord.' },
+  ]
+
+  const AUDIENCE_CARDS = [
+    { title: 'Renters & Buyers', description: 'Browse verified properties and connect directly with landlords.' },
+    { title: 'Landlords', description: 'List properties, manage enquiries, and fill vacancies faster.' },
+    { title: 'Property Developers', description: 'Showcase off-plan and commercial projects to serious buyers.' },
+  ]
+
   return (
     <div className="min-h-screen flex flex-col bg-white">
       <PublicNavbar />
@@ -215,28 +242,34 @@ export default function HomePage() {
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75" />
                   <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-400" />
                 </span>
-                <span className="text-xs font-bold text-white/80 uppercase tracking-[0.15em]">Nigeria's #1 Property Platform</span>
+                <span className="text-xs font-bold text-white/80 uppercase tracking-[0.15em]">Nigeria's Verified Property Marketplace</span>
               </div>
             </div>
 
             {/* Headline */}
             <h1 className="text-5xl sm:text-6xl xl:text-7xl font-black leading-[1.0] tracking-tight text-white mb-6">
-              Find Your<br />
+              Nigeria's Verified<br />
               <span className="relative inline-block">
                 <span className="relative z-10 text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-blue-300 to-indigo-400">
-                  Dream Home
+                  Property Marketplace
                 </span>
                 <span className="absolute -bottom-1 left-0 right-0 h-[3px] bg-gradient-to-r from-blue-400 to-indigo-400 rounded-full opacity-60" />
               </span>
-              <br />
-              <span className="text-white/90">in Nigeria</span>
             </h1>
 
             {/* Subtitle */}
-            <p className="text-lg text-white/60 mb-10 leading-relaxed max-w-lg font-light">
-              Verified listings. Direct landlord contact.<br className="hidden sm:block" />
-              <span className="text-white/80 font-medium">Zero agent fees, ever.</span>
+            <p className="text-lg text-white/70 mb-10 leading-relaxed max-w-lg font-light">
+              Find verified homes directly from verified landlords. No agents. No middlemen. No hidden fees.
             </p>
+
+            <div className="flex flex-col sm:flex-row gap-4 mb-12">
+              <Link href="/listings" className="inline-flex items-center justify-center rounded-full bg-blue-600 px-8 py-4 text-sm font-bold text-white shadow-lg shadow-blue-600/25 hover:bg-blue-500 transition-all">
+                Browse Properties
+              </Link>
+              <Link href="/for-landlords" className="inline-flex items-center justify-center rounded-full border border-white/20 bg-white/10 px-8 py-4 text-sm font-semibold text-white hover:bg-white/15 transition-all">
+                List Your Property
+              </Link>
+            </div>
 
             {/* Search card */}
             <div className="mb-12">
@@ -601,10 +634,10 @@ export default function HomePage() {
         <div className="max-w-6xl mx-auto px-5 sm:px-8 py-10">
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
             {[
-              { icon: ShieldCheck, label: 'Verified Landlords', desc: 'Every landlord reviewed & approved' },
-              { icon: Building2, label: 'Genuine Listings', desc: 'Real properties, real prices' },
-              { icon: Users, label: 'Direct Contact', desc: 'No middlemen or agent fees' },
-              { icon: TrendingUp, label: 'Market Insights', desc: 'Stay ahead with price trends' },
+              { icon: ShieldCheck, label: 'Verified Landlords', desc: 'Every landlord completes identity verification before listings go live.' },
+              { icon: Users, label: 'Zero Agent Fees', desc: 'No commission, no middlemen, no hidden charges.' },
+              { icon: MessageCircle, label: 'Direct WhatsApp Contact', desc: 'Contact landlords directly through WhatsApp.' },
+              { icon: Building2, label: 'Nationwide Listings', desc: 'Properties available across Nigeria.' },
             ].map(({ icon: Icon, label, desc }) => (
               <div key={label} className="flex items-start gap-3 p-4">
                 <div className="w-11 h-11 rounded-xl bg-blue-50 flex items-center justify-center shrink-0">
@@ -614,6 +647,102 @@ export default function HomePage() {
                   <p className="font-semibold text-gray-900 text-sm">{label}</p>
                   <p className="text-gray-500 text-xs mt-0.5">{desc}</p>
                 </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── PROBLEM WE SOLVE ── */}
+      <section className="bg-slate-50 py-20">
+        <div className="max-w-6xl mx-auto px-5 sm:px-8">
+          <div className="max-w-3xl mx-auto text-center mb-12">
+            <p className="text-blue-600 font-bold text-sm uppercase tracking-[0.24em] mb-3">The challenge</p>
+            <h2 className="text-4xl font-extrabold text-gray-950 tracking-tight mb-4">Finding a home in Nigeria shouldn&apos;t be this difficult</h2>
+            <p className="text-gray-600 leading-relaxed">LIVAREX solves the most common problems that make property search slow, risky, and expensive.</p>
+          </div>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {[
+              'Fake property listings',
+              'Agent fees',
+              'Hidden costs',
+              'Unverified landlords',
+              'Slow property search',
+            ].map(item => (
+              <div key={item} className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
+                <p className="text-sm font-semibold text-gray-900">{item}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── WHY CHOOSE LIVAREX ── */}
+      <section className="bg-white py-20">
+        <div className="max-w-6xl mx-auto px-5 sm:px-8">
+          <div className="max-w-3xl mx-auto text-center mb-12">
+            <p className="text-blue-600 font-bold text-sm uppercase tracking-[0.24em] mb-3">Why choose LIVAREX</p>
+            <h2 className="text-4xl font-extrabold text-gray-950 tracking-tight">Real advantages for renters, buyers, and landlords</h2>
+          </div>
+          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+            {WHY_CARDS.map(card => (
+              <div key={card.title} className="rounded-3xl border border-gray-100 bg-slate-50 p-6 hover:shadow-lg transition-all">
+                <h3 className="text-lg font-semibold text-gray-950 mb-3">{card.title}</h3>
+                <p className="text-sm text-gray-600 leading-relaxed">{card.description}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── STATISTICS ── */}
+      <section className="bg-blue-950 py-20 text-white">
+        <div className="max-w-6xl mx-auto px-5 sm:px-8">
+          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+            {HOME_STATS.map((stat, index) => (
+              <div key={index} className="rounded-3xl bg-white/5 p-8 text-center">
+                <p className="text-4xl font-black tracking-tight mb-3">
+                  {stat.prefix ?? ''}
+                  <AnimatedCounter target={stat.value} suffix={stat.suffix ?? ''} />
+                </p>
+                <p className="text-sm uppercase tracking-[0.24em] text-white/70">{stat.label}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── HOW IT WORKS ── */}
+      <section className="bg-slate-50 py-20">
+        <div className="max-w-6xl mx-auto px-5 sm:px-8">
+          <div className="max-w-3xl mx-auto text-center mb-12">
+            <p className="text-blue-600 font-bold text-sm uppercase tracking-[0.24em] mb-3">How it works</p>
+            <h2 className="text-4xl font-extrabold text-gray-950 tracking-tight">Search, connect, inspect, move in</h2>
+          </div>
+          <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
+            {WORK_STEPS.map((step, index) => (
+              <div key={step.title} className="rounded-3xl border border-gray-200 bg-white p-8 text-center shadow-sm hover:shadow-lg transition-all">
+                <div className="mx-auto mb-5 w-14 h-14 rounded-full bg-blue-600 text-white grid place-items-center text-lg font-bold">{index + 1}</div>
+                <h3 className="text-xl font-semibold text-gray-950 mb-3">{step.title}</h3>
+                <p className="text-sm text-gray-600 leading-relaxed">{step.description}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── WHO WE SERVE ── */}
+      <section className="bg-white py-20">
+        <div className="max-w-6xl mx-auto px-5 sm:px-8">
+          <div className="max-w-3xl mx-auto text-center mb-12">
+            <p className="text-blue-600 font-bold text-sm uppercase tracking-[0.24em] mb-3">Who we serve</p>
+            <h2 className="text-4xl font-extrabold text-gray-950 tracking-tight">Built for every part of the property market</h2>
+          </div>
+          <div className="grid gap-5 md:grid-cols-3">
+            {AUDIENCE_CARDS.map(card => (
+              <div key={card.title} className="rounded-3xl border border-gray-100 bg-slate-50 p-8 hover:shadow-lg transition-all">
+                <h3 className="text-xl font-semibold text-gray-950 mb-3">{card.title}</h3>
+                <p className="text-sm text-gray-600 leading-relaxed">{card.description}</p>
               </div>
             ))}
           </div>
