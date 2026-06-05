@@ -5,9 +5,9 @@ import Footer from '../components/Footer'
 
 const stats = [
   { value: '2,400+', label: 'Active Listings' },
-  { value: '850+',   label: 'Verified Landlords' },
-  { value: '36',     label: 'Cities Covered' },
-  { value: '₦0',     label: 'Agent Fees' },
+  { value: '850+', label: 'Verified Landlords' },
+  { value: '36', label: 'Cities Covered' },
+  { value: '₦0', label: 'Agent Fees' },
 ]
 
 const values = [
@@ -70,11 +70,11 @@ export default function AboutPage() {
               About LIVAREX
             </span>
             <h1 className="text-5xl sm:text-6xl md:text-7xl font-extrabold text-white leading-[1.05] tracking-tight mb-7">
-              We built the platform<br />
+              Building Trust in Nigerian Real Estate<br />
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-violet-400">we wished existed.</span>
             </h1>
             <p className="text-lg text-gray-400 leading-relaxed max-w-2xl mb-10">
-              LIVAREX is Nigeria's most trusted property platform — connecting real renters with verified landlords, no agents, no scams, no hidden fees.
+              LIVAREX was founded to eliminate agent exploitation, fake listings, and property scams by creating a transparent marketplace where renters and buyers connect directly with verified landlords.
             </p>
             <div className="flex flex-wrap gap-3">
               <Link href="/listings" className="inline-flex items-center gap-2 px-6 py-3.5 bg-blue-600 hover:bg-blue-500 text-white text-sm font-bold rounded-xl transition-all shadow-lg shadow-blue-600/25">
@@ -107,40 +107,65 @@ export default function AboutPage() {
         <div className="max-w-6xl mx-auto px-5 sm:px-8">
           <div className="grid lg:grid-cols-2 gap-16 items-center">
             <div>
-              <p className="text-blue-600 font-bold text-sm uppercase tracking-widest mb-4">Our Story</p>
+              <p className="text-blue-600 font-bold text-sm uppercase tracking-widest mb-4">
+                Our Story
+              </p>
+
               <h2 className="text-4xl font-extrabold text-gray-900 tracking-tight leading-tight mb-6">
-                Born out of frustration.<br />Built with purpose.
+                Built to eliminate agent fees and fake listings.
               </h2>
-              <div className="space-y-5 text-gray-500 leading-relaxed">
+
+              <div className="space-y-5 text-gray-600 leading-relaxed">
                 <p>
-                  In 2022, our founder — Shorinmade — spent three months and paid two agent fees trying to find a two-bedroom apartment in Lagos. Both deals collapsed. One listing didn't exist. One landlord disappeared after collecting a fee. The experience was embarrassing, expensive, and entirely avoidable.
+                  LIVAREX was founded after experiencing firsthand the frustrations
+                  of finding a home in Nigeria. After spending months searching for a
+                  two-bedroom apartment in Lagos and paying multiple agent fees,
+                  promising deals repeatedly fell through due to fake listings and
+                  unreliable intermediaries.
                 </p>
+
                 <p>
-                  So he did what frustrated engineers do: he built a solution. Not another listing aggregator that recycles outdated content — a platform where every landlord is reviewed before a listing goes live, where renters contact property owners directly, and where transparency is the product, not a feature.
+                  That experience revealed a bigger problem — a rental market filled
+                  with hidden fees, unverified landlords, and limited transparency.
+                  LIVAREX was created to change that by connecting renters and buyers
+                  directly with verified landlords through a trusted digital
+                  marketplace.
                 </p>
+
                 <p>
-                  Today, LIVAREX serves thousands of renters and landlords across 36 Nigerian cities. We're growing fast — but we've never lost sight of the single promise we made at the beginning: <strong className="text-gray-900">make property search honest.</strong>
+                  Today, LIVAREX is helping Nigerians discover verified properties
+                  across multiple cities while removing unnecessary middlemen and
+                  making property search simpler, safer, and more transparent.
                 </p>
               </div>
             </div>
+
             <div className="relative">
               <div className="relative rounded-3xl overflow-hidden shadow-2xl aspect-[4/3]">
                 <img
                   src="https://images.unsplash.com/photo-1560472355-536de3962603?w=900&q=80"
-                  alt="Lagos skyline"
+                  alt="Property marketplace in Nigeria"
                   className="w-full h-full object-cover"
                 />
+
                 <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
+
                 <div className="absolute bottom-6 left-6 right-6">
-                  <p className="text-white font-bold text-lg">Lagos, Nigeria</p>
-                  <p className="text-blue-300 text-sm">Where LIVAREX was born</p>
+                  <p className="text-white font-bold text-lg">
+                    Nigeria's Verified Property Marketplace
+                  </p>
+
+                  <p className="text-blue-300 text-sm">
+                    Connecting renters directly with verified landlords
+                  </p>
                 </div>
               </div>
+
               {/* Floating badge */}
               <div className="absolute -top-5 -right-5 bg-blue-600 text-white rounded-2xl p-5 shadow-2xl shadow-blue-600/30">
                 <Building2 className="w-7 h-7 mb-1" />
-                <p className="text-2xl font-extrabold leading-none">2,400+</p>
-                <p className="text-blue-200 text-xs mt-0.5">Live listings</p>
+                <p className="text-2xl font-extrabold leading-none">36</p>
+                <p className="text-blue-200 text-xs mt-0.5">Cities Covered</p>
               </div>
             </div>
           </div>
