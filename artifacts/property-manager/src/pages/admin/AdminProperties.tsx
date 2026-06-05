@@ -625,6 +625,7 @@ export default function AdminProperties() {
                     <p className="mt-2 text-3xl font-semibold text-white">{item.value}</p>
                   </div>
                 ))}
+              </div>
             </div>
             <div className="rounded-[32px] border border-slate-200 bg-white p-5 shadow-sm">
               <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">Recent listings</p>
