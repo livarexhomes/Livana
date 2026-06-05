@@ -610,23 +610,6 @@ export default function AdminProperties() {
           </div>
 
           <aside className="space-y-5">
-            <div className="rounded-[32px] border border-slate-200 bg-slate-950 p-6 text-white shadow-2xl shadow-slate-950/20">
-              <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">Quick snapshot</p>
-              <h3 className="mt-4 text-2xl font-extrabold">Portfolio health</h3>
-              <p className="mt-3 text-sm leading-6 text-slate-300">See listing trends and recent activity at a glance.</p>
-              <div className="mt-6 grid gap-3">
-                {[
-                  { label: 'Total listings', value: properties.length },
-                  { label: 'Available now', value: available },
-                  { label: 'Taken off market', value: taken },
-                ].map(item => (
-                  <div key={item.label} className="rounded-3xl bg-white/5 p-4">
-                    <p className="text-sm text-slate-300">{item.label}</p>
-                    <p className="mt-2 text-3xl font-semibold text-white">{item.value}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
             <div className="rounded-[32px] border border-slate-200 bg-white p-5 shadow-sm">
               <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">Recent listings</p>
               <div className="mt-4 space-y-3">

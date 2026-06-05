@@ -118,10 +118,10 @@ export default function AdminActivity() {
           />
 
           <main className="flex-1 overflow-hidden">
-            <div className="h-full overflow-y-auto p-4 md:p-6">
-              <div className="grid gap-5 xl:grid-cols-[1.7fr_0.9fr]">
-                <section className="space-y-5">
-                  <div className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-[0_30px_60px_-30px_rgba(15,23,42,0.15)]">
+            <div className="h-full overflow-y-auto p-3 md:p-4">
+              <div className="grid gap-4 xl:grid-cols-[1.7fr_0.9fr]">
+                <section className="space-y-4">
+                  <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
                     <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                       <div>
                         <p className="text-xs uppercase tracking-[0.3em] text-slate-400">Activity overview</p>
@@ -131,43 +131,43 @@ export default function AdminActivity() {
                       <div className="rounded-3xl bg-slate-50 px-4 py-2 text-sm font-semibold text-slate-700">Showing {filtered.length.toLocaleString()} of {items.length.toLocaleString()}</div>
                     </div>
 
-                    <div className="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-                      <div className="rounded-3xl border border-slate-100 bg-slate-50 p-4">
+                    <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                      <div className="rounded-2xl border border-slate-100 bg-slate-50 p-3">
                         <p className="text-sm text-slate-500">Total events</p>
                         <p className="mt-3 text-3xl font-semibold text-slate-950">{items.length.toLocaleString()}</p>
                       </div>
-                      <div className="rounded-3xl border border-slate-100 bg-emerald-50 p-4">
+                      <div className="rounded-2xl border border-slate-100 bg-emerald-50 p-3">
                         <p className="text-sm text-emerald-700">Properties listed</p>
                         <p className="mt-3 text-3xl font-semibold text-emerald-900">{eventCounts.property_listed.toLocaleString()}</p>
                       </div>
-                      <div className="rounded-3xl border border-slate-100 bg-blue-50 p-4">
+                      <div className="rounded-2xl border border-slate-100 bg-blue-50 p-3">
                         <p className="text-sm text-blue-700">Tenant signups</p>
                         <p className="mt-3 text-3xl font-semibold text-blue-900">{eventCounts.tenant_signup.toLocaleString()}</p>
                       </div>
-                      <div className="rounded-3xl border border-slate-100 bg-violet-50 p-4">
+                      <div className="rounded-2xl border border-slate-100 bg-violet-50 p-3">
                         <p className="text-sm text-violet-700">Landlord signups</p>
                         <p className="mt-3 text-3xl font-semibold text-violet-900">{eventCounts.landlord_signup.toLocaleString()}</p>
                       </div>
-                      <div className="rounded-3xl border border-slate-100 bg-amber-50 p-4">
+                      <div className="rounded-2xl border border-slate-100 bg-amber-50 p-3">
                         <p className="text-sm text-amber-700">Enquiries sent</p>
                         <p className="mt-3 text-3xl font-semibold text-amber-900">{eventCounts.enquiry_sent.toLocaleString()}</p>
                       </div>
-                      <div className="rounded-3xl border border-slate-100 bg-indigo-50 p-4">
+                      <div className="rounded-2xl border border-slate-100 bg-indigo-50 p-3">
                         <p className="text-sm text-indigo-700">KYC submissions</p>
                         <p className="mt-3 text-3xl font-semibold text-indigo-900">{eventCounts.kyc_submitted.toLocaleString()}</p>
                       </div>
                     </div>
                   </div>
 
-                  <div className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-[0_30px_60px_-30px_rgba(15,23,42,0.15)]">
-                    <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                       <div>
                         <p className="text-xs uppercase tracking-[0.3em] text-slate-400">Filter</p>
                         <h3 className="mt-1 text-lg font-semibold text-slate-950">Activity type</h3>
                       </div>
                       <div className="rounded-3xl bg-slate-50 px-3 py-2 text-xs text-slate-500">Latest 50 events</div>
                     </div>
-                    <div className="mt-4 flex flex-wrap gap-2">
+                    <div className="mt-3 flex flex-wrap gap-2">
                       <button onClick={() => setTypeFilter('all')}
                         className={`shrink-0 flex items-center gap-1.5 rounded-2xl px-4 py-2 text-sm font-semibold transition ${
                           typeFilter === 'all' ? 'bg-slate-950 text-white shadow-sm' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
@@ -195,19 +195,19 @@ export default function AdminActivity() {
                   </div>
 
                   {loading ? (
-                    <div className="flex items-center justify-center py-28">
+                    <div className="flex items-center justify-center py-16">
                       <div className="animate-spin w-12 h-12 border-4 border-slate-200 border-t-slate-900 rounded-full" />
                     </div>
                   ) : filtered.length === 0 ? (
-                    <div className="rounded-[32px] border border-slate-200 bg-white p-16 text-center shadow-sm">
+                    <div className="rounded-2xl border border-slate-200 bg-white p-8 text-center shadow-sm">
                       <Activity className="w-14 h-14 text-slate-200 mx-auto mb-4" />
                       <p className="text-lg font-semibold text-slate-900">No activity found</p>
                       <p className="mt-2 text-sm text-slate-500">Change your filter or wait for new events to appear.</p>
                     </div>
                   ) : (
-                    <div className="space-y-5">
+                    <div className="space-y-4">
                       {groups.map(group => (
-                        <div key={group.label} className="rounded-[32px] border border-slate-200 bg-white p-5 shadow-sm">
+                        <div key={group.label} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
                           <div className="flex items-center justify-between gap-4 mb-4">
                             <h4 className="text-sm font-semibold uppercase tracking-[0.3em] text-slate-400">{group.label}</h4>
                             <span className="text-xs font-semibold text-slate-500">{group.items.length} events</span>
@@ -217,9 +217,9 @@ export default function AdminActivity() {
                               const meta = TYPE_META[item.type]
                               const Icon = meta.icon
                               return (
-                                <div key={item.id} className="group rounded-3xl border border-slate-100 p-4 transition hover:border-slate-300 hover:bg-slate-50">
-                                  <div className="flex items-start gap-4">
-                                    <div className={`mt-1 flex h-11 w-11 items-center justify-center rounded-3xl ${meta.bg}`}>
+                                <div key={item.id} className="group rounded-2xl border border-slate-100 p-3 transition hover:border-slate-300 hover:bg-slate-50">
+                                  <div className="flex items-start gap-3">
+                                    <div className={`mt-1 flex h-9 w-9 items-center justify-center rounded-2xl ${meta.bg}`}>
                                       <Icon className={`w-5 h-5 ${meta.text}`} />
                                     </div>
                                     <div className="min-w-0 flex-1">
@@ -241,15 +241,15 @@ export default function AdminActivity() {
                   )}
                 </section>
 
-                <aside className="space-y-5">
-                  <div className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm">
+                <aside className="space-y-4">
+                  <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
                     <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-400">Recent events</p>
                     <div className="mt-4 space-y-3">
                       {filtered.slice(0, 4).map(item => {
                         const meta = TYPE_META[item.type]
                         const Icon = meta.icon
                         return (
-                          <div key={item.id} className="flex items-start gap-3 rounded-3xl border border-slate-100 bg-slate-50 p-4">
+                          <div key={item.id} className="flex items-start gap-3 rounded-2xl border border-slate-100 bg-slate-50 p-3">
                             <div className={`mt-1 flex h-10 w-10 items-center justify-center rounded-3xl ${meta.bg}`}>
                               <Icon className={`w-4 h-4 ${meta.text}`} />
                             </div>

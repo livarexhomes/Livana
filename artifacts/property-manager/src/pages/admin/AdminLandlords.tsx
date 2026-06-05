@@ -132,51 +132,51 @@ export default function AdminLandlords() {
           />
 
           <main className="flex-1 overflow-y-auto p-4 md:p-6 pb-24 md:pb-6">
-            <div className="grid gap-5 xl:grid-cols-[1.6fr_0.9fr]">
-              <div className="space-y-5">
-                <div className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-[0_18px_80px_-40px_rgba(15,23,42,0.18)]">
-                  <div className="flex flex-col gap-5 xl:flex-row xl:items-center xl:justify-between">
+            <div className="grid gap-4 xl:grid-cols-[1.6fr_0.9fr]">
+              <div className="space-y-4">
+                <div className="rounded-[32px] border border-slate-200 bg-white p-5 shadow-[0_18px_80px_-40px_rgba(15,23,42,0.18)]">
+                  <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
                     <div>
                       <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">Landlord management</p>
                       <h2 className="mt-3 text-3xl font-extrabold text-slate-950">A fresh view of landlord health</h2>
                       <p className="mt-3 text-sm leading-6 text-slate-500">Search, filter, and act on landlord accounts with a modern admin experience.</p>
                     </div>
-                    <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                    <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
                       {[
                         { label: 'Total', value: clients.length },
                         { label: 'Approved', value: approved },
                         { label: 'Pending', value: pending },
                         { label: 'Suspended', value: clients.filter(c => c.status === 'suspended').length },
                       ].map(item => (
-                        <div key={item.label} className="rounded-3xl border border-slate-100 bg-slate-50 p-4">
+                        <div key={item.label} className="rounded-3xl border border-slate-100 bg-slate-50 p-3">
                           <p className="text-2xl font-extrabold text-slate-950">{item.value}</p>
-                          <p className="mt-2 text-xs uppercase tracking-[0.2em] text-slate-400">{item.label}</p>
+                          <p className="mt-2 text-[11px] uppercase tracking-[0.22em] text-slate-400">{item.label}</p>
                         </div>
                       ))}
                     </div>
                   </div>
                 </div>
 
-                <div className="rounded-[32px] border border-slate-200 bg-white p-5 shadow-sm">
-                  <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                <div className="rounded-[32px] border border-slate-200 bg-white p-4 shadow-sm">
+                  <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
                     <div className="flex flex-wrap gap-2">
                       {STATUS_TABS.map(tab => (
                         <button key={tab.key} type="button" onClick={() => setStatusFilter(tab.key)}
-                          className={`rounded-full px-4 py-2 text-sm font-semibold transition ${statusFilter === tab.key ? 'bg-slate-950 text-white shadow-lg shadow-slate-950/10' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}>
+                          className={`rounded-full px-4 py-1.5 text-sm font-semibold transition ${statusFilter === tab.key ? 'bg-slate-950 text-white shadow-lg shadow-slate-950/10' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}>
                           {tab.label}
                           <span className="ml-2 inline-flex h-6 min-w-[24px] items-center justify-center rounded-full bg-slate-900 text-[11px] text-white font-bold">{tab.count}</span>
                         </button>
                       ))}
                     </div>
                     <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-                      <div className="flex items-center gap-2 rounded-3xl border border-slate-200 bg-slate-100 px-4 py-3 shadow-sm">
+                      <div className="flex items-center gap-2 rounded-3xl border border-slate-200 bg-slate-100 px-3 py-2 shadow-sm">
                         <Search className="w-4 h-4 text-slate-500" />
                         <input value={search} onChange={e => setSearch(e.target.value)}
                           placeholder="Search by name, city, or phone"
                           className="w-full bg-transparent text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none" />
                       </div>
                       <select value={sort} onChange={e => setSort(e.target.value)}
-                        className="rounded-3xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        className="rounded-3xl border border-slate-200 bg-white px-3 py-2.5 text-sm font-semibold text-slate-700 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
                         <option value="newest">Newest</option>
                         <option value="oldest">Oldest</option>
                         <option value="name">Name A–Z</option>
@@ -202,8 +202,8 @@ export default function AdminLandlords() {
                       const grad = avatarGrad(l.full_name)
                       const initials = getInitials(l.full_name)
                       return (
-                        <div key={l.id} className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
-                          <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+                        <div key={l.id} className="rounded-[28px] border border-slate-200 bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
+                          <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
                             <div className="flex items-start gap-4">
                               <div className={`flex h-14 w-14 items-center justify-center rounded-3xl bg-gradient-to-br ${grad}`}>
                                 <span className="text-sm font-semibold text-white">{initials}</span>
@@ -226,7 +226,7 @@ export default function AdminLandlords() {
                               </div>
                             </div>
                             <div className="flex flex-col gap-3 sm:items-end">
-                              <div className="rounded-3xl bg-slate-50 px-4 py-2 text-sm font-semibold text-slate-900">{l.property_count} properties</div>
+                              <div className="rounded-3xl bg-slate-50 px-3 py-1.5 text-sm font-semibold text-slate-900">{l.property_count} properties</div>
                               <div className="text-sm text-slate-400">Joined {new Date(l.created_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</div>
                             </div>
                           </div>
@@ -257,8 +257,8 @@ export default function AdminLandlords() {
                 )}
               </div>
 
-              <aside className="space-y-5">
-                <div className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm">
+              <aside className="space-y-4">
+                <div className="rounded-[32px] border border-slate-200 bg-white p-5 shadow-sm">
                   <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">Top pending</p>
                   <div className="mt-4 space-y-3">
                     {filtered.filter(item => item.status === 'pending').slice(0, 3).map(item => (

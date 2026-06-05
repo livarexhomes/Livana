@@ -153,7 +153,7 @@ function AdminChatThread({
 
   return (
     <div className="flex flex-col h-full bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-      <div className="flex items-center gap-3 px-5 py-4 border-b border-gray-100 shrink-0">
+      <div className="flex items-center gap-3 px-4 py-3 border-b border-gray-100 shrink-0">
         <button onClick={onBack} className="lg:hidden p-1.5 rounded-lg hover:bg-gray-100 text-gray-500 transition-colors">
           <ChevronLeft className="w-4 h-4" />
         </button>
@@ -188,13 +188,13 @@ function AdminChatThread({
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto px-5 py-4 space-y-3">
+      <div className="flex-1 overflow-y-auto px-4 py-3 space-y-2">
         {loading ? (
           <div className="flex items-center justify-center h-full"><Loader2 className="w-6 h-6 animate-spin text-gray-300" /></div>
         ) : (
           <>
             <div className="flex justify-center">
-              <span className="text-[11px] text-gray-400 bg-gray-50 border border-gray-100 px-3 py-1 rounded-full">
+              <span className="text-[10px] text-gray-400 bg-gray-50 border border-gray-100 px-2.5 py-1 rounded-full">
                 Ticket opened · {format(new Date(ticket.created_at), 'dd MMM yyyy, h:mm a')}
               </span>
             </div>
@@ -367,7 +367,7 @@ function EnquiryDetail({ enquiry, onBack, onStatusChange }: {
   return (
     <div className="flex flex-col h-full bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
       {/* Header */}
-      <div className="flex items-center gap-3 px-5 py-4 border-b border-gray-100 shrink-0">
+      <div className="flex items-center gap-3 px-4 py-3 border-b border-gray-100 shrink-0">
         <button onClick={onBack} className="lg:hidden p-1.5 rounded-lg hover:bg-gray-100 text-gray-500 transition-colors">
           <ChevronLeft className="w-4 h-4" />
         </button>
@@ -409,7 +409,7 @@ function EnquiryDetail({ enquiry, onBack, onStatusChange }: {
         ) : (
           <>
             {/* Property info */}
-            <div className="flex items-start gap-3 p-3 bg-blue-50 border border-blue-100 rounded-xl mb-4">
+            <div className="flex items-start gap-3 p-3 bg-blue-50 border border-blue-100 rounded-xl mb-3">
               <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center shrink-0">
                 <Building2 className="w-4 h-4 text-white" />
               </div>
@@ -551,18 +551,18 @@ function SupportTab() {
   }
 
   return (
-    <div className="flex flex-1 overflow-hidden gap-4">
+    <div className="flex flex-1 overflow-hidden gap-3">
       {/* Ticket list */}
-      <div className={`flex flex-col border border-gray-100 bg-white w-full lg:w-80 xl:w-96 shrink-0 overflow-hidden ${selected ? 'hidden lg:flex' : 'flex'}`}>
-        <div className="px-4 py-4 border-b border-gray-100">
-          <div className="flex items-center justify-between gap-3">
+      <div className={`flex flex-col border border-gray-100 bg-white w-full lg:w-72 xl:w-80 shrink-0 overflow-hidden ${selected ? 'hidden lg:flex' : 'flex'}`}>
+        <div className="px-4 py-3 border-b border-gray-100">
+          <div className="flex items-center justify-between gap-2">
             <div>
-              <p className="text-xs uppercase tracking-[0.3em] text-slate-400">Support queue</p>
-              <h2 className="text-lg font-bold text-slate-950">Tickets</h2>
+              <p className="text-[10px] uppercase tracking-[0.3em] text-slate-400">Support queue</p>
+              <h2 className="text-base font-bold text-slate-950">Tickets</h2>
             </div>
-            <span className="text-xs text-slate-500">{tickets.length} total</span>
+            <span className="text-[11px] text-slate-500">{tickets.length} total</span>
           </div>
-          <div className="mt-4 flex flex-wrap gap-2">
+          <div className="mt-3 flex flex-wrap gap-2">
             {(['all', 'open', 'in_progress', 'resolved', 'closed'] as const).map(key => (
               <button key={key} onClick={() => setFilterStatus(key)}
                 className={`shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-2xl text-xs font-semibold border transition-all ${
@@ -587,7 +587,7 @@ function SupportTab() {
               <p className="text-sm font-semibold text-slate-400">No tickets</p>
             </div>
           ) : (
-            <div className="space-y-3">
+            <div className="space-y-2">
               {filtered.map(ticket => {
                 const s = STATUS_META[ticket.status]
                 const p = PRIORITY_META[ticket.priority]
@@ -598,14 +598,14 @@ function SupportTab() {
                   : (ticket.tenants?.full_name ?? 'Tenant')
                 return (
                   <button key={ticket.id} onClick={() => setSelectedId(ticket.id)}
-                    className={`w-full text-left rounded-3xl border px-4 py-4 transition-all ${isActive ? 'border-slate-900 bg-slate-950 text-white shadow-lg' : 'border-slate-200 bg-white hover:border-slate-300 hover:shadow-sm'}`}>
-                    <div className="flex items-start justify-between gap-3">
+                    className={`w-full text-left rounded-2xl border px-3 py-3 transition-all ${isActive ? 'border-slate-900 bg-slate-950 text-white shadow-lg' : 'border-slate-200 bg-white hover:border-slate-300 hover:shadow-sm'}`}>
+                    <div className="flex items-start justify-between gap-2">
                       <p className={`font-semibold text-sm truncate ${isActive ? 'text-white' : 'text-slate-950'}`}>{ticket.subject}</p>
                       <span className={`shrink-0 inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full ${isActive ? 'bg-white/15 text-white' : `${s.bg} ${s.color}`}`}>
                         <span className={`w-1.5 h-1.5 rounded-full ${isActive ? 'bg-white' : s.dot}`} />{s.label}
                       </span>
                     </div>
-                    <div className="mt-3 flex flex-wrap items-center gap-2 text-xs">
+                    <div className="mt-2 flex flex-wrap items-center gap-2 text-[11px]">
                       <span className={`inline-flex items-center gap-1 ${isActive ? 'text-white/70' : 'text-slate-500'}`}>
                         <User className="w-3 h-3" />
                         {isLandlordTicket && <span className="rounded-full bg-violet-100 px-2 py-0.5 text-violet-700">LL</span>}
@@ -629,7 +629,7 @@ function SupportTab() {
         {selected ? (
           <AdminChatThread key={selected.id} ticket={selected} onBack={() => setSelectedId(null)} onStatusChange={handleStatusChange} />
         ) : (
-          <div className="flex-1 flex flex-col items-center justify-center bg-white rounded-2xl border border-gray-100 shadow-sm text-center p-10 h-full">
+          <div className="flex-1 flex flex-col items-center justify-center bg-white rounded-2xl border border-gray-100 shadow-sm text-center p-8 h-full">
             <div className="w-16 h-16 rounded-2xl bg-gray-50 flex items-center justify-center mb-4">
               <HeadphonesIcon className="w-8 h-8 text-gray-300" />
             </div>
@@ -689,18 +689,18 @@ function InboxTab() {
   }
 
   return (
-    <div className="flex flex-1 overflow-hidden gap-4">
+    <div className="flex flex-1 overflow-hidden gap-3">
       {/* Enquiry list */}
-      <div className={`flex flex-col border border-gray-100 bg-white w-full lg:w-80 xl:w-96 shrink-0 overflow-hidden ${selected ? 'hidden lg:flex' : 'flex'}`}>
-        <div className="px-4 py-4 border-b border-gray-100">
-          <div className="flex items-center justify-between gap-3">
+      <div className={`flex flex-col border border-gray-100 bg-white w-full lg:w-72 xl:w-80 shrink-0 overflow-hidden ${selected ? 'hidden lg:flex' : 'flex'}`}>
+        <div className="px-4 py-3 border-b border-gray-100">
+          <div className="flex items-center justify-between gap-2">
             <div>
-              <p className="text-xs uppercase tracking-[0.3em] text-slate-400">Inbox queue</p>
-              <h2 className="text-lg font-bold text-slate-950">Enquiries</h2>
+              <p className="text-[10px] uppercase tracking-[0.3em] text-slate-400">Inbox queue</p>
+              <h2 className="text-base font-bold text-slate-950">Enquiries</h2>
             </div>
-            <span className="text-xs text-slate-500">{enquiries.length} total</span>
+            <span className="text-[11px] text-slate-500">{enquiries.length} total</span>
           </div>
-          <div className="mt-4 flex flex-wrap gap-2">
+          <div className="mt-3 flex flex-wrap gap-2">
             {(['all', 'open', 'replied', 'closed'] as const).map(key => (
               <button key={key} onClick={() => setFilterStatus(key)}
                 className={`shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-2xl text-xs font-semibold border transition-all ${
@@ -725,7 +725,7 @@ function InboxTab() {
               <p className="text-sm font-semibold text-slate-400">No enquiries yet</p>
             </div>
           ) : (
-            <div className="space-y-3">
+            <div className="space-y-2">
               {filtered.map(enq => {
                 const s = ENQUIRY_STATUS_META[enq.status]
                 const isActive = selectedId === enq.id
@@ -733,16 +733,16 @@ function InboxTab() {
                 const propertyTitle = enq.properties?.title ?? 'Property'
                 return (
                   <button key={enq.id} onClick={() => setSelectedId(enq.id)}
-                    className={`w-full text-left rounded-3xl border px-4 py-4 transition-all ${isActive ? 'border-slate-900 bg-slate-950 text-white shadow-lg' : 'border-slate-200 bg-white hover:border-slate-300 hover:shadow-sm'}`}>
-                    <div className="flex items-start justify-between gap-3">
+                    className={`w-full text-left rounded-2xl border px-3 py-3 transition-all ${isActive ? 'border-slate-900 bg-slate-950 text-white shadow-lg' : 'border-slate-200 bg-white hover:border-slate-300 hover:shadow-sm'}`}>
+                    <div className="flex items-start justify-between gap-2">
                       <p className={`font-semibold text-sm truncate ${isActive ? 'text-white' : 'text-slate-950'}`}>{tenantName}</p>
                       <span className={`shrink-0 inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full ${isActive ? 'bg-white/15 text-white' : `${s.bg} ${s.color}`}`}>
                         <span className={`w-1.5 h-1.5 rounded-full ${isActive ? 'bg-white' : s.dot}`} />{s.label}
                       </span>
                     </div>
-                    <p className={`text-xs truncate mt-2 ${isActive ? 'text-white/80' : 'text-slate-500'}`}>{propertyTitle}</p>
-                    <p className={`text-xs mt-3 line-clamp-2 ${isActive ? 'text-white/70' : 'text-slate-500'}`}>{enq.message}</p>
-                    <p className={`text-[11px] mt-3 ${isActive ? 'text-white/50' : 'text-slate-400'}`}>
+                    <p className={`text-xs truncate mt-1 ${isActive ? 'text-white/80' : 'text-slate-500'}`}>{propertyTitle}</p>
+                    <p className={`text-xs mt-2 line-clamp-2 ${isActive ? 'text-white/70' : 'text-slate-500'}`}>{enq.message}</p>
+                    <p className={`text-[11px] mt-2 ${isActive ? 'text-white/50' : 'text-slate-400'}`}>
                       {formatDistanceToNow(new Date(enq.created_at), { addSuffix: true })}
                     </p>
                   </button>
@@ -758,7 +758,7 @@ function InboxTab() {
         {selected ? (
           <EnquiryDetail key={selected.id} enquiry={selected} onBack={() => setSelectedId(null)} onStatusChange={handleStatusChange} />
         ) : (
-          <div className="flex-1 flex flex-col items-center justify-center bg-white rounded-2xl border border-gray-100 shadow-sm text-center p-10 h-full">
+          <div className="flex-1 flex flex-col items-center justify-center bg-white rounded-2xl border border-gray-100 shadow-sm text-center p-6 h-full">
             <div className="w-16 h-16 rounded-2xl bg-gray-50 flex items-center justify-center mb-4">
               <Inbox className="w-8 h-8 text-gray-300" />
             </div>
@@ -797,38 +797,38 @@ export default function AdminSupportPage() {
 
   return (
     <AuthGuard require="admin">
-      <div className="flex h-screen overflow-hidden bg-[#F4F6FB]">
+      <div className="flex h-screen overflow-hidden bg-slate-50">
         <AdminSidebar userEmail={user?.email} userName={displayName} />
 
         <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
           {/* Page header */}
           <header className="bg-gradient-to-r from-slate-950 via-slate-900 to-slate-800 text-white border-b border-slate-800 shadow-sm shrink-0">
-            <div className="px-4 md:px-6 py-6 max-w-7xl mx-auto">
-              <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+            <div className="px-4 md:px-6 py-4 max-w-7xl mx-auto">
+              <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
                 <div className="min-w-0">
-                  <p className="text-xs uppercase tracking-[0.3em] text-slate-400">Support hub</p>
-                  <h1 className="mt-2 text-3xl font-extrabold tracking-tight">Support & enquiries</h1>
-                  <p className="mt-2 max-w-2xl text-sm text-slate-300">Manage tickets, respond to enquiries, and keep customer communications moving.</p>
+                  <p className="text-[10px] uppercase tracking-[0.3em] text-slate-400">Support hub</p>
+                  <h1 className="mt-2 text-2xl font-bold tracking-tight">Support & enquiries</h1>
+                  <p className="mt-1 max-w-2xl text-sm text-slate-300">Manage tickets, respond to enquiries, and keep customer communications moving.</p>
                 </div>
-                <div className="rounded-3xl border border-white/15 bg-white/10 px-5 py-3 text-sm shadow-sm">
-                  <p className="text-[11px] uppercase tracking-[0.3em] text-slate-300">Open enquiries</p>
-                  <p className="mt-1 text-2xl font-semibold text-white">{openCount}</p>
+                <div className="rounded-2xl border border-white/15 bg-white/10 px-4 py-2 text-sm shadow-sm">
+                  <p className="text-[10px] uppercase tracking-[0.3em] text-slate-300">Open enquiries</p>
+                  <p className="mt-1 text-xl font-semibold text-white">{openCount}</p>
                 </div>
               </div>
             </div>
           </header>
 
           {/* Tabs */}
-          <div className="flex items-center gap-2 px-4 md:px-6 py-4 bg-white border-b border-slate-200 shrink-0">
+          <div className="flex items-center gap-1 px-4 md:px-6 py-3 bg-white border-b border-slate-200 shrink-0">
             <button onClick={() => setTab('support')}
-              className={`flex items-center gap-2 px-4 py-2 rounded-2xl text-sm font-semibold transition-all ${
+              className={`flex items-center gap-2 px-3 py-2 rounded-2xl text-sm font-semibold transition-all ${
                 tab === 'support' ? 'bg-slate-950 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-100'
               }`}>
               <HeadphonesIcon className="w-4 h-4" />
               Support
             </button>
             <button onClick={() => setTab('inbox')}
-              className={`flex items-center gap-2 px-4 py-2 rounded-2xl text-sm font-semibold transition-all relative ${
+              className={`flex items-center gap-2 px-3 py-2 rounded-2xl text-sm font-semibold transition-all relative ${
                 tab === 'inbox' ? 'bg-slate-950 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-100'
               }`}>
               <Inbox className="w-4 h-4" />

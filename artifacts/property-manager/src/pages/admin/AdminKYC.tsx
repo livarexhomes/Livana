@@ -144,45 +144,35 @@ export default function AdminKYC() {
             pendingCount={pending}
           />
 
-          <main className="flex-1 overflow-y-auto p-4 md:p-6 pb-24 md:pb-6">
-            <div className="grid gap-5 xl:grid-cols-[1.3fr_0.95fr]">
-              <div className="space-y-5">
-                <div className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-[0_20px_80px_-40px_rgba(15,23,42,0.14)]">
-                  <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
-                    <div>
-                      <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">KYC dashboard</p>
-                      <h2 className="mt-3 text-3xl font-extrabold text-slate-950">Review identity checks quickly</h2>
-                      <p className="mt-3 text-sm leading-6 text-slate-500">Manage landlord KYC submissions, track statuses, and approve verified accounts.</p>
-                    </div>
-                    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-                      {STATUS_TABS.filter(tab => tab.key !== 'all').map(tab => (
-                        <div key={tab.key} className="rounded-3xl border border-slate-100 bg-slate-50 p-4">
-                          <p className="text-xs uppercase tracking-[0.25em] text-slate-400">{tab.label}</p>
-                          <p className="mt-2 text-2xl font-extrabold text-slate-950">{tab.count}</p>
-                        </div>
-                      ))}
-                    </div>
+          <main className="flex-1 overflow-y-auto p-4 md:p-5 pb-24 md:pb-6">
+            <div className="grid gap-4 xl:grid-cols-[1.3fr_0.95fr]">
+              <div className="space-y-4">
+                <div className="rounded-[32px] border border-slate-200 bg-white p-5 shadow-[0_20px_80px_-40px_rgba(15,23,42,0.14)]">
+                  <div className="space-y-3">
+                    <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">KYC dashboard</p>
+                    <h2 className="text-3xl font-extrabold text-slate-950">Review identity checks quickly</h2>
+                    <p className="text-sm leading-6 text-slate-500">Manage landlord KYC submissions, track statuses, and approve verified accounts.</p>
                   </div>
                 </div>
 
-                <div className="rounded-[32px] border border-slate-200 bg-white p-5 shadow-sm">
+                <div className="rounded-[32px] border border-slate-200 bg-white p-4 shadow-sm">
                   <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
                     <div className="flex flex-wrap items-center gap-2">
                       {STATUS_TABS.map(tab => (
                         <button key={tab.key} type="button" onClick={() => setStatusFilter(tab.key)}
-                          className={`rounded-full px-4 py-2 text-sm font-semibold transition ${statusFilter === tab.key ? 'bg-slate-950 text-white shadow' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}>
+                          className={`rounded-full px-3 py-1.5 text-sm font-semibold transition ${statusFilter === tab.key ? 'bg-slate-950 text-white shadow' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}>
                           {tab.label}
                         </button>
                       ))}
                     </div>
                     <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-                      <div className="flex items-center gap-2 rounded-3xl border border-slate-200 bg-slate-100 px-4 py-3 shadow-sm">
+                      <div className="flex items-center gap-2 rounded-3xl border border-slate-200 bg-slate-100 px-3 py-2 shadow-sm">
                         <Search className="w-4 h-4 text-slate-500" />
                         <input value={search} onChange={e => setSearch(e.target.value)}
                           placeholder="Search by name or WhatsApp"
                           className="w-full bg-transparent text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none" />
                       </div>
-                      <div className="rounded-3xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 shadow-sm">
+                      <div className="rounded-3xl border border-slate-200 bg-white px-3 py-2.5 text-sm font-semibold text-slate-700 shadow-sm">
                         {filtered.length} result{filtered.length === 1 ? '' : 's'}
                       </div>
                     </div>
@@ -190,11 +180,11 @@ export default function AdminKYC() {
                 </div>
 
                 {loading ? (
-                  <div className="flex items-center justify-center py-32">
+                  <div className="flex items-center justify-center py-20">
                     <div className="animate-spin w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full" />
                   </div>
                 ) : filtered.length === 0 ? (
-                  <div className="rounded-[32px] border border-slate-200 bg-white p-16 text-center shadow-sm">
+                  <div className="rounded-[32px] border border-slate-200 bg-white p-12 text-center shadow-sm">
                     <ShieldCheck className="mx-auto mb-4 h-12 w-12 text-slate-200" />
                     <p className="text-lg font-semibold text-slate-700">No submissions match this view</p>
                     <p className="mt-2 text-sm text-slate-500">Try another filter or search query.</p>
@@ -209,7 +199,7 @@ export default function AdminKYC() {
                           if (isSelected) { setSelected(null); setKycDocs([]); setImgErrors({}) }
                           else { setSelected(l); loadKycDocs(l.id) }
                         }}
-                          className={`w-full rounded-[28px] border p-4 text-left transition ${isSelected ? 'border-blue-300 bg-blue-50 shadow-sm' : 'border-slate-200 bg-white hover:border-slate-300 hover:shadow-sm'}`}>
+                          className={`w-full rounded-[28px] border p-3 text-left transition ${isSelected ? 'border-blue-300 bg-blue-50 shadow-sm' : 'border-slate-200 bg-white hover:border-slate-300 hover:shadow-sm'}`}>
                           <div className="flex items-start gap-4">
                             <div className={`flex h-12 w-12 items-center justify-center rounded-3xl bg-gradient-to-br ${avatarGrad(l.full_name)}`}>
                               <span className="text-sm font-semibold text-white">{getInitials(l.full_name)}</span>
@@ -221,7 +211,7 @@ export default function AdminKYC() {
                                   <span className={`h-2.5 w-2.5 rounded-full ${meta.dot}`} />{meta.label}
                                 </span>
                               </div>
-                              <div className="mt-3 flex flex-wrap items-center gap-3 text-sm text-slate-500">
+                              <div className="mt-2 flex flex-wrap items-center gap-2 text-sm text-slate-500">
                                 <span>{l.whatsapp || 'No WhatsApp'}</span>
                                 {l.kyc_submitted_at && <span>{fmtDate(l.kyc_submitted_at)}</span>}
                               </div>
@@ -235,12 +225,12 @@ export default function AdminKYC() {
                 )}
               </div>
 
-              <aside className="space-y-5">
-                <div className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm">
+              <aside className="space-y-4">
+                <div className="rounded-[32px] border border-slate-200 bg-white p-5 shadow-sm">
                   <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">Top pending</p>
-                  <div className="mt-4 space-y-3">
+                  <div className="mt-3 space-y-2">
                     {filtered.filter(item => item.status === 'pending').slice(0, 3).map(item => (
-                      <div key={item.id} className="rounded-3xl border border-slate-100 bg-slate-50 p-4">
+                      <div key={item.id} className="rounded-3xl border border-slate-100 bg-slate-50 p-3">
                         <p className="text-sm font-semibold text-slate-950 truncate">{item.full_name}</p>
                         <p className="mt-1 text-xs text-slate-500">{item.whatsapp || 'No WhatsApp'}</p>
                       </div>
@@ -254,7 +244,7 @@ export default function AdminKYC() {
             </div>
 
             {selected && (
-              <div className="mt-5 xl:hidden rounded-[32px] border border-slate-200 bg-white p-5 shadow-sm">
+              <div className="mt-4 xl:hidden rounded-[32px] border border-slate-200 bg-white p-4 shadow-sm">
                 <div className="flex items-center justify-between gap-4">
                   <div className="flex items-center gap-3">
                     <div className={`flex h-12 w-12 items-center justify-center rounded-3xl bg-gradient-to-br ${avatarGrad(selected.full_name)}`}>
@@ -270,14 +260,14 @@ export default function AdminKYC() {
                     <X className="h-4 w-4" />
                   </button>
                 </div>
-                <div className="mt-4 rounded-3xl bg-slate-50 p-4">
+                <div className="mt-3 rounded-3xl bg-slate-50 p-3">
                   <p className="text-xs uppercase tracking-[0.25em] text-slate-400">Status</p>
                   <div className="mt-3 inline-flex items-center gap-2 rounded-full bg-white px-3 py-2 text-sm font-semibold text-slate-900 shadow-sm">
                     <span className={`h-2.5 w-2.5 rounded-full ${STATUS_META[selected.status]?.dot ?? STATUS_META.pending.dot}`} />
                     {STATUS_META[selected.status]?.label ?? 'Pending'}
                   </div>
                 </div>
-                <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                <div className="mt-3 grid gap-2 sm:grid-cols-2">
                   {[
                     ['Joined', fmtDate(selected.created_at)],
                     ['NIN', selected.nin],
