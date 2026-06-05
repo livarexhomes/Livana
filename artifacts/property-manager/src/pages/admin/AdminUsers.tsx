@@ -514,24 +514,6 @@ export default function AdminUsers() {
               </div>
 
               <aside className="space-y-5">
-                <div className="rounded-[32px] border border-slate-200 bg-slate-950 p-6 text-white shadow-2xl shadow-slate-900/20">
-                  <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-400">Quick insights</p>
-                  <h2 className="mt-4 text-2xl font-extrabold">Tenant health overview</h2>
-                  <p className="mt-3 text-sm leading-6 text-slate-300">A fast summary of active accounts, suspensions, and recent signups.</p>
-                  <div className="mt-6 grid gap-3">
-                    {[
-                      { label: 'Active users', value: activeCount },
-                      { label: 'Suspended users', value: suspendedCount },
-                      { label: 'Joined this month', value: monthlyCount },
-                    ].map(item => (
-                      <div key={item.label} className="rounded-3xl bg-white/5 p-4">
-                        <p className="text-sm text-slate-300">{item.label}</p>
-                        <p className="mt-2 text-3xl font-semibold text-white">{item.value}</p>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
                 <div className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm">
                   <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-400">Recent registrations</p>
                   <div className="mt-4 space-y-3">

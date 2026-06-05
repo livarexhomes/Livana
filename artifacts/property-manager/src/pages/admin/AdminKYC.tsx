@@ -236,22 +236,6 @@ export default function AdminKYC() {
               </div>
 
               <aside className="space-y-5">
-                <div className="rounded-[32px] border border-slate-200 bg-slate-950 p-6 text-white shadow-2xl shadow-slate-950/20">
-                  <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">Quick glance</p>
-                  <h3 className="mt-4 text-2xl font-extrabold">KYC status summary</h3>
-                  <p className="mt-3 text-sm leading-6 text-slate-300">Review submission trends and identify priority accounts in one place.</p>
-                  <div className="mt-6 grid gap-3">
-                    {STATUS_TABS.filter(tab => tab.key !== 'all').map(tab => (
-                      <div key={tab.key} className="rounded-3xl bg-white/5 p-4">
-                        <div className="flex items-center justify-between gap-3">
-                          <p className="text-sm text-slate-300">{tab.label}</p>
-                          <span className="rounded-full bg-slate-900/70 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-slate-200">{tab.count}</span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
                 <div className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm">
                   <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">Top pending</p>
                   <div className="mt-4 space-y-3">

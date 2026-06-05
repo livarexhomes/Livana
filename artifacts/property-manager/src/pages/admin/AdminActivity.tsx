@@ -242,25 +242,6 @@ export default function AdminActivity() {
                 </section>
 
                 <aside className="space-y-5">
-                  <div className="rounded-[32px] border border-slate-200 bg-slate-950 p-6 text-white shadow-2xl shadow-slate-900/20">
-                    <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-400">Quick insights</p>
-                    <h2 className="mt-4 text-2xl font-extrabold">Activity summary</h2>
-                    <p className="mt-3 text-sm leading-6 text-slate-300">At a glance, see how many events the platform has generated this session.</p>
-                    <div className="mt-6 grid gap-3">
-                      {[
-                        { label: 'Total events', value: items.length },
-                        { label: 'Signups', value: eventCounts.landlord_signup + eventCounts.tenant_signup },
-                        { label: 'Enquiries', value: eventCounts.enquiry_sent },
-                        { label: 'KYC submissions', value: eventCounts.kyc_submitted },
-                      ].map(item => (
-                        <div key={item.label} className="rounded-3xl bg-white/5 p-4">
-                          <p className="text-sm text-slate-300">{item.label}</p>
-                          <p className="mt-2 text-3xl font-semibold text-white">{item.value.toLocaleString()}</p>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
                   <div className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm">
                     <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-400">Recent events</p>
                     <div className="mt-4 space-y-3">

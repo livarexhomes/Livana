@@ -99,9 +99,9 @@ export default function AdminHelp() {
 
           <main className="flex-1 overflow-hidden">
             <div className="h-full overflow-y-auto p-4 md:p-6">
-              <div className="grid gap-5 xl:grid-cols-[1.5fr_0.9fr]">
-                <section className="space-y-5">
-                  <div className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-[0_24px_50px_-30px_rgba(15,23,42,0.18)]">
+              <div className="grid gap-4 xl:grid-cols-[1.5fr_0.9fr]">
+                <section className="space-y-4">
+                  <div className="rounded-[32px] border border-slate-200 bg-white p-5 shadow-[0_24px_50px_-30px_rgba(15,23,42,0.18)]">
                     <div className="grid gap-4 lg:grid-cols-[1.5fr_0.9fr] lg:items-center">
                       <div>
                         <p className="text-xs uppercase tracking-[0.3em] text-slate-400">Get support</p>
@@ -145,7 +145,7 @@ export default function AdminHelp() {
                     })}
                   </div>
 
-                  <div className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm">
+                  <div className="rounded-[32px] border border-slate-200 bg-white p-5 shadow-sm">
                     <div className="flex items-center gap-2 mb-4">
                       <HelpCircle className="w-5 h-5 text-blue-600" />
                       <h2 className="text-base font-bold text-slate-950">Frequently Asked Questions</h2>
@@ -158,7 +158,7 @@ export default function AdminHelp() {
                     </div>
                     <div className="space-y-3">
                       {filteredFaqs.length === 0 ? (
-                        <div className="rounded-3xl border border-slate-100 bg-slate-50 p-8 text-center text-sm text-slate-500">No FAQs match your search.</div>
+                        <div className="rounded-3xl border border-slate-100 bg-slate-50 p-5 text-center text-sm text-slate-500">No FAQs match your search.</div>
                       ) : filteredFaqs.map((faq, i) => (
                         <div key={i} className="rounded-[26px] border border-slate-100 overflow-hidden">
                           <button type="button" onClick={() => setOpenFaq(openFaq === i ? null : i)}
@@ -177,8 +177,8 @@ export default function AdminHelp() {
                   </div>
                 </section>
 
-                <aside className="space-y-5">
-                  <div className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm">
+                <aside className="space-y-4">
+                  <div className="rounded-[32px] border border-slate-200 bg-white p-5 shadow-sm">
                     <div className="flex items-center gap-2 mb-4">
                       <BookOpen className="w-5 h-5 text-blue-600" />
                       <h2 className="text-base font-bold text-slate-950">Documentation</h2>
@@ -202,13 +202,13 @@ export default function AdminHelp() {
                     </div>
                   </div>
 
-                  <div className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm">
+                  <div className="rounded-[32px] border border-slate-200 bg-white p-5 shadow-sm">
                     <div className="flex items-center gap-2 mb-4">
                       <MessageSquare className="w-5 h-5 text-blue-600" />
                       <h2 className="text-base font-bold text-slate-950">Submit a Ticket</h2>
                     </div>
                     {submitted ? (
-                      <div className="rounded-3xl bg-emerald-50 p-6 text-center">
+                      <div className="rounded-3xl bg-emerald-50 p-5 text-center">
                         <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-emerald-100 mb-4">
                           <MessageSquare className="w-6 h-6 text-emerald-600" />
                         </div>
@@ -216,7 +216,7 @@ export default function AdminHelp() {
                         <p className="mt-2 text-sm text-slate-500">Our team will contact you within 24 hours.</p>
                       </div>
                     ) : (
-                      <form onSubmit={handleSubmit} className="space-y-4">
+                      <form onSubmit={handleSubmit} className="space-y-3">
                         <div>
                           <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5 block">Subject</label>
                           <input required value={ticket.subject} onChange={e => setTicket(t => ({ ...t, subject: e.target.value }))}

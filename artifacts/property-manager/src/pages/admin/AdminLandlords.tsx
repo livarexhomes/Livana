@@ -258,25 +258,6 @@ export default function AdminLandlords() {
               </div>
 
               <aside className="space-y-5">
-                <div className="rounded-[32px] border border-slate-200 bg-slate-950 p-6 text-white shadow-2xl shadow-slate-950/20">
-                  <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">Quick insights</p>
-                  <h3 className="mt-4 text-2xl font-extrabold">Landlord trends</h3>
-                  <p className="mt-3 text-sm leading-6 text-slate-300">Monitor your landlord ecosystem and see what needs attention.</p>
-                  <div className="mt-6 grid gap-3">
-                    {[
-                      { label: 'Total landlords', value: clients.length },
-                      { label: 'KYC pending', value: pending },
-                      { label: 'Approved landlords', value: approved },
-                    ].map(item => (
-                      <div key={item.label} className="rounded-3xl bg-white/5 p-4">
-                        <div className="flex items-center justify-between gap-3">
-                          <p className="text-sm text-slate-300">{item.label}</p>
-                          <span className="rounded-full bg-slate-900/70 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-slate-200">{item.value}</span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
                 <div className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm">
                   <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">Top pending</p>
                   <div className="mt-4 space-y-3">
