@@ -393,70 +393,76 @@ export default function AdminProperties() {
             }
           />
 
-          <main className="flex-1 overflow-y-auto p-4 md:p-6 pb-24 md:pb-6 space-y-5">
-
-            {/* Stat cards */}
-            <div className="grid grid-cols-3 gap-3">
-              {[
-                { label: 'Total', value: properties.length, icon: Building2, color: 'text-blue-600', bg: 'bg-blue-50' },
-                { label: 'Available', value: available, icon: CheckCircle, color: 'text-emerald-600', bg: 'bg-emerald-50' },
-                { label: 'Taken', value: taken, icon: XCircle, color: 'text-red-500', bg: 'bg-red-50' },
-              ].map(s => (
-                <div key={s.label} className="bg-white rounded-2xl border border-gray-100 px-4 py-3.5 flex items-center gap-3 shadow-sm">
-                  <div className={`w-9 h-9 rounded-xl ${s.bg} flex items-center justify-center shrink-0`}>
-                    <s.icon className={`w-4.5 h-4.5 ${s.color}`} />
+          <main className="flex-1 overflow-y-auto p-4 md:p-6 pb-24 md:pb-6">
+            <div className="grid gap-5 xl:grid-cols-[1.75fr_0.9fr]">
+              <div className="space-y-5">
+                <div className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-[0_18px_80px_-40px_rgba(15,23,42,0.18)]">
+                  <div className="flex flex-col gap-6 xl:flex-row xl:items-center xl:justify-between">
+                    <div className="max-w-2xl">
+                      <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">Property management</p>
+                      <h2 className="mt-3 text-3xl font-extrabold text-slate-950">Control listings with clarity</h2>
+                      <p className="mt-3 text-sm leading-6 text-slate-500">Find, filter, and manage your portfolio from a polished admin workspace.</p>
+                    </div>
+                    <div className="grid grid-cols-3 gap-3">
+                      {[
+                        { label: 'Total listings', value: properties.length, accent: 'text-blue-700 bg-blue-500/10' },
+                        { label: 'Available', value: available, accent: 'text-emerald-700 bg-emerald-500/10' },
+                        { label: 'Taken', value: taken, accent: 'text-rose-700 bg-rose-500/10' },
+                      ].map(item => (
+                        <div key={item.label} className="rounded-3xl border border-slate-100 bg-slate-50 p-4">
+                          <p className={`text-3xl font-extrabold ${item.accent}`}>{item.value}</p>
+                          <p className="mt-2 text-xs font-semibold uppercase tracking-[0.25em] text-slate-500">{item.label}</p>
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-xl font-extrabold text-gray-900 leading-none">{s.value}</p>
-                    <p className="text-xs text-gray-400 mt-0.5">{s.label}</p>
+
+                  <div className="mt-6 flex flex-wrap items-center gap-2">
+                    {STATUS_TABS.map(tab => (
+                      <button key={tab.key} type="button" onClick={() => setStatusFilter(tab.key)}
+                        className={`rounded-full px-4 py-2 text-sm font-semibold transition ${statusFilter === tab.key
+                          ? 'bg-slate-950 text-white shadow-lg shadow-slate-950/10'
+                          : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}>
+                        {tab.label}
+                        <span className="ml-2 inline-flex h-6 min-w-[24px] items-center justify-center rounded-full bg-slate-900 text-[11px] text-white font-bold">{tab.count}</span>
+                      </button>
+                    ))}
                   </div>
                 </div>
-              ))}
-            </div>
 
-            {/* Filters row */}
-            <div className="flex items-center gap-2 flex-wrap">
-              {STATUS_TABS.map(tab => (
-                <button key={tab.key} type="button" onClick={() => setStatusFilter(tab.key)}
-                  className={`shrink-0 flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-semibold border transition-all ${
-                    statusFilter === tab.key
-                      ? 'bg-gray-900 text-white border-gray-900'
-                      : 'bg-white text-gray-600 border-gray-200 hover:border-gray-400'
-                  }`}>
-                  {tab.label}
-                  <span className={`px-1.5 py-0.5 rounded-md text-[10px] font-bold ${statusFilter === tab.key ? 'bg-white/20 text-white' : 'bg-gray-100 text-gray-500'}`}>{tab.count}</span>
-                </button>
-              ))}
-            </div>
+                <div className="rounded-[32px] border border-slate-200 bg-white p-5 shadow-sm">
+                  <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-3 rounded-3xl border border-slate-200 bg-slate-100 px-4 py-3 shadow-sm">
+                        <Search className="w-4 h-4 text-slate-500" />
+                        <input value={search} onChange={e => setSearch(e.target.value)}
+                          placeholder="Search properties, neighborhoods, or landlords"
+                          className="w-full bg-transparent text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none" />
+                      </div>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-3">
+                      <div className="inline-flex overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
+                        <button type="button" onClick={() => setViewMode('grid')}
+                          className={`px-4 py-3 transition ${viewMode === 'grid' ? 'bg-slate-950 text-white' : 'text-slate-500 hover:bg-slate-50'}`}>
+                          <LayoutGrid className="w-4 h-4" />
+                        </button>
+                        <button type="button" onClick={() => setViewMode('list')}
+                          className={`px-4 py-3 transition ${viewMode === 'list' ? 'bg-slate-950 text-white' : 'text-slate-500 hover:bg-slate-50'}`}>
+                          <List className="w-4 h-4" />
+                        </button>
+                      </div>
+                      <select value={sort} onChange={e => setSort(e.target.value)}
+                        className="rounded-3xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="newest">Newest</option>
+                        <option value="oldest">Oldest</option>
+                        <option value="price_asc">Price ↑</option>
+                        <option value="price_desc">Price ↓</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
 
-            {/* Search + controls */}
-            <div className="flex items-center gap-2">
-              <div className="flex-1 flex items-center gap-2 bg-white border border-gray-200 rounded-xl px-3.5 py-2.5 shadow-sm focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-blue-500 transition-all">
-                <Search className="w-4 h-4 text-gray-400 shrink-0" />
-                <input value={search} onChange={e => setSearch(e.target.value)}
-                  placeholder="Search by title, city, type…"
-                  className="flex-1 text-sm text-gray-700 placeholder-gray-400 focus:outline-none bg-transparent" />
-              </div>
-              <div className="flex items-center bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
-                <button type="button" onClick={() => setViewMode('grid')}
-                  className={`p-2.5 transition-colors ${viewMode === 'grid' ? 'bg-gray-900 text-white' : 'text-gray-400 hover:bg-gray-50'}`}>
-                  <LayoutGrid className="w-4 h-4" />
-                </button>
-                <button type="button" onClick={() => setViewMode('list')}
-                  className={`p-2.5 transition-colors ${viewMode === 'list' ? 'bg-gray-900 text-white' : 'text-gray-400 hover:bg-gray-50'}`}>
-                  <List className="w-4 h-4" />
-                </button>
-              </div>
-              <select value={sort} onChange={e => setSort(e.target.value)}
-                className="hidden sm:block px-3 py-2.5 bg-white border border-gray-200 rounded-xl text-sm font-semibold text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm cursor-pointer">
-                <option value="newest">Newest</option>
-                <option value="oldest">Oldest</option>
-                <option value="price_asc">Price ↑</option>
-                <option value="price_desc">Price ↓</option>
-              </select>
-            </div>
-
-            {loading ? (
+                {loading ? (
               <div className="flex items-center justify-center py-40">
                 <div className="animate-spin w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full" />
               </div>
@@ -493,9 +499,9 @@ export default function AdminProperties() {
                       {/* Body */}
                       <div className="p-4 flex flex-col flex-1">
                         <div className="flex items-start justify-between gap-2 mb-1.5">
-                          <h3 className="font-bold text-gray-900 text-sm leading-snug line-clamp-1 flex-1">{p.title}</h3>
-                          <span className={`shrink-0 inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-bold ${status.cls}`}>
-                            <span className={`w-1.5 h-1.5 rounded-full ${status.dot}`} />
+                          <h3 className="font-semibold text-slate-950 text-sm leading-snug line-clamp-1 flex-1">{p.title}</h3>
+                          <span className={`shrink-0 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold ${status.cls}`}>
+                            <span className={`w-2 h-2 rounded-full ${status.dot}`} />
                             {status.label}
                           </span>
                         </div>
@@ -580,15 +586,15 @@ export default function AdminProperties() {
                             </td>
                             <td className="px-5 py-3.5">
                               <div className="flex items-center justify-end gap-1">
-                                <button onClick={() => openEdit(p)} className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-colors">
+                                <button onClick={() => openEdit(p)} className="w-8 h-8 flex items-center justify-center rounded-lg text-slate-500 hover:text-blue-600 hover:bg-blue-50 transition-colors">
                                   <Pencil className="w-3.5 h-3.5" />
                                 </button>
                                 <button onClick={() => handleDelete(p.id)} disabled={deleting === p.id}
-                                  className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors disabled:opacity-40">
+                                  className="w-8 h-8 flex items-center justify-center rounded-lg text-slate-500 hover:text-rose-600 hover:bg-rose-50 transition-colors disabled:opacity-40">
                                   <Trash2 className="w-3.5 h-3.5" />
                                 </button>
                                 <Link href={`/listings/${p.id}`}
-                                  className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-colors">
+                                  className="w-8 h-8 flex items-center justify-center rounded-lg text-slate-500 hover:text-blue-600 hover:bg-blue-50 transition-colors">
                                   <Eye className="w-3.5 h-3.5" />
                                 </Link>
                               </div>
@@ -601,10 +607,44 @@ export default function AdminProperties() {
                 </div>
               </div>
             )}
-          </main>
-        </div>
+          </div>
 
-        {/* Edit modal */}
+          <aside className="space-y-5">
+            <div className="rounded-[32px] border border-slate-200 bg-slate-950 p-6 text-white shadow-2xl shadow-slate-950/20">
+              <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">Quick snapshot</p>
+              <h3 className="mt-4 text-2xl font-extrabold">Portfolio health</h3>
+              <p className="mt-3 text-sm leading-6 text-slate-300">See listing trends and recent activity at a glance.</p>
+              <div className="mt-6 grid gap-3">
+                {[
+                  { label: 'Total listings', value: properties.length },
+                  { label: 'Available now', value: available },
+                  { label: 'Taken off market', value: taken },
+                ].map(item => (
+                  <div key={item.label} className="rounded-3xl bg-white/5 p-4">
+                    <p className="text-sm text-slate-300">{item.label}</p>
+                    <p className="mt-2 text-3xl font-semibold text-white">{item.value}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="rounded-[32px] border border-slate-200 bg-white p-5 shadow-sm">
+              <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">Recent listings</p>
+              <div className="mt-4 space-y-3">
+                {filtered.slice(0, 3).map(p => (
+                  <div key={p.id} className="rounded-3xl border border-slate-100 bg-slate-50 p-4">
+                    <p className="text-sm font-semibold text-slate-950 truncate">{p.title}</p>
+                    <p className="mt-1 text-xs text-slate-500">{p.city} · ₦{Number(p.price).toLocaleString()}</p>
+                    <span className={`mt-3 inline-flex rounded-full px-3 py-1 text-[11px] font-semibold ${STATUS_META[p.status]?.cls ?? STATUS_META.available.cls}`}>{STATUS_META[p.status]?.label ?? 'Available'}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </aside>
+        </div>
+      </main>
+    </div>
+
+    {/* Edit modal */}
         {editingProp && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
             <div className="w-full max-w-lg bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">

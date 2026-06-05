@@ -101,6 +101,10 @@ export default function AdminActivity() {
 
   const displayName = user?.email ? user.email.split('@')[0] : 'Admin'
   const groups = groupByDay(filtered)
+  const eventCounts = ALL_TYPES.reduce((acc, type) => {
+    acc[type as ActivityItem['type']] = items.filter(i => i.type === type).length
+    return acc
+  }, {} as Record<ActivityItem['type'], number>)
 
   return (
     <AuthGuard require="admin">
@@ -113,73 +117,177 @@ export default function AdminActivity() {
             subtitle={`${items.length.toLocaleString()} total events`}
           />
 
-          <div className="flex-1 overflow-y-auto p-4 md:p-6 pb-24 md:pb-6 space-y-5">
+          <main className="flex-1 overflow-hidden">
+            <div className="h-full overflow-y-auto p-4 md:p-6">
+              <div className="grid gap-5 xl:grid-cols-[1.7fr_0.9fr]">
+                <section className="space-y-5">
+                  <div className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-[0_30px_60px_-30px_rgba(15,23,42,0.15)]">
+                    <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                      <div>
+                        <p className="text-xs uppercase tracking-[0.3em] text-slate-400">Activity overview</p>
+                        <h2 className="mt-2 text-2xl font-extrabold text-slate-950">Real-time platform activity</h2>
+                        <p className="mt-2 text-sm text-slate-500">Track registrations, property listings, enquiries, and KYC events in one place.</p>
+                      </div>
+                      <div className="rounded-3xl bg-slate-50 px-4 py-2 text-sm font-semibold text-slate-700">Showing {filtered.length.toLocaleString()} of {items.length.toLocaleString()}</div>
+                    </div>
 
-            {/* Filter chips */}
-            <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar">
-              <button onClick={() => setTypeFilter('all')}
-                className={`shrink-0 flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-semibold border transition-all ${
-                  typeFilter === 'all' ? 'bg-gray-900 text-white border-gray-900' : 'bg-white text-gray-600 border-gray-200 hover:border-gray-400'
-                }`}>
-                All
-                <span className={`px-1.5 py-0.5 rounded-md text-[10px] font-bold ${typeFilter === 'all' ? 'bg-white/20 text-white' : 'bg-gray-100 text-gray-500'}`}>{items.length}</span>
-              </button>
-              {ALL_TYPES.map(t => {
-                const meta = TYPE_META[t]
-                const Icon = meta.icon
-                const count = items.filter(i => i.type === t).length
-                return (
-                  <button key={t} onClick={() => setTypeFilter(t)}
-                    className={`shrink-0 flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-semibold border transition-all ${
-                      typeFilter === t ? 'bg-gray-900 text-white border-gray-900' : 'bg-white text-gray-600 border-gray-200 hover:border-gray-400'
-                    }`}>
-                    <Icon className="w-3 h-3" />{meta.label}
-                    <span className={`px-1.5 py-0.5 rounded-md text-[10px] font-bold ${typeFilter === t ? 'bg-white/20 text-white' : 'bg-gray-100 text-gray-500'}`}>{count}</span>
-                  </button>
-                )
-              })}
-            </div>
+                    <div className="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                      <div className="rounded-3xl border border-slate-100 bg-slate-50 p-4">
+                        <p className="text-sm text-slate-500">Total events</p>
+                        <p className="mt-3 text-3xl font-semibold text-slate-950">{items.length.toLocaleString()}</p>
+                      </div>
+                      <div className="rounded-3xl border border-slate-100 bg-emerald-50 p-4">
+                        <p className="text-sm text-emerald-700">Properties listed</p>
+                        <p className="mt-3 text-3xl font-semibold text-emerald-900">{eventCounts.property_listed.toLocaleString()}</p>
+                      </div>
+                      <div className="rounded-3xl border border-slate-100 bg-blue-50 p-4">
+                        <p className="text-sm text-blue-700">Tenant signups</p>
+                        <p className="mt-3 text-3xl font-semibold text-blue-900">{eventCounts.tenant_signup.toLocaleString()}</p>
+                      </div>
+                      <div className="rounded-3xl border border-slate-100 bg-violet-50 p-4">
+                        <p className="text-sm text-violet-700">Landlord signups</p>
+                        <p className="mt-3 text-3xl font-semibold text-violet-900">{eventCounts.landlord_signup.toLocaleString()}</p>
+                      </div>
+                      <div className="rounded-3xl border border-slate-100 bg-amber-50 p-4">
+                        <p className="text-sm text-amber-700">Enquiries sent</p>
+                        <p className="mt-3 text-3xl font-semibold text-amber-900">{eventCounts.enquiry_sent.toLocaleString()}</p>
+                      </div>
+                      <div className="rounded-3xl border border-slate-100 bg-indigo-50 p-4">
+                        <p className="text-sm text-indigo-700">KYC submissions</p>
+                        <p className="mt-3 text-3xl font-semibold text-indigo-900">{eventCounts.kyc_submitted.toLocaleString()}</p>
+                      </div>
+                    </div>
+                  </div>
 
-            {loading ? (
-              <div className="flex items-center justify-center py-32">
-                <div className="animate-spin w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full" />
-              </div>
-            ) : filtered.length === 0 ? (
-              <div className="bg-white rounded-2xl border border-gray-100 p-16 text-center shadow-sm">
-                <Activity className="w-12 h-12 text-gray-200 mx-auto mb-4" />
-                <p className="text-gray-400 font-medium">No activity yet</p>
-              </div>
-            ) : (
-              <div className="space-y-5">
-                {groups.map(group => (
-                  <div key={group.label}>
-                    <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-2.5 px-1">{group.label}</p>
-                    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden divide-y divide-gray-50">
-                      {group.items.map(item => {
-                        const meta = TYPE_META[item.type]
+                  <div className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-[0_30px_60px_-30px_rgba(15,23,42,0.15)]">
+                    <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                      <div>
+                        <p className="text-xs uppercase tracking-[0.3em] text-slate-400">Filter</p>
+                        <h3 className="mt-1 text-lg font-semibold text-slate-950">Activity type</h3>
+                      </div>
+                      <div className="rounded-3xl bg-slate-50 px-3 py-2 text-xs text-slate-500">Latest 50 events</div>
+                    </div>
+                    <div className="mt-4 flex flex-wrap gap-2">
+                      <button onClick={() => setTypeFilter('all')}
+                        className={`shrink-0 flex items-center gap-1.5 rounded-2xl px-4 py-2 text-sm font-semibold transition ${
+                          typeFilter === 'all' ? 'bg-slate-950 text-white shadow-sm' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                        }`}>
+                        <Activity className="w-4 h-4" />
+                        All
+                        <span className="ml-2 inline-flex h-6 min-w-[24px] items-center justify-center rounded-full bg-slate-900 text-[11px] text-white">{items.length}</span>
+                      </button>
+                      {ALL_TYPES.map(t => {
+                        const meta = TYPE_META[t]
                         const Icon = meta.icon
+                        const count = eventCounts[t as ActivityItem['type']]
                         return (
-                          <div key={item.id} className="flex items-center gap-3 px-5 py-3 hover:bg-gray-50/60 transition-colors">
-                            <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${meta.bg}`}>
-                              <Icon className={`w-4 h-4 ${meta.text}`} />
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <p className="text-sm font-semibold text-gray-900 leading-snug truncate">{item.title}</p>
-                              {item.sub && <p className="text-xs text-gray-400 mt-0.5 truncate">{item.sub}</p>}
-                            </div>
-                            <div className="shrink-0 text-right">
-                              <span className="text-[10px] font-semibold text-gray-300 uppercase tracking-wide block">{meta.label}</span>
-                              <span className="text-[11px] text-gray-400">{relativeTime(item.ts)}</span>
-                            </div>
-                          </div>
+                          <button key={t} onClick={() => setTypeFilter(t)}
+                            className={`shrink-0 flex items-center gap-2 rounded-2xl px-4 py-2 text-sm font-semibold transition ${
+                              typeFilter === t ? 'bg-slate-950 text-white shadow-sm' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                            }`}>
+                            <span className={`flex h-7 w-7 items-center justify-center rounded-full ${meta.bg} ${meta.text}`}><Icon className="w-4 h-4" /></span>
+                            {meta.label}
+                            <span className="ml-2 inline-flex h-6 min-w-[24px] items-center justify-center rounded-full bg-slate-900 text-[11px] text-white">{count}</span>
+                          </button>
                         )
                       })}
                     </div>
                   </div>
-                ))}
+
+                  {loading ? (
+                    <div className="flex items-center justify-center py-28">
+                      <div className="animate-spin w-12 h-12 border-4 border-slate-200 border-t-slate-900 rounded-full" />
+                    </div>
+                  ) : filtered.length === 0 ? (
+                    <div className="rounded-[32px] border border-slate-200 bg-white p-16 text-center shadow-sm">
+                      <Activity className="w-14 h-14 text-slate-200 mx-auto mb-4" />
+                      <p className="text-lg font-semibold text-slate-900">No activity found</p>
+                      <p className="mt-2 text-sm text-slate-500">Change your filter or wait for new events to appear.</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-5">
+                      {groups.map(group => (
+                        <div key={group.label} className="rounded-[32px] border border-slate-200 bg-white p-5 shadow-sm">
+                          <div className="flex items-center justify-between gap-4 mb-4">
+                            <h4 className="text-sm font-semibold uppercase tracking-[0.3em] text-slate-400">{group.label}</h4>
+                            <span className="text-xs font-semibold text-slate-500">{group.items.length} events</span>
+                          </div>
+                          <div className="space-y-3">
+                            {group.items.map(item => {
+                              const meta = TYPE_META[item.type]
+                              const Icon = meta.icon
+                              return (
+                                <div key={item.id} className="group rounded-3xl border border-slate-100 p-4 transition hover:border-slate-300 hover:bg-slate-50">
+                                  <div className="flex items-start gap-4">
+                                    <div className={`mt-1 flex h-11 w-11 items-center justify-center rounded-3xl ${meta.bg}`}>
+                                      <Icon className={`w-5 h-5 ${meta.text}`} />
+                                    </div>
+                                    <div className="min-w-0 flex-1">
+                                      <p className="text-sm font-semibold text-slate-950 truncate">{item.title}</p>
+                                      {item.sub && <p className="mt-1 text-sm text-slate-500 truncate">{item.sub}</p>}
+                                    </div>
+                                    <div className="shrink-0 text-right">
+                                      <p className="text-xs uppercase tracking-[0.3em] text-slate-400">{meta.label}</p>
+                                      <p className="mt-1 text-xs text-slate-500">{relativeTime(item.ts)}</p>
+                                    </div>
+                                  </div>
+                                </div>
+                              )
+                            })}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </section>
+
+                <aside className="space-y-5">
+                  <div className="rounded-[32px] border border-slate-200 bg-slate-950 p-6 text-white shadow-2xl shadow-slate-900/20">
+                    <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-400">Quick insights</p>
+                    <h2 className="mt-4 text-2xl font-extrabold">Activity summary</h2>
+                    <p className="mt-3 text-sm leading-6 text-slate-300">At a glance, see how many events the platform has generated this session.</p>
+                    <div className="mt-6 grid gap-3">
+                      {[
+                        { label: 'Total events', value: items.length },
+                        { label: 'Signups', value: eventCounts.landlord_signup + eventCounts.tenant_signup },
+                        { label: 'Enquiries', value: eventCounts.enquiry_sent },
+                        { label: 'KYC submissions', value: eventCounts.kyc_submitted },
+                      ].map(item => (
+                        <div key={item.label} className="rounded-3xl bg-white/5 p-4">
+                          <p className="text-sm text-slate-300">{item.label}</p>
+                          <p className="mt-2 text-3xl font-semibold text-white">{item.value.toLocaleString()}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm">
+                    <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-400">Recent events</p>
+                    <div className="mt-4 space-y-3">
+                      {filtered.slice(0, 4).map(item => {
+                        const meta = TYPE_META[item.type]
+                        const Icon = meta.icon
+                        return (
+                          <div key={item.id} className="flex items-start gap-3 rounded-3xl border border-slate-100 bg-slate-50 p-4">
+                            <div className={`mt-1 flex h-10 w-10 items-center justify-center rounded-3xl ${meta.bg}`}>
+                              <Icon className={`w-4 h-4 ${meta.text}`} />
+                            </div>
+                            <div className="min-w-0">
+                              <p className="text-sm font-semibold text-slate-950 truncate">{item.title}</p>
+                              <p className="mt-1 text-xs text-slate-500 truncate">{relativeTime(item.ts)}</p>
+                            </div>
+                          </div>
+                        )
+                      })}
+                      {filtered.length === 0 && (
+                        <p className="text-sm text-slate-500">No recent activity to show.</p>
+                      )}
+                    </div>
+                  </div>
+                </aside>
               </div>
-            )}
-          </div>
+            </div>
+          </main>
         </div>
       </div>
     </AuthGuard>

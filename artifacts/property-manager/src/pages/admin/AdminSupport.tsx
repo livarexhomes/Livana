@@ -551,66 +551,76 @@ function SupportTab() {
   }
 
   return (
-    <div className="flex flex-1 overflow-hidden gap-0">
+    <div className="flex flex-1 overflow-hidden gap-4">
       {/* Ticket list */}
-      <div className={`flex flex-col border-r border-gray-100 bg-white w-full lg:w-80 xl:w-96 shrink-0 ${selected ? 'hidden lg:flex' : 'flex'}`}>
-        <div className="flex items-center gap-1.5 px-3 py-3 border-b border-gray-100 overflow-x-auto no-scrollbar">
-          {(['all', 'open', 'in_progress', 'resolved', 'closed'] as const).map(key => (
-            <button key={key} onClick={() => setFilterStatus(key)}
-              className={`shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all ${
-                filterStatus === key ? 'bg-gray-900 text-white border-gray-900' : 'bg-white text-gray-500 border-gray-200 hover:border-gray-400'
-              }`}>
-              {key === 'all' ? 'All' : STATUS_META[key].label}
-              <span className={`text-[10px] font-bold ${filterStatus === key ? 'text-white/70' : 'text-gray-400'}`}>{counts[key]}</span>
-            </button>
-          ))}
+      <div className={`flex flex-col border border-gray-100 bg-white w-full lg:w-80 xl:w-96 shrink-0 overflow-hidden ${selected ? 'hidden lg:flex' : 'flex'}`}>
+        <div className="px-4 py-4 border-b border-gray-100">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <p className="text-xs uppercase tracking-[0.3em] text-slate-400">Support queue</p>
+              <h2 className="text-lg font-bold text-slate-950">Tickets</h2>
+            </div>
+            <span className="text-xs text-slate-500">{tickets.length} total</span>
+          </div>
+          <div className="mt-4 flex flex-wrap gap-2">
+            {(['all', 'open', 'in_progress', 'resolved', 'closed'] as const).map(key => (
+              <button key={key} onClick={() => setFilterStatus(key)}
+                className={`shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-2xl text-xs font-semibold border transition-all ${
+                  filterStatus === key ? 'bg-slate-900 text-white border-slate-900' : 'bg-slate-100 text-slate-600 border-slate-200 hover:border-slate-300'
+                }`}>
+                {key === 'all' ? 'All' : STATUS_META[key].label}
+                <span className={`text-[10px] font-bold ${filterStatus === key ? 'text-white/70' : 'text-slate-400'}`}>{counts[key]}</span>
+              </button>
+            ))}
+          </div>
         </div>
-        <div className="flex-1 overflow-y-auto">
+        <div className="flex-1 overflow-y-auto p-4 space-y-3">
           {loading ? (
-            <div className="p-4 space-y-2">
+            <div className="space-y-3">
               {Array.from({ length: 4 }).map((_, i) => (
-                <div key={i} className="p-4 rounded-xl animate-pulse space-y-2">
-                  <div className="h-4 bg-gray-200 rounded w-3/4" />
-                  <div className="h-3 bg-gray-100 rounded w-1/2" />
-                </div>
+                <div key={i} className="h-24 rounded-3xl bg-slate-100 animate-pulse" />
               ))}
             </div>
           ) : filtered.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-full p-8 text-center">
-              <MessageSquare className="w-10 h-10 text-gray-200 mb-3" />
-              <p className="text-sm font-semibold text-gray-400">No tickets</p>
+              <MessageSquare className="w-10 h-10 text-slate-200 mb-3" />
+              <p className="text-sm font-semibold text-slate-400">No tickets</p>
             </div>
-          ) : filtered.map(ticket => {
-            const s = STATUS_META[ticket.status]
-            const p = PRIORITY_META[ticket.priority]
-            const isActive = selectedId === ticket.id
-            const isLandlordTicket = !!ticket.landlord_id
-            const senderName = isLandlordTicket
-              ? (ticket.landlords?.full_name ?? 'Landlord')
-              : (ticket.tenants?.full_name ?? 'Tenant')
-            return (
-              <button key={ticket.id} onClick={() => setSelectedId(ticket.id)}
-                className={`w-full text-left px-4 py-3.5 border-b border-gray-50 transition-all ${isActive ? 'bg-gray-900' : 'hover:bg-gray-50'}`}>
-                <div className="flex items-start justify-between gap-2">
-                  <p className={`font-semibold text-sm truncate ${isActive ? 'text-white' : 'text-gray-900'}`}>{ticket.subject}</p>
-                  <span className={`shrink-0 inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full ${isActive ? 'bg-white/20 text-white' : `${s.bg} ${s.color}`}`}>
-                    <span className={`w-1.5 h-1.5 rounded-full ${isActive ? 'bg-white' : s.dot}`} />{s.label}
-                  </span>
-                </div>
-                <div className="flex items-center gap-2 mt-1">
-                  <div className={`flex items-center gap-1 text-xs ${isActive ? 'text-white/70' : 'text-gray-500'}`}>
-                    <User className="w-3 h-3" />
-                    {isLandlordTicket && <span className="text-[10px] px-1 py-0.5 rounded bg-violet-100 text-violet-700 mr-1">LL</span>}
-                    {senderName}
-                  </div>
-                  <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-md ${isActive ? 'bg-white/15 text-white/80' : `${p.bg} ${p.color}`}`}>{p.label}</span>
-                  <span className={`text-[11px] ml-auto ${isActive ? 'text-white/50' : 'text-gray-400'}`}>
-                    {formatDistanceToNow(new Date(ticket.updated_at), { addSuffix: true })}
-                  </span>
-                </div>
-              </button>
-            )
-          })}
+          ) : (
+            <div className="space-y-3">
+              {filtered.map(ticket => {
+                const s = STATUS_META[ticket.status]
+                const p = PRIORITY_META[ticket.priority]
+                const isActive = selectedId === ticket.id
+                const isLandlordTicket = !!ticket.landlord_id
+                const senderName = isLandlordTicket
+                  ? (ticket.landlords?.full_name ?? 'Landlord')
+                  : (ticket.tenants?.full_name ?? 'Tenant')
+                return (
+                  <button key={ticket.id} onClick={() => setSelectedId(ticket.id)}
+                    className={`w-full text-left rounded-3xl border px-4 py-4 transition-all ${isActive ? 'border-slate-900 bg-slate-950 text-white shadow-lg' : 'border-slate-200 bg-white hover:border-slate-300 hover:shadow-sm'}`}>
+                    <div className="flex items-start justify-between gap-3">
+                      <p className={`font-semibold text-sm truncate ${isActive ? 'text-white' : 'text-slate-950'}`}>{ticket.subject}</p>
+                      <span className={`shrink-0 inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full ${isActive ? 'bg-white/15 text-white' : `${s.bg} ${s.color}`}`}>
+                        <span className={`w-1.5 h-1.5 rounded-full ${isActive ? 'bg-white' : s.dot}`} />{s.label}
+                      </span>
+                    </div>
+                    <div className="mt-3 flex flex-wrap items-center gap-2 text-xs">
+                      <span className={`inline-flex items-center gap-1 ${isActive ? 'text-white/70' : 'text-slate-500'}`}>
+                        <User className="w-3 h-3" />
+                        {isLandlordTicket && <span className="rounded-full bg-violet-100 px-2 py-0.5 text-violet-700">LL</span>}
+                        {senderName}
+                      </span>
+                      <span className={`inline-flex items-center gap-1 rounded-full px-2 py-1 text-[10px] font-semibold ${isActive ? 'bg-white/10 text-white/80' : `${p.bg} ${p.color}`}`}>{p.label}</span>
+                      <span className={`ml-auto text-[11px] ${isActive ? 'text-white/50' : 'text-slate-400'}`}>
+                        {formatDistanceToNow(new Date(ticket.updated_at), { addSuffix: true })}
+                      </span>
+                    </div>
+                  </button>
+                )
+              })}
+            </div>
+          )}
         </div>
       </div>
 
@@ -679,57 +689,67 @@ function InboxTab() {
   }
 
   return (
-    <div className="flex flex-1 overflow-hidden gap-0">
+    <div className="flex flex-1 overflow-hidden gap-4">
       {/* Enquiry list */}
-      <div className={`flex flex-col border-r border-gray-100 bg-white w-full lg:w-80 xl:w-96 shrink-0 ${selected ? 'hidden lg:flex' : 'flex'}`}>
-        <div className="flex items-center gap-1.5 px-3 py-3 border-b border-gray-100 overflow-x-auto no-scrollbar">
-          {(['all', 'open', 'replied', 'closed'] as const).map(key => (
-            <button key={key} onClick={() => setFilterStatus(key)}
-              className={`shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all ${
-                filterStatus === key ? 'bg-gray-900 text-white border-gray-900' : 'bg-white text-gray-500 border-gray-200 hover:border-gray-400'
-              }`}>
-              {key === 'all' ? 'All' : ENQUIRY_STATUS_META[key].label}
-              <span className={`text-[10px] font-bold ${filterStatus === key ? 'text-white/70' : 'text-gray-400'}`}>{counts[key]}</span>
-            </button>
-          ))}
+      <div className={`flex flex-col border border-gray-100 bg-white w-full lg:w-80 xl:w-96 shrink-0 overflow-hidden ${selected ? 'hidden lg:flex' : 'flex'}`}>
+        <div className="px-4 py-4 border-b border-gray-100">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <p className="text-xs uppercase tracking-[0.3em] text-slate-400">Inbox queue</p>
+              <h2 className="text-lg font-bold text-slate-950">Enquiries</h2>
+            </div>
+            <span className="text-xs text-slate-500">{enquiries.length} total</span>
+          </div>
+          <div className="mt-4 flex flex-wrap gap-2">
+            {(['all', 'open', 'replied', 'closed'] as const).map(key => (
+              <button key={key} onClick={() => setFilterStatus(key)}
+                className={`shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-2xl text-xs font-semibold border transition-all ${
+                  filterStatus === key ? 'bg-slate-900 text-white border-slate-900' : 'bg-slate-100 text-slate-600 border-slate-200 hover:border-slate-300'
+                }`}>
+                {key === 'all' ? 'All' : ENQUIRY_STATUS_META[key].label}
+                <span className={`text-[10px] font-bold ${filterStatus === key ? 'text-white/70' : 'text-slate-400'}`}>{counts[key]}</span>
+              </button>
+            ))}
+          </div>
         </div>
-        <div className="flex-1 overflow-y-auto">
+        <div className="flex-1 overflow-y-auto p-4 space-y-3">
           {loading ? (
-            <div className="p-4 space-y-2">
+            <div className="space-y-3">
               {Array.from({ length: 4 }).map((_, i) => (
-                <div key={i} className="p-4 rounded-xl animate-pulse space-y-2">
-                  <div className="h-4 bg-gray-200 rounded w-3/4" />
-                  <div className="h-3 bg-gray-100 rounded w-1/2" />
-                </div>
+                <div key={i} className="h-28 rounded-3xl bg-slate-100 animate-pulse" />
               ))}
             </div>
           ) : filtered.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-full p-8 text-center">
-              <Inbox className="w-10 h-10 text-gray-200 mb-3" />
-              <p className="text-sm font-semibold text-gray-400">No enquiries yet</p>
+              <Inbox className="w-10 h-10 text-slate-200 mb-3" />
+              <p className="text-sm font-semibold text-slate-400">No enquiries yet</p>
             </div>
-          ) : filtered.map(enq => {
-            const s = ENQUIRY_STATUS_META[enq.status]
-            const isActive = selectedId === enq.id
-            const tenantName = enq.tenants?.full_name ?? 'Tenant'
-            const propertyTitle = enq.properties?.title ?? 'Property'
-            return (
-              <button key={enq.id} onClick={() => setSelectedId(enq.id)}
-                className={`w-full text-left px-4 py-3.5 border-b border-gray-50 transition-all ${isActive ? 'bg-blue-600' : 'hover:bg-gray-50'}`}>
-                <div className="flex items-start justify-between gap-2">
-                  <p className={`font-semibold text-sm truncate ${isActive ? 'text-white' : 'text-gray-900'}`}>{tenantName}</p>
-                  <span className={`shrink-0 inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full ${isActive ? 'bg-white/20 text-white' : `${s.bg} ${s.color}`}`}>
-                    <span className={`w-1.5 h-1.5 rounded-full ${isActive ? 'bg-white' : s.dot}`} />{s.label}
-                  </span>
-                </div>
-                <p className={`text-xs truncate mt-0.5 ${isActive ? 'text-white/80' : 'text-gray-500'}`}>{propertyTitle}</p>
-                <p className={`text-xs mt-1 line-clamp-1 ${isActive ? 'text-white/60' : 'text-gray-400'}`}>{enq.message}</p>
-                <p className={`text-[11px] mt-1 ${isActive ? 'text-white/50' : 'text-gray-400'}`}>
-                  {formatDistanceToNow(new Date(enq.created_at), { addSuffix: true })}
-                </p>
-              </button>
-            )
-          })}
+          ) : (
+            <div className="space-y-3">
+              {filtered.map(enq => {
+                const s = ENQUIRY_STATUS_META[enq.status]
+                const isActive = selectedId === enq.id
+                const tenantName = enq.tenants?.full_name ?? 'Tenant'
+                const propertyTitle = enq.properties?.title ?? 'Property'
+                return (
+                  <button key={enq.id} onClick={() => setSelectedId(enq.id)}
+                    className={`w-full text-left rounded-3xl border px-4 py-4 transition-all ${isActive ? 'border-slate-900 bg-slate-950 text-white shadow-lg' : 'border-slate-200 bg-white hover:border-slate-300 hover:shadow-sm'}`}>
+                    <div className="flex items-start justify-between gap-3">
+                      <p className={`font-semibold text-sm truncate ${isActive ? 'text-white' : 'text-slate-950'}`}>{tenantName}</p>
+                      <span className={`shrink-0 inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full ${isActive ? 'bg-white/15 text-white' : `${s.bg} ${s.color}`}`}>
+                        <span className={`w-1.5 h-1.5 rounded-full ${isActive ? 'bg-white' : s.dot}`} />{s.label}
+                      </span>
+                    </div>
+                    <p className={`text-xs truncate mt-2 ${isActive ? 'text-white/80' : 'text-slate-500'}`}>{propertyTitle}</p>
+                    <p className={`text-xs mt-3 line-clamp-2 ${isActive ? 'text-white/70' : 'text-slate-500'}`}>{enq.message}</p>
+                    <p className={`text-[11px] mt-3 ${isActive ? 'text-white/50' : 'text-slate-400'}`}>
+                      {formatDistanceToNow(new Date(enq.created_at), { addSuffix: true })}
+                    </p>
+                  </button>
+                )
+              })}
+            </div>
+          )}
         </div>
       </div>
 
@@ -782,31 +802,40 @@ export default function AdminSupportPage() {
 
         <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
           {/* Page header */}
-          <header className="flex items-center justify-between pl-14 pr-4 md:px-6 py-3.5 bg-white border-b border-gray-100 shrink-0">
-            <div>
-              <h1 className="text-base font-extrabold text-gray-900">Support & Inbox</h1>
-              <p className="text-xs text-gray-400 mt-0.5">Manage tickets and property enquiries</p>
+          <header className="bg-gradient-to-r from-slate-950 via-slate-900 to-slate-800 text-white border-b border-slate-800 shadow-sm shrink-0">
+            <div className="px-4 md:px-6 py-6 max-w-7xl mx-auto">
+              <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+                <div className="min-w-0">
+                  <p className="text-xs uppercase tracking-[0.3em] text-slate-400">Support hub</p>
+                  <h1 className="mt-2 text-3xl font-extrabold tracking-tight">Support & enquiries</h1>
+                  <p className="mt-2 max-w-2xl text-sm text-slate-300">Manage tickets, respond to enquiries, and keep customer communications moving.</p>
+                </div>
+                <div className="rounded-3xl border border-white/15 bg-white/10 px-5 py-3 text-sm shadow-sm">
+                  <p className="text-[11px] uppercase tracking-[0.3em] text-slate-300">Open enquiries</p>
+                  <p className="mt-1 text-2xl font-semibold text-white">{openCount}</p>
+                </div>
+              </div>
             </div>
           </header>
 
           {/* Tabs */}
-          <div className="flex items-center gap-1.5 px-4 md:px-6 py-3 bg-white border-b border-gray-100 shrink-0">
+          <div className="flex items-center gap-2 px-4 md:px-6 py-4 bg-white border-b border-slate-200 shrink-0">
             <button onClick={() => setTab('support')}
-              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all ${
-                tab === 'support' ? 'bg-gray-900 text-white' : 'text-gray-500 hover:text-gray-900 hover:bg-gray-100'
+              className={`flex items-center gap-2 px-4 py-2 rounded-2xl text-sm font-semibold transition-all ${
+                tab === 'support' ? 'bg-slate-950 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-100'
               }`}>
               <HeadphonesIcon className="w-4 h-4" />
               Support
             </button>
             <button onClick={() => setTab('inbox')}
-              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all relative ${
-                tab === 'inbox' ? 'bg-gray-900 text-white' : 'text-gray-500 hover:text-gray-900 hover:bg-gray-100'
+              className={`flex items-center gap-2 px-4 py-2 rounded-2xl text-sm font-semibold transition-all relative ${
+                tab === 'inbox' ? 'bg-slate-950 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-100'
               }`}>
               <Inbox className="w-4 h-4" />
               Enquiries
               {openCount > 0 && (
                 <span className={`inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full text-[10px] font-bold ${
-                  tab === 'inbox' ? 'bg-white text-gray-900' : 'bg-blue-600 text-white'
+                  tab === 'inbox' ? 'bg-white text-slate-950' : 'bg-blue-600 text-white'
                 }`}>
                   {openCount > 99 ? '99+' : openCount}
                 </span>

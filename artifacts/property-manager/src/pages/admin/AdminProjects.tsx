@@ -157,6 +157,11 @@ export default function AdminProjects() {
   const displayName = user?.email ? user.email.split('@')[0] : 'Admin'
   const totalUnits = projects.reduce((s, p) => s + (p.units || 0), 0)
   const totalSold  = projects.reduce((s, p) => s + (p.sold  || 0), 0)
+  const averageProgress = projects.length > 0 ? Math.round(projects.reduce((s, p) => s + p.progress, 0) / projects.length) : 0
+  const statusTotals = projects.reduce((acc, project) => {
+    acc[project.status] = (acc[project.status] ?? 0) + 1
+    return acc
+  }, {} as Record<ProjectStatus, number>)
 
   const F = (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) =>
     setForm(f => ({ ...f, [k]: e.target.type === 'number' ? Number(e.target.value) : e.target.value }))
@@ -197,192 +202,263 @@ export default function AdminProjects() {
             subtitle="Manage off-plan developments"
             action={
               <button type="button" onClick={openAdd}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-xl transition-colors shadow-sm">
+                className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-2xl transition-colors shadow-sm">
                 <Plus className="w-4 h-4" />
                 <span className="hidden sm:inline">Add Project</span>
               </button>
             }
           />
 
-          <main className="flex-1 overflow-y-auto p-4 md:p-6 pb-24 md:pb-6 space-y-5" onClick={() => setMenuOpen(null)}>
-            {loading ? (
-              <div className="flex items-center justify-center py-40">
-                <div className="animate-spin w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full" />
-              </div>
-            ) : (<>
-            {/* Toast */}
-            {toast && (
-              <div className={`fixed top-5 right-5 z-50 flex items-center gap-2.5 px-4 py-3 rounded-2xl shadow-xl text-sm font-semibold text-white ${toast.ok ? 'bg-emerald-600' : 'bg-red-600'}`}>
-                {toast.ok ? <CheckCircle className="w-4 h-4" /> : <AlertCircle className="w-4 h-4" />}
-                {toast.msg}
-              </div>
-            )}
-
-            {/* KPI strip */}
-            <div className="grid grid-cols-3 gap-3">
-              {[
-                { label: 'Total Projects', value: projects.length, color: 'text-blue-600', bg: 'bg-blue-50' },
-                { label: 'Units Sold', value: `${totalSold} / ${totalUnits}`, color: 'text-emerald-600', bg: 'bg-emerald-50' },
-                { label: 'Avg Progress', value: projects.length > 0 ? `${Math.round(projects.reduce((s, p) => s + p.progress, 0) / projects.length)}%` : '—', color: 'text-violet-600', bg: 'bg-violet-50' },
-              ].map(s => (
-                <div key={s.label} className="bg-white rounded-2xl border border-gray-100 shadow-sm px-4 py-3.5">
-                  <p className="text-xl font-extrabold text-gray-900">{s.value}</p>
-                  <p className="text-xs text-gray-400 mt-0.5">{s.label}</p>
+          <main className="flex-1 overflow-hidden">
+            <div className="h-full overflow-y-auto p-4 md:p-6">
+              {loading ? (
+                <div className="flex items-center justify-center py-40">
+                  <div className="animate-spin w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full" />
                 </div>
-              ))}
-            </div>
-
-            {/* Filters */}
-            <div className="flex items-center gap-2 flex-wrap">
-              <div className="flex items-center gap-2 flex-1 min-w-[200px] bg-white border border-gray-200 rounded-xl px-3.5 py-2.5 shadow-sm focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-blue-500 transition-all">
-                <Search className="w-4 h-4 text-gray-400 shrink-0" />
-                <input value={search} onChange={e => setSearch(e.target.value)}
-                  placeholder="Search projects, developers…"
-                  className="flex-1 text-sm text-gray-700 placeholder-gray-400 focus:outline-none bg-transparent" />
-              </div>
-              {categories.map(cat => (
-                <button key={cat} type="button" onClick={() => setCatFilter(cat)}
-                  className={`shrink-0 px-3.5 py-1.5 rounded-xl text-xs font-semibold border transition-all ${
-                    catFilter === cat
-                      ? 'bg-gray-900 text-white border-gray-900'
-                      : 'bg-white text-gray-600 border-gray-200 hover:border-gray-400'
-                  }`}>
-                  {cat === 'all' ? 'All' : cat}
-                </button>
-              ))}
-            </div>
-
-            {/* Grid */}
-            {filtered.length === 0 ? (
-              <div className="bg-white rounded-2xl border border-gray-100 p-20 text-center shadow-sm">
-                <Building2 className="w-12 h-12 text-gray-200 mx-auto mb-4" />
-                <p className="text-gray-800 font-bold text-base mb-1">{projects.length === 0 ? 'No projects yet' : 'No projects match your filter'}</p>
-                <p className="text-sm text-gray-400 mb-5">
-                  {projects.length === 0
-                    ? 'Add your first development project and it will appear on the user dashboard.'
-                    : 'Try adjusting your search or filter.'}
-                </p>
-                {projects.length === 0 && (
-                  <button type="button" onClick={openAdd}
-                    className="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-xl transition-colors">
-                    <Plus className="w-4 h-4" /> Add First Project
-                  </button>
-                )}
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                {filtered.map(p => {
-                  const soldPct  = p.units > 0 ? Math.round((p.sold / p.units) * 100) : 0
-                  const catColor = CATEGORY_COLORS[p.category] ?? 'bg-gray-100 text-gray-600'
-                  const sm       = STATUS_META[p.status] ?? STATUS_META.active
-                  return (
-                    <div key={p.id} className="bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-sm hover:shadow-md transition-all duration-200 group">
-                      {/* Image */}
-                      <div className="relative h-48 overflow-hidden bg-gray-100">
-                        {p.image ? (
-                          <img src={p.image} alt={p.name}
-                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                            onError={(e: any) => { e.currentTarget.style.display = 'none' }} />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center">
-                            <Building2 className="w-14 h-14 text-gray-200" />
-                          </div>
-                        )}
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />
-                        <div className="absolute bottom-3 left-4 right-4">
-                          <h3 className="text-base font-extrabold text-white leading-tight">{p.name}</h3>
-                          <div className="flex items-center gap-1 text-white/70 text-xs mt-0.5">
-                            <MapPin className="w-3 h-3" />{p.location}
-                          </div>
+              ) : (
+                <div className="grid gap-5 xl:grid-cols-[1.7fr_0.9fr]">
+                  <section className="space-y-5">
+                    {/* Hero summary */}
+                    <div className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-[0_24px_50px_-30px_rgba(15,23,42,0.2)]">
+                      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                        <div>
+                          <p className="text-xs uppercase tracking-[0.3em] text-slate-400">Project dashboard</p>
+                          <h1 className="mt-2 text-3xl font-extrabold text-slate-950">Developments</h1>
+                          <p className="mt-2 max-w-2xl text-sm text-slate-500">Manage active launches, monitor sales progress, and keep your portfolio organized.</p>
                         </div>
-                        <span className={`absolute top-3 left-3 px-2 py-0.5 rounded-lg text-[11px] font-bold ${catColor}`}>{p.category}</span>
-                        <span className={`absolute top-3 right-12 px-2 py-0.5 rounded-lg text-[11px] font-bold bg-white/90 backdrop-blur ${progressText(p.progress)}`}>{p.progress}%</span>
-
-                        {/* Action menu */}
-                        <div className="absolute top-2.5 right-2.5" onClick={e => e.stopPropagation()}>
-                          <button type="button" onClick={() => setMenuOpen(menuOpen === p.id ? null : p.id)}
-                            className="w-8 h-8 flex items-center justify-center rounded-lg bg-white/90 backdrop-blur hover:bg-white text-gray-700 shadow-sm transition-all">
-                            <MoreVertical className="w-4 h-4" />
-                          </button>
-                          {menuOpen === p.id && (
-                            <div className="absolute top-9 right-0 bg-white rounded-2xl shadow-xl border border-gray-100 py-1.5 min-w-[160px] z-10">
-                              <button type="button" onClick={() => openEdit(p)}
-                                className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
-                                <Pencil className="w-3.5 h-3.5 text-gray-400" /> Edit
-                              </button>
-                              <div className="border-t border-gray-100 my-1" />
-                              <p className="px-4 py-1 text-[10px] font-bold uppercase tracking-wide text-gray-400">Status</p>
-                              {(Object.keys(STATUS_META) as ProjectStatus[]).map(st => (
-                                <button key={st} type="button" onClick={() => changeStatus(p.id, st)}
-                                  className={`w-full flex items-center gap-2.5 px-4 py-2 text-sm transition-colors ${p.status === st ? 'text-blue-700 bg-blue-50' : 'text-gray-700 hover:bg-gray-50'}`}>
-                                  <span className={`w-2 h-2 rounded-full ${STATUS_META[st].dot}`} />{STATUS_META[st].label}
-                                </button>
-                              ))}
-                              <div className="border-t border-gray-100 my-1" />
-                              <button type="button" onClick={() => { setDeleteId(p.id); setMenuOpen(null) }}
-                                className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors">
-                                <Trash2 className="w-3.5 h-3.5" /> Delete
-                              </button>
-                            </div>
-                          )}
+                        <div className="rounded-3xl border border-slate-100 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700">
+                          {projects.length} projects • {averageProgress}% avg progress
                         </div>
                       </div>
 
-                      {/* Content */}
-                      <div className="p-4">
-                        <div className="flex items-center justify-between mb-3">
-                          <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold ${sm.bg} ${sm.text}`}>
-                            <span className={`w-1.5 h-1.5 rounded-full ${sm.dot}`} />{sm.label}
-                          </span>
-                          <span className="text-xs text-gray-400 font-medium">{p.developer}</span>
+                      <div className="mt-6 grid gap-3 sm:grid-cols-3">
+                        <div className="rounded-3xl border border-slate-100 bg-slate-50 p-4">
+                          <p className="text-sm text-slate-500">Total projects</p>
+                          <p className="mt-2 text-3xl font-semibold text-slate-950">{projects.length}</p>
                         </div>
-
-                        {p.description && <p className="text-xs text-gray-500 leading-relaxed mb-3 line-clamp-2">{p.description}</p>}
-
-                        <div className="space-y-2.5 mb-3">
-                          <div>
-                            <div className="flex items-center justify-between text-xs mb-1">
-                              <span className="text-gray-500">Construction</span>
-                              <span className={`font-bold ${progressText(p.progress)}`}>{p.progress}%</span>
-                            </div>
-                            <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                              <div className={`h-full rounded-full ${progressColor(p.progress)}`} style={{ width: `${p.progress}%` }} />
-                            </div>
-                          </div>
-                          {p.units > 0 && (
-                            <div>
-                              <div className="flex items-center justify-between text-xs mb-1">
-                                <span className="text-gray-500">Units Sold</span>
-                                <span className="font-bold text-gray-700">{p.sold}/{p.units}</span>
-                              </div>
-                              <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                                <div className="h-full rounded-full bg-violet-500" style={{ width: `${soldPct}%` }} />
-                              </div>
-                            </div>
-                          )}
+                        <div className="rounded-3xl border border-slate-100 bg-emerald-50 p-4">
+                          <p className="text-sm text-emerald-700">Units sold</p>
+                          <p className="mt-2 text-3xl font-semibold text-emerald-900">{totalSold} / {totalUnits}</p>
                         </div>
+                        <div className="rounded-3xl border border-slate-100 bg-blue-50 p-4">
+                          <p className="text-sm text-blue-700">Active launches</p>
+                          <p className="mt-2 text-3xl font-semibold text-blue-900">{statusTotals.active ?? 0}</p>
+                        </div>
+                      </div>
+                    </div>
 
-                        <div className="grid grid-cols-3 gap-2 pt-3 border-t border-gray-100">
-                          <div>
-                            <p className="text-[10px] text-gray-400 uppercase tracking-wide mb-0.5">From</p>
-                            <p className="text-sm font-bold text-gray-900">{p.price > 0 ? `₦${(p.price / 1_000_000).toFixed(0)}M` : '—'}</p>
+                    {/* Filters */}
+                    <div className="rounded-[32px] border border-slate-200 bg-white p-5 shadow-sm">
+                      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                        <div>
+                          <p className="text-xs uppercase tracking-[0.3em] text-slate-400">Search & filter</p>
+                          <h2 className="mt-2 text-xl font-semibold text-slate-950">Find the right project quickly</h2>
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          {categories.map(cat => (
+                            <button key={cat} type="button" onClick={() => setCatFilter(cat)}
+                              className={`shrink-0 rounded-2xl px-4 py-2 text-sm font-semibold transition ${
+                                catFilter === cat ? 'bg-slate-950 text-white shadow-sm' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                              }`}>
+                              {cat === 'all' ? 'All categories' : cat}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-center">
+                        <div className="flex-1 rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 shadow-sm flex items-center gap-3">
+                          <Search className="w-4 h-4 text-slate-400" />
+                          <input value={search} onChange={e => setSearch(e.target.value)}
+                            placeholder="Search projects, developers or locations"
+                            className="w-full bg-transparent text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none" />
+                        </div>
+                        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 flex-1">
+                          <div className="rounded-3xl border border-slate-200 bg-white px-4 py-3 text-sm">
+                            <p className="text-xs text-slate-500">Coming soon</p>
+                            <p className="mt-2 text-lg font-semibold text-slate-950">{statusTotals.coming_soon ?? 0}</p>
                           </div>
-                          <div>
-                            <p className="text-[10px] text-gray-400 uppercase tracking-wide mb-0.5">Down</p>
-                            <p className="text-sm font-bold text-gray-900">{p.down}%</p>
+                          <div className="rounded-3xl border border-slate-200 bg-white px-4 py-3 text-sm">
+                            <p className="text-xs text-slate-500">Completed</p>
+                            <p className="mt-2 text-lg font-semibold text-slate-950">{statusTotals.completed ?? 0}</p>
                           </div>
-                          <div>
-                            <p className="text-[10px] text-gray-400 uppercase tracking-wide mb-0.5">Completion</p>
-                            <p className="text-sm font-bold text-gray-900">{p.completion || '—'}</p>
+                          <div className="rounded-3xl border border-slate-200 bg-white px-4 py-3 text-sm">
+                            <p className="text-xs text-slate-500">On hold</p>
+                            <p className="mt-2 text-lg font-semibold text-slate-950">{statusTotals.on_hold ?? 0}</p>
                           </div>
                         </div>
                       </div>
                     </div>
-                  )
-                })}
-              </div>
-            )}
-          </>)} {/* end loading conditional */}
+
+                    {/* Project cards */}
+                    {filtered.length === 0 ? (
+                      <div className="rounded-[32px] border border-slate-200 bg-white p-16 text-center shadow-sm">
+                        <Building2 className="w-12 h-12 text-slate-200 mx-auto mb-4" />
+                        <p className="text-lg font-semibold text-slate-900 mb-2">{projects.length === 0 ? 'No projects yet' : 'No projects match your filter'}</p>
+                        <p className="text-sm text-slate-500 mb-5">
+                          {projects.length === 0
+                            ? 'Add your first development project and it will appear on the user dashboard.'
+                            : 'Try adjusting your search or filter.'}
+                        </p>
+                        {projects.length === 0 && (
+                          <button type="button" onClick={openAdd}
+                            className="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-2xl transition-colors">
+                            <Plus className="w-4 h-4" /> Add Project
+                          </button>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                        {filtered.map(p => {
+                          const soldPct  = p.units > 0 ? Math.round((p.sold / p.units) * 100) : 0
+                          const catColor = CATEGORY_COLORS[p.category] ?? 'bg-gray-100 text-gray-600'
+                          const sm       = STATUS_META[p.status] ?? STATUS_META.active
+                          return (
+                            <div key={p.id} className="group overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg">
+                              <div className="relative h-52 overflow-hidden bg-slate-100">
+                                {p.image ? (
+                                  <img src={p.image} alt={p.name}
+                                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                                    onError={(e: any) => { e.currentTarget.style.display = 'none' }} />
+                                ) : (
+                                  <div className="flex h-full items-center justify-center">
+                                    <Building2 className="w-14 h-14 text-slate-200" />
+                                  </div>
+                                )}
+                                <div className="absolute inset-0 bg-gradient-to-t from-slate-950/70 via-slate-950/10 to-transparent" />
+                                <div className="absolute left-4 bottom-4 right-4">
+                                  <h3 className="text-lg font-bold text-white leading-tight truncate">{p.name}</h3>
+                                  <p className="mt-1 text-xs text-slate-200 truncate">{p.location}</p>
+                                </div>
+                                <div className={`absolute top-3 left-3 rounded-2xl px-3 py-1 text-xs font-semibold ${catColor}`}>{p.category}</div>
+                                <div className="absolute top-3 right-3 rounded-2xl bg-white/95 px-3 py-1 text-xs font-semibold text-slate-700">{p.progress}%</div>
+                                <div className="absolute top-3 right-16" onClick={e => e.stopPropagation()}>
+                                  <button type="button" onClick={() => setMenuOpen(menuOpen === p.id ? null : p.id)}
+                                    className="w-9 h-9 rounded-2xl bg-white/90 text-slate-700 shadow-sm transition hover:bg-white">
+                                    <MoreVertical className="w-4 h-4" />
+                                  </button>
+                                  {menuOpen === p.id && (
+                                    <div className="absolute right-0 top-11 z-10 w-52 overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-xl">
+                                      <button type="button" onClick={() => openEdit(p)}
+                                        className="w-full flex items-center gap-2.5 px-4 py-3 text-sm text-slate-700 hover:bg-slate-50">
+                                        <Pencil className="w-3.5 h-3.5 text-slate-400" /> Edit
+                                      </button>
+                                      <div className="border-t border-slate-100" />
+                                      <div className="px-4 py-2 text-[10px] font-semibold uppercase tracking-[0.3em] text-slate-400">Status</div>
+                                      {(Object.keys(STATUS_META) as ProjectStatus[]).map(st => (
+                                        <button key={st} type="button" onClick={() => changeStatus(p.id, st)}
+                                          className={`w-full px-4 py-3 text-left text-sm transition ${p.status === st ? 'bg-slate-100 text-slate-900' : 'text-slate-600 hover:bg-slate-50'}`}>
+                                          <span className={`inline-flex h-2.5 w-2.5 rounded-full ${STATUS_META[st].dot} mr-2`} />{STATUS_META[st].label}
+                                        </button>
+                                      ))}
+                                      <div className="border-t border-slate-100" />
+                                      <button type="button" onClick={() => { setDeleteId(p.id); setMenuOpen(null) }}
+                                        className="w-full px-4 py-3 text-left text-sm text-red-600 hover:bg-red-50">
+                                        <Trash2 className="inline-block w-3.5 h-3.5 mr-2" /> Delete
+                                      </button>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+
+                              <div className="space-y-4 p-5">
+                                <div className="flex items-center justify-between gap-3">
+                                  <span className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold ${sm.bg} ${sm.text}`}>
+                                    <span className={`h-2.5 w-2.5 rounded-full ${sm.dot}`} />{sm.label}
+                                  </span>
+                                  <span className="text-xs font-semibold text-slate-500">{p.developer}</span>
+                                </div>
+                                <p className="text-sm leading-6 text-slate-600 line-clamp-2">{p.description}</p>
+
+                                <div className="space-y-3">
+                                  <div>
+                                    <div className="flex items-center justify-between text-xs text-slate-500 mb-1">
+                                      <span>Construction</span>
+                                      <span className={`font-semibold ${progressText(p.progress)}`}>{p.progress}%</span>
+                                    </div>
+                                    <div className="h-2.5 overflow-hidden rounded-full bg-slate-100">
+                                      <div className={`h-full rounded-full ${progressColor(p.progress)}`} style={{ width: `${p.progress}%` }} />
+                                    </div>
+                                  </div>
+                                  {p.units > 0 && (
+                                    <div>
+                                      <div className="flex items-center justify-between text-xs text-slate-500 mb-1">
+                                        <span>Units sold</span>
+                                        <span className="font-semibold text-slate-900">{p.sold}/{p.units}</span>
+                                      </div>
+                                      <div className="h-2.5 overflow-hidden rounded-full bg-slate-100">
+                                        <div className="h-full rounded-full bg-violet-500" style={{ width: `${soldPct}%` }} />
+                                      </div>
+                                    </div>
+                                  )}
+                                </div>
+
+                                <div className="grid grid-cols-3 gap-2 pt-4 border-t border-slate-100 text-xs text-slate-500">
+                                  <div>
+                                    <div className="uppercase tracking-[0.2em] text-[10px]">Price</div>
+                                    <div className="mt-1 font-semibold text-slate-900">{p.price > 0 ? `₦${(p.price / 1_000_000).toFixed(0)}M` : '—'}</div>
+                                  </div>
+                                  <div>
+                                    <div className="uppercase tracking-[0.2em] text-[10px]">Down</div>
+                                    <div className="mt-1 font-semibold text-slate-900">{p.down}%</div>
+                                  </div>
+                                  <div>
+                                    <div className="uppercase tracking-[0.2em] text-[10px]">Completion</div>
+                                    <div className="mt-1 font-semibold text-slate-900">{p.completion || '—'}</div>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    )}
+                  </section>
+
+                  <aside className="space-y-5">
+                    <div className="rounded-[32px] border border-slate-200 bg-slate-950 p-6 text-white shadow-2xl shadow-slate-900/20">
+                      <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-400">Quick insights</p>
+                      <h2 className="mt-4 text-2xl font-extrabold">Portfolio summary</h2>
+                      <p className="mt-3 text-sm leading-6 text-slate-300">A quick snapshot of the development pipeline and sales momentum.</p>
+                      <div className="mt-6 grid gap-3">
+                        {[
+                          { label: 'Active projects', value: statusTotals.active ?? 0 },
+                          { label: 'Average progress', value: `${averageProgress}%` },
+                          { label: 'Coming soon', value: statusTotals.coming_soon ?? 0 },
+                          { label: 'Completed', value: statusTotals.completed ?? 0 },
+                        ].map(item => (
+                          <div key={item.label} className="rounded-3xl bg-white/5 p-4">
+                            <p className="text-sm text-slate-300">{item.label}</p>
+                            <p className="mt-2 text-3xl font-semibold text-white">{item.value}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm">
+                      <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-400">Latest projects</p>
+                      <div className="mt-4 space-y-3">
+                        {projects.slice(0, 4).map(p => (
+                          <div key={p.id} className="rounded-3xl border border-slate-100 bg-slate-50 p-4">
+                            <div className="flex items-start gap-3">
+                              <div className="mt-1 h-10 w-10 rounded-3xl bg-slate-200 flex items-center justify-center text-slate-500">
+                                <Building2 className="w-5 h-5" />
+                              </div>
+                              <div className="min-w-0">
+                                <p className="text-sm font-semibold text-slate-950 truncate">{p.name}</p>
+                                <p className="text-xs text-slate-500 truncate">{p.location}</p>
+                              </div>
+                              <span className="text-[11px] font-semibold text-slate-600">{p.progress}%</span>
+                            </div>
+                          </div>
+                        ))}
+                        {projects.length === 0 && <p className="text-sm text-slate-500">No projects yet.</p>}
+                      </div>
+                    </div>
+                  </aside>
+                </div>
+              )}
+            </div>
           </main>
         </div>
       </div>
