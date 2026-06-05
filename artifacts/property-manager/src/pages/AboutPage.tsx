@@ -37,14 +37,14 @@ const values = [
   },
 ]
 
-const milestones = [
-  { year: '2022', title: 'The Problem Was Personal', desc: 'Our founder spent three months and paid two agents to find a 2-bedroom in Lagos. Both deals fell through. The idea for LIVAREX was born out of that frustration.' },
-  { year: '2023', title: 'Building the Foundation', desc: 'We quietly onboarded our first 50 verified landlords across Lagos and Abuja, testing every assumption about what renters actually needed.' },
-  { year: '2023', title: 'First 1,000 Listings', desc: 'By the end of our beta, we had over 1,000 active listings with zero agent fees and a landlord verification rate of 100%.' },
-  { year: '2024', title: 'Expanding Nationally', desc: 'LIVAREX expanded to Port Harcourt, Ibadan, Kano, and 32 more cities, making us the most geographically diverse verified property platform in Nigeria.' },
-  { year: '2025', title: 'Off-Plan & Developments', desc: 'We introduced the Projects marketplace, allowing developers to showcase off-plan developments to a pre-qualified audience of serious buyers.' },
-  { year: '2026', title: 'Today & Beyond', desc: 'With 2,400+ active listings and 850+ verified landlords, LIVAREX is Nigeria\'s most trusted property platform. We\'re just getting started.' },
-]
+// const milestones = [
+//   { year: '2022', title: 'The Problem Was Personal', desc: 'Our founder spent three months and paid two agents to find a 2-bedroom in Lagos. Both deals fell through. The idea for LIVAREX was born out of that frustration.' },
+//   { year: '2023', title: 'Building the Foundation', desc: 'We quietly onboarded our first 50 verified landlords across Lagos and Abuja, testing every assumption about what renters actually needed.' },
+//   { year: '2023', title: 'First 1,000 Listings', desc: 'By the end of our beta, we had over 1,000 active listings with zero agent fees and a landlord verification rate of 100%.' },
+//   { year: '2024', title: 'Expanding Nationally', desc: 'LIVAREX expanded to Port Harcourt, Ibadan, Kano, and 32 more cities, making us the most geographically diverse verified property platform in Nigeria.' },
+//   { year: '2025', title: 'Off-Plan & Developments', desc: 'We introduced the Projects marketplace, allowing developers to showcase off-plan developments to a pre-qualified audience of serious buyers.' },
+//   { year: '2026', title: 'Today & Beyond', desc: 'With 2,400+ active listings and 850+ verified landlords, LIVAREX is Nigeria\'s most trusted property platform. We\'re just getting started.' },
+// ]
 
 const team = [
   { name: 'Shorinmade Ibrahim', role: 'CEO & Co-Founder', bio: 'Former real estate agent who spent 8 years watching good tenants get scammed. Built LIVAREX to fix it.', initials: 'SI', color: 'bg-blue-600' },
@@ -199,7 +199,7 @@ export default function AboutPage() {
       </section>
 
       {/* ── TIMELINE — white ── */}
-      <section className="bg-white py-24">
+      {/* <section className="bg-white py-24">
         <div className="max-w-6xl mx-auto px-5 sm:px-8">
           <div className="text-center mb-16">
             <p className="text-blue-600 font-bold text-sm uppercase tracking-widest mb-4">Our Journey</p>
@@ -223,7 +223,7 @@ export default function AboutPage() {
             </div>
           </div>
         </div>
-      </section>
+      </section> */}
 
       {/* ── TEAM — dark ── */}
       <section className="bg-gray-950 py-24 relative overflow-hidden">
@@ -260,12 +260,10 @@ export default function AboutPage() {
               </h2>
               <div className="space-y-4">
                 {[
-                  'Zero agent fees — ever. For renters and landlords.',
+                  'Every landlord completes identity verification before listings go live.',
                   'Every landlord verified before any listing goes live.',
-                  'Direct WhatsApp contact — talk to the property owner, not a middleman.',
-                  'Real-time availability — if it\'s listed, it\'s available.',
-                  'Cover 36 cities across Nigeria and growing.',
-                  'Off-plan developments from vetted developers.',
+                  'Direct WhatsApp contact.',
+                  'Every property is tied to a verified identity.',
                 ].map(item => (
                   <div key={item} className="flex items-start gap-3">
                     <CheckCircle className="w-5 h-5 text-blue-600 shrink-0 mt-0.5" />
@@ -276,7 +274,7 @@ export default function AboutPage() {
             </div>
             <div className="grid grid-cols-2 gap-4">
               {[
-                { icon: Globe, label: '36 Cities', sub: 'Across Nigeria', color: 'bg-blue-50 text-blue-600' },
+                { icon: Globe, label: '2 Cities', sub: 'Across Nigeria', color: 'bg-blue-50 text-blue-600' },
                 { icon: Shield, label: '100% Verified', sub: 'Landlord rate', color: 'bg-emerald-50 text-emerald-600' },
                 { icon: TrendingUp, label: '₦0 Fees', sub: 'Always free to browse', color: 'bg-violet-50 text-violet-600' },
                 { icon: Heart, label: '4.9/5 Rating', sub: 'Average user review', color: 'bg-rose-50 text-rose-600' },
