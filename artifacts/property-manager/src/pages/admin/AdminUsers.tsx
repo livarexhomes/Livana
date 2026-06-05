@@ -512,43 +512,6 @@ export default function AdminUsers() {
                   </div>
                 )}
               </div>
-
-              <div className="space-y-4">
-                <div className="rounded-3xl border border-slate-200 bg-gradient-to-br from-slate-950 to-slate-900 p-6 text-white shadow-2xl shadow-slate-950/20">
-                  <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-400/80">Quick insights</p>
-                  <h3 className="mt-4 text-2xl font-extrabold">Tenant ecosystem at a glance</h3>
-                  <p className="mt-2 text-sm text-slate-300">Track tenant activity, recent signups, and account health from a single panel.</p>
-                  <div className="mt-6 grid gap-3">
-                    {[
-                      { label: 'Total users', value: tenants.length },
-                      { label: 'Active', value: activeCount },
-                      { label: 'Suspended', value: suspendedCount },
-                    ].map(item => (
-                      <div key={item.label} className="rounded-3xl bg-white/10 p-4">
-                        <p className="text-sm text-slate-300">{item.label}</p>
-                        <p className="mt-2 text-3xl font-semibold text-white">{item.value}</p>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-                <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-                  <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-400">Status distribution</p>
-                  <div className="mt-4 space-y-3">
-                    <div className="flex items-center justify-between rounded-3xl bg-slate-50 px-4 py-3">
-                      <span className="text-sm font-medium text-slate-700">Active tenants</span>
-                      <span className="text-sm font-semibold text-slate-900">{activeCount}</span>
-                    </div>
-                    <div className="flex items-center justify-between rounded-3xl bg-slate-50 px-4 py-3">
-                      <span className="text-sm font-medium text-slate-700">Suspended accounts</span>
-                      <span className="text-sm font-semibold text-slate-900">{suspendedCount}</span>
-                    </div>
-                    <div className="flex items-center justify-between rounded-3xl bg-slate-50 px-4 py-3">
-                      <span className="text-sm font-medium text-slate-700">Joined this month</span>
-                      <span className="text-sm font-semibold text-slate-900">{monthlyCount}</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
             </div>
           </main>
         </div>
