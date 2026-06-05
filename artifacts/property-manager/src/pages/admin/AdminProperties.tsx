@@ -608,21 +608,6 @@ export default function AdminProperties() {
               </div>
             )}
           </div>
-
-          <aside className="space-y-5">
-            <div className="rounded-[32px] border border-slate-200 bg-white p-5 shadow-sm">
-              <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">Recent listings</p>
-              <div className="mt-4 space-y-3">
-                {filtered.slice(0, 3).map(p => (
-                  <div key={p.id} className="rounded-3xl border border-slate-100 bg-slate-50 p-4">
-                    <p className="text-sm font-semibold text-slate-950 truncate">{p.title}</p>
-                    <p className="mt-1 text-xs text-slate-500">{p.city} · ₦{Number(p.price).toLocaleString()}</p>
-                    <span className={`mt-3 inline-flex rounded-full px-3 py-1 text-[11px] font-semibold ${STATUS_META[p.status]?.cls ?? STATUS_META.available.cls}`}>{STATUS_META[p.status]?.label ?? 'Available'}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </aside>
         </div>
       </main>
     </div>

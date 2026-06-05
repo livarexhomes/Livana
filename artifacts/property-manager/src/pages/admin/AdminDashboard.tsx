@@ -43,6 +43,7 @@ export default function AdminDashboard() {
   })
   const [recentEnquiries, setRecentEnquiries] = useState<any[]>([])
   const [recentLandlords, setRecentLandlords] = useState<any[]>([])
+  const [recentListings, setRecentListings] = useState<any[]>([])
   const [cityStats, setCityStats] = useState<{ city: string; count: number }[]>([])
   const [typeStats, setTypeStats] = useState<{ name: string; value: number }[]>([])
   const [areaData, setAreaData] = useState<{ month: string; listings: number; enquiries: number }[]>([])
@@ -64,6 +65,7 @@ export default function AdminDashboard() {
         { count: enqCount },
         { data: enqData },
         { data: llData },
+        { data: recentProps },
         { data: cityData },
         { data: typeData },
         { data: propMonthly },
@@ -78,16 +80,7 @@ export default function AdminDashboard() {
         supabase.from('enquiries').select('id', { count: 'exact', head: true }),
         supabase.from('enquiries').select('*, properties(title, city), tenants(full_name)').order('created_at', { ascending: false }).limit(5),
         supabase.from('landlords').select('id, full_name, created_at').order('created_at', { ascending: false }).limit(4),
-        supabase.from('properties').select('city').limit(500),
-        supabase.from('properties').select('property_type').limit(500),
-        // Monthly listings for the current year
-        supabase.from('properties').select('created_at')
-          .gte('created_at', `${new Date().getFullYear()}-01-01`)
-          .lte('created_at', `${new Date().getFullYear()}-12-31`),
-        // Monthly enquiries for the current year
-        supabase.from('enquiries').select('created_at')
-          .gte('created_at', `${new Date().getFullYear()}-01-01`)
-          .lte('created_at', `${new Date().getFullYear()}-12-31`),
+        supabase.from('properties').select('id, title, city, price, status').order('created_at', { ascending: false }).limit(3),
       ])
 
       setStats({
@@ -97,6 +90,7 @@ export default function AdminDashboard() {
       })
       setRecentEnquiries(enqData ?? [])
       setRecentLandlords(llData ?? [])
+      setRecentListings(recentProps ?? [])
 
       // City breakdown
       const cityMap: Record<string, number> = {}
@@ -122,6 +116,13 @@ export default function AdminDashboard() {
   const rawName = user?.email ? user.email.split('@')[0] : 'Admin'
   const displayName = rawName.charAt(0).toUpperCase() + rawName.slice(1)
   const occupancyRate = stats.properties > 0 ? Math.round((stats.occupied / stats.properties) * 100) : 0
+
+  const PROPERTY_STATUS: Record<string, { label: string; cls: string }> = {
+    available: { label: 'Available', cls: 'bg-emerald-100 text-emerald-700' },
+    taken: { label: 'Taken', cls: 'bg-red-100 text-red-700' },
+    under_negotiation: { label: 'Negotiating', cls: 'bg-amber-100 text-amber-700' },
+    coming_soon: { label: 'Coming Soon', cls: 'bg-blue-100 text-blue-700' },
+  }
 
   const STAT_CARDS = [
     {
@@ -483,6 +484,38 @@ export default function AdminDashboard() {
                         })}
                       </div>
                     </div>
+                  </div>
+                </div>
+
+                {/* Recent listings */}
+                <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+                  <div className="flex items-center justify-between gap-4 mb-4">
+                    <div>
+                      <h2 className="text-sm font-bold text-gray-900">Recent Listings</h2>
+                      <p className="text-xs text-gray-400 mt-0.5">Latest properties added to the platform</p>
+                    </div>
+                    <Link href="/admin/properties" className="text-xs font-semibold text-blue-600 hover:text-blue-700 transition-colors flex items-center gap-1">
+                      View all <ArrowRight className="w-3 h-3" />
+                    </Link>
+                  </div>
+                  <div className="space-y-3">
+                    {recentListings.length === 0 ? (
+                      <p className="text-xs text-gray-400 py-6 text-center">No recent listings available</p>
+                    ) : (
+                      recentListings.map((p: any) => (
+                        <div key={p.id} className="rounded-3xl border border-slate-100 bg-slate-50 p-4">
+                          <div className="flex items-center justify-between gap-3">
+                            <div>
+                              <p className="text-sm font-semibold text-slate-950 truncate">{p.title}</p>
+                              <p className="mt-1 text-xs text-slate-500">{p.city} · ₦{Number(p.price).toLocaleString()}</p>
+                            </div>
+                            <span className={`inline-flex items-center rounded-full px-3 py-1 text-[11px] font-semibold ${PROPERTY_STATUS[p.status]?.cls ?? 'bg-gray-100 text-gray-600'}`}>
+                              {PROPERTY_STATUS[p.status]?.label ?? 'Unknown'}
+                            </span>
+                          </div>
+                        </div>
+                      ))
+                    )}
                   </div>
                 </div>
 
