@@ -81,6 +81,16 @@ export default function AdminDashboard() {
         supabase.from('enquiries').select('*, properties(title, city), tenants(full_name)').order('created_at', { ascending: false }).limit(5),
         supabase.from('landlords').select('id, full_name, created_at').order('created_at', { ascending: false }).limit(4),
         supabase.from('properties').select('id, title, city, price, status').order('created_at', { ascending: false }).limit(3),
+        supabase.from('properties').select('city').limit(500),
+        supabase.from('properties').select('property_type').limit(500),
+        // Monthly listings for the current year
+        supabase.from('properties').select('created_at')
+          .gte('created_at', `${new Date().getFullYear()}-01-01`)
+          .lte('created_at', `${new Date().getFullYear()}-12-31`),
+        // Monthly enquiries for the current year
+        supabase.from('enquiries').select('created_at')
+          .gte('created_at', `${new Date().getFullYear()}-01-01`)
+          .lte('created_at', `${new Date().getFullYear()}-12-31`),
       ])
 
       setStats({
