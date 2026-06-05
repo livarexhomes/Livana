@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react'
 import {
   Users, Search, MapPin, Phone,
   CheckCircle, Clock, XCircle, Ban, ShieldCheck,
-  ChevronRight, ArrowUpDown, Filter,
+  TrendingUp, ArrowUpRight, MoreHorizontal, Filter,
+  UserCheck, UserX, ChevronDown,
 } from 'lucide-react'
 import { Link } from 'wouter'
 import AdminSidebar from '../../components/AdminSidebar'
@@ -10,212 +11,252 @@ import AdminHeader from '../../components/AdminHeader'
 import AuthGuard from '../../components/AuthGuard'
 import { createClient } from '../../lib/supabase'
 
-// ─── Status config ────────────────────────────────────────────────────────────
-const STATUS_META: Record<string, { label: string; dot: string; ring: string; text: string; bg: string }> = {
-  approved:      { label: 'Approved',      dot: '#22d3a5', ring: 'rgba(34,211,165,0.18)',  text: '#22d3a5', bg: 'rgba(34,211,165,0.08)'  },
-  pending:       { label: 'KYC Pending',   dot: '#f59e0b', ring: 'rgba(245,158,11,0.18)',  text: '#f59e0b', bg: 'rgba(245,158,11,0.08)'  },
-  rejected:      { label: 'Rejected',      dot: '#f87171', ring: 'rgba(248,113,113,0.18)', text: '#f87171', bg: 'rgba(248,113,113,0.08)' },
-  suspended:     { label: 'Suspended',     dot: '#fb923c', ring: 'rgba(251,146,60,0.18)',  text: '#fb923c', bg: 'rgba(251,146,60,0.08)'  },
-  not_submitted: { label: 'Not Submitted', dot: '#6b7280', ring: 'rgba(107,114,128,0.18)', text: '#6b7280', bg: 'rgba(107,114,128,0.08)' },
+const STATUS_META: Record<string, {
+  label: string
+  icon: any
+  pill: string
+  dot: string
+  ring: string
+}> = {
+  approved: {
+    label: 'Approved',
+    icon: CheckCircle,
+    pill: 'bg-emerald-50 text-emerald-700 ring-emerald-200/60',
+    dot: 'bg-emerald-400',
+    ring: 'ring-emerald-100',
+  },
+  pending: {
+    label: 'KYC Pending',
+    icon: Clock,
+    pill: 'bg-amber-50 text-amber-700 ring-amber-200/60',
+    dot: 'bg-amber-400',
+    ring: 'ring-amber-100',
+  },
+  rejected: {
+    label: 'Rejected',
+    icon: XCircle,
+    pill: 'bg-red-50 text-red-600 ring-red-200/60',
+    dot: 'bg-red-400',
+    ring: 'ring-red-100',
+  },
+  suspended: {
+    label: 'Suspended',
+    icon: Ban,
+    pill: 'bg-orange-50 text-orange-700 ring-orange-200/60',
+    dot: 'bg-orange-400',
+    ring: 'ring-orange-100',
+  },
+  not_submitted: {
+    label: 'Not Submitted',
+    icon: Clock,
+    pill: 'bg-slate-100 text-slate-500 ring-slate-200/60',
+    dot: 'bg-slate-300',
+    ring: 'ring-slate-100',
+  },
 }
 
-// ─── Avatar colour palette ────────────────────────────────────────────────────
-const AVATAR_COLORS = [
-  { bg: '#3b2fc9', text: '#c4bfff' },
-  { bg: '#0f5a8c', text: '#7dd3fc' },
-  { bg: '#0d6e56', text: '#6ee7c7' },
-  { bg: '#7c2d85', text: '#e879f9' },
-  { bg: '#9a3412', text: '#fdba74' },
-  { bg: '#065f46', text: '#6ee7b7' },
-  { bg: '#1e3a5f', text: '#93c5fd' },
+// Carefully curated palette — soft but distinct
+const AVATAR_PALETTE = [
+  { bg: 'bg-violet-100', text: 'text-violet-700', border: 'ring-violet-200' },
+  { bg: 'bg-sky-100',    text: 'text-sky-700',    border: 'ring-sky-200'    },
+  { bg: 'bg-teal-100',   text: 'text-teal-700',   border: 'ring-teal-200'   },
+  { bg: 'bg-rose-100',   text: 'text-rose-700',   border: 'ring-rose-200'   },
+  { bg: 'bg-amber-100',  text: 'text-amber-700',  border: 'ring-amber-200'  },
+  { bg: 'bg-indigo-100', text: 'text-indigo-700', border: 'ring-indigo-200' },
+  { bg: 'bg-cyan-100',   text: 'text-cyan-700',   border: 'ring-cyan-200'   },
+  { bg: 'bg-lime-100',   text: 'text-lime-700',   border: 'ring-lime-200'   },
 ]
 
 function avatarColor(name: string) {
   let h = 0
   for (const c of name) h = (h * 31 + c.charCodeAt(0)) & 0xffff
-  return AVATAR_COLORS[h % AVATAR_COLORS.length]
+  return AVATAR_PALETTE[h % AVATAR_PALETTE.length]
 }
 
 function getInitials(name: string) {
-  return name.split(' ').slice(0, 2).map(w => w[0]).join('').toUpperCase()
+  return name
+    .split(' ')
+    .slice(0, 2)
+    .map(w => w[0])
+    .join('')
+    .toUpperCase()
 }
 
-// ─── Stat chip ────────────────────────────────────────────────────────────────
-function StatChip({ label, value, accent }: { label: string; value: number; accent?: string }) {
+function formatDate(iso: string) {
+  return new Date(iso).toLocaleDateString('en-GB', {
+    day: '2-digit', month: 'short', year: 'numeric',
+  })
+}
+
+// ─── Mini Stat Card ───────────────────────────────────────────────────────────
+function StatCard({
+  label, value, sub, accent,
+}: {
+  label: string; value: number; sub?: string; accent: string
+}) {
   return (
-    <div style={{
-      display: 'flex', flexDirection: 'column', gap: 2,
-      padding: '10px 16px',
-      background: 'rgba(255,255,255,0.04)',
-      border: '1px solid rgba(255,255,255,0.07)',
-      borderRadius: 12,
-    }}>
-      <span style={{ fontSize: 22, fontWeight: 700, color: accent ?? '#f1f5f9', fontFamily: '"DM Mono", "Fira Mono", monospace', letterSpacing: '-0.5px' }}>{value}</span>
-      <span style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#64748b' }}>{label}</span>
+    <div className="relative overflow-hidden rounded-2xl bg-white border border-slate-100 p-5 shadow-[0_1px_3px_rgba(0,0,0,0.06)] transition hover:shadow-[0_4px_16px_rgba(0,0,0,0.08)]">
+      <p className="text-[11px] font-semibold uppercase tracking-widest text-slate-400 mb-2">{label}</p>
+      <p className={`text-3xl font-bold tracking-tight ${accent}`}>{value.toLocaleString()}</p>
+      {sub && <p className="mt-1 text-xs text-slate-400">{sub}</p>}
+      <div className={`absolute -bottom-2 -right-2 h-14 w-14 rounded-full opacity-[0.07] ${accent.replace('text-', 'bg-')}`} />
     </div>
   )
 }
 
-// ─── Status badge ─────────────────────────────────────────────────────────────
-function StatusBadge({ status }: { status: string }) {
-  const m = STATUS_META[status] ?? STATUS_META.not_submitted
-  return (
-    <span style={{
-      display: 'inline-flex', alignItems: 'center', gap: 5,
-      padding: '3px 9px', borderRadius: 99,
-      background: m.bg, border: `1px solid ${m.ring}`,
-      fontSize: 11, fontWeight: 600, color: m.text,
-      letterSpacing: '0.02em', whiteSpace: 'nowrap',
-    }}>
-      <span style={{ width: 6, height: 6, borderRadius: '50%', background: m.dot, flexShrink: 0 }} />
-      {m.label}
-    </span>
-  )
-}
-
-// ─── Action button ────────────────────────────────────────────────────────────
-function ActionBtn({ children, variant = 'ghost', disabled, onClick }: {
-  children: React.ReactNode
-  variant?: 'ghost' | 'danger' | 'success' | 'warn' | 'indigo'
-  disabled?: boolean
-  onClick?: () => void
-}) {
-  const variants = {
-    ghost:  { bg: 'rgba(255,255,255,0.06)', color: '#94a3b8', border: 'rgba(255,255,255,0.08)' },
-    danger: { bg: 'rgba(248,113,113,0.09)', color: '#f87171', border: 'rgba(248,113,113,0.2)' },
-    success:{ bg: 'rgba(34,211,165,0.09)',  color: '#22d3a5', border: 'rgba(34,211,165,0.2)'  },
-    warn:   { bg: 'rgba(251,146,60,0.09)',  color: '#fb923c', border: 'rgba(251,146,60,0.2)'  },
-    indigo: { bg: 'rgba(129,140,248,0.09)', color: '#818cf8', border: 'rgba(129,140,248,0.2)' },
-  }
-  const v = variants[variant]
-  return (
-    <button
-      type="button"
-      disabled={disabled}
-      onClick={onClick}
-      style={{
-        padding: '5px 11px', borderRadius: 8, fontSize: 11, fontWeight: 600,
-        cursor: disabled ? 'not-allowed' : 'pointer', opacity: disabled ? 0.4 : 1,
-        background: v.bg, color: v.color, border: `1px solid ${v.border}`,
-        transition: 'opacity 0.15s', letterSpacing: '0.02em',
-      }}
-    >{children}</button>
-  )
-}
-
-// ─── Landlord row card ────────────────────────────────────────────────────────
-function LandlordCard({ l, processing, onStatus, onDelete }: {
+// ─── Landlord Row Card ────────────────────────────────────────────────────────
+function LandlordCard({
+  l, processing, onStatus, onDelete,
+}: {
   l: any
   processing: string | null
   onStatus: (id: string, status: string) => void
   onDelete: (id: string) => void
 }) {
-  const av = avatarColor(l.full_name)
+  const meta    = STATUS_META[l.status] ?? STATUS_META.not_submitted
+  const palette = avatarColor(l.full_name)
   const initials = getInitials(l.full_name)
-  const busy = processing === l.id
+  const busy    = processing === l.id
 
   return (
-    <div style={{
-      background: 'rgba(255,255,255,0.03)',
-      border: '1px solid rgba(255,255,255,0.07)',
-      borderRadius: 16,
-      padding: '14px 16px',
-      transition: 'border-color 0.15s, background 0.15s',
-      display: 'flex', flexDirection: 'column', gap: 10,
-    }}
-      onMouseEnter={e => {
-        ;(e.currentTarget as HTMLDivElement).style.borderColor = 'rgba(255,255,255,0.13)'
-        ;(e.currentTarget as HTMLDivElement).style.background = 'rgba(255,255,255,0.05)'
-      }}
-      onMouseLeave={e => {
-        ;(e.currentTarget as HTMLDivElement).style.borderColor = 'rgba(255,255,255,0.07)'
-        ;(e.currentTarget as HTMLDivElement).style.background = 'rgba(255,255,255,0.03)'
-      }}
+    <article
+      className="group relative flex flex-col gap-3 rounded-2xl border border-slate-100 bg-white p-4 shadow-[0_1px_4px_rgba(0,0,0,0.05)] transition-all duration-200
+        hover:border-slate-200 hover:shadow-[0_6px_24px_rgba(0,0,0,0.08)] hover:-translate-y-[1px]"
     >
       {/* Top row */}
-      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
+      <div className="flex items-start gap-3">
         {/* Avatar */}
-        <div style={{
-          width: 40, height: 40, borderRadius: 10, flexShrink: 0,
-          background: av.bg, display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontSize: 13, fontWeight: 700, color: av.text, letterSpacing: '0.04em',
-          fontFamily: '"DM Mono", "Fira Mono", monospace',
-        }}>{initials}</div>
+        <div
+          className={`relative flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ring-1 ${palette.bg} ${palette.text} ${palette.border}`}
+        >
+          <span className="text-[13px] font-semibold">{initials}</span>
+          {/* status dot */}
+          <span
+            className={`absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-white ${meta.dot}`}
+          />
+        </div>
 
-        {/* Info */}
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-            <span style={{ fontSize: 14, fontWeight: 600, color: '#e2e8f0', letterSpacing: '-0.01em', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+        {/* Name + meta */}
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="truncate text-[15px] font-semibold text-slate-900 leading-tight">
               {l.full_name}
             </span>
-            <StatusBadge status={l.status} />
+            <span
+              className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-semibold ring-1 ${meta.pill}`}
+            >
+              {meta.label}
+            </span>
           </div>
-          <div style={{ marginTop: 5, display: 'flex', gap: 14, flexWrap: 'wrap' }}>
-            <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, color: '#64748b' }}>
-              <MapPin size={12} />
+
+          <div className="mt-1.5 flex flex-wrap gap-x-4 gap-y-1">
+            <span className="inline-flex items-center gap-1 text-xs text-slate-400">
+              <MapPin className="h-3.5 w-3.5" />
               {l.city ?? '—'}
             </span>
-            <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, color: '#64748b' }}>
-              <Phone size={12} />
+            <span className="inline-flex items-center gap-1 text-xs text-slate-400">
+              <Phone className="h-3.5 w-3.5" />
               {l.whatsapp ?? '—'}
             </span>
           </div>
         </div>
 
-        {/* Right meta */}
-        <div style={{ flexShrink: 0, textAlign: 'right', display: 'flex', flexDirection: 'column', gap: 4 }}>
-          <span style={{
-            fontSize: 11, fontWeight: 700, color: '#94a3b8', letterSpacing: '-0.01em',
-            fontFamily: '"DM Mono", "Fira Mono", monospace',
-            background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.07)',
-            borderRadius: 6, padding: '2px 8px',
-          }}>
+        {/* Right side meta */}
+        <div className="hidden shrink-0 flex-col items-end gap-1 sm:flex">
+          <span className="rounded-lg bg-slate-50 px-2.5 py-1 text-xs font-semibold text-slate-700 ring-1 ring-slate-100">
             {l.property_count} {l.property_count === 1 ? 'property' : 'properties'}
           </span>
-          <span style={{ fontSize: 11, color: '#475569' }}>
-            {new Date(l.created_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
-          </span>
+          <span className="text-[11px] text-slate-400">Joined {formatDate(l.created_at)}</span>
         </div>
       </div>
 
-      {/* Action bar */}
-      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', paddingLeft: 52 }}>
+      {/* Action strip — appears on hover / when relevant */}
+      <div className="flex flex-wrap items-center gap-2 border-t border-slate-50 pt-3">
         {l.status === 'pending' && (
           <>
             <Link href="/admin/kyc">
-              <ActionBtn variant="indigo">Review KYC</ActionBtn>
+              <button
+                type="button"
+                className="h-8 rounded-lg border border-indigo-200 bg-indigo-50 px-3 text-xs font-semibold text-indigo-700 transition hover:bg-indigo-100"
+              >
+                Review KYC
+              </button>
             </Link>
-            <ActionBtn variant="success" disabled={busy} onClick={() => onStatus(l.id, 'approved')}>Approve</ActionBtn>
-            <ActionBtn variant="warn" disabled={busy} onClick={() => onStatus(l.id, 'suspended')}>Suspend</ActionBtn>
+            <button
+              type="button"
+              disabled={busy}
+              onClick={() => onStatus(l.id, 'approved')}
+              className="h-8 rounded-lg bg-emerald-500 px-3 text-xs font-semibold text-white transition hover:bg-emerald-600 disabled:opacity-40"
+            >
+              Approve
+            </button>
+            <button
+              type="button"
+              disabled={busy}
+              onClick={() => onStatus(l.id, 'suspended')}
+              className="h-8 rounded-lg border border-orange-200 bg-orange-50 px-3 text-xs font-semibold text-orange-700 transition hover:bg-orange-100 disabled:opacity-40"
+            >
+              Suspend
+            </button>
           </>
         )}
         {l.status === 'approved' && (
-          <ActionBtn variant="warn" disabled={busy} onClick={() => onStatus(l.id, 'suspended')}>Suspend</ActionBtn>
+          <button
+            type="button"
+            disabled={busy}
+            onClick={() => onStatus(l.id, 'suspended')}
+            className="h-8 rounded-lg border border-orange-200 bg-orange-50 px-3 text-xs font-semibold text-orange-700 transition hover:bg-orange-100 disabled:opacity-40"
+          >
+            Suspend
+          </button>
         )}
         {l.status === 'suspended' && (
-          <ActionBtn variant="success" disabled={busy} onClick={() => onStatus(l.id, 'approved')}>Reinstate</ActionBtn>
+          <button
+            type="button"
+            disabled={busy}
+            onClick={() => onStatus(l.id, 'approved')}
+            className="h-8 rounded-lg border border-emerald-200 bg-emerald-50 px-3 text-xs font-semibold text-emerald-700 transition hover:bg-emerald-100 disabled:opacity-40"
+          >
+            Reinstate
+          </button>
         )}
-        <ActionBtn variant="danger" disabled={busy} onClick={() => onDelete(l.id)}>Delete</ActionBtn>
+
+        {/* Spacer */}
+        <div className="flex-1" />
+
+        <button
+          type="button"
+          disabled={busy}
+          onClick={() => onDelete(l.id)}
+          className="h-8 rounded-lg border border-red-100 bg-red-50 px-3 text-xs font-semibold text-red-500 transition hover:bg-red-100 disabled:opacity-40"
+        >
+          Delete
+        </button>
+
+        {busy && (
+          <span className="ml-1 h-4 w-4 animate-spin rounded-full border-2 border-slate-300 border-t-blue-500" />
+        )}
       </div>
-    </div>
+    </article>
   )
 }
 
-// ─── Main page ────────────────────────────────────────────────────────────────
+// ─── Main Page ────────────────────────────────────────────────────────────────
 export default function AdminLandlords() {
-  const [user, setUser]         = useState<{ email?: string } | null>(null)
-  const [clients, setClients]   = useState<any[]>([])
-  const [filtered, setFiltered] = useState<any[]>([])
-  const [loading, setLoading]   = useState(true)
-  const [search, setSearch]     = useState('')
-  const [sort, setSort]         = useState('newest')
+  const [user, setUser]           = useState<{ email?: string } | null>(null)
+  const [clients, setClients]     = useState<any[]>([])
+  const [filtered, setFiltered]   = useState<any[]>([])
+  const [loading, setLoading]     = useState(true)
+  const [search, setSearch]       = useState('')
+  const [sort, setSort]           = useState('newest')
   const [statusFilter, setStatusFilter] = useState('all')
-  const [processing, setProcessing] = useState<string | null>(null)
+  const [processing, setProcessing]     = useState<string | null>(null)
 
-  // ── Data fetch (unchanged) ────────────────────────────────────────────────
   useEffect(() => {
     const supabase = createClient()
-    supabase.auth.getUser().then(({ data: { user } }) => setUser({ email: user?.email }))
+    supabase.auth.getUser().then(({ data: { user } }) =>
+      setUser({ email: user?.email }),
+    )
     supabase
       .from('landlords')
       .select('*, properties(count)')
@@ -231,16 +272,16 @@ export default function AdminLandlords() {
       })
   }, [])
 
-  // ── Filter/sort (unchanged) ───────────────────────────────────────────────
   useEffect(() => {
     let list = [...clients]
     if (statusFilter !== 'all') list = list.filter(l => l.status === statusFilter)
     if (search.trim()) {
       const q = search.toLowerCase()
-      list = list.filter(l =>
-        l.full_name?.toLowerCase().includes(q) ||
-        l.city?.toLowerCase().includes(q) ||
-        l.whatsapp?.includes(q)
+      list = list.filter(
+        l =>
+          l.full_name?.toLowerCase().includes(q) ||
+          l.city?.toLowerCase().includes(q) ||
+          l.whatsapp?.includes(q),
       )
     }
     if (sort === 'newest') list.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
@@ -249,19 +290,18 @@ export default function AdminLandlords() {
     setFiltered(list)
   }, [search, sort, statusFilter, clients])
 
-  // ── Mutations (unchanged) ─────────────────────────────────────────────────
   async function updateStatus(id: string, status: string) {
     setProcessing(id)
     const supabase = createClient()
     const patch: any = { status }
     if (status === 'approved') patch.is_verified = true
     await supabase.from('landlords').update(patch).eq('id', id)
-    setClients(cs => cs.map(c => c.id === id ? { ...c, ...patch } : c))
+    setClients(cs => cs.map(c => (c.id === id ? { ...c, ...patch } : c)))
     setProcessing(null)
   }
 
   async function handleDelete(id: string) {
-    if (!confirm('Permanently delete this landlord record? This cannot be undone.')) return
+    if (!confirm('Permanently delete this landlord? This cannot be undone.')) return
     setProcessing(id)
     const supabase = createClient()
     await supabase.from('landlords').delete().eq('id', id)
@@ -269,302 +309,242 @@ export default function AdminLandlords() {
     setProcessing(null)
   }
 
-  // ── Derived values ────────────────────────────────────────────────────────
   const displayName = user?.email ? user.email.split('@')[0] : 'Admin'
-  const pending  = clients.filter(c => c.status === 'pending').length
-  const approved = clients.filter(c => c.status === 'approved').length
+  const pending   = clients.filter(c => c.status === 'pending').length
+  const approved  = clients.filter(c => c.status === 'approved').length
+  const suspended = clients.filter(c => c.status === 'suspended').length
+  const notSub    = clients.filter(c => c.status === 'not_submitted').length
 
   const STATUS_TABS = [
     { key: 'all',           label: 'All',           count: clients.length },
     { key: 'approved',      label: 'Approved',      count: approved },
-    { key: 'pending',       label: 'Pending',       count: pending },
-    { key: 'suspended',     label: 'Suspended',     count: clients.filter(c => c.status === 'suspended').length },
-    { key: 'not_submitted', label: 'Not Submitted', count: clients.filter(c => c.status === 'not_submitted').length },
+    { key: 'pending',       label: 'KYC Pending',   count: pending },
+    { key: 'suspended',     label: 'Suspended',     count: suspended },
+    { key: 'not_submitted', label: 'Not Submitted', count: notSub },
   ]
+
+  // Top pending for sidebar
+  const topPending = clients.filter(c => c.status === 'pending').slice(0, 4)
 
   return (
     <AuthGuard require="admin">
-      {/* Page shell */}
-      <div style={{ display: 'flex', height: '100vh', overflow: 'hidden', background: '#0a0e1a' }}>
+      <div className="flex h-screen overflow-hidden bg-[#F7F8FC]">
         <AdminSidebar userEmail={user?.email} userName={displayName} />
 
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, overflow: 'hidden' }}>
+        <div className="flex-1 flex flex-col min-w-0">
           <AdminHeader
-            title="Clients"
-            subtitle={`${clients.length.toLocaleString()} landlords${pending > 0 ? ` · ${pending} pending KYC` : ''}`}
+            title="Landlords"
+            subtitle={`${clients.length.toLocaleString()} total${pending > 0 ? ` · ${pending} awaiting KYC` : ''}`}
             pendingCount={pending}
             action={
               <Link href="/admin/kyc">
-                <button type="button" style={{
-                  display: 'inline-flex', alignItems: 'center', gap: 6,
-                  padding: '7px 14px',
-                  background: 'rgba(99,102,241,0.15)',
-                  border: '1px solid rgba(99,102,241,0.35)',
-                  borderRadius: 10, color: '#818cf8',
-                  fontSize: 13, fontWeight: 600, cursor: 'pointer',
-                  transition: 'background 0.15s',
-                }}>
-                  <ShieldCheck size={14} />
-                  KYC Review
+                <button
+                  type="button"
+                  className="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-700 active:scale-95"
+                >
+                  <ShieldCheck className="h-4 w-4" />
+                  <span className="hidden sm:inline">KYC Review</span>
+                  {pending > 0 && (
+                    <span className="flex h-5 min-w-[20px] items-center justify-center rounded-full bg-amber-400 px-1.5 text-[10px] font-bold text-amber-900">
+                      {pending}
+                    </span>
+                  )}
                 </button>
               </Link>
             }
           />
 
-          {/* Scrollable body */}
-          <main style={{ flex: 1, overflowY: 'auto', padding: '20px 24px 80px' }}>
-            <div style={{ display: 'grid', gap: 20, gridTemplateColumns: '1fr 280px', maxWidth: 1200 }}>
+          {/* ── Main scroll area ── */}
+          <main className="flex-1 overflow-y-auto p-4 md:p-6 pb-24 md:pb-8">
+            <div className="mx-auto max-w-7xl">
 
-              {/* ── Left column ─────────────────────────────────────────── */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+              {/* ── Stat row ── */}
+              <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+                <StatCard label="Total" value={clients.length} accent="text-slate-900" />
+                <StatCard label="Approved" value={approved} sub="verified landlords" accent="text-emerald-600" />
+                <StatCard label="Pending" value={pending} sub="awaiting review" accent="text-amber-600" />
+                <StatCard label="Suspended" value={suspended} accent="text-orange-600" />
+              </div>
 
-                {/* Header card */}
-                <div style={{
-                  background: 'rgba(255,255,255,0.03)',
-                  border: '1px solid rgba(255,255,255,0.07)',
-                  borderRadius: 20, padding: '20px 24px',
-                }}>
-                  <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
-                    <div>
-                      <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.2em', textTransform: 'uppercase', color: '#334155', margin: 0 }}>
-                        Landlord management
-                      </p>
-                      <h2 style={{
-                        margin: '10px 0 0', fontSize: 26, fontWeight: 800, color: '#f1f5f9',
-                        letterSpacing: '-0.03em', lineHeight: 1.2,
-                        fontFamily: '"DM Serif Display", Georgia, serif',
-                      }}>
-                        A fresh view of landlord health
-                      </h2>
-                      <p style={{ margin: '8px 0 0', fontSize: 13, color: '#475569', lineHeight: 1.6 }}>
-                        Search, filter, and act on landlord accounts.
-                      </p>
-                    </div>
-                    {/* Stats row */}
-                    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                      <StatChip label="Total"     value={clients.length} />
-                      <StatChip label="Approved"  value={approved}   accent="#22d3a5" />
-                      <StatChip label="Pending"   value={pending}    accent="#f59e0b" />
-                      <StatChip label="Suspended" value={clients.filter(c => c.status === 'suspended').length} accent="#fb923c" />
-                    </div>
-                  </div>
-                </div>
+              {/* ── Body grid ── */}
+              <div className="grid gap-5 xl:grid-cols-[1fr_288px]">
 
-                {/* Filters bar */}
-                <div style={{
-                  background: 'rgba(255,255,255,0.03)',
-                  border: '1px solid rgba(255,255,255,0.07)',
-                  borderRadius: 16, padding: '12px 16px',
-                  display: 'flex', flexDirection: 'column', gap: 12,
-                }}>
-                  {/* Status tabs */}
-                  <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                    {STATUS_TABS.map(tab => {
-                      const active = statusFilter === tab.key
-                      return (
+                {/* ── Left column ── */}
+                <div className="space-y-3">
+
+                  {/* Filter / search bar */}
+                  <div className="flex flex-col gap-3 rounded-2xl border border-slate-100 bg-white p-3 shadow-[0_1px_4px_rgba(0,0,0,0.05)] sm:flex-row sm:items-center sm:justify-between">
+                    {/* Status tabs */}
+                    <div className="flex flex-wrap gap-1.5">
+                      {STATUS_TABS.map(tab => (
                         <button
                           key={tab.key}
                           type="button"
                           onClick={() => setStatusFilter(tab.key)}
-                          style={{
-                            display: 'inline-flex', alignItems: 'center', gap: 6,
-                            padding: '5px 12px', borderRadius: 99, cursor: 'pointer',
-                            fontSize: 12, fontWeight: 600, transition: 'all 0.15s',
-                            background: active ? '#e2e8f0' : 'rgba(255,255,255,0.05)',
-                            color: active ? '#0f172a' : '#64748b',
-                            border: active ? 'none' : '1px solid rgba(255,255,255,0.07)',
-                          }}
+                          className={`flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-semibold transition-all ${
+                            statusFilter === tab.key
+                              ? 'bg-slate-900 text-white shadow-sm'
+                              : 'text-slate-500 hover:bg-slate-100 hover:text-slate-800'
+                          }`}
                         >
                           {tab.label}
-                          <span style={{
-                            fontSize: 10, fontWeight: 700,
-                            background: active ? 'rgba(0,0,0,0.12)' : 'rgba(255,255,255,0.08)',
-                            color: active ? '#0f172a' : '#475569',
-                            borderRadius: 99, padding: '1px 6px',
-                            fontFamily: '"DM Mono", monospace',
-                          }}>{tab.count}</span>
+                          <span
+                            className={`inline-flex h-4 min-w-[16px] items-center justify-center rounded-full px-1 text-[10px] font-bold transition-colors ${
+                              statusFilter === tab.key
+                                ? 'bg-white/20 text-white'
+                                : 'bg-slate-100 text-slate-500'
+                            }`}
+                          >
+                            {tab.count}
+                          </span>
                         </button>
-                      )
-                    })}
-                  </div>
-
-                  {/* Search + sort */}
-                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
-                    {/* Search */}
-                    <div style={{
-                      flex: 1, minWidth: 200,
-                      display: 'flex', alignItems: 'center', gap: 8,
-                      background: 'rgba(255,255,255,0.05)',
-                      border: '1px solid rgba(255,255,255,0.08)',
-                      borderRadius: 10, padding: '7px 12px',
-                    }}>
-                      <Search size={14} color="#475569" />
-                      <input
-                        value={search}
-                        onChange={e => setSearch(e.target.value)}
-                        placeholder="Search by name, city, or phone"
-                        style={{
-                          flex: 1, background: 'transparent', border: 'none', outline: 'none',
-                          fontSize: 13, color: '#e2e8f0',
-                        }}
-                      />
+                      ))}
                     </div>
 
-                    {/* Sort */}
-                    <div style={{
-                      display: 'flex', alignItems: 'center', gap: 6,
-                      background: 'rgba(255,255,255,0.05)',
-                      border: '1px solid rgba(255,255,255,0.08)',
-                      borderRadius: 10, padding: '7px 12px',
-                    }}>
-                      <ArrowUpDown size={13} color="#475569" />
-                      <select
-                        value={sort}
-                        onChange={e => setSort(e.target.value)}
-                        style={{
-                          background: 'transparent', border: 'none', outline: 'none',
-                          fontSize: 12, fontWeight: 600, color: '#94a3b8', cursor: 'pointer',
-                        }}
-                      >
-                        <option value="newest" style={{ background: '#0f172a' }}>Newest first</option>
-                        <option value="oldest" style={{ background: '#0f172a' }}>Oldest first</option>
-                        <option value="name"   style={{ background: '#0f172a' }}>Name A–Z</option>
-                      </select>
+                    {/* Search + sort */}
+                    <div className="flex shrink-0 items-center gap-2">
+                      <label className="flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm focus-within:border-slate-400 focus-within:bg-white transition-all">
+                        <Search className="h-3.5 w-3.5 shrink-0 text-slate-400" />
+                        <input
+                          value={search}
+                          onChange={e => setSearch(e.target.value)}
+                          placeholder="Search name, city, phone…"
+                          className="w-44 bg-transparent text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none"
+                        />
+                      </label>
+
+                      <div className="relative">
+                        <select
+                          value={sort}
+                          onChange={e => setSort(e.target.value)}
+                          className="h-9 appearance-none rounded-xl border border-slate-200 bg-white pl-3 pr-8 text-xs font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-slate-300 cursor-pointer"
+                        >
+                          <option value="newest">Newest</option>
+                          <option value="oldest">Oldest</option>
+                          <option value="name">Name A–Z</option>
+                        </select>
+                        <ChevronDown className="pointer-events-none absolute right-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" />
+                      </div>
                     </div>
                   </div>
+
+                  {/* Results */}
+                  {loading ? (
+                    <div className="flex h-64 items-center justify-center">
+                      <div className="h-8 w-8 animate-spin rounded-full border-[3px] border-slate-200 border-t-blue-500" />
+                    </div>
+                  ) : filtered.length === 0 ? (
+                    <div className="flex h-56 flex-col items-center justify-center rounded-2xl border border-dashed border-slate-200 bg-white text-center">
+                      <Users className="mb-3 h-10 w-10 text-slate-200" />
+                      <p className="text-sm font-semibold text-slate-500">No landlords match this filter</p>
+                      <p className="mt-1 text-xs text-slate-400">Try adjusting the status or search terms.</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      {filtered.map(l => (
+                        <LandlordCard
+                          key={l.id}
+                          l={l}
+                          processing={processing}
+                          onStatus={updateStatus}
+                          onDelete={handleDelete}
+                        />
+                      ))}
+                    </div>
+                  )}
                 </div>
 
-                {/* List */}
-                {loading ? (
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '80px 0' }}>
-                    <div style={{
-                      width: 36, height: 36, borderRadius: '50%',
-                      border: '3px solid rgba(99,102,241,0.2)',
-                      borderTopColor: '#6366f1',
-                      animation: 'spin 0.7s linear infinite',
-                    }} />
-                    <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-                  </div>
-                ) : filtered.length === 0 ? (
-                  <div style={{
-                    display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-                    padding: '60px 0', gap: 12,
-                    background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)',
-                    borderRadius: 16,
-                  }}>
-                    <Users size={36} color="rgba(255,255,255,0.1)" />
-                    <p style={{ margin: 0, fontSize: 15, fontWeight: 600, color: '#475569' }}>No landlords match this filter</p>
-                    <p style={{ margin: 0, fontSize: 13, color: '#334155' }}>Try changing the status or search terms.</p>
-                  </div>
-                ) : (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                    {filtered.map(l => (
-                      <LandlordCard
-                        key={l.id}
-                        l={l}
-                        processing={processing}
-                        onStatus={updateStatus}
-                        onDelete={handleDelete}
-                      />
-                    ))}
-                  </div>
-                )}
-              </div>
+                {/* ── Right sidebar ── */}
+                <aside className="space-y-4">
 
-              {/* ── Right sidebar ────────────────────────────────────────── */}
-              <aside style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                  {/* Pending queue */}
+                  <div className="rounded-2xl border border-slate-100 bg-white p-4 shadow-[0_1px_4px_rgba(0,0,0,0.05)]">
+                    <div className="mb-3 flex items-center justify-between">
+                      <p className="text-[11px] font-semibold uppercase tracking-widest text-slate-400">
+                        Pending Queue
+                      </p>
+                      {pending > 0 && (
+                        <span className="rounded-full bg-amber-50 px-2 py-0.5 text-[11px] font-semibold text-amber-700 ring-1 ring-amber-200">
+                          {pending}
+                        </span>
+                      )}
+                    </div>
 
-                {/* Pending queue */}
-                <div style={{
-                  background: 'rgba(255,255,255,0.03)',
-                  border: '1px solid rgba(255,255,255,0.07)',
-                  borderRadius: 20, padding: '16px 16px 12px',
-                }}>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-                    <p style={{ margin: 0, fontSize: 10, fontWeight: 700, letterSpacing: '0.18em', textTransform: 'uppercase', color: '#334155' }}>
-                      Pending queue
-                    </p>
-                    <span style={{
-                      fontSize: 10, fontWeight: 700, color: '#f59e0b',
-                      background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.2)',
-                      borderRadius: 99, padding: '2px 7px',
-                      fontFamily: '"DM Mono", monospace',
-                    }}>
-                      {filtered.filter(i => i.status === 'pending').length}
-                    </span>
-                  </div>
-
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                    {filtered.filter(i => i.status === 'pending').slice(0, 4).map(item => {
-                      const av = avatarColor(item.full_name)
-                      return (
-                        <div key={item.id} style={{
-                          display: 'flex', alignItems: 'center', gap: 10,
-                          padding: '10px 12px',
-                          background: 'rgba(255,255,255,0.03)',
-                          border: '1px solid rgba(255,255,255,0.06)',
-                          borderRadius: 12,
-                        }}>
-                          <div style={{
-                            width: 30, height: 30, borderRadius: 8, flexShrink: 0,
-                            background: av.bg, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            fontSize: 11, fontWeight: 700, color: av.text,
-                            fontFamily: '"DM Mono", monospace',
-                          }}>
-                            {getInitials(item.full_name)}
-                          </div>
-                          <div style={{ flex: 1, minWidth: 0 }}>
-                            <p style={{ margin: 0, fontSize: 12, fontWeight: 600, color: '#cbd5e1', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                              {item.full_name}
-                            </p>
-                            <p style={{ margin: 0, fontSize: 11, color: '#475569' }}>{item.city ?? 'No city'}</p>
-                          </div>
+                    {topPending.length === 0 ? (
+                      <div className="flex flex-col items-center py-6 text-center">
+                        <UserCheck className="mb-2 h-8 w-8 text-emerald-200" />
+                        <p className="text-xs text-slate-400">All clear — no pending KYC</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-2">
+                        {topPending.map(item => {
+                          const pal = avatarColor(item.full_name)
+                          return (
+                            <div
+                              key={item.id}
+                              className="flex items-center gap-2.5 rounded-xl border border-slate-50 bg-slate-50/80 p-2.5 transition hover:bg-slate-100/70"
+                            >
+                              <div
+                                className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[11px] font-semibold ring-1 ${pal.bg} ${pal.text} ${pal.border}`}
+                              >
+                                {getInitials(item.full_name)}
+                              </div>
+                              <div className="min-w-0">
+                                <p className="truncate text-xs font-semibold text-slate-800">{item.full_name}</p>
+                                <p className="truncate text-[11px] text-slate-400">{item.city ?? 'No city'}</p>
+                              </div>
+                              <Link href="/admin/kyc" className="ml-auto shrink-0">
+                                <span className="inline-flex h-6 w-6 items-center justify-center rounded-lg bg-white text-slate-400 ring-1 ring-slate-200 transition hover:text-slate-700">
+                                  <ArrowUpRight className="h-3.5 w-3.5" />
+                                </span>
+                              </Link>
+                            </div>
+                          )
+                        })}
+                        {pending > 4 && (
                           <Link href="/admin/kyc">
-                            <ChevronRight size={14} color="#334155" />
+                            <button
+                              type="button"
+                              className="mt-1 w-full rounded-xl border border-slate-200 bg-white py-2 text-xs font-semibold text-slate-500 transition hover:border-slate-300 hover:text-slate-700"
+                            >
+                              View all {pending} pending →
+                            </button>
                           </Link>
-                        </div>
-                      )
-                    })}
-                    {filtered.filter(i => i.status === 'pending').length === 0 && (
-                      <p style={{ margin: 0, fontSize: 12, color: '#334155', padding: '4px 0' }}>Queue is clear.</p>
+                        )}
+                      </div>
                     )}
                   </div>
-                </div>
 
-                {/* Quick breakdown */}
-                <div style={{
-                  background: 'rgba(255,255,255,0.03)',
-                  border: '1px solid rgba(255,255,255,0.07)',
-                  borderRadius: 20, padding: '16px',
-                }}>
-                  <p style={{ margin: '0 0 12px', fontSize: 10, fontWeight: 700, letterSpacing: '0.18em', textTransform: 'uppercase', color: '#334155' }}>
-                    Status breakdown
-                  </p>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                    {Object.entries(STATUS_META).map(([key, m]) => {
-                      const count = clients.filter(c => c.status === key).length
-                      const pct = clients.length > 0 ? (count / clients.length) * 100 : 0
-                      return (
-                        <div key={key}>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-                            <span style={{ fontSize: 11, color: '#64748b' }}>{m.label}</span>
-                            <span style={{ fontSize: 11, fontWeight: 700, color: m.text, fontFamily: '"DM Mono", monospace' }}>{count}</span>
-                          </div>
-                          <div style={{ height: 3, borderRadius: 99, background: 'rgba(255,255,255,0.05)', overflow: 'hidden' }}>
-                            <div style={{
-                              height: '100%', borderRadius: 99,
-                              background: m.dot,
-                              width: `${pct}%`,
-                              transition: 'width 0.4s ease',
-                            }} />
+                  {/* Quick summary */}
+                  <div className="rounded-2xl border border-slate-100 bg-white p-4 shadow-[0_1px_4px_rgba(0,0,0,0.05)]">
+                    <p className="mb-3 text-[11px] font-semibold uppercase tracking-widest text-slate-400">
+                      Overview
+                    </p>
+                    <div className="space-y-2">
+                      {[
+                        { label: 'Approved', value: approved,  color: 'bg-emerald-400' },
+                        { label: 'Pending',  value: pending,   color: 'bg-amber-400'   },
+                        { label: 'Suspended',value: suspended, color: 'bg-orange-400'  },
+                        { label: 'Not submitted', value: notSub, color: 'bg-slate-300' },
+                      ].map(row => (
+                        <div key={row.label} className="flex items-center gap-2">
+                          <span className={`h-2 w-2 shrink-0 rounded-full ${row.color}`} />
+                          <span className="flex-1 text-xs text-slate-600">{row.label}</span>
+                          <span className="text-xs font-semibold text-slate-800">{row.value}</span>
+                          {/* mini progress */}
+                          <div className="h-1 w-16 rounded-full bg-slate-100 overflow-hidden">
+                            <div
+                              className={`h-full rounded-full ${row.color} transition-all duration-500`}
+                              style={{ width: clients.length ? `${(row.value / clients.length) * 100}%` : '0%' }}
+                            />
                           </div>
                         </div>
-                      )
-                    })}
+                      ))}
+                    </div>
                   </div>
-                </div>
 
-              </aside>
+                </aside>
+              </div>
             </div>
           </main>
         </div>
