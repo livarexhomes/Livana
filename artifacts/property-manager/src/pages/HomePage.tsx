@@ -18,7 +18,7 @@ type Project = {
   category: string; status: string; type: string
 }
 function loadProjects(): Project[] {
-  try { const r = localStorage.getItem('livana_admin_projects'); if (r) return JSON.parse(r) } catch {}
+  try { const r = localStorage.getItem('livana_admin_projects'); if (r) return JSON.parse(r) } catch { }
   return []
 }
 function progressColor(p: number) {
@@ -75,9 +75,9 @@ export default function HomePage() {
 
   const HERO_LISTINGS = [
     { label: 'Just Listed', title: '3 Bed Detached • Lekki', price: '₦4,500,000', suffix: '/yr' },
-    { label: 'New Build',   title: '4 Bed Semi-Detached • Ikoyi', price: '₦85,000,000', suffix: '' },
-    { label: 'Hot Deal',    title: '2 Bed Apartment • VI', price: '₦2,800,000', suffix: '/yr' },
-    { label: 'Off-Plan',   title: '5 Bed Duplex • Abuja', price: '₦120,000,000', suffix: '' },
+    { label: 'New Build', title: '4 Bed Semi-Detached • Ikoyi', price: '₦85,000,000', suffix: '' },
+    { label: 'Hot Deal', title: '2 Bed Apartment • VI', price: '₦2,800,000', suffix: '/yr' },
+    { label: 'Off-Plan', title: '5 Bed Duplex • Abuja', price: '₦120,000,000', suffix: '' },
     { label: 'Just Listed', title: '3 Bed Terrace • Lekki Phase 2', price: '₦3,200,000', suffix: '/yr' },
   ]
 
@@ -184,7 +184,7 @@ export default function HomePage() {
       {/* ── HERO ── */}
       <section
         className="relative"
-        style={{ minHeight: 'calc(100vh - 80px)', marginTop: '80px' }}
+        style={{ minHeight: 'calc(100vh - 80px)', marginTop: '80px', padding: 'clamp(2rem, 5vw, 4rem) clamp(1.5rem, 5vw, 6rem)' }}
       >
         {/* Full-bleed background image */}
         <div className="absolute inset-0 overflow-hidden">
@@ -215,16 +215,16 @@ export default function HomePage() {
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75" />
                   <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-400" />
                 </span>
-                <span className="text-xs font-bold text-white/80 uppercase tracking-[0.15em]">Nigeria's #1 Property Platform</span>
+                <span className="text-xs font-bold text-white/80 uppercase tracking-[0.15em]">Nigeria's Verified Property Marketplace</span>
               </div>
             </div>
 
             {/* Headline */}
             <h1 className="text-5xl sm:text-6xl xl:text-7xl font-black leading-[1.0] tracking-tight text-white mb-6">
-              Find Your<br />
+              Nigeria's Verified<br />
               <span className="relative inline-block">
                 <span className="relative z-10 text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-blue-300 to-indigo-400">
-                  Dream Home
+                  Property Marketplace
                 </span>
                 <span className="absolute -bottom-1 left-0 right-0 h-[3px] bg-gradient-to-r from-blue-400 to-indigo-400 rounded-full opacity-60" />
               </span>
@@ -233,10 +233,18 @@ export default function HomePage() {
             </h1>
 
             {/* Subtitle */}
-            <p className="text-lg text-white/60 mb-10 leading-relaxed max-w-lg font-light">
-              Verified listings. Direct landlord contact.<br className="hidden sm:block" />
-              <span className="text-white/80 font-medium">Zero agent fees, ever.</span>
+            <p className="text-lg text-white/70 mb-10 leading-relaxed max-w-lg font-light">
+              Find verified homes directly from verified landlords. No agents. No middlemen. No hidden fees.
             </p>
+
+            <div className="flex flex-col sm:flex-row gap-4 mb-12">
+              <Link href="/listings" className="inline-flex items-center justify-center rounded-full bg-blue-600 px-8 py-4 text-sm font-bold text-white shadow-lg shadow-blue-600/25 hover:bg-blue-500 transition-all">
+                Browse Properties
+              </Link>
+              <Link href="/for-landlords" className="inline-flex items-center justify-center rounded-full border border-white/20 bg-white/10 px-8 py-4 text-sm font-semibold text-white hover:bg-white/15 transition-all">
+                List Your Property
+              </Link>
+            </div>
 
             {/* Search card */}
             <div className="mb-12">
@@ -251,11 +259,10 @@ export default function HomePage() {
                     </span>
                   ) : (
                     <button key={t} type="button" onClick={() => setActiveTab(t)}
-                      className={`px-5 py-2 rounded-full text-sm font-bold transition-all shrink-0 ${
-                        activeTab === t
+                      className={`px-5 py-2 rounded-full text-sm font-bold transition-all shrink-0 ${activeTab === t
                           ? 'bg-white text-gray-900 shadow-lg'
                           : 'text-white/50 hover:text-white hover:bg-white/10'
-                      }`}>
+                        }`}>
                       {t}
                     </button>
                   )
@@ -359,7 +366,7 @@ export default function HomePage() {
                             onClick={() => { setSearchState(''); setOpenDropdown(null); setLocationQuery('') }}
                             className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-colors ${!searchState ? 'bg-blue-50 text-blue-600 font-semibold' : 'text-gray-700 hover:bg-gray-50'}`}>
                             <span className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 ${!searchState ? 'bg-blue-600 border-blue-600' : 'border-gray-300'}`}>
-                              {!searchState && <svg className="w-3 h-3 text-white" viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>}
+                              {!searchState && <svg className="w-3 h-3 text-white" viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>}
                             </span>
                             Any Location
                           </button>
@@ -374,7 +381,7 @@ export default function HomePage() {
                                 onClick={() => { setSearchState(s); setOpenDropdown(null); setLocationQuery('') }}
                                 className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-colors ${searchState === s ? 'bg-blue-50 text-blue-600 font-semibold' : 'text-gray-700 hover:bg-gray-50'}`}>
                                 <span className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 ${searchState === s ? 'bg-blue-600 border-blue-600' : 'border-gray-300'}`}>
-                                  {searchState === s && <svg className="w-3 h-3 text-white" viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>}
+                                  {searchState === s && <svg className="w-3 h-3 text-white" viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>}
                                 </span>
                                 {s}
                               </button>
@@ -391,7 +398,7 @@ export default function HomePage() {
                                 onClick={() => { setSearchState(area); setOpenDropdown(null); setLocationQuery('') }}
                                 className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-colors ${searchState === area ? 'bg-blue-50 text-blue-600 font-semibold' : 'text-gray-700 hover:bg-gray-50'}`}>
                                 <span className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 ${searchState === area ? 'bg-blue-600 border-blue-600' : 'border-gray-300'}`}>
-                                  {searchState === area && <svg className="w-3 h-3 text-white" viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>}
+                                  {searchState === area && <svg className="w-3 h-3 text-white" viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>}
                                 </span>
                                 <span className="flex-1 text-left">{area}</span>
                                 <span className="text-[10px] text-gray-400 font-medium">{state}</span>
@@ -418,7 +425,7 @@ export default function HomePage() {
                       <label className="flex items-center gap-3 cursor-pointer group">
                         <div className={`w-5 h-5 rounded flex items-center justify-center border-2 transition-colors shrink-0 ${selectedPropertyTypes.length === 0 ? 'bg-blue-600 border-blue-600' : 'border-gray-300 group-hover:border-blue-400'}`}
                           onClick={() => togglePropertyType('')}>
-                          {selectedPropertyTypes.length === 0 && <svg className="w-3 h-3 text-white" viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>}
+                          {selectedPropertyTypes.length === 0 && <svg className="w-3 h-3 text-white" viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>}
                         </div>
                         <span className="text-sm font-medium text-gray-800">Any</span>
                       </label>
@@ -426,7 +433,7 @@ export default function HomePage() {
                         <label key={pt} className="flex items-center gap-3 cursor-pointer group">
                           <div className={`w-5 h-5 rounded flex items-center justify-center border-2 transition-colors shrink-0 ${selectedPropertyTypes.includes(pt) ? 'bg-blue-600 border-blue-600' : 'border-gray-300 group-hover:border-blue-400'}`}
                             onClick={() => togglePropertyType(pt)}>
-                            {selectedPropertyTypes.includes(pt) && <svg className="w-3 h-3 text-white" viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>}
+                            {selectedPropertyTypes.includes(pt) && <svg className="w-3 h-3 text-white" viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>}
                           </div>
                           <span className="text-sm text-gray-700">{pt}</span>
                         </label>
@@ -441,8 +448,8 @@ export default function HomePage() {
                     <div className="mb-5">
                       <p className="text-base font-bold text-gray-900 mb-3">Bedrooms</p>
                       <div className="flex gap-2">
-                        {['Any','1','2','3','4','5+'].map(v => {
-                          const val = v === 'Any' ? '' : v.replace('+','')
+                        {['Any', '1', '2', '3', '4', '5+'].map(v => {
+                          const val = v === 'Any' ? '' : v.replace('+', '')
                           const active = v === 'Any' ? searchBeds === '' : searchBeds === val
                           return <button key={v} type="button" onClick={() => setSearchBeds(active ? '' : val)}
                             className={`flex-1 py-2 rounded-lg text-sm font-semibold border transition-all ${active ? 'bg-blue-600 border-blue-600 text-white' : 'border-gray-200 text-gray-700 hover:border-blue-300'}`}>{v}</button>
@@ -452,8 +459,8 @@ export default function HomePage() {
                     <div className="mb-5">
                       <p className="text-base font-bold text-gray-900 mb-3">Bathrooms</p>
                       <div className="flex gap-2">
-                        {['Any','1','2','3','4','5','6+'].map(v => {
-                          const val = v === 'Any' ? '' : v.replace('+','')
+                        {['Any', '1', '2', '3', '4', '5', '6+'].map(v => {
+                          const val = v === 'Any' ? '' : v.replace('+', '')
                           const active = v === 'Any' ? searchBaths === '' : searchBaths === val
                           return <button key={v} type="button" onClick={() => setSearchBaths(active ? '' : val)}
                             className={`flex-1 py-2 rounded-lg text-sm font-semibold border transition-all ${active ? 'bg-blue-600 border-blue-600 text-white' : 'border-gray-200 text-gray-700 hover:border-blue-300'}`}>{v}</button>
@@ -476,26 +483,26 @@ export default function HomePage() {
                       <div className="flex-1 border border-gray-200 rounded-xl px-3 py-2 focus-within:border-blue-400 focus-within:ring-2 focus-within:ring-blue-100">
                         <p className="text-[10px] text-gray-400 font-semibold uppercase tracking-wide mb-0.5">Min (₦)</p>
                         <input type="number" min={0} max={priceMax - 500_000} step={100_000} value={priceMin === 0 ? '' : priceMin} placeholder="0"
-                          onChange={e => { const v = Number(e.target.value)||0; if(v<priceMax) setPriceMin(v) }}
+                          onChange={e => { const v = Number(e.target.value) || 0; if (v < priceMax) setPriceMin(v) }}
                           className="w-full text-sm font-bold text-gray-900 outline-none bg-transparent" />
                       </div>
                       <div className="flex items-center text-gray-300 font-bold">—</div>
                       <div className="flex-1 border border-gray-200 rounded-xl px-3 py-2 focus-within:border-blue-400 focus-within:ring-2 focus-within:ring-blue-100">
                         <p className="text-[10px] text-gray-400 font-semibold uppercase tracking-wide mb-0.5">Max (₦)</p>
-                        <input type="number" min={priceMin+500_000} max={500_000_000} step={100_000} value={priceMax===500_000_000?'':priceMax} placeholder="500,000,000"
-                          onChange={e => { const v=Number(e.target.value)||500_000_000; if(v>priceMin) setPriceMax(v) }}
+                        <input type="number" min={priceMin + 500_000} max={500_000_000} step={100_000} value={priceMax === 500_000_000 ? '' : priceMax} placeholder="500,000,000"
+                          onChange={e => { const v = Number(e.target.value) || 500_000_000; if (v > priceMin) setPriceMax(v) }}
                           className="w-full text-sm font-bold text-gray-900 outline-none bg-transparent" />
                       </div>
                     </div>
                     <div className="relative h-5 mb-2">
                       <div className="absolute top-1/2 -translate-y-1/2 w-full h-1.5 bg-gray-200 rounded-full" />
                       <div className="absolute top-1/2 -translate-y-1/2 h-1.5 bg-blue-600 rounded-full"
-                        style={{ left:`${(priceMin/500_000_000)*100}%`, right:`${100-(priceMax/500_000_000)*100}%` }} />
+                        style={{ left: `${(priceMin / 500_000_000) * 100}%`, right: `${100 - (priceMax / 500_000_000) * 100}%` }} />
                       <input type="range" min={0} max={500_000_000} step={500_000} value={priceMin}
-                        onChange={e=>{const v=Number(e.target.value);if(v<priceMax)setPriceMin(v)}}
+                        onChange={e => { const v = Number(e.target.value); if (v < priceMax) setPriceMin(v) }}
                         className="absolute w-full top-1/2 -translate-y-1/2 appearance-none bg-transparent pointer-events-none [&::-webkit-slider-thumb]:pointer-events-auto [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-blue-600 [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-white [&::-webkit-slider-thumb]:shadow-md [&::-webkit-slider-thumb]:cursor-pointer" />
                       <input type="range" min={0} max={500_000_000} step={500_000} value={priceMax}
-                        onChange={e=>{const v=Number(e.target.value);if(v>priceMin)setPriceMax(v)}}
+                        onChange={e => { const v = Number(e.target.value); if (v > priceMin) setPriceMax(v) }}
                         className="absolute w-full top-1/2 -translate-y-1/2 appearance-none bg-transparent pointer-events-none [&::-webkit-slider-thumb]:pointer-events-auto [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-blue-600 [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-white [&::-webkit-slider-thumb]:shadow-md [&::-webkit-slider-thumb]:cursor-pointer" />
                     </div>
                     <div className="flex justify-between text-xs text-gray-400 font-medium mb-5"><span>₦0</span><span>₦500M</span></div>
@@ -516,15 +523,15 @@ export default function HomePage() {
                   </select>
                 </div>
                 <div className="grid grid-cols-2 gap-2">
-                  <select value={selectedPropertyTypes[0]??''} onChange={e=>setSelectedPropertyTypes(e.target.value?[e.target.value]:[])}
+                  <select value={selectedPropertyTypes[0] ?? ''} onChange={e => setSelectedPropertyTypes(e.target.value ? [e.target.value] : [])}
                     className="w-full px-3 py-3 rounded-xl bg-gray-50 text-sm text-gray-800 outline-none appearance-none">
                     <option value="">Property Type</option>
-                    {PROPERTY_TYPES.map(pt=><option key={pt} value={pt}>{pt}</option>)}
+                    {PROPERTY_TYPES.map(pt => <option key={pt} value={pt}>{pt}</option>)}
                   </select>
-                  <select value={searchBeds} onChange={e=>setSearchBeds(e.target.value)}
+                  <select value={searchBeds} onChange={e => setSearchBeds(e.target.value)}
                     className="w-full px-3 py-3 rounded-xl bg-gray-50 text-sm text-gray-800 outline-none appearance-none">
                     <option value="">Beds</option>
-                    {['1','2','3','4','5'].map(n=><option key={n} value={n}>{n}+ Beds</option>)}
+                    {['1', '2', '3', '4', '5'].map(n => <option key={n} value={n}>{n}+ Beds</option>)}
                   </select>
                 </div>
                 <button type="submit"
@@ -539,8 +546,8 @@ export default function HomePage() {
             <div className="flex items-center gap-8">
               {[
                 { value: 2400, suffix: '+', label: 'Properties' },
-                { value: 850,  suffix: '+', label: 'Landlords'  },
-                { value: 0,    prefix: '₦', label: 'Agent Fees' },
+                { value: 850, suffix: '+', label: 'Landlords' },
+                { value: 0, prefix: '₦', label: 'Agent Fees' },
               ].map((s, i) => (
                 <div key={s.label} className="flex items-center gap-8">
                   {i > 0 && <div className="w-px h-8 bg-white/20" />}
@@ -567,7 +574,7 @@ export default function HomePage() {
                     {HERO_LISTINGS[heroIdx].label}
                   </span>
                   <div className="flex items-center gap-1 text-amber-400">
-                    {[...Array(5)].map((_,i) => <Star key={i} className="w-3 h-3 fill-current" />)}
+                    {[...Array(5)].map((_, i) => <Star key={i} className="w-3 h-3 fill-current" />)}
                   </div>
                 </div>
                 <h3 className="font-bold text-gray-900 text-sm mb-1 leading-snug">{HERO_LISTINGS[heroIdx].title}</h3>
@@ -582,10 +589,10 @@ export default function HomePage() {
                   View Listings <ArrowRight className="w-3.5 h-3.5" />
                 </Link>
                 <div className="flex items-center gap-1">
-                  {HERO_LISTINGS.map((_,i) => (
+                  {HERO_LISTINGS.map((_, i) => (
                     <button key={i}
                       onClick={() => { setHeroVisible(false); setTimeout(() => { setHeroIdx(i); setHeroVisible(true) }, 200) }}
-                      className={`rounded-full transition-all duration-300 ${i===heroIdx ? 'w-4 h-1.5 bg-blue-600' : 'w-1.5 h-1.5 bg-gray-300 hover:bg-gray-400'}`}
+                      className={`rounded-full transition-all duration-300 ${i === heroIdx ? 'w-4 h-1.5 bg-blue-600' : 'w-1.5 h-1.5 bg-gray-300 hover:bg-gray-400'}`}
                     />
                   ))}
                 </div>
@@ -621,7 +628,7 @@ export default function HomePage() {
       </section>
 
       {/* ── PROPERTIES ── */}
-      <section className="bg-[#F8F8F6] py-20 md:py-28">
+      <section className="bg-[#F8F8F6] py-20 md:py-25">
         <div className="max-w-7xl mx-auto px-5 sm:px-8">
 
           {/* Header */}
@@ -663,11 +670,10 @@ export default function HomePage() {
                 <button
                   key={t}
                   onClick={() => setActiveTab(t)}
-                  className={`px-5 py-2.5 rounded-2xl text-sm font-bold whitespace-nowrap transition-all duration-200 shrink-0 ${
-                    activeTab === t
+                  className={`px-5 py-2.5 rounded-2xl text-sm font-bold whitespace-nowrap transition-all duration-200 shrink-0 ${activeTab === t
                       ? 'bg-gray-900 text-white shadow-lg shadow-gray-900/15'
                       : 'bg-white text-gray-500 border border-gray-100 hover:border-gray-200 hover:text-gray-800 hover:shadow-sm'
-                  }`}
+                    }`}
                 >
                   {t}
                 </button>
@@ -749,11 +755,10 @@ export default function HomePage() {
                           )}
                           {/* Status badge */}
                           <div className="absolute top-3 left-3">
-                            <span className={`px-2.5 py-1 rounded-full text-[11px] font-bold ${
-                              proj.status === 'coming_soon'
+                            <span className={`px-2.5 py-1 rounded-full text-[11px] font-bold ${proj.status === 'coming_soon'
                                 ? 'bg-blue-600 text-white'
                                 : 'bg-emerald-500 text-white'
-                            }`}>
+                              }`}>
                               {proj.status === 'coming_soon' ? 'Coming Soon' : 'Active'}
                             </span>
                           </div>
@@ -936,11 +941,10 @@ export default function HomePage() {
             ].map((t, i) => (
               <div
                 key={i}
-                className={`relative rounded-3xl p-8 flex flex-col gap-6 transition-all duration-300 ${
-                  t.featured
+                className={`relative rounded-3xl p-8 flex flex-col gap-6 transition-all duration-300 ${t.featured
                     ? 'bg-blue-600 shadow-2xl shadow-blue-600/30 scale-[1.02]'
                     : 'bg-white/5 border border-white/10 hover:bg-white/8'
-                }`}
+                  }`}
               >
                 {/* Big decorative quote */}
                 <span className={`absolute top-6 right-7 text-8xl font-serif leading-none select-none ${t.featured ? 'text-blue-400/40' : 'text-white/8'}`}>"</span>

@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link } from 'wouter'
-import { Mail, Phone, MapPin, MessageCircle, ArrowRight, CheckCircle, Clock, ChevronDown, Instagram, Twitter, Facebook, Linkedin, Send } from 'lucide-react'
+import { Mail, Phone, MapPin, MessageCircle, Globe, ArrowRight, CheckCircle, Clock, ChevronDown, Instagram, Twitter, Send } from 'lucide-react'
 import PublicNavbar from '../components/PublicNavbar'
 import Footer from '../components/Footer'
 import { createClient, isSupabaseConfigured } from '../lib/supabase'
@@ -15,10 +15,11 @@ const faqs = [
 ]
 
 const channels = [
-  { icon: Mail,          label: 'Email',     value: 'support@livarex.ng',   href: 'mailto:support@livarex.ng',  note: 'Reply within 1–2 business days', color: 'bg-blue-600',    shadow: 'shadow-blue-500/20',   ring: 'hover:ring-blue-200'   },
-  { icon: Phone,         label: 'Phone',     value: '+234 800 123 4567',    href: 'tel:+2348001234567',         note: 'Mon–Fri, 9am–6pm WAT',           color: 'bg-emerald-600', shadow: 'shadow-emerald-500/20',ring: 'hover:ring-emerald-200'},
-  { icon: MessageCircle, label: 'WhatsApp',  value: 'Chat with us',         href: 'https://wa.me/2348001234567?text=Hi%20LIVAREX%2C%20I%20need%20help!', note: 'Usually under an hour', color: 'bg-[#25D366]', shadow: 'shadow-green-500/20', ring: 'hover:ring-green-200' },
-  { icon: MapPin,        label: 'Office',    value: 'Victoria Island, Lagos', href: 'https://maps.google.com/?q=Victoria+Island+Lagos+Nigeria', note: 'By appointment only', color: 'bg-rose-600', shadow: 'shadow-rose-500/20', ring: 'hover:ring-rose-200' },
+  { icon: Mail,          label: 'Email',     value: 'livarexhomes@gmail.com',   href: 'mailto:livarexhomes@gmail.com',  note: 'Reply within 1–2 business days', color: 'bg-blue-600',    shadow: 'shadow-blue-500/20',   ring: 'hover:ring-blue-200'   },
+  { icon: Phone,         label: 'Phone',     value: '+234 706 052 8437',    href: 'tel:+2347060528437',         note: '24/7 support',                  color: 'bg-emerald-600', shadow: 'shadow-emerald-500/20',ring: 'hover:ring-emerald-200'},
+  { icon: MessageCircle, label: 'WhatsApp',  value: '+234 706 052 8437',    href: 'https://wa.me/2347060528437', note: 'Direct WhatsApp chat',          color: 'bg-[#25D366]', shadow: 'shadow-green-500/20', ring: 'hover:ring-green-200' },
+  { icon: MapPin,        label: 'Office',    value: 'Joju, Sango Ota, Ogun State', href: 'https://maps.google.com/?q=Joju+Sango+Ota+Ogun+State+Nigeria', note: 'Visit our office in Ogun State', color: 'bg-rose-600', shadow: 'shadow-rose-500/20', ring: 'hover:ring-rose-200' },
+  { icon: Globe,         label: 'Website',   value: 'livarex.com.ng',          href: 'https://livarex.com.ng', note: 'Browse verified listings online', color: 'bg-slate-800', shadow: 'shadow-slate-500/20', ring: 'hover:ring-slate-200' },
 ]
 
 export default function ContactPage() {
@@ -61,11 +62,10 @@ export default function ContactPage() {
                 Get in touch
               </span>
               <h1 className="text-5xl sm:text-6xl font-extrabold text-gray-900 leading-[1.05] tracking-tight mb-5">
-                We'd love to<br />
-                <span className="text-blue-600">hear from you.</span>
+                Get in Touch With LIVAREX
               </h1>
               <p className="text-gray-500 text-lg leading-relaxed max-w-md">
-                Whether you're a renter, landlord, or developer — our team is ready to help.
+                Whether you're a renter, landlord, or developer, our team is standing by to support you.
               </p>
             </div>
             {/* Right — channel cards */}
@@ -196,9 +196,7 @@ export default function ContactPage() {
                 <p className="text-xs text-gray-400 font-medium">Follow us:</p>
                 {[
                   { Icon: Instagram, href: 'https://instagram.com/livarex.ng',          label: 'Instagram' },
-                  { Icon: Twitter,   href: 'https://twitter.com/livarex_ng',             label: 'Twitter'   },
-                  { Icon: Facebook,  href: 'https://facebook.com/livarex.ng',            label: 'Facebook'  },
-                  { Icon: Linkedin,  href: 'https://linkedin.com/company/livarex-ng',    label: 'LinkedIn'  },
+                  { Icon: Twitter,   href: 'https://twitter.com/livarex_ng',             label: 'X'         },
                 ].map(({ Icon, href, label }) => (
                   <a key={label} href={href} target="_blank" rel="noopener noreferrer" aria-label={label}
                     className="w-9 h-9 rounded-xl bg-white border border-gray-200 flex items-center justify-center text-gray-400 hover:text-blue-600 hover:border-blue-200 hover:shadow-sm transition-all">
@@ -258,9 +256,9 @@ export default function ContactPage() {
                   <h3 className="font-bold text-sm">Office Hours</h3>
                 </div>
                 <div className="space-y-2 text-sm text-blue-100">
-                  <div className="flex justify-between"><span>Monday – Friday</span><span className="font-semibold text-white">9am – 6pm</span></div>
-                  <div className="flex justify-between"><span>Saturday</span><span className="font-semibold text-white">10am – 2pm</span></div>
-                  <div className="flex justify-between"><span>Sunday</span><span className="text-blue-300">Closed</span></div>
+                  <div className="flex justify-between"><span>Monday – Friday</span><span className="font-semibold text-white">24hrs</span></div>
+                  <div className="flex justify-between"><span>Saturday</span><span className="font-semibold text-white">24hrs</span></div>
+                  <div className="flex justify-between"><span>Sunday</span><span className="font-semibold text-white">24hrs</span></div>
                 </div>
                 <p className="text-xs text-blue-200 mt-4">All times in West Africa Time (WAT)</p>
               </div>
