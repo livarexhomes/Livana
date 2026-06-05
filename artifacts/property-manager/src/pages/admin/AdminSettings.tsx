@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, type ElementType, type ReactNode } from 'react'
 import {
   Building2, Bell, Shield, Globe, Save, CreditCard,
   CheckCircle, Mail, Phone, MapPin, User, Wifi,
@@ -93,7 +93,7 @@ function FieldInput({
   label: string
   value: string
   onChange: (v: string) => void
-  icon: React.ElementType
+  icon: ElementType
   type?: string
   placeholder?: string
   mono?: boolean
@@ -145,7 +145,7 @@ function ToggleRow({
   desc: string
   enabled: boolean
   onChange: () => void
-  icon?: React.ElementType
+  icon?: ElementType
   tag?: string
   loading?: boolean
 }) {
@@ -185,7 +185,7 @@ function ToggleRow({
   )
 }
 
-function SectionTitle({ title, sub, action }: { title: string; sub: string; action?: React.ReactNode }) {
+function SectionTitle({ title, sub, action }: { title: string; sub: string; action?: ReactNode }) {
   return (
     <div className="mb-6 flex items-start justify-between">
       <div>
@@ -462,7 +462,7 @@ export default function AdminSettings() {
           {/* ── Top bar ── */}
           <header className="flex items-center justify-between pl-14 pr-6 md:pl-8 md:pr-8 py-3.5 bg-white border-b border-gray-200 shrink-0">
             <div className="flex items-center gap-3">
-              <p className="text-xs font-mono text-gray-400 hidden sm:block">livana / admin /</p>
+              <p className="text-xs font-mono text-gray-400 hidden sm:block">livarex / admin /</p>
               <h1 className="text-sm font-bold text-gray-900 tracking-tight">settings</h1>
             </div>
             <div className="flex items-center gap-3">
