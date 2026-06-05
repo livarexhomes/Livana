@@ -382,12 +382,12 @@ export default function AdminUsers() {
         <AdminSidebar userEmail={user?.email} userName={displayName} />
         <div className="flex-1 flex flex-col min-w-0">
           <AdminHeader title="Users" subtitle={`${tenants.length} registered tenants`} />
-          <main className="flex-1 overflow-y-auto p-4 md:p-6 pb-24 md:pb-6 space-y-5">
+          <main className="flex-1 overflow-y-auto p-3 md:p-4 pb-20 md:pb-5 space-y-4">
 
-            <div className="grid grid-cols-1 gap-5 xl:grid-cols-[1.2fr_0.8fr]">
-              <div className="space-y-5">
-                <div className="rounded-3xl border border-slate-200 bg-white/90 shadow-2xl shadow-slate-900/5 p-6">
-                  <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="grid grid-cols-1 gap-4 xl:grid-cols-[1.2fr_0.8fr]">
+              <div className="space-y-4">
+                <div className="rounded-3xl border border-slate-200 bg-white/90 shadow-2xl shadow-slate-900/5 p-5">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                     <div>
                       <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-400">Tenant overview</p>
                       <h2 className="text-2xl font-extrabold text-slate-950">A modern view of tenant activity</h2>
@@ -402,7 +402,7 @@ export default function AdminUsers() {
                           key={item.key}
                           type="button"
                           onClick={() => setStatusFilter(item.key as typeof statusFilter)}
-                          className={`rounded-full px-4 py-2 text-sm font-semibold transition ${statusFilter === item.key ? 'bg-slate-950 text-white shadow-sm' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
+                          className={`rounded-full px-3.5 py-1.5 text-sm font-semibold transition ${statusFilter === item.key ? 'bg-slate-950 text-white shadow-sm' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
                         >
                           {item.label} <span className="ml-2 inline-flex h-6 min-w-[24px] items-center justify-center rounded-full bg-slate-900 text-[11px] text-white">{item.count}</span>
                         </button>
@@ -410,7 +410,7 @@ export default function AdminUsers() {
                     </div>
                   </div>
 
-                  <div className="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div className="mt-5 grid grid-cols-1 sm:grid-cols-3 gap-2.5">
                     {[
                       { label: 'Total users', value: tenants.length, accent: 'bg-blue-500/10 text-blue-700' },
                       { label: 'Enquiries', value: totalEnquiries, accent: 'bg-emerald-500/10 text-emerald-700' },
@@ -424,7 +424,7 @@ export default function AdminUsers() {
                   </div>
                 </div>
 
-                <div className="rounded-3xl border border-slate-200 bg-white/90 shadow-2xl shadow-slate-900/5 p-5 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                <div className="rounded-3xl border border-slate-200 bg-white/90 shadow-2xl shadow-slate-900/5 p-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                   <div className="flex items-center gap-3 flex-1 rounded-3xl border border-slate-200 bg-slate-100 px-4 py-3 shadow-sm">
                     <Search className="w-4 h-4 text-slate-500" />
                     <input
@@ -454,11 +454,11 @@ export default function AdminUsers() {
                     <p className="text-sm text-slate-500">Tenants who register on the platform will appear here.</p>
                   </div>
                 ) : filtered.length === 0 ? (
-                  <div className="rounded-3xl border border-slate-200 bg-white p-16 text-center shadow-sm">
+                  <div className="rounded-3xl border border-slate-200 bg-white p-12 text-center shadow-sm">
                     <p className="text-lg font-medium text-slate-700">No tenants match your search.</p>
                   </div>
                 ) : (
-                  <div className="grid gap-4">
+                  <div className="grid gap-3">
                     {filtered.map(t => {
                       const grad = avatarGrad(t.full_name)
                       const initials = getInitials(t.full_name)
@@ -467,10 +467,10 @@ export default function AdminUsers() {
                         <div
                           key={t.id}
                           onClick={() => setSelectedTenant(t)}
-                          className={`group cursor-pointer rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-lg ${isSuspended ? 'opacity-80' : ''}`}
+                          className={`group cursor-pointer rounded-[28px] border border-slate-200 bg-white p-4 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-lg ${isSuspended ? 'opacity-80' : ''}`}
                         >
-                          <div className="flex items-start justify-between gap-4">
-                            <div className="flex items-start gap-4">
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="flex items-start gap-3">
                               {t.avatar_url ? (
                                 <img
                                   src={t.avatar_url}
@@ -486,7 +486,7 @@ export default function AdminUsers() {
                               <div className="min-w-0">
                                 <p className="text-base font-semibold text-slate-950 truncate">{t.full_name}</p>
                                 <p className="mt-1 text-sm text-slate-500 truncate max-w-xl">{t.email ?? t.phone ?? 'No contact details'}</p>
-                                <div className="mt-3 flex flex-wrap items-center gap-2">
+                                <div className="mt-2 flex flex-wrap items-center gap-2">
                                   <span className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold ${isSuspended ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800'}`}>
                                     <span className={`h-2.5 w-2.5 rounded-full ${isSuspended ? 'bg-amber-500' : 'bg-emerald-500'}`} />
                                     {isSuspended ? 'Suspended' : 'Active'}
@@ -513,12 +513,12 @@ export default function AdminUsers() {
                 )}
               </div>
 
-              <aside className="space-y-5">
-                <div className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm">
+              <aside className="space-y-4">
+                <div className="rounded-[32px] border border-slate-200 bg-white p-4 shadow-sm">
                   <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-400">Recent registrations</p>
-                  <div className="mt-4 space-y-3">
+                  <div className="mt-3 space-y-2.5">
                     {tenants.slice(0, 3).map(t => (
-                      <div key={t.id} className="rounded-3xl border border-slate-100 bg-slate-50 p-4">
+                      <div key={t.id} className="rounded-3xl border border-slate-100 bg-slate-50 p-3.5">
                         <div className="flex items-center justify-between gap-3">
                           <div className="min-w-0">
                             <p className="text-sm font-semibold text-slate-950 truncate">{t.full_name}</p>
