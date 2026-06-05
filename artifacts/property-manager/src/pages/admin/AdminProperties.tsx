@@ -472,7 +472,7 @@ export default function AdminProperties() {
                 <p className="text-gray-500 font-medium">{search ? 'No properties match your search.' : 'No properties found.'}</p>
               </div>
             ) : viewMode === 'grid' ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                 {filtered.map(p => {
                   const badge = TYPE_BADGE[p.type] ?? TYPE_BADGE.sale
                   const status = STATUS_META[p.status] ?? STATUS_META.available
