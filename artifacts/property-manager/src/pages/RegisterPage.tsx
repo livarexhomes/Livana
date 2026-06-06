@@ -28,6 +28,7 @@ export default function RegisterPage() {
       options: { data: { full_name: fullName, phone: phone || null } },
     })
     if (signUpError || !data.user) {
+      console.error('Sign up error:', signUpError)
       setError(signUpError?.message ?? 'Sign up failed')
       setLoading(false)
       return

@@ -309,11 +309,36 @@ export default function AdminUsers() {
   useEffect(() => {
     const supabase = createClient()
     supabase.auth.getUser().then(({ data: { user } }) => setUser({ email: user?.email }))
+    
+    // Fetch tenants - admins should have full access via RLS policy
     supabase
       .from('tenants')
-      .select('*, enquiries(count)')
+      .select('*')
       .order('created_at', { ascending: false })
-      .then(({ data }) => {
+      .then(async ({ data, error }) => {
+        console.log('Tenants fetch result:', { data, error })
+        if (error) {
+          console.error('Error fetching tenants:', error)
+          setLoading(false)
+          return
+        }
+        
+        // Get enquiry counts separately to avoid RLS issues with joined queries
+        const tenantIds = (data ?? []).map(t => t.id)
+        let enquiryCounts: Record<string, number> = {}
+        
+        if (tenantIds.length > 0) {
+          const { data: enquiries } = await supabase
+            .from('enquiries')
+            .select('tenant_id')
+            .in('tenant_id', tenantIds)
+          
+          enquiryCounts = (enquiries ?? []).reduce((acc: Record<string, number>, e: any) => {
+            acc[e.tenant_id] = (acc[e.tenant_id] || 0) + 1
+            return acc
+          }, {})
+        }
+        
         const list: Tenant[] = (data ?? []).map((t: any) => ({
           id: t.id,
           user_id: t.user_id,
@@ -323,7 +348,7 @@ export default function AdminUsers() {
           avatar_url: t.avatar_url ?? null,
           provider: t.provider ?? 'email',
           created_at: t.created_at,
-          enquiry_count: t.enquiries?.[0]?.count ?? 0,
+          enquiry_count: enquiryCounts[t.id] || 0,
           status: t.status ?? 'active',
         }))
         setTenants(list)
@@ -344,14 +369,20 @@ export default function AdminUsers() {
 
     if (type === 'delete') {
       const { error } = await supabase.from('tenants').delete().eq('id', tenant.id)
-      if (!error) {
+      if (error) {
+        console.error('Delete error:', error)
+        showToast(`Failed to delete: ${error.message}`)
+      } else {
         setTenants(prev => prev.filter(t => t.id !== tenant.id))
         showToast(`${tenant.full_name} has been deleted.`)
       }
     } else {
       const newStatus = type === 'suspend' ? 'suspended' : 'active'
       const { error } = await supabase.from('tenants').update({ status: newStatus }).eq('id', tenant.id)
-      if (!error) {
+      if (error) {
+        console.error('Update error:', error)
+        showToast(`Failed to update: ${error.message}`)
+      } else {
         setTenants(prev => prev.map(t => t.id === tenant.id ? { ...t, status: newStatus } : t))
         showToast(`${tenant.full_name} has been ${newStatus === 'suspended' ? 'suspended' : 'unsuspended'}.`)
       }

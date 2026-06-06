@@ -257,14 +257,38 @@ export default function AdminLandlords() {
     supabase.auth.getUser().then(({ data: { user } }) =>
       setUser({ email: user?.email }),
     )
+    // Fetch landlords - admins should have full access via RLS policy
     supabase
       .from('landlords')
-      .select('*, properties(count)')
+      .select('*')
       .order('created_at', { ascending: false })
-      .then(({ data }) => {
+      .then(async ({ data, error }) => {
+        console.log('Landlords fetch result:', { data, error })
+        if (error) {
+          console.error('Error fetching landlords:', error)
+          setLoading(false)
+          return
+        }
+        
+        // Get property counts separately to avoid RLS issues with joined queries
+        const landlordIds = (data ?? []).map(l => l.id)
+        let propertyCounts: Record<string, number> = {}
+        
+        if (landlordIds.length > 0) {
+          const { data: properties } = await supabase
+            .from('properties')
+            .select('landlord_id')
+            .in('landlord_id', landlordIds)
+          
+          propertyCounts = (properties ?? []).reduce((acc: Record<string, number>, p: any) => {
+            acc[p.landlord_id] = (acc[p.landlord_id] || 0) + 1
+            return acc
+          }, {})
+        }
+        
         const list = (data ?? []).map((l: any) => ({
           ...l,
-          property_count: l.properties?.[0]?.count ?? 0,
+          property_count: propertyCounts[l.id] || 0,
         }))
         setClients(list)
         setFiltered(list)
@@ -304,7 +328,13 @@ export default function AdminLandlords() {
     if (!confirm('Permanently delete this landlord? This cannot be undone.')) return
     setProcessing(id)
     const supabase = createClient()
-    await supabase.from('landlords').delete().eq('id', id)
+    const { error } = await supabase.from('landlords').delete().eq('id', id)
+    if (error) {
+      console.error('Delete error:', error)
+      alert('Failed to delete: ' + error.message)
+      setProcessing(null)
+      return
+    }
     setClients(cs => cs.filter(c => c.id !== id))
     setProcessing(null)
   }
@@ -432,6 +462,12 @@ export default function AdminLandlords() {
                   {loading ? (
                     <div className="flex h-64 items-center justify-center">
                       <div className="h-8 w-8 animate-spin rounded-full border-[3px] border-slate-200 border-t-blue-500" />
+                    </div>
+                  ) : clients.length === 0 ? (
+                    <div className="flex h-56 flex-col items-center justify-center rounded-2xl border border-dashed border-slate-200 bg-white text-center">
+                      <Users className="mb-3 h-10 w-10 text-slate-200" />
+                      <p className="text-sm font-semibold text-slate-500">No landlords registered yet</p>
+                      <p className="mt-1 text-xs text-slate-400">Landlords will appear here when they register.</p>
                     </div>
                   ) : filtered.length === 0 ? (
                     <div className="flex h-56 flex-col items-center justify-center rounded-2xl border border-dashed border-slate-200 bg-white text-center">
