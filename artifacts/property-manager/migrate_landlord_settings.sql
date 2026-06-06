@@ -40,4 +40,16 @@ CREATE POLICY "Admins full access to landlord_settings"
   );
 
 -- Enable realtime
-ALTER PUBLICATION supabase_realtime ADD TABLE public.landlord_settings;
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_publication_tables
+    WHERE pubname = 'supabase_realtime'
+      AND schemaname = 'public'
+      AND tablename = 'landlord_settings'
+  ) THEN
+    EXECUTE 'ALTER PUBLICATION supabase_realtime ADD TABLE public.landlord_settings';
+  END IF;
+END;
+$$;

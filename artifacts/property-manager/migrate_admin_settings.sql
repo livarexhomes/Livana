@@ -34,7 +34,19 @@ CREATE POLICY "Admins full access to admin_settings"
   );
 
 -- Enable realtime
-ALTER PUBLICATION supabase_realtime ADD TABLE public.admin_settings;
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_publication_tables
+    WHERE pubname = 'supabase_realtime'
+      AND schemaname = 'public'
+      AND tablename = 'admin_settings'
+  ) THEN
+    EXECUTE 'ALTER PUBLICATION supabase_realtime ADD TABLE public.admin_settings';
+  END IF;
+END;
+$$;
 
 -- ── Admin Email Notifications Log ────────────────────────────────
 CREATE TABLE IF NOT EXISTS public.admin_email_notifications (
@@ -133,8 +145,7 @@ BEGIN
   -- Insert notification record (will be picked up by edge function)
   INSERT INTO public.admin_email_notifications (admin_id, type, subject, body, status)
   SELECT id, event_type, subject, body, 'pending'
-  FROM public.admins
-  WHERE is_super = true OR EXISTS (SELECT 1 FROM public.admin_settings WHERE key = 'notifications' AND (value->>'newLandlord')::boolean);
+  FROM public.admins;
 
   RETURN NEW;
 END;

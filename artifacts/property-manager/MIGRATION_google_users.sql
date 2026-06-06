@@ -17,7 +17,17 @@ DECLARE
   v_full_name  TEXT;
   v_email      TEXT;
   v_avatar_url TEXT;
+  v_role       TEXT;
 BEGIN
+  v_role := COALESCE(
+    NEW.raw_user_meta_data->>'role',
+    NEW.raw_app_meta_data->>'role'
+  );
+
+  IF v_role IN ('landlord', 'admin') OR (NEW.raw_user_meta_data->>'whatsapp') IS NOT NULL THEN
+    RETURN NEW;
+  END IF;
+
   v_provider   := COALESCE(NEW.raw_app_meta_data->>'provider', 'email');
   v_full_name  := COALESCE(
                     NEW.raw_user_meta_data->>'full_name',

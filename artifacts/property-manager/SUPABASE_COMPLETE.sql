@@ -165,7 +165,11 @@ CREATE POLICY "Landlord can update own profile"
 DROP POLICY IF EXISTS "Admins full access to landlords" ON public.landlords;
 CREATE POLICY "Admins full access to landlords"
   ON public.landlords FOR ALL
-  USING (EXISTS (SELECT 1 FROM public.admins WHERE id = auth.uid()));
+  USING (
+    EXISTS (SELECT 1 FROM public.admins WHERE id = auth.uid())
+    OR (auth.jwt() -> 'user_metadata' ->> 'role') = 'admin'
+    OR (auth.jwt() -> 'app_metadata' ->> 'role') = 'admin'
+  );
 
 
 -- ── tenants ──────────────────────────────────────────────────
@@ -202,7 +206,18 @@ DECLARE
   v_full_name  TEXT;
   v_email      TEXT;
   v_avatar_url TEXT;
+  v_role       TEXT;
 BEGIN
+  v_role := COALESCE(
+    NEW.raw_user_meta_data->>'role',
+    NEW.raw_app_meta_data->>'role'
+  );
+
+  -- Skip admin and landlord signups so they are not stored as tenants.
+  IF v_role IN ('landlord', 'admin') OR (NEW.raw_user_meta_data->>'whatsapp') IS NOT NULL THEN
+    RETURN NEW;
+  END IF;
+
   v_provider   := COALESCE(NEW.raw_app_meta_data->>'provider', 'email');
   v_full_name  := COALESCE(
                     NEW.raw_user_meta_data->>'full_name',
@@ -273,7 +288,11 @@ CREATE POLICY "Tenant update own row"
 DROP POLICY IF EXISTS "Admins full access to tenants" ON public.tenants;
 CREATE POLICY "Admins full access to tenants"
   ON public.tenants FOR ALL
-  USING (EXISTS (SELECT 1 FROM public.admins WHERE id = auth.uid()));
+  USING (
+    EXISTS (SELECT 1 FROM public.admins WHERE id = auth.uid())
+    OR (auth.jwt() -> 'user_metadata' ->> 'role') = 'admin'
+    OR (auth.jwt() -> 'app_metadata' ->> 'role') = 'admin'
+  );
 
 
 -- ── admins ───────────────────────────────────────────────────

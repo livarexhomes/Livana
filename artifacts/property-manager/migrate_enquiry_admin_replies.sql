@@ -28,4 +28,16 @@ CREATE POLICY "Admins full access to enquiry_replies"
 CREATE INDEX IF NOT EXISTS idx_enquiry_replies_admin ON public.enquiry_replies(admin_id);
 
 -- Enable realtime for enquiry_replies
-ALTER PUBLICATION supabase_realtime ADD TABLE public.enquiry_replies;
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_publication_tables
+    WHERE pubname = 'supabase_realtime'
+      AND schemaname = 'public'
+      AND tablename = 'enquiry_replies'
+  ) THEN
+    EXECUTE 'ALTER PUBLICATION supabase_realtime ADD TABLE public.enquiry_replies';
+  END IF;
+END;
+$$;

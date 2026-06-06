@@ -311,49 +311,54 @@ export default function AdminUsers() {
     supabase.auth.getUser().then(({ data: { user } }) => setUser({ email: user?.email }))
     
     // Fetch tenants - admins should have full access via RLS policy
-    supabase
-      .from('tenants')
-      .select('*')
-      .order('created_at', { ascending: false })
-      .then(async ({ data, error }) => {
-        console.log('Tenants fetch result:', { data, error })
-        if (error) {
-          console.error('Error fetching tenants:', error)
-          setLoading(false)
-          return
-        }
-        
-        // Get enquiry counts separately to avoid RLS issues with joined queries
-        const tenantIds = (data ?? []).map(t => t.id)
-        let enquiryCounts: Record<string, number> = {}
-        
-        if (tenantIds.length > 0) {
-          const { data: enquiries } = await supabase
-            .from('enquiries')
-            .select('tenant_id')
-            .in('tenant_id', tenantIds)
-          
-          enquiryCounts = (enquiries ?? []).reduce((acc: Record<string, number>, e: any) => {
-            acc[e.tenant_id] = (acc[e.tenant_id] || 0) + 1
-            return acc
-          }, {})
-        }
-        
-        const list: Tenant[] = (data ?? []).map((t: any) => ({
-          id: t.id,
-          user_id: t.user_id,
-          full_name: t.full_name ?? 'Unknown Tenant',
-          phone: t.phone ?? null,
-          email: t.email ?? null,
-          avatar_url: t.avatar_url ?? null,
-          provider: t.provider ?? 'email',
-          created_at: t.created_at,
-          enquiry_count: enquiryCounts[t.id] || 0,
-          status: t.status ?? 'active',
-        }))
-        setTenants(list)
+    ;(async () => {
+      const [{ data: tenantData, error: tenantError }, { data: landlordData, error: landlordError }] = await Promise.all([
+        supabase.from('tenants').select('*').order('created_at', { ascending: false }),
+        supabase.from('landlords').select('user_id'),
+      ])
+
+      console.log('Tenants fetch result:', { tenantData, tenantError, landlordData, landlordError })
+      if (tenantError || landlordError) {
+        if (tenantError) console.error('Error fetching tenants:', tenantError)
+        if (landlordError) console.error('Error fetching landlords:', landlordError)
         setLoading(false)
-      })
+        return
+      }
+
+      const landlordUserIds = new Set((landlordData ?? []).map((l: any) => l.user_id))
+      const tenantsOnly = (tenantData ?? []).filter((t: any) => !landlordUserIds.has(t.user_id))
+
+      // Get enquiry counts separately to avoid RLS issues with joined queries
+      const tenantIds = tenantsOnly.map(t => t.id)
+      let enquiryCounts: Record<string, number> = {}
+
+      if (tenantIds.length > 0) {
+        const { data: enquiries } = await supabase
+          .from('enquiries')
+          .select('tenant_id')
+          .in('tenant_id', tenantIds)
+
+        enquiryCounts = (enquiries ?? []).reduce((acc: Record<string, number>, e: any) => {
+          acc[e.tenant_id] = (acc[e.tenant_id] || 0) + 1
+          return acc
+        }, {})
+      }
+
+      const list: Tenant[] = tenantsOnly.map((t: any) => ({
+        id: t.id,
+        user_id: t.user_id,
+        full_name: t.full_name ?? 'Unknown Tenant',
+        phone: t.phone ?? null,
+        email: t.email ?? null,
+        avatar_url: t.avatar_url ?? null,
+        provider: t.provider ?? 'email',
+        created_at: t.created_at,
+        enquiry_count: enquiryCounts[t.id] || 0,
+        status: t.status ?? 'active',
+      }))
+      setTenants(list)
+      setLoading(false)
+    })()
   }, [])
 
   function showToast(msg: string) {
