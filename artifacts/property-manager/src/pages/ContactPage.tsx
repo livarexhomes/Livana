@@ -52,43 +52,88 @@ export default function ContactPage() {
       <PublicNavbar />
 
       {/* ── HERO ── */}
-      <section className="pt-24 pb-0 bg-white" style={{ marginTop: '80px' }}>
-        <div className="max-w-6xl mx-auto px-5 sm:px-8">
-          <div className="grid lg:grid-cols-2 gap-16 items-end pb-16 border-b border-gray-100">
-            {/* Left */}
-            <div>
-              <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-blue-50 text-blue-600 text-xs font-bold uppercase tracking-widest mb-6">
-                <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
+      <section className="relative pt-28 pb-24 bg-white overflow-hidden" style={{ marginTop: '80px' }}>
+        {/* Subtle Background Pattern */}
+        <div className="absolute inset-0">
+          <div className="absolute top-0 right-0 w-1/2 h-full bg-gradient-to-l from-blue-50/50 to-transparent" />
+          <div className="absolute bottom-0 left-0 w-96 h-96 bg-emerald-50/30 rounded-full blur-3xl" />
+          <div className="absolLETute top-20 right-20 w-64 h-64 bg-blue-100/20 rounded-full blur-2xl" />
+          {/* Grid Pattern */}
+          <div className="absolute inset-0 bg-[linear-gradient(rgba(59,130,246,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(59,130,246,0.03)_1px,transparent_1px)] bg-[size:60px_60px]" />
+        </div>
+        
+        <div className="relative max-w-7xl mx-auto px-5 sm:px-8">
+          <div className="grid lg:grid-cols-2 gap-16 items-center">
+            {/* Left Content */}
+            <div className="max-w-xl">
+              <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-blue-50 border border-blue-100 text-blue-600 text-xs font-bold uppercase tracking-wider mb-6">
+                <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
                 Get in touch
               </span>
-              <h1 className="text-5xl sm:text-6xl font-extrabold text-gray-900 leading-[1.05] tracking-tight mb-5">
-                Get in Touch With LIVAREX
+              
+              <h1 className="text-5xl sm:text-6xl font-extrabold text-gray-900 leading-[1.05] tracking-tight mb-6">
+                Let's Talk About Your
+                <span className="text-blue-600"> Property Goals</span>
               </h1>
-              <p className="text-gray-500 text-lg leading-relaxed max-w-md">
-                Whether you're a renter, landlord, or developer, our team is standing by to support you.
+              
+              <p className="text-gray-500 text-lg leading-relaxed mb-8">
+                Whether you're searching for your dream home, looking to list your property, 
+                or just have questions — our team is ready to assist you every step of the way.
               </p>
+              
+              <div className="flex flex-wrap gap-4">
+                <a href="#contact-form" className="inline-flex items-center gap-2 px-6 py-3.5 bg-blue-600 text-white rounded-xl font-semibold text-sm hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/25 hover:shadow-blue-600/40">
+                  Send us a message
+                  <ArrowRight className="w-4 h-4" />
+                </a>
+                <a href="tel:+2347060528437" className="inline-flex items-center gap-2 px-6 py-3.5 bg-white border border-gray-200 text-gray-700 rounded-xl font-semibold text-sm hover:bg-gray-50 hover:border-gray-300 transition-all">
+                  <Phone className="w-4 h-4" />
+                  Call us now
+                </a>
+              </div>
+              
+              {/* Trust indicators */}
+              <div className="flex items-center gap-6 mt-10 pt-10 border-t border-gray-100">
+                <div className="flex items-center gap-2">
+                  <div className="w-10 h-10 rounded-full bg-emerald-50 flex items-center justify-center">
+                    <CheckCircle className="w-5 h-5 text-emerald-600" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-gray-900">24/7 Support</p>
+                    <p className="text-xs text-gray-400">Always available</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center">
+                    <Clock className="w-5 h-5 text-blue-600" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-gray-900">Fast Response</p>
+                    <p className="text-xs text-gray-400">Within 24 hours</p>
+                  </div>
+                </div>
+              </div>
             </div>
-            {/* Right — channel cards */}
-            <div className="grid grid-cols-2 gap-3">
-              {channels.map(ch => {
+            
+            {/* Right - Contact Cards Grid */}
+            <div className="grid grid-cols-2 gap-4">
+              {channels.slice(0, 4).map((ch, index) => {
                 const Icon = ch.icon
                 return (
                   <a key={ch.label} href={ch.href}
                     target={ch.href.startsWith('http') ? '_blank' : undefined}
                     rel="noopener noreferrer"
-                    className={`group bg-white border border-gray-100 rounded-2xl p-5 flex flex-col gap-3 transition-all hover:shadow-lg ring-2 ring-transparent ${ch.ring}`}
+                    className={`group bg-white border border-gray-100 rounded-2xl p-6 transition-all duration-300 hover:shadow-xl hover:border-blue-100 hover:-translate-y-1 ${index === 0 ? 'col-span-2 sm:col-span-1' : ''}`}
                   >
-                    <div className={`w-10 h-10 rounded-xl ${ch.color} shadow-lg ${ch.shadow} flex items-center justify-center group-hover:scale-105 transition-transform`}>
-                      <Icon className="w-4.5 h-4.5 text-white w-5 h-5" />
+                    <div className={`w-12 h-12 rounded-xl ${ch.color} shadow-lg ${ch.shadow} flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300`}>
+                      <Icon className="w-5 h-5 text-white" />
                     </div>
-                    <div>
-                      <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-0.5">{ch.label}</p>
-                      <p className="text-sm font-bold text-gray-900 leading-snug">{ch.value}</p>
-                      <p className="text-xs text-gray-400 mt-1">{ch.note}</p>
-                    </div>
-                    <span className="inline-flex items-center gap-1 text-xs font-semibold text-gray-400 group-hover:text-blue-600 transition-colors mt-auto">
+                    <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">{ch.label}</p>
+                    <p className="text-sm font-semibold text-gray-900 leading-snug mb-2">{ch.value}</p>
+                    <p className="text-xs text-gray-400">{ch.note}</p>
+                    <div className="flex items-center gap-1 text-xs font-semibold text-blue-600 mt-3 opacity-0 group-hover:opacity-100 transition-opacity">
                       Contact <ArrowRight className="w-3 h-3" />
-                    </span>
+                    </div>
                   </a>
                 )
               })}
@@ -98,7 +143,7 @@ export default function ContactPage() {
       </section>
 
       {/* ── FORM + FAQ ── */}
-      <section className="bg-gray-50 py-20">
+      <section id="contact-form" className="bg-gray-50 py-20">
         <div className="max-w-6xl mx-auto px-5 sm:px-8">
           <div className="grid lg:grid-cols-[1fr_400px] gap-10">
 

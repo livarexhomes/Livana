@@ -3,7 +3,7 @@ import { Link, useParams, useLocation } from 'wouter'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   MapPin, BedDouble, Bath, Maximize, Heart,
-  ArrowLeft, Share2, CheckCircle, Send, LogIn, UserPlus,
+  ArrowLeft, Share2, CheckCircle, Send,
   Building2, Calendar, ShieldCheck, Info,
   Mail, Wifi, Car, Dumbbell, Waves, Wind, Shield, Zap,
   Droplets, TreePine, UtensilsCrossed, Tv, Lock, Sun, Package,
@@ -545,23 +545,41 @@ export default function PropertyDetailPage() {
 
                 <div className="p-5 space-y-3">
                   {/* WhatsApp - connects to admin */}
-                  <a
-                    href={`https://wa.me/2348001234567?text=${encodeURIComponent(`Hi, I'm interested in: ${property.title} (${property.address}, ${property.city})`)}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center justify-center gap-2.5 w-full py-3.5 bg-[#25D366] text-white rounded-2xl font-bold text-sm hover:bg-[#20c05c] transition-all active:scale-[0.98] shadow-lg shadow-green-100"
-                  >
-                    <MessageSquare className="w-4 h-4" /> Chat on WhatsApp
-                  </a>
+                  {userRole === 'guest' ? (
+                    <button
+                      onClick={() => navigate('/login')}
+                      className="flex items-center justify-center gap-2.5 w-full py-3.5 bg-[#25D366]/50 text-white rounded-2xl font-bold text-sm hover:bg-[#25D366]/70 transition-all cursor-pointer"
+                    >
+                      <Lock className="w-4 h-4" /> Sign in to chat on WhatsApp
+                    </button>
+                  ) : (
+                    <a
+                      href={`https://wa.me/2348001234567?text=${encodeURIComponent(`Hi, I'm interested in: ${property.title} (${property.address}, ${property.city})`)}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center justify-center gap-2.5 w-full py-3.5 bg-[#25D366] text-white rounded-2xl font-bold text-sm hover:bg-[#20c05c] transition-all active:scale-[0.98] shadow-lg shadow-green-100"
+                    >
+                      <MessageSquare className="w-4 h-4" /> Chat on WhatsApp
+                    </a>
+                  )}
 
                   {/* Enquiry toggle */}
-                  <button
-                    onClick={() => { setEnquiryOpen(!enquiryOpen); setEnquirySuccess(false) }}
-                    className="flex items-center justify-center gap-2.5 w-full py-3.5 bg-gray-900 text-white rounded-2xl font-bold text-sm hover:bg-gray-800 transition-all active:scale-[0.98]"
-                  >
-                    <Mail className="w-4 h-4" />
-                    {enquiryOpen ? 'Close' : 'Send Enquiry'}
-                  </button>
+                  {userRole === 'guest' ? (
+                    <button
+                      onClick={() => navigate('/login')}
+                      className="flex items-center justify-center gap-2.5 w-full py-3.5 bg-gray-400 text-white rounded-2xl font-bold text-sm hover:bg-gray-500 transition-all cursor-pointer"
+                    >
+                      <Lock className="w-4 h-4" /> Sign in to send enquiry
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => { setEnquiryOpen(!enquiryOpen); setEnquirySuccess(false) }}
+                      className="flex items-center justify-center gap-2.5 w-full py-3.5 bg-gray-900 text-white rounded-2xl font-bold text-sm hover:bg-gray-800 transition-all active:scale-[0.98]"
+                    >
+                      <Mail className="w-4 h-4" />
+                      {enquiryOpen ? 'Close' : 'Send Enquiry'}
+                    </button>
+                  )}
 
                   {/* Enquiry form */}
                   <AnimatePresence>
@@ -601,17 +619,15 @@ export default function PropertyDetailPage() {
                     )}
                   </AnimatePresence>
 
-                  {/* Guest CTA */}
+                  {/* Guest CTA - Lock message */}
                   {userRole === 'guest' && (
-                    <div className="rounded-2xl border border-gray-100 bg-gray-50 p-4 text-center space-y-3">
-                      <p className="text-xs text-gray-500 font-semibold">Sign up to send enquiries</p>
-                      <div className="flex gap-2">
-                        <Link href="/login" className="flex-1 flex items-center justify-center gap-1.5 py-2.5 border border-gray-200 rounded-xl text-xs font-bold text-gray-700 hover:bg-white transition-colors">
-                          <LogIn className="w-3.5 h-3.5" /> Sign in
-                        </Link>
-                        <Link href="/register" className="flex-1 flex items-center justify-center gap-1.5 py-2.5 bg-gray-900 text-white rounded-xl text-xs font-bold hover:bg-gray-800 transition-colors">
-                          <UserPlus className="w-3.5 h-3.5" /> Register
-                        </Link>
+                    <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4 flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center shrink-0">
+                        <Lock className="w-5 h-5 text-gray-500" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-bold text-gray-700">Sign up to send enquiries</p>
+                        <p className="text-xs text-gray-400">Create an account to contact landlords</p>
                       </div>
                     </div>
                   )}
@@ -708,10 +724,17 @@ export default function PropertyDetailPage() {
             </button>
           )}
           <button
-            onClick={() => { setEnquiryOpen(true); window.scrollTo({ top: 0, behavior: 'smooth' }) }}
+            onClick={() => {
+              if (userRole === 'guest') {
+                navigate('/login')
+              } else {
+                setEnquiryOpen(true)
+                window.scrollTo({ top: 0, behavior: 'smooth' })
+              }
+            }}
             className="px-6 py-3 bg-gray-900 text-white rounded-2xl font-bold text-sm hover:bg-gray-800 transition-colors active:scale-95 shadow-lg shadow-gray-900/10"
           >
-            Contact Now
+            {userRole === 'guest' ? 'Sign in to Contact' : 'Contact Now'}
           </button>
         </div>
       </div>

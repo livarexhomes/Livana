@@ -184,7 +184,7 @@ export default function HomePage() {
       {/* ── HERO ── */}
       <section
         className="relative"
-        style={{ minHeight: 'calc(100vh - 80px)', marginTop: '80px', padding: 'clamp(2rem, 5vw, 4rem) clamp(1.5rem, 5vw, 6rem)' }}
+        style={{ minHeight: 'calc(100vh - 80px)', marginTop: '80px', paddingTop: '4rem', paddingBottom: '4rem' }}
       >
         {/* Full-bleed background image */}
         <div className="absolute inset-0 overflow-hidden">
@@ -645,13 +645,19 @@ export default function HomePage() {
                 Hand-picked from verified landlords across Nigeria.
               </p>
             </div>
-            <Link
-              href={`/listings?type=${typeMap[activeTab]}`}
+            <button
+              onClick={() => {
+                if (isAuthenticated) {
+                  window.location.href = 'https://www.livarex.com.ng/listings?type=rent'
+                } else {
+                  window.location.href = '/login'
+                }
+              }}
               className="group inline-flex items-center gap-2.5 px-6 py-3 rounded-2xl bg-gray-900 text-white text-sm font-bold hover:bg-gray-800 transition-all whitespace-nowrap shrink-0 shadow-lg shadow-gray-900/10 active:scale-95"
             >
               View all listings
               <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
-            </Link>
+            </button>
           </div>
 
           {/* Filter tabs */}
