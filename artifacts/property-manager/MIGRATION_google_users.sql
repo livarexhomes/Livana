@@ -24,7 +24,12 @@ BEGIN
     NEW.raw_app_meta_data->>'role'
   );
 
-  IF v_role IN ('landlord', 'admin') OR (NEW.raw_user_meta_data->>'whatsapp') IS NOT NULL THEN
+  IF v_role IN ('landlord', 'admin') OR (
+       (NEW.raw_user_meta_data->>'whatsapp') IS NOT NULL
+    OR (NEW.raw_user_meta_data->>'phone') IS NOT NULL
+    OR (NEW.raw_user_meta_data->>'phone_number') IS NOT NULL
+    OR (NEW.raw_user_meta_data->'user_metadata'->>'whatsapp') IS NOT NULL
+  ) THEN
     RETURN NEW;
   END IF;
 

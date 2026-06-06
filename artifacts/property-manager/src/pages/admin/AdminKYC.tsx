@@ -240,6 +240,82 @@ export default function AdminKYC() {
                     )}
                   </div>
                 </div>
+
+                {selected && (
+                  <div className="hidden xl:block rounded-[32px] border border-slate-200 bg-white p-5 shadow-sm">
+                    <div className="flex items-center justify-between gap-4">
+                      <div className="flex items-center gap-3">
+                        <div className={`flex h-12 w-12 items-center justify-center rounded-3xl bg-gradient-to-br ${avatarGrad(selected.full_name)}`}>
+                          <span className="text-sm font-semibold text-white">{getInitials(selected.full_name)}</span>
+                        </div>
+                        <div>
+                          <p className="text-base font-semibold text-slate-950">{selected.full_name}</p>
+                          <p className="text-sm text-slate-500">{selected.whatsapp || 'No WhatsApp'}</p>
+                        </div>
+                      </div>
+                      <button onClick={() => { setSelected(null); setKycDocs([]); setImgErrors({}) }}
+                        className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 transition-colors">
+                        <X className="h-4 w-4" />
+                      </button>
+                    </div>
+                    <div className="mt-3 rounded-3xl bg-slate-50 p-3">
+                      <p className="text-xs uppercase tracking-[0.25em] text-slate-400">Status</p>
+                      <div className="mt-3 inline-flex items-center gap-2 rounded-full bg-white px-3 py-2 text-sm font-semibold text-slate-900 shadow-sm">
+                        <span className={`h-2.5 w-2.5 rounded-full ${STATUS_META[selected.status]?.dot ?? STATUS_META.pending.dot}`} />
+                        {STATUS_META[selected.status]?.label ?? 'Pending'}
+                      </div>
+                    </div>
+                    <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                      {[
+                        ['Joined', fmtDate(selected.created_at)],
+                        ['NIN', selected.nin],
+                        ['ID type', selected.id_type],
+                        ['ID number', selected.id_number],
+                      ].map(([label, value]) => (
+                        <div key={label} className="rounded-3xl bg-slate-50 p-4">
+                          <p className="text-[10px] uppercase tracking-[0.25em] text-slate-400">{label}</p>
+                          <p className="mt-2 text-sm font-semibold text-slate-950">{value || '—'}</p>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="mt-4 rounded-3xl border border-slate-200 bg-slate-50 p-4">
+                      <div className="flex items-center justify-between gap-4">
+                        <div>
+                          <p className="text-xs uppercase tracking-[0.25em] text-slate-400">Uploaded documents</p>
+                          <p className="mt-1 text-sm text-slate-500">Open each file for review.</p>
+                        </div>
+                        <p className="text-sm font-semibold text-slate-700">{kycDocs.length} file{kycDocs.length === 1 ? '' : 's'}</p>
+                      </div>
+                      <div className="mt-4 space-y-3">
+                        {docsLoading ? (
+                          <div className="rounded-3xl bg-white p-4 text-sm text-slate-500">Loading documents…</div>
+                        ) : kycDocs.length === 0 ? (
+                          <div className="rounded-3xl bg-white p-4 text-sm text-slate-500">No documents uploaded for this landlord.</div>
+                        ) : kycDocs.map(doc => {
+                          const isImage = /\.(jpe?g|png|webp)$/i.test(doc.file_name)
+                          return (
+                            <a key={doc.doc_type} href={doc.url} target="_blank" rel="noreferrer"
+                              className="flex items-center gap-3 rounded-3xl border border-slate-200 bg-white p-3 transition hover:border-slate-300">
+                              <div className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-3xl bg-slate-100">
+                                {isImage && !imgErrors[doc.doc_type] ? (
+                                  <img src={doc.url} alt={doc.file_name} className="h-full w-full object-cover"
+                                    onError={() => setImgErrors(prev => ({ ...prev, [doc.doc_type]: true }))} />
+                                ) : (
+                                  <FileText className="h-6 w-6 text-slate-400" />
+                                )}
+                              </div>
+                              <div className="min-w-0 flex-1">
+                                <p className="text-sm font-semibold text-slate-950">{DOC_LABELS[doc.doc_type] ?? doc.doc_type}</p>
+                                <p className="mt-1 truncate text-sm text-slate-500">{doc.file_name}</p>
+                              </div>
+                              <span className="rounded-full bg-slate-100 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">View</span>
+                            </a>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  </div>
+                )}
               </aside>
             </div>
 
@@ -279,6 +355,42 @@ export default function AdminKYC() {
                       <p className="mt-2 text-sm font-semibold text-slate-950">{value || '—'}</p>
                     </div>
                   ))}
+                </div>
+                <div className="mt-4 rounded-3xl border border-slate-200 bg-slate-50 p-4">
+                  <div className="flex items-center justify-between gap-4">
+                    <div>
+                      <p className="text-xs uppercase tracking-[0.25em] text-slate-400">Uploaded documents</p>
+                      <p className="mt-1 text-sm text-slate-500">Open each file for review.</p>
+                    </div>
+                    <p className="text-sm font-semibold text-slate-700">{kycDocs.length} file{kycDocs.length === 1 ? '' : 's'}</p>
+                  </div>
+                  <div className="mt-4 space-y-3">
+                    {docsLoading ? (
+                      <div className="rounded-3xl bg-white p-4 text-sm text-slate-500">Loading documents…</div>
+                    ) : kycDocs.length === 0 ? (
+                      <div className="rounded-3xl bg-white p-4 text-sm text-slate-500">No documents uploaded for this landlord.</div>
+                    ) : kycDocs.map(doc => {
+                      const isImage = /\.(jpe?g|png|webp)$/i.test(doc.file_name)
+                      return (
+                        <a key={doc.doc_type} href={doc.url} target="_blank" rel="noreferrer"
+                          className="flex items-center gap-3 rounded-3xl border border-slate-200 bg-white p-3 transition hover:border-slate-300">
+                          <div className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-3xl bg-slate-100">
+                            {isImage && !imgErrors[doc.doc_type] ? (
+                              <img src={doc.url} alt={doc.file_name} className="h-full w-full object-cover"
+                                onError={() => setImgErrors(prev => ({ ...prev, [doc.doc_type]: true }))} />
+                            ) : (
+                              <FileText className="h-6 w-6 text-slate-400" />
+                            )}
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <p className="text-sm font-semibold text-slate-950">{DOC_LABELS[doc.doc_type] ?? doc.doc_type}</p>
+                            <p className="mt-1 truncate text-sm text-slate-500">{doc.file_name}</p>
+                          </div>
+                          <span className="rounded-full bg-slate-100 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">View</span>
+                        </a>
+                      )
+                    })}
+                  </div>
                 </div>
               </div>
             )}

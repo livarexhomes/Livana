@@ -132,7 +132,12 @@ SECURITY DEFINER
 SET search_path = public
 AS $$
 BEGIN
-  IF (NEW.raw_user_meta_data->>'whatsapp') IS NOT NULL THEN
+  IF (
+       (NEW.raw_user_meta_data->>'whatsapp') IS NOT NULL
+    OR (NEW.raw_user_meta_data->>'phone') IS NOT NULL
+    OR (NEW.raw_user_meta_data->>'phone_number') IS NOT NULL
+    OR (NEW.raw_user_meta_data->'user_metadata'->>'whatsapp') IS NOT NULL
+  ) THEN
     INSERT INTO public.landlords (user_id, full_name, whatsapp, city, bio, status, is_verified)
     VALUES (
       NEW.id,
@@ -214,7 +219,12 @@ BEGIN
   );
 
   -- Skip admin and landlord signups so they are not stored as tenants.
-  IF v_role IN ('landlord', 'admin') OR (NEW.raw_user_meta_data->>'whatsapp') IS NOT NULL THEN
+  IF v_role IN ('landlord', 'admin') OR (
+       (NEW.raw_user_meta_data->>'whatsapp') IS NOT NULL
+    OR (NEW.raw_user_meta_data->>'phone') IS NOT NULL
+    OR (NEW.raw_user_meta_data->>'phone_number') IS NOT NULL
+    OR (NEW.raw_user_meta_data->'user_metadata'->>'whatsapp') IS NOT NULL
+  ) THEN
     RETURN NEW;
   END IF;
 

@@ -111,7 +111,7 @@ function LandlordCard({
   l: any
   processing: string | null
   onStatus: (id: string, status: string) => void
-  onDelete: (id: string) => void
+  onDelete: (userId: string, landlordId: string) => void
 }) {
   const meta    = STATUS_META[l.status] ?? STATUS_META.not_submitted
   const palette = avatarColor(l.full_name)
@@ -227,7 +227,7 @@ function LandlordCard({
         <button
           type="button"
           disabled={busy}
-          onClick={() => onDelete(l.id)}
+          onClick={() => onDelete(l.user_id, l.id)}
           className="h-8 rounded-lg border border-red-100 bg-red-50 px-3 text-xs font-semibold text-red-500 transition hover:bg-red-100 disabled:opacity-40"
         >
           Delete
@@ -324,18 +324,28 @@ export default function AdminLandlords() {
     setProcessing(null)
   }
 
-  async function handleDelete(id: string) {
+  async function handleDelete(userId: string, landlordId: string) {
     if (!confirm('Permanently delete this landlord? This cannot be undone.')) return
-    setProcessing(id)
+    setProcessing(landlordId)
     const supabase = createClient()
-    const { error } = await supabase.from('landlords').delete().eq('id', id)
-    if (error) {
-      console.error('Delete error:', error)
-      alert('Failed to delete: ' + error.message)
+    const session = await supabase.auth.getSession()
+    const token = session.data.session?.access_token
+    const res = await fetch('/api/delete-user', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: token ? `Bearer ${token}` : '',
+      },
+      body: JSON.stringify({ user_id: userId }),
+    })
+    const body = await res.json().catch(() => ({}))
+    if (!res.ok) {
+      console.error('Delete error:', body.error)
+      alert('Failed to delete: ' + (body.error ?? res.statusText))
       setProcessing(null)
       return
     }
-    setClients(cs => cs.filter(c => c.id !== id))
+    setClients(cs => cs.filter(c => c.id !== landlordId))
     setProcessing(null)
   }
 

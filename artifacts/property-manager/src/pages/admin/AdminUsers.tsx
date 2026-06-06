@@ -373,13 +373,27 @@ export default function AdminUsers() {
     const { tenant, type } = confirm
 
     if (type === 'delete') {
-      const { error } = await supabase.from('tenants').delete().eq('id', tenant.id)
-      if (error) {
-        console.error('Delete error:', error)
-        showToast(`Failed to delete: ${error.message}`)
+      if (!tenant.user_id) {
+        showToast('Unable to delete this user: missing auth user id.')
       } else {
-        setTenants(prev => prev.filter(t => t.id !== tenant.id))
-        showToast(`${tenant.full_name} has been deleted.`)
+        const session = await supabase.auth.getSession()
+        const token = session.data.session?.access_token
+        const res = await fetch('/api/delete-user', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: token ? `Bearer ${token}` : '',
+          },
+          body: JSON.stringify({ user_id: tenant.user_id }),
+        })
+        const body = await res.json().catch(() => ({}))
+        if (!res.ok) {
+          console.error('Delete error:', body.error)
+          showToast(`Failed to delete: ${body.error ?? res.statusText}`)
+        } else {
+          setTenants(prev => prev.filter(t => t.id !== tenant.id))
+          showToast(`${tenant.full_name} has been deleted.`)
+        }
       }
     } else {
       const newStatus = type === 'suspend' ? 'suspended' : 'active'
