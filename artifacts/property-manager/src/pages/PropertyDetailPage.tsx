@@ -627,7 +627,7 @@ export default function PropertyDetailPage() {
                       </div>
                       <div>
                         <p className="text-sm font-bold text-gray-700">Sign up to send enquiries</p>
-                        <p className="text-xs text-gray-400">Create an account to contact landlords</p>
+                        <p className="text-xs text-gray-400">Create an account to contact Livarex</p>
                       </div>
                     </div>
                   )}
