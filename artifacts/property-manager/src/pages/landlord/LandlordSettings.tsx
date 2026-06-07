@@ -557,11 +557,11 @@ export default function LandlordSettings() {
                 })}
               </div>
 
-              {/* Desktop sidebar navigation + Content */}
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-6 max-w-6xl">
-                {/* Desktop sidebar */}
-                <div className="hidden md:block md:col-span-1">
-                  <nav className="sticky top-4 flex flex-col gap-2 bg-white border border-gray-200 rounded-2xl p-4 shadow-sm">
+              {/* Desktop layout with fixed sidebar */}
+              <div className="flex gap-6">
+                {/* Desktop sidebar - FIXED */}
+                <div className="hidden md:block md:w-60 flex-shrink-0">
+                  <nav className="fixed w-60 top-24 flex flex-col gap-2 bg-white border border-gray-200 rounded-2xl p-4 shadow-sm max-h-[calc(100vh-150px)] overflow-y-auto">
                     {SECTIONS.map(s => {
                       const Icon = s.icon
                       const isActive = active === s.id
@@ -591,8 +591,8 @@ export default function LandlordSettings() {
                   </nav>
                 </div>
 
-                {/* Content area */}
-                <div className="md:col-span-3 space-y-6">
+                {/* Content area - with margin to account for fixed sidebar */}
+                <div className="flex-1 space-y-6">
 
                 {active === 'notifications' && (
                   <div>

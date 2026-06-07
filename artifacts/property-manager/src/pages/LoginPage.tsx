@@ -275,7 +275,7 @@ export default function LoginPage() {
         {/* Top: logo + tagline */}
         <div className="relative z-10">
           <div className="w-full flex items-center justify-center mb-10 mb-16">
-            <img src="/Livarex-logo-blue.png" alt="LIVAREX" className="h-50 w-auto" />
+            <img src="/livarex-logo.png" alt="LIVAREX" className="h-50 w-auto" />
           </div>
 
           <h2 className="text-4xl xl:text-5xl font-extrabold text-white leading-tight tracking-tight mb-4">
