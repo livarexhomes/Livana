@@ -688,7 +688,7 @@ export default function HomePage() {
           </div>
 
           {loading ? (
-            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
               {[...Array(4)].map((_, i) => (
                 <div key={i} className="bg-white rounded-3xl overflow-hidden border border-gray-100 animate-pulse">
                   <div className="h-56 bg-gray-100" />
@@ -705,7 +705,7 @@ export default function HomePage() {
               ))}
             </div>
           ) : properties.length > 0 ? (
-            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
               {properties.map(p => (
                 <PropertyCard key={p.id} property={p} saved={savedIds.has(p.id)} isAuthenticated={isAuthenticated} />
               ))}
@@ -863,12 +863,13 @@ export default function HomePage() {
             </Link>
 
             {/* Abuja — coming soon */}
-            <div className="relative overflow-hidden rounded-3xl col-span-1 shadow-sm cursor-default">
-              <img src="https://images.unsplash.com/photo-1567985207911-725f4e7c8926?w=800" alt="Abuja" className="w-full h-full object-cover" />
-              <div className="absolute inset-0 bg-black/60" />
+            <div className="relative group overflow-hidden rounded-3xl col-span-1 shadow-sm hover:shadow-2xl transition-all duration-500">
+              <img src="https://images.unsplash.com/photo-1567985207911-725f4e7c8926?w=800" alt="Abuja"
+                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
               <div className="absolute bottom-4 left-4">
-                <h3 className="text-lg font-bold text-white/60">Abuja</h3>
-                <p className="text-white/40 text-xs font-medium mt-0.5">Federal Capital</p>
+                <h3 className="text-lg font-bold text-white">Abuja</h3>
+                <p className="text-blue-200 text-xs font-medium mt-0.5">Federal Capital</p>
               </div>
               <div className="absolute top-3 right-3 bg-white/15 backdrop-blur-sm border border-white/20 text-white text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full">
                 Coming Soon
