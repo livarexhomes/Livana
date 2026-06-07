@@ -1014,7 +1014,7 @@ export default function HomePage() {
                     } else {
                       window.location.href = '/login'
                     }
-                  }} href="/listings" className="px-7 py-3.5 bg-blue-600 text-gray-900 font-bold rounded-2xl hover:bg-blue-700 transition-all text-center text-sm shadow-xl">
+                  }} href="/listings" className="px-7 py-3.5 bg-blue-600 text-gray-600 font-bold rounded-2xl hover:bg-blue-700 transition-all text-center text-sm shadow-xl">
                     Browse Listings
                   </Link>
                 </div>
