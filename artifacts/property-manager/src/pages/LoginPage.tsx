@@ -99,8 +99,8 @@ export default function LoginPage() {
       <div className="flex-1 flex flex-col justify-center px-6 sm:px-12 lg:px-16 py-12">
         <div className="max-w-md w-full mx-auto">
           {/* Logo */}
-          <Link href="/" className="inline-flex items-center mb-10">
-            <img src="/livarex-logo.png" alt="LIVAREX" className="h-10 w-auto" />
+          <Link href="/" className="w-full flex items-center justify-center mb-10">
+            <img src="/livarex-logo-transparent.png" alt="LIVAREX" className="h-20 w-auto" />
           </Link>
 
           {/* Heading */}
@@ -275,7 +275,7 @@ export default function LoginPage() {
         {/* Top: logo + tagline */}
         <div className="relative z-10">
           <div className="mb-16">
-            <img src="/livarex-logo.png" alt="LIVAREX" className="h-10 w-auto" />
+            <img src="/livarex-logo-transparent.png" alt="LIVAREX" className="h-20 w-auto" />
           </div>
 
           <h2 className="text-4xl xl:text-5xl font-extrabold text-white leading-tight tracking-tight mb-4">

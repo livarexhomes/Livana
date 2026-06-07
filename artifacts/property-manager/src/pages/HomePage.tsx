@@ -237,14 +237,14 @@ export default function HomePage() {
               Find verified homes directly from verified landlords. No agents. No middlemen. No hidden fees.
             </p>
 
-            <div className="flex flex-col sm:flex-row gap-4 mb-12">
+            {/* <div className="flex flex-col sm:flex-row gap-4 mb-12">
               <Link href="/listings" className="inline-flex items-center justify-center rounded-full bg-blue-600 px-8 py-4 text-sm font-bold text-white shadow-lg shadow-blue-600/25 hover:bg-blue-500 transition-all">
                 Browse Properties
               </Link>
               <Link href="/for-landlords" className="inline-flex items-center justify-center rounded-full border border-white/20 bg-white/10 px-8 py-4 text-sm font-semibold text-white hover:bg-white/15 transition-all">
                 List Your Property
               </Link>
-            </div>
+            </div> */}
 
             {/* Search card */}
             <div className="mb-12">
@@ -584,10 +584,10 @@ export default function HomePage() {
                 </p>
               </div>
               <div className="flex items-center gap-3">
-                <Link href="/listings"
+                {/* <Link href="/listings"
                   className="flex-1 bg-gray-900 hover:bg-gray-800 text-white py-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-colors">
                   View Listings <ArrowRight className="w-3.5 h-3.5" />
-                </Link>
+                </Link> */}
                 <div className="flex items-center gap-1">
                   {HERO_LISTINGS.map((_, i) => (
                     <button key={i}
@@ -1008,11 +1008,14 @@ export default function HomePage() {
                   ))}
                 </ul>
                 <div className="flex flex-col sm:flex-row gap-3">
-                  <Link href="/listings" className="px-7 py-3.5 bg-white text-gray-900 font-bold rounded-2xl hover:bg-gray-100 transition-all text-center text-sm shadow-xl">
+                  <Link onClick={() => {
+                    if (isAuthenticated) {
+                      window.location.href = 'https://www.livarex.com.ng/listings?type=all'
+                    } else {
+                      window.location.href = '/login'
+                    }
+                  }} href="/listings" className="px-7 py-3.5 bg-white text-gray-900 font-bold rounded-2xl hover:bg-gray-100 transition-all text-center text-sm shadow-xl">
                     Browse Listings
-                  </Link>
-                  <Link href="/register" className="px-7 py-3.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-2xl transition-all text-center text-sm">
-                    List Your Property
                   </Link>
                 </div>
               </div>
