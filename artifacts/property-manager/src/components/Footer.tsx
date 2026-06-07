@@ -10,7 +10,7 @@ export default function Footer() {
               <img src="/livarex-logo.png" alt="LIVAREX" className="h-9 w-auto" />
             </Link>
             <p className="text-sm leading-relaxed text-gray-400 max-w-xs">
-              Every listing is backed by a verified landlord. No agents. No hidden fees.
+              The Bridge to your new home.
             </p>
             <div className="flex items-center gap-3 mt-6">
               <a href="https://instagram.com/livarex.ng" target="_blank" rel="noopener noreferrer" className="w-9 h-9 rounded-xl bg-white/6 hover:bg-blue-600 border border-white/8 flex items-center justify-center transition-all hover:border-blue-600">
