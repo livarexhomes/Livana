@@ -4,6 +4,19 @@ import { createClient, isSupabaseConfigured } from '../lib/supabase'
 import { isAdminUser } from '../lib/auth'
 import type { User } from '@supabase/supabase-js'
 
+// Exported for unit testing
+export function getRedirectForLandlord(existingLandlord: { status: string } | null, requestedRole: string | null) {
+  if (!existingLandlord) return null
+  if ((requestedRole ?? '').toLowerCase() === 'tenant') return null
+
+  const status = existingLandlord.status
+  if (status === 'not_submitted') return '/landlord/onboarding'
+  if (status === 'pending')       return '/landlord/pending'
+  if (status === 'rejected')      return '/landlord/rejected'
+  if (status === 'suspended')     return '/landlord/suspended'
+  return '/landlord'
+}
+
 function isSafePath(next: string | null): next is string {
   if (!next) return false
   try {
@@ -30,6 +43,7 @@ export default function AuthCallbackPage() {
     const errorDesc = hashParams.get('error_description') ?? queryParams.get('error_description')
     const next = queryParams.get('next')
     const redirectTo = isSafePath(next) ? next : '/user'
+    const requestedRole = (queryParams.get('role') ?? '').toLowerCase()
 
     if (errorParam) {
       setErrorMsg(errorDesc ?? errorParam)
@@ -42,21 +56,12 @@ export default function AuthCallbackPage() {
 
       const meta = user.user_metadata ?? {}
 
-      // ── Landlord flow ──────────────────────────────────────────────
-      // Landlords are created via /api/landlord-register (auto-confirmed, no
-      // email callback). If a landlord row exists here it means they signed in
-      // via Google or a magic link — route them by status.
+      // Landlord flow handled by helper to allow testing.
       const { data: existingLandlord } = await supabase
         .from('landlords').select('status').eq('user_id', user.id).single() as { data: { status: string } | null }
 
-      if (existingLandlord) {
-        if (existingLandlord.status === 'not_submitted') { navigate('/landlord/onboarding'); return }
-        if (existingLandlord.status === 'pending')       { navigate('/landlord/pending');    return }
-        if (existingLandlord.status === 'rejected')      { navigate('/landlord/rejected');   return }
-        if (existingLandlord.status === 'suspended')     { navigate('/landlord/suspended');  return }
-        navigate('/landlord')
-        return
-      }
+      const landlordRedirect = getRedirectForLandlord(existingLandlord, requestedRole)
+      if (landlordRedirect) { navigate(landlordRedirect); return }
 
       // ── Tenant flow ────────────────────────────────────────────────
       // Upsert so that re-logins (especially Google OAuth) always keep
