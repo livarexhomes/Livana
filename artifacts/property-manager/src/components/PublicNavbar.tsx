@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { Building2 } from 'lucide-react'
 import { Link, useLocation } from 'wouter'
 import type { User } from '@supabase/supabase-js'
 import { createClient, isSupabaseConfigured } from '../lib/supabase'
@@ -70,13 +71,22 @@ export default function PublicNavbar() {
               <Link
                 key={href}
                 href={href!}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all ${
                   (isActive(href!) && href !== '/') || (href === '/' && location === '/')
-                    ? 'bg-blue-50 text-blue-600'
+                    ? 'bg-blue-600 text-white shadow-md'
                     : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
                 }`}
               >
-                {label}
+                {label === 'Rent' ? (
+                  <>
+                    <span className="w-7 h-7 rounded-lg bg-white/10 flex items-center justify-center">
+                      <Building2 className={`w-4 h-4 ${isActive(href!) ? 'text-white' : 'text-blue-600'}`} />
+                    </span>
+                    <span>{label}</span>
+                  </>
+                ) : (
+                  <span>{label}</span>
+                )}
               </Link>
             )
           ))}
@@ -148,7 +158,16 @@ export default function PublicNavbar() {
                 className={`block px-4 py-3 rounded-xl text-sm font-medium transition-all ${
                   isActive(href!) ? 'bg-blue-50 text-blue-600' : 'text-gray-700 hover:bg-gray-50'
                 }`}>
-                {label}
+                {label === 'Rent' ? (
+                  <span className="inline-flex items-center gap-2">
+                    <span className="w-6 h-6 rounded-lg bg-white/10 flex items-center justify-center">
+                      <Building2 className="w-4 h-4 text-blue-600" />
+                    </span>
+                    <span>{label}</span>
+                  </span>
+                ) : (
+                  <span>{label}</span>
+                )}
               </Link>
             )
           ))}
