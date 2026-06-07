@@ -5,6 +5,7 @@ import {
 } from 'lucide-react'
 import AuthGuard from '../../components/AuthGuard'
 import UserSidebar from '../../components/UserSidebar'
+import UserBottomNav from '../../components/UserBottomNav'
 import ListingCard from '../../components/ListingCard'
 import { createClient } from '../../lib/supabase'
 import type { Tenant, PropertyWithLandlord } from '../../lib/types'
@@ -15,10 +16,7 @@ import type { Tenant, PropertyWithLandlord } from '../../lib/types'
 export function UserLayout({ children, title }: { children: React.ReactNode; title: string }) {
   const [tenant, setTenant] = useState<Tenant | null>(null)
   const [user, setUser] = useState<{ email?: string } | null>(null)
-  const [sidebarOpen, setSidebarOpen] = useState(false)
   const [location] = useLocation()
-
-  useEffect(() => { setSidebarOpen(false) }, [location])
 
   useEffect(() => {
     const supabase = createClient()
@@ -35,22 +33,17 @@ export function UserLayout({ children, title }: { children: React.ReactNode; tit
 
   return (
     <div className="flex h-screen overflow-hidden bg-[#F4F6FB]">
+      {/* Desktop sidebar */}
       <UserSidebar
         displayName={displayName}
         userEmail={user?.email}
         initials={initials}
-        open={sidebarOpen}
-        onClose={() => setSidebarOpen(false)}
+        open={false}
+        onClose={() => {}}
       />
 
-      <button type="button" onClick={() => setSidebarOpen(true)}
-        className="md:hidden fixed top-3 left-3 z-[65] w-9 h-9 flex items-center justify-center rounded-xl bg-white border border-gray-200 shadow-sm text-gray-600 hover:bg-gray-50 active:scale-95 transition-all"
-        aria-label="Open menu">
-        <Menu className="w-4 h-4" />
-      </button>
-
       <div className="flex-1 flex flex-col min-w-0">
-        <header className="flex items-center justify-between pl-14 pr-4 md:px-8 py-4 bg-white border-b border-gray-100 shrink-0">
+        <header className="flex items-center justify-between px-4 md:px-8 py-4 bg-white border-b border-gray-100 shrink-0">
           <h1 className="text-base font-extrabold text-gray-900 tracking-tight">{title}</h1>
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center shadow-sm">
@@ -59,8 +52,11 @@ export function UserLayout({ children, title }: { children: React.ReactNode; tit
             <span className="text-sm font-semibold text-gray-700 hidden sm:block">{displayName}</span>
           </div>
         </header>
-        <main className="flex-1 overflow-y-auto p-4 md:p-6 pb-24 md:pb-6">{children}</main>
+        <main className="flex-1 overflow-y-auto p-4 md:p-6 pb-20 md:pb-6">{children}</main>
       </div>
+
+      {/* Mobile bottom navigation */}
+      <UserBottomNav userEmail={user?.email} />
     </div>
   )
 }
