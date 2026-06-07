@@ -256,7 +256,7 @@ export default function AboutPage() {
             <div>
               <p className="text-blue-600 font-bold text-sm uppercase tracking-widest mb-4">Why LIVAREX</p>
               <h2 className="text-4xl font-extrabold text-gray-900 tracking-tight leading-tight mb-8">
-                The honest alternative to Nigerian property agents
+                Verified Homes. Trusted Connections
               </h2>
               <div className="space-y-4">
                 {[
