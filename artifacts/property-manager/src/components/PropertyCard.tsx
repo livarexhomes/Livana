@@ -39,6 +39,9 @@ export default function PropertyCard({ property: p, saved: initialSaved = false,
   const cfg = TYPE_CONFIG[p.type] ?? TYPE_CONFIG.sale
   const statusDot = STATUS_DOT[p.status] ?? 'bg-gray-400'
   const statusLabel = p.status.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
+  const daysListed = Math.max(1, Math.floor((Date.now() - new Date(p.created_at).getTime()) / 86400000))
+  const listedLabel = daysListed === 1 ? 'Listed today' : `Listed ${daysListed} day${daysListed === 1 ? '' : 's'} ago`
+  const availableNow = p.status === 'available'
 
   async function handleSave(e: React.MouseEvent) {
     e.preventDefault()
@@ -132,9 +135,17 @@ export default function PropertyCard({ property: p, saved: initialSaved = false,
           <h3 className="font-bold text-gray-900 text-[15px] leading-snug line-clamp-1 mb-1 group-hover:text-blue-600 transition-colors duration-200">
             {p.title}
           </h3>
-          <div className="flex items-center gap-1 text-gray-400 text-xs mb-4">
-            <MapPin className="w-3 h-3 shrink-0 text-blue-400" />
-            <span className="truncate">{p.city}</span>
+          <div className="flex flex-wrap items-center gap-2 text-gray-400 text-xs mb-4">
+            <div className="inline-flex items-center gap-1">
+              <MapPin className="w-3 h-3 shrink-0 text-blue-400" />
+              <span className="truncate">{p.city}</span>
+            </div>
+            <span className="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2 py-1 text-[10px] uppercase tracking-[0.18em] text-gray-500">
+              {availableNow ? 'Available now' : statusLabel}
+            </span>
+            <span className="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2 py-1 text-[10px] uppercase tracking-[0.18em] text-gray-500">
+              {listedLabel}
+            </span>
           </div>
 
           {/* Stats row */}

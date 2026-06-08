@@ -627,6 +627,40 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* ── VERIFICATION PROCESS & REQUEST ── */}
+      <section className="bg-white border-b border-gray-100">
+        <div className="max-w-6xl mx-auto px-5 sm:px-8 py-16">
+          <div className="grid gap-10 lg:grid-cols-[1.3fr_0.9fr] items-center">
+            <div>
+              <p className="text-blue-600 font-semibold text-sm uppercase tracking-widest mb-3">Verified for safety</p>
+              <h2 className="text-3xl md:text-4xl font-extrabold text-gray-900 mb-4">How Livarex verifies every landlord</h2>
+              <p className="text-gray-500 max-w-xl mb-8">We combine phone checks, ID screening, ownership review, and manual approval so you can book a home with confidence.</p>
+              <div className="grid gap-3">
+                {[
+                  'Government ID verified',
+                  'Phone number authenticated',
+                  'Ownership & listing review',
+                  'Manual admin approval',
+                ].map((item, idx) => (
+                  <div key={item} className="flex gap-3 items-start">
+                    <span className="mt-1 inline-flex h-7 w-7 items-center justify-center rounded-2xl bg-blue-600 text-white text-xs font-bold">{idx + 1}</span>
+                    <p className="text-sm text-gray-600">{item}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="rounded-3xl border border-gray-100 bg-gray-50 p-8">
+              <p className="text-sm font-bold text-gray-900 mb-2">Can’t find what you need?</p>
+              <p className="text-gray-500 text-sm mb-5">Tell us your ideal location, budget and move-in date. Our team will notify landlords and match you faster.</p>
+              <Link href="/contact" className="inline-flex items-center gap-2 px-5 py-3 rounded-2xl bg-blue-600 text-white font-semibold hover:bg-blue-500 transition-all">
+                Request a property
+                <ArrowRight className="w-4 h-4" />
+              </Link>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* ── PROPERTIES ── */}
       <section className="bg-[#F8F8F6] py-20 md:py-25">
         <div className="max-w-7xl mx-auto px-5 sm:px-8">

@@ -218,6 +218,16 @@ export default function PropertyDetailPage() {
   const landlord = property.landlords
   const statusCfg = STATUS_CONFIG[property.status] ?? { label: property.status, dot: 'bg-gray-400', bg: 'bg-gray-50', text: 'text-gray-600' }
   const landlordInitials = landlord?.full_name ? landlord.full_name.split(' ').slice(0, 2).map(w => w[0]).join('').toUpperCase() : '?'
+  const addressVisible = userRole !== 'guest'
+  const publicLocation = property ? property.city : ''
+  const fullLocation = property ? [property.address, property.city].filter(Boolean).join(', ') : ''
+  const locationText = addressVisible ? fullLocation : publicLocation
+
+  function handleBookInspection() {
+    if (userRole === 'guest') { navigate('/login'); return }
+    setEnquiryOpen(true)
+    setEnquiryMsg(`Hi, I'd like to book an inspection for ${property?.title || 'this property'}.`)
+  }
 
   return (
     <div className="min-h-screen bg-[#F8F8F6] selection:bg-blue-100 selection:text-blue-900">
@@ -307,8 +317,11 @@ export default function PropertyDetailPage() {
               </h1>
               <div className="flex items-center gap-2 text-white/70 text-sm">
                 <MapPin className="w-3.5 h-3.5 text-white/50 shrink-0" />
-                {[property.address, property.city].filter(Boolean).join(', ')}, Nigeria
+                {locationText}, Nigeria
               </div>
+              {!addressVisible && (
+                <div className="mt-2 text-xs text-white/80">Create a free account to unlock the full address and contact details.</div>
+              )}
             </div>
 
             {/* Image counter */}
@@ -485,8 +498,11 @@ export default function PropertyDetailPage() {
                         <h2 className="text-lg font-bold text-gray-900 mb-1">Where you'll be</h2>
                         <p className="text-sm text-gray-400 flex items-center gap-1.5">
                           <MapPin className="w-3.5 h-3.5 text-blue-500 shrink-0" />
-                          {[property.address, property.city].filter(Boolean).join(', ')}, Nigeria
+                          {addressVisible ? fullLocation : property.city}, Nigeria
                         </p>
+                        {!addressVisible && (
+                          <p className="text-xs text-gray-400 mt-2">Sign in to view the full address and securely contact the landlord.</p>
+                        )}
                       </div>
 
                       {property.latitude && property.longitude ? (
@@ -504,7 +520,7 @@ export default function PropertyDetailPage() {
                             <Marker position={[property.latitude, property.longitude]}>
                               <Popup>
                                 <span className="font-semibold text-gray-900 text-xs">{property.title}</span><br />
-                                <span className="text-gray-400 text-xs">{property.address}, {property.city}</span>
+                                <span className="text-gray-400 text-xs">{addressVisible ? fullLocation : property.city}</span>
                               </Popup>
                             </Marker>
                           </MapContainer>
@@ -550,11 +566,11 @@ export default function PropertyDetailPage() {
                       onClick={() => navigate('/login')}
                       className="flex items-center justify-center gap-2.5 w-full py-3.5 bg-[#25D366]/50 text-white rounded-2xl font-bold text-sm hover:bg-[#25D366]/70 transition-all cursor-pointer"
                     >
-                      <Lock className="w-4 h-4" /> Sign in to chat on WhatsApp
+                      <Lock className="w-4 h-4" /> Create a free account to contact verified landlords
                     </button>
                   ) : (
                     <a
-                      href={`https://wa.me/2348001234567?text=${encodeURIComponent(`Hi, I'm interested in: ${property.title} (${property.address}, ${property.city})`)}`}
+                      href={`https://wa.me/${landlord?.whatsapp?.replace(/\D/g, '') ?? '2348001234567'}?text=${encodeURIComponent(`Hi, I'm interested in: ${property.title} (${fullLocation})`)}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="flex items-center justify-center gap-2.5 w-full py-3.5 bg-[#25D366] text-white rounded-2xl font-bold text-sm hover:bg-[#20c05c] transition-all active:scale-[0.98] shadow-lg shadow-green-100"
@@ -562,6 +578,13 @@ export default function PropertyDetailPage() {
                       <MessageSquare className="w-4 h-4" /> Chat on WhatsApp
                     </a>
                   )}
+
+                  <button
+                    onClick={handleBookInspection}
+                    className="flex items-center justify-center gap-2.5 w-full py-3.5 bg-gray-900 text-white rounded-2xl font-bold text-sm hover:bg-gray-800 transition-all active:scale-[0.98] shadow-lg shadow-gray-900/10"
+                  >
+                    <Calendar className="w-4 h-4" /> Book inspection
+                  </button>
 
                   {/* Enquiry toggle */}
                   {userRole === 'guest' ? (
@@ -621,13 +644,23 @@ export default function PropertyDetailPage() {
 
                   {/* Guest CTA - Lock message */}
                   {userRole === 'guest' && (
-                    <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4 flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center shrink-0">
-                        <Lock className="w-5 h-5 text-gray-500" />
+                    <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4 flex flex-col gap-3">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center shrink-0">
+                          <Lock className="w-5 h-5 text-gray-500" />
+                        </div>
+                        <div>
+                          <p className="text-sm font-bold text-gray-700">Create an account to contact landlords</p>
+                          <p className="text-xs text-gray-400">Free signup unlocks landlord contact, booking, and alerts.</p>
+                        </div>
                       </div>
-                      <div>
-                        <p className="text-sm font-bold text-gray-700">Sign up to send enquiries</p>
-                        <p className="text-xs text-gray-400">Create an account to contact Livarex</p>
+                      <div className="rounded-2xl bg-white border border-gray-100 p-3 text-xs text-gray-500">
+                        <p className="font-semibold text-gray-700 mb-1">Why register?</p>
+                        <ul className="list-disc pl-5 space-y-1">
+                          <li>Contact verified landlords directly</li>
+                          <li>Unlock full property address</li>
+                          <li>Save properties and book inspections</li>
+                        </ul>
                       </div>
                     </div>
                   )}
@@ -697,6 +730,17 @@ export default function PropertyDetailPage() {
                     <p className="text-xs text-gray-500 leading-relaxed">Always inspect the property in person before making any payments. We never ask for money via the platform.</p>
                   </div>
                 </div>
+              </div>
+
+              {/* Verification process */}
+              <div className="rounded-3xl border border-gray-100 bg-white p-5">
+                <p className="text-sm font-bold text-gray-900 mb-3">How Livana verifies landlords</p>
+                <ol className="space-y-3 text-sm text-gray-600">
+                  <li className="flex gap-2"><span className="text-blue-600">1.</span> Government ID check</li>
+                  <li className="flex gap-2"><span className="text-blue-600">2.</span> Phone verification</li>
+                  <li className="flex gap-2"><span className="text-blue-600">3.</span> Property ownership review</li>
+                  <li className="flex gap-2"><span className="text-blue-600">4.</span> Manual admin approval</li>
+                </ol>
               </div>
 
             </div>
