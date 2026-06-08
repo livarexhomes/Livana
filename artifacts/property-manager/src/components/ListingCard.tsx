@@ -74,12 +74,6 @@ export default function ListingCard({
   return (
     <Link
       href={`/listings/${p.id}`}
-      onClick={(e: any) => {
-        if (!isAuthenticated) {
-          e.preventDefault()
-          navigate(`/login?next=/listings/${p.id}`)
-        }
-      }}
       className={`${isGrid ? 'flex-col' : 'flex'} gap-0 bg-white rounded-2xl overflow-hidden border transition-all duration-200 cursor-pointer group h-full ${
         highlighted
           ? 'border-green-500 shadow-lg shadow-green-500/10 ring-1 ring-green-500/30'
@@ -101,15 +95,6 @@ export default function ListingCard({
             <svg className="w-10 h-10" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1}>
               <path strokeLinecap="round" stroke-linejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
             </svg>
-          </div>
-        )}
-        {/* Lock overlay for unauthenticated users */}
-        {!isAuthenticated && (
-          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-            <span className="inline-flex items-center gap-2 bg-white/90 text-gray-800 px-3 py-2 rounded-full text-sm font-semibold shadow">
-              <Lock className="w-4 h-4" />
-              Sign in to view details
-            </span>
           </div>
         )}
         {/* Listed badge */}
