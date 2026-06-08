@@ -261,8 +261,8 @@ export default function AboutPage() {
               <div className="space-y-4">
                 {[
                   'Every landlord completes identity verification before listings go live.',
-                  'Every landlord verified before any listing goes live.',
-                  'Direct WhatsApp contact.',
+                  'Every listing is verified and approved by Livarex.',
+                  'Inspection requests are handled through our marketplace process.',
                   'Every property is tied to a verified identity.',
                 ].map(item => (
                   <div key={item} className="flex items-start gap-3">

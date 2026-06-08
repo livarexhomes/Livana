@@ -282,16 +282,16 @@ export default function LoginPage() {
             Nigeria's most<br />trusted property<br />platform.
           </h2>
           <p className="text-gray-400 text-base leading-relaxed max-w-xs">
-            Browse verified listings, contact landlords directly, and move in faster — no agent fees.
+            Browse verified listings, submit inspection requests, and move in faster — no agent fees.
           </p>
         </div>
 
         {/* Middle: trust badges */}
         <div className="relative z-10 space-y-4 my-10">
           {[
-            { icon: ShieldCheck, label: 'Verified landlords only', desc: 'Every landlord reviewed & approved' },
+            { icon: ShieldCheck, label: 'Verified properties only', desc: 'Every listing reviewed by Livarex' },
             { icon: Building2, label: 'Real listings, real prices', desc: 'No fake or inflated listings' },
-            { icon: Users, label: 'Direct contact', desc: 'WhatsApp landlords in one tap' },
+            { icon: Users, label: 'Contact through Livarex', desc: 'Request inspections and enquiries securely' },
           ].map(({ icon: Icon, label, desc }) => (
             <div key={label} className="flex items-center gap-4">
               <div className="w-10 h-10 rounded-xl bg-blue-600/20 border border-blue-500/30 flex items-center justify-center shrink-0">

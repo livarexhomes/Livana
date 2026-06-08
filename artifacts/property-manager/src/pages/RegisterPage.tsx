@@ -293,7 +293,7 @@ export default function RegisterPage() {
 
         {/* Bottom: perks */}
         <div className="relative z-10 space-y-3">
-          {['Free to browse — no hidden fees', 'Verified landlords only', 'Direct WhatsApp contact'].map(item => (
+          {['Free to browse — no hidden fees', 'Verified properties only', 'Secure inspection requests'].map(item => (
             <div key={item} className="flex items-center gap-3">
               <CheckCircle2 className="w-4 h-4 text-blue-500 shrink-0" />
               <span className="text-sm text-gray-400">{item}</span>

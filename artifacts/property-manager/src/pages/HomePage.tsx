@@ -234,7 +234,7 @@ export default function HomePage() {
 
             {/* Subtitle */}
             <p className="text-lg text-white/70 mb-10 leading-relaxed max-w-lg font-light">
-              Find verified homes directly from verified landlords. No agents. No middlemen. No hidden fees.
+              Find verified homes with a safe and transparent rental process. Every property is reviewed and managed through Livarex.
             </p>
 
             {/* <div className="flex flex-col sm:flex-row gap-4 mb-12">
@@ -545,10 +545,11 @@ export default function HomePage() {
             {/* Stats row */}
             <div className="flex items-center gap-8">
               {[
-                { value: 2400, suffix: '+', label: 'Properties' },
-                { value: 850, suffix: '+', label: 'Landlords' },
-                { value: 0, prefix: '₦', label: 'Agent Fees' },
-              ].map((s, i) => (
+                { value: 2400, suffix: '+', label: 'Verified Properties' },
+                { value: 850, suffix: '+', label: 'Successful Inspections' },
+                { value: 10, suffix: 'K+', label: 'Happy Tenants' },
+                { value: 2, suffix: 'h', label: 'Avg Response Time' },
+              ].map((s: { value: number; suffix: string; label: string; prefix?: string }, i) => (
                 <div key={s.label} className="flex items-center gap-8">
                   {i > 0 && <div className="w-px h-8 bg-white/20" />}
                   <div>
@@ -608,10 +609,10 @@ export default function HomePage() {
         <div className="max-w-6xl mx-auto px-5 sm:px-8 py-10">
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
             {[
-              { icon: ShieldCheck, label: 'Verified Landlords', desc: 'Every landlord reviewed & approved' },
-              { icon: Building2, label: 'Genuine Listings', desc: 'Real properties, real prices' },
-              { icon: Users, label: 'Direct Contact', desc: 'No middlemen or agent fees' },
-              { icon: TrendingUp, label: 'Market Insights', desc: 'Stay ahead with price trends' },
+              { icon: ShieldCheck, label: 'Verified Properties', desc: 'Every listing reviewed by Livarex' },
+              { icon: Building2, label: 'Secure Inspections', desc: 'Book viewings with our team' },
+              { icon: Users, label: 'Dedicated Support', desc: 'Livarex handles your request end-to-end' },
+              { icon: TrendingUp, label: 'Transparent Pricing', desc: 'Clear fees and no hidden charges' },
             ].map(({ icon: Icon, label, desc }) => (
               <div key={label} className="flex items-start gap-3 p-4">
                 <div className="w-11 h-11 rounded-xl bg-blue-50 flex items-center justify-center shrink-0">
@@ -978,7 +979,7 @@ export default function HomePage() {
             {[
               { name: 'Adebayo O.', role: 'Tenant', city: 'Lagos', text: 'Found my perfect 3-bedroom in Lekki within a week. The landlord verification gave me total peace of mind. Absolutely recommend LIVAREX!', avatar: 'AO', featured: false },
               { name: 'Chidinma E.', role: 'Landlord', city: 'Abuja', text: 'Listed my property on a Friday, had 3 serious enquiries by Monday. The platform is slick and my tenants are quality people.', avatar: 'CE', featured: true },
-              { name: 'Emeka N.', role: 'Tenant', city: 'Port Harcourt', text: 'No agent stress, no fake listings. I contacted the landlord directly on WhatsApp and moved in within two weeks. Game changer.', avatar: 'EN', featured: false },
+              { name: 'Emeka N.', role: 'Tenant', city: 'Port Harcourt', text: 'Livarex scheduled my inspection quickly and helped me secure a verified apartment without agent stress.', avatar: 'EN', featured: false },
             ].map((t, i) => (
               <div
                 key={i}
@@ -1035,7 +1036,7 @@ export default function HomePage() {
                   Join over 10,000 Nigerians who've found their ideal property on LIVAREX. Start your search today — it's completely free.
                 </p>
                 <ul className="space-y-2 mb-8">
-                  {['Verified landlords only', 'Zero agent fees', 'Direct WhatsApp contact'].map(item => (
+                  {['Verified properties only', 'Transparent pricing', 'Secure inspection booking'].map(item => (
                     <li key={item} className="flex items-center gap-2.5 text-gray-400 text-sm">
                       <CheckCircle2 className="w-4 h-4 text-blue-500 shrink-0" />
                       {item}
@@ -1058,8 +1059,8 @@ export default function HomePage() {
               <div className="hidden md:grid grid-cols-2 gap-3 shrink-0">
                 {[
                   { num: '10K+', label: 'Happy Tenants' },
-                  { num: '850+', label: 'Landlords' },
-                  { num: '₦0', label: 'Agent Fees' },
+                  { num: '850+', label: 'Successful Inspections' },
+                  { num: '100%', label: 'Verified Homes' },
                   { num: '4.9★', label: 'Average Rating' },
                 ].map(item => (
                   <div key={item.label} className="bg-white/5 border border-white/10 rounded-2xl px-6 py-5 text-center hover:bg-white/8 transition-all">

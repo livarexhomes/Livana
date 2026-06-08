@@ -501,7 +501,7 @@ export default function PropertyDetailPage() {
                           {addressVisible ? fullLocation : property.city}, Nigeria
                         </p>
                         {!addressVisible && (
-                          <p className="text-xs text-gray-400 mt-2">Sign in to view the full address and securely contact the landlord.</p>
+                          <p className="text-xs text-gray-400 mt-2">Sign in to view the full address and request an inspection through Livarex.</p>
                         )}
                       </div>
 
@@ -564,26 +564,24 @@ export default function PropertyDetailPage() {
                   {userRole === 'guest' ? (
                     <button
                       onClick={() => navigate('/login')}
-                      className="flex items-center justify-center gap-2.5 w-full py-3.5 bg-[#25D366]/50 text-white rounded-2xl font-bold text-sm hover:bg-[#25D366]/70 transition-all cursor-pointer"
+                      className="flex items-center justify-center gap-2.5 w-full py-3.5 bg-gray-900 text-white rounded-2xl font-bold text-sm hover:bg-gray-800 transition-all cursor-pointer"
                     >
-                      <Lock className="w-4 h-4" /> Create a free account to contact verified landlords
+                      <Lock className="w-4 h-4" /> Sign in to request inspection
                     </button>
                   ) : (
-                    <a
-                      href={`https://wa.me/${landlord?.whatsapp?.replace(/\D/g, '') ?? '2348001234567'}?text=${encodeURIComponent(`Hi, I'm interested in: ${property.title} (${fullLocation})`)}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center justify-center gap-2.5 w-full py-3.5 bg-[#25D366] text-white rounded-2xl font-bold text-sm hover:bg-[#20c05c] transition-all active:scale-[0.98] shadow-lg shadow-green-100"
+                    <button
+                      onClick={handleBookInspection}
+                      className="flex items-center justify-center gap-2.5 w-full py-3.5 bg-gray-900 text-white rounded-2xl font-bold text-sm hover:bg-gray-800 transition-all active:scale-[0.98] shadow-lg shadow-gray-900/10"
                     >
-                      <MessageSquare className="w-4 h-4" /> Chat on WhatsApp
-                    </a>
+                      <Calendar className="w-4 h-4" /> Request inspection
+                    </button>
                   )}
 
                   <button
-                    onClick={handleBookInspection}
-                    className="flex items-center justify-center gap-2.5 w-full py-3.5 bg-gray-900 text-white rounded-2xl font-bold text-sm hover:bg-gray-800 transition-all active:scale-[0.98] shadow-lg shadow-gray-900/10"
+                    onClick={() => { setEnquiryOpen(!enquiryOpen); setEnquirySuccess(false) }}
+                    className="flex items-center justify-center gap-2.5 w-full py-3.5 bg-blue-600 text-white rounded-2xl font-bold text-sm hover:bg-blue-700 transition-all active:scale-[0.98]"
                   >
-                    <Calendar className="w-4 h-4" /> Book inspection
+                    <Mail className="w-4 h-4" /> Contact Livarex
                   </button>
 
                   {/* Enquiry toggle */}
@@ -650,16 +648,16 @@ export default function PropertyDetailPage() {
                           <Lock className="w-5 h-5 text-gray-500" />
                         </div>
                         <div>
-                          <p className="text-sm font-bold text-gray-700">Create an account to contact landlords</p>
-                          <p className="text-xs text-gray-400">Free signup unlocks landlord contact, booking, and alerts.</p>
+                          <p className="text-sm font-bold text-gray-700">Create an account to request inspections</p>
+                          <p className="text-xs text-gray-400">Free signup unlocks inspection booking, reservations, and alerts.</p>
                         </div>
                       </div>
                       <div className="rounded-2xl bg-white border border-gray-100 p-3 text-xs text-gray-500">
                         <p className="font-semibold text-gray-700 mb-1">Why register?</p>
                         <ul className="list-disc pl-5 space-y-1">
-                          <li>Contact verified landlords directly</li>
+                          <li>Request inspection or reserve this property</li>
                           <li>Unlock full property address</li>
-                          <li>Save properties and book inspections</li>
+                          <li>Save properties and get alerts</li>
                         </ul>
                       </div>
                     </div>
@@ -776,9 +774,9 @@ export default function PropertyDetailPage() {
                 window.scrollTo({ top: 0, behavior: 'smooth' })
               }
             }}
-            className="px-6 py-3 bg-gray-900 text-white rounded-2xl font-bold text-sm hover:bg-gray-800 transition-colors active:scale-95 shadow-lg shadow-gray-900/10"
+            className="px-6 py-3 bg-blue-600 text-white rounded-2xl font-bold text-sm hover:bg-blue-700 transition-colors active:scale-95 shadow-lg shadow-blue-600/20"
           >
-            {userRole === 'guest' ? 'Sign in to Contact' : 'Contact Now'}
+            {userRole === 'guest' ? 'Sign in to Contact Livarex' : 'Contact Livarex'}
           </button>
         </div>
       </div>
