@@ -164,6 +164,7 @@ export default function PropertyDetailPage() {
 
   async function handleEnquiry(e: React.FormEvent) {
     e.preventDefault()
+    if (userRole === 'guest') { navigate('/login'); return }
     if (!tenantId || !property) return
     setEnquiryLoading(true)
     const supabase = createClient()
@@ -194,28 +195,19 @@ export default function PropertyDetailPage() {
     }, 3000)
   }
 
+  const LIVAREX_SUPPORT_WHATSAPP = '+2347060528437'
+
   function handleWhatsAppContact() {
-    const whatsappNumber = landlord?.whatsapp
-    if (!whatsappNumber) {
-      // Fallback to enquiry form if no WhatsApp
-      setContactMethod('form')
-      setEnquiryOpen(true)
-      return
-    }
-    
-    const cleanNumber = whatsappNumber.replace(/\D/g, '')
-    const formattedNumber = cleanNumber.startsWith('0') 
-      ? `+234${cleanNumber.slice(1)}` 
-      : cleanNumber.startsWith('+') ? cleanNumber : `+234${cleanNumber}`
-    
-    const message = `Hi, I'm interested in your property: ${property?.title} on Livana. Is it still available?`
-    const whatsappUrl = `https://wa.me/${formattedNumber}?text=${encodeURIComponent(message)}`
-    
+    if (userRole === 'guest') { navigate('/login'); return }
+    const cleanNumber = LIVAREX_SUPPORT_WHATSAPP.replace(/\D/g, '')
+    const message = `Hi Livarex, I'm interested in a property: ${property?.title} (ID: ${property?.id}). Can you help me with an inspection?`
+    const whatsappUrl = `https://wa.me/${cleanNumber}?text=${encodeURIComponent(message)}`
     window.open(whatsappUrl, '_blank')
     setContactModalOpen(false)
   }
 
   function openContactModal() {
+    if (userRole === 'guest') { navigate('/login'); return }
     setContactModalOpen(true)
     setContactMethod(null)
     setEnquirySuccess(false)
@@ -634,19 +626,37 @@ export default function PropertyDetailPage() {
 
                   {/* Contact Options - WhatsApp + Enquiry */}
                   <div className="grid grid-cols-2 gap-2">
-                    <button
-                      onClick={openContactModal}
-                      className="flex items-center justify-center gap-2 py-3 bg-emerald-600 text-white rounded-2xl font-bold text-sm hover:bg-emerald-700 transition-all active:scale-[0.98]"
-                    >
-                      <Phone className="w-4 h-4" /> WhatsApp
-                    </button>
-                    <button
-                      onClick={() => { setEnquiryOpen(!enquiryOpen); setEnquirySuccess(false); setContactModalOpen(false) }}
-                      className="flex items-center justify-center gap-2 py-3 bg-blue-600 text-white rounded-2xl font-bold text-sm hover:bg-blue-700 transition-all active:scale-[0.98]"
-                    >
-                      <Mail className="w-4 h-4" /> 
-                      {enquiryOpen ? 'Close' : 'Enquiry'}
-                    </button>
+                    {userRole === 'guest' ? (
+                      <button
+                        onClick={() => navigate('/login')}
+                        className="flex items-center justify-center gap-2 py-3 bg-gray-100 text-gray-400 rounded-2xl font-bold text-sm cursor-pointer hover:bg-gray-200 transition-all"
+                      >
+                        <Lock className="w-4 h-4" /> WhatsApp
+                      </button>
+                    ) : (
+                      <button
+                        onClick={openContactModal}
+                        className="flex items-center justify-center gap-2 py-3 bg-emerald-600 text-white rounded-2xl font-bold text-sm hover:bg-emerald-700 transition-all active:scale-[0.98]"
+                      >
+                        <Phone className="w-4 h-4" /> WhatsApp
+                      </button>
+                    )}
+                    {userRole === 'guest' ? (
+                      <button
+                        onClick={() => navigate('/login')}
+                        className="flex items-center justify-center gap-2 py-3 bg-gray-100 text-gray-400 rounded-2xl font-bold text-sm cursor-pointer hover:bg-gray-200 transition-all"
+                      >
+                        <Lock className="w-4 h-4" /> Enquiry
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => { setEnquiryOpen(!enquiryOpen); setEnquirySuccess(false); setContactModalOpen(false) }}
+                        className="flex items-center justify-center gap-2 py-3 bg-blue-600 text-white rounded-2xl font-bold text-sm hover:bg-blue-700 transition-all active:scale-[0.98]"
+                      >
+                        <Mail className="w-4 h-4" /> 
+                        {enquiryOpen ? 'Close' : 'Enquiry'}
+                      </button>
+                    )}
                   </div>
 
                   {/* Contact Method Modal */}
@@ -676,8 +686,8 @@ export default function PropertyDetailPage() {
                                 <Phone className="w-5 h-5 text-emerald-600" />
                               </div>
                               <div>
-                                <p className="text-sm font-bold text-gray-900">WhatsApp Chat</p>
-                                <p className="text-xs text-gray-500">Chat directly with {landlord?.full_name || 'the landlord'}</p>
+                                <p className="text-sm font-bold text-gray-900">Livarex WhatsApp</p>
+                                <p className="text-xs text-gray-500">Speak with Livarex support</p>
                               </div>
                             </button>
                           ) : (
@@ -687,7 +697,7 @@ export default function PropertyDetailPage() {
                               </div>
                               <div>
                                 <p className="text-sm font-bold text-gray-400">WhatsApp unavailable</p>
-                                <p className="text-xs text-gray-400">This landlord has no WhatsApp number</p>
+                                <p className="text-xs text-gray-400">Livarex support is offline</p>
                               </div>
                             </div>
                           )}
@@ -701,7 +711,7 @@ export default function PropertyDetailPage() {
                             </div>
                             <div>
                               <p className="text-sm font-bold text-gray-900">Send Enquiry</p>
-                              <p className="text-xs text-gray-500">Message via Livana admin inbox</p>
+                              <p className="text-xs text-gray-500">Livarex will contact you shortly</p>
                             </div>
                           </button>
                         </div>
@@ -723,7 +733,7 @@ export default function PropertyDetailPage() {
                           {enquirySuccess ? (
                             <div className="flex items-center gap-2.5 p-4 bg-emerald-50 text-emerald-700 rounded-2xl text-sm font-medium border border-emerald-100">
                               <CheckCircle className="w-4 h-4 shrink-0" />
-                              Enquiry sent! Our team will contact you shortly.
+                              Enquiry sent to Livarex! Our team will contact you shortly.
                             </div>
                           ) : (
                             <form onSubmit={handleEnquiry} className="space-y-3">
@@ -822,10 +832,14 @@ export default function PropertyDetailPage() {
                       {landlord.whatsapp && (
                         <button
                           onClick={handleWhatsAppContact}
-                          className="mt-3 flex items-center gap-2 w-full py-2.5 px-3 bg-emerald-50 border border-emerald-200 rounded-xl text-sm font-semibold text-emerald-700 hover:bg-emerald-100 transition-colors"
+                          className={`mt-3 flex items-center gap-2 w-full py-2.5 px-3 rounded-xl text-sm font-semibold transition-colors ${
+                            userRole === 'guest'
+                              ? 'bg-gray-100 border border-gray-200 text-gray-400 cursor-pointer hover:bg-gray-200'
+                              : 'bg-emerald-50 border border-emerald-200 text-emerald-700 hover:bg-emerald-100'
+                          }`}
                         >
                           <Phone className="w-4 h-4" />
-                          Chat on WhatsApp: {landlord.whatsapp}
+                          {userRole === 'guest' ? 'Sign in to chat with Livarex' : 'WhatsApp Livarex Support'}
                         </button>
                       )}
                     </div>
@@ -893,7 +907,7 @@ export default function PropertyDetailPage() {
             className="px-6 py-3 bg-emerald-600 text-white rounded-2xl font-bold text-sm hover:bg-emerald-700 transition-colors active:scale-95 shadow-lg shadow-emerald-600/20"
           >
             <Phone className="w-4 h-4 inline mr-2" />
-            {userRole === 'guest' ? 'Sign in to Contact' : 'WhatsApp'}
+            {userRole === 'guest' ? 'Sign in to Contact' : 'Contact'}
           </button>
         </div>
       </div>

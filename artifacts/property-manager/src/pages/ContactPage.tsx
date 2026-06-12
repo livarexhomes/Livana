@@ -6,7 +6,7 @@ import Footer from '../components/Footer'
 import { createClient, isSupabaseConfigured } from '../lib/supabase'
 
 const faqs = [
-  { q: 'How do I contact a landlord?', a: 'Every listing has a "Contact on WhatsApp" button that opens a direct chat with the landlord — no account needed.' },
+  { q: 'How do I contact a landlord?', a: 'Sign in to your tenant account, then use the "Enquiry" or "WhatsApp" button on any listing. All messages go through Livarex — our team will coordinate with the landlord and get back to you.' },
   { q: 'Are all landlords verified?', a: 'Yes. Every landlord goes through our review process before listings go live. Verified badges are only awarded to landlords we\'ve confirmed.' },
   { q: 'How do I list my property?', a: 'Register as a landlord, submit your details for review, and once approved (usually within 24 hours), you can add listings from your dashboard.' },
   { q: 'Is there a fee to use LIVAREX?', a: 'No — browsing is completely free for renters. Listing is also free for landlords. We will never charge agent fees.' },
