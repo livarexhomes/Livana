@@ -1,12 +1,24 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { createClient } from '@supabase/supabase-js'
 import type { SupabaseClient } from '@supabase/supabase-js'
+import { z } from 'zod'
+import { rateLimit } from './lib/rate-limit'
+
+const schema = z.object({
+  email: z.string().email(),
+  otp: z.string().min(6).max(6),
+})
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
+  if (!rateLimit(req, res, { windowMs: 5 * 60 * 1000, maxRequests: 10, keyPrefix: 'verify-otp' })) return
 
-  const { email, otp } = req.body ?? {}
-  if (!email || !otp) return res.status(400).json({ error: 'email and otp are required' })
+  const parsed = schema.safeParse(req.body ?? {})
+  if (!parsed.success) {
+    return res.status(400).json({ error: 'Invalid input', details: parsed.error.flatten() })
+  }
+
+  const { email, otp } = parsed.data
 
   const supabaseUrl = process.env.SUPABASE_URL
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY

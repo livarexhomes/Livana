@@ -27,8 +27,12 @@ export function createClient() {
   return _client
 }
 
-export function getSupabaseImageUrl(storagePath: string) {
-  return `${url}/storage/v1/object/public/property-images/${storagePath}`
+export function getSupabaseImageUrl(storagePath: string, width = 800) {
+  return `${url}/storage/v1/object/public/property-images/${storagePath}?width=${width}&resize=contain`
+}
+
+export function getSupabaseImageThumbnailUrl(storagePath: string) {
+  return getSupabaseImageUrl(storagePath, 400)
 }
 
 export function getSupabaseAvatarUrl(storagePath: string) {

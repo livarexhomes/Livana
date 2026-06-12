@@ -2,21 +2,29 @@ import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { createClient } from '@supabase/supabase-js'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { Resend } from 'resend'
+import { z } from 'zod'
+
+import { rateLimit } from './lib/rate-limit'
 
 const resend = new Resend(process.env.RESEND_API_KEY)
 const FROM = process.env.FROM_EMAIL ?? 'LIVAREX <noreply@livarex.com.ng>'
 const APP_NAME = 'LIVAREX'
+
+const schema = z.object({
+  email: z.string().email(),
+})
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' })
   }
 
-  const { email } = req.body ?? {}
-
-  if (!email || typeof email !== 'string') {
-    return res.status(400).json({ error: 'email is required' })
+  const parsed = schema.safeParse(req.body ?? {})
+  if (!parsed.success) {
+    return res.status(400).json({ error: 'Invalid input', details: parsed.error.flatten() })
   }
+
+  const { email } = parsed.data
 
   const supabaseUrl = process.env.SUPABASE_URL
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
@@ -29,12 +37,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(503).json({ error: 'Email service is not configured' })
   }
 
+  const appUrl = process.env.APP_URL
+  if (!appUrl) {
+    return res.status(503).json({ error: 'APP_URL environment variable is not configured' })
+  }
+
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey, {
     auth: { autoRefreshToken: false, persistSession: false },
   }) as SupabaseClient & { auth: { admin: any } }
-
-  const appUrl = process.env.APP_URL ?? `https://${req.headers.host}`
 
   const { data: linkData, error: linkError } = await supabaseAdmin.auth.admin.generateLink({
     type: 'recovery',

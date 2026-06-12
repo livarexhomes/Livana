@@ -545,9 +545,9 @@ export default function HomePage() {
             {/* Stats row */}
             <div className="flex items-center gap-8">
               {[
-                { value: 2400, suffix: '+', label: 'Verified Properties' },
-                { value: 850, suffix: '+', label: 'Successful Inspections' },
-                { value: 10, suffix: 'K+', label: 'Happy Tenants' },
+                { value: 100, suffix: '+', label: 'Verified Properties' },
+                { value: 80, suffix: '+', label: 'Successful Inspections' },
+                { value: 3, suffix: 'K+', label: 'Happy Tenants' },
                 { value: 2, suffix: 'h', label: 'Avg Response Time' },
               ].map((s: { value: number; suffix: string; label: string; prefix?: string }, i) => (
                 <div key={s.label} className="flex items-center gap-8">
@@ -942,7 +942,7 @@ export default function HomePage() {
           </div>
 
           {/* Second row — smaller cities, all coming soon */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mt-3 md:mt-4">
+          {/* <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mt-3 md:mt-4">
             {[
               { name: 'Kano', sub: 'Northern Hub', img: 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=800' },
               { name: 'Ibadan', sub: 'Cultural Centre', img: 'https://images.unsplash.com/photo-1553194588-ecc5e217ebf0?w=800' },
@@ -964,7 +964,7 @@ export default function HomePage() {
                 </div>
               </div>
             ))}
-          </div>
+          </div> */}
         </div>
       </section>
 

@@ -344,7 +344,7 @@ CREATE TABLE IF NOT EXISTS public.properties (
   bedrooms      SMALLINT     NOT NULL DEFAULT 0,
   bathrooms     SMALLINT     NOT NULL DEFAULT 0,
   area_sqft     NUMERIC(10,2),
-  type          TEXT         NOT NULL CHECK (type IN ('sale', 'rent')),
+  type          TEXT         NOT NULL CHECK (type IN ('sale', 'rent', 'lease', 'commercial')),
   status        TEXT         NOT NULL DEFAULT 'available'
                   CHECK (status IN ('available', 'taken', 'coming_soon', 'under_negotiation')),
   featured      BOOLEAN      NOT NULL DEFAULT false,
@@ -353,6 +353,13 @@ CREATE TABLE IF NOT EXISTS public.properties (
 );
 
 CREATE INDEX IF NOT EXISTS idx_properties_landlord_id ON public.properties(landlord_id);
+CREATE INDEX IF NOT EXISTS idx_properties_search ON public.properties(status, type, city, featured, created_at);
+CREATE INDEX IF NOT EXISTS idx_properties_price ON public.properties(price);
+
+-- enquiries indexes
+CREATE INDEX IF NOT EXISTS idx_enquiries_tenant ON public.enquiries(tenant_id);
+CREATE INDEX IF NOT EXISTS idx_enquiries_property ON public.enquiries(property_id);
+CREATE INDEX IF NOT EXISTS idx_enquiries_status ON public.enquiries(status);
 
 CREATE OR REPLACE TRIGGER properties_updated_at
   BEFORE UPDATE ON public.properties

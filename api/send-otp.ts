@@ -2,20 +2,33 @@ import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { createClient } from '@supabase/supabase-js'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { Resend } from 'resend'
+import { randomInt } from 'node:crypto'
+import { z } from 'zod'
+
+import { rateLimit } from './lib/rate-limit'
 
 const resend = new Resend(process.env.RESEND_API_KEY)
 const FROM = process.env.FROM_EMAIL ?? 'LIVAREX <noreply@livarex.com.ng>'
 const APP_NAME = 'LIVAREX'
 
+const schema = z.object({
+  email: z.string().email(),
+  full_name: z.string().optional(),
+})
+
 function generateOtp(): string {
-  return String(Math.floor(100000 + Math.random() * 900000))
+  return String(randomInt(100000, 999999))
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
 
-  const { email, full_name } = req.body ?? {}
-  if (!email) return res.status(400).json({ error: 'email is required' })
+  const parsed = schema.safeParse(req.body ?? {})
+  if (!parsed.success) {
+    return res.status(400).json({ error: 'Invalid input', details: parsed.error.flatten() })
+  }
+
+  const { email, full_name } = parsed.data
 
   const supabaseUrl = process.env.SUPABASE_URL
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY

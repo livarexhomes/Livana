@@ -70,6 +70,7 @@ export default function ListingsPage() {
       .eq('status', 'available')
       .order('featured', { ascending: false })
       .order('created_at', { ascending: false })
+      .limit(50)
 
     if (typeFilter) query = query.eq('type', typeFilter)
     if (stateFilter) query = (query as any).ilike('city', `%${stateFilter}%`)

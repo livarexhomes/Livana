@@ -2,21 +2,31 @@ import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { createClient } from '@supabase/supabase-js'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { Resend } from 'resend'
+import { z } from 'zod'
+
+import { rateLimit } from './lib/rate-limit'
 
 const resend = new Resend(process.env.RESEND_API_KEY)
 const FROM = process.env.FROM_EMAIL ?? 'LIVAREX <noreply@livarex.com.ng>'
 const APP_NAME = 'LIVAREX'
+
+const schema = z.object({
+  email: z.string().email(),
+  fullName: z.string().min(1),
+  metadata: z.record(z.unknown()).optional(),
+})
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' })
   }
 
-  const { email, fullName, password, metadata } = req.body ?? {}
-
-  if (!email || !fullName || !password) {
-    return res.status(400).json({ error: 'email, fullName and password are required' })
+  const parsed = schema.safeParse(req.body ?? {})
+  if (!parsed.success) {
+    return res.status(400).json({ error: 'Invalid input', details: parsed.error.flatten() })
   }
+
+  const { email, fullName, metadata } = parsed.data
 
   const supabaseUrl = process.env.SUPABASE_URL
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
@@ -29,22 +39,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(503).json({ error: 'Email service is not configured' })
   }
 
+  const appUrl = process.env.APP_URL
+  if (!appUrl) {
+    return res.status(503).json({ error: 'APP_URL environment variable is not configured' })
+  }
+
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey, {
     auth: { autoRefreshToken: false, persistSession: false },
   }) as SupabaseClient & { auth: { admin: any } }
 
-  // Generate a signup confirmation link that preserves the password credential.
-  // Using type 'signup' (not 'magiclink') ensures the user can sign in with
-  // email+password after confirming — magiclink would confirm the account but
-  // leave the password unverifiable.
-  const appUrl = process.env.APP_URL ?? `https://${req.headers.host}`
   let confirmationUrl: string
 
   // If metadata was provided, explicitly write it onto the existing user record
-  // before generating the link. generateLink does NOT update metadata on an
-  // already-created user — it only sets it during initial creation — so we must
-  // patch it separately to ensure role/whatsapp survive the confirmation flow.
+  // before generating the link.
   if (metadata && typeof metadata === 'object') {
     const { data: userList } = await supabaseAdmin.auth.admin.listUsers()
     const existingUser = (userList?.users ?? []).find((u: any) => u.email === email)
@@ -55,33 +63,22 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
   }
 
-  // Generate the signup confirmation link.
-  const { data: linkData, error: linkError } = await supabaseAdmin.auth.admin.generateLink({
-    type: 'signup',
+  // Generate the confirmation link using magiclink (user already exists with password).
+  const { data: magicData, error: magicError } = await supabaseAdmin.auth.admin.generateLink({
+    type: 'magiclink',
     email,
-    password,
     options: { redirectTo: `${appUrl}/auth/callback` },
   })
 
-  if (linkData?.properties?.action_link) {
-    confirmationUrl = linkData.properties.action_link
-  } else {
-    // User may already be confirmed or signup link unavailable — fall back to magiclink.
-    console.warn('[send-confirmation] generateLink signup failed, trying magiclink:', linkError?.message)
-    const { data: magicData, error: magicError } = await supabaseAdmin.auth.admin.generateLink({
-      type: 'magiclink',
-      email,
-      options: { redirectTo: `${appUrl}/auth/callback` },
+  if (magicError || !magicData?.properties?.action_link) {
+    console.error('[send-confirmation] magiclink failed:', magicError)
+    return res.status(502).json({
+      error: 'Failed to generate confirmation link',
+      detail: magicError?.message ?? 'action_link missing',
     })
-    if (magicError || !magicData?.properties?.action_link) {
-      console.error('[send-confirmation] both link types failed:', magicError)
-      return res.status(502).json({
-        error: 'Failed to generate confirmation link',
-        detail: magicError?.message ?? linkError?.message ?? 'action_link missing',
-      })
-    }
-    confirmationUrl = magicData.properties.action_link
   }
+  
+  confirmationUrl = magicData.properties.action_link
   const firstName = fullName.split(' ')[0]
 
   const { data, error } = await resend.emails.send({

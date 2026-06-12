@@ -1,15 +1,29 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { createClient } from '@supabase/supabase-js'
 import type { SupabaseClient } from '@supabase/supabase-js'
+import { z } from 'zod'
+
+import { rateLimit } from './lib/rate-limit'
+
+const schema = z.object({
+  email: z.string().email(),
+  password: z.string().min(8),
+  full_name: z.string().min(1),
+  whatsapp: z.string().min(1),
+  city: z.string().optional(),
+  bio: z.string().optional(),
+})
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
+  if (!rateLimit(req, res, { windowMs: 15 * 60 * 1000, maxRequests: 5, keyPrefix: 'register' })) return
 
-  const { email, password, full_name, whatsapp, city, bio } = req.body ?? {}
-
-  if (!email || !password || !full_name || !whatsapp) {
-    return res.status(400).json({ error: 'email, password, full_name and whatsapp are required' })
+  const parsed = schema.safeParse(req.body ?? {})
+  if (!parsed.success) {
+    return res.status(400).json({ error: 'Invalid input', details: parsed.error.flatten() })
   }
+
+  const { email, password, full_name, whatsapp, city, bio } = parsed.data
 
   const supabaseUrl = process.env.SUPABASE_URL
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
@@ -23,11 +37,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     auth: { autoRefreshToken: false, persistSession: false },
   }) as SupabaseClient & { auth: { admin: any } }
 
-  // Create the user and auto-confirm their email so they can sign in immediately.
+  // Create the user but require email verification (removed email_confirm: true)
   const { data: created, error: createError } = await admin.auth.admin.createUser({
     email,
     password,
-    email_confirm: true,
+    email_confirm: false,
     user_metadata: {
       full_name,
       whatsapp,
