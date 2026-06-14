@@ -8,6 +8,7 @@ out-tsc
 vercel-out
 .expo
 .expo-shared
+.next
 
 # dependencies
 node_modules
