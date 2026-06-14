@@ -60,6 +60,7 @@ interface EmailConfig {
   fromEmail: string
   fromName: string
   enabled: boolean
+  resendApiKey: string
 }
 
 // ── UI Components ────────────────────────────────────────────────────────────
@@ -269,6 +270,7 @@ export default function AdminSettings() {
     fromEmail: 'noreply@livana.ng',
     fromName: 'Livana',
     enabled: false,
+    resendApiKey: '',
   })
 
   // Load settings from database

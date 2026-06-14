@@ -32,6 +32,12 @@ export interface Property {
   amenities: string[]
   latitude: number | null
   longitude: number | null
+  state?: string
+  property_type?: string
+  price_negotiable?: boolean
+  furnished?: boolean
+  parking_spaces?: number
+  year_built?: number
   created_at: string
   updated_at: string
 }

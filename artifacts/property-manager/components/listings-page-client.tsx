@@ -67,7 +67,7 @@ export default function ListingsPageClient({
 
   useEffect(() => {
     // Sync with URL search params when they change
-    const sp = new URLSearchParams(searchParams.toString())
+    const sp = new URLSearchParams(searchParams?.toString() ?? '')
     setTypeFilter(sp.get('type') ?? '')
     setStateFilter(sp.get('city') ?? sp.get('state') ?? '')
     setAreaFilter(sp.get('area') ?? '')
@@ -368,7 +368,9 @@ export default function ListingsPageClient({
                     property={property}
                     saved={savedIds.has(property.id)}
                     isAuthenticated={isAuthenticated}
-                    hovered={hoveredId === property.id}
+                    highlighted={hoveredId === property.id}
+                    onMouseEnter={() => setHoveredId(property.id)}
+                    onMouseLeave={() => setHoveredId(null)}
                   />
                 </div>
               ))

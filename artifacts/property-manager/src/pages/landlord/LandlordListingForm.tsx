@@ -53,8 +53,9 @@ const SELECT_CLASS = FIELD_CLASS + ' cursor-pointer'
 
 export default function LandlordListingForm() {
   const params = useParams<{ id?: string }>()
+  const id = params?.id
   const [, navigate] = useLocation()
-  const isEdit = !!params.id && params.id !== 'new'
+  const isEdit = !!id && id !== 'new'
   const [landlord, setLandlord] = useState<Landlord | null>(null)
   const [user, setUser]         = useState<{ email?: string } | null>(null)
   const [form, setForm]         = useState<FormData>(emptyForm)
@@ -83,15 +84,15 @@ export default function LandlordListingForm() {
         if (l.status === 'rejected')      { navigate('/landlord/rejected');   return }
         if (l.status === 'suspended')     { navigate('/landlord/suspended');  return }
       }
-      if (isEdit && params.id) {
+      if (isEdit && id) {
         // Ownership check: scope the property fetch to this landlord's id so
         // navigating to /landlord/listings/{other-id}/edit returns no data.
         const [{ data: p }, { data: imgs }] = await Promise.all([
           supabase.from('properties').select('*')
-            .eq('id', params.id)
+            .eq('id', id)
             .eq('landlord_id', l?.id ?? '')
             .single(),
-          supabase.from('property_images').select('*').eq('property_id', params.id).order('sort_order', { ascending: true }),
+          supabase.from('property_images').select('*').eq('property_id', id).order('sort_order', { ascending: true }),
         ])
         if (!p) {
           // Property not found or belongs to another landlord — redirect away.
@@ -118,7 +119,7 @@ export default function LandlordListingForm() {
         setLoadingData(false)
       }
     })
-  }, [isEdit, params.id])
+  }, [isEdit, id])
 
   function addFiles(files: FileList | null) {
     if (!files) return
@@ -147,7 +148,7 @@ export default function LandlordListingForm() {
     const { data: ownerCheck } = await supabase
       .from('properties')
       .select('id')
-      .eq('id', img.property_id ?? params.id!)
+      .eq('id', img.property_id ?? id!)
       .eq('landlord_id', landlord.id)
       .single()
     if (!ownerCheck) {
@@ -162,21 +163,21 @@ export default function LandlordListingForm() {
   }
 
   async function setCoverExisting(imgId: string) {
-    if (!landlord || !params.id) return
+    if (!landlord || !id) return
     const supabase = createClient()
     // Ownership check: confirm this property belongs to the current landlord
     // before updating cover flags.
     const { data: ownerCheck } = await supabase
       .from('properties')
       .select('id')
-      .eq('id', params.id)
+      .eq('id', id)
       .eq('landlord_id', landlord.id)
       .single()
     if (!ownerCheck) {
       setError('Permission denied: this listing does not belong to you.')
       return
     }
-    await supabase.from('property_images').update({ is_cover: false }).eq('property_id', params.id)
+    await supabase.from('property_images').update({ is_cover: false }).eq('property_id', id)
     await supabase.from('property_images').update({ is_cover: true }).eq('id', imgId)
     setExistingImages(prev => prev.map(i => ({ ...i, is_cover: i.id === imgId })))
   }
@@ -245,16 +246,16 @@ export default function LandlordListingForm() {
     }
 
     let ok = true
-    if (isEdit && params.id) {
+    if (isEdit && id) {
       // Ownership check: restrict the UPDATE to rows owned by this landlord.
       // Without this, any landlord could overwrite another's property by id.
       const { error: err } = await supabase
         .from('properties')
         .update(data)
-        .eq('id', params.id)
+        .eq('id', id)
         .eq('landlord_id', landlord.id)
       if (err) { setError(err.message); setLoading(false); return }
-      ok = await uploadImages(params.id)
+      ok = await uploadImages(id)
     } else {
       const { data: created, error: err } = await supabase.from('properties').insert(data).select('id').single()
       if (err || !created) { setError(err?.message ?? 'Failed to create listing'); setLoading(false); return }

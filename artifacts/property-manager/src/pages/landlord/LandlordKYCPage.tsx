@@ -3,10 +3,10 @@
 // /landlord/kyc is superseded by /landlord/onboarding (full 3-step flow).
 // Redirect any direct visits so nothing is broken.
 import { useEffect } from 'react'
-import { useLocation } from '@/lib/navigation'
+import { useRouter } from '@/lib/navigation'
 
 export default function LandlordKYCPage() {
-  const [, navigate] = useLocation()
-  useEffect(() => { navigate('/landlord/onboarding', { replace: true }) }, [])
+  const router = useRouter()
+  useEffect(() => { router.replace('/landlord/onboarding') }, [router])
   return null
 }

@@ -545,10 +545,10 @@ export default function HomePageClient({ initialProperties }: { initialPropertie
             {/* Stats row */}
             <div className="flex items-center gap-8">
               {[
-                { value: 100, suffix: '+', label: 'Verified Properties' },
-                { value: 80, suffix: '+', label: 'Successful Inspections' },
-                { value: 3, suffix: 'K+', label: 'Happy Tenants' },
-                { value: 2, suffix: 'h', label: 'Avg Response Time' },
+                { value: 100, suffix: '+', label: 'Verified Properties', prefix: '' },
+                { value: 80, suffix: '+', label: 'Successful Inspections', prefix: '' },
+                { value: 3, suffix: 'K+', label: 'Happy Tenants', prefix: '' },
+                { value: 2, suffix: 'h', label: 'Avg Response Time', prefix: '' },
               ].map((s, i) => (
                 <div key={s.label} className="flex items-center gap-8">
                   {i > 0 && <div className="w-px h-8 bg-white/20" />}

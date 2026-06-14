@@ -74,6 +74,7 @@ function timeAgo(iso: string) {
 
 export default function PropertyDetailPage() {
   const params = useParams<{ id: string }>()
+  const id = params?.id
   const [, navigate] = useLocation()
   const [property, setProperty] = useState<FullProperty | null>(null)
   const [loading, setLoading]   = useState(true)
@@ -97,7 +98,7 @@ export default function PropertyDetailPage() {
   const [copied, setCopied]       = useState(false)
 
   useEffect(() => {
-    if (!isSupabaseConfigured() || !params.id) { setLoading(false); return }
+    if (!isSupabaseConfigured() || !id) { setLoading(false); return }
     const supabase = createClient()
 
     async function init() {
@@ -109,7 +110,7 @@ export default function PropertyDetailPage() {
       const { data: prop } = await supabase
         .from('properties')
         .select('*, landlords(id, full_name, whatsapp, bio, avatar_url, is_verified), property_images(id, storage_path, alt_text, is_cover, sort_order)')
-        .eq('id', params.id!)
+        .eq('id', id!)
         .single()
 
       if (!prop) { setNotFound(true); setLoading(false); return }
@@ -126,7 +127,7 @@ export default function PropertyDetailPage() {
           if (tenant) {
             setUserRole('tenant')
             setTenantId(tenant.id)
-            const { data: sv } = await supabase.from('saved_properties').select('id').eq('tenant_id', tenant.id).eq('property_id', params.id!).single() as { data: { id: string } | null }
+            const { data: sv } = await supabase.from('saved_properties').select('id').eq('tenant_id', tenant.id).eq('property_id', id!).single() as { data: { id: string } | null }
             setSaved(!!sv)
           } else if (landlord) {
             setUserRole('landlord')
@@ -142,7 +143,7 @@ export default function PropertyDetailPage() {
     }
 
     init()
-  }, [params.id])
+  }, [id])
 
   const images = (property?.property_images ?? [])
     .sort((a, b) => (a.is_cover ? -1 : b.is_cover ? 1 : (a.sort_order ?? 0) - (b.sort_order ?? 0)))
@@ -153,10 +154,10 @@ export default function PropertyDetailPage() {
     setSaving(true)
     const supabase = createClient()
     if (saved) {
-      await supabase.from('saved_properties').delete().eq('tenant_id', tenantId).eq('property_id', params.id!)
+      await supabase.from('saved_properties').delete().eq('tenant_id', tenantId).eq('property_id', id!)
       setSaved(false)
     } else {
-      await supabase.from('saved_properties').insert({ tenant_id: tenantId, property_id: params.id! })
+      await supabase.from('saved_properties').insert({ tenant_id: tenantId, property_id: id! })
       setSaved(true)
     }
     setSaving(false)
@@ -171,7 +172,7 @@ export default function PropertyDetailPage() {
     
     const { error } = await supabase.from('enquiries').insert({
       tenant_id: tenantId,
-      property_id: params.id!,
+      property_id: id!,
       landlord_id: null,
       message: enquiryMsg,
       status: 'open',
