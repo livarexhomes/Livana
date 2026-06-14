@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { useParams, useLocation } from 'wouter'
+import { useParams, useLocation } from '@/lib/navigation'
 import {
   Home, FileText, MapPin, DollarSign, BedDouble, Bath,
   Maximize2, Tag, CheckCircle, ArrowLeft, ImagePlus, X, Star,

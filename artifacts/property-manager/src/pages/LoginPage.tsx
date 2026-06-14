@@ -1,5 +1,7 @@
+'use client'
+
 import { useState } from 'react'
-import { Link, useLocation } from 'wouter'
+import { Link, useLocation } from '@/lib/navigation'
 import { Eye, EyeOff, ShieldCheck, Building2, Users, Mail } from 'lucide-react'
 import { createClient, isSupabaseConfigured } from '../lib/supabase'
 import { isAdminUser } from '../lib/auth'

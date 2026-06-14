@@ -1,4 +1,4 @@
-import { Link, useLocation } from 'wouter'
+import { Link, useLocation } from '@/lib/navigation'
 import {
   LayoutDashboard, Heart, HeadphonesIcon, User, LogOut,
 } from 'lucide-react'

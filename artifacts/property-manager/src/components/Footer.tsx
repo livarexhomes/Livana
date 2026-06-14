@@ -1,4 +1,4 @@
-import { Link } from 'wouter'
+import { Link } from '@/lib/navigation'
 
 export default function Footer() {
   return (

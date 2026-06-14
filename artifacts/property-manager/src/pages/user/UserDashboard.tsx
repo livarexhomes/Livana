@@ -1,5 +1,7 @@
+'use client'
+
 import { useState, useEffect } from 'react'
-import { Link, useLocation } from 'wouter'
+import { Link, useLocation } from '@/lib/navigation'
 import {
   Menu, Search, ChevronDown, Building2, X,
 } from 'lucide-react'

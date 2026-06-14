@@ -5,7 +5,7 @@ import {
   TrendingUp, ArrowUpRight, MoreHorizontal, Filter,
   UserCheck, UserX, ChevronDown,
 } from 'lucide-react'
-import { Link } from 'wouter'
+import { Link } from '@/lib/navigation'
 import AdminSidebar from '../../components/AdminSidebar'
 import AdminHeader from '../../components/AdminHeader'
 import AuthGuard from '../../components/AuthGuard'

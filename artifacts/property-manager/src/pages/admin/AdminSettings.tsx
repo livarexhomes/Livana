@@ -57,7 +57,6 @@ interface ListingSettings {
 }
 
 interface EmailConfig {
-  resendApiKey: string
   fromEmail: string
   fromName: string
   enabled: boolean
@@ -267,7 +266,6 @@ export default function AdminSettings() {
   })
 
   const [emailConfig, setEmailConfig] = useState<EmailConfig>({
-    resendApiKey: '',
     fromEmail: 'noreply@livana.ng',
     fromName: 'Livana',
     enabled: false,

@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, ReactNode } from 'react'
-import { useLocation } from 'wouter'
+import { useLocation } from '@/lib/navigation'
 import { Search, Bell, X, Building2, Users, MessageSquare, ArrowRight, ChevronRight, ShieldCheck, Headphones } from 'lucide-react'
 import { createClient } from '../lib/supabase'
 

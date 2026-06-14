@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Link } from 'wouter'
+import { Link } from '@/lib/navigation'
 import {
   Plus, Building2, Pencil, Trash2, MapPin, BedDouble, Bath,
   LayoutGrid, List, Search, CheckCircle, Clock, XCircle, AlertCircle,
@@ -61,10 +61,22 @@ export default function LandlordListings() {
 
   async function handleDelete(id: string) {
     if (!confirm('Delete this listing? This cannot be undone.')) return
+    if (!landlord) return
     setDeleting(id)
     const supabase = createClient()
+    // Verify ownership before deleting
+    const { data: prop } = await supabase
+      .from('properties')
+      .select('id')
+      .eq('id', id)
+      .eq('landlord_id', landlord.id)
+      .single()
+    if (!prop) {
+      setDeleting(null)
+      return
+    }
     await supabase.from('property_images').delete().eq('property_id', id)
-    await supabase.from('properties').delete().eq('id', id)
+    await supabase.from('properties').delete().eq('id', id).eq('landlord_id', landlord.id)
     setProperties(ps => ps.filter(p => p.id !== id))
     setDeleting(null)
   }

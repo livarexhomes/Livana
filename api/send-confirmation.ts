@@ -4,6 +4,7 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import { Resend } from 'resend'
 import { z } from 'zod'
 
+import { escapeHtml } from './lib/escape-html'
 import { rateLimit } from './lib/rate-limit'
 
 const resend = new Resend(process.env.RESEND_API_KEY)
@@ -79,7 +80,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
   
   confirmationUrl = magicData.properties.action_link
-  const firstName = fullName.split(' ')[0]
+  const firstName = escapeHtml(fullName.split(' ')[0])
 
   const { data, error } = await resend.emails.send({
     from: FROM,

@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, lazy, Suspense } from 'react'
-import { useSearch, useLocation } from 'wouter'
+import { useSearch, useLocation } from '@/lib/navigation'
 import {
   Search, MapPin, ChevronDown, X, SlidersHorizontal,
   Building2, Map, List,

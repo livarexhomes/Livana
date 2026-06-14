@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link, useLocation } from 'wouter'
+import { Link, useLocation } from '@/lib/navigation'
 import { MapPin, BedDouble, Bath, Bookmark, ShieldCheck, Clock, Lock } from 'lucide-react'
 import type { PropertyWithLandlord } from '../lib/types'
 import { getSupabaseImageUrl, createClient } from '../lib/supabase'

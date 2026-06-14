@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Link, useLocation } from 'wouter'
+import { Link, useLocation } from '@/lib/navigation'
 import { createClient } from '../lib/supabase'
 import {
   LayoutDashboard, Heart, HeadphonesIcon, User,

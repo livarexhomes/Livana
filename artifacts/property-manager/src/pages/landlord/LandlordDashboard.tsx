@@ -1,5 +1,7 @@
+'use client'
+
 import { useState, useEffect } from 'react'
-import { Link } from 'wouter'
+import { Link } from '@/lib/navigation'
 import {
   Building2, MessageSquare, Plus, Search, X,
   ChevronDown, CheckCircle, TrendingUp, ArrowRight,

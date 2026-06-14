@@ -1,5 +1,5 @@
 import { useEffect, useState, ReactNode } from 'react'
-import { useLocation } from 'wouter'
+import { useLocation } from '@/lib/navigation'
 import { createClient, isSupabaseConfigured } from '../lib/supabase'
 import { isAdminUser } from '../lib/auth'
 

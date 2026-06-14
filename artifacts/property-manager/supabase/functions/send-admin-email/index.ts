@@ -1,11 +1,21 @@
 import { serve } from 'https://deno.land/std@0.177.0/http/server.ts'
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3'
 import { Resend } from 'npm:resend@3.2.0'
 
+const ALLOWED_ORIGIN = Deno.env.get('APP_URL') ?? 'https://livarex.com.ng'
+
 const jsonHeaders = {
-  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Origin': ALLOWED_ORIGIN,
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
   'Content-Type': 'application/json',
+}
+
+const MAX_HTML_LENGTH = 500_000
+const MAX_SUBJECT_LENGTH = 500
+
+function isValidEmail(email: string): boolean {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
 }
 
 serve(async (req) => {
@@ -17,6 +27,45 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({ success: false, error: 'Method not allowed' }),
       { status: 405, headers: jsonHeaders }
+    )
+  }
+
+  // Authentication check
+  const authHeader = req.headers.get('authorization')
+  if (!authHeader?.startsWith('Bearer ')) {
+    return new Response(
+      JSON.stringify({ success: false, error: 'Unauthorized' }),
+      { status: 401, headers: jsonHeaders }
+    )
+  }
+
+  const supabaseUrl = Deno.env.get('SUPABASE_URL')!
+  const supabaseKey = Deno.env.get('SUPABASE_ANON_KEY')!
+  const token = authHeader.replace('Bearer ', '')
+
+  const supabase = createClient(supabaseUrl, supabaseKey, {
+    auth: { persistSession: false },
+  })
+
+  const { data: { user }, error: authError } = await supabase.auth.getUser(token)
+  if (authError || !user) {
+    return new Response(
+      JSON.stringify({ success: false, error: 'Invalid token' }),
+      { status: 401, headers: jsonHeaders }
+    )
+  }
+
+  // Optional: verify admin role
+  const { data: adminRow } = await supabase
+    .from('admins')
+    .select('id')
+    .eq('id', user.id)
+    .single()
+
+  if (!adminRow) {
+    return new Response(
+      JSON.stringify({ success: false, error: 'Admin access required' }),
+      { status: 403, headers: jsonHeaders }
     )
   }
 
@@ -36,22 +85,22 @@ serve(async (req) => {
       return new Response(
         JSON.stringify({
           success: false,
-          error: 'RESEND_API_KEY not configured. Add the secret to your Supabase Edge Function environment.',
+          error: 'RESEND_API_KEY not configured.',
         }),
         { status: 500, headers: jsonHeaders }
       )
     }
 
-    if (!body.to) {
+    if (!body.to || !isValidEmail(body.to)) {
       return new Response(
-        JSON.stringify({ success: false, error: 'Missing required field: to' }),
+        JSON.stringify({ success: false, error: 'Missing or invalid recipient email' }),
         { status: 400, headers: jsonHeaders }
       )
     }
 
-    if (!body.subject) {
+    if (!body.subject || body.subject.length > MAX_SUBJECT_LENGTH) {
       return new Response(
-        JSON.stringify({ success: false, error: 'Missing required field: subject' }),
+        JSON.stringify({ success: false, error: `Subject required and must be under ${MAX_SUBJECT_LENGTH} characters` }),
         { status: 400, headers: jsonHeaders }
       )
     }
@@ -63,9 +112,15 @@ serve(async (req) => {
       )
     }
 
-    const from = typeof body.from === 'string' && body.from.trim()
-      ? body.from
-      : 'Livana <noreply@livana.ng>'
+    if (body.html && body.html.length > MAX_HTML_LENGTH) {
+      return new Response(
+        JSON.stringify({ success: false, error: 'HTML content too large' }),
+        { status: 400, headers: jsonHeaders }
+      )
+    }
+
+    // Hardcode from address — do not allow caller to spoof
+    const from = 'Livarex <noreply@livarex.com.ng>'
 
     const resend = new Resend(resendApiKey)
     console.log('Sending email to:', body.to)
@@ -83,7 +138,7 @@ serve(async (req) => {
       return new Response(
         JSON.stringify({
           success: false,
-          error: `Resend API error: ${error.message || JSON.stringify(error)}`,
+          error: 'Failed to send email',
         }),
         { status: 500, headers: jsonHeaders }
       )
@@ -99,7 +154,7 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({
         success: false,
-        error: `Server error: ${error?.message || 'Unknown error'}`,
+        error: 'Internal server error',
       }),
       { status: 500, headers: jsonHeaders }
     )

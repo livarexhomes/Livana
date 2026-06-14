@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { Link } from 'wouter'
+import { Link } from '@/lib/navigation'
 import {
   HeadphonesIcon, ArrowRight, Plus, Send, ChevronLeft,
   Clock, AlertCircle, CheckCircle2, XCircle, Loader2,

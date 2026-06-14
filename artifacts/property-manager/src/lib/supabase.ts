@@ -1,7 +1,20 @@
 import { createClient as createSupabaseClient } from '@supabase/supabase-js'
 
-const url = import.meta.env.VITE_SUPABASE_URL as string
-const key = import.meta.env.VITE_SUPABASE_ANON_KEY as string
+// Support both Vite (import.meta.env) and Next.js (process.env) environments
+function getEnv(key: string): string | undefined {
+  if (typeof process !== 'undefined' && process.env) {
+    return process.env[key] || process.env[`NEXT_PUBLIC_${key}`]
+  }
+  // @ts-ignore - Vite env
+  if (typeof import.meta !== 'undefined' && import.meta.env) {
+    // @ts-ignore
+    return import.meta.env[key]
+  }
+  return undefined
+}
+
+const url = getEnv('VITE_SUPABASE_URL') || getEnv('SUPABASE_URL') || ''
+const key = getEnv('VITE_SUPABASE_ANON_KEY') || getEnv('SUPABASE_ANON_KEY') || ''
 
 export function isSupabaseConfigured(): boolean {
   return Boolean(url && key)
@@ -20,7 +33,7 @@ export function createClient() {
     _client = createSupabaseClient(url, key, {
       auth: {
         detectSessionInUrl: true,
-        flowType: 'implicit',
+        flowType: 'pkce',
       },
     })
   }

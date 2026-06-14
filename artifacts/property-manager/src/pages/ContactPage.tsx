@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link } from 'wouter'
+import { Link } from '@/lib/navigation'
 import { Mail, Phone, MapPin, MessageCircle, Globe, ArrowRight, CheckCircle, Clock, ChevronDown, Instagram, Twitter, Send } from 'lucide-react'
 import PublicNavbar from '../components/PublicNavbar'
 import Footer from '../components/Footer'
@@ -16,8 +16,8 @@ const faqs = [
 
 const channels = [
   { icon: Mail,          label: 'Email',     value: 'livarexhomes@gmail.com',   href: 'mailto:livarexhomes@gmail.com',  note: 'Reply within 1–2 business days', color: 'bg-blue-600',    shadow: 'shadow-blue-500/20',   ring: 'hover:ring-blue-200'   },
-  { icon: Phone,         label: 'Phone',     value: '+234 706 052 8437',    href: 'tel:+2347060528437',         note: '24/7 support',                  color: 'bg-emerald-600', shadow: 'shadow-emerald-500/20',ring: 'hover:ring-emerald-200'},
-  { icon: MessageCircle, label: 'WhatsApp',  value: '+234 706 052 8437',    href: 'https://wa.me/2347060528437', note: 'Livarex support on WhatsApp',          color: 'bg-[#25D366]', shadow: 'shadow-green-500/20', ring: 'hover:ring-green-200' },
+  { icon: Phone,         label: 'Phone',     value: '+234 706 137 0742',    href: 'tel:+2347061370742',         note: '24/7 support',                  color: 'bg-emerald-600', shadow: 'shadow-emerald-500/20',ring: 'hover:ring-emerald-200'},
+  { icon: MessageCircle, label: 'WhatsApp',  value: '+234 706 137 0742',    href: 'https://wa.me/2347061370742', note: 'Livarex support on WhatsApp',          color: 'bg-[#25D366]', shadow: 'shadow-green-500/20', ring: 'hover:ring-green-200' },
   { icon: MapPin,        label: 'Office',    value: 'Joju, Sango Ota, Ogun State', href: 'https://maps.google.com/?q=Joju+Sango+Ota+Ogun+State+Nigeria', note: 'Visit our office in Ogun State', color: 'bg-rose-600', shadow: 'shadow-rose-500/20', ring: 'hover:ring-rose-200' },
   { icon: Globe,         label: 'Website',   value: 'livarex.com.ng',          href: 'https://livarex.com.ng', note: 'Browse verified listings online', color: 'bg-slate-800', shadow: 'shadow-slate-500/20', ring: 'hover:ring-slate-200' },
 ]

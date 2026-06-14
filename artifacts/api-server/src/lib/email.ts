@@ -1,5 +1,14 @@
 import { Resend } from 'resend'
 
+function escapeHtml(str: string): string {
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+}
+
 const resend = new Resend(process.env.RESEND_API_KEY)
 
 const FROM = process.env.FROM_EMAIL ?? 'Livana <noreply@livana.ng>'
@@ -11,7 +20,7 @@ export async function sendConfirmationEmail(opts: {
   confirmationUrl: string
 }) {
   const { to, fullName, confirmationUrl } = opts
-  const firstName = fullName.split(' ')[0]
+  const firstName = escapeHtml(fullName.split(' ')[0])
 
   return resend.emails.send({
     from: FROM,

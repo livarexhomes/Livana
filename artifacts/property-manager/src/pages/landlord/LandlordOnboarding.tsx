@@ -1,5 +1,7 @@
+'use client'
+
 import { useState, useEffect, useRef } from 'react'
-import { Link, useLocation } from 'wouter'
+import { Link, useLocation } from '@/lib/navigation'
 import {
   User, ShieldCheck, FileText, CheckCircle2,
   Upload, X, AlertCircle, ChevronRight, Loader2,

@@ -29,19 +29,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     auth: { autoRefreshToken: false, persistSession: false },
   }) as SupabaseClient & { auth: { admin: any } }
 
-  const { data: record, error } = await admin
+  // Atomic check-and-set: only update if OTP matches, not yet verified, and not expired
+  const { data: updated, error } = await admin
     .from('otp_verifications')
-    .select('otp, expires_at, verified')
+    .update({ verified: true })
     .eq('email', email)
-    .single()
+    .eq('otp', String(otp))
+    .eq('verified', false)
+    .gte('expires_at', new Date().toISOString())
+    .select()
 
-  if (error || !record) return res.status(400).json({ error: 'No OTP found for this email.' })
-  if (record.verified)   return res.status(400).json({ error: 'OTP already used.' })
-  if (new Date(record.expires_at) < new Date()) return res.status(400).json({ error: 'OTP has expired. Please request a new one.' })
-  if (record.otp !== String(otp)) return res.status(400).json({ error: 'Incorrect code. Please try again.' })
-
-  // Mark as verified
-  await admin.from('otp_verifications').update({ verified: true }).eq('email', email)
+  if (error || !updated || updated.length === 0) {
+    return res.status(400).json({ error: 'Invalid or expired verification code.' })
+  }
 
   return res.status(200).json({ ok: true })
 }

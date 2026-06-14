@@ -1,4 +1,4 @@
-import { Link } from 'wouter'
+import { Link } from '@/lib/navigation'
 import { ArrowRight, CheckCircle, Shield, Users, Zap, Eye, TrendingUp, Building2, Heart, Globe } from 'lucide-react'
 import PublicNavbar from '../components/PublicNavbar'
 import Footer from '../components/Footer'

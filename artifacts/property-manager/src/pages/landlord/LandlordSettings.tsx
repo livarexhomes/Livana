@@ -434,6 +434,10 @@ export default function LandlordSettings() {
 
   // Change password
   async function changePassword() {
+    if (!currentPass) {
+      toast({ title: 'Error', description: 'Please enter your current password', variant: 'destructive' })
+      return
+    }
     if (!newPass || newPass !== confirmPass) {
       toast({ title: 'Error', description: 'Passwords do not match', variant: 'destructive' })
       return
@@ -445,6 +449,18 @@ export default function LandlordSettings() {
     
     setSaving(true)
     const supabase = createClient()
+    
+    // Verify current password before allowing change
+    const { error: verifyError } = await supabase.auth.signInWithPassword({
+      email: user?.email || '',
+      password: currentPass,
+    })
+    
+    if (verifyError) {
+      setSaving(false)
+      toast({ title: 'Error', description: 'Current password is incorrect', variant: 'destructive' })
+      return
+    }
     
     const { error } = await supabase.auth.updateUser({ password: newPass })
     

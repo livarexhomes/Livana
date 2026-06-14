@@ -6,6 +6,7 @@ import { randomInt } from 'node:crypto'
 import { z } from 'zod'
 
 import { rateLimit } from './lib/rate-limit'
+import { escapeHtml } from './lib/escape-html'
 
 const resend = new Resend(process.env.RESEND_API_KEY)
 const FROM = process.env.FROM_EMAIL ?? 'LIVAREX <noreply@livarex.com.ng>'
@@ -56,7 +57,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(502).json({ error: 'Failed to store OTP' })
   }
 
-  const firstName = (full_name ?? email).split(' ')[0]
+  const firstName = escapeHtml((full_name ?? email).split(' ')[0])
 
   const { error: emailError } = await resend.emails.send({
     from: FROM,

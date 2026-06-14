@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Link } from 'wouter'
+import { Link } from '@/lib/navigation'
 import { Heart, ArrowRight, Building2, Trash2 } from 'lucide-react'
 import AuthGuard from '../../components/AuthGuard'
 import { UserLayout } from './UserDashboard'

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Link, useParams, useLocation } from 'wouter'
+import { Link, useParams, useLocation } from '@/lib/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   MapPin, BedDouble, Bath, Maximize, Heart,
@@ -195,13 +195,13 @@ export default function PropertyDetailPage() {
     }, 3000)
   }
 
-  const LIVAREX_SUPPORT_WHATSAPP = '+2347060528437'
+  const LIVAREX_SUPPORT_WHATSAPP = '07061370742'
 
   function handleWhatsAppContact() {
     if (userRole === 'guest') { navigate('/login'); return }
     const cleanNumber = LIVAREX_SUPPORT_WHATSAPP.replace(/\D/g, '')
     const message = `Hi Livarex, I'm interested in a property: ${property?.title} (ID: ${property?.id}). Can you help me with an inspection?`
-    const whatsappUrl = `https://wa.me/${cleanNumber}?text=${encodeURIComponent(message)}`
+    const whatsappUrl = `https://wa.me/234${cleanNumber}?text=${encodeURIComponent(message)}`
     window.open(whatsappUrl, '_blank')
     setContactModalOpen(false)
   }
@@ -677,7 +677,7 @@ export default function PropertyDetailPage() {
                             </button>
                           </div>
                           
-                          {landlord?.whatsapp ? (
+                          {/* {landlord?.whatsapp ? (
                             <button
                               onClick={() => selectContactMethod('whatsapp')}
                               className="flex items-center gap-3 w-full p-3 bg-white rounded-xl border border-gray-200 hover:border-emerald-300 hover:shadow-sm transition-all text-left"
@@ -700,9 +700,9 @@ export default function PropertyDetailPage() {
                                 <p className="text-xs text-gray-400">Livarex support is offline</p>
                               </div>
                             </div>
-                          )}
+                          )} */}
                           
-                          <button
+                          {/* <button
                             onClick={() => selectContactMethod('form')}
                             className="flex items-center gap-3 w-full p-3 bg-white rounded-xl border border-gray-200 hover:border-blue-300 hover:shadow-sm transition-all text-left"
                           >
@@ -713,7 +713,7 @@ export default function PropertyDetailPage() {
                               <p className="text-sm font-bold text-gray-900">Send Enquiry</p>
                               <p className="text-xs text-gray-500">Livarex will contact you shortly</p>
                             </div>
-                          </button>
+                          </button> */}
                         </div>
                       </motion.div>
                     )}
