@@ -7,7 +7,7 @@ import {
 import LandlordSidebar from '../../components/layout/LandlordSidebar'
 import AuthGuard from '../../components/auth/AuthGuard'
 import { createClient, getSupabaseAvatarUrl } from '../../lib/supabase'
-import type { Landlord } from '../../lib/types'
+import type { Landlord } from '@/types'
 
 const FIELD = "w-full px-4 py-3 rounded-xl border border-gray-200 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all bg-gray-50 focus:bg-white"
 const LABEL = "text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5 block"

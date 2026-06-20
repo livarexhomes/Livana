@@ -8,10 +8,10 @@ import PublicNavbar from '../components/layout/PublicNavbar'
 import ListingCard from '../components/property/ListingCard'
 import { createClient, isSupabaseConfigured } from '../lib/supabase'
 import { isAdminUser } from '../lib/auth'
-import type { PropertyWithLandlord } from '../lib/types'
+import type { PropertyWithLandlord } from '@/types'
 
 
-const PropertyMap = lazy(() => import('../components/PropertyMap'))
+const PropertyMap = lazy(() => import('../components/property/PropertyMap'))
 
 const TYPE_TABS = [
   { value: '', label: 'All', icon: '✦' },

@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { Link, useLocation } from '@/lib/navigation'
 import { Eye, EyeOff, Building2, CheckCircle2 } from 'lucide-react'
-import { createClient, isSupabaseConfigured } from '../lib/supabase'
+import { createClient, isSupabaseConfigured } from '../../lib/supabase'
 
 const FIELD = 'w-full px-4 py-3.5 rounded-2xl border border-gray-200 bg-gray-50 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:bg-white transition-all'
 

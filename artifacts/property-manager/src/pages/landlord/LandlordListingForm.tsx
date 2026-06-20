@@ -9,7 +9,7 @@ import {
 import LandlordSidebar from '../../components/layout/LandlordSidebar'
 import AuthGuard from '../../components/auth/AuthGuard'
 import { createClient, getSupabaseImageUrl } from '../../lib/supabase'
-import type { Landlord } from '../../lib/types'
+import type { Landlord } from '@/types'
 import { NIGERIAN_STATES, POPULAR_AREAS } from '../../lib/nigerianStates'
 
 type FormData = {

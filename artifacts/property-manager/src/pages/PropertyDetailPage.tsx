@@ -16,7 +16,7 @@ import PublicNavbar from '../components/layout/PublicNavbar'
 import Footer from '../components/layout/Footer'
 import { createClient, isSupabaseConfigured, getSupabaseImageUrl } from '../lib/supabase'
 import { isAdminUser } from '../lib/auth'
-import type { PropertyWithLandlord, PropertyImage, Landlord } from '../lib/types'
+import type { PropertyWithLandlord, PropertyImage, Landlord } from '@/types'
 
 delete (L.Icon.Default.prototype as unknown as Record<string, unknown>)._getIconUrl
 L.Icon.Default.mergeOptions({

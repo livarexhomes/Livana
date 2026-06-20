@@ -16,7 +16,7 @@ import {
 import LandlordSidebar from '../../components/layout/LandlordSidebar'
 import AuthGuard from '../../components/auth/AuthGuard'
 import { createClient } from '../../lib/supabase'
-import type { Landlord } from '../../lib/types'
+import type { Landlord } from '@/types'
 import { useToast } from '../../hooks/use-toast'
 
 const SECTIONS = [

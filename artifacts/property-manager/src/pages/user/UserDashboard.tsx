@@ -10,7 +10,7 @@ import UserSidebar from '../../components/layout/UserSidebar'
 import UserBottomNav from '../../components/layout/UserBottomNav'
 import ListingCard from '../../components/property/ListingCard'
 import { createClient } from '../../lib/supabase'
-import type { Tenant, PropertyWithLandlord } from '../../lib/types'
+import type { Tenant, PropertyWithLandlord } from '@/types'
 
 
 // ── Shared layout ─────────────────────────────────────────────────────────────

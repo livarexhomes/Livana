@@ -5,7 +5,7 @@ import PublicNavbar from '../components/layout/PublicNavbar'
 import Footer from '../components/layout/Footer'
 import PropertyCard from '../components/property/PropertyCard'
 import { createClient, isSupabaseConfigured } from '../lib/supabase'
-import type { PropertyWithLandlord } from '../lib/types'
+import type { PropertyWithLandlord } from '@/types'
 import { NIGERIAN_STATES, POPULAR_AREAS } from '../lib/nigerianStates'
 
 type Tab = 'Buy' | 'Rent' | 'Lease' | 'Commercial'
