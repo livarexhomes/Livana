@@ -111,7 +111,7 @@ export default function ListingsPage() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-gray-50 pt-20">
+    <div className="min-h-screen flex flex-col bg-[#F6F7FB] pt-20">
       <SEO
         title="Browse Properties — Rent, Lease & Sale"
         description="Search verified properties for rent, lease and sale across Nigeria. Filter by location, price, bedrooms and type."
@@ -339,15 +339,24 @@ export default function ListingsPage() {
             showMap ? 'w-full lg:w-[520px] xl:w-[600px]' : 'w-full'
           }`}
         >
-          <div className="px-4 py-2.5 bg-white border-b border-gray-100 flex items-center justify-between sticky top-0 z-10">
-            <p className="text-sm text-gray-500">
-              <span className="font-bold text-gray-900">{sorted.length}</span>{' '}
-              {sorted.length === 1 ? 'property' : 'properties'} found
-              {hasFilters && <span className="text-green-600 ml-1 font-medium">· filtered</span>}
+          <div className="px-4 sm:px-6 py-3 bg-white/80 backdrop-blur-sm border-b border-gray-100/60 flex items-center justify-between sticky top-0 z-10">
+            <p className="text-sm text-gray-500 flex items-center gap-2">
+              <span className="font-extrabold text-gray-900 text-base">{sorted.length}</span>
+              <span>{sorted.length === 1 ? 'property' : 'properties'} found</span>
+              {hasFilters && (
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-violet-50 text-violet-700 text-[10px] font-bold rounded-full border border-violet-100 uppercase tracking-wide">
+                  filtered
+                </span>
+              )}
             </p>
+            {!loading && sorted.length > 0 && (
+              <p className="text-[11px] text-gray-400 hidden sm:block">
+                All landlords verified
+              </p>
+            )}
           </div>
 
-          <div className={`p-4 grid gap-4 ${!showMap ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3' : 'grid-cols-1 sm:grid-cols-2'}`}>
+          <div className={`p-4 sm:p-6 grid gap-5 ${!showMap ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3' : 'grid-cols-1 sm:grid-cols-2'}`}>
             {loading ? (
               Array.from({ length: 6 }).map((_, i) => (
                 <div key={i} className="bg-white rounded-2xl overflow-hidden border border-gray-100 animate-pulse h-80">
