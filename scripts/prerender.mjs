@@ -20,6 +20,15 @@ const ROUTES = [
   '/contact',
   '/terms',
   '/privacy-policy',
+  '/how-we-verify',
+  '/properties-in/lekki',
+  '/properties-in/ikeja',
+  '/properties-in/ajah',
+  '/properties-in/yaba',
+  '/properties-in/surulere',
+  '/properties-in/abuja',
+  '/properties-in/lagos',
+  '/properties-in/victoria-island',
 ]
 
 async function prerender() {

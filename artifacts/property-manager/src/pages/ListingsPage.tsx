@@ -33,6 +33,8 @@ export default function ListingsPage() {
   const [minPrice, setMinPrice] = useState(params.get('min_price') ?? '')
   const [maxPrice, setMaxPrice] = useState(params.get('max_price') ?? '')
   const [bedsFilter, setBedsFilter] = useState(params.get('bedrooms') ?? '')
+  const [bathsFilter, setBathsFilter] = useState('')
+  const [furnishedFilter, setFurnishedFilter] = useState('')
   const [sortBy, setSortBy] = useState('newest')
   const [showFilters, setShowFilters] = useState(false)
   const [showMap, setShowMap] = useState(false)
@@ -59,7 +61,7 @@ export default function ListingsPage() {
     })
   }, [])
 
-  useEffect(() => { fetchProperties() }, [typeFilter, stateFilter, areaFilter, minPrice, maxPrice, bedsFilter])
+  useEffect(() => { fetchProperties() }, [typeFilter, stateFilter, areaFilter, minPrice, maxPrice, bedsFilter, bathsFilter, furnishedFilter])
 
   async function fetchProperties() {
     if (!isSupabaseConfigured()) { setLoading(false); return }
@@ -79,6 +81,8 @@ export default function ListingsPage() {
     if (minPrice) query = query.gte('price', Number(minPrice))
     if (maxPrice) query = query.lte('price', Number(maxPrice))
     if (bedsFilter) query = query.gte('bedrooms', Number(bedsFilter))
+    if (bathsFilter) query = query.gte('bathrooms', Number(bathsFilter))
+    if (furnishedFilter !== '') query = query.eq('furnished', furnishedFilter === 'true')
 
     const { data } = await query
     setProperties((data as PropertyWithLandlord[]) ?? [])
@@ -88,9 +92,10 @@ export default function ListingsPage() {
   function clearFilters() {
     setTypeFilter(''); setStateFilter(''); setAreaFilter('')
     setMinPrice(''); setMaxPrice(''); setBedsFilter('')
+    setBathsFilter(''); setFurnishedFilter('')
   }
 
-  const hasFilters = typeFilter || stateFilter || areaFilter || minPrice || maxPrice || bedsFilter
+  const hasFilters = typeFilter || stateFilter || areaFilter || minPrice || maxPrice || bedsFilter || bathsFilter || furnishedFilter !== ''
 
   const sorted = [...properties].sort((a, b) => {
     if (sortBy === 'price_asc') return Number(a.price) - Number(b.price)
@@ -275,6 +280,42 @@ export default function ListingsPage() {
                     placeholder="e.g. Lekki, Maitama…"
                     className="pl-9 pr-3.5 py-2 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 w-full sm:w-52"
                   />
+                </div>
+              </div>
+              <div className="flex flex-col gap-1">
+                <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Bathrooms</label>
+                <select
+                  value={bathsFilter}
+                  onChange={e => setBathsFilter(e.target.value)}
+                  className="px-3.5 py-2 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 w-full sm:w-36"
+                >
+                  <option value="">Any</option>
+                  <option value="1">1+</option>
+                  <option value="2">2+</option>
+                  <option value="3">3+</option>
+                  <option value="4">4+</option>
+                </select>
+              </div>
+              <div className="flex flex-col gap-1 col-span-2 sm:col-span-1">
+                <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Furnished</label>
+                <div className="flex gap-2">
+                  {[
+                    { value: '', label: 'Any' },
+                    { value: 'true', label: 'Furnished' },
+                    { value: 'false', label: 'Unfurnished' },
+                  ].map(opt => (
+                    <button
+                      key={opt.value}
+                      onClick={() => setFurnishedFilter(opt.value)}
+                      className={`px-3 py-2 rounded-xl border text-sm font-semibold transition-all ${
+                        furnishedFilter === opt.value
+                          ? 'bg-gray-900 text-white border-gray-900'
+                          : 'bg-white text-gray-600 border-gray-200 hover:border-gray-400'
+                      }`}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
                 </div>
               </div>
               <button

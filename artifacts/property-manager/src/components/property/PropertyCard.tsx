@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { Link, useLocation } from '@/lib/navigation'
-import { MapPin, BedDouble, Bath, Heart, Building2, Maximize2, ShieldCheck } from 'lucide-react'
+import { MapPin, BedDouble, Bath, Heart, Building2, Maximize2, ShieldCheck, Flag, X } from 'lucide-react'
 import type { PropertyWithLandlord } from '@/types'
 import { getSupabaseImageUrl } from '@/lib/supabase'
 import { createClient } from '@/lib/supabase'
@@ -35,6 +35,28 @@ export default function PropertyCard({ property: p, saved: initialSaved = false,
   const [, navigate] = useLocation()
   const [saved, setSaved] = useState(initialSaved)
   const [saving, setSaving] = useState(false)
+  const [reportOpen, setReportOpen] = useState(false)
+  const [reported, setReported] = useState(false)
+
+  const REPORT_REASONS = [
+    'Fake or scam listing',
+    'Already rented / not available',
+    'Wrong price or misleading info',
+    'Duplicate listing',
+    'Inappropriate content',
+    'Other',
+  ]
+
+  async function handleReport(e: React.MouseEvent, reason: string) {
+    e.preventDefault()
+    e.stopPropagation()
+    try {
+      const supabase = createClient()
+      await supabase.from('property_reports').insert({ property_id: p.id, reason })
+    } catch (_) {}
+    setReported(true)
+    setReportOpen(false)
+  }
 
   const cover = p.property_images?.find(i => i.is_cover) ?? p.property_images?.[0]
   const coverUrl = cover ? getSupabaseImageUrl(cover.storage_path) : null
@@ -148,6 +170,48 @@ export default function PropertyCard({ property: p, saved: initialSaved = false,
             <span className="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2 py-1 text-[10px] uppercase tracking-[0.18em] text-gray-500">
               {listedLabel}
             </span>
+          </div>
+
+          {/* Report */}
+          <div className="relative mb-2">
+            {reported ? (
+              <p className="text-[11px] text-emerald-600 font-semibold flex items-center gap-1">
+                ✓ Report received — we'll review within 24 hours
+              </p>
+            ) : reportOpen ? (
+              <div
+                className="bg-white border border-gray-200 rounded-2xl shadow-lg p-3 z-20"
+                onClick={e => e.preventDefault()}
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <p className="text-xs font-bold text-gray-700">Why are you reporting?</p>
+                  <button
+                    onClick={e => { e.preventDefault(); e.stopPropagation(); setReportOpen(false) }}
+                    className="w-5 h-5 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-400"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </div>
+                <div className="flex flex-col gap-1">
+                  {REPORT_REASONS.map(r => (
+                    <button
+                      key={r}
+                      onClick={e => handleReport(e, r)}
+                      className="text-left text-xs text-gray-600 hover:text-red-600 hover:bg-red-50 px-2.5 py-1.5 rounded-lg transition-colors font-medium"
+                    >
+                      {r}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <button
+                onClick={e => { e.preventDefault(); e.stopPropagation(); setReportOpen(true) }}
+                className="inline-flex items-center gap-1 text-[11px] text-gray-300 hover:text-red-400 transition-colors font-medium"
+              >
+                <Flag className="w-3 h-3" /> Report listing
+              </button>
+            )}
           </div>
 
           {/* Stats row */}

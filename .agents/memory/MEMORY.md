@@ -1,2 +1,1 @@
-- [LIVAREX SSG pipeline](livarex-ssg.md) — build-time static prerender for 6 public routes; run after both vite builds.
-- [LIVAREX Vercel deploy](livarex-vercel.md) — user deploys from repo root to Vercel; vercel.json lives at workspace root, NOT inside the artifact dir.
+- [Wouter route params](wouter-routing.md) — parametric params need a `/` separator; inline params like `/path-:slug` don't match in regexparam
