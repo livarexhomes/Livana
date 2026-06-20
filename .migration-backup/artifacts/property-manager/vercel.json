@@ -1,7 +1,0 @@
-{
-    "version": 2,
-    "framework": null,
-    "buildCommand": "cd ../.. && pnpm --filter @workspace/property-manager run build",
-    "outputDirectory": "vercel-out",
-    "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]
-  }

@@ -1,7 +1,7 @@
-import { createClient } from '@supabase/supabase-js'
+import { createClient as createSupabaseClient } from '@supabase/supabase-js'
 
-const url = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || ''
-const key = process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY || ''
+const url = import.meta.env.VITE_SUPABASE_URL || ''
+const key = import.meta.env.VITE_SUPABASE_ANON_KEY || ''
 
 export function isSupabaseConfigured(): boolean {
   return Boolean(url && key)
@@ -9,11 +9,10 @@ export function isSupabaseConfigured(): boolean {
 
 export function createServerClient() {
   if (!url || !key) {
-    throw new Error(
-      'Supabase is not configured. Set SUPABASE_URL and SUPABASE_ANON_KEY.',
-    )
+    console.warn('Supabase is not configured. Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.')
+    return createSupabaseClient('https://placeholder.supabase.co', 'placeholder')
   }
-  return createClient(url, key, {
+  return createSupabaseClient(url, key, {
     auth: {
       autoRefreshToken: false,
       persistSession: false,

@@ -9,7 +9,11 @@ function escapeHtml(str: string): string {
     .replace(/'/g, '&#39;')
 }
 
-const resend = new Resend(process.env.RESEND_API_KEY)
+function getResend() {
+  const key = process.env.RESEND_API_KEY
+  if (!key) throw new Error('RESEND_API_KEY is not set')
+  return new Resend(key)
+}
 
 const FROM = process.env.FROM_EMAIL ?? 'Livana <noreply@livana.ng>'
 const APP_NAME = 'Livana'
@@ -22,6 +26,7 @@ export async function sendConfirmationEmail(opts: {
   const { to, fullName, confirmationUrl } = opts
   const firstName = escapeHtml(fullName.split(' ')[0])
 
+  const resend = getResend()
   return resend.emails.send({
     from: FROM,
     to,

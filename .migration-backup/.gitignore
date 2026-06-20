@@ -5,10 +5,8 @@ dist
 tmp
 out-tsc
 *.tsbuildinfo
-vercel-out
 .expo
 .expo-shared
-.next
 
 # dependencies
 node_modules
@@ -49,8 +47,3 @@ Thumbs.db
 # Replit
 .cache/
 .local/
-
-# Environment secrets
-.env
-.env.*
-!.env.example
