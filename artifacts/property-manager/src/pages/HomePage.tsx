@@ -634,41 +634,6 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ── HOW IT WORKS ── */}
-      <section className="bg-[#F8F8F6] py-20 md:py-24 border-b border-gray-100">
-        <div className="max-w-6xl mx-auto px-5 sm:px-8">
-          <div className="text-center mb-14">
-            <p className="text-blue-600 font-semibold text-sm uppercase tracking-widest mb-3">Simple Process</p>
-            <h2 className="text-3xl md:text-4xl font-extrabold text-gray-900 tracking-tight">Find a home in 4 steps</h2>
-            <p className="text-gray-500 mt-3 max-w-md mx-auto text-sm">No agents, no stress. Livarex handles the coordination so you deal directly with verified landlords.</p>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6 md:gap-4 relative">
-            {/* Connector line on desktop */}
-            <div className="hidden md:block absolute top-9 left-[12.5%] right-[12.5%] h-px bg-gray-200 z-0" />
-            {[
-              { step: 1, icon: '🔍', title: 'Search Properties', desc: 'Filter by location, type, budget, and beds to find your ideal home.' },
-              { step: 2, icon: '✅', title: 'View Verified Landlord', desc: 'Every landlord is ID-verified and manually approved by our team.' },
-              { step: 3, icon: '💬', title: 'Contact Directly', desc: 'Reach out via WhatsApp or our platform — no middlemen involved.' },
-              { step: 4, icon: '🏠', title: 'Book Inspection', desc: 'Livarex coordinates the visit and confirms the slot with the landlord.' },
-            ].map(({ step, icon, title, desc }) => (
-              <div key={step} className="relative z-10 flex flex-col items-center text-center">
-                <div className="w-18 h-18 rounded-2xl bg-white border border-gray-100 shadow-sm flex items-center justify-center mb-5 text-3xl relative">
-                  <span>{icon}</span>
-                  <span className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-blue-600 text-white text-xs font-black flex items-center justify-center shadow-md">{step}</span>
-                </div>
-                <h3 className="font-bold text-gray-900 text-base mb-2">{title}</h3>
-                <p className="text-gray-500 text-sm leading-relaxed">{desc}</p>
-              </div>
-            ))}
-          </div>
-          <div className="text-center mt-12">
-            <Link href="/listings" className="inline-flex items-center gap-2 px-7 py-3.5 bg-blue-600 text-white font-bold rounded-2xl hover:bg-blue-700 transition-all text-sm shadow-xl shadow-blue-600/20">
-              Start your search <ArrowRight className="w-4 h-4" />
-            </Link>
-          </div>
-        </div>
-      </section>
-
       {/* ── LANDLORD CTA ── */}
       <section className="bg-white py-14 border-b border-gray-100">
         <div className="max-w-6xl mx-auto px-5 sm:px-8">
