@@ -935,23 +935,6 @@ export default function HomePage() {
               </div>
             </Link>
 
-            {/* Abuja — launching soon */}
-            <div className="relative group overflow-hidden rounded-3xl col-span-1 shadow-sm hover:shadow-2xl transition-all duration-500">
-              <img src="https://images.unsplash.com/photo-1567985207911-725f4e7c8926?w=800" alt="Abuja"
-                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
-              <div className="absolute bottom-4 left-4">
-                <h3 className="text-lg font-bold text-white">Abuja</h3>
-                <p className="text-blue-200 text-xs font-medium mt-0.5">Federal Capital</p>
-                <a href="/contact" className="mt-2 inline-flex items-center gap-1 text-[11px] font-bold text-blue-300 hover:text-white transition-colors">
-                  Get notified <ArrowRight className="w-3 h-3" />
-                </a>
-              </div>
-              <div className="absolute top-3 right-3 bg-blue-600/90 backdrop-blur-sm text-white text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full">
-                Launching Soon
-              </div>
-            </div>
-
             {/* Ogun — ACTIVE */}
             <Link
               href="/listings?city=Ogun"
@@ -968,20 +951,21 @@ export default function HomePage() {
               </div>
             </Link>
 
-            {/* Port Harcourt — launching soon (2 cols) */}
-            <div className="relative overflow-hidden rounded-3xl col-span-2 shadow-sm group">
-              <img src="https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=1000" alt="Port Harcourt" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
-              <div className="absolute inset-0 bg-black/60" />
-              <div className="absolute bottom-4 left-5">
-                <h3 className="text-xl font-bold text-white">Port Harcourt</h3>
-                <p className="text-white/60 text-xs font-medium mt-0.5">Oil City Hub</p>
-                <a href="/contact" className="mt-2 inline-flex items-center gap-1 text-[11px] font-bold text-blue-300 hover:text-white transition-colors">
-                  Join the waitlist <ArrowRight className="w-3 h-3" />
-                </a>
+            {/* Expanding Soon — single clean card replacing multiple "coming soon" tiles */}
+            <div className="relative overflow-hidden rounded-3xl col-span-2 bg-gradient-to-br from-gray-900 to-gray-800 shadow-sm flex flex-col items-center justify-center p-8 text-center">
+              <div className="w-12 h-12 rounded-2xl bg-blue-600/20 border border-blue-500/30 flex items-center justify-center mb-4">
+                <MapPin className="w-5 h-5 text-blue-400" />
               </div>
-              <div className="absolute top-3 right-3 bg-blue-600/90 backdrop-blur-sm text-white text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full">
-                Launching Soon
-              </div>
+              <h3 className="text-xl font-extrabold text-white mb-1">Expanding Across Nigeria</h3>
+              <p className="text-gray-400 text-sm max-w-xs mb-5">
+                Abuja, Port Harcourt, Ibadan and more cities are joining soon. Be the first to know.
+              </p>
+              <a
+                href="/contact"
+                className="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white text-sm font-bold rounded-2xl transition-all"
+              >
+                Get notified <ArrowRight className="w-3.5 h-3.5" />
+              </a>
             </div>
           </div>
 
@@ -1009,6 +993,75 @@ export default function HomePage() {
               </div>
             ))}
           </div> */}
+        </div>
+      </section>
+
+      {/* ── HOW IT WORKS ── */}
+      <section className="bg-[#F6F7FB] py-20 md:py-28">
+        <div className="max-w-5xl mx-auto px-5 sm:px-8">
+          <div className="text-center mb-14">
+            <p className="text-blue-600 font-semibold text-sm uppercase tracking-widest mb-3">Simple Process</p>
+            <h2 className="text-3xl md:text-4xl font-extrabold text-gray-900 tracking-tight">How LIVAREX Works</h2>
+            <p className="text-gray-500 mt-3 max-w-lg mx-auto">From browsing to moving in — we handle the coordination so you deal with zero stress.</p>
+          </div>
+
+          <div className="grid md:grid-cols-5 gap-0 items-start">
+            {[
+              {
+                step: '01',
+                icon: '🔍',
+                title: 'Browse Verified Properties',
+                desc: 'Explore listings that have been manually reviewed. Every landlord is ID-verified before going live.',
+              },
+              {
+                step: '02',
+                icon: '📩',
+                title: 'Submit a Request',
+                desc: 'Found something you like? Submit a viewing request through LIVAREX — no direct contact needed.',
+              },
+              {
+                step: '03',
+                icon: '✅',
+                title: 'LIVAREX Confirms Availability',
+                desc: 'We contact the landlord, verify the property is still available, and confirm it matches what was listed.',
+              },
+              {
+                step: '04',
+                icon: '📅',
+                title: 'Inspection Scheduled',
+                desc: 'We coordinate a convenient time for you to inspect the property safely and with full information.',
+              },
+              {
+                step: '05',
+                icon: '🏠',
+                title: 'Move In Safely',
+                desc: 'Once satisfied, finalise the agreement. LIVAREX stays available if any issues arise.',
+              },
+            ].map((item, i, arr) => (
+              <div key={item.step} className="flex md:flex-col items-start md:items-center gap-4 md:gap-0 relative">
+                {/* Connector line (desktop) */}
+                {i < arr.length - 1 && (
+                  <div className="hidden md:block absolute top-8 left-[calc(50%+2.5rem)] w-[calc(100%-5rem)] h-0.5 bg-gradient-to-r from-blue-200 to-blue-100 z-0" />
+                )}
+                {/* Icon bubble */}
+                <div className="relative z-10 w-16 h-16 shrink-0 rounded-2xl bg-white shadow-sm border border-gray-100 flex flex-col items-center justify-center md:mb-5">
+                  <span className="text-2xl leading-none">{item.icon}</span>
+                  <span className="text-[9px] font-black text-blue-500 mt-0.5 tracking-widest">{item.step}</span>
+                </div>
+                {/* Text */}
+                <div className="md:text-center md:px-2 pb-8 md:pb-0">
+                  <h3 className="font-bold text-gray-900 text-sm leading-snug mb-1">{item.title}</h3>
+                  <p className="text-gray-500 text-xs leading-relaxed">{item.desc}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-12 text-center">
+            <Link href="/listings" className="inline-flex items-center gap-2 px-7 py-3.5 bg-gray-900 hover:bg-gray-800 text-white font-bold rounded-2xl transition-all text-sm shadow-lg shadow-gray-900/20">
+              Browse Properties <ArrowRight className="w-4 h-4" />
+            </Link>
+          </div>
         </div>
       </section>
 
