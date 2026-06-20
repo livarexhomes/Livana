@@ -608,24 +608,7 @@ export default function PropertyDetailPage() {
                 </div>
 
                 <div className="p-5 space-y-3">
-                  {/* Primary CTA - Request Inspection */}
-                  {userRole === 'guest' ? (
-                    <button
-                      onClick={() => navigate('/login')}
-                      className="flex items-center justify-center gap-2.5 w-full py-3.5 bg-gray-900 text-white rounded-2xl font-bold text-sm hover:bg-gray-800 transition-all cursor-pointer"
-                    >
-                      <Lock className="w-4 h-4" /> Sign in to request inspection
-                    </button>
-                  ) : (
-                    <button
-                      onClick={handleBookInspection}
-                      className="flex items-center justify-center gap-2.5 w-full py-3.5 bg-gray-900 text-white rounded-2xl font-bold text-sm hover:bg-gray-800 transition-all active:scale-[0.98] shadow-lg shadow-gray-900/10"
-                    >
-                      <Calendar className="w-4 h-4" /> Request inspection
-                    </button>
-                  )}
-
-                  {/* Contact Options - WhatsApp + Enquiry */}
+                  {/* Contact Options - WhatsApp + Request Inspection */}
                   <div className="grid grid-cols-2 gap-2">
                     {userRole === 'guest' ? (
                       <button
@@ -647,15 +630,15 @@ export default function PropertyDetailPage() {
                         onClick={() => navigate('/login')}
                         className="flex items-center justify-center gap-2 py-3 bg-gray-100 text-gray-400 rounded-2xl font-bold text-sm cursor-pointer hover:bg-gray-200 transition-all"
                       >
-                        <Lock className="w-4 h-4" /> Enquiry
+                        <Lock className="w-4 h-4" /> Request inspection
                       </button>
                     ) : (
                       <button
                         onClick={() => { setEnquiryOpen(!enquiryOpen); setEnquirySuccess(false); setContactModalOpen(false) }}
                         className="flex items-center justify-center gap-2 py-3 bg-blue-600 text-white rounded-2xl font-bold text-sm hover:bg-blue-700 transition-all active:scale-[0.98]"
                       >
-                        <Mail className="w-4 h-4" /> 
-                        {enquiryOpen ? 'Close' : 'Enquiry'}
+                        <Calendar className="w-4 h-4" />
+                        {enquiryOpen ? 'Close' : 'Request inspection'}
                       </button>
                     )}
                   </div>
