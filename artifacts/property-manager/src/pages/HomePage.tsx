@@ -553,7 +553,7 @@ export default function HomePage() {
               {[
                 { value: 307, suffix: '+', label: 'Verified Properties' },
                 { value: 108, suffix: '+', label: 'Verified Landlords' },
-                { value: 850, suffix: '+', label: 'Inspections Booked' },
+                { value: 80, suffix: '+', label: 'Requests Processed' },
                 { value: 2, suffix: 'h', label: 'Avg Response Time' },
               ].map((s: { value: number; suffix: string; label: string; prefix?: string }, i) => (
                 <div key={s.label} className="flex items-center gap-8">
@@ -1107,7 +1107,7 @@ export default function HomePage() {
                 {[
                   { num: '307+', label: 'Verified Properties' },
                   { num: '108+', label: 'Verified Landlords' },
-                  { num: '850+', label: 'Inspections Booked' },
+                  { num: '80+', label: 'Requests Processed' },
                   { num: '4.9★', label: 'Average Rating' },
                 ].map(item => (
                   <div key={item.label} className="bg-white/5 border border-white/10 rounded-2xl px-6 py-5 text-center hover:bg-white/8 transition-all">

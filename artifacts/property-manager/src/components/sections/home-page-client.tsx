@@ -545,9 +545,9 @@ export default function HomePageClient({ initialProperties }: { initialPropertie
             {/* Stats row */}
             <div className="flex items-center gap-8">
               {[
-                { value: 100, suffix: '+', label: 'Verified Properties', prefix: '' },
-                { value: 80, suffix: '+', label: 'Successful Inspections', prefix: '' },
-                { value: 3, suffix: 'K+', label: 'Happy Tenants', prefix: '' },
+                { value: 307, suffix: '+', label: 'Verified Properties', prefix: '' },
+                { value: 108, suffix: '+', label: 'Verified Landlords', prefix: '' },
+                { value: 80, suffix: '+', label: 'Requests Processed', prefix: '' },
                 { value: 2, suffix: 'h', label: 'Avg Response Time', prefix: '' },
               ].map((s, i) => (
                 <div key={s.label} className="flex items-center gap-8">
@@ -1017,9 +1017,9 @@ export default function HomePageClient({ initialProperties }: { initialPropertie
 
               <div className="hidden md:flex items-center gap-8 shrink-0 bg-white/5 border border-white/10 rounded-2xl px-8 py-5">
                 {[
-                  { num: '10K+', label: 'Happy Tenants' },
-                  { num: '850+', label: 'Successful Inspections' },
-                  { num: '100%', label: 'Verified Homes' },
+                  { num: '307+', label: 'Verified Properties' },
+                  { num: '108+', label: 'Verified Landlords' },
+                  { num: '80+', label: 'Requests Processed' },
                   { num: '4.9★', label: 'Average Rating' },
                 ].map((item, i) => (
                   <div key={item.label} className="flex items-center gap-8">
