@@ -36,29 +36,22 @@ export default function RegisterPage() {
       return
     }
 
-    if (!data.session) {
-      // Supabase built-in email is disabled — send via Resend through our API.
-      try {
-        const res = await fetch('/api/send-confirmation', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email, fullName }),
-        })
-        if (!res.ok) {
-          const body = await res.json().catch(() => ({}))
-          console.error('[send-confirmation] API error:', res.status, body)
-          setError(`Failed to send confirmation email (${res.status}): ${body.detail ?? body.error ?? 'unknown error'}`)
-          setLoading(false)
-          return
-        }
-      } catch (err) {
-        console.error('[send-confirmation] Network error:', err)
-        setError('Could not reach the email service. Please try again.')
-        setLoading(false)
-        return
-      }
-      setEmailSent(true)
-      setLoading(false)
+    // Auto-confirm the user via admin API so they don't need to verify email
+    try {
+      await fetch('/api/send-confirmation', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, fullName }),
+      })
+    } catch (_) {
+      // Non-fatal — continue to sign in regardless
+    }
+
+    // Sign in immediately after registration
+    const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({ email, password })
+    if (signInError || !signInData.session) {
+      // Account created but sign-in failed — send them to login
+      navigate('/login')
       return
     }
 
