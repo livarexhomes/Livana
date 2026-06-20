@@ -3,6 +3,7 @@ import { Link } from '@/lib/navigation'
 import { ArrowRight, ShieldCheck, Building2, Users, TrendingUp, Star, CheckCircle2, CheckCircle, MapPin, ChevronRight, Calendar, ChevronDown } from 'lucide-react'
 import PublicNavbar from '../components/layout/PublicNavbar'
 import Footer from '../components/layout/Footer'
+import SEO from '../components/SEO'
 import PropertyCard from '../components/property/PropertyCard'
 import { createClient, isSupabaseConfigured } from '../lib/supabase'
 import type { PropertyWithLandlord } from '@/types'
@@ -179,6 +180,11 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen flex flex-col bg-white">
+      <SEO
+        title="Nigeria's Verified Property Marketplace"
+        description="Find verified homes, apartments and commercial properties for rent, lease and sale across Nigeria. Every landlord is vetted, every listing is real."
+        url="/"
+      />
       <PublicNavbar />
 
       {/* ── HERO ── */}
