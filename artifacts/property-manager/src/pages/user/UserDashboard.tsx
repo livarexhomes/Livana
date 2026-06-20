@@ -245,20 +245,19 @@ export default function UserDashboardPage() {
 
           {/* Listings */}
           {loading ? (
-            <div className="space-y-3">
-              {Array.from({ length: 4 }).map((_, i) => (
-                <div key={i} className="flex bg-white rounded-2xl overflow-hidden border border-gray-100 h-36 animate-pulse">
-                  <div className="w-44 bg-gray-200 shrink-0" />
-                  <div className="flex-1 p-4 space-y-3">
-                    <div className="h-6 bg-gray-200 rounded w-1/2" />
-                    <div className="h-4 bg-gray-100 rounded w-3/4" />
-                    <div className="h-4 bg-gray-100 rounded w-1/3" />
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <div key={i} className="bg-white rounded-3xl overflow-hidden border border-gray-100 animate-pulse h-80">
+                  <div className="h-56 w-full bg-gray-200" />
+                  <div className="p-4 space-y-3">
+                    <div className="h-4 bg-gray-200 rounded-lg w-2/3" />
+                    <div className="h-3 bg-gray-100 rounded-lg w-1/2" />
                   </div>
                 </div>
               ))}
             </div>
           ) : filtered.length === 0 ? (
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-16 text-center flex flex-col items-center">
+            <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-16 text-center flex flex-col items-center">
               <div className="w-14 h-14 bg-gray-50 rounded-2xl flex items-center justify-center mb-4">
                 <Building2 className="w-7 h-7 text-gray-300" />
               </div>
@@ -272,13 +271,14 @@ export default function UserDashboardPage() {
               )}
             </div>
           ) : (
-            <div className="space-y-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
               {filtered.map(p => (
                 <ListingCard
                   key={p.id}
                   property={p}
                   saved={savedIds.has(p.id)}
                   isAuthenticated={true}
+                  layout="grid"
                 />
               ))}
             </div>
