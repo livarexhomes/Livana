@@ -2,7 +2,7 @@ import { Link, useLocation } from '@/lib/navigation'
 import {
   LayoutDashboard, Heart, HeadphonesIcon, User, LogOut,
 } from 'lucide-react'
-import { createClient } from '../lib/supabase'
+import { createClient } from '@/lib/supabase'
 
 const mainNav = [
   { href: '/user', label: 'Overview', icon: LayoutDashboard, exact: true },

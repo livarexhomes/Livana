@@ -3,9 +3,9 @@
 import { useState } from 'react'
 import { Link, useLocation } from '@/lib/navigation'
 import { MapPin, BedDouble, Bath, Heart, Building2, Maximize2, ShieldCheck } from 'lucide-react'
-import type { PropertyWithLandlord } from '../lib/types'
-import { getSupabaseImageUrl } from '../lib/supabase'
-import { createClient } from '../lib/supabase'
+import type { PropertyWithLandlord } from '@/types'
+import { getSupabaseImageUrl } from '@/lib/supabase'
+import { createClient } from '@/lib/supabase'
 
 interface PropertyCardProps {
   property: PropertyWithLandlord

@@ -3,8 +3,8 @@ import {
   HelpCircle, ChevronDown, ChevronUp, MessageSquare, Mail,
   Phone, BookOpen, Video, ExternalLink, Search,
 } from 'lucide-react'
-import AdminSidebar from '../../components/AdminSidebar'
-import AuthGuard from '../../components/AuthGuard'
+import AdminSidebar from '../../components/layout/AdminSidebar'
+import AuthGuard from '../../components/auth/AuthGuard'
 import { createClient } from '../../lib/supabase'
 
 const FAQS = [

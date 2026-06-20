@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { MessageSquare, MapPin, Phone, User, Clock, CheckCircle, X, Headphones, Send, ChevronDown, ChevronUp } from 'lucide-react'
-import LandlordSidebar from '../../components/LandlordSidebar'
-import AuthGuard from '../../components/AuthGuard'
+import LandlordSidebar from '../../components/layout/LandlordSidebar'
+import AuthGuard from '../../components/auth/AuthGuard'
 import { createClient } from '../../lib/supabase'
 import type { Landlord } from '../../lib/types'
 

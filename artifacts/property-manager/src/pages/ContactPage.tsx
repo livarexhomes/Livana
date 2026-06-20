@@ -1,8 +1,8 @@
 import { useState } from 'react'
 import { Link } from '@/lib/navigation'
 import { Mail, Phone, MapPin, MessageCircle, Globe, ArrowRight, CheckCircle, Clock, ChevronDown, Instagram, Twitter, Send } from 'lucide-react'
-import PublicNavbar from '../components/PublicNavbar'
-import Footer from '../components/Footer'
+import PublicNavbar from '../components/layout/PublicNavbar'
+import Footer from '../components/layout/Footer'
 import { createClient, isSupabaseConfigured } from '../lib/supabase'
 
 const faqs = [

@@ -1,7 +1,7 @@
 import { useEffect, useState, ReactNode } from 'react'
 import { useLocation } from '@/lib/navigation'
-import { createClient, isSupabaseConfigured } from '../lib/supabase'
-import { isAdminUser } from '../lib/auth'
+import { createClient, isSupabaseConfigured } from '@/lib/supabase'
+import { isAdminUser } from '@/lib/auth'
 
 interface AuthGuardProps {
   children: ReactNode

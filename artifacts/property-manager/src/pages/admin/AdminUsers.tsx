@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef } from 'react'
 import { Search, Phone, Users, MessageSquare, Clock, UserX, MoreVertical, ShieldOff, Trash2, ShieldCheck, X, ChevronRight, Home, Calendar } from 'lucide-react'
-import AdminSidebar from '../../components/AdminSidebar'
-import AdminHeader from '../../components/AdminHeader'
-import AuthGuard from '../../components/AuthGuard'
+import AdminSidebar from '../../components/layout/AdminSidebar'
+import AdminHeader from '../../components/layout/AdminHeader'
+import AuthGuard from '../../components/auth/AuthGuard'
 import { createClient } from '../../lib/supabase'
 
 const AVATAR_GRADIENTS = [

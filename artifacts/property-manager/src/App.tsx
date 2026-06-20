@@ -14,7 +14,7 @@ const AuthCallbackPage = lazy(() => import("@/pages/AuthCallbackPage"));
 const AboutPage = lazy(() => import("@/pages/AboutPage"));
 const ContactPage = lazy(() => import("@/pages/ContactPage"));
 
-const LandlordRegisterPage = lazy(() => import("@/pages/LandlordRegisterPage"));
+const LandlordRegisterPage = lazy(() => import("@/pages/landlord/LandlordRegisterPage"));
 const LandlordDashboard = lazy(() => import("@/pages/landlord/LandlordDashboard"));
 const LandlordOnboarding = lazy(() => import("@/pages/landlord/LandlordOnboarding"));
 const LandlordKYCPage = lazy(() => import("@/pages/landlord/LandlordKYCPage"));

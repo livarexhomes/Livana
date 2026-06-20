@@ -1,7 +1,7 @@
 import { useEffect } from 'react'
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet'
 import L from 'leaflet'
-import type { PropertyWithLandlord } from '../lib/types'
+import type { PropertyWithLandlord } from '@/types'
 
 // Fix default marker icons broken by bundlers
 delete (L.Icon.Default.prototype as any)._getIconUrl

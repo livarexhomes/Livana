@@ -7,8 +7,8 @@ import {
   ChevronDown, CheckCircle, TrendingUp, ArrowRight,
   Clock, AlertCircle, MapPin, BedDouble, Bath,
 } from 'lucide-react'
-import LandlordSidebar from '../../components/LandlordSidebar'
-import AuthGuard from '../../components/AuthGuard'
+import LandlordSidebar from '../../components/layout/LandlordSidebar'
+import AuthGuard from '../../components/auth/AuthGuard'
 import { createClient, getSupabaseImageUrl } from '../../lib/supabase'
 import type { Landlord } from '../../lib/types'
 

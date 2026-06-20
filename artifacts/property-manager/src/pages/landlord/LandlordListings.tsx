@@ -5,8 +5,8 @@ import {
   LayoutGrid, List, Search, CheckCircle, Clock, XCircle, AlertCircle,
   ImagePlus, ArrowRight,
 } from 'lucide-react'
-import LandlordSidebar from '../../components/LandlordSidebar'
-import AuthGuard from '../../components/AuthGuard'
+import LandlordSidebar from '../../components/layout/LandlordSidebar'
+import AuthGuard from '../../components/auth/AuthGuard'
 import { createClient, getSupabaseImageUrl } from '../../lib/supabase'
 import type { Property, Landlord } from '../../lib/types'
 

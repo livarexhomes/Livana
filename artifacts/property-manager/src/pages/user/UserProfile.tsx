@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { User, Phone, CheckCircle, Mail, Shield } from 'lucide-react'
-import AuthGuard from '../../components/AuthGuard'
+import AuthGuard from '../../components/auth/AuthGuard'
 import { UserLayout } from './UserDashboard'
 import { createClient } from '../../lib/supabase'
 

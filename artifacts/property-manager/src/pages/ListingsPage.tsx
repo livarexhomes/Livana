@@ -4,8 +4,8 @@ import {
   Search, MapPin, ChevronDown, X, SlidersHorizontal,
   Building2, Map, List,
 } from 'lucide-react'
-import PublicNavbar from '../components/PublicNavbar'
-import ListingCard from '../components/ListingCard'
+import PublicNavbar from '../components/layout/PublicNavbar'
+import ListingCard from '../components/property/ListingCard'
 import { createClient, isSupabaseConfigured } from '../lib/supabase'
 import { isAdminUser } from '../lib/auth'
 import type { PropertyWithLandlord } from '../lib/types'

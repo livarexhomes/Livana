@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Link, useLocation } from '@/lib/navigation'
-import { createClient } from '../lib/supabase'
+import { createClient } from '@/lib/supabase'
 import {
   LayoutDashboard, Heart, HeadphonesIcon, User,
   LogOut, Menu, X, Building2, PanelLeftClose, PanelLeftOpen,

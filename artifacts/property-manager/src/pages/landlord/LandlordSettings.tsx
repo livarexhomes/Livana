@@ -13,8 +13,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from '../../components/ui/dialog'
-import LandlordSidebar from '../../components/LandlordSidebar'
-import AuthGuard from '../../components/AuthGuard'
+import LandlordSidebar from '../../components/layout/LandlordSidebar'
+import AuthGuard from '../../components/auth/AuthGuard'
 import { createClient } from '../../lib/supabase'
 import type { Landlord } from '../../lib/types'
 import { useToast } from '../../hooks/use-toast'

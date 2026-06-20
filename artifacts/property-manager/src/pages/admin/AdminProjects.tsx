@@ -4,9 +4,9 @@ import {
   Pencil, Trash2, X, CheckCircle, AlertCircle, MoreVertical,
   Upload, ImageIcon, Loader2,
 } from 'lucide-react'
-import AdminSidebar from '../../components/AdminSidebar'
-import AdminHeader from '../../components/AdminHeader'
-import AuthGuard from '../../components/AuthGuard'
+import AdminSidebar from '../../components/layout/AdminSidebar'
+import AdminHeader from '../../components/layout/AdminHeader'
+import AuthGuard from '../../components/auth/AuthGuard'
 import { createClient, getSupabaseProjectImageUrl } from '../../lib/supabase'
 
 type ProjectStatus = 'active' | 'coming_soon' | 'completed' | 'on_hold'

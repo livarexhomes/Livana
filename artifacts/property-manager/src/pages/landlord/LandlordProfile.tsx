@@ -4,8 +4,8 @@ import {
   MapPin, Briefcase, Calendar, Globe, Twitter,
   Linkedin, Instagram, Camera, Save, Loader2,
 } from 'lucide-react'
-import LandlordSidebar from '../../components/LandlordSidebar'
-import AuthGuard from '../../components/AuthGuard'
+import LandlordSidebar from '../../components/layout/LandlordSidebar'
+import AuthGuard from '../../components/auth/AuthGuard'
 import { createClient, getSupabaseAvatarUrl } from '../../lib/supabase'
 import type { Landlord } from '../../lib/types'
 

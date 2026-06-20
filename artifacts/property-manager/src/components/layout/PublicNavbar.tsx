@@ -4,8 +4,8 @@ import { useState, useEffect } from 'react'
 import { Building2 } from 'lucide-react'
 import { Link, useLocation } from '@/lib/navigation'
 import type { User } from '@supabase/supabase-js'
-import { createClient, isSupabaseConfigured } from '../lib/supabase'
-import { isAdminUser } from '../lib/auth'
+import { createClient, isSupabaseConfigured } from '@/lib/supabase'
+import { isAdminUser } from '@/lib/auth'
 
 export default function PublicNavbar() {
   const [location] = useLocation()

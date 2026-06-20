@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react'
 import { Activity, UserPlus, Building2, MessageSquare, ShieldCheck, Filter } from 'lucide-react'
-import AdminSidebar from '../../components/AdminSidebar'
-import AdminHeader from '../../components/AdminHeader'
-import AuthGuard from '../../components/AuthGuard'
+import AdminSidebar from '../../components/layout/AdminSidebar'
+import AdminHeader from '../../components/layout/AdminHeader'
+import AuthGuard from '../../components/auth/AuthGuard'
 import { createClient } from '../../lib/supabase'
 
 type ActivityItem = {

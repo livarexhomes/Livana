@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Link, useLocation } from '@/lib/navigation'
-import { createClient } from '../lib/supabase'
+import { createClient } from '@/lib/supabase'
 import {
   LayoutDashboard, Building2, UserPlus, FolderKanban, UserCog,
   Settings, LogOut, Menu, X,
