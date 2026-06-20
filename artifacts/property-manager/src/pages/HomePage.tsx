@@ -551,9 +551,9 @@ export default function HomePage() {
             {/* Stats row */}
             <div className="flex items-center gap-8">
               {[
-                { value: 100, suffix: '+', label: 'Verified Properties' },
-                { value: 80, suffix: '+', label: 'Successful Inspections' },
-                { value: 3, suffix: 'K+', label: 'Happy Tenants' },
+                { value: 307, suffix: '+', label: 'Verified Properties' },
+                { value: 108, suffix: '+', label: 'Verified Landlords' },
+                { value: 850, suffix: '+', label: 'Inspections Booked' },
                 { value: 2, suffix: 'h', label: 'Avg Response Time' },
               ].map((s: { value: number; suffix: string; label: string; prefix?: string }, i) => (
                 <div key={s.label} className="flex items-center gap-8">
@@ -630,6 +630,73 @@ export default function HomePage() {
                 </div>
               </div>
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── HOW IT WORKS ── */}
+      <section className="bg-[#F8F8F6] py-20 md:py-24 border-b border-gray-100">
+        <div className="max-w-6xl mx-auto px-5 sm:px-8">
+          <div className="text-center mb-14">
+            <p className="text-blue-600 font-semibold text-sm uppercase tracking-widest mb-3">Simple Process</p>
+            <h2 className="text-3xl md:text-4xl font-extrabold text-gray-900 tracking-tight">Find a home in 4 steps</h2>
+            <p className="text-gray-500 mt-3 max-w-md mx-auto text-sm">No agents, no stress. Livarex handles the coordination so you deal directly with verified landlords.</p>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6 md:gap-4 relative">
+            {/* Connector line on desktop */}
+            <div className="hidden md:block absolute top-9 left-[12.5%] right-[12.5%] h-px bg-gray-200 z-0" />
+            {[
+              { step: 1, icon: '🔍', title: 'Search Properties', desc: 'Filter by location, type, budget, and beds to find your ideal home.' },
+              { step: 2, icon: '✅', title: 'View Verified Landlord', desc: 'Every landlord is ID-verified and manually approved by our team.' },
+              { step: 3, icon: '💬', title: 'Contact Directly', desc: 'Reach out via WhatsApp or our platform — no middlemen involved.' },
+              { step: 4, icon: '🏠', title: 'Book Inspection', desc: 'Livarex coordinates the visit and confirms the slot with the landlord.' },
+            ].map(({ step, icon, title, desc }) => (
+              <div key={step} className="relative z-10 flex flex-col items-center text-center">
+                <div className="w-18 h-18 rounded-2xl bg-white border border-gray-100 shadow-sm flex items-center justify-center mb-5 text-3xl relative">
+                  <span>{icon}</span>
+                  <span className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-blue-600 text-white text-xs font-black flex items-center justify-center shadow-md">{step}</span>
+                </div>
+                <h3 className="font-bold text-gray-900 text-base mb-2">{title}</h3>
+                <p className="text-gray-500 text-sm leading-relaxed">{desc}</p>
+              </div>
+            ))}
+          </div>
+          <div className="text-center mt-12">
+            <Link href="/listings" className="inline-flex items-center gap-2 px-7 py-3.5 bg-blue-600 text-white font-bold rounded-2xl hover:bg-blue-700 transition-all text-sm shadow-xl shadow-blue-600/20">
+              Start your search <ArrowRight className="w-4 h-4" />
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* ── LANDLORD CTA ── */}
+      <section className="bg-white py-14 border-b border-gray-100">
+        <div className="max-w-6xl mx-auto px-5 sm:px-8">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-8 bg-blue-50 border border-blue-100 rounded-3xl px-8 py-10">
+            <div className="flex items-start gap-4">
+              <div className="w-12 h-12 rounded-2xl bg-blue-600 flex items-center justify-center shrink-0">
+                <Building2 className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <h3 className="text-xl font-extrabold text-gray-900">Own a property? List it free.</h3>
+                <p className="text-gray-500 text-sm mt-1 max-w-md">Join 108+ verified landlords who reach serious, pre-screened tenants with zero agent fees. Livarex handles all the coordination for you.</p>
+                <div className="flex flex-wrap gap-4 mt-3">
+                  {['No agent fees', 'Verified tenants only', 'Inspection scheduling included'].map(point => (
+                    <span key={point} className="flex items-center gap-1.5 text-xs font-semibold text-blue-700">
+                      <CheckCircle className="w-3.5 h-3.5" /> {point}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            </div>
+            <div className="flex flex-col sm:flex-row gap-3 shrink-0">
+              <Link href="/landlord/register" className="px-6 py-3 bg-blue-600 text-white font-bold rounded-2xl hover:bg-blue-700 transition-all text-sm text-center shadow-lg shadow-blue-600/20 whitespace-nowrap">
+                List Your Property Free
+              </Link>
+              <Link href="/about" className="px-6 py-3 bg-white border border-gray-200 text-gray-700 font-semibold rounded-2xl hover:bg-gray-50 transition-all text-sm text-center whitespace-nowrap">
+                How it works for landlords
+              </Link>
+            </div>
           </div>
         </div>
       </section>
@@ -903,7 +970,7 @@ export default function HomePage() {
               </div>
             </Link>
 
-            {/* Abuja — coming soon */}
+            {/* Abuja — launching soon */}
             <div className="relative group overflow-hidden rounded-3xl col-span-1 shadow-sm hover:shadow-2xl transition-all duration-500">
               <img src="https://images.unsplash.com/photo-1567985207911-725f4e7c8926?w=800" alt="Abuja"
                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
@@ -911,9 +978,12 @@ export default function HomePage() {
               <div className="absolute bottom-4 left-4">
                 <h3 className="text-lg font-bold text-white">Abuja</h3>
                 <p className="text-blue-200 text-xs font-medium mt-0.5">Federal Capital</p>
+                <a href="/contact" className="mt-2 inline-flex items-center gap-1 text-[11px] font-bold text-blue-300 hover:text-white transition-colors">
+                  Get notified <ArrowRight className="w-3 h-3" />
+                </a>
               </div>
-              <div className="absolute top-3 right-3 bg-white/15 backdrop-blur-sm border border-white/20 text-white text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full">
-                Coming Soon
+              <div className="absolute top-3 right-3 bg-blue-600/90 backdrop-blur-sm text-white text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full">
+                Launching Soon
               </div>
             </div>
 
@@ -933,16 +1003,19 @@ export default function HomePage() {
               </div>
             </Link>
 
-            {/* Port Harcourt — coming soon (2 cols) */}
-            <div className="relative overflow-hidden rounded-3xl col-span-2 shadow-sm cursor-default">
-              <img src="https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=1000" alt="Port Harcourt" className="w-full h-full object-cover" />
+            {/* Port Harcourt — launching soon (2 cols) */}
+            <div className="relative overflow-hidden rounded-3xl col-span-2 shadow-sm group">
+              <img src="https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=1000" alt="Port Harcourt" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
               <div className="absolute inset-0 bg-black/60" />
               <div className="absolute bottom-4 left-5">
-                <h3 className="text-xl font-bold text-white/60">Port Harcourt</h3>
-                <p className="text-white/40 text-xs font-medium mt-0.5">Oil City Hub</p>
+                <h3 className="text-xl font-bold text-white">Port Harcourt</h3>
+                <p className="text-white/60 text-xs font-medium mt-0.5">Oil City Hub</p>
+                <a href="/contact" className="mt-2 inline-flex items-center gap-1 text-[11px] font-bold text-blue-300 hover:text-white transition-colors">
+                  Join the waitlist <ArrowRight className="w-3 h-3" />
+                </a>
               </div>
-              <div className="absolute top-3 right-3 bg-white/15 backdrop-blur-sm border border-white/20 text-white text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full">
-                Coming Soon
+              <div className="absolute top-3 right-3 bg-blue-600/90 backdrop-blur-sm text-white text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full">
+                Launching Soon
               </div>
             </div>
           </div>
@@ -1039,7 +1112,7 @@ export default function HomePage() {
                   Ready to find your<br />perfect home?
                 </h2>
                 <p className="text-gray-400 text-base leading-relaxed mb-8 max-w-md">
-                  Join over 10,000 Nigerians who've found their ideal property on LIVAREX. Start your search today — it's completely free.
+                  Join thousands of Nigerians who've found verified properties on LIVAREX. No agents, no hidden fees — start your search today for free.
                 </p>
                 <ul className="space-y-2 mb-8">
                   {['Verified properties only', 'Transparent pricing', 'Secure inspection booking'].map(item => (
@@ -1059,14 +1132,17 @@ export default function HomePage() {
                   }} href="/listings" className="px-7 py-3.5 bg-blue-600 text-white font-bold rounded-2xl hover:bg-blue-700 transition-all text-center text-sm shadow-xl">
                     Browse Listings
                   </Link>
+                  <Link href="/landlord/register" className="px-7 py-3.5 bg-white/10 border border-white/20 text-white font-semibold rounded-2xl hover:bg-white/15 transition-all text-center text-sm whitespace-nowrap">
+                    List Your Property Free
+                  </Link>
                 </div>
               </div>
 
               <div className="hidden md:grid grid-cols-2 gap-3 shrink-0">
                 {[
-                  { num: '10K+', label: 'Happy Tenants' },
-                  { num: '850+', label: 'Successful Inspections' },
-                  { num: '100%', label: 'Verified Homes' },
+                  { num: '307+', label: 'Verified Properties' },
+                  { num: '108+', label: 'Verified Landlords' },
+                  { num: '850+', label: 'Inspections Booked' },
                   { num: '4.9★', label: 'Average Rating' },
                 ].map(item => (
                   <div key={item.label} className="bg-white/5 border border-white/10 rounded-2xl px-6 py-5 text-center hover:bg-white/8 transition-all">
