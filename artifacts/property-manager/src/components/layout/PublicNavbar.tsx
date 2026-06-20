@@ -46,8 +46,6 @@ export default function PublicNavbar() {
     { href: '/listings?type=lease', label: 'Lease', comingSoon: false },
     { href: null, label: 'Buy', comingSoon: true },
     { href: null, label: 'Commercial', comingSoon: true },
-    { href: '/about', label: 'About', comingSoon: false },
-    { href: '/contact', label: 'Contact', comingSoon: false },
   ]
 
   const isHomePage = location === '/'

@@ -1015,16 +1015,19 @@ export default function HomePageClient({ initialProperties }: { initialPropertie
                 </div>
               </div>
 
-              <div className="hidden md:grid grid-cols-2 gap-3 shrink-0">
+              <div className="hidden md:flex items-center gap-8 shrink-0 bg-white/5 border border-white/10 rounded-2xl px-8 py-5">
                 {[
                   { num: '10K+', label: 'Happy Tenants' },
                   { num: '850+', label: 'Successful Inspections' },
                   { num: '100%', label: 'Verified Homes' },
                   { num: '4.9★', label: 'Average Rating' },
-                ].map(item => (
-                  <div key={item.label} className="bg-white/5 border border-white/10 rounded-2xl px-6 py-5 text-center hover:bg-white/8 transition-all">
-                    <p className="text-2xl font-extrabold text-white">{item.num}</p>
-                    <p className="text-gray-500 text-xs mt-1 font-medium">{item.label}</p>
+                ].map((item, i) => (
+                  <div key={item.label} className="flex items-center gap-8">
+                    {i > 0 && <div className="w-px h-8 bg-white/20" />}
+                    <div>
+                      <p className="font-black text-white text-2xl leading-none tracking-tight">{item.num}</p>
+                      <p className="text-xs text-white/40 mt-1 font-medium">{item.label}</p>
+                    </div>
                   </div>
                 ))}
               </div>
