@@ -67,7 +67,7 @@ catalogs:
       specifier: ^7.3.2
       version: 7.3.3
     zod:
-      specifier: ^3.25.76
+      specifier: 3.25.76
       version: 3.25.76
 
 overrides:
@@ -196,6 +196,9 @@ importers:
       resend:
         specifier: ^6.14.0
         version: 6.14.0
+      zod:
+        specifier: 'catalog:'
+        version: 3.25.76
     devDependencies:
       '@types/cookie-parser':
         specifier: ^1.4.10
