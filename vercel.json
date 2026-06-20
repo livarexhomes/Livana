@@ -1,0 +1,3 @@
+{
+  "buildCommand": "pnpm run typecheck && pnpm -r --filter '!@workspace/mockup-sandbox' --if-present run build"
+}
