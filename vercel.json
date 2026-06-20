@@ -1,4 +1,5 @@
 {
   "buildCommand": "pnpm run typecheck && pnpm -r --filter '!@workspace/mockup-sandbox' --if-present run build",
-  "outputDirectory": "artifacts/property-manager/dist/public"
+  "outputDirectory": "artifacts/property-manager/dist/public",
+  "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]
 }
