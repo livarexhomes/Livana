@@ -54,11 +54,13 @@ export default function PublicNavbar() {
     <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 bg-white/95 nav-blur border-b border-gray-100 ${
       scrolled ? 'shadow-sm' : ''
     }`}>
-      <div className="max-w-7xl mx-auto px-5 sm:px-8 grid grid-cols-3 items-center" style={{ height: '80px' }}>
+      <div className="max-w-7xl mx-auto px-5 sm:px-8 flex items-center justify-between md:grid md:grid-cols-3" style={{ height: '72px' }}>
+        {/* Logo */}
         <Link href="/" className="flex items-center shrink-0">
-          <img src="/livarex-logo.png" alt="LIVAREX" className="h-16 w-auto" />
+          <img src="/livarex-logo.png" alt="LIVAREX" className="h-14 w-auto" />
         </Link>
 
+        {/* Desktop nav links */}
         <div className="hidden md:flex items-center justify-center gap-0.5">
           {navLinks.map(({ href, label, comingSoon }) => (
             comingSoon ? (
@@ -92,6 +94,7 @@ export default function PublicNavbar() {
           ))}
         </div>
 
+        {/* Desktop auth buttons */}
         <div className="hidden md:flex items-center justify-end gap-2">
           {user ? (
             <>
@@ -132,16 +135,25 @@ export default function PublicNavbar() {
           )}
         </div>
 
-        <button
-          className="md:hidden ml-auto p-2.5 rounded-xl transition-all text-gray-700 hover:bg-gray-100"
-          onClick={() => setMenuOpen(!menuOpen)}
-        >
-          {menuOpen ? (
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
-          ) : (
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" /></svg>
+        {/* Mobile: right-side controls */}
+        <div className="flex items-center gap-2 md:hidden">
+          {!user && (
+            <Link href="/register" className="text-xs font-semibold bg-blue-600 text-white px-3 py-2 rounded-xl hover:bg-blue-700 transition-all whitespace-nowrap">
+              Get Started
+            </Link>
           )}
-        </button>
+          <button
+            className="p-2.5 rounded-xl transition-all text-gray-700 hover:bg-gray-100"
+            onClick={() => setMenuOpen(!menuOpen)}
+            aria-label="Toggle menu"
+          >
+            {menuOpen ? (
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+            ) : (
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" /></svg>
+            )}
+          </button>
+        </div>
       </div>
 
       {menuOpen && (
