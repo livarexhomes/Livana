@@ -13,6 +13,8 @@ const ResetPasswordPage = lazy(() => import("@/pages/ResetPasswordPage"));
 const AuthCallbackPage = lazy(() => import("@/pages/AuthCallbackPage"));
 const AboutPage = lazy(() => import("@/pages/AboutPage"));
 const ContactPage = lazy(() => import("@/pages/ContactPage"));
+const TermsPage = lazy(() => import("@/pages/TermsPage"));
+const PrivacyPage = lazy(() => import("@/pages/PrivacyPage"));
 
 const LandlordRegisterPage = lazy(() => import("@/pages/landlord/LandlordRegisterPage"));
 const LandlordDashboard = lazy(() => import("@/pages/landlord/LandlordDashboard"));
@@ -81,6 +83,8 @@ function Router() {
         <Route path="/auth/callback" component={AuthCallbackPage} />
         <Route path="/about" component={AboutPage} />
         <Route path="/contact" component={ContactPage} />
+        <Route path="/terms" component={TermsPage} />
+        <Route path="/privacy-policy" component={PrivacyPage} />
 
         <Route path="/landlord/register" component={LandlordRegisterPage} />
         <Route path="/landlord" component={LandlordDashboard} />
