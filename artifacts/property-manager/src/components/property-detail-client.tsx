@@ -1,8 +1,8 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Link } from '@/src/lib/navigation'
-import { useRouter } from '@/src/lib/navigation'
+import { Link } from '@/lib/navigation'
+import { useRouter } from '@/lib/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   MapPin, BedDouble, Bath, Maximize, Heart,
@@ -15,11 +15,11 @@ import {
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet'
 import 'leaflet/dist/leaflet.css'
 import L from 'leaflet'
-import PublicNavbar from '@/src/components/PublicNavbar'
-import Footer from '@/src/components/Footer'
-import { createClient, isSupabaseConfigured, getSupabaseImageUrl } from '@/src/lib/supabase'
-import { isAdminUser } from '@/src/lib/auth'
-import type { PropertyWithLandlord, PropertyImage, Landlord } from '@/src/lib/types'
+import PublicNavbar from '@/components/PublicNavbar'
+import Footer from '@/components/Footer'
+import { createClient, isSupabaseConfigured, getSupabaseImageUrl } from '@/lib/supabase'
+import { isAdminUser } from '@/lib/auth'
+import type { PropertyWithLandlord, PropertyImage, Landlord } from '@/lib/types'
 
 delete (L.Icon.Default.prototype as unknown as Record<string, unknown>)._getIconUrl
 L.Icon.Default.mergeOptions({

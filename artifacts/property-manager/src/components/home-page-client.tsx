@@ -1,15 +1,15 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { Link } from '@/src/lib/navigation'
-import { useRouter } from '@/src/lib/navigation'
+import { Link } from '@/lib/navigation'
+import { useRouter } from '@/lib/navigation'
 import { ArrowRight, ShieldCheck, Building2, Users, TrendingUp, Star, CheckCircle2, MapPin, ChevronRight, Calendar, ChevronDown } from 'lucide-react'
-import PublicNavbar from '@/src/components/PublicNavbar'
-import Footer from '@/src/components/Footer'
-import PropertyCard from '@/src/components/PropertyCard'
-import { createClient, isSupabaseConfigured } from '@/src/lib/supabase'
-import type { PropertyWithLandlord } from '@/src/lib/types'
-import { NIGERIAN_STATES, POPULAR_AREAS } from '@/src/lib/nigerianStates'
+import PublicNavbar from '@/components/PublicNavbar'
+import Footer from '@/components/Footer'
+import PropertyCard from '@/components/PropertyCard'
+import { createClient, isSupabaseConfigured } from '@/lib/supabase'
+import type { PropertyWithLandlord } from '@/lib/types'
+import { NIGERIAN_STATES, POPULAR_AREAS } from '@/lib/nigerianStates'
 
 type Tab = 'Buy' | 'Rent' | 'Lease' | 'Commercial'
 const typeMap: Record<Tab, string> = { Buy: 'sale', Rent: 'rent', Lease: 'lease', Commercial: 'commercial' }

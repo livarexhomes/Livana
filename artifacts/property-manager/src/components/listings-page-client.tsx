@@ -1,19 +1,19 @@
 'use client'
 
 import { useState, useEffect, useRef, lazy, Suspense } from 'react'
-import { Link } from '@/src/lib/navigation'
-import { useRouter, useSearchParams } from '@/src/lib/navigation'
+import { Link } from '@/lib/navigation'
+import { useRouter, useSearchParams } from '@/lib/navigation'
 import {
   Search, MapPin, ChevronDown, X, SlidersHorizontal,
   Building2, Map, List,
 } from 'lucide-react'
-import PublicNavbar from '@/src/components/PublicNavbar'
-import ListingCard from '@/src/components/ListingCard'
-import { createClient, isSupabaseConfigured } from '@/src/lib/supabase'
-import { isAdminUser } from '@/src/lib/auth'
-import type { PropertyWithLandlord } from '@/src/lib/types'
+import PublicNavbar from '@/components/PublicNavbar'
+import ListingCard from '@/components/ListingCard'
+import { createClient, isSupabaseConfigured } from '@/lib/supabase'
+import { isAdminUser } from '@/lib/auth'
+import type { PropertyWithLandlord } from '@/lib/types'
 
-const PropertyMap = lazy(() => import('@/src/components/PropertyMap'))
+const PropertyMap = lazy(() => import('@/components/PropertyMap'))
 
 const TYPE_TABS = [
   { value: '', label: 'All', icon: '✦' },
@@ -107,13 +107,13 @@ export default function ListingsPageClient({
   function updateUrl(params: Record<string, string>) {
     const sp = new URLSearchParams()
     Object.entries(params).forEach(([k, v]) => { if (v) sp.set(k, v) })
-    router.push(`/listings?${sp.toString()}`, { scroll: false })
+    router.push(`/listings?${sp.toString()}`)
   }
 
   function clearFilters() {
     setTypeFilter(''); setStateFilter(''); setAreaFilter('')
     setMinPrice(''); setMaxPrice(''); setBedsFilter('')
-    router.push('/listings', { scroll: false })
+    router.push('/listings')
   }
 
   const hasFilters = typeFilter || stateFilter || areaFilter || minPrice || maxPrice || bedsFilter
