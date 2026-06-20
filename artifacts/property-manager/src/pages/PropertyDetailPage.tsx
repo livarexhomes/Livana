@@ -636,7 +636,7 @@ export default function PropertyDetailPage() {
                       </button>
                     ) : (
                       <button
-                        onClick={openContactModal}
+                        onClick={handleWhatsAppContact}
                         className="flex items-center justify-center gap-2 py-3 bg-emerald-600 text-white rounded-2xl font-bold text-sm hover:bg-emerald-700 transition-all active:scale-[0.98]"
                       >
                         <Phone className="w-4 h-4" /> WhatsApp
