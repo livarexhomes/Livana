@@ -7,10 +7,11 @@ export default function Footer() {
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-10 pb-12 border-b border-white/10">
 
-          <div className="flex flex-col gap-6">
+          <div className="flex flex-col gap-4">
             <Link href="/">
               <img src="/livarex-logo.png" alt="LIVAREX" className="h-10 w-auto" />
             </Link>
+            <p className="text-sm text-gray-400">The Bridge to your new home.</p>
           </div>
 
           <div>
