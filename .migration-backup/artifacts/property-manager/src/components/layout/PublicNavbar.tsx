@@ -46,8 +46,6 @@ export default function PublicNavbar() {
     { href: '/listings?type=lease', label: 'Lease', comingSoon: false },
     { href: null, label: 'Buy', comingSoon: true },
     { href: null, label: 'Commercial', comingSoon: true },
-    { href: '/about', label: 'About', comingSoon: false },
-    { href: '/contact', label: 'Contact', comingSoon: false },
   ]
 
   const isHomePage = location === '/'
@@ -56,12 +54,12 @@ export default function PublicNavbar() {
     <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 bg-white/95 nav-blur border-b border-gray-100 ${
       scrolled ? 'shadow-sm' : ''
     }`}>
-      <div className="max-w-7xl mx-auto px-5 sm:px-8 flex items-center gap-6" style={{ height: '80px' }}>
+      <div className="max-w-7xl mx-auto px-5 sm:px-8 grid grid-cols-3 items-center" style={{ height: '80px' }}>
         <Link href="/" className="flex items-center shrink-0">
           <img src="/livarex-logo.png" alt="LIVAREX" className="h-16 w-auto" />
         </Link>
 
-        <div className="hidden md:flex items-center gap-0.5 flex-1">
+        <div className="hidden md:flex items-center justify-center gap-0.5">
           {navLinks.map(({ href, label, comingSoon }) => (
             comingSoon ? (
               <span key={label}
@@ -94,7 +92,7 @@ export default function PublicNavbar() {
           ))}
         </div>
 
-        <div className="ml-auto hidden md:flex items-center gap-2">
+        <div className="hidden md:flex items-center justify-end gap-2">
           {user ? (
             <>
               {user.isAdmin && (

@@ -5,6 +5,7 @@ import {
   Building2, Map, List,
 } from 'lucide-react'
 import PublicNavbar from '../components/layout/PublicNavbar'
+import SEO from '../components/SEO'
 import ListingCard from '../components/property/ListingCard'
 import { createClient, isSupabaseConfigured } from '../lib/supabase'
 import { isAdminUser } from '../lib/auth'
@@ -106,6 +107,11 @@ export default function ListingsPage() {
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-50 pt-20">
+      <SEO
+        title="Browse Properties — Rent, Lease & Sale"
+        description="Search verified properties for rent, lease and sale across Nigeria. Filter by location, price, bedrooms and type."
+        url="/listings"
+      />
       <PublicNavbar />
 
       {/* Filter bar */}

@@ -1,5 +1,11 @@
 {
-  "buildCommand": "pnpm run typecheck && pnpm -r --filter '!@workspace/mockup-sandbox' --if-present run build",
+  "buildCommand": "pnpm --filter @workspace/property-manager run build",
   "outputDirectory": "artifacts/property-manager/dist/public",
-  "rewrites": [{ "source": "/:path*", "destination": "/index.html" }]
+  "installCommand": "pnpm install",
+  "framework": null,
+  "rewrites": [
+    { "source": "/api/send-confirmation", "destination": "/api/send-confirmation" },
+    { "source": "/api/delete-user", "destination": "/api/delete-user" },
+    { "source": "/:path*", "destination": "/index.html" }
+  ]
 }

@@ -1,2 +1,7 @@
 User-agent: *
 Allow: /
+Disallow: /admin/
+Disallow: /landlord/
+Disallow: /user/
+
+Sitemap: https://livarex.com.ng/sitemap.xml

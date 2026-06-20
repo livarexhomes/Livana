@@ -14,6 +14,7 @@ import 'leaflet/dist/leaflet.css'
 import L from 'leaflet'
 import PublicNavbar from '../components/layout/PublicNavbar'
 import Footer from '../components/layout/Footer'
+import SEO from '../components/SEO'
 import { createClient, isSupabaseConfigured, getSupabaseImageUrl } from '../lib/supabase'
 import { isAdminUser } from '../lib/auth'
 import type { PropertyWithLandlord, PropertyImage, Landlord } from '@/types'
@@ -277,8 +278,46 @@ export default function PropertyDetailPage() {
     setEnquiryMsg(`Hi, I'd like to book an inspection for ${property?.title || 'this property'}.`)
   }
 
+  const coverImage = images.find(i => i.is_cover) ?? images[0]
+  const ogImage = coverImage ? getSupabaseImageUrl(coverImage.storage_path) : undefined
+  const propertySchema = property ? {
+    '@context': 'https://schema.org',
+    '@type': 'Residence',
+    name: property.title,
+    description: property.description ?? `${TYPE_LABEL[property.type]} in ${property.city ?? ''}, Nigeria`,
+    url: `https://livarex.com.ng/property/${property.id}`,
+    ...(ogImage ? { image: ogImage } : {}),
+    address: {
+      '@type': 'PostalAddress',
+      addressLocality: property.city ?? '',
+      addressRegion: property.state ?? '',
+      addressCountry: 'NG',
+    },
+    numberOfRooms: property.bedrooms ?? undefined,
+    offers: {
+      '@type': 'Offer',
+      price: property.price,
+      priceCurrency: 'NGN',
+      availability: property.status === 'available'
+        ? 'https://schema.org/InStock'
+        : 'https://schema.org/SoldOut',
+    },
+  } : undefined
+
   return (
     <div className="min-h-screen bg-[#F8F8F6] selection:bg-blue-100 selection:text-blue-900">
+      {property && (
+        <SEO
+          title={`${property.title} — ${TYPE_LABEL[property.type]} in ${property.city ?? 'Nigeria'}`}
+          description={property.description
+            ? property.description.slice(0, 155)
+            : `${TYPE_LABEL[property.type]}: ${property.bedrooms ?? ''} bedroom property in ${property.city ?? ''}, ${property.state ?? 'Nigeria'}. ₦${Number(property.price).toLocaleString()}.`}
+          image={ogImage}
+          url={`/property/${property.id}`}
+          type="article"
+          schema={propertySchema}
+        />
+      )}
       <PublicNavbar />
 
       {/* ── GALLERY ── */}

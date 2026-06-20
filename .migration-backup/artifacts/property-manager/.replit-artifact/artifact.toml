@@ -1,6 +1,6 @@
 kind = "web"
 previewPath = "/"
-title = "Livarex - Property Marketplace"
+title = "LIVAREX"
 version = "1.0.0"
 id = "artifacts/property-manager"
 router = "path"
