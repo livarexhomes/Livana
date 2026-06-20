@@ -18,6 +18,6 @@ let _admin: ReturnType<typeof getSupabaseAdmin> | null = null
 export const supabaseAdmin = new Proxy({} as ReturnType<typeof getSupabaseAdmin>, {
   get(_target, prop) {
     if (!_admin) _admin = getSupabaseAdmin()
-    return (_admin as Record<string | symbol, unknown>)[prop]
+    return (_admin as unknown as Record<string | symbol, unknown>)[prop]
   },
 })
