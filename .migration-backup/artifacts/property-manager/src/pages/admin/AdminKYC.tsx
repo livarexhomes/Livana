@@ -4,9 +4,9 @@ import {
   ChevronRight, X, User, FileText, MapPin,
   ExternalLink, ImageIcon,
 } from 'lucide-react'
-import AdminSidebar from '../../components/AdminSidebar'
-import AdminHeader from '../../components/AdminHeader'
-import AuthGuard from '../../components/AuthGuard'
+import AdminSidebar from '../../components/layout/AdminSidebar'
+import AdminHeader from '../../components/layout/AdminHeader'
+import AuthGuard from '../../components/auth/AuthGuard'
 import { createClient, getKycDocUrl } from '../../lib/supabase'
 
 const DOC_LABELS: Record<string, string> = {

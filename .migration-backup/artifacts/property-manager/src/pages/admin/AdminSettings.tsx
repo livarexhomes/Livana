@@ -8,8 +8,8 @@ import {
   Eye, EyeOff, Send, TestTube, Trash2, Plus,
   Key, Smartphone, Webhook, Loader2, Check, X,
 } from 'lucide-react'
-import AdminSidebar from '../../components/AdminSidebar'
-import AuthGuard from '../../components/AuthGuard'
+import AdminSidebar from '../../components/layout/AdminSidebar'
+import AuthGuard from '../../components/auth/AuthGuard'
 import { createClient } from '../../lib/supabase'
 
 const SECTIONS = [

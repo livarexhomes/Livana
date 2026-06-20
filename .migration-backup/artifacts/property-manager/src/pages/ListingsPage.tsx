@@ -4,14 +4,14 @@ import {
   Search, MapPin, ChevronDown, X, SlidersHorizontal,
   Building2, Map, List,
 } from 'lucide-react'
-import PublicNavbar from '../components/PublicNavbar'
-import ListingCard from '../components/ListingCard'
+import PublicNavbar from '../components/layout/PublicNavbar'
+import ListingCard from '../components/property/ListingCard'
 import { createClient, isSupabaseConfigured } from '../lib/supabase'
 import { isAdminUser } from '../lib/auth'
-import type { PropertyWithLandlord } from '../lib/types'
+import type { PropertyWithLandlord } from '@/types'
 
 
-const PropertyMap = lazy(() => import('../components/PropertyMap'))
+const PropertyMap = lazy(() => import('../components/property/PropertyMap'))
 
 const TYPE_TABS = [
   { value: '', label: 'All', icon: '✦' },
@@ -300,11 +300,11 @@ export default function ListingsPage() {
             </p>
           </div>
 
-          <div className={`p-4 ${!showMap ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4' : 'space-y-3'}`}>
+          <div className={`p-4 grid gap-4 ${!showMap ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3' : 'grid-cols-1 sm:grid-cols-2'}`}>
             {loading ? (
-              Array.from({ length: 8 }).map((_, i) => (
-                <div key={i} className={`bg-white rounded-2xl overflow-hidden border border-gray-100 animate-pulse ${!showMap ? 'h-80' : 'h-36 flex'}`}>
-                  <div className={`${!showMap ? 'h-48 w-full' : 'w-44 h-full'} bg-gray-200 shrink-0`} />
+              Array.from({ length: 6 }).map((_, i) => (
+                <div key={i} className="bg-white rounded-2xl overflow-hidden border border-gray-100 animate-pulse h-80">
+                  <div className="h-48 w-full bg-gray-200" />
                   <div className="flex-1 p-4 space-y-3">
                     <div className="h-6 bg-gray-200 rounded w-1/2" />
                     <div className="h-4 bg-gray-100 rounded w-3/4" />
@@ -338,7 +338,7 @@ export default function ListingsPage() {
                     highlighted={hoveredId === p.id}
                     onMouseEnter={() => setHoveredId(p.id)}
                     onMouseLeave={() => setHoveredId(null)}
-                    layout={showMap ? 'list' : 'grid'}
+                    layout="grid"
                   />
                 </div>
               ))

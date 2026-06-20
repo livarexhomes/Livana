@@ -6,13 +6,13 @@ import {
   TrendingUp, TrendingDown, Building2, Users,
   CheckCircle, MessageSquare, MapPin, ArrowRight, Clock,
 } from 'lucide-react'
-import AdminHeader from '../../components/AdminHeader'
+import AdminHeader from '../../components/layout/AdminHeader'
 import {
   AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer,
   CartesianGrid, PieChart, Pie, Cell,
 } from 'recharts'
-import AdminSidebar from '../../components/AdminSidebar'
-import AuthGuard from '../../components/AuthGuard'
+import AdminSidebar from '../../components/layout/AdminSidebar'
+import AuthGuard from '../../components/auth/AuthGuard'
 import { createClient } from '../../lib/supabase'
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']

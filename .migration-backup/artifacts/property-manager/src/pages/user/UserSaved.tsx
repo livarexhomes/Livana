@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react'
 import { Link } from '@/lib/navigation'
 import { Heart, ArrowRight, Building2, Trash2 } from 'lucide-react'
-import AuthGuard from '../../components/AuthGuard'
+import AuthGuard from '../../components/auth/AuthGuard'
 import { UserLayout } from './UserDashboard'
-import ListingCard from '../../components/ListingCard'
+import ListingCard from '../../components/property/ListingCard'
 import { createClient } from '../../lib/supabase'
-import type { PropertyWithLandlord } from '../../lib/types'
+import type { PropertyWithLandlord } from '@/types'
 
 export default function UserSavedPage() {
   const [items, setItems] = useState<{ id: string; property_id: string; properties: PropertyWithLandlord }[]>([])

@@ -7,10 +7,10 @@ import {
   ChevronDown, CheckCircle, TrendingUp, ArrowRight,
   Clock, AlertCircle, MapPin, BedDouble, Bath,
 } from 'lucide-react'
-import LandlordSidebar from '../../components/LandlordSidebar'
-import AuthGuard from '../../components/AuthGuard'
+import LandlordSidebar from '../../components/layout/LandlordSidebar'
+import AuthGuard from '../../components/auth/AuthGuard'
 import { createClient, getSupabaseImageUrl } from '../../lib/supabase'
-import type { Landlord } from '../../lib/types'
+import type { Landlord } from '@/types'
 
 const STATUS_STYLE: Record<string, { bg: string; text: string; dot: string; label: string }> = {
   available:         { bg: 'bg-emerald-100', text: 'text-emerald-700', dot: 'bg-emerald-500', label: 'Available' },

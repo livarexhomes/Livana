@@ -5,7 +5,7 @@ import {
   Clock, AlertCircle, CheckCircle2, XCircle, Loader2,
   MessageSquare, Ticket, ImageIcon, X as XIcon,
 } from 'lucide-react'
-import AuthGuard from '../../components/AuthGuard'
+import AuthGuard from '../../components/auth/AuthGuard'
 import { UserLayout } from './UserDashboard'
 import { createClient } from '../../lib/supabase'
 import { formatDistanceToNow, format } from 'date-fns'

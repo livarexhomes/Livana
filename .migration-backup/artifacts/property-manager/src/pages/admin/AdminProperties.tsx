@@ -7,9 +7,9 @@ import {
   Wifi, Car, Dumbbell, Waves, Wind, Shield, Zap,
   Droplets, TreePine, UtensilsCrossed, Tv, Lock, Sun, Package,
 } from 'lucide-react'
-import AdminSidebar from '../../components/AdminSidebar'
-import AdminHeader from '../../components/AdminHeader'
-import AuthGuard from '../../components/AuthGuard'
+import AdminSidebar from '../../components/layout/AdminSidebar'
+import AdminHeader from '../../components/layout/AdminHeader'
+import AuthGuard from '../../components/auth/AuthGuard'
 import { createClient, getSupabaseImageUrl } from '../../lib/supabase'
 
 function getCoverImage(p: any): string | null {

@@ -6,9 +6,9 @@ import {
   UserCheck, UserX, ChevronDown,
 } from 'lucide-react'
 import { Link } from '@/lib/navigation'
-import AdminSidebar from '../../components/AdminSidebar'
-import AdminHeader from '../../components/AdminHeader'
-import AuthGuard from '../../components/AuthGuard'
+import AdminSidebar from '../../components/layout/AdminSidebar'
+import AdminHeader from '../../components/layout/AdminHeader'
+import AuthGuard from '../../components/auth/AuthGuard'
 import { createClient } from '../../lib/supabase'
 
 const STATUS_META: Record<string, {

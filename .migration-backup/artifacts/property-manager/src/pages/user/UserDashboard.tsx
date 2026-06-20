@@ -5,12 +5,12 @@ import { Link, useLocation } from '@/lib/navigation'
 import {
   Menu, Search, ChevronDown, Building2, X,
 } from 'lucide-react'
-import AuthGuard from '../../components/AuthGuard'
-import UserSidebar from '../../components/UserSidebar'
-import UserBottomNav from '../../components/UserBottomNav'
-import ListingCard from '../../components/ListingCard'
+import AuthGuard from '../../components/auth/AuthGuard'
+import UserSidebar from '../../components/layout/UserSidebar'
+import UserBottomNav from '../../components/layout/UserBottomNav'
+import ListingCard from '../../components/property/ListingCard'
 import { createClient } from '../../lib/supabase'
-import type { Tenant, PropertyWithLandlord } from '../../lib/types'
+import type { Tenant, PropertyWithLandlord } from '@/types'
 
 
 // ── Shared layout ─────────────────────────────────────────────────────────────

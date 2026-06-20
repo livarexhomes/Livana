@@ -1,11 +1,11 @@
 import { useState, useEffect, useRef } from 'react'
 import { Link } from '@/lib/navigation'
 import { ArrowRight, ShieldCheck, Building2, Users, TrendingUp, Star, CheckCircle2, CheckCircle, MapPin, ChevronRight, Calendar, ChevronDown } from 'lucide-react'
-import PublicNavbar from '../components/PublicNavbar'
-import Footer from '../components/Footer'
-import PropertyCard from '../components/PropertyCard'
+import PublicNavbar from '../components/layout/PublicNavbar'
+import Footer from '../components/layout/Footer'
+import PropertyCard from '../components/property/PropertyCard'
 import { createClient, isSupabaseConfigured } from '../lib/supabase'
-import type { PropertyWithLandlord } from '../lib/types'
+import type { PropertyWithLandlord } from '@/types'
 import { NIGERIAN_STATES, POPULAR_AREAS } from '../lib/nigerianStates'
 
 type Tab = 'Buy' | 'Rent' | 'Lease' | 'Commercial'
@@ -977,9 +977,9 @@ export default function HomePage() {
           </div>
           <div className="grid md:grid-cols-3 gap-5">
             {[
-              { name: 'Adebayo O.', role: 'Tenant', city: 'Lagos', text: 'Found my perfect 3-bedroom in Lekki within a week. The landlord verification gave me total peace of mind. Absolutely recommend LIVAREX!', avatar: 'AO', featured: false },
-              { name: 'Chidinma E.', role: 'Landlord', city: 'Abuja', text: 'Listed my property on a Friday, had 3 serious enquiries by Monday. The platform is slick and my tenants are quality people.', avatar: 'CE', featured: true },
-              { name: 'Emeka N.', role: 'Tenant', city: 'Port Harcourt', text: 'Livarex scheduled my inspection quickly and helped me secure a verified apartment without agent stress.', avatar: 'EN', featured: false },
+              { name: 'Adebayo O.', role: 'Tenant', city: 'Lagos', text: 'Found my perfect 3-bedroom in Lekki within a week. Livarex handled all the coordination — I never had to chase anyone. Absolutely recommend LIVAREX!', avatar: 'AO', featured: false },
+              { name: 'Chidinma E.', role: 'Landlord', city: 'Abuja', text: 'Listed my property on a Friday, had 3 serious inspection requests by Monday. Livarex screens and coordinates everything — I only meet verified, serious tenants.', avatar: 'CE', featured: true },
+              { name: 'Emeka N.', role: 'Tenant', city: 'Port Harcourt', text: 'Livarex scheduled my inspection and handled all communication on my behalf. I secured a verified apartment without any agent stress.', avatar: 'EN', featured: false },
             ].map((t, i) => (
               <div
                 key={i}
