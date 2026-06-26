@@ -1,0 +1,18 @@
+{
+  "name": "livarex-whatsapp-bot",
+  "version": "1.0.0",
+  "description": "Livarex WhatsApp AI Bot powered by Claude",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "node --watch index.js"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.27.0",
+    "express": "^4.19.2"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
