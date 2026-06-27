@@ -41,9 +41,10 @@ export default function PublicNavbar() {
   const isActive = (path: string) => location === path || location.startsWith(path + '/')
 
   const navLinks = [
-    { href: '/', label: 'Home', comingSoon: false },
     { href: '/listings?type=rent', label: 'Rent', comingSoon: false },
-    { href: '/listings?type=lease', label: 'Lease', comingSoon: false },
+    { href: '/listings?type=buy', label: 'Buy', comingSoon: false },
+    { href: null, label: 'Lease', comingSoon: true },
+    { href: null, label: 'Commercial', comingSoon: true },
   ]
 
   const isHomePage = location === '/'
@@ -123,11 +124,11 @@ export default function PublicNavbar() {
             </>
           ) : (
             <>
-              <Link href="/login" className="text-sm font-medium px-4 py-2 rounded-lg transition-all text-gray-700 hover:text-gray-900 hover:bg-gray-50">
-                Sign in
+              <Link href="/partner" className="text-sm font-medium px-4 py-2 rounded-lg transition-all text-gray-700 hover:text-gray-900 hover:bg-gray-50">
+                List your Property
               </Link>
-              <Link href="/register" className="text-sm font-semibold bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl transition-all shadow-lg shadow-blue-600/25 hover:shadow-blue-600/40">
-                Get Started
+              <Link href="/login" className="text-sm font-semibold bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl transition-all shadow-lg shadow-blue-600/25 hover:shadow-blue-600/40">
+                Sign In
               </Link>
             </>
           )}
@@ -136,8 +137,8 @@ export default function PublicNavbar() {
         {/* Mobile: right-side controls */}
         <div className="flex items-center gap-2 md:hidden">
           {!user && (
-            <Link href="/register" className="text-xs font-semibold bg-blue-600 text-white px-3 py-2 rounded-xl hover:bg-blue-700 transition-all whitespace-nowrap">
-              Get Started
+            <Link href="/login" className="text-xs font-semibold bg-blue-600 text-white px-3 py-2 rounded-xl hover:bg-blue-700 transition-all whitespace-nowrap">
+              Sign In
             </Link>
           )}
           <button
@@ -192,8 +193,8 @@ export default function PublicNavbar() {
               </>
             ) : (
               <>
-                <Link href="/login" onClick={() => setMenuOpen(false)} className="block px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 rounded-xl">Sign in</Link>
-                <Link href="/register" onClick={() => setMenuOpen(false)} className="block px-4 py-3 text-sm font-semibold bg-blue-600 text-white rounded-xl text-center hover:bg-blue-700 transition-colors shadow-lg shadow-blue-600/25">Get Started</Link>
+                <Link href="/partner" onClick={() => setMenuOpen(false)} className="block px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 rounded-xl">List your Property</Link>
+                <Link href="/login" onClick={() => setMenuOpen(false)} className="block px-4 py-3 text-sm font-semibold bg-blue-600 text-white rounded-xl text-center hover:bg-blue-700 transition-colors shadow-lg shadow-blue-600/25">Sign In</Link>
               </>
             )}
           </div>
