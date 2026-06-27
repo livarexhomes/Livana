@@ -15,11 +15,9 @@ import type { PropertyWithLandlord } from '@/types'
 const PropertyMap = lazy(() => import('../components/property/PropertyMap'))
 
 const TYPE_TABS = [
-  { value: '', label: 'All', icon: '✦' },
-  { value: 'rent', label: 'For Rent', icon: '🏠' },
-  { value: 'lease', label: 'Lease', icon: '📋' },
-  { value: 'sale', label: 'For Sale', icon: '🏢', comingSoon: true },
-  { value: 'commercial', label: 'Commercial', icon: '🏪', comingSoon: true },
+  { value: '', label: 'Any' },
+  { value: 'rent', label: 'For Rent' },
+  { value: 'lease', label: 'Lease' },
 ]
 
 export default function ListingsPage() {
@@ -103,6 +101,12 @@ export default function ListingsPage() {
     return 0
   })
 
+  const [openPanel, setOpenPanel] = useState<'location' | 'type' | 'beds' | 'price' | null>(null)
+
+  function togglePanel(p: 'location' | 'type' | 'beds' | 'price') {
+    setOpenPanel(prev => prev === p ? null : p)
+  }
+
   function scrollToCard(id: string) {
     const el = listRef.current?.querySelector(`[data-id="${id}"]`)
     el?.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
@@ -110,223 +114,198 @@ export default function ListingsPage() {
     setTimeout(() => setHoveredId(null), 2000)
   }
 
+  const locationLabel = [stateFilter, areaFilter].filter(Boolean).join(', ') || 'Any Location'
+  const typeLabel = TYPE_TABS.find(t => t.value === typeFilter)?.label ?? 'Any'
+  const bedsLabel = bedsFilter ? `${bedsFilter}+ Beds` : 'Beds / Baths'
+  const priceLabel = (minPrice || maxPrice)
+    ? [minPrice ? `₦${Number(minPrice).toLocaleString()}` : '', maxPrice ? `₦${Number(maxPrice).toLocaleString()}` : ''].filter(Boolean).join(' – ')
+    : 'Any Price'
+
   return (
-    <div className="min-h-screen flex flex-col bg-[#F6F7FB] pt-20">
+    <div className="min-h-screen flex flex-col bg-[#F5F5F3] pt-20">
       <SEO
-        title="Browse Properties — Rent, Lease & Sale"
-        description="Search verified properties for rent, lease and sale across Nigeria. Filter by location, price, bedrooms and type."
+        title="Browse Properties — Rent & Lease"
+        description="Search verified properties for rent and lease across Nigeria. Filter by location, price, bedrooms and type."
         url="/listings"
       />
       <PublicNavbar />
 
-      {/* Filter bar */}
-      <div className="sticky top-[80px] z-40 bg-white border-b border-gray-100 shadow-sm">
-        <div className="max-w-screen-2xl mx-auto px-4 sm:px-6">
-          <div className="flex items-center gap-2 py-3 overflow-x-auto no-scrollbar">
+      {/* ── Unified filter bar ──────────────────────────────────────────────── */}
+      <div className="sticky top-[80px] z-40 bg-[#F5F5F3] border-b border-gray-200/60">
+        <div className="max-w-screen-xl mx-auto px-4 sm:px-6 py-3">
 
-            {/* Type tabs */}
-            {TYPE_TABS.map(t => (
-              <button
-                key={t.value}
-                onClick={() => !t.comingSoon && setTypeFilter(t.value)}
-                disabled={t.comingSoon}
-                className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-semibold whitespace-nowrap transition-all border shrink-0 ${
-                  t.comingSoon
-                    ? 'bg-white text-gray-400 border-gray-200 cursor-default'
-                    : typeFilter === t.value
-                    ? 'bg-gray-900 text-white border-gray-900'
-                    : 'bg-white text-gray-600 border-gray-200 hover:border-gray-400'
-                }`}
-              >
-                <span>{t.icon}</span>
-                {t.label}
-                {t.comingSoon && (
-                  <span className="text-[9px] font-bold uppercase tracking-wider bg-gray-100 text-gray-400 px-1.5 py-0.5 rounded-md">
-                    Soon
-                  </span>
-                )}
-              </button>
-            ))}
+          {/* Main filter card */}
+          <div className="relative flex items-stretch bg-white rounded-2xl shadow-md border border-gray-100 divide-x divide-gray-100">
 
-            <div className="w-px h-6 bg-gray-200 mx-1 shrink-0" />
-
-            {/* State */}
-            <div className="relative shrink-0">
-              <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
-              <select
-                value={stateFilter}
-                onChange={e => setStateFilter(e.target.value)}
-                className="appearance-none pl-8 pr-7 py-2 rounded-full border border-gray-200 text-sm bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-900 cursor-pointer"
-              >
-                <option value="">Any State</option>
-                <option value="Lagos">Lagos</option>
-                <option value="Ogun">Ogun</option>
-              </select>
-              <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
-            </div>
-
-            {/* Beds */}
-            <div className="relative shrink-0">
-              <select
-                value={bedsFilter}
-                onChange={e => setBedsFilter(e.target.value)}
-                className="appearance-none pl-3 pr-7 py-2 rounded-full border border-gray-200 text-sm bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-900 cursor-pointer"
-              >
-                <option value="">Beds / Baths</option>
-                <option value="1">1+ Beds</option>
-                <option value="2">2+ Beds</option>
-                <option value="3">3+ Beds</option>
-                <option value="4">4+ Beds</option>
-                <option value="5">5+ Beds</option>
-              </select>
-              <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
-            </div>
-
-            {/* Price / more filters */}
+            {/* LOCATION */}
             <button
-              onClick={() => setShowFilters(!showFilters)}
-              className={`flex items-center gap-1.5 px-4 py-2 rounded-full border text-sm font-semibold transition-all shrink-0 ${
-                minPrice || maxPrice || areaFilter
-                  ? 'border-gray-900 bg-gray-900 text-white'
-                  : 'border-gray-200 bg-white text-gray-700 hover:border-gray-400'
-              }`}
+              onClick={() => togglePanel('location')}
+              className={`flex-1 min-w-0 flex flex-col items-start px-5 py-3 hover:bg-gray-50 transition-colors rounded-l-2xl ${openPanel === 'location' ? 'bg-gray-50' : ''}`}
             >
-              ₦ Price
-              <ChevronDown className="w-3.5 h-3.5" />
+              <span className="text-[10px] font-bold uppercase tracking-[0.12em] text-gray-400 mb-0.5 flex items-center gap-1">
+                <MapPin className="w-3 h-3" /> Location
+              </span>
+              <span className="flex items-center gap-1.5 text-sm font-semibold text-gray-900 w-full min-w-0">
+                <span className="truncate">{locationLabel}</span>
+                <ChevronDown className={`w-3.5 h-3.5 text-gray-500 shrink-0 transition-transform ${openPanel === 'location' ? 'rotate-180' : ''}`} />
+              </span>
             </button>
 
+            {/* TYPE */}
             <button
-              onClick={() => setShowFilters(!showFilters)}
-              className={`flex items-center gap-1.5 px-4 py-2 rounded-full border text-sm font-semibold transition-all shrink-0 ${
-                showFilters
-                  ? 'border-gray-900 bg-gray-900 text-white'
-                  : 'border-gray-200 bg-white text-gray-700 hover:border-gray-400'
-              }`}
+              onClick={() => togglePanel('type')}
+              className={`flex-1 min-w-0 flex flex-col items-start px-5 py-3 hover:bg-gray-50 transition-colors ${openPanel === 'type' ? 'bg-gray-50' : ''}`}
             >
-              <SlidersHorizontal className="w-3.5 h-3.5" />
-              Filters
-              {hasFilters && <span className="w-1.5 h-1.5 bg-green-400 rounded-full" />}
+              <span className="text-[10px] font-bold uppercase tracking-[0.12em] text-gray-400 mb-0.5">Type</span>
+              <span className="flex items-center gap-1.5 text-sm font-semibold text-gray-900 w-full">
+                <span className="truncate">{typeLabel}</span>
+                <ChevronDown className={`w-3.5 h-3.5 text-gray-500 shrink-0 transition-transform ${openPanel === 'type' ? 'rotate-180' : ''}`} />
+              </span>
             </button>
 
-            {hasFilters && (
-              <button
-                onClick={clearFilters}
-                className="flex items-center gap-1 px-3 py-2 rounded-full text-sm text-red-500 hover:bg-red-50 border border-red-100 shrink-0"
-              >
-                <X className="w-3.5 h-3.5" /> Clear
-              </button>
-            )}
-
-            <div className="flex-1 min-w-4" />
-
-            {/* Sort */}
-            <div className="relative shrink-0">
-              <select
-                value={sortBy}
-                onChange={e => setSortBy(e.target.value)}
-                className="appearance-none pl-3 pr-7 py-2 rounded-full border border-gray-200 text-sm bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-900 cursor-pointer"
-              >
-                <option value="newest">Newest Properties</option>
-                <option value="price_asc">Price: Low → High</option>
-                <option value="price_desc">Price: High → Low</option>
-              </select>
-              <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
-            </div>
-
-            {/* Map toggle */}
+            {/* BEDS & BATHS */}
             <button
-              onClick={() => setShowMap(!showMap)}
-              className={`flex items-center gap-1.5 px-4 py-2 rounded-full border text-sm font-semibold transition-all shrink-0 ${
-                showMap
-                  ? 'bg-gray-900 text-white border-gray-900'
-                  : 'bg-white text-gray-700 border-gray-200 hover:border-gray-400'
-              }`}
+              onClick={() => togglePanel('beds')}
+              className={`flex-1 min-w-0 flex flex-col items-start px-5 py-3 hover:bg-gray-50 transition-colors ${openPanel === 'beds' ? 'bg-gray-50' : ''}`}
             >
-              {showMap ? <List className="w-3.5 h-3.5" /> : <Map className="w-3.5 h-3.5" />}
-              {showMap ? 'List only' : 'Show map'}
+              <span className="text-[10px] font-bold uppercase tracking-[0.12em] text-gray-400 mb-0.5">Beds &amp; Baths</span>
+              <span className="flex items-center gap-1.5 text-sm font-semibold text-gray-900 w-full">
+                <span className="truncate">{bedsLabel}</span>
+                <ChevronDown className={`w-3.5 h-3.5 text-gray-500 shrink-0 transition-transform ${openPanel === 'beds' ? 'rotate-180' : ''}`} />
+              </span>
             </button>
-          </div>
 
-          {/* Expanded filters */}
-          {showFilters && (
-            <div className="pb-4 grid grid-cols-2 sm:flex sm:flex-wrap gap-3 sm:gap-4 items-end border-t border-gray-50 pt-4">
-              <div className="flex flex-col gap-1">
-                <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Min Price (₦)</label>
-                <input
-                  type="number"
-                  value={minPrice}
-                  onChange={e => setMinPrice(e.target.value)}
-                  placeholder="e.g. 500,000"
-                  className="px-3.5 py-2 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 w-full sm:w-40"
-                />
-              </div>
-              <div className="flex flex-col gap-1">
-                <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Max Price (₦)</label>
-                <input
-                  type="number"
-                  value={maxPrice}
-                  onChange={e => setMaxPrice(e.target.value)}
-                  placeholder="e.g. 5,000,000"
-                  className="px-3.5 py-2 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 w-full sm:w-40"
-                />
-              </div>
-              <div className="flex flex-col gap-1 col-span-2 sm:col-span-1">
-                <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Area / Neighbourhood</label>
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
-                  <input
-                    value={areaFilter}
-                    onChange={e => setAreaFilter(e.target.value)}
-                    placeholder="e.g. Lekki, Maitama…"
-                    className="pl-9 pr-3.5 py-2 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 w-full sm:w-52"
-                  />
+            {/* PRICE */}
+            <button
+              onClick={() => togglePanel('price')}
+              className={`flex-1 min-w-0 flex flex-col items-start px-5 py-3 hover:bg-gray-50 transition-colors rounded-r-2xl ${openPanel === 'price' ? 'bg-gray-50' : ''}`}
+            >
+              <span className="text-[10px] font-bold uppercase tracking-[0.12em] text-gray-400 mb-0.5">Price</span>
+              <span className="flex items-center gap-1.5 text-sm font-semibold text-gray-900 w-full">
+                <span className="truncate">{priceLabel}</span>
+                <ChevronDown className={`w-3.5 h-3.5 text-gray-500 shrink-0 transition-transform ${openPanel === 'price' ? 'rotate-180' : ''}`} />
+              </span>
+            </button>
+
+            {/* ── Dropdown panels ── */}
+            {openPanel === 'location' && (
+              <div className="absolute left-0 top-[calc(100%+8px)] w-80 bg-white rounded-2xl shadow-xl border border-gray-100 p-4 z-50">
+                <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-2">State</p>
+                {['', 'Lagos', 'Ogun'].map(v => (
+                  <button key={v} onClick={() => { setStateFilter(v); setOpenPanel(null) }}
+                    className={`w-full text-left px-3 py-2.5 rounded-xl text-sm font-medium transition-colors mb-1 ${stateFilter === v ? 'bg-gray-900 text-white' : 'hover:bg-gray-50 text-gray-700'}`}>
+                    {v || 'Any State'}
+                  </button>
+                ))}
+                <div className="mt-3 pt-3 border-t border-gray-100">
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-2">Area / Neighbourhood</p>
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
+                    <input value={areaFilter} onChange={e => setAreaFilter(e.target.value)}
+                      onKeyDown={e => e.key === 'Enter' && setOpenPanel(null)}
+                      placeholder="e.g. Lekki, Maitama…"
+                      className="w-full pl-9 pr-3 py-2 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900" />
+                  </div>
+                  <button onClick={() => setOpenPanel(null)}
+                    className="mt-3 w-full py-2 bg-gray-900 text-white text-sm font-semibold rounded-xl hover:bg-gray-800">Apply</button>
                 </div>
               </div>
-              <div className="flex flex-col gap-1">
-                <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Bathrooms</label>
-                <select
-                  value={bathsFilter}
-                  onChange={e => setBathsFilter(e.target.value)}
-                  className="px-3.5 py-2 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 w-full sm:w-36"
-                >
-                  <option value="">Any</option>
-                  <option value="1">1+</option>
-                  <option value="2">2+</option>
-                  <option value="3">3+</option>
-                  <option value="4">4+</option>
-                </select>
+            )}
+
+            {openPanel === 'type' && (
+              <div className="absolute left-[25%] top-[calc(100%+8px)] w-52 bg-white rounded-2xl shadow-xl border border-gray-100 p-3 z-50">
+                <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-2 px-1">Property type</p>
+                {TYPE_TABS.map(t => (
+                  <button key={t.value} onClick={() => { setTypeFilter(t.value); setOpenPanel(null) }}
+                    className={`w-full text-left px-3 py-2.5 rounded-xl text-sm font-medium transition-colors mb-1 ${typeFilter === t.value ? 'bg-gray-900 text-white' : 'hover:bg-gray-50 text-gray-700'}`}>
+                    {t.label}
+                  </button>
+                ))}
               </div>
-              <div className="flex flex-col gap-1 col-span-2 sm:col-span-1">
-                <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Furnished</label>
-                <div className="flex gap-2">
-                  {[
-                    { value: '', label: 'Any' },
-                    { value: 'true', label: 'Furnished' },
-                    { value: 'false', label: 'Unfurnished' },
-                  ].map(opt => (
-                    <button
-                      key={opt.value}
-                      onClick={() => setFurnishedFilter(opt.value)}
-                      className={`px-3 py-2 rounded-xl border text-sm font-semibold transition-all ${
-                        furnishedFilter === opt.value
-                          ? 'bg-gray-900 text-white border-gray-900'
-                          : 'bg-white text-gray-600 border-gray-200 hover:border-gray-400'
-                      }`}
-                    >
-                      {opt.label}
+            )}
+
+            {openPanel === 'beds' && (
+              <div className="absolute left-[50%] top-[calc(100%+8px)] w-64 bg-white rounded-2xl shadow-xl border border-gray-100 p-4 z-50">
+                <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-2">Bedrooms</p>
+                <div className="flex flex-wrap gap-2 mb-3">
+                  {[['', 'Any'], ['1', '1+'], ['2', '2+'], ['3', '3+'], ['4', '4+'], ['5', '5+']].map(([v, l]) => (
+                    <button key={v} onClick={() => setBedsFilter(v)}
+                      className={`px-3 py-1.5 rounded-full border text-sm font-semibold transition-all ${bedsFilter === v ? 'bg-gray-900 text-white border-gray-900' : 'bg-white text-gray-600 border-gray-200 hover:border-gray-400'}`}>
+                      {l}
                     </button>
                   ))}
                 </div>
+                <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-2 mt-3">Bathrooms</p>
+                <div className="flex flex-wrap gap-2 mb-3">
+                  {[['', 'Any'], ['1', '1+'], ['2', '2+'], ['3', '3+'], ['4', '4+']].map(([v, l]) => (
+                    <button key={v} onClick={() => setBathsFilter(v)}
+                      className={`px-3 py-1.5 rounded-full border text-sm font-semibold transition-all ${bathsFilter === v ? 'bg-gray-900 text-white border-gray-900' : 'bg-white text-gray-600 border-gray-200 hover:border-gray-400'}`}>
+                      {l}
+                    </button>
+                  ))}
+                </div>
+                <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-2 mt-3">Furnished</p>
+                <div className="flex gap-2 mb-3">
+                  {[['', 'Any'], ['true', 'Furnished'], ['false', 'Unfurnished']].map(([v, l]) => (
+                    <button key={v} onClick={() => setFurnishedFilter(v)}
+                      className={`flex-1 py-1.5 rounded-xl border text-xs font-semibold transition-all ${furnishedFilter === v ? 'bg-gray-900 text-white border-gray-900' : 'bg-white text-gray-600 border-gray-200 hover:border-gray-400'}`}>
+                      {l}
+                    </button>
+                  ))}
+                </div>
+                <button onClick={() => setOpenPanel(null)}
+                  className="w-full py-2 bg-gray-900 text-white text-sm font-semibold rounded-xl hover:bg-gray-800">Apply</button>
               </div>
-              <button
-                onClick={() => setShowFilters(false)}
-                className="col-span-2 sm:col-span-1 px-5 py-2 bg-gray-900 text-white text-sm font-semibold rounded-xl hover:bg-gray-800 transition-colors"
-              >
-                Apply
+            )}
+
+            {openPanel === 'price' && (
+              <div className="absolute right-0 top-[calc(100%+8px)] w-72 bg-white rounded-2xl shadow-xl border border-gray-100 p-4 z-50">
+                <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-3">Price range (₦)</p>
+                <div className="grid grid-cols-2 gap-2 mb-3">
+                  <div>
+                    <label className="text-xs text-gray-400 mb-1 block">Min</label>
+                    <input type="number" value={minPrice} onChange={e => setMinPrice(e.target.value)}
+                      placeholder="Min" className="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900" />
+                  </div>
+                  <div>
+                    <label className="text-xs text-gray-400 mb-1 block">Max</label>
+                    <input type="number" value={maxPrice} onChange={e => setMaxPrice(e.target.value)}
+                      placeholder="Max" className="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900" />
+                  </div>
+                </div>
+                <button onClick={() => setOpenPanel(null)}
+                  className="w-full py-2 bg-gray-900 text-white text-sm font-semibold rounded-xl hover:bg-gray-800">Apply</button>
+              </div>
+            )}
+          </div>
+
+          {/* Secondary row: sort + clear + map */}
+          <div className="flex items-center gap-3 mt-2.5">
+            {hasFilters && (
+              <button onClick={clearFilters} className="flex items-center gap-1 text-xs text-red-500 hover:text-red-600 font-medium">
+                <X className="w-3 h-3" /> Clear filters
               </button>
+            )}
+            <div className="flex-1" />
+            <div className="relative">
+              <select value={sortBy} onChange={e => setSortBy(e.target.value)}
+                className="appearance-none pl-3 pr-7 py-1.5 rounded-full border border-gray-200 text-xs bg-white text-gray-600 focus:outline-none cursor-pointer">
+                <option value="newest">Newest</option>
+                <option value="price_asc">Price ↑</option>
+                <option value="price_desc">Price ↓</option>
+              </select>
+              <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-gray-400 pointer-events-none" />
             </div>
-          )}
+            <button onClick={() => setShowMap(!showMap)}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-medium transition-all ${showMap ? 'bg-gray-900 text-white border-gray-900' : 'bg-white text-gray-600 border-gray-200 hover:border-gray-400'}`}>
+              {showMap ? <List className="w-3 h-3" /> : <Map className="w-3 h-3" />}
+              {showMap ? 'List' : 'Map'}
+            </button>
+          </div>
         </div>
+
+        {/* Backdrop to close open panel */}
+        {openPanel && <div className="fixed inset-0 z-40" onClick={() => setOpenPanel(null)} />}
       </div>
 
       {/* Body */}
