@@ -19,8 +19,6 @@ const TYPE_TABS = [
   { value: '', label: 'All', icon: '✦' },
   { value: 'rent', label: 'For Rent', icon: '🏠' },
   { value: 'lease', label: 'Lease', icon: '📋' },
-  { value: 'sale', label: 'For Sale', icon: '🏢', comingSoon: true },
-  { value: 'commercial', label: 'Commercial', icon: '🏪', comingSoon: true },
 ]
 
 export default function ListingsPageClient({
