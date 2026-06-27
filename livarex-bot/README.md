@@ -1,121 +1,141 @@
-// ── Core message handling logic ────────────────────────────────────────────
-import { sendText, sendButtons, markRead } from "./whatsapp.js";
-import { askClaude } from "./ai.js";
-import { getSession, saveSession, addToHistory } from "./sessions.js";
-import { fetchListings, formatListingsForAI } from "./listings.js";
+# Livarex WhatsApp Bot 🏡
 
-const AGENT_KEYWORDS = ["agent", "human", "speak to", "call me", "call back", "SPEAK TO AGENT"];
-const GREETING_KEYWORDS = ["hi", "hello", "hey", "good morning", "good afternoon", "good evening", "start"];
+Nigeria's verified property marketplace — WhatsApp AI bot powered by Claude.
 
-export async function handleIncomingMessage(phone, contactName, msg) {
-  try {
-    // Mark as read
-    if (msg.id) await markRead(msg.id);
+## What it does
 
-    const session = getSession(phone);
-    if (contactName && !session.name) {
-      saveSession(phone, { name: contactName });
-    }
+| Feature | Description |
+|---|---|
+| 🤖 AI property rep | Answers tenant inquiries using Claude, with live property listings from Supabase |
+| 📋 Inspection updates | Sends tenants a WhatsApp message when their enquiry status changes |
+| 🚨 Admin alerts | Notifies admin via WhatsApp on new signups and KYC submissions |
+| ⏰ Follow-ups | Auto follow-up messages after 24h / 48h / 72h of inactivity |
+| 🙋 Agent escalation | Transfers to human agent and alerts admin when user asks |
 
-    const name = session.name || contactName || "there";
-    const msgText = extractText(msg).trim();
+---
 
-    if (!msgText) return; // ignore non-text (audio, stickers, etc.)
+## Setup
 
-    console.log(`📩 [${phone}] ${name}: ${msgText}`);
+### Step 1 — Meta WhatsApp Cloud API
 
-    // ── Handle agent escalation ──────────────────────────────────────────
-    if (AGENT_KEYWORDS.some((kw) => msgText.toLowerCase().includes(kw.toLowerCase()))) {
-      saveSession(phone, { agentRequested: true });
-      await sendText(phone,
-        `Got it, ${name}! 🙋 I'm connecting you with one of our Livarex agents right away.\n\n` +
-        `A team member will reach out to you within minutes.\n\n` +
-        `In the meantime, browse our listings at www.livarex.com.org`
-      );
-      // TODO: notify your team here (email/Slack webhook)
-      await notifyAgent(phone, name, session);
-      return;
-    }
+1. Go to [developers.facebook.com](https://developers.facebook.com) → Create App → Business
+2. Add **WhatsApp** product
+3. Under WhatsApp → API Setup, note your **Phone Number ID** and **Access Token**
+4. Create a webhook:
+   - URL: `https://your-bot-url.com/webhook`
+   - Verify token: match `WHATSAPP_VERIFY_TOKEN` in your `.env`
+   - Subscribe to: **messages**
 
-    // ── First-time greeting ──────────────────────────────────────────────
-    if (session.stage === "greeting" || GREETING_KEYWORDS.some((kw) => msgText.toLowerCase() === kw)) {
-      saveSession(phone, { stage: "qualifying" });
-      await sendButtons(
-        phone,
-        `Hello ${name}! 👋 Welcome to *Livarex Homes* — Where Luxury Meets Home. 🏡\n\n` +
-        `I'm your personal real estate rep. I can help you find the perfect property, ` +
-        `answer questions, or connect you with our team.\n\nWhat are you looking for today?`,
-        [
-          { id: "buy", title: "🏠 Buy a Property" },
-          { id: "rent", title: "🔑 Rent a Property" },
-          { id: "invest", title: "📈 Investment Property" },
-        ]
-      );
-      return;
-    }
+### Step 2 — Anthropic API Key
 
-    // ── Fetch listings context ───────────────────────────────────────────
-    const listings = await fetchListings();
-    const listingsContext = formatListingsForAI(listings);
+Get from [console.anthropic.com](https://console.anthropic.com).
 
-    // ── Build AI history ─────────────────────────────────────────────────
-    addToHistory(phone, "user", msgText);
+### Step 3 — Configure environment
 
-    const reply = await askClaude(
-      msgText,
-      session.history.slice(0, -1), // exclude last (already added above)
-      listingsContext
-    );
+```bash
+cp .env.example .env
+# Fill in all values
+```
 
-    addToHistory(phone, "assistant", reply);
-    saveSession(phone, { stage: "browsing", lastSeen: Date.now() });
+### Step 4 — Supabase database tables
 
-    await sendText(phone, reply);
+Run this SQL once in your Supabase project (SQL Editor):
 
-    // After AI reply, offer human escalation if in browsing for 3+ turns
-    const turns = session.history.length;
-    if (turns > 0 && turns % 6 === 0) {
-      await sendButtons(phone,
-        "Would you like to take the next step? 😊",
-        [
-          { id: "viewing", title: "📅 Book a Viewing" },
-          { id: "agent_connect", title: "👤 Speak to Agent" },
-        ]
-      );
-    }
-  } catch (err) {
-    console.error(`Error handling message from ${phone}:`, err);
-    await sendText(phone,
-      "Sorry, I ran into a small issue. Please try again or type *SPEAK TO AGENT* to reach our team directly. 🙏"
-    );
-  }
-}
+```sql
+-- Bot conversation history
+create table if not exists bot_messages (
+  id uuid primary key default gen_random_uuid(),
+  phone text not null,
+  role text not null check (role in ('user','assistant')),
+  content text not null,
+  created_at timestamptz default now()
+);
+create index if not exists bot_messages_phone_idx on bot_messages (phone, created_at);
 
-function extractText(msg) {
-  if (msg.type === "text") return msg.text?.body || "";
-  if (msg.type === "interactive") {
-    return msg.interactive?.button_reply?.title ||
-           msg.interactive?.list_reply?.title || "";
-  }
-  return "";
-}
+-- Lead tracking
+create table if not exists bot_leads (
+  phone text primary key,
+  name text,
+  last_message text,
+  last_message_at timestamptz default now(),
+  follow_up_count int default 0,
+  follow_up_due_at timestamptz,
+  follow_up_sent_at timestamptz,
+  created_at timestamptz default now()
+);
+```
 
-async function notifyAgent(phone, name, session) {
-  const AGENT_WEBHOOK = process.env.AGENT_NOTIFY_WEBHOOK;
-  if (!AGENT_WEBHOOK) return;
-  try {
-    await fetch(AGENT_WEBHOOK, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        phone,
-        name,
-        lead: session.lead,
-        message: "Client requested agent connection via Livarex WhatsApp bot",
-        timestamp: new Date().toISOString(),
-      }),
-    });
-  } catch (e) {
-    console.error("Agent notify failed:", e.message);
-  }
-}
+### Step 5 — Supabase Database Webhooks
+
+In Supabase → Database → Webhooks → Create webhook:
+
+| Webhook | Table | Events | URL |
+|---|---|---|---|
+| Inspection updates | `enquiries` | UPDATE | `https://your-bot.com/events/inspection` |
+| New tenant signup | `tenants` | INSERT | `https://your-bot.com/events/signup` |
+| Landlord KYC | `landlords` | INSERT, UPDATE | `https://your-bot.com/events/kyc` |
+
+Add HTTP header `x-webhook-secret: your_secret` (match `WEBHOOK_SECRET` in `.env`).
+
+### Step 6 — Install and run
+
+```bash
+cd livarex-bot
+npm install
+npm start
+```
+
+### Step 7 — Deploy
+
+The bot needs a **persistent server** (not Vercel serverless — it needs to stay running for the follow-up scheduler).
+
+Recommended: **Railway**, **Render**, or **Fly.io**
+
+```bash
+# Railway
+npm install -g @railway/cli
+railway login
+railway init
+railway up
+```
+
+Set all `.env` values in the Railway dashboard.
+
+---
+
+## Architecture
+
+```
+WhatsApp User
+    │
+    ▼
+Meta Webhook → /webhook (Express)
+                    │
+              webhook.js ──→ ai.js (Claude)
+                    │              │
+              sessions.js    listings.js (Supabase)
+              leads.js       memory.js (Supabase)
+                    │
+              followUp.js (scheduler)
+
+Supabase Events
+    │
+    ├── /events/inspection → notifications.js → sendText() to tenant
+    ├── /events/signup     → notifications.js → sendText() to admin
+    └── /events/kyc        → notifications.js → sendText() to admin
+```
+
+## File structure
+
+| File | Purpose |
+|---|---|
+| `index.js` | Express server, routes, startup |
+| `whatsapp.js` | WhatsApp Cloud API helpers (sendText, sendButtons) |
+| `ai.js` | Claude AI — processMessage, generateFollowUpMessage |
+| `memory.js` | Conversation history (Supabase + in-memory fallback) |
+| `listings.js` | Property listings from Supabase |
+| `sessions.js` | In-memory per-user session state |
+| `leads.js` | Lead tracking (Supabase + in-memory fallback) |
+| `webhook.js` | WhatsApp message routing + greeting/escalation logic |
+| `followUp.js` | Scheduled follow-up messages |
+| `notifications.js` | Inspection updates + admin alerts via Supabase webhooks |

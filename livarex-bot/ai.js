@@ -1,48 +1,87 @@
-// ── In-memory session store ────────────────────────────────────────────────
-// For production: replace with Redis or a DB (e.g. Supabase)
+// ── Claude AI — message processing ────────────────────────────────────────
+import Anthropic from "@anthropic-ai/sdk"
+import { getConversationHistory, saveMessage } from "./memory.js"
+import { fetchListings, formatListingsForAI } from "./listings.js"
 
-const sessions = new Map();
+const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 
-const DEFAULT_SESSION = () => ({
-  name: null,
-  stage: "greeting",       // greeting | qualifying | browsing | follow_up
-  history: [],             // Claude conversation history
-  lead: {
-    budget: null,
-    location: null,
-    propertyType: null,
-    timeline: null,
-  },
-  lastSeen: Date.now(),
-  followUpSent: false,
-  agentRequested: false,
-});
+const SYSTEM_PROMPT = `You are the Livarex Real Estate Rep — a warm, professional, and knowledgeable AI agent for Livarex Homes, Nigeria's verified property marketplace.
 
-export function getSession(phone) {
-  if (!sessions.has(phone)) {
-    sessions.set(phone, DEFAULT_SESSION());
-  }
-  const session = sessions.get(phone);
-  session.lastSeen = Date.now();
-  return session;
+Your role:
+- Help prospective buyers and renters find their perfect property in Nigeria
+- Answer questions about listings, pricing, locations, and availability
+- Qualify leads by naturally gathering their budget, preferred location, and property type
+- Schedule property viewings by collecting name, preferred date/time, and contact info
+- Follow up with interested clients professionally
+
+Your personality:
+- Friendly and approachable, but always professional
+- Concise — WhatsApp messages should be short and conversational (2–4 sentences max unless listing details are requested)
+- Never pushy — guide naturally, don't hard sell
+- Use Nigerian context (Lagos areas, Abuja, PH; Naira pricing; local idioms where appropriate)
+
+Key rules:
+- Always greet new contacts warmly by name
+- If asked about a specific property, share key details and offer a viewing
+- If a client seems interested, collect: full name, budget range, preferred area, type (buy/rent), and preferred viewing time
+- Never make up property details — only reference what's in the listings context provided
+- End messages with a gentle CTA or question to keep the conversation going
+- Keep messages under 300 characters when possible for readability on WhatsApp
+- If you can't answer, say you'll check with the team rather than guessing
+
+When listings are provided in context, use them to answer accurately. If no listings match, say you'll check and get back to them.`
+
+export async function processMessage(phone, name, userMessage) {
+  const history = await getConversationHistory(phone)
+
+  const listings = await fetchListings()
+  const listingsContext = formatListingsForAI(listings)
+
+  const systemWithListings = listingsContext
+    ? `${SYSTEM_PROMPT}\n\n--- CURRENT LISTINGS ---\n${listingsContext}\n--- END LISTINGS ---`
+    : SYSTEM_PROMPT
+
+  const response = await client.messages.create({
+    model: "claude-opus-4-5",
+    max_tokens: 500,
+    system: systemWithListings,
+    messages: [
+      ...history,
+      { role: "user", content: userMessage },
+    ],
+  })
+
+  const reply = response.content[0].text
+
+  await saveMessage(phone, "user", userMessage)
+  await saveMessage(phone, "assistant", reply)
+
+  return reply
 }
 
-export function saveSession(phone, updates) {
-  const session = getSession(phone);
-  Object.assign(session, updates);
-  sessions.set(phone, session);
-}
+export async function generateFollowUpMessage(lead, history) {
+  const FOLLOW_UP_PROMPT = `You are the Livarex Real Estate Rep sending a friendly follow-up WhatsApp message to a prospective client.
 
-export function addToHistory(phone, role, content) {
-  const session = getSession(phone);
-  session.history.push({ role, content });
-  // Keep last 20 messages to control token usage
-  if (session.history.length > 20) {
-    session.history = session.history.slice(-20);
-  }
-  sessions.set(phone, session);
-}
+Rules:
+- Under 200 characters
+- Warm and non-pushy
+- Reference their previous interest if visible in history
+- End with a simple open question
+- Sound human, not automated
+- Don't say "I noticed you haven't replied"`
 
-export function getAllSessions() {
-  return sessions;
+  const response = await client.messages.create({
+    model: "claude-opus-4-5",
+    max_tokens: 150,
+    system: FOLLOW_UP_PROMPT,
+    messages: [
+      ...history.slice(-6),
+      {
+        role: "user",
+        content: `Generate a follow-up for: ${lead.name}. Follow-up #${(lead.follow_up_count || 0) + 1} of 3. Their last message: "${lead.last_message}"`,
+      },
+    ],
+  })
+
+  return response.content[0].text
 }

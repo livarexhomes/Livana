@@ -1,51 +1,123 @@
-import express from "express";
-import { handleIncomingMessage } from "./messageHandler.js";
-import { sendFollowUps } from "./followUp.js";
+// ── Lead tracking (Supabase + in-memory fallback) ─────────────────────────
+//
+// Run this SQL once in Supabase:
+//
+//   create table bot_leads (
+//     phone text primary key,
+//     name text,
+//     last_message text,
+//     last_message_at timestamptz default now(),
+//     follow_up_count int default 0,
+//     follow_up_due_at timestamptz,
+//     follow_up_sent_at timestamptz,
+//     created_at timestamptz default now()
+//   );
 
-const app = express();
-app.use(express.json());
+const SUPABASE_URL         = process.env.SUPABASE_URL
+const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY
+const useSupabase          = !!(SUPABASE_URL && SUPABASE_SERVICE_KEY)
+const leadsStore           = new Map()  // fallback
 
-const VERIFY_TOKEN = process.env.VERIFY_TOKEN || "livarex_verify_token";
+async function sbFetch(path, options = {}) {
+  const res = await fetch(`${SUPABASE_URL}/rest/v1${path}`, {
+    ...options,
+    headers: {
+      apikey: SUPABASE_SERVICE_KEY,
+      Authorization: `Bearer ${SUPABASE_SERVICE_KEY}`,
+      "Content-Type": "application/json",
+      Prefer: options.method === "POST" ? "resolution=merge-duplicates" : "return=representation",
+      ...(options.headers || {}),
+    },
+  })
+  const text = await res.text()
+  return text ? JSON.parse(text) : null
+}
 
-// ── Webhook verification (Meta setup) ──────────────────────────────────────
-app.get("/webhook", (req, res) => {
-  const mode = req.query["hub.mode"];
-  const token = req.query["hub.verify_token"];
-  const challenge = req.query["hub.challenge"];
-
-  if (mode === "subscribe" && token === VERIFY_TOKEN) {
-    console.log("✅ Webhook verified by Meta");
-    return res.status(200).send(challenge);
+export async function upsertLead(phone, name, message) {
+  const record = {
+    phone,
+    name: name || null,
+    last_message: message.slice(0, 500),
+    last_message_at: new Date().toISOString(),
   }
-  res.sendStatus(403);
-});
 
-// ── Incoming messages ──────────────────────────────────────────────────────
-app.post("/webhook", async (req, res) => {
-  res.sendStatus(200);
-  const body = req.body;
-
-  if (body.object !== "whatsapp_business_account") return;
-
-  for (const entry of body.entry || []) {
-    for (const change of entry.changes || []) {
-      const value = change.value;
-      if (!value?.messages?.length) continue;
-
-      for (const msg of value.messages) {
-        const phone = msg.from;
-        const contact = value.contacts?.[0]?.profile?.name || "there";
-        await handleIncomingMessage(phone, contact, msg);
-      }
+  if (useSupabase) {
+    try {
+      await sbFetch("/bot_leads", {
+        method: "POST",
+        body: JSON.stringify(record),
+        headers: { Prefer: "resolution=merge-duplicates,return=minimal" },
+      })
+      return
+    } catch (err) {
+      console.error("upsertLead failed:", err.message)
     }
   }
-});
 
-// ── Health check ───────────────────────────────────────────────────────────
-app.get("/", (_, res) => res.json({ status: "Livarex Bot running 🏡" }));
+  leadsStore.set(phone, { ...(leadsStore.get(phone) || {}), ...record })
+}
 
-// ── Scheduled follow-ups (every hour) ─────────────────────────────────────
-setInterval(sendFollowUps, 60 * 60 * 1000);
+export async function scheduleFollowUp(phone, delayHours = 24) {
+  const dueAt = new Date(Date.now() + delayHours * 3600 * 1000).toISOString()
 
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`🏡 Livarex Bot listening on port ${PORT}`));
+  if (useSupabase) {
+    try {
+      await sbFetch("/bot_leads", {
+        method: "POST",
+        body: JSON.stringify({ phone, follow_up_due_at: dueAt }),
+        headers: { Prefer: "resolution=merge-duplicates,return=minimal" },
+      })
+      return
+    } catch (err) { console.error("scheduleFollowUp failed:", err.message) }
+  }
+
+  const lead = leadsStore.get(phone) || { phone }
+  leadsStore.set(phone, { ...lead, follow_up_due_at: dueAt })
+}
+
+export async function getLeadsDueForFollowUp() {
+  const now = new Date().toISOString()
+
+  if (useSupabase) {
+    try {
+      const rows = await sbFetch(
+        `/bot_leads?follow_up_due_at=lte.${now}&follow_up_sent_at=is.null&limit=50`,
+        { method: "GET" }
+      )
+      return rows || []
+    } catch (err) {
+      console.error("getLeadsDueForFollowUp failed:", err.message)
+    }
+  }
+
+  return [...leadsStore.values()].filter(
+    (l) => l.follow_up_due_at && new Date(l.follow_up_due_at) <= new Date() && !l.follow_up_sent_at
+  )
+}
+
+export async function markFollowUpSent(phone) {
+  const now = new Date().toISOString()
+
+  if (useSupabase) {
+    try {
+      await sbFetch(`/bot_leads?phone=eq.${encodeURIComponent(phone)}`, {
+        method: "PATCH",
+        body: JSON.stringify({
+          follow_up_sent_at: now,
+          follow_up_due_at: null,
+          follow_up_count: undefined,  // use SQL increment below
+        }),
+        headers: { Prefer: "return=minimal" },
+      })
+      return
+    } catch (err) { console.error("markFollowUpSent failed:", err.message) }
+  }
+
+  const lead = leadsStore.get(phone) || { phone }
+  leadsStore.set(phone, {
+    ...lead,
+    follow_up_sent_at: now,
+    follow_up_due_at: null,
+    follow_up_count: (lead.follow_up_count || 0) + 1,
+  })
+}
