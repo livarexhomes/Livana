@@ -188,7 +188,20 @@ export default function PropertyDetailPage() {
     setEnquirySuccess(true)
     setEnquiryLoading(false)
     setEnquiryMsg('')
-    
+
+    // Notify admin via WhatsApp (fire-and-forget — don't block UI)
+    fetch('/api/whatsapp/notify-inspection', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        tenantName: null,
+        propertyTitle: property?.title ?? null,
+        propertyCity: property?.city ?? null,
+        propertyId: property?.id ?? null,
+        message: enquiryMsg,
+      }),
+    }).catch(() => { /* silent — notification is best-effort */ })
+
     // Auto-close after 3 seconds
     setTimeout(() => {
       setEnquirySuccess(false)

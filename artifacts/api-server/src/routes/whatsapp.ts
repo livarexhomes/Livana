@@ -53,17 +53,15 @@ async function fetchListings(type: string): Promise<string> {
 async function saveInspectionRequest(phone: string, property: string, date: string) {
   try {
     const db = getAdmin()
-    await db.from('bot_inquiries').insert({
-      phone,
-      property_ref: property,
-      preferred_date: date,
-      status: 'pending',
-      source: 'whatsapp',
-      created_at: new Date().toISOString(),
+    await db.from('enquiries').insert({
+      tenant_id: null,
+      property_id: null,
+      landlord_id: null,
+      message: `📲 WhatsApp inspection request\nPhone: +${phone}\nProperty: ${property}\nPreferred date: ${date}`,
+      status: 'open',
     })
   } catch {
-    // Table may not exist yet — fail silently, inquiry still confirmed to user
-    logger.warn({ phone, property }, 'bot_inquiries insert failed (table may not exist)')
+    logger.warn({ phone, property }, 'enquiries insert failed for WhatsApp bot request')
   }
 }
 
@@ -258,6 +256,39 @@ async function handleMessage(phone: string, messageId: string, incoming: string)
       return sendMainMenu(phone)
   }
 }
+
+// ─── Admin notification endpoint (called by website after enquiry saved) ─────
+router.post('/whatsapp/notify-inspection', async (req, res) => {
+  const adminPhone = ADMIN_PHONE()
+  if (!adminPhone) {
+    res.status(200).json({ ok: false, reason: 'WHATSAPP_ADMIN_PHONE not configured' })
+    return
+  }
+
+  const { tenantName, propertyTitle, propertyCity, message, propertyId } = req.body ?? {}
+
+  const text = [
+    '🔔 *New Inspection Request — LIVAREX*',
+    '',
+    `👤 Tenant: ${tenantName ?? 'Unknown'}`,
+    `🏠 Property: ${propertyTitle ?? 'Unknown'}${propertyCity ? ` · ${propertyCity}` : ''}`,
+    propertyId ? `🔗 ${APP_URL()}/property/${propertyId}` : '',
+    '',
+    `📝 "${message ?? ''}"`,
+    '',
+    `📋 Admin inbox: ${APP_URL()}/admin/support`,
+  ]
+    .filter(l => l !== null)
+    .join('\n')
+
+  try {
+    await sendText(adminPhone, text)
+    res.status(200).json({ ok: true })
+  } catch (err) {
+    logger.error({ err }, 'notify-inspection WhatsApp send failed')
+    res.status(500).json({ ok: false, error: String(err) })
+  }
+})
 
 // ─── Webhook verification (GET) ───────────────────────────────────────────────
 router.get('/whatsapp/webhook', (req, res) => {
