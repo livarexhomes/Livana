@@ -226,22 +226,40 @@ export default function HomePage() {
             </div>
 
             {/* Headline */}
-            <h1 className="text-5xl sm:text-6xl xl:text-7xl font-black leading-[1.0] tracking-tight text-white mb-6">
-              Nigeria's Verified<br />
+            <h1 className="text-4xl sm:text-6xl xl:text-7xl font-black leading-[1.05] tracking-tight text-white mb-5">
+              Nigeria's<br className="hidden sm:block" />{' '}Verified{' '}
               <span className="relative inline-block">
                 <span className="relative z-10 text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-blue-300 to-indigo-400">
-                  Property Marketplace
+                  Property
                 </span>
-                <span className="absolute -bottom-1 left-0 right-0 h-[3px] bg-gradient-to-r from-blue-400 to-indigo-400 rounded-full opacity-60" />
               </span>
               <br />
-              <span className="text-white/90">in Nigeria</span>
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-blue-300 to-indigo-400">Marketplace</span>
             </h1>
 
             {/* Subtitle */}
-            <p className="text-lg text-white/70 mb-10 leading-relaxed max-w-lg font-light">
-              Find verified homes with a safe and transparent rental process. Every property is reviewed and managed through Livarex.
+            <p className="text-base sm:text-lg text-white/70 mb-8 leading-relaxed max-w-lg font-light">
+              Find verified homes with a safe and transparent rental process. Every landlord is vetted, every listing is real.
             </p>
+
+            {/* Mobile animated listing pill */}
+            <div className="sm:hidden mb-5">
+              <div
+                className="inline-flex items-center gap-3 bg-white/10 backdrop-blur-sm border border-white/20 rounded-2xl px-4 py-3 transition-all duration-300"
+                style={{ opacity: heroVisible ? 1 : 0, transform: heroVisible ? 'translateY(0)' : 'translateY(6px)' }}
+              >
+                <span className="bg-blue-500 text-white text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full shrink-0">
+                  {HERO_LISTINGS[heroIdx].label}
+                </span>
+                <div className="min-w-0">
+                  <p className="text-white text-xs font-semibold truncate">{HERO_LISTINGS[heroIdx].title}</p>
+                  <p className="text-blue-300 text-xs font-black">{HERO_LISTINGS[heroIdx].price}<span className="text-white/40 font-normal">{HERO_LISTINGS[heroIdx].suffix}</span></p>
+                </div>
+                <div className="flex gap-1 shrink-0">
+                  {[...Array(5)].map((_, i) => <Star key={i} className="w-2.5 h-2.5 text-amber-400 fill-current" />)}
+                </div>
+              </div>
+            </div>
 
             {/* <div className="flex flex-col sm:flex-row gap-4 mb-12">
               <Link href="/listings" className="inline-flex items-center justify-center rounded-full bg-blue-600 px-8 py-4 text-sm font-bold text-white shadow-lg shadow-blue-600/25 hover:bg-blue-500 transition-all">
@@ -255,24 +273,16 @@ export default function HomePage() {
             {/* Search card */}
             <div className="mb-12">
               {/* Tabs */}
-              <div className="flex gap-1 mb-4 overflow-x-auto no-scrollbar">
-                {(['Rent', 'Lease', 'Buy', 'Commercial'] as Tab[]).map(t => {
-                  const comingSoon = t === 'Buy' || t === 'Commercial'
-                  return comingSoon ? (
-                    <span key={t} className="px-3 py-2 rounded-full text-sm font-semibold text-white/25 cursor-default select-none flex items-center gap-1.5 shrink-0">
-                      {t}
-                      <span className="text-[9px] font-bold uppercase tracking-wider bg-white/10 text-white/30 px-1.5 py-0.5 rounded-md">Soon</span>
-                    </span>
-                  ) : (
-                    <button key={t} type="button" onClick={() => setActiveTab(t)}
-                      className={`px-5 py-2 rounded-full text-sm font-bold transition-all shrink-0 ${activeTab === t
-                          ? 'bg-white text-gray-900 shadow-lg'
-                          : 'text-white/50 hover:text-white hover:bg-white/10'
-                        }`}>
-                      {t}
-                    </button>
-                  )
-                })}
+              <div className="flex gap-1 mb-4">
+                {(['Rent', 'Lease'] as Tab[]).map(t => (
+                  <button key={t} type="button" onClick={() => setActiveTab(t)}
+                    className={`px-5 py-2 rounded-full text-sm font-bold transition-all shrink-0 ${activeTab === t
+                        ? 'bg-white text-gray-900 shadow-lg'
+                        : 'text-white/50 hover:text-white hover:bg-white/10'
+                      }`}>
+                    {t}
+                  </button>
+                ))}
               </div>
 
               {/* Desktop search bar */}
@@ -519,29 +529,41 @@ export default function HomePage() {
               </div>
 
               {/* Mobile search */}
-              <form onSubmit={handleSearch} className="sm:hidden bg-white rounded-2xl shadow-2xl p-3 space-y-2">
-                <div className="relative">
-                  <MapPin className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-blue-500 pointer-events-none" />
+              <form onSubmit={handleSearch} className="sm:hidden bg-white rounded-2xl shadow-[0_8px_40px_rgba(0,0,0,0.35)] overflow-hidden">
+                {/* Location row */}
+                <div className="relative border-b border-gray-100">
+                  <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-blue-500 pointer-events-none z-10" />
+                  <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-300 pointer-events-none z-10" />
                   <select value={searchState} onChange={e => setSearchState(e.target.value)}
-                    className="w-full pl-10 pr-4 py-3 rounded-xl bg-gray-50 text-sm text-gray-800 outline-none appearance-none">
-                    <option value="">Location — Any State</option>
+                    className="w-full pl-11 pr-10 py-4 text-sm text-gray-800 appearance-none bg-transparent focus:outline-none">
+                    <option value="">Any Location</option>
                     {NIGERIAN_STATES.map(s => <option key={s} value={s}>{s}</option>)}
                   </select>
                 </div>
-                <div className="grid grid-cols-2 gap-2">
-                  <select value={selectedPropertyTypes[0] ?? ''} onChange={e => setSelectedPropertyTypes(e.target.value ? [e.target.value] : [])}
-                    className="w-full px-3 py-3 rounded-xl bg-gray-50 text-sm text-gray-800 outline-none appearance-none">
-                    <option value="">Property Type</option>
-                    {PROPERTY_TYPES.map(pt => <option key={pt} value={pt}>{pt}</option>)}
-                  </select>
-                  <select value={searchBeds} onChange={e => setSearchBeds(e.target.value)}
-                    className="w-full px-3 py-3 rounded-xl bg-gray-50 text-sm text-gray-800 outline-none appearance-none">
-                    <option value="">Beds</option>
-                    {['1', '2', '3', '4', '5'].map(n => <option key={n} value={n}>{n}+ Beds</option>)}
-                  </select>
+                {/* Type + Beds row */}
+                <div className="grid grid-cols-2 border-b border-gray-100">
+                  <div className="relative border-r border-gray-100">
+                    <span className="absolute left-3 top-2.5 text-[9px] font-black uppercase tracking-widest text-gray-400 pointer-events-none z-10">Type</span>
+                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-300 pointer-events-none z-10" />
+                    <select value={selectedPropertyTypes[0] ?? ''} onChange={e => setSelectedPropertyTypes(e.target.value ? [e.target.value] : [])}
+                      className="w-full pl-3 pr-8 pt-6 pb-3 text-sm font-semibold text-gray-800 appearance-none bg-transparent focus:outline-none">
+                      <option value="">Any</option>
+                      {PROPERTY_TYPES.map(pt => <option key={pt} value={pt}>{pt}</option>)}
+                    </select>
+                  </div>
+                  <div className="relative">
+                    <span className="absolute left-3 top-2.5 text-[9px] font-black uppercase tracking-widest text-gray-400 pointer-events-none z-10">Beds</span>
+                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-300 pointer-events-none z-10" />
+                    <select value={searchBeds} onChange={e => setSearchBeds(e.target.value)}
+                      className="w-full pl-3 pr-8 pt-6 pb-3 text-sm font-semibold text-gray-800 appearance-none bg-transparent focus:outline-none">
+                      <option value="">Any</option>
+                      {['1', '2', '3', '4', '5'].map(n => <option key={n} value={n}>{n}+</option>)}
+                    </select>
+                  </div>
                 </div>
+                {/* Search button */}
                 <button type="submit"
-                  className="w-full bg-blue-600 hover:bg-blue-500 text-white font-black py-3.5 rounded-xl text-sm flex items-center justify-center gap-2 shadow-lg shadow-blue-600/30">
+                  className="w-full bg-blue-600 active:bg-blue-700 text-white font-black py-4 text-sm flex items-center justify-center gap-2">
                   <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
                   Search Properties
                 </button>
@@ -549,18 +571,18 @@ export default function HomePage() {
             </div>
 
             {/* Stats row */}
-            <div className="flex items-center gap-8">
+            <div className="grid grid-cols-2 sm:flex sm:items-center gap-y-5 gap-x-0 sm:gap-8">
               {[
                 { value: 307, suffix: '+', label: 'Verified Properties' },
                 { value: 108, suffix: '+', label: 'Verified Landlords' },
                 { value: 80, suffix: '+', label: 'Requests Processed' },
                 { value: 2, suffix: 'h', label: 'Avg Response Time' },
-              ].map((s: { value: number; suffix: string; label: string; prefix?: string }, i) => (
-                <div key={s.label} className="flex items-center gap-8">
-                  {i > 0 && <div className="w-px h-8 bg-white/20" />}
+              ].map((s, i) => (
+                <div key={s.label} className="flex items-center gap-4 sm:gap-8">
+                  {i > 0 && <div className="hidden sm:block w-px h-8 bg-white/20" />}
                   <div>
                     <p className="font-black text-white text-2xl leading-none tracking-tight">
-                      {s.prefix ?? ''}<AnimatedCounter target={s.value} suffix={s.suffix ?? ''} />
+                      <AnimatedCounter target={s.value} suffix={s.suffix} />
                     </p>
                     <p className="text-xs text-white/40 mt-1 font-medium">{s.label}</p>
                   </div>
