@@ -72,25 +72,28 @@ router.post("/delete-user", async (req, res) => {
     return;
   }
 
+  if (!token) {
+    res.status(401).json({ error: "Authorization token required" });
+    return;
+  }
+
   try {
     const admin = getAdminClient();
 
-    if (token) {
-      const { data: { user }, error: authErr } = await admin.auth.getUser(token);
-      if (authErr || !user) {
-        res.status(401).json({ error: "Unauthorized" });
-        return;
-      }
+    const { data: { user }, error: authErr } = await admin.auth.getUser(token);
+    if (authErr || !user) {
+      res.status(401).json({ error: "Unauthorized" });
+      return;
+    }
 
-      const meta = user.app_metadata ?? {};
-      const isAdmin =
-        meta.role === "admin" ||
-        (Array.isArray(meta.roles) && meta.roles.includes("admin"));
+    const meta = user.app_metadata ?? {};
+    const isAdmin =
+      meta.role === "admin" ||
+      (Array.isArray(meta.roles) && meta.roles.includes("admin"));
 
-      if (!isAdmin) {
-        res.status(403).json({ error: "Admin access required" });
-        return;
-      }
+    if (!isAdmin) {
+      res.status(403).json({ error: "Admin access required" });
+      return;
     }
 
     const { error: deleteErr } = await admin.auth.admin.deleteUser(user_id);
