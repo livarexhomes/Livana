@@ -189,35 +189,35 @@ export default function ListingsPage() {
 
             {/* ── Dropdown panels ── */}
             {openPanel === 'location' && (
-              <div className="absolute left-0 top-[calc(100%+8px)] w-80 bg-white rounded-2xl shadow-xl border border-gray-100 p-4 z-50">
+              <div className="absolute left-0 top-[calc(100%+8px)] w-72 bg-white rounded-2xl shadow-lg border border-gray-100 p-4 z-50">
                 <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-2">State</p>
                 {['', 'Lagos', 'Ogun'].map(v => (
                   <button key={v} onClick={() => { setStateFilter(v); setOpenPanel(null) }}
-                    className={`w-full text-left px-3 py-2.5 rounded-xl text-sm font-medium transition-colors mb-1 ${stateFilter === v ? 'bg-gray-900 text-white' : 'hover:bg-gray-50 text-gray-700'}`}>
+                    className={`w-full text-left px-3 py-2.5 rounded-xl text-sm font-medium transition-colors mb-0.5 ${stateFilter === v ? 'bg-gray-900 text-white' : 'text-gray-700 hover:bg-gray-50'}`}>
                     {v || 'Any State'}
                   </button>
                 ))}
                 <div className="mt-3 pt-3 border-t border-gray-100">
-                  <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-2">Area / Neighbourhood</p>
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-2">Neighbourhood</p>
                   <div className="relative">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
                     <input value={areaFilter} onChange={e => setAreaFilter(e.target.value)}
                       onKeyDown={e => e.key === 'Enter' && setOpenPanel(null)}
                       placeholder="e.g. Lekki, Maitama…"
-                      className="w-full pl-9 pr-3 py-2 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900" />
+                      className="w-full pl-9 pr-3 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900" />
                   </div>
-                  <button onClick={() => setOpenPanel(null)}
-                    className="mt-3 w-full py-2 bg-gray-900 text-white text-sm font-semibold rounded-xl hover:bg-gray-800">Apply</button>
                 </div>
+                <button onClick={() => setOpenPanel(null)}
+                  className="mt-3 w-full py-2.5 bg-gray-900 text-white text-sm font-semibold rounded-xl hover:bg-gray-800 transition-colors">Apply</button>
               </div>
             )}
 
             {openPanel === 'type' && (
-              <div className="absolute left-[25%] top-[calc(100%+8px)] w-52 bg-white rounded-2xl shadow-xl border border-gray-100 p-3 z-50">
-                <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-2 px-1">Property type</p>
+              <div className="absolute left-[25%] top-[calc(100%+8px)] w-72 bg-white rounded-2xl shadow-lg border border-gray-100 p-4 z-50">
+                <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-2">Property type</p>
                 {TYPE_TABS.map(t => (
                   <button key={t.value} onClick={() => { setTypeFilter(t.value); setOpenPanel(null) }}
-                    className={`w-full text-left px-3 py-2.5 rounded-xl text-sm font-medium transition-colors mb-1 ${typeFilter === t.value ? 'bg-gray-900 text-white' : 'hover:bg-gray-50 text-gray-700'}`}>
+                    className={`w-full text-left px-3 py-2.5 rounded-xl text-sm font-medium transition-colors mb-0.5 ${typeFilter === t.value ? 'bg-gray-900 text-white' : 'text-gray-700 hover:bg-gray-50'}`}>
                     {t.label}
                   </button>
                 ))}
@@ -225,56 +225,47 @@ export default function ListingsPage() {
             )}
 
             {openPanel === 'beds' && (
-              <div className="absolute left-[50%] top-[calc(100%+8px)] w-64 bg-white rounded-2xl shadow-xl border border-gray-100 p-4 z-50">
+              <div className="absolute left-[50%] top-[calc(100%+8px)] w-72 bg-white rounded-2xl shadow-lg border border-gray-100 p-4 z-50">
                 <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-2">Bedrooms</p>
-                <div className="flex flex-wrap gap-2 mb-3">
-                  {[['', 'Any'], ['1', '1+'], ['2', '2+'], ['3', '3+'], ['4', '4+'], ['5', '5+']].map(([v, l]) => (
-                    <button key={v} onClick={() => setBedsFilter(v)}
-                      className={`px-3 py-1.5 rounded-full border text-sm font-semibold transition-all ${bedsFilter === v ? 'bg-gray-900 text-white border-gray-900' : 'bg-white text-gray-600 border-gray-200 hover:border-gray-400'}`}>
-                      {l}
-                    </button>
-                  ))}
-                </div>
-                <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-2 mt-3">Bathrooms</p>
-                <div className="flex flex-wrap gap-2 mb-3">
-                  {[['', 'Any'], ['1', '1+'], ['2', '2+'], ['3', '3+'], ['4', '4+']].map(([v, l]) => (
-                    <button key={v} onClick={() => setBathsFilter(v)}
-                      className={`px-3 py-1.5 rounded-full border text-sm font-semibold transition-all ${bathsFilter === v ? 'bg-gray-900 text-white border-gray-900' : 'bg-white text-gray-600 border-gray-200 hover:border-gray-400'}`}>
-                      {l}
-                    </button>
-                  ))}
-                </div>
-                <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-2 mt-3">Furnished</p>
-                <div className="flex gap-2 mb-3">
+                {[['', 'Any bedrooms'], ['1', '1+ Beds'], ['2', '2+ Beds'], ['3', '3+ Beds'], ['4', '4+ Beds'], ['5', '5+ Beds']].map(([v, l]) => (
+                  <button key={v} onClick={() => setBedsFilter(v)}
+                    className={`w-full text-left px-3 py-2.5 rounded-xl text-sm font-medium transition-colors mb-0.5 ${bedsFilter === v ? 'bg-gray-900 text-white' : 'text-gray-700 hover:bg-gray-50'}`}>
+                    {l}
+                  </button>
+                ))}
+                <div className="mt-3 pt-3 border-t border-gray-100">
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-2">Furnished</p>
                   {[['', 'Any'], ['true', 'Furnished'], ['false', 'Unfurnished']].map(([v, l]) => (
                     <button key={v} onClick={() => setFurnishedFilter(v)}
-                      className={`flex-1 py-1.5 rounded-xl border text-xs font-semibold transition-all ${furnishedFilter === v ? 'bg-gray-900 text-white border-gray-900' : 'bg-white text-gray-600 border-gray-200 hover:border-gray-400'}`}>
+                      className={`w-full text-left px-3 py-2.5 rounded-xl text-sm font-medium transition-colors mb-0.5 ${furnishedFilter === v ? 'bg-gray-900 text-white' : 'text-gray-700 hover:bg-gray-50'}`}>
                       {l}
                     </button>
                   ))}
                 </div>
                 <button onClick={() => setOpenPanel(null)}
-                  className="w-full py-2 bg-gray-900 text-white text-sm font-semibold rounded-xl hover:bg-gray-800">Apply</button>
+                  className="mt-3 w-full py-2.5 bg-gray-900 text-white text-sm font-semibold rounded-xl hover:bg-gray-800 transition-colors">Apply</button>
               </div>
             )}
 
             {openPanel === 'price' && (
-              <div className="absolute right-0 top-[calc(100%+8px)] w-72 bg-white rounded-2xl shadow-xl border border-gray-100 p-4 z-50">
-                <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-3">Price range (₦)</p>
-                <div className="grid grid-cols-2 gap-2 mb-3">
+              <div className="absolute right-0 top-[calc(100%+8px)] w-72 bg-white rounded-2xl shadow-lg border border-gray-100 p-4 z-50">
+                <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-2">Price range (₦)</p>
+                <div className="grid grid-cols-2 gap-2 mb-1">
                   <div>
-                    <label className="text-xs text-gray-400 mb-1 block">Min</label>
+                    <label className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-1.5 block">Min</label>
                     <input type="number" value={minPrice} onChange={e => setMinPrice(e.target.value)}
-                      placeholder="Min" className="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900" />
+                      placeholder="e.g. 500,000"
+                      className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900" />
                   </div>
                   <div>
-                    <label className="text-xs text-gray-400 mb-1 block">Max</label>
+                    <label className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-1.5 block">Max</label>
                     <input type="number" value={maxPrice} onChange={e => setMaxPrice(e.target.value)}
-                      placeholder="Max" className="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900" />
+                      placeholder="e.g. 5,000,000"
+                      className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900" />
                   </div>
                 </div>
                 <button onClick={() => setOpenPanel(null)}
-                  className="w-full py-2 bg-gray-900 text-white text-sm font-semibold rounded-xl hover:bg-gray-800">Apply</button>
+                  className="mt-3 w-full py-2.5 bg-gray-900 text-white text-sm font-semibold rounded-xl hover:bg-gray-800 transition-colors">Apply</button>
               </div>
             )}
           </div>
