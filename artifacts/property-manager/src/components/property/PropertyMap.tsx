@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet'
+import 'leaflet/dist/leaflet.css'
 import L from 'leaflet'
 import type { PropertyWithLandlord } from '@/types'
 
@@ -29,69 +30,53 @@ function makePriceIcon(price: number, highlighted: boolean) {
       font-size:12px;
       font-weight:700;
       white-space:nowrap;
-      box-shadow:0 2px 8px rgba(0,0,0,0.25);
+      box-shadow:0 2px 8px rgba(0,0,0,.25);
       border:2px solid #fff;
-      transform:translateX(-50%);
-      position:relative;
-    ">
-      ${label}
-      <div style="
-        position:absolute;
-        bottom:-7px;
-        left:50%;
-        transform:translateX(-50%);
-        width:0;height:0;
-        border-left:6px solid transparent;
-        border-right:6px solid transparent;
-        border-top:7px solid ${bg};
-      "></div>
-    </div>`
-  return L.divIcon({ html, className: '', iconAnchor: [0, 36] })
+      cursor:pointer;
+      transition:transform .15s;
+    ">${label}</div>`
+  return L.divIcon({ html, className: '', iconAnchor: [0, 0] })
 }
 
-// Nigerian city → approximate lat/lng
 const CITY_COORDS: Record<string, [number, number]> = {
-  lagos: [6.5244, 3.3792],
-  abuja: [9.0579, 7.4951],
-  'port harcourt': [4.8156, 7.0498],
-  kano: [12.0022, 8.5920],
-  ibadan: [7.3775, 3.9470],
-  benin: [6.3350, 5.6270],
-  warri: [5.5167, 5.7500],
-  enugu: [6.4584, 7.5464],
-  kaduna: [10.5222, 7.4383],
-  onitsha: [6.1667, 6.7833],
-  aba: [5.1066, 7.3667],
-  jos: [9.8965, 8.8583],
-  ilorin: [8.4966, 4.5426],
-  maiduguri: [11.8333, 13.1500],
-  zaria: [11.0667, 7.7000],
+  'Lagos': [6.5244, 3.3792],
+  'Ikeja': [6.6018, 3.3515],
+  'Lekki': [6.4331, 3.5852],
+  'Victoria Island': [6.4281, 3.4219],
+  'Ajah': [6.4698, 3.5852],
+  'Yaba': [6.5144, 3.3736],
+  'Surulere': [6.4969, 3.3483],
+  'Ikorodu': [6.6194, 3.5108],
+  'Badagry': [6.4121, 2.8890],
+  'Ogun': [7.1604, 3.3483],
+  'Abeokuta': [7.1558, 3.3452],
+  'Sagamu': [6.8333, 3.6500],
+  'Ijebu-Ode': [6.8190, 3.9160],
+  'Mowe': [6.9167, 3.4167],
 }
 
 function getCityCoords(city: string): [number, number] | null {
-  const key = city.toLowerCase()
-  for (const [k, v] of Object.entries(CITY_COORDS)) {
-    if (key.includes(k)) return v
-  }
-  return null
+  if (!city) return null
+  const key = Object.keys(CITY_COORDS).find(k => city.toLowerCase().includes(k.toLowerCase()))
+  return key ? CITY_COORDS[key] : null
 }
 
-// Scatter markers slightly so they don't stack
-function jitter(coord: [number, number], index: number): [number, number] {
-  const angle = (index * 137.5 * Math.PI) / 180
-  const radius = 0.008 + (index % 4) * 0.004
-  return [coord[0] + Math.sin(angle) * radius, coord[1] + Math.cos(angle) * radius]
+function jitter(coords: [number, number], index: number): [number, number] {
+  const seed = index * 0.0007
+  return [coords[0] + Math.sin(seed * 13) * 0.003, coords[1] + Math.cos(seed * 7) * 0.003]
 }
 
 function FitBounds({ coords }: { coords: [number, number][] }) {
   const map = useMap()
   useEffect(() => {
     if (coords.length === 0) return
-    if (coords.length === 1) {
-      map.setView(coords[0], 13)
-    } else {
-      map.fitBounds(L.latLngBounds(coords), { padding: [40, 40], maxZoom: 14 })
-    }
+    if (coords.length === 1) { map.setView(coords[0], 14); return }
+    const lats = coords.map(c => c[0])
+    const lngs = coords.map(c => c[1])
+    map.fitBounds([
+      [Math.min(...lats), Math.min(...lngs)],
+      [Math.max(...lats), Math.max(...lngs)],
+    ], { padding: [40, 40], maxZoom: 15 })
   }, [coords.length])
   return null
 }
@@ -100,10 +85,10 @@ interface Props {
   properties: PropertyWithLandlord[]
   hoveredId: string | null
   onMarkerClick: (id: string) => void
+  height?: number | string
 }
 
-export default function PropertyMap({ properties, hoveredId, onMarkerClick }: Props) {
-  // Build positioned properties
+export default function PropertyMap({ properties, hoveredId, onMarkerClick, height = '100%' }: Props) {
   const positioned = properties
     .map((p, i) => {
       const coords = getCityCoords(p.city)
@@ -113,36 +98,38 @@ export default function PropertyMap({ properties, hoveredId, onMarkerClick }: Pr
     .filter(Boolean) as { p: PropertyWithLandlord; coords: [number, number] }[]
 
   const allCoords = positioned.map(x => x.coords)
-  const defaultCenter: [number, number] = [6.5244, 3.3792] // Lagos
+  const defaultCenter: [number, number] = [6.5244, 3.3792]
 
   return (
-    <MapContainer
-      center={defaultCenter}
-      zoom={10}
-      className="w-full h-full"
-      zoomControl={true}
-    >
-      <TileLayer
-        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-      />
-      <FitBounds coords={allCoords} />
-      {positioned.map(({ p, coords }) => (
-        <Marker
-          key={`${p.id}-${hoveredId === p.id}`}
-          position={coords}
-          icon={makePriceIcon(p.price, hoveredId === p.id)}
-          eventHandlers={{ click: () => onMarkerClick(p.id) }}
-        >
-          <Popup>
-            <div className="text-sm font-semibold">{p.title}</div>
-            <div className="text-xs text-gray-500">{p.city}</div>
-            <div className="text-sm font-bold text-green-700 mt-1">
-              ₦{Number(p.price).toLocaleString()}
-            </div>
-          </Popup>
-        </Marker>
-      ))}
-    </MapContainer>
+    <div style={{ width: '100%', height }}>
+      <MapContainer
+        center={defaultCenter}
+        zoom={10}
+        style={{ width: '100%', height: '100%' }}
+        zoomControl={true}
+      >
+        <TileLayer
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+        />
+        <FitBounds coords={allCoords} />
+        {positioned.map(({ p, coords }) => (
+          <Marker
+            key={`${p.id}-${hoveredId === p.id}`}
+            position={coords}
+            icon={makePriceIcon(p.price, hoveredId === p.id)}
+            eventHandlers={{ click: () => onMarkerClick(p.id) }}
+          >
+            <Popup>
+              <div className="text-sm font-semibold">{p.title}</div>
+              <div className="text-xs text-gray-500">{p.city}</div>
+              <div className="text-sm font-bold text-green-700 mt-1">
+                ₦{Number(p.price).toLocaleString()}
+              </div>
+            </Popup>
+          </Marker>
+        ))}
+      </MapContainer>
+    </div>
   )
 }
