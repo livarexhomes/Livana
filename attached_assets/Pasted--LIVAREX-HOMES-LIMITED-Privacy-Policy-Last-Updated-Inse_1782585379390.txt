@@ -1,0 +1,221 @@
+# LIVAREX HOMES LIMITED
+
+## Privacy Policy
+
+**Last Updated:** [Insert Date]
+
+Livarex Homes Limited ("Livarex," "we," "our," or "us") is committed to protecting your privacy and safeguarding your personal information. This Privacy Policy explains how we collect, use, store, disclose, and protect your personal information when you access or use our website, mobile applications, and related services (collectively, the "Platform").
+
+By accessing or using the Platform, you acknowledge that you have read and understood this Privacy Policy and consent to the collection and use of your information as described herein.
+
+---
+
+## 1. Information We Collect
+
+To provide our services effectively, we may collect the following categories of information:
+
+### Personal Information
+
+* Full name
+* Email address
+* Phone number
+* Residential address
+* Profile information
+* Government-issued identification (where required for verification)
+
+### Property Information
+
+For landlords, property owners, caretakers, and authorized agents, we may collect:
+
+* Property address
+* Property descriptions
+* Property photographs
+* Ownership or authorization documents
+* Rental pricing and availability information
+
+### Payment Information
+
+Where payments are processed through Livarex or our approved payment partners, we may collect:
+
+* Transaction records
+* Payment references
+* Payment status information
+
+Livarex does not store sensitive debit card details, banking credentials, or payment authentication data except where required by law or through an approved payment process.
+
+### Technical Information
+
+When you use our Platform, we may automatically collect:
+
+* IP address
+* Browser type and version
+* Device information
+* Operating system
+* Date and time of access
+* Platform usage activity
+* Log and diagnostic information
+
+---
+
+## 2. How We Use Your Information
+
+We use your information to:
+
+* Create and manage user accounts.
+* Verify users and property listings.
+* Facilitate communication between tenants, landlords, and other users.
+* Process payments and escrow transactions where applicable.
+* Detect, prevent, and investigate fraud or unauthorized activities.
+* Improve the functionality, performance, and security of the Platform.
+* Respond to customer support requests and inquiries.
+* Comply with legal and regulatory obligations.
+* Send important service notifications and account updates.
+
+---
+
+## 3. Property Verification
+
+To maintain a trusted marketplace, Livarex may request identity documents, ownership records, photographs, or other supporting documents necessary to verify users and listed properties.
+
+Verification information is used solely for security, compliance, and verification purposes.
+
+---
+
+## 4. Sharing of Information
+
+Livarex does not sell, rent, or trade users' personal information.
+
+We may disclose information only in the following circumstances:
+
+### Service Providers
+
+We may share information with trusted third-party service providers that assist us with:
+
+* Payment processing
+* Cloud hosting
+* Data storage
+* Website maintenance
+* Security monitoring
+* Customer support
+
+These providers are required to protect your information and use it only for the services they provide on our behalf.
+
+### Legal and Regulatory Authorities
+
+We may disclose information where required by law, court order, regulatory request, or where necessary to:
+
+* Comply with legal obligations.
+* Prevent fraud or criminal activity.
+* Protect the rights, property, safety, or security of Livarex, our users, or the public.
+
+### Business Transfers
+
+In the event of a merger, acquisition, restructuring, financing, or sale of assets, user information may be transferred as part of that transaction, subject to applicable legal requirements.
+
+---
+
+## 5. Data Security
+
+Livarex implements reasonable administrative, technical, and organizational safeguards designed to protect personal information against unauthorized access, misuse, alteration, loss, or disclosure.
+
+However, no internet-based platform or electronic storage system can guarantee absolute security. Users are responsible for maintaining the confidentiality of their account credentials.
+
+---
+
+## 6. Data Retention
+
+We retain personal information only for as long as reasonably necessary to:
+
+* Provide our services.
+* Maintain business records.
+* Resolve disputes.
+* Prevent fraud.
+* Comply with legal obligations.
+* Enforce our Terms and Conditions.
+
+When information is no longer required, it will be securely deleted, anonymized, or otherwise disposed of in accordance with applicable laws.
+
+---
+
+## 7. Your Privacy Rights
+
+Subject to applicable law, you may have the right to:
+
+* Access the personal information we hold about you.
+* Correct inaccurate or incomplete information.
+* Update your account information.
+* Request deletion of your personal information.
+* Withdraw consent where processing is based on consent.
+* Object to certain processing activities where permitted by law.
+
+Requests may be submitted using the contact details provided below.
+
+---
+
+## 8. Cookies and Analytics
+
+Livarex may use cookies and similar technologies to:
+
+* Improve user experience.
+* Remember your preferences.
+* Analyze website performance.
+* Enhance security.
+* Improve our services.
+
+You may configure your browser settings to refuse or manage cookies, although doing so may affect certain Platform features.
+
+---
+
+## 9. Third-Party Services
+
+The Platform may contain links to third-party websites, payment providers, or other services.
+
+Livarex is not responsible for the privacy practices or content of external websites or services. Users are encouraged to review the privacy policies of any third-party services they access.
+
+---
+
+## 10. Children's Privacy
+
+Livarex's services are intended solely for individuals who are at least 18 years of age.
+
+We do not knowingly collect personal information from children. If we become aware that such information has been collected, we will take reasonable steps to delete it promptly.
+
+---
+
+## 11. Compliance with Nigerian Data Protection Laws
+
+Livarex processes personal information in accordance with applicable laws of the Federal Republic of Nigeria, including the Nigeria Data Protection Act (NDPA), where applicable.
+
+---
+
+## 12. Changes to This Privacy Policy
+
+We may update this Privacy Policy periodically to reflect changes in our services, legal requirements, or operational practices.
+
+Updated versions will be published on the Platform and become effective immediately upon publication unless otherwise stated.
+
+Your continued use of the Platform after any updates constitutes your acceptance of the revised Privacy Policy.
+
+---
+
+## 13. Contact Information
+
+**Livarex Homes Limited**
+
+**Email:** [livarexhomes@gmail.com](mailto:livarexhomes@gmail.com)
+
+**Phone:** 07060528437
+
+**Address:** Lagos, Nigeria
+
+**Website:** https://www.livarex.com.ng
+
+If you have any questions, requests, or concerns regarding this Privacy Policy or how your personal information is handled, please contact us using the details above.
+
+---
+
+By using the Livarex Platform, you acknowledge that you have read, understood, and agree to this Privacy Policy.
+
+**Livarex Homes Limited**
+
+*"The Bridge to Your New Home."*
