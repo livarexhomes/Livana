@@ -673,72 +673,6 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ── LANDLORD CTA ── */}
-      <section className="bg-white py-14 border-b border-gray-100">
-        <div className="max-w-6xl mx-auto px-5 sm:px-8">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-8 bg-blue-50 border border-blue-100 rounded-3xl px-8 py-10">
-            <div className="flex items-start gap-4">
-              <div className="w-12 h-12 rounded-2xl bg-blue-600 flex items-center justify-center shrink-0">
-                <Building2 className="w-6 h-6 text-white" />
-              </div>
-              <div>
-                <h3 className="text-xl font-extrabold text-gray-900">Own a property? List it free.</h3>
-                <p className="text-gray-500 text-sm mt-1 max-w-md">Join 108+ verified landlords who reach serious, pre-screened tenants with zero agent fees. Livarex handles all the coordination for you.</p>
-                <div className="flex flex-wrap gap-4 mt-3">
-                  {['No agent fees', 'Verified tenants only', 'Inspection scheduling included'].map(point => (
-                    <span key={point} className="flex items-center gap-1.5 text-xs font-semibold text-blue-700">
-                      <CheckCircle className="w-3.5 h-3.5" /> {point}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            </div>
-            <div className="flex flex-col sm:flex-row gap-3 shrink-0">
-              <Link href="/landlord/register" className="px-6 py-3 bg-blue-600 text-white font-bold rounded-2xl hover:bg-blue-700 transition-all text-sm text-center shadow-lg shadow-blue-600/20 whitespace-nowrap">
-                List Your Property Free
-              </Link>
-              <Link href="/about" className="px-6 py-3 bg-white border border-gray-200 text-gray-700 font-semibold rounded-2xl hover:bg-gray-50 transition-all text-sm text-center whitespace-nowrap">
-                How it works for landlords
-              </Link>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ── VERIFICATION PROCESS & REQUEST ── */}
-      <section className="bg-white border-b border-gray-100">
-        <div className="max-w-6xl mx-auto px-5 sm:px-8 py-16">
-          <div className="grid gap-10 lg:grid-cols-[1.3fr_0.9fr] items-center">
-            <div>
-              <p className="text-blue-600 font-semibold text-sm uppercase tracking-widest mb-3">Verified for safety</p>
-              <h2 className="text-3xl md:text-4xl font-extrabold text-gray-900 mb-4">How Livarex verifies every landlord</h2>
-              <p className="text-gray-500 max-w-xl mb-8">We combine phone checks, ID screening, ownership review, and manual approval so you can book a home with confidence.</p>
-              <div className="grid gap-3">
-                {[
-                  'Government ID verified',
-                  'Phone number authenticated',
-                  'Ownership & listing review',
-                  'Manual admin approval',
-                ].map((item, idx) => (
-                  <div key={item} className="flex gap-3 items-start">
-                    <span className="mt-1 inline-flex h-7 w-7 items-center justify-center rounded-2xl bg-blue-600 text-white text-xs font-bold">{idx + 1}</span>
-                    <p className="text-sm text-gray-600">{item}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-            <div className="rounded-3xl border border-gray-100 bg-gray-50 p-8">
-              <p className="text-sm font-bold text-gray-900 mb-2">Can’t find what you need?</p>
-              <p className="text-gray-500 text-sm mb-5">Tell us your ideal location, budget and move-in date. Our team will notify landlords and match you faster.</p>
-              <Link href="/contact" className="inline-flex items-center gap-2 px-5 py-3 rounded-2xl bg-blue-600 text-white font-semibold hover:bg-blue-500 transition-all">
-                Request a property
-                <ArrowRight className="w-4 h-4" />
-              </Link>
-            </div>
-          </div>
-        </div>
-      </section>
-
       {/* ── PROPERTIES ── */}
       <section className="bg-[#F8F8F6] py-20 md:py-25">
         <div className="max-w-7xl mx-auto px-5 sm:px-8">
@@ -1060,6 +994,40 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* ── VERIFICATION PROCESS & REQUEST ── */}
+      <section className="bg-white border-b border-gray-100">
+        <div className="max-w-6xl mx-auto px-5 sm:px-8 py-16">
+          <div className="grid gap-10 lg:grid-cols-[1.3fr_0.9fr] items-center">
+            <div>
+              <p className="text-blue-600 font-semibold text-sm uppercase tracking-widest mb-3">Verified for safety</p>
+              <h2 className="text-3xl md:text-4xl font-extrabold text-gray-900 mb-4">How Livarex verifies every landlord</h2>
+              <p className="text-gray-500 max-w-xl mb-8">We combine phone checks, ID screening, ownership review, and manual approval so you can book a home with confidence.</p>
+              <div className="grid gap-3">
+                {[
+                  'Government ID verified',
+                  'Phone number authenticated',
+                  'Ownership & listing review',
+                  'Manual admin approval',
+                ].map((item, idx) => (
+                  <div key={item} className="flex gap-3 items-start">
+                    <span className="mt-1 inline-flex h-7 w-7 items-center justify-center rounded-2xl bg-blue-600 text-white text-xs font-bold">{idx + 1}</span>
+                    <p className="text-sm text-gray-600">{item}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="rounded-3xl border border-gray-100 bg-gray-50 p-8">
+              <p className="text-sm font-bold text-gray-900 mb-2">Can’t find what you need?</p>
+              <p className="text-gray-500 text-sm mb-5">Tell us your ideal location, budget and move-in date. Our team will notify landlords and match you faster.</p>
+              <Link href="/contact" className="inline-flex items-center gap-2 px-5 py-3 rounded-2xl bg-blue-600 text-white font-semibold hover:bg-blue-500 transition-all">
+                Request a property
+                <ArrowRight className="w-4 h-4" />
+              </Link>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* ── HOW IT WORKS: FLUID PREMIUM ── */}
       <section className="relative bg-[#fcfcfd] py-24 md:py-32 overflow-hidden">
         {/* ── Ambient Background Elements ── */}
@@ -1217,6 +1185,7 @@ export default function HomePage() {
         </div>
       </section>
 
+
       {/* ── TESTIMONIALS ── */}
       <section className="bg-gray-950 py-20 md:py-28">
         <div className="max-w-6xl mx-auto px-5 sm:px-8">
@@ -1302,9 +1271,9 @@ export default function HomePage() {
                   }} href="/listings" className="px-7 py-3.5 bg-blue-600 text-white font-bold rounded-2xl hover:bg-blue-700 transition-all text-center text-sm shadow-xl">
                     Browse Listings
                   </Link>
-                  <Link href="/landlord/register" className="px-7 py-3.5 bg-white/10 border border-white/20 text-white font-semibold rounded-2xl hover:bg-white/15 transition-all text-center text-sm whitespace-nowrap">
+                  {/* <Link href="/landlord/register" className="px-7 py-3.5 bg-white/10 border border-white/20 text-white font-semibold rounded-2xl hover:bg-white/15 transition-all text-center text-sm whitespace-nowrap">
                     List Your Property Free
-                  </Link>
+                  </Link> */}
                 </div>
               </div>
 
@@ -1321,6 +1290,38 @@ export default function HomePage() {
                   </div>
                 ))}
               </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ── LANDLORD CTA ── */}
+      <section className="bg-white py-14 border-b border-gray-100">
+        <div className="max-w-6xl mx-auto px-5 sm:px-8">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-8 bg-blue-50 border border-blue-100 rounded-3xl px-8 py-10">
+            <div className="flex items-start gap-4">
+              <div className="w-12 h-12 rounded-2xl bg-blue-600 flex items-center justify-center shrink-0">
+                <Building2 className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <h3 className="text-xl font-extrabold text-gray-900">Own a property? List it free.</h3>
+                <p className="text-gray-500 text-sm mt-1 max-w-md">Join 108+ verified landlords who reach serious, pre-screened tenants with zero agent fees. Livarex handles all the coordination for you.</p>
+                <div className="flex flex-wrap gap-4 mt-3">
+                  {['No agent fees', 'Verified tenants only', 'Inspection scheduling included'].map(point => (
+                    <span key={point} className="flex items-center gap-1.5 text-xs font-semibold text-blue-700">
+                      <CheckCircle className="w-3.5 h-3.5" /> {point}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            </div>
+            <div className="flex flex-col sm:flex-row gap-3 shrink-0">
+              <Link href="/landlord/register" className="px-6 py-3 bg-blue-600 text-white font-bold rounded-2xl hover:bg-blue-700 transition-all text-sm text-center shadow-lg shadow-blue-600/20 whitespace-nowrap">
+                List Your Property Free
+              </Link>
+              <Link href="/about" className="px-6 py-3 bg-white border border-gray-200 text-gray-700 font-semibold rounded-2xl hover:bg-gray-50 transition-all text-sm text-center whitespace-nowrap">
+                How it works for landlords
+              </Link>
             </div>
           </div>
         </div>
