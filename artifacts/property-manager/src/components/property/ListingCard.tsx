@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link, useLocation } from '@/lib/navigation'
-import { MapPin, BedDouble, Bath, Heart, ShieldCheck, Building2, Maximize2, Zap, Star } from 'lucide-react'
+import { MapPin, BedDouble, Bath, Heart, ShieldCheck, Building2, Maximize2, Star } from 'lucide-react'
 import type { PropertyWithLandlord } from '@/types'
 import { getSupabaseImageUrl, createClient } from '@/lib/supabase'
 import { formatDistanceToNow } from 'date-fns'
@@ -16,10 +16,10 @@ interface Props {
 }
 
 const TYPE_CONFIG: Record<string, { label: string; cls: string }> = {
-  sale:       { label: 'For Sale',   cls: 'bg-blue-600 text-white' },
-  rent:       { label: 'For Rent',   cls: 'bg-violet-600 text-white' },
-  lease:      { label: 'Lease',      cls: 'bg-emerald-600 text-white' },
-  commercial: { label: 'Commercial', cls: 'bg-slate-700 text-white' },
+  sale:       { label: 'For Sale',   cls: 'bg-blue-600/95 text-white' },
+  rent:       { label: 'For Rent',   cls: 'bg-blue-600/95 text-white' },
+  lease:      { label: 'Lease',      cls: 'bg-slate-800/95 text-white' },
+  commercial: { label: 'Commercial', cls: 'bg-slate-800/95 text-white' },
 }
 
 const PERIOD: Record<string, string> = {
@@ -83,50 +83,50 @@ export default function ListingCard({
       href={`/listings/${p.id}`}
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
-      className={`block group outline-none focus-visible:ring-2 focus-visible:ring-violet-500 rounded-3xl h-full ${
-        highlighted ? 'ring-2 ring-emerald-500 ring-offset-2' : ''
+      className={`block group outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded-2xl h-full ${
+        highlighted ? 'ring-2 ring-blue-500 ring-offset-2' : ''
       }`}
     >
-      <article className={`bg-white rounded-3xl overflow-hidden h-full flex flex-col transition-all duration-300 ease-out ${
+      <article className={`bg-white rounded-2xl overflow-hidden h-full flex flex-col transition-all duration-200 ease-out ${
         highlighted
-          ? 'shadow-2xl shadow-emerald-500/10'
-          : 'shadow-sm border border-gray-100/80 hover:shadow-2xl hover:shadow-gray-200/80 hover:-translate-y-1.5'
+          ? 'shadow-xl shadow-blue-500/10'
+          : 'shadow-sm border border-slate-100 hover:shadow-[0_8px_30px_rgba(0,0,0,0.10)] hover:-translate-y-1'
       }`}>
 
         {/* IMAGE BLOCK */}
-        <div className="relative flex-shrink-0 h-56 bg-gray-100 overflow-hidden">
+        <div className="relative flex-shrink-0 h-52 bg-slate-100 overflow-hidden">
           {coverUrl ? (
             <img
               src={coverUrl}
               alt={p.title}
               loading="lazy"
-              className="w-full h-full object-cover group-hover:scale-[1.07] transition-transform duration-700 ease-out"
+              className="w-full h-full object-cover group-hover:scale-[1.05] transition-transform duration-500 ease-out"
             />
           ) : (
-            <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 gap-2">
+            <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100 gap-2">
               <div className="w-14 h-14 rounded-2xl bg-white shadow-sm flex items-center justify-center">
-                <Building2 className="w-7 h-7 text-gray-200" strokeWidth={1.5} />
+                <Building2 className="w-7 h-7 text-slate-200" strokeWidth={1.5} />
               </div>
-              <span className="text-[11px] font-medium text-gray-300 tracking-wide">No photo</span>
+              <span className="text-[11px] font-medium text-slate-300 tracking-wide">No photo</span>
             </div>
           )}
 
-          {/* Gradient scrim — stronger at bottom */}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/10 to-transparent" />
+          {/* Gradient scrim */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/15 to-transparent" />
 
           {/* TOP ROW: type badge + save */}
-          <div className="absolute top-3.5 left-3.5 right-3.5 flex items-start justify-between">
-            <span className={`inline-flex items-center px-2.5 py-1 rounded-xl text-[10px] font-black uppercase tracking-wider shadow-lg ${cfg.cls}`}>
+          <div className="absolute top-3 left-3 right-3 flex items-start justify-between">
+            <span className={`inline-flex items-center px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider backdrop-blur-sm ${cfg.cls}`}>
               {cfg.label}
             </span>
             <button
               onClick={handleSave}
               disabled={saving}
               aria-label={saved ? 'Unsave' : 'Save'}
-              className={`w-8 h-8 rounded-xl flex items-center justify-center shadow-lg transition-all duration-200 active:scale-90 ${
+              className={`w-8 h-8 rounded-xl flex items-center justify-center backdrop-blur-sm shadow-md transition-all duration-200 active:scale-90 ${
                 saved
                   ? 'bg-rose-500 text-white shadow-rose-500/40'
-                  : 'bg-white/90 backdrop-blur-sm text-gray-400 hover:text-rose-500 hover:bg-white'
+                  : 'bg-white/90 text-slate-400 hover:text-rose-500 hover:bg-white'
               }`}
             >
               <Heart className={`w-3.5 h-3.5 ${saved ? 'fill-current' : ''}`} />
@@ -135,19 +135,19 @@ export default function ListingCard({
 
           {/* FEATURED ribbon */}
           {p.featured && (
-            <div className="absolute top-12 left-0">
-              <div className="flex items-center gap-1 bg-amber-400 text-amber-900 text-[9px] font-black uppercase tracking-widest px-3 py-1 shadow-lg">
+            <div className="absolute top-11 left-0">
+              <div className="flex items-center gap-1 bg-amber-400 text-amber-900 text-[9px] font-black uppercase tracking-widest px-3 py-1 shadow-md">
                 <Star className="w-2.5 h-2.5 fill-current" /> Featured
               </div>
             </div>
           )}
 
-          {/* BOTTOM OVERLAY: verified + price */}
-          <div className="absolute bottom-0 left-0 right-0 px-4 pb-4 pt-10 flex items-end justify-between gap-2">
-            <div className="flex flex-col gap-1.5">
+          {/* BOTTOM OVERLAY: time + price */}
+          <div className="absolute bottom-0 left-0 right-0 px-3.5 pb-3.5 pt-8 flex items-end justify-between gap-2">
+            <div className="flex flex-col gap-1">
               {isVerified && (
-                <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-emerald-500/90 backdrop-blur-sm text-white text-[10px] font-bold rounded-lg w-fit shadow-sm">
-                  <ShieldCheck className="w-3 h-3" /> Verified
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-emerald-500/90 backdrop-blur-sm text-white text-[10px] font-bold rounded-md w-fit">
+                  <ShieldCheck className="w-2.5 h-2.5" /> Verified
                 </span>
               )}
               <span className="text-white/60 text-[10px] font-medium">
@@ -155,64 +155,64 @@ export default function ListingCard({
               </span>
             </div>
             <div className="text-right shrink-0">
-              <p className="text-white font-black text-2xl leading-none tracking-tight drop-shadow-lg">
+              <p className="text-white font-extrabold text-xl leading-none tracking-tight drop-shadow-md">
                 {formatPrice(Number(p.price))}
               </p>
               {period && (
-                <p className="text-white/60 text-[10px] font-semibold mt-0.5">{period}</p>
+                <p className="text-white/55 text-[10px] font-semibold mt-0.5">{period}</p>
               )}
             </div>
           </div>
         </div>
 
         {/* CONTENT BLOCK */}
-        <div className="p-4 flex flex-col flex-1">
+        <div className="p-3.5 flex flex-col flex-1">
           {/* Title */}
-          <h3 className="font-bold text-gray-900 text-[15px] leading-snug line-clamp-1 mb-1.5 group-hover:text-violet-700 transition-colors duration-200">
+          <h3 className="font-semibold text-slate-900 text-[14px] leading-snug line-clamp-1 mb-1 group-hover:text-blue-600 transition-colors duration-200">
             {p.title}
           </h3>
 
           {/* Location */}
-          <div className="flex items-center gap-1 text-gray-400 text-xs mb-4">
-            <MapPin className="w-3 h-3 shrink-0 text-violet-400" />
+          <div className="flex items-center gap-1 text-slate-400 text-xs mb-3">
+            <MapPin className="w-3 h-3 shrink-0 text-blue-400" />
             <span className="truncate">{p.address ? `${p.address}, ${p.city}` : p.city}</span>
           </div>
 
           {/* Specs row */}
-          <div className="flex items-center gap-3 mt-auto pt-3 border-t border-gray-50">
-            <div className="flex items-center gap-1.5">
-              <div className="w-6 h-6 rounded-lg bg-gray-50 flex items-center justify-center">
-                <BedDouble className="w-3 h-3 text-gray-400" strokeWidth={1.5} />
+          <div className="flex items-center gap-2 mt-auto pt-3 border-t border-slate-50">
+            <div className="flex items-center gap-1.5 text-xs text-slate-500">
+              <div className="w-6 h-6 rounded-lg bg-slate-50 flex items-center justify-center">
+                <BedDouble className="w-3 h-3 text-slate-400" strokeWidth={1.5} />
               </div>
-              <span className="text-xs font-bold text-gray-800">{p.bedrooms}</span>
-              <span className="text-xs text-gray-400">bed{p.bedrooms !== 1 ? 's' : ''}</span>
+              <span className="font-semibold text-slate-700">{p.bedrooms}</span>
+              <span>bed{p.bedrooms !== 1 ? 's' : ''}</span>
             </div>
 
-            <span className="w-px h-3 bg-gray-100" />
+            <span className="w-px h-3 bg-slate-100" />
 
-            <div className="flex items-center gap-1.5">
-              <div className="w-6 h-6 rounded-lg bg-gray-50 flex items-center justify-center">
-                <Bath className="w-3 h-3 text-gray-400" strokeWidth={1.5} />
+            <div className="flex items-center gap-1.5 text-xs text-slate-500">
+              <div className="w-6 h-6 rounded-lg bg-slate-50 flex items-center justify-center">
+                <Bath className="w-3 h-3 text-slate-400" strokeWidth={1.5} />
               </div>
-              <span className="text-xs font-bold text-gray-800">{p.bathrooms}</span>
-              <span className="text-xs text-gray-400">bath</span>
+              <span className="font-semibold text-slate-700">{p.bathrooms}</span>
+              <span>bath</span>
             </div>
 
             {p.area_sqft ? (
               <>
-                <span className="w-px h-3 bg-gray-100" />
-                <div className="flex items-center gap-1.5">
-                  <div className="w-6 h-6 rounded-lg bg-gray-50 flex items-center justify-center">
-                    <Maximize2 className="w-3 h-3 text-gray-400" strokeWidth={1.5} />
+                <span className="w-px h-3 bg-slate-100" />
+                <div className="flex items-center gap-1.5 text-xs text-slate-500">
+                  <div className="w-6 h-6 rounded-lg bg-slate-50 flex items-center justify-center">
+                    <Maximize2 className="w-3 h-3 text-slate-400" strokeWidth={1.5} />
                   </div>
-                  <span className="text-xs text-gray-400">{p.area_sqft.toLocaleString()} sqft</span>
+                  <span>{p.area_sqft.toLocaleString()} sqft</span>
                 </div>
               </>
             ) : null}
 
             {/* Arrow CTA */}
-            <div className="ml-auto w-7 h-7 rounded-xl bg-gray-50 group-hover:bg-violet-600 flex items-center justify-center transition-all duration-300 shrink-0">
-              <svg className="w-3.5 h-3.5 text-gray-400 group-hover:text-white transition-colors duration-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+            <div className="ml-auto w-7 h-7 rounded-xl bg-slate-50 group-hover:bg-blue-600 flex items-center justify-center transition-all duration-200 shrink-0">
+              <svg className="w-3.5 h-3.5 text-slate-400 group-hover:text-white transition-colors duration-200" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M7 17L17 7M17 7H7M17 7v10" />
               </svg>
             </div>
