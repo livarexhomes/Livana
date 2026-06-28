@@ -932,62 +932,87 @@ export default function HomePage() {
       {/* ── CITIES ── */}
       <section className="bg-white py-20 md:py-28">
         <div className="max-w-7xl mx-auto px-5 sm:px-8">
-          <div className="mb-12">
-            <p className="text-blue-600 font-semibold text-sm uppercase tracking-widest mb-2">Top Locations</p>
-            <h2 className="text-3xl md:text-4xl font-extrabold text-gray-900 tracking-tight">Explore by City</h2>
-            <p className="text-gray-500 mt-2">Nigeria's most sought-after real estate markets.</p>
+          <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-10 gap-4">
+            <div>
+              <p className="text-blue-600 font-semibold text-sm uppercase tracking-widest mb-2">Top Locations</p>
+              <h2 className="text-3xl md:text-4xl font-extrabold text-gray-900 tracking-tight">Explore by City</h2>
+              <p className="text-gray-400 mt-2 text-sm">Nigeria's most sought-after real estate markets.</p>
+            </div>
+            <Link href="/listings" className="shrink-0 text-sm font-semibold text-blue-600 hover:text-blue-700 flex items-center gap-1.5 transition-colors">
+              View all listings <ArrowRight className="w-3.5 h-3.5" />
+            </Link>
           </div>
 
-          {/* Bento grid */}
-          <div className="grid grid-cols-2 md:grid-cols-4 auto-rows-[140px] md:grid-rows-[280px_200px] gap-3 md:gap-4">
-            {/* Lagos — large feature cell (2 cols × 2 rows) — ACTIVE */}
+          {/* Bento grid — 3 col desktop: Lagos (2/3) | right col (1/3) with Ogun + Expanding */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+
+            {/* Lagos — large feature card, full height */}
             <Link
               href="/listings?city=Lagos"
-              className="relative group overflow-hidden rounded-3xl col-span-2 row-span-2 shadow-sm hover:shadow-2xl transition-all duration-500"
+              className="relative group overflow-hidden rounded-3xl md:col-span-2 shadow-sm hover:shadow-2xl transition-all duration-500"
+              style={{ minHeight: '420px' }}
             >
-              <img src="https://images.pexels.com/photos/36622013/pexels-photo-36622013.jpeg?auto=compress&cs=tinysrgb&w=1200" alt="Lagos" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
-              <div className="absolute bottom-6 left-6">
-                <span className="inline-block bg-blue-600 text-white text-xs font-bold px-3 py-1 rounded-full mb-2">Most Popular</span>
-                <h3 className="text-3xl font-extrabold text-white">Lagos</h3>
-                <p className="text-blue-300 text-sm font-medium mt-1">Commercial Capital</p>
+              <img
+                src="https://images.pexels.com/photos/36622013/pexels-photo-36622013.jpeg?auto=compress&cs=tinysrgb&w=1200"
+                alt="Lagos aerial view"
+                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 absolute inset-0"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/25 to-transparent" />
+              <div className="absolute bottom-7 left-7">
+                <span className="inline-flex items-center gap-1.5 bg-blue-600 text-white text-[11px] font-black uppercase tracking-widest px-3 py-1.5 rounded-full mb-3 shadow-lg">
+                  <span className="w-1.5 h-1.5 rounded-full bg-white/80 inline-block" />
+                  Most Popular
+                </span>
+                <h3 className="text-4xl font-black text-white tracking-tight leading-none">Lagos</h3>
+                <p className="text-blue-300 text-sm font-semibold mt-2">Commercial Capital</p>
               </div>
-              <div className="absolute top-5 right-5 w-9 h-9 rounded-full bg-white/15 backdrop-blur flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all translate-x-2 group-hover:translate-x-0 duration-300">
+              <div className="absolute top-5 right-5 w-10 h-10 rounded-full bg-white/15 backdrop-blur-sm border border-white/20 flex items-center justify-center opacity-0 group-hover:opacity-100 translate-x-2 group-hover:translate-x-0 transition-all duration-300">
                 <ArrowRight className="w-4 h-4 text-white" />
               </div>
             </Link>
 
-            {/* Ogun — ACTIVE */}
-            <Link
-              href="/listings?city=Ogun"
-              className="relative group overflow-hidden rounded-3xl col-span-1 shadow-sm hover:shadow-2xl transition-all duration-500"
-            >
-              <img src="https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=800" alt="Ogun" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/20 to-transparent" />
-              <div className="absolute bottom-4 left-4">
-                <h3 className="text-lg font-bold text-white">Ogun</h3>
-                <p className="text-blue-300 text-xs font-medium mt-0.5">Gateway State</p>
-              </div>
-              <div className="absolute top-5 right-5 w-9 h-9 rounded-full bg-white/15 backdrop-blur flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all translate-x-2 group-hover:translate-x-0 duration-300">
-                <ArrowRight className="w-4 h-4 text-white" />
-              </div>
-            </Link>
+            {/* Right column: Ogun + Expanding stacked */}
+            <div className="flex flex-col gap-4">
 
-            {/* Expanding Soon — single clean card replacing multiple "coming soon" tiles */}
-            <div className="relative overflow-hidden rounded-3xl col-span-2 bg-gradient-to-br from-gray-900 to-gray-800 shadow-sm flex flex-col items-center justify-center p-8 text-center">
-              <div className="w-12 h-12 rounded-2xl bg-blue-600/20 border border-blue-500/30 flex items-center justify-center mb-4">
-                <MapPin className="w-5 h-5 text-blue-400" />
-              </div>
-              <h3 className="text-xl font-extrabold text-white mb-1">Expanding Across Nigeria</h3>
-              <p className="text-gray-400 text-sm max-w-xs mb-5">
-                Abuja, Port Harcourt, Ibadan and more cities are joining soon. Be the first to know.
-              </p>
-              <a
-                href="/contact"
-                className="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white text-sm font-bold rounded-2xl transition-all"
+              {/* Ogun */}
+              <Link
+                href="/listings?city=Ogun"
+                className="relative group overflow-hidden rounded-3xl shadow-sm hover:shadow-2xl transition-all duration-500 flex-1"
+                style={{ minHeight: '200px' }}
               >
-                Get notified <ArrowRight className="w-3.5 h-3.5" />
-              </a>
+                <img
+                  src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&q=80"
+                  alt="Ogun State"
+                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 absolute inset-0"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
+                <div className="absolute bottom-5 left-5">
+                  <h3 className="text-xl font-black text-white tracking-tight">Ogun</h3>
+                  <p className="text-blue-300 text-xs font-semibold mt-1">Gateway State</p>
+                </div>
+                <div className="absolute top-4 right-4 w-9 h-9 rounded-full bg-white/15 backdrop-blur-sm border border-white/20 flex items-center justify-center opacity-0 group-hover:opacity-100 translate-x-2 group-hover:translate-x-0 transition-all duration-300">
+                  <ArrowRight className="w-3.5 h-3.5 text-white" />
+                </div>
+              </Link>
+
+              {/* Expanding Across Nigeria */}
+              <div className="relative overflow-hidden rounded-3xl bg-[#0f172a] shadow-sm flex flex-col items-center justify-center p-8 text-center flex-1" style={{ minHeight: '200px' }}>
+                <div className="absolute inset-0 opacity-[0.04]" style={{ backgroundImage: 'radial-gradient(circle at 50% 50%, #3b82f6 0%, transparent 70%)' }} />
+                <div className="w-11 h-11 rounded-2xl bg-blue-600/20 border border-blue-500/25 flex items-center justify-center mb-4">
+                  <MapPin className="w-5 h-5 text-blue-400" />
+                </div>
+                <h3 className="text-[17px] font-extrabold text-white mb-2 leading-snug">Expanding Across Nigeria</h3>
+                <p className="text-gray-400 text-[13px] leading-relaxed max-w-[200px] mb-5">
+                  Abuja, Port Harcourt, Ibadan and more cities are joining soon. Be the first to know.
+                </p>
+                <a
+                  href="/contact"
+                  className="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-500 active:scale-95 text-white text-sm font-bold rounded-2xl transition-all shadow-lg shadow-blue-600/20"
+                >
+                  Get notified <ArrowRight className="w-3.5 h-3.5" />
+                </a>
+              </div>
+
             </div>
           </div>
 
