@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { Link } from '@/lib/navigation'
-import { ArrowRight, ShieldCheck, Building2, Users, TrendingUp, Star, CheckCircle2, CheckCircle, MapPin, ChevronRight, Calendar, ChevronDown } from 'lucide-react'
+import { ArrowRight, ShieldCheck, Building2, Users, TrendingUp, Star, CheckCircle2, CheckCircle, MapPin, ChevronRight, Calendar, ChevronDown, Search, Send, Home, Sparkles } from 'lucide-react'
 import PublicNavbar from '../components/layout/PublicNavbar'
 import Footer from '../components/layout/Footer'
 import SEO from '../components/SEO'
@@ -73,6 +73,7 @@ export default function HomePage() {
   const [allProjects, setAllProjects] = useState<Project[]>([])
   const [heroIdx, setHeroIdx] = useState(0)
   const [heroVisible, setHeroVisible] = useState(true)
+  const [visibleSteps, setVisibleSteps] = useState<Set<number>>(new Set())
 
   const HERO_LISTINGS = [
     { label: 'Just Listed', title: '3 Bed Detached • Lekki', price: '₦4,500,000', suffix: '/yr' },
@@ -135,6 +136,21 @@ export default function HomePage() {
         setLoading(false)
       })
   }, [activeTab])
+
+  useEffect(() => {
+    const els = document.querySelectorAll('[data-hiw-index]')
+    const obs = new IntersectionObserver((entries) => {
+      entries.forEach(e => {
+        if (e.isIntersecting) {
+          const idx = Number((e.target as HTMLElement).dataset.hiwIndex)
+          setVisibleSteps(prev => new Set([...prev, idx]))
+          obs.unobserve(e.target)
+        }
+      })
+    }, { threshold: 0.15 })
+    els.forEach(el => obs.observe(el))
+    return () => obs.disconnect()
+  }, [])
 
   function handleSearch(e?: React.FormEvent) {
     if (e) e.preventDefault()
@@ -932,62 +948,87 @@ export default function HomePage() {
       {/* ── CITIES ── */}
       <section className="bg-white py-20 md:py-28">
         <div className="max-w-7xl mx-auto px-5 sm:px-8">
-          <div className="mb-12">
-            <p className="text-blue-600 font-semibold text-sm uppercase tracking-widest mb-2">Top Locations</p>
-            <h2 className="text-3xl md:text-4xl font-extrabold text-gray-900 tracking-tight">Explore by City</h2>
-            <p className="text-gray-500 mt-2">Nigeria's most sought-after real estate markets.</p>
+          <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-10 gap-4">
+            <div>
+              <p className="text-blue-600 font-semibold text-sm uppercase tracking-widest mb-2">Top Locations</p>
+              <h2 className="text-3xl md:text-4xl font-extrabold text-gray-900 tracking-tight">Explore by City</h2>
+              <p className="text-gray-400 mt-2 text-sm">Nigeria's most sought-after real estate markets.</p>
+            </div>
+            <Link href="/listings" className="shrink-0 text-sm font-semibold text-blue-600 hover:text-blue-700 flex items-center gap-1.5 transition-colors">
+              View all listings <ArrowRight className="w-3.5 h-3.5" />
+            </Link>
           </div>
 
-          {/* Bento grid */}
-          <div className="grid grid-cols-2 md:grid-cols-4 auto-rows-[140px] md:grid-rows-[280px_200px] gap-3 md:gap-4">
-            {/* Lagos — large feature cell (2 cols × 2 rows) — ACTIVE */}
+          {/* Bento grid — 3 col desktop: Lagos (2/3) | right col (1/3) with Ogun + Expanding */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+
+            {/* Lagos — large feature card, full height */}
             <Link
               href="/listings?city=Lagos"
-              className="relative group overflow-hidden rounded-3xl col-span-2 row-span-2 shadow-sm hover:shadow-2xl transition-all duration-500"
+              className="relative group overflow-hidden rounded-3xl md:col-span-2 shadow-sm hover:shadow-2xl transition-all duration-500"
+              style={{ minHeight: '420px' }}
             >
-              <img src="https://images.pexels.com/photos/36622013/pexels-photo-36622013.jpeg?auto=compress&cs=tinysrgb&w=1200" alt="Lagos" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
-              <div className="absolute bottom-6 left-6">
-                <span className="inline-block bg-blue-600 text-white text-xs font-bold px-3 py-1 rounded-full mb-2">Most Popular</span>
-                <h3 className="text-3xl font-extrabold text-white">Lagos</h3>
-                <p className="text-blue-300 text-sm font-medium mt-1">Commercial Capital</p>
+              <img
+                src="https://images.pexels.com/photos/36622013/pexels-photo-36622013.jpeg?auto=compress&cs=tinysrgb&w=1200"
+                alt="Lagos aerial view"
+                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 absolute inset-0"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/25 to-transparent" />
+              <div className="absolute bottom-7 left-7">
+                <span className="inline-flex items-center gap-1.5 bg-blue-600 text-white text-[11px] font-black uppercase tracking-widest px-3 py-1.5 rounded-full mb-3 shadow-lg">
+                  <span className="w-1.5 h-1.5 rounded-full bg-white/80 inline-block" />
+                  Most Popular
+                </span>
+                <h3 className="text-4xl font-black text-white tracking-tight leading-none">Lagos</h3>
+                <p className="text-blue-300 text-sm font-semibold mt-2">Commercial Capital</p>
               </div>
-              <div className="absolute top-5 right-5 w-9 h-9 rounded-full bg-white/15 backdrop-blur flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all translate-x-2 group-hover:translate-x-0 duration-300">
+              <div className="absolute top-5 right-5 w-10 h-10 rounded-full bg-white/15 backdrop-blur-sm border border-white/20 flex items-center justify-center opacity-0 group-hover:opacity-100 translate-x-2 group-hover:translate-x-0 transition-all duration-300">
                 <ArrowRight className="w-4 h-4 text-white" />
               </div>
             </Link>
 
-            {/* Ogun — ACTIVE */}
-            <Link
-              href="/listings?city=Ogun"
-              className="relative group overflow-hidden rounded-3xl col-span-1 shadow-sm hover:shadow-2xl transition-all duration-500"
-            >
-              <img src="https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=800" alt="Ogun" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/20 to-transparent" />
-              <div className="absolute bottom-4 left-4">
-                <h3 className="text-lg font-bold text-white">Ogun</h3>
-                <p className="text-blue-300 text-xs font-medium mt-0.5">Gateway State</p>
-              </div>
-              <div className="absolute top-5 right-5 w-9 h-9 rounded-full bg-white/15 backdrop-blur flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all translate-x-2 group-hover:translate-x-0 duration-300">
-                <ArrowRight className="w-4 h-4 text-white" />
-              </div>
-            </Link>
+            {/* Right column: Ogun + Expanding stacked */}
+            <div className="flex flex-col gap-4">
 
-            {/* Expanding Soon — single clean card replacing multiple "coming soon" tiles */}
-            <div className="relative overflow-hidden rounded-3xl col-span-2 bg-gradient-to-br from-gray-900 to-gray-800 shadow-sm flex flex-col items-center justify-center p-8 text-center">
-              <div className="w-12 h-12 rounded-2xl bg-blue-600/20 border border-blue-500/30 flex items-center justify-center mb-4">
-                <MapPin className="w-5 h-5 text-blue-400" />
-              </div>
-              <h3 className="text-xl font-extrabold text-white mb-1">Expanding Across Nigeria</h3>
-              <p className="text-gray-400 text-sm max-w-xs mb-5">
-                Abuja, Port Harcourt, Ibadan and more cities are joining soon. Be the first to know.
-              </p>
-              <a
-                href="/contact"
-                className="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white text-sm font-bold rounded-2xl transition-all"
+              {/* Ogun */}
+              <Link
+                href="/listings?city=Ogun"
+                className="relative group overflow-hidden rounded-3xl shadow-sm hover:shadow-2xl transition-all duration-500 flex-1"
+                style={{ minHeight: '200px' }}
               >
-                Get notified <ArrowRight className="w-3.5 h-3.5" />
-              </a>
+                <img
+                  src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&q=80"
+                  alt="Ogun State"
+                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 absolute inset-0"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
+                <div className="absolute bottom-5 left-5">
+                  <h3 className="text-xl font-black text-white tracking-tight">Ogun</h3>
+                  <p className="text-blue-300 text-xs font-semibold mt-1">Gateway State</p>
+                </div>
+                <div className="absolute top-4 right-4 w-9 h-9 rounded-full bg-white/15 backdrop-blur-sm border border-white/20 flex items-center justify-center opacity-0 group-hover:opacity-100 translate-x-2 group-hover:translate-x-0 transition-all duration-300">
+                  <ArrowRight className="w-3.5 h-3.5 text-white" />
+                </div>
+              </Link>
+
+              {/* Expanding Across Nigeria */}
+              <div className="relative overflow-hidden rounded-3xl bg-[#0f172a] shadow-sm flex flex-col items-center justify-center p-8 text-center flex-1" style={{ minHeight: '200px' }}>
+                <div className="absolute inset-0 opacity-[0.04]" style={{ backgroundImage: 'radial-gradient(circle at 50% 50%, #3b82f6 0%, transparent 70%)' }} />
+                <div className="w-11 h-11 rounded-2xl bg-blue-600/20 border border-blue-500/25 flex items-center justify-center mb-4">
+                  <MapPin className="w-5 h-5 text-blue-400" />
+                </div>
+                <h3 className="text-[17px] font-extrabold text-white mb-2 leading-snug">Expanding Across Nigeria</h3>
+                <p className="text-gray-400 text-[13px] leading-relaxed max-w-[200px] mb-5">
+                  Abuja, Port Harcourt, Ibadan and more cities are joining soon. Be the first to know.
+                </p>
+                <a
+                  href="/contact"
+                  className="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-500 active:scale-95 text-white text-sm font-bold rounded-2xl transition-all shadow-lg shadow-blue-600/20"
+                >
+                  Get notified <ArrowRight className="w-3.5 h-3.5" />
+                </a>
+              </div>
+
             </div>
           </div>
 
@@ -1019,70 +1060,118 @@ export default function HomePage() {
       </section>
 
       {/* ── HOW IT WORKS ── */}
-      <section className="bg-[#F6F7FB] py-20 md:py-28">
-        <div className="max-w-5xl mx-auto px-5 sm:px-8">
-          <div className="text-center mb-14">
-            <p className="text-blue-600 font-semibold text-sm uppercase tracking-widest mb-3">Simple Process</p>
-            <h2 className="text-3xl md:text-4xl font-extrabold text-gray-900 tracking-tight">How LIVAREX Works</h2>
-            <p className="text-gray-500 mt-3 max-w-lg mx-auto">From browsing to moving in — we handle the coordination so you deal with zero stress.</p>
+      <section className="relative bg-[#f8fafc] py-24 md:py-32 overflow-hidden">
+        {/* Subtle dot grid */}
+        <div className="absolute inset-0" style={{ backgroundImage: 'radial-gradient(circle, #cbd5e1 1px, transparent 1px)', backgroundSize: '28px 28px', opacity: 0.5 }} />
+        {/* Top edge fade */}
+        <div className="absolute top-0 left-0 right-0 h-24 bg-gradient-to-b from-[#f8fafc] to-transparent" />
+        {/* Bottom edge fade */}
+        <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-[#f8fafc] to-transparent" />
+
+        <div className="relative max-w-4xl mx-auto px-5 sm:px-8">
+
+          {/* Header */}
+          <div className="text-center mb-20">
+            <span className="inline-flex items-center gap-2 text-blue-600 text-xs font-black uppercase tracking-[0.2em] mb-4">
+              <span className="w-8 h-px bg-blue-600/40 inline-block" />
+              Simple Process
+              <span className="w-8 h-px bg-blue-600/40 inline-block" />
+            </span>
+            <h2 className="text-3xl md:text-5xl font-black text-gray-950 tracking-tight leading-[1.1]">
+              How <span className="relative inline-block">
+                <span className="relative z-10 text-blue-600">LIVAREX</span>
+                <span className="absolute bottom-1 left-0 right-0 h-3 bg-blue-100 rounded-sm -z-0" />
+              </span> Works
+            </h2>
+            <p className="text-gray-500 mt-4 max-w-md mx-auto text-sm leading-relaxed">
+              From browsing to moving in — we handle every step so you deal with zero stress.
+            </p>
           </div>
 
-          <div className="grid md:grid-cols-5 gap-0 items-start">
+          {/* Alternating timeline */}
+          <div className="relative">
+            {/* Center spine — desktop only */}
+            <div className="hidden md:block absolute left-1/2 top-6 bottom-6 w-px -translate-x-1/2"
+              style={{ background: 'linear-gradient(to bottom, transparent, #3b82f6 10%, #3b82f6 90%, transparent)' }} />
+
             {[
-              {
-                step: '01',
-                icon: '🔍',
-                title: 'Browse Verified Properties',
-                desc: 'Explore listings that have been manually reviewed. Every landlord is ID-verified before going live.',
-              },
-              {
-                step: '02',
-                icon: '📩',
-                title: 'Submit a Request',
-                desc: 'Found something you like? Submit a viewing request through LIVAREX — no direct contact needed.',
-              },
-              {
-                step: '03',
-                icon: '✅',
-                title: 'LIVAREX Confirms Availability',
-                desc: 'We contact the landlord, verify the property is still available, and confirm it matches what was listed.',
-              },
-              {
-                step: '04',
-                icon: '📅',
-                title: 'Inspection Scheduled',
-                desc: 'We coordinate a convenient time for you to inspect the property safely and with full information.',
-              },
-              {
-                step: '05',
-                icon: '🏠',
-                title: 'Move In Safely',
-                desc: 'Once satisfied, finalise the agreement. LIVAREX stays available if any issues arise.',
-              },
-            ].map((item, i, arr) => (
-              <div key={item.step} className="flex md:flex-col items-start md:items-center gap-4 md:gap-0 relative">
-                {/* Connector line (desktop) */}
-                {i < arr.length - 1 && (
-                  <div className="hidden md:block absolute top-8 left-[calc(50%+2.5rem)] w-[calc(100%-5rem)] h-0.5 bg-gradient-to-r from-blue-200 to-blue-100 z-0" />
-                )}
-                {/* Icon bubble */}
-                <div className="relative z-10 w-16 h-16 shrink-0 rounded-2xl bg-white shadow-sm border border-gray-100 flex flex-col items-center justify-center md:mb-5">
-                  <span className="text-2xl leading-none">{item.icon}</span>
-                  <span className="text-[9px] font-black text-blue-500 mt-0.5 tracking-widest">{item.step}</span>
+              { step: '01', Icon: Search,      accent: '#3b82f6', bg: '#eff6ff', label: 'blue',    title: 'Browse Verified Properties',    desc: 'Every listing is manually reviewed and every landlord is ID-verified before going live.' },
+              { step: '02', Icon: Send,        accent: '#8b5cf6', bg: '#f5f3ff', label: 'violet',  title: 'Submit a Viewing Request',       desc: 'Found something you like? Submit a request through LIVAREX — no direct contact needed.' },
+              { step: '03', Icon: ShieldCheck, accent: '#06b6d4', bg: '#ecfeff', label: 'cyan',    title: 'LIVAREX Confirms Availability',  desc: 'We contact the landlord, verify the listing is accurate, and confirm everything is ready.' },
+              { step: '04', Icon: Calendar,    accent: '#10b981', bg: '#f0fdf4', label: 'emerald', title: 'Inspection Scheduled',           desc: 'We coordinate a safe, convenient time for you to visit and inspect the property.' },
+              { step: '05', Icon: Home,        accent: '#f97316', bg: '#fff7ed', label: 'orange',  title: 'Move In Safely',                 desc: 'Finalise the agreement and move in. LIVAREX stays available if anything comes up.' },
+            ].map((item, i) => {
+              const isLeft = i % 2 === 0
+              const visible = visibleSteps.has(i)
+              return (
+                <div
+                  key={item.step}
+                  data-hiw-index={i}
+                  className="relative flex items-center mb-10 md:mb-14 last:mb-0"
+                  style={{
+                    flexDirection: isLeft ? 'row' : 'row-reverse',
+                    opacity: visible ? 1 : 0,
+                    transform: visible
+                      ? 'translateX(0)'
+                      : `translateX(${isLeft ? '-48px' : '48px'})`,
+                    transition: `opacity 0.65s ease ${i * 0.1}s, transform 0.65s ease ${i * 0.1}s`,
+                  }}
+                >
+                  {/* Card */}
+                  <div className="flex-1 md:w-[calc(50%-2.5rem)] group cursor-default">
+                    <div
+                      className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-0.5 relative overflow-hidden"
+                    >
+                      {/* Accent top bar */}
+                      <div className="absolute top-0 left-0 right-0 h-0.5 rounded-t-2xl" style={{ background: item.accent }} />
+
+                      {/* Icon + step row */}
+                      <div className="flex items-center gap-3 mb-4">
+                        <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ background: item.bg }}>
+                          <item.Icon className="w-4.5 h-4.5" style={{ color: item.accent, width: 18, height: 18 }} />
+                        </div>
+                        <span className="text-[11px] font-black tracking-[0.18em] uppercase" style={{ color: item.accent }}>Step {item.step}</span>
+                      </div>
+
+                      <h3 className="font-bold text-gray-900 text-[15px] leading-snug mb-2">{item.title}</h3>
+                      <p className="text-gray-500 text-sm leading-relaxed">{item.desc}</p>
+
+                      {/* Watermark number */}
+                      <span className="absolute bottom-2 right-4 text-6xl font-black select-none leading-none pointer-events-none" style={{ color: item.accent, opacity: 0.05 }}>{item.step}</span>
+                    </div>
+                  </div>
+
+                  {/* Center node — desktop only */}
+                  <div className="hidden md:flex shrink-0 w-10 mx-5 flex-col items-center">
+                    <div
+                      className="w-10 h-10 rounded-full border-2 border-white shadow-md flex items-center justify-center text-white text-xs font-black transition-transform duration-300"
+                      style={{
+                        background: item.accent,
+                        boxShadow: `0 0 0 4px ${item.bg}, 0 4px 12px ${item.accent}55`,
+                        transform: visible ? 'scale(1)' : 'scale(0.6)',
+                        transition: `transform 0.5s ease ${i * 0.1 + 0.3}s`,
+                      }}
+                    >
+                      {item.step}
+                    </div>
+                  </div>
+
+                  {/* Spacer for opposite side */}
+                  <div className="flex-1 hidden md:block" />
                 </div>
-                {/* Text */}
-                <div className="md:text-center md:px-2 pb-8 md:pb-0">
-                  <h3 className="font-bold text-gray-900 text-sm leading-snug mb-1">{item.title}</h3>
-                  <p className="text-gray-500 text-xs leading-relaxed">{item.desc}</p>
-                </div>
-              </div>
-            ))}
+              )
+            })}
           </div>
 
-          <div className="mt-12 text-center">
-            <Link href="/listings" className="inline-flex items-center gap-2 px-7 py-3.5 bg-gray-900 hover:bg-gray-800 text-white font-bold rounded-2xl transition-all text-sm shadow-lg shadow-gray-900/20">
+          {/* CTA */}
+          <div className="mt-16 flex flex-col items-center gap-3">
+            <Link
+              href="/listings"
+              className="inline-flex items-center gap-2.5 px-8 py-4 bg-gray-900 hover:bg-gray-800 active:scale-95 text-white font-bold rounded-2xl transition-all text-sm shadow-lg shadow-gray-900/20"
+            >
               Browse Properties <ArrowRight className="w-4 h-4" />
             </Link>
+            <p className="text-gray-400 text-xs">No account needed to browse listings</p>
           </div>
         </div>
       </section>
