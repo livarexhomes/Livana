@@ -73,6 +73,7 @@ export default function HomePage() {
   const [allProjects, setAllProjects] = useState<Project[]>([])
   const [heroIdx, setHeroIdx] = useState(0)
   const [heroVisible, setHeroVisible] = useState(true)
+  const [visibleSteps, setVisibleSteps] = useState<Set<number>>(new Set())
 
   const HERO_LISTINGS = [
     { label: 'Just Listed', title: '3 Bed Detached • Lekki', price: '₦4,500,000', suffix: '/yr' },
@@ -135,6 +136,21 @@ export default function HomePage() {
         setLoading(false)
       })
   }, [activeTab])
+
+  useEffect(() => {
+    const els = document.querySelectorAll('[data-hiw-index]')
+    const obs = new IntersectionObserver((entries) => {
+      entries.forEach(e => {
+        if (e.isIntersecting) {
+          const idx = Number((e.target as HTMLElement).dataset.hiwIndex)
+          setVisibleSteps(prev => new Set([...prev, idx]))
+          obs.unobserve(e.target)
+        }
+      })
+    }, { threshold: 0.15 })
+    els.forEach(el => obs.observe(el))
+    return () => obs.disconnect()
+  }, [])
 
   function handleSearch(e?: React.FormEvent) {
     if (e) e.preventDefault()
@@ -1044,111 +1060,118 @@ export default function HomePage() {
       </section>
 
       {/* ── HOW IT WORKS ── */}
-      <section className="relative bg-[#080d1a] py-24 md:py-32 overflow-hidden">
-        {/* Background grid */}
-        <div className="absolute inset-0 opacity-[0.06]" style={{ backgroundImage: 'linear-gradient(#334155 1px,transparent 1px),linear-gradient(90deg,#334155 1px,transparent 1px)', backgroundSize: '48px 48px' }} />
-        {/* Radial glow */}
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] rounded-full opacity-20" style={{ background: 'radial-gradient(ellipse at center, #3b82f6 0%, transparent 70%)' }} />
+      <section className="relative bg-[#f8fafc] py-24 md:py-32 overflow-hidden">
+        {/* Subtle dot grid */}
+        <div className="absolute inset-0" style={{ backgroundImage: 'radial-gradient(circle, #cbd5e1 1px, transparent 1px)', backgroundSize: '28px 28px', opacity: 0.5 }} />
+        {/* Top edge fade */}
+        <div className="absolute top-0 left-0 right-0 h-24 bg-gradient-to-b from-[#f8fafc] to-transparent" />
+        {/* Bottom edge fade */}
+        <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-[#f8fafc] to-transparent" />
 
-        <div className="relative max-w-6xl mx-auto px-5 sm:px-8">
+        <div className="relative max-w-4xl mx-auto px-5 sm:px-8">
+
           {/* Header */}
-          <div className="text-center mb-16">
-            <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-blue-500/30 bg-blue-500/10 text-blue-400 text-xs font-bold uppercase tracking-widest mb-5">
-              <Sparkles className="w-3 h-3" /> Simple Process
+          <div className="text-center mb-20">
+            <span className="inline-flex items-center gap-2 text-blue-600 text-xs font-black uppercase tracking-[0.2em] mb-4">
+              <span className="w-8 h-px bg-blue-600/40 inline-block" />
+              Simple Process
+              <span className="w-8 h-px bg-blue-600/40 inline-block" />
             </span>
-            <h2 className="text-3xl md:text-5xl font-black text-white tracking-tight leading-tight">
-              How <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-400">LIVAREX</span> Works
+            <h2 className="text-3xl md:text-5xl font-black text-gray-950 tracking-tight leading-[1.1]">
+              How <span className="relative inline-block">
+                <span className="relative z-10 text-blue-600">LIVAREX</span>
+                <span className="absolute bottom-1 left-0 right-0 h-3 bg-blue-100 rounded-sm -z-0" />
+              </span> Works
             </h2>
-            <p className="text-slate-400 mt-4 max-w-xl mx-auto text-sm md:text-base leading-relaxed">
-              From browsing to moving in — we handle the coordination so you deal with zero stress.
+            <p className="text-gray-500 mt-4 max-w-md mx-auto text-sm leading-relaxed">
+              From browsing to moving in — we handle every step so you deal with zero stress.
             </p>
           </div>
 
-          {/* Steps */}
-          <div className="grid grid-cols-1 md:grid-cols-5 gap-3 md:gap-2 items-stretch">
+          {/* Alternating timeline */}
+          <div className="relative">
+            {/* Center spine — desktop only */}
+            <div className="hidden md:block absolute left-1/2 top-6 bottom-6 w-px -translate-x-1/2"
+              style={{ background: 'linear-gradient(to bottom, transparent, #3b82f6 10%, #3b82f6 90%, transparent)' }} />
+
             {[
-              {
-                step: '01',
-                Icon: Search,
-                color: 'from-blue-500 to-blue-600',
-                glow: 'shadow-blue-500/25',
-                title: 'Browse Verified Properties',
-                desc: 'Every listing is manually reviewed. Every landlord is ID-verified before going live.',
-              },
-              {
-                step: '02',
-                Icon: Send,
-                color: 'from-violet-500 to-violet-600',
-                glow: 'shadow-violet-500/25',
-                title: 'Submit a Request',
-                desc: 'Found something? Submit a viewing request — no direct landlord contact needed.',
-              },
-              {
-                step: '03',
-                Icon: ShieldCheck,
-                color: 'from-cyan-500 to-cyan-600',
-                glow: 'shadow-cyan-500/25',
-                title: 'LIVAREX Confirms',
-                desc: 'We contact the landlord, verify availability, and confirm everything matches the listing.',
-              },
-              {
-                step: '04',
-                Icon: Calendar,
-                color: 'from-emerald-500 to-emerald-600',
-                glow: 'shadow-emerald-500/25',
-                title: 'Inspection Scheduled',
-                desc: 'We coordinate a convenient inspection time with full property information provided.',
-              },
-              {
-                step: '05',
-                Icon: Home,
-                color: 'from-orange-500 to-orange-600',
-                glow: 'shadow-orange-500/25',
-                title: 'Move In Safely',
-                desc: 'Finalise the agreement. LIVAREX remains available if any issues arise after move-in.',
-              },
-            ].map((item, i, arr) => (
-              <div key={item.step} className="relative flex md:flex-col gap-4 md:gap-0">
-                {/* Arrow connector (desktop) */}
-                {i < arr.length - 1 && (
-                  <div className="hidden md:flex absolute top-9 left-[calc(50%+2.75rem)] w-[calc(100%-5.5rem)] items-center z-0">
-                    <div className="flex-1 h-px bg-gradient-to-r from-slate-600 to-slate-700" />
-                    <ChevronRight className="w-3 h-3 text-slate-600 -ml-1 shrink-0" />
-                  </div>
-                )}
+              { step: '01', Icon: Search,      accent: '#3b82f6', bg: '#eff6ff', label: 'blue',    title: 'Browse Verified Properties',    desc: 'Every listing is manually reviewed and every landlord is ID-verified before going live.' },
+              { step: '02', Icon: Send,        accent: '#8b5cf6', bg: '#f5f3ff', label: 'violet',  title: 'Submit a Viewing Request',       desc: 'Found something you like? Submit a request through LIVAREX — no direct contact needed.' },
+              { step: '03', Icon: ShieldCheck, accent: '#06b6d4', bg: '#ecfeff', label: 'cyan',    title: 'LIVAREX Confirms Availability',  desc: 'We contact the landlord, verify the listing is accurate, and confirm everything is ready.' },
+              { step: '04', Icon: Calendar,    accent: '#10b981', bg: '#f0fdf4', label: 'emerald', title: 'Inspection Scheduled',           desc: 'We coordinate a safe, convenient time for you to visit and inspect the property.' },
+              { step: '05', Icon: Home,        accent: '#f97316', bg: '#fff7ed', label: 'orange',  title: 'Move In Safely',                 desc: 'Finalise the agreement and move in. LIVAREX stays available if anything comes up.' },
+            ].map((item, i) => {
+              const isLeft = i % 2 === 0
+              const visible = visibleSteps.has(i)
+              return (
+                <div
+                  key={item.step}
+                  data-hiw-index={i}
+                  className="relative flex items-center mb-10 md:mb-14 last:mb-0"
+                  style={{
+                    flexDirection: isLeft ? 'row' : 'row-reverse',
+                    opacity: visible ? 1 : 0,
+                    transform: visible
+                      ? 'translateX(0)'
+                      : `translateX(${isLeft ? '-48px' : '48px'})`,
+                    transition: `opacity 0.65s ease ${i * 0.1}s, transform 0.65s ease ${i * 0.1}s`,
+                  }}
+                >
+                  {/* Card */}
+                  <div className="flex-1 md:w-[calc(50%-2.5rem)] group cursor-default">
+                    <div
+                      className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-0.5 relative overflow-hidden"
+                    >
+                      {/* Accent top bar */}
+                      <div className="absolute top-0 left-0 right-0 h-0.5 rounded-t-2xl" style={{ background: item.accent }} />
 
-                {/* Card */}
-                <div className="relative z-10 flex-1 bg-slate-900/80 backdrop-blur border border-slate-800 hover:border-slate-600 rounded-2xl p-5 md:p-6 transition-all duration-300 group hover:-translate-y-1 hover:shadow-xl">
-                  {/* Step watermark */}
-                  <span className="absolute top-3 right-4 text-5xl font-black text-white/[0.04] select-none leading-none">{item.step}</span>
+                      {/* Icon + step row */}
+                      <div className="flex items-center gap-3 mb-4">
+                        <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ background: item.bg }}>
+                          <item.Icon className="w-4.5 h-4.5" style={{ color: item.accent, width: 18, height: 18 }} />
+                        </div>
+                        <span className="text-[11px] font-black tracking-[0.18em] uppercase" style={{ color: item.accent }}>Step {item.step}</span>
+                      </div>
 
-                  {/* Icon */}
-                  <div className={`relative w-11 h-11 rounded-xl bg-gradient-to-br ${item.color} flex items-center justify-center mb-4 shadow-lg ${item.glow}`}>
-                    <item.Icon className="w-5 h-5 text-white" />
+                      <h3 className="font-bold text-gray-900 text-[15px] leading-snug mb-2">{item.title}</h3>
+                      <p className="text-gray-500 text-sm leading-relaxed">{item.desc}</p>
+
+                      {/* Watermark number */}
+                      <span className="absolute bottom-2 right-4 text-6xl font-black select-none leading-none pointer-events-none" style={{ color: item.accent, opacity: 0.05 }}>{item.step}</span>
+                    </div>
                   </div>
 
-                  {/* Step label */}
-                  <p className="text-[10px] font-black uppercase tracking-[0.15em] text-slate-500 mb-2">{item.step}</p>
+                  {/* Center node — desktop only */}
+                  <div className="hidden md:flex shrink-0 w-10 mx-5 flex-col items-center">
+                    <div
+                      className="w-10 h-10 rounded-full border-2 border-white shadow-md flex items-center justify-center text-white text-xs font-black transition-transform duration-300"
+                      style={{
+                        background: item.accent,
+                        boxShadow: `0 0 0 4px ${item.bg}, 0 4px 12px ${item.accent}55`,
+                        transform: visible ? 'scale(1)' : 'scale(0.6)',
+                        transition: `transform 0.5s ease ${i * 0.1 + 0.3}s`,
+                      }}
+                    >
+                      {item.step}
+                    </div>
+                  </div>
 
-                  {/* Title */}
-                  <h3 className="font-bold text-white text-sm leading-snug mb-2 group-hover:text-blue-300 transition-colors">{item.title}</h3>
-
-                  {/* Desc */}
-                  <p className="text-slate-500 text-xs leading-relaxed">{item.desc}</p>
+                  {/* Spacer for opposite side */}
+                  <div className="flex-1 hidden md:block" />
                 </div>
-              </div>
-            ))}
+              )
+            })}
           </div>
 
           {/* CTA */}
-          <div className="mt-14 text-center">
+          <div className="mt-16 flex flex-col items-center gap-3">
             <Link
               href="/listings"
-              className="inline-flex items-center gap-2.5 px-8 py-4 bg-blue-600 hover:bg-blue-500 active:scale-95 text-white font-bold rounded-2xl transition-all text-sm shadow-2xl shadow-blue-600/30"
+              className="inline-flex items-center gap-2.5 px-8 py-4 bg-gray-900 hover:bg-gray-800 active:scale-95 text-white font-bold rounded-2xl transition-all text-sm shadow-lg shadow-gray-900/20"
             >
               Browse Properties <ArrowRight className="w-4 h-4" />
             </Link>
-            <p className="text-slate-600 text-xs mt-4">No signup required to browse</p>
+            <p className="text-gray-400 text-xs">No account needed to browse listings</p>
           </div>
         </div>
       </section>
