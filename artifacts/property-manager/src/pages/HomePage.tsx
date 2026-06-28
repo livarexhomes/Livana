@@ -74,6 +74,7 @@ export default function HomePage() {
   const [heroIdx, setHeroIdx] = useState(0)
   const [heroVisible, setHeroVisible] = useState(true)
   const [visibleSteps, setVisibleSteps] = useState<Set<number>>(new Set())
+  const [activeHiwStep, setActiveHiwStep] = useState<number | null>(null)
 
   const HERO_LISTINGS = [
     { label: 'Just Listed', title: '3 Bed Detached • Lekki', price: '₦4,500,000', suffix: '/yr' },
@@ -1060,93 +1061,116 @@ export default function HomePage() {
       </section>
 
       {/* ── HOW IT WORKS ── */}
-      <section className="relative bg-[#0c0c15] py-24 md:py-32 overflow-hidden">
-        {/* Top blue glow */}
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[900px] h-[500px] pointer-events-none"
-          style={{ background: 'radial-gradient(ellipse at top, #2563eb18 0%, transparent 65%)' }} />
-        {/* Grid texture */}
-        <div className="absolute inset-0 opacity-[0.025] pointer-events-none"
-          style={{ backgroundImage: 'linear-gradient(#ffffff 1px, transparent 1px), linear-gradient(90deg, #ffffff 1px, transparent 1px)', backgroundSize: '48px 48px' }} />
-        {/* Bottom fade into next section */}
-        <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-black/30 to-transparent pointer-events-none" />
+      <section className="relative bg-white py-20 md:py-28 overflow-hidden">
+        {/* Faint diagonal stripe texture */}
+        <div className="absolute inset-0 pointer-events-none opacity-[0.018]"
+          style={{ backgroundImage: 'repeating-linear-gradient(45deg, #2563eb 0, #2563eb 1px, transparent 0, transparent 50%)', backgroundSize: '24px 24px' }} />
 
-        <div className="relative max-w-6xl mx-auto px-5 sm:px-8">
+        <div className="relative max-w-7xl mx-auto px-5 sm:px-8">
 
-          {/* Header */}
-          <div className="text-center mb-16 md:mb-20">
-            <span className="inline-flex items-center gap-2 text-blue-400 text-[11px] font-black uppercase tracking-[0.22em] mb-5">
-              <span className="w-8 h-px bg-blue-500/40 inline-block" />
-              Simple Process
-              <span className="w-8 h-px bg-blue-500/40 inline-block" />
-            </span>
-            <h2 className="text-3xl md:text-5xl font-black text-white tracking-tight leading-[1.1]">
-              How{' '}
-              <span className="text-blue-500">LIVAREX</span>{' '}
-              Works
-            </h2>
-            <p className="text-slate-400 mt-4 max-w-md mx-auto text-sm leading-relaxed">
-              From browsing to moving in — we handle every step so you deal with zero stress.
+          {/* Header — left-aligned for editorial feel */}
+          <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-6 mb-12 md:mb-16 border-b border-slate-100 pb-8">
+            <div>
+              <span className="text-[10px] font-black uppercase tracking-[0.28em] text-blue-600 mb-3 block">Simple Process</span>
+              <h2 className="text-4xl md:text-5xl font-black text-slate-950 tracking-tight leading-[1.05]">
+                How it works
+              </h2>
+            </div>
+            <p className="text-slate-400 text-sm leading-relaxed max-w-xs sm:text-right">
+              From browsing to moving in — zero stress, every step handled.
             </p>
           </div>
 
-          {/* Steps grid */}
-          <div className="relative">
-            {/* Horizontal connector — desktop */}
-            <div className="hidden lg:block absolute top-[2.6rem] left-[9%] right-[9%] h-px"
-              style={{ background: 'linear-gradient(to right, transparent, #2563eb35 15%, #2563eb35 85%, transparent)' }} />
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
-              {[
-                { step: '01', Icon: Search,      title: 'Browse Verified',          desc: 'Every listing is manually reviewed and every landlord is ID-verified before going live.' },
-                { step: '02', Icon: Send,        title: 'Submit a Request',         desc: 'Found something? Request a viewing through LIVAREX — no direct landlord contact needed.' },
-                { step: '03', Icon: ShieldCheck, title: 'We Confirm',               desc: 'We contact the landlord, verify accuracy, and confirm everything is ready for you.' },
-                { step: '04', Icon: Calendar,    title: 'Inspection Scheduled',     desc: 'We coordinate a safe, convenient time for you to visit and inspect in person.' },
-                { step: '05', Icon: Home,        title: 'Move In Safely',           desc: 'Finalise the agreement and move in. LIVAREX stays on standby if anything comes up.' },
-              ].map((item, i) => {
-                const visible = visibleSteps.has(i)
-                return (
-                  <div
-                    key={item.step}
-                    data-hiw-index={i}
-                    className="group relative"
-                    style={{
-                      opacity: visible ? 1 : 0,
-                      transform: visible ? 'translateY(0)' : 'translateY(30px)',
-                      transition: `opacity 0.6s ease ${i * 0.1}s, transform 0.6s ease ${i * 0.1}s`,
-                    }}
-                  >
-                    <div className="relative h-full rounded-2xl border border-white/[0.07] bg-white/[0.04] p-5 hover:bg-white/[0.07] hover:border-white/[0.13] hover:-translate-y-1 transition-all duration-200 overflow-hidden cursor-default">
-                      {/* Ghost step number */}
-                      <span className="absolute -bottom-2 -right-1 text-8xl font-black leading-none select-none pointer-events-none text-white/[0.03]">{item.step}</span>
-
-                      {/* Icon */}
-                      <div className="relative w-11 h-11 rounded-xl bg-blue-600/15 border border-blue-500/20 flex items-center justify-center mb-4 group-hover:bg-blue-600/25 group-hover:border-blue-500/35 transition-all duration-200">
-                        <item.Icon className="w-5 h-5 text-blue-400" strokeWidth={1.5} />
-                        {/* Connector dot — desktop only, last item has none */}
-                        {i < 4 && (
-                          <div className="hidden lg:block absolute -right-[calc(100%+0.5rem)] top-1/2 -translate-y-1/2 w-2 h-2 rounded-full bg-blue-500/40 ring-4 ring-[#0c0c15]" />
-                        )}
-                      </div>
-
-                      <p className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-400/60 mb-2">Step {item.step}</p>
-                      <h3 className="font-bold text-white text-[13.5px] leading-snug mb-2">{item.title}</h3>
-                      <p className="text-slate-500 text-[12px] leading-relaxed">{item.desc}</p>
+          {/* Steps — editorial columns */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 divide-y sm:divide-y-0 sm:divide-x divide-slate-100">
+            {([
+              { step: '01', Icon: Search,      title: 'Browse\nVerified',      desc: 'Every listing is manually reviewed and every landlord ID-verified before going live.' },
+              { step: '02', Icon: Send,        title: 'Submit a\nRequest',      desc: 'Found something? Request a viewing through us — no direct landlord contact needed.' },
+              { step: '03', Icon: ShieldCheck, title: 'LIVAREX\nConfirms',      desc: 'We contact the landlord, verify accuracy, and confirm everything is ready for you.' },
+              { step: '04', Icon: Calendar,    title: 'Inspection\nScheduled',  desc: 'We coordinate a safe, convenient time for you to visit the property in person.' },
+              { step: '05', Icon: Home,        title: 'Move In\nSafely',        desc: 'Finalise the agreement and move in. We stay on standby if anything comes up.' },
+            ] as const).map((item, i) => {
+              const visible = visibleSteps.has(i)
+              const isActive = activeHiwStep === i
+              return (
+                <div
+                  key={item.step}
+                  data-hiw-index={i}
+                  onMouseEnter={() => setActiveHiwStep(i)}
+                  onMouseLeave={() => setActiveHiwStep(null)}
+                  className="relative group cursor-default px-6 py-8 lg:py-10 first:pl-0 last:pr-0 transition-colors duration-200"
+                  style={{
+                    opacity: visible ? 1 : 0,
+                    transform: visible ? 'translateY(0)' : 'translateY(24px)',
+                    transition: `opacity 0.55s ease ${i * 0.09}s, transform 0.55s ease ${i * 0.09}s`,
+                    backgroundColor: isActive ? '#f0f7ff' : 'transparent',
+                  }}
+                >
+                  {/* Step number — editorial watermark */}
+                  <div className="flex items-start justify-between mb-6">
+                    <span
+                      className="text-[4.5rem] font-black leading-none tracking-tighter select-none transition-colors duration-200"
+                      style={{ color: isActive ? '#2563eb' : '#e2e8f0' }}
+                    >
+                      {item.step}
+                    </span>
+                    {/* Icon floats top-right */}
+                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 mt-1 transition-all duration-200 ${isActive ? 'bg-blue-600 shadow-lg shadow-blue-600/30' : 'bg-slate-100'}`}>
+                      <item.Icon
+                        className={`w-4.5 h-4.5 transition-colors duration-200 ${isActive ? 'text-white' : 'text-slate-400'}`}
+                        style={{ width: 18, height: 18 }}
+                        strokeWidth={1.8}
+                      />
                     </div>
                   </div>
-                )
-              })}
-            </div>
+
+                  {/* Thin rule */}
+                  <div className={`h-px mb-5 transition-colors duration-200 ${isActive ? 'bg-blue-200' : 'bg-slate-100'}`} />
+
+                  {/* Content */}
+                  <h3
+                    className="font-black text-[15px] leading-snug mb-3 whitespace-pre-line transition-colors duration-200"
+                    style={{ color: isActive ? '#1e3a8a' : '#0f172a' }}
+                  >
+                    {item.title}
+                  </h3>
+                  <p className="text-slate-400 text-[12.5px] leading-relaxed">{item.desc}</p>
+
+                  {/* Bottom step indicator bar */}
+                  <div
+                    className="absolute bottom-0 left-6 right-6 h-[2px] rounded-full transition-all duration-300 origin-left"
+                    style={{
+                      background: '#2563eb',
+                      opacity: isActive ? 1 : 0,
+                      transform: isActive ? 'scaleX(1)' : 'scaleX(0)',
+                    }}
+                  />
+                </div>
+              )
+            })}
+          </div>
+
+          {/* Progress track — desktop only */}
+          <div className="hidden lg:flex items-center mt-6 px-0 gap-0">
+            {[0,1,2,3,4].map(i => (
+              <div key={i} className="flex-1 flex items-center">
+                <div className={`w-2.5 h-2.5 rounded-full border-2 transition-all duration-200 ${activeHiwStep === i ? 'bg-blue-600 border-blue-600 shadow-sm shadow-blue-400' : 'bg-white border-slate-200'}`} />
+                {i < 4 && <div className={`flex-1 h-px transition-colors duration-200 ${activeHiwStep !== null && activeHiwStep > i ? 'bg-blue-200' : 'bg-slate-100'}`} />}
+              </div>
+            ))}
           </div>
 
           {/* CTA */}
-          <div className="mt-14 flex flex-col items-center gap-3">
+          <div className="mt-14 flex flex-col sm:flex-row items-center justify-between gap-6 pt-8 border-t border-slate-100">
+            <p className="text-slate-400 text-sm">
+              <span className="font-semibold text-slate-700">5 simple steps.</span> That's all it takes to find your next home.
+            </p>
             <Link
               href="/listings"
-              className="inline-flex items-center gap-2.5 px-8 py-4 bg-blue-600 hover:bg-blue-700 active:scale-95 text-white font-bold rounded-2xl transition-all text-sm shadow-lg shadow-blue-600/25"
+              className="inline-flex items-center gap-2.5 px-7 py-3.5 bg-slate-950 hover:bg-slate-800 active:scale-95 text-white font-bold rounded-xl transition-all text-sm shadow-md shadow-slate-950/15 shrink-0"
             >
               Browse Properties <ArrowRight className="w-4 h-4" />
             </Link>
-            <p className="text-slate-600 text-xs">No account needed to browse listings</p>
           </div>
         </div>
       </section>
