@@ -1060,118 +1060,93 @@ export default function HomePage() {
       </section>
 
       {/* ── HOW IT WORKS ── */}
-      <section className="relative bg-[#f8fafc] py-24 md:py-32 overflow-hidden">
-        {/* Subtle dot grid */}
-        <div className="absolute inset-0" style={{ backgroundImage: 'radial-gradient(circle, #cbd5e1 1px, transparent 1px)', backgroundSize: '28px 28px', opacity: 0.5 }} />
-        {/* Top edge fade */}
-        <div className="absolute top-0 left-0 right-0 h-24 bg-gradient-to-b from-[#f8fafc] to-transparent" />
-        {/* Bottom edge fade */}
-        <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-[#f8fafc] to-transparent" />
+      <section className="relative bg-[#0c0c15] py-24 md:py-32 overflow-hidden">
+        {/* Top blue glow */}
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[900px] h-[500px] pointer-events-none"
+          style={{ background: 'radial-gradient(ellipse at top, #2563eb18 0%, transparent 65%)' }} />
+        {/* Grid texture */}
+        <div className="absolute inset-0 opacity-[0.025] pointer-events-none"
+          style={{ backgroundImage: 'linear-gradient(#ffffff 1px, transparent 1px), linear-gradient(90deg, #ffffff 1px, transparent 1px)', backgroundSize: '48px 48px' }} />
+        {/* Bottom fade into next section */}
+        <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-black/30 to-transparent pointer-events-none" />
 
-        <div className="relative max-w-4xl mx-auto px-5 sm:px-8">
+        <div className="relative max-w-6xl mx-auto px-5 sm:px-8">
 
           {/* Header */}
-          <div className="text-center mb-20">
-            <span className="inline-flex items-center gap-2 text-blue-600 text-xs font-black uppercase tracking-[0.2em] mb-4">
-              <span className="w-8 h-px bg-blue-600/40 inline-block" />
+          <div className="text-center mb-16 md:mb-20">
+            <span className="inline-flex items-center gap-2 text-blue-400 text-[11px] font-black uppercase tracking-[0.22em] mb-5">
+              <span className="w-8 h-px bg-blue-500/40 inline-block" />
               Simple Process
-              <span className="w-8 h-px bg-blue-600/40 inline-block" />
+              <span className="w-8 h-px bg-blue-500/40 inline-block" />
             </span>
-            <h2 className="text-3xl md:text-5xl font-black text-gray-950 tracking-tight leading-[1.1]">
-              How <span className="relative inline-block">
-                <span className="relative z-10 text-blue-600">LIVAREX</span>
-                <span className="absolute bottom-1 left-0 right-0 h-3 bg-blue-100 rounded-sm -z-0" />
-              </span> Works
+            <h2 className="text-3xl md:text-5xl font-black text-white tracking-tight leading-[1.1]">
+              How{' '}
+              <span className="text-blue-500">LIVAREX</span>{' '}
+              Works
             </h2>
-            <p className="text-gray-500 mt-4 max-w-md mx-auto text-sm leading-relaxed">
+            <p className="text-slate-400 mt-4 max-w-md mx-auto text-sm leading-relaxed">
               From browsing to moving in — we handle every step so you deal with zero stress.
             </p>
           </div>
 
-          {/* Alternating timeline */}
+          {/* Steps grid */}
           <div className="relative">
-            {/* Center spine — desktop only */}
-            <div className="hidden md:block absolute left-1/2 top-6 bottom-6 w-px -translate-x-1/2"
-              style={{ background: 'linear-gradient(to bottom, transparent, #3b82f6 10%, #3b82f6 90%, transparent)' }} />
+            {/* Horizontal connector — desktop */}
+            <div className="hidden lg:block absolute top-[2.6rem] left-[9%] right-[9%] h-px"
+              style={{ background: 'linear-gradient(to right, transparent, #2563eb35 15%, #2563eb35 85%, transparent)' }} />
 
-            {[
-              { step: '01', Icon: Search,      accent: '#3b82f6', bg: '#eff6ff', label: 'blue',    title: 'Browse Verified Properties',    desc: 'Every listing is manually reviewed and every landlord is ID-verified before going live.' },
-              { step: '02', Icon: Send,        accent: '#8b5cf6', bg: '#f5f3ff', label: 'violet',  title: 'Submit a Viewing Request',       desc: 'Found something you like? Submit a request through LIVAREX — no direct contact needed.' },
-              { step: '03', Icon: ShieldCheck, accent: '#06b6d4', bg: '#ecfeff', label: 'cyan',    title: 'LIVAREX Confirms Availability',  desc: 'We contact the landlord, verify the listing is accurate, and confirm everything is ready.' },
-              { step: '04', Icon: Calendar,    accent: '#10b981', bg: '#f0fdf4', label: 'emerald', title: 'Inspection Scheduled',           desc: 'We coordinate a safe, convenient time for you to visit and inspect the property.' },
-              { step: '05', Icon: Home,        accent: '#f97316', bg: '#fff7ed', label: 'orange',  title: 'Move In Safely',                 desc: 'Finalise the agreement and move in. LIVAREX stays available if anything comes up.' },
-            ].map((item, i) => {
-              const isLeft = i % 2 === 0
-              const visible = visibleSteps.has(i)
-              return (
-                <div
-                  key={item.step}
-                  data-hiw-index={i}
-                  className="relative flex items-center mb-10 md:mb-14 last:mb-0"
-                  style={{
-                    flexDirection: isLeft ? 'row' : 'row-reverse',
-                    opacity: visible ? 1 : 0,
-                    transform: visible
-                      ? 'translateX(0)'
-                      : `translateX(${isLeft ? '-48px' : '48px'})`,
-                    transition: `opacity 0.65s ease ${i * 0.1}s, transform 0.65s ease ${i * 0.1}s`,
-                  }}
-                >
-                  {/* Card */}
-                  <div className="flex-1 md:w-[calc(50%-2.5rem)] group cursor-default">
-                    <div
-                      className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-0.5 relative overflow-hidden"
-                    >
-                      {/* Accent top bar */}
-                      <div className="absolute top-0 left-0 right-0 h-0.5 rounded-t-2xl" style={{ background: item.accent }} />
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+              {[
+                { step: '01', Icon: Search,      title: 'Browse Verified',          desc: 'Every listing is manually reviewed and every landlord is ID-verified before going live.' },
+                { step: '02', Icon: Send,        title: 'Submit a Request',         desc: 'Found something? Request a viewing through LIVAREX — no direct landlord contact needed.' },
+                { step: '03', Icon: ShieldCheck, title: 'We Confirm',               desc: 'We contact the landlord, verify accuracy, and confirm everything is ready for you.' },
+                { step: '04', Icon: Calendar,    title: 'Inspection Scheduled',     desc: 'We coordinate a safe, convenient time for you to visit and inspect in person.' },
+                { step: '05', Icon: Home,        title: 'Move In Safely',           desc: 'Finalise the agreement and move in. LIVAREX stays on standby if anything comes up.' },
+              ].map((item, i) => {
+                const visible = visibleSteps.has(i)
+                return (
+                  <div
+                    key={item.step}
+                    data-hiw-index={i}
+                    className="group relative"
+                    style={{
+                      opacity: visible ? 1 : 0,
+                      transform: visible ? 'translateY(0)' : 'translateY(30px)',
+                      transition: `opacity 0.6s ease ${i * 0.1}s, transform 0.6s ease ${i * 0.1}s`,
+                    }}
+                  >
+                    <div className="relative h-full rounded-2xl border border-white/[0.07] bg-white/[0.04] p-5 hover:bg-white/[0.07] hover:border-white/[0.13] hover:-translate-y-1 transition-all duration-200 overflow-hidden cursor-default">
+                      {/* Ghost step number */}
+                      <span className="absolute -bottom-2 -right-1 text-8xl font-black leading-none select-none pointer-events-none text-white/[0.03]">{item.step}</span>
 
-                      {/* Icon + step row */}
-                      <div className="flex items-center gap-3 mb-4">
-                        <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ background: item.bg }}>
-                          <item.Icon className="w-4.5 h-4.5" style={{ color: item.accent, width: 18, height: 18 }} />
-                        </div>
-                        <span className="text-[11px] font-black tracking-[0.18em] uppercase" style={{ color: item.accent }}>Step {item.step}</span>
+                      {/* Icon */}
+                      <div className="relative w-11 h-11 rounded-xl bg-blue-600/15 border border-blue-500/20 flex items-center justify-center mb-4 group-hover:bg-blue-600/25 group-hover:border-blue-500/35 transition-all duration-200">
+                        <item.Icon className="w-5 h-5 text-blue-400" strokeWidth={1.5} />
+                        {/* Connector dot — desktop only, last item has none */}
+                        {i < 4 && (
+                          <div className="hidden lg:block absolute -right-[calc(100%+0.5rem)] top-1/2 -translate-y-1/2 w-2 h-2 rounded-full bg-blue-500/40 ring-4 ring-[#0c0c15]" />
+                        )}
                       </div>
 
-                      <h3 className="font-bold text-gray-900 text-[15px] leading-snug mb-2">{item.title}</h3>
-                      <p className="text-gray-500 text-sm leading-relaxed">{item.desc}</p>
-
-                      {/* Watermark number */}
-                      <span className="absolute bottom-2 right-4 text-6xl font-black select-none leading-none pointer-events-none" style={{ color: item.accent, opacity: 0.05 }}>{item.step}</span>
+                      <p className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-400/60 mb-2">Step {item.step}</p>
+                      <h3 className="font-bold text-white text-[13.5px] leading-snug mb-2">{item.title}</h3>
+                      <p className="text-slate-500 text-[12px] leading-relaxed">{item.desc}</p>
                     </div>
                   </div>
-
-                  {/* Center node — desktop only */}
-                  <div className="hidden md:flex shrink-0 w-10 mx-5 flex-col items-center">
-                    <div
-                      className="w-10 h-10 rounded-full border-2 border-white shadow-md flex items-center justify-center text-white text-xs font-black transition-transform duration-300"
-                      style={{
-                        background: item.accent,
-                        boxShadow: `0 0 0 4px ${item.bg}, 0 4px 12px ${item.accent}55`,
-                        transform: visible ? 'scale(1)' : 'scale(0.6)',
-                        transition: `transform 0.5s ease ${i * 0.1 + 0.3}s`,
-                      }}
-                    >
-                      {item.step}
-                    </div>
-                  </div>
-
-                  {/* Spacer for opposite side */}
-                  <div className="flex-1 hidden md:block" />
-                </div>
-              )
-            })}
+                )
+              })}
+            </div>
           </div>
 
           {/* CTA */}
-          <div className="mt-16 flex flex-col items-center gap-3">
+          <div className="mt-14 flex flex-col items-center gap-3">
             <Link
               href="/listings"
-              className="inline-flex items-center gap-2.5 px-8 py-4 bg-gray-900 hover:bg-gray-800 active:scale-95 text-white font-bold rounded-2xl transition-all text-sm shadow-lg shadow-gray-900/20"
+              className="inline-flex items-center gap-2.5 px-8 py-4 bg-blue-600 hover:bg-blue-700 active:scale-95 text-white font-bold rounded-2xl transition-all text-sm shadow-lg shadow-blue-600/25"
             >
               Browse Properties <ArrowRight className="w-4 h-4" />
             </Link>
-            <p className="text-gray-400 text-xs">No account needed to browse listings</p>
+            <p className="text-slate-600 text-xs">No account needed to browse listings</p>
           </div>
         </div>
       </section>
