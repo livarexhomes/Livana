@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { Link } from '@/lib/navigation'
-import { ArrowRight, ShieldCheck, Building2, Users, TrendingUp, Star, CheckCircle2, CheckCircle, MapPin, ChevronRight, Calendar, ChevronDown } from 'lucide-react'
+import { ArrowRight, ShieldCheck, Building2, Users, TrendingUp, Star, CheckCircle2, CheckCircle, MapPin, ChevronRight, Calendar, ChevronDown, Search, Send, Home, Sparkles } from 'lucide-react'
 import PublicNavbar from '../components/layout/PublicNavbar'
 import Footer from '../components/layout/Footer'
 import SEO from '../components/SEO'
@@ -1044,70 +1044,111 @@ export default function HomePage() {
       </section>
 
       {/* ── HOW IT WORKS ── */}
-      <section className="bg-[#F6F7FB] py-20 md:py-28">
-        <div className="max-w-5xl mx-auto px-5 sm:px-8">
-          <div className="text-center mb-14">
-            <p className="text-blue-600 font-semibold text-sm uppercase tracking-widest mb-3">Simple Process</p>
-            <h2 className="text-3xl md:text-4xl font-extrabold text-gray-900 tracking-tight">How LIVAREX Works</h2>
-            <p className="text-gray-500 mt-3 max-w-lg mx-auto">From browsing to moving in — we handle the coordination so you deal with zero stress.</p>
+      <section className="relative bg-[#080d1a] py-24 md:py-32 overflow-hidden">
+        {/* Background grid */}
+        <div className="absolute inset-0 opacity-[0.06]" style={{ backgroundImage: 'linear-gradient(#334155 1px,transparent 1px),linear-gradient(90deg,#334155 1px,transparent 1px)', backgroundSize: '48px 48px' }} />
+        {/* Radial glow */}
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] rounded-full opacity-20" style={{ background: 'radial-gradient(ellipse at center, #3b82f6 0%, transparent 70%)' }} />
+
+        <div className="relative max-w-6xl mx-auto px-5 sm:px-8">
+          {/* Header */}
+          <div className="text-center mb-16">
+            <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-blue-500/30 bg-blue-500/10 text-blue-400 text-xs font-bold uppercase tracking-widest mb-5">
+              <Sparkles className="w-3 h-3" /> Simple Process
+            </span>
+            <h2 className="text-3xl md:text-5xl font-black text-white tracking-tight leading-tight">
+              How <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-400">LIVAREX</span> Works
+            </h2>
+            <p className="text-slate-400 mt-4 max-w-xl mx-auto text-sm md:text-base leading-relaxed">
+              From browsing to moving in — we handle the coordination so you deal with zero stress.
+            </p>
           </div>
 
-          <div className="grid md:grid-cols-5 gap-0 items-start">
+          {/* Steps */}
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-3 md:gap-2 items-stretch">
             {[
               {
                 step: '01',
-                icon: '🔍',
+                Icon: Search,
+                color: 'from-blue-500 to-blue-600',
+                glow: 'shadow-blue-500/25',
                 title: 'Browse Verified Properties',
-                desc: 'Explore listings that have been manually reviewed. Every landlord is ID-verified before going live.',
+                desc: 'Every listing is manually reviewed. Every landlord is ID-verified before going live.',
               },
               {
                 step: '02',
-                icon: '📩',
+                Icon: Send,
+                color: 'from-violet-500 to-violet-600',
+                glow: 'shadow-violet-500/25',
                 title: 'Submit a Request',
-                desc: 'Found something you like? Submit a viewing request through LIVAREX — no direct contact needed.',
+                desc: 'Found something? Submit a viewing request — no direct landlord contact needed.',
               },
               {
                 step: '03',
-                icon: '✅',
-                title: 'LIVAREX Confirms Availability',
-                desc: 'We contact the landlord, verify the property is still available, and confirm it matches what was listed.',
+                Icon: ShieldCheck,
+                color: 'from-cyan-500 to-cyan-600',
+                glow: 'shadow-cyan-500/25',
+                title: 'LIVAREX Confirms',
+                desc: 'We contact the landlord, verify availability, and confirm everything matches the listing.',
               },
               {
                 step: '04',
-                icon: '📅',
+                Icon: Calendar,
+                color: 'from-emerald-500 to-emerald-600',
+                glow: 'shadow-emerald-500/25',
                 title: 'Inspection Scheduled',
-                desc: 'We coordinate a convenient time for you to inspect the property safely and with full information.',
+                desc: 'We coordinate a convenient inspection time with full property information provided.',
               },
               {
                 step: '05',
-                icon: '🏠',
+                Icon: Home,
+                color: 'from-orange-500 to-orange-600',
+                glow: 'shadow-orange-500/25',
                 title: 'Move In Safely',
-                desc: 'Once satisfied, finalise the agreement. LIVAREX stays available if any issues arise.',
+                desc: 'Finalise the agreement. LIVAREX remains available if any issues arise after move-in.',
               },
             ].map((item, i, arr) => (
-              <div key={item.step} className="flex md:flex-col items-start md:items-center gap-4 md:gap-0 relative">
-                {/* Connector line (desktop) */}
+              <div key={item.step} className="relative flex md:flex-col gap-4 md:gap-0">
+                {/* Arrow connector (desktop) */}
                 {i < arr.length - 1 && (
-                  <div className="hidden md:block absolute top-8 left-[calc(50%+2.5rem)] w-[calc(100%-5rem)] h-0.5 bg-gradient-to-r from-blue-200 to-blue-100 z-0" />
+                  <div className="hidden md:flex absolute top-9 left-[calc(50%+2.75rem)] w-[calc(100%-5.5rem)] items-center z-0">
+                    <div className="flex-1 h-px bg-gradient-to-r from-slate-600 to-slate-700" />
+                    <ChevronRight className="w-3 h-3 text-slate-600 -ml-1 shrink-0" />
+                  </div>
                 )}
-                {/* Icon bubble */}
-                <div className="relative z-10 w-16 h-16 shrink-0 rounded-2xl bg-white shadow-sm border border-gray-100 flex flex-col items-center justify-center md:mb-5">
-                  <span className="text-2xl leading-none">{item.icon}</span>
-                  <span className="text-[9px] font-black text-blue-500 mt-0.5 tracking-widest">{item.step}</span>
-                </div>
-                {/* Text */}
-                <div className="md:text-center md:px-2 pb-8 md:pb-0">
-                  <h3 className="font-bold text-gray-900 text-sm leading-snug mb-1">{item.title}</h3>
-                  <p className="text-gray-500 text-xs leading-relaxed">{item.desc}</p>
+
+                {/* Card */}
+                <div className="relative z-10 flex-1 bg-slate-900/80 backdrop-blur border border-slate-800 hover:border-slate-600 rounded-2xl p-5 md:p-6 transition-all duration-300 group hover:-translate-y-1 hover:shadow-xl">
+                  {/* Step watermark */}
+                  <span className="absolute top-3 right-4 text-5xl font-black text-white/[0.04] select-none leading-none">{item.step}</span>
+
+                  {/* Icon */}
+                  <div className={`relative w-11 h-11 rounded-xl bg-gradient-to-br ${item.color} flex items-center justify-center mb-4 shadow-lg ${item.glow}`}>
+                    <item.Icon className="w-5 h-5 text-white" />
+                  </div>
+
+                  {/* Step label */}
+                  <p className="text-[10px] font-black uppercase tracking-[0.15em] text-slate-500 mb-2">{item.step}</p>
+
+                  {/* Title */}
+                  <h3 className="font-bold text-white text-sm leading-snug mb-2 group-hover:text-blue-300 transition-colors">{item.title}</h3>
+
+                  {/* Desc */}
+                  <p className="text-slate-500 text-xs leading-relaxed">{item.desc}</p>
                 </div>
               </div>
             ))}
           </div>
 
-          <div className="mt-12 text-center">
-            <Link href="/listings" className="inline-flex items-center gap-2 px-7 py-3.5 bg-gray-900 hover:bg-gray-800 text-white font-bold rounded-2xl transition-all text-sm shadow-lg shadow-gray-900/20">
+          {/* CTA */}
+          <div className="mt-14 text-center">
+            <Link
+              href="/listings"
+              className="inline-flex items-center gap-2.5 px-8 py-4 bg-blue-600 hover:bg-blue-500 active:scale-95 text-white font-bold rounded-2xl transition-all text-sm shadow-2xl shadow-blue-600/30"
+            >
               Browse Properties <ArrowRight className="w-4 h-4" />
             </Link>
+            <p className="text-slate-600 text-xs mt-4">No signup required to browse</p>
           </div>
         </div>
       </section>
