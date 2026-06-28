@@ -294,8 +294,8 @@ export default function HomePage() {
                 {(['Rent', 'Lease'] as Tab[]).map(t => (
                   <button key={t} type="button" onClick={() => setActiveTab(t)}
                     className={`px-5 py-2 rounded-full text-sm font-bold transition-all shrink-0 ${activeTab === t
-                        ? 'bg-white text-gray-900 shadow-lg'
-                        : 'text-white/50 hover:text-white hover:bg-white/10'
+                      ? 'bg-white text-gray-900 shadow-lg'
+                      : 'text-white/50 hover:text-white hover:bg-white/10'
                       }`}>
                     {t}
                   </button>
@@ -789,8 +789,8 @@ export default function HomePage() {
                   key={t}
                   onClick={() => setActiveTab(t)}
                   className={`px-5 py-2.5 rounded-2xl text-sm font-bold whitespace-nowrap transition-all duration-200 shrink-0 ${activeTab === t
-                      ? 'bg-gray-900 text-white shadow-lg shadow-gray-900/15'
-                      : 'bg-white text-gray-500 border border-gray-100 hover:border-gray-200 hover:text-gray-800 hover:shadow-sm'
+                    ? 'bg-gray-900 text-white shadow-lg shadow-gray-900/15'
+                    : 'bg-white text-gray-500 border border-gray-100 hover:border-gray-200 hover:text-gray-800 hover:shadow-sm'
                     }`}
                 >
                   {t}
@@ -874,8 +874,8 @@ export default function HomePage() {
                           {/* Status badge */}
                           <div className="absolute top-3 left-3">
                             <span className={`px-2.5 py-1 rounded-full text-[11px] font-bold ${proj.status === 'coming_soon'
-                                ? 'bg-blue-600 text-white'
-                                : 'bg-emerald-500 text-white'
+                              ? 'bg-blue-600 text-white'
+                              : 'bg-emerald-500 text-white'
                               }`}>
                               {proj.status === 'coming_soon' ? 'Coming Soon' : 'Active'}
                             </span>
@@ -1060,118 +1060,160 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ── HOW IT WORKS ── */}
-      <section className="relative bg-white py-20 md:py-28 overflow-hidden">
-        {/* Faint diagonal stripe texture */}
-        <div className="absolute inset-0 pointer-events-none opacity-[0.018]"
-          style={{ backgroundImage: 'repeating-linear-gradient(45deg, #2563eb 0, #2563eb 1px, transparent 0, transparent 50%)', backgroundSize: '24px 24px' }} />
+      {/* ── HOW IT WORKS: FLUID PREMIUM ── */}
+      <section className="relative bg-[#fcfcfd] py-24 md:py-32 overflow-hidden">
+        {/* ── Ambient Background Elements ── */}
+        <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-slate-200 to-transparent" />
+
+        {/* Subtle Moving Spotlight */}
+        <div
+          className="absolute pointer-events-none blur-[120px] opacity-20 transition-all duration-1000 ease-in-out"
+          style={{
+            width: '600px',
+            height: '600px',
+            left: activeHiwStep !== null ? `${activeHiwStep * 20}%` : '50%',
+            top: '20%',
+            background: activeHiwStep !== null
+              ? ['#2563eb', '#7c3aed', '#0891b2', '#059669', '#d97706'][activeHiwStep]
+              : '#cbd5e1',
+            transform: 'translate(-50%, -50%)',
+          }}
+        />
 
         <div className="relative max-w-7xl mx-auto px-5 sm:px-8">
 
-          {/* Header — left-aligned for editorial feel */}
-          <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-6 mb-12 md:mb-16 border-b border-slate-100 pb-8">
-            <div>
-              <span className="text-[10px] font-black uppercase tracking-[0.28em] text-blue-600 mb-3 block">Simple Process</span>
-              <h2 className="text-4xl md:text-5xl font-black text-slate-950 tracking-tight leading-[1.05]">
-                How it works
+          {/* ── Header ── */}
+          <div className="relative z-10 flex flex-col md:flex-row md:items-end justify-between gap-8 mb-20">
+            <div className="max-w-2xl">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white border border-slate-100 shadow-sm mb-5">
+                <div className="w-2 h-2 rounded-full bg-blue-600 animate-pulse" />
+                <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500">Security-First Process</span>
+              </div>
+              <h2 className="text-5xl md:text-6xl font-black text-slate-950 tracking-tight leading-[0.95]">
+                Your journey to <br />
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-slate-900 via-slate-500 to-slate-900">a new home.</span>
               </h2>
             </div>
-            <p className="text-slate-400 text-sm leading-relaxed max-w-xs sm:text-right">
-              From browsing to moving in — zero stress, every step handled.
-            </p>
+
+            <div className="hidden md:block text-right">
+              <div className="text-[4rem] font-black text-slate-100 leading-none select-none">
+                {activeHiwStep !== null ? `0${activeHiwStep + 1}` : '00'}
+              </div>
+              <p className="text-slate-400 text-xs font-bold uppercase tracking-widest -mt-2">Step Phase</p>
+            </div>
           </div>
 
-          {/* Steps — editorial columns */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 divide-y sm:divide-y-0 sm:divide-x divide-slate-100">
+          {/* ── The Connector Line (Desktop) ── */}
+          <div className="hidden lg:block relative h-px w-full bg-slate-100 mb-[-1px] z-0">
+            <div
+              className="absolute top-0 left-0 h-px transition-all duration-700 ease-in-out bg-gradient-to-r from-blue-600 to-indigo-500"
+              style={{ width: activeHiwStep !== null ? `${(activeHiwStep + 1) * 20}%` : '0%' }}
+            />
+          </div>
+
+          {/* ── Step Grid ── */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 relative z-10">
             {([
-              { step: '01', Icon: Search,      title: 'Browse\nVerified',      desc: 'Every listing is manually reviewed and every landlord ID-verified before going live.' },
-              { step: '02', Icon: Send,        title: 'Submit a\nRequest',      desc: 'Found something? Request a viewing through us — no direct landlord contact needed.' },
-              { step: '03', Icon: ShieldCheck, title: 'LIVAREX\nConfirms',      desc: 'We contact the landlord, verify accuracy, and confirm everything is ready for you.' },
-              { step: '04', Icon: Calendar,    title: 'Inspection\nScheduled',  desc: 'We coordinate a safe, convenient time for you to visit the property in person.' },
-              { step: '05', Icon: Home,        title: 'Move In\nSafely',        desc: 'Finalise the agreement and move in. We stay on standby if anything comes up.' },
+              { step: '01', Icon: Search, title: 'Browse\nVerified', desc: 'Manual review for every listing. ID-verified landlords only.' },
+              { step: '02', Icon: Send, title: 'Submit a\nRequest', desc: 'One-click viewing requests. We bridge the gap for you.' },
+              { step: '03', Icon: ShieldCheck, title: 'LIVAREX\nConfirms', desc: 'We audit the property status and confirm landlord availability.' },
+              { step: '04', Icon: Calendar, title: 'Inspection\nScheduled', desc: 'Professional coordination of physical or virtual tours.' },
+              { step: '05', Icon: Home, title: 'Move In\nSafely', desc: 'Contract support and keys in hand. Total peace of mind.' },
             ] as const).map((item, i) => {
               const visible = visibleSteps.has(i)
               const isActive = activeHiwStep === i
+              const colors = ['#2563eb', '#7c3aed', '#0891b2', '#059669', '#d97706']
+
               return (
                 <div
                   key={item.step}
                   data-hiw-index={i}
                   onMouseEnter={() => setActiveHiwStep(i)}
                   onMouseLeave={() => setActiveHiwStep(null)}
-                  className="relative group cursor-default px-6 py-8 lg:py-10 first:pl-0 last:pr-0 transition-colors duration-200"
+                  className="relative group cursor-default transition-all duration-500"
                   style={{
                     opacity: visible ? 1 : 0,
-                    transform: visible ? 'translateY(0)' : 'translateY(24px)',
-                    transition: `opacity 0.55s ease ${i * 0.09}s, transform 0.55s ease ${i * 0.09}s`,
-                    backgroundColor: isActive ? '#f0f7ff' : 'transparent',
+                    transform: visible ? 'translateY(0)' : 'translateY(30px)',
+                    transition: `opacity 0.6s ease ${i * 0.1}s, transform 0.6s ease ${i * 0.1}s`,
                   }}
                 >
-                  {/* Step number — editorial watermark */}
-                  <div className="flex items-start justify-between mb-6">
-                    <span
-                      className="text-[4.5rem] font-black leading-none tracking-tighter select-none transition-colors duration-200"
-                      style={{ color: isActive ? '#2563eb' : '#e2e8f0' }}
+                  {/* Hover Background Effect */}
+                  <div
+                    className={`absolute inset-0 transition-all duration-500 rounded-3xl lg:rounded-none ${isActive ? 'bg-white shadow-[0_32px_64px_-16px_rgba(0,0,0,0.1)] z-20 scale-[1.05] lg:scale-110' : 'bg-transparent'}`}
+                  />
+
+                  <div className="relative p-8 md:p-10 flex flex-col h-full z-30">
+                    {/* Step Label */}
+                    <div className="flex items-center justify-between mb-8">
+                      <span className={`text-[10px] font-black tracking-widest transition-colors duration-300 ${isActive ? 'text-blue-600' : 'text-slate-300'}`}>
+                        PHASE {item.step}
+                      </span>
+                      <div className={`w-2 h-2 rounded-full transition-all duration-300 ${isActive ? 'scale-150' : 'bg-slate-200'}`} style={{ backgroundColor: isActive ? colors[i] : '' }} />
+                    </div>
+
+                    {/* Icon Circle */}
+                    <div
+                      className={`w-14 h-14 rounded-2xl flex items-center justify-center mb-8 transition-all duration-500 ${isActive ? 'shadow-lg rotate-[10deg]' : 'bg-slate-50'}`}
+                      style={{
+                        backgroundColor: isActive ? colors[i] : '',
+                        boxShadow: isActive ? `0 10px 25px -5px ${colors[i]}50` : ''
+                      }}
                     >
-                      {item.step}
-                    </span>
-                    {/* Icon floats top-right */}
-                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 mt-1 transition-all duration-200 ${isActive ? 'bg-blue-600 shadow-lg shadow-blue-600/30' : 'bg-slate-100'}`}>
                       <item.Icon
-                        className={`w-4.5 h-4.5 transition-colors duration-200 ${isActive ? 'text-white' : 'text-slate-400'}`}
-                        style={{ width: 18, height: 18 }}
-                        strokeWidth={1.8}
+                        className={`w-6 h-6 transition-colors duration-300 ${isActive ? 'text-white' : 'text-slate-400'}`}
+                        strokeWidth={2}
                       />
                     </div>
+
+                    <h3 className={`font-black text-lg leading-tight mb-4 whitespace-pre-line transition-colors duration-300 ${isActive ? 'text-slate-900' : 'text-slate-800'}`}>
+                      {item.title}
+                    </h3>
+
+                    <p className={`text-[13px] leading-relaxed transition-all duration-300 ${isActive ? 'text-slate-600' : 'text-slate-400'}`}>
+                      {item.desc}
+                    </p>
+
+                    {/* Decorative Number (Active only) */}
+                    <div className={`absolute bottom-6 right-8 text-4xl font-black transition-all duration-500 select-none ${isActive ? 'opacity-10 translate-y-0' : 'opacity-0 translate-y-4'}`} style={{ color: colors[i] }}>
+                      {item.step}
+                    </div>
                   </div>
-
-                  {/* Thin rule */}
-                  <div className={`h-px mb-5 transition-colors duration-200 ${isActive ? 'bg-blue-200' : 'bg-slate-100'}`} />
-
-                  {/* Content */}
-                  <h3
-                    className="font-black text-[15px] leading-snug mb-3 whitespace-pre-line transition-colors duration-200"
-                    style={{ color: isActive ? '#1e3a8a' : '#0f172a' }}
-                  >
-                    {item.title}
-                  </h3>
-                  <p className="text-slate-400 text-[12.5px] leading-relaxed">{item.desc}</p>
-
-                  {/* Bottom step indicator bar */}
-                  <div
-                    className="absolute bottom-0 left-6 right-6 h-[2px] rounded-full transition-all duration-300 origin-left"
-                    style={{
-                      background: '#2563eb',
-                      opacity: isActive ? 1 : 0,
-                      transform: isActive ? 'scaleX(1)' : 'scaleX(0)',
-                    }}
-                  />
                 </div>
               )
             })}
           </div>
 
-          {/* Progress track — desktop only */}
-          <div className="hidden lg:flex items-center mt-6 px-0 gap-0">
-            {[0,1,2,3,4].map(i => (
-              <div key={i} className="flex-1 flex items-center">
-                <div className={`w-2.5 h-2.5 rounded-full border-2 transition-all duration-200 ${activeHiwStep === i ? 'bg-blue-600 border-blue-600 shadow-sm shadow-blue-400' : 'bg-white border-slate-200'}`} />
-                {i < 4 && <div className={`flex-1 h-px transition-colors duration-200 ${activeHiwStep !== null && activeHiwStep > i ? 'bg-blue-200' : 'bg-slate-100'}`} />}
+          {/* ── Footer ── */}
+          <div className="mt-20 flex flex-col md:flex-row items-center justify-between gap-10 p-8 md:p-12 rounded-[32px] bg-slate-950 relative overflow-hidden">
+            {/* Background Decor */}
+            <div className="absolute top-0 right-0 w-64 h-64 bg-blue-600/20 blur-[80px] -mr-32 -mt-32" />
+
+            <div className="relative z-10">
+              <h4 className="text-2xl font-bold text-white mb-2">Ready to start?</h4>
+              <p className="text-slate-400 text-sm">Join thousands of happy tenants in Lagos.</p>
+            </div>
+
+            <div className="flex flex-col sm:flex-row items-center gap-4 relative z-10 w-full md:w-auto">
+              <div className="flex -space-x-3 mr-4">
+                {[1, 2, 3].map((i) => (
+                  <div key={i} className="w-10 h-10 rounded-full border-4 border-slate-950 bg-slate-800 flex items-center justify-center text-[10px] text-white font-bold">
+                    LD
+                  </div>
+                ))}
+                <div className="w-10 h-10 rounded-full border-4 border-slate-950 bg-blue-600 flex items-center justify-center text-[10px] text-white font-bold">
+                  +5k
+                </div>
               </div>
-            ))}
+
+              <Link
+                href="/listings"
+                className="group inline-flex items-center gap-2 px-8 py-4 bg-white text-slate-950 font-black rounded-2xl hover:bg-blue-50 transition-all duration-300 text-sm active:scale-95 shadow-xl shadow-blue-500/10"
+              >
+                Find My Home <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
+              </Link>
+            </div>
           </div>
 
-          {/* CTA */}
-          <div className="mt-14 flex flex-col sm:flex-row items-center justify-between gap-6 pt-8 border-t border-slate-100">
-            <p className="text-slate-400 text-sm">
-              <span className="font-semibold text-slate-700">5 simple steps.</span> That's all it takes to find your next home.
-            </p>
-            <Link
-              href="/listings"
-              className="inline-flex items-center gap-2.5 px-7 py-3.5 bg-slate-950 hover:bg-slate-800 active:scale-95 text-white font-bold rounded-xl transition-all text-sm shadow-md shadow-slate-950/15 shrink-0"
-            >
-              Browse Properties <ArrowRight className="w-4 h-4" />
-            </Link>
-          </div>
         </div>
       </section>
 
@@ -1191,8 +1233,8 @@ export default function HomePage() {
               <div
                 key={i}
                 className={`relative rounded-3xl p-8 flex flex-col gap-6 transition-all duration-300 ${t.featured
-                    ? 'bg-blue-600 shadow-2xl shadow-blue-600/30 scale-[1.02]'
-                    : 'bg-white/5 border border-white/10 hover:bg-white/8'
+                  ? 'bg-blue-600 shadow-2xl shadow-blue-600/30 scale-[1.02]'
+                  : 'bg-white/5 border border-white/10 hover:bg-white/8'
                   }`}
               >
                 {/* Big decorative quote */}
