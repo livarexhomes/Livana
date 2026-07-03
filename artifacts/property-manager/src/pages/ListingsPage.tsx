@@ -27,10 +27,10 @@ export default function ListingsPage() {
   const [typeFilter,      setTypeFilter]      = useState(params.get('type')      ?? '')
   const [stateFilter,     setStateFilter]     = useState(params.get('city')      ?? params.get('state') ?? '')
   const [areaFilter,      setAreaFilter]      = useState(params.get('area')      ?? '')
-  const [minPrice,        setMinPrice]        = useState(params.get('min_price') ?? '')
-  const [maxPrice,        setMaxPrice]        = useState(params.get('max_price') ?? '')
-  const [bedsFilter,      setBedsFilter]      = useState(params.get('bedrooms')  ?? '')
-  const [bathsFilter,     setBathsFilter]     = useState('')
+  const [minPrice,        setMinPrice]        = useState(params.get('price_min') ?? '')
+  const [maxPrice,        setMaxPrice]        = useState(params.get('price_max') ?? '')
+  const [bedsFilter,      setBedsFilter]      = useState(params.get('beds')      ?? '')
+  const [bathsFilter,     setBathsFilter]     = useState(params.get('baths')     ?? '')
   const [furnishedFilter, setFurnishedFilter] = useState('')
   const [sortBy,          setSortBy]          = useState('newest')
   const [mapVisible,      setMapVisible]      = useState(true)
@@ -113,19 +113,25 @@ export default function ListingsPage() {
 
   const locationLabel = [stateFilter, areaFilter].filter(Boolean).join(', ') || 'Any Location'
   const typeLabel     = TYPE_TABS.find(t => t.value === typeFilter)?.label ?? 'Any'
+  const seoTypeLabel  = typeLabel === 'Any' ? 'verified' : typeLabel.toLowerCase()
   const bedsLabel     = bedsFilter ? `${bedsFilter}+ Beds` : 'Beds / Baths'
   const priceLabel    = (minPrice || maxPrice)
     ? [minPrice ? `₦${Number(minPrice).toLocaleString()}` : '', maxPrice ? `₦${Number(maxPrice).toLocaleString()}` : ''].filter(Boolean).join(' – ')
     : 'Any Price'
+  const pageTitle = locationLabel !== 'Any Location'
+    ? `${typeLabel} properties in ${locationLabel} — Verified listings`
+    : `${typeLabel} properties across Nigeria — Verified listings`
+  const pageDescription = `Browse ${seoTypeLabel} properties ${locationLabel !== 'Any Location' ? `in ${locationLabel}` : 'across Nigeria'}. Filter by price, bedrooms, type, and neighbourhood.`
+  const pageUrl = `/listings${search}`
 
   const activeCount = [typeFilter, stateFilter || areaFilter, minPrice || maxPrice, bedsFilter].filter(Boolean).length
 
   return (
     <>
       <SEO
-        title="Browse Properties — Rent & Lease"
-        description="Search verified properties for rent and lease across Nigeria. Filter by location, price, bedrooms and type."
-        url="/listings"
+        title={pageTitle}
+        description={pageDescription}
+        url={pageUrl}
       />
       <PublicNavbar />
 
@@ -381,18 +387,26 @@ export default function ListingsPage() {
                   </div>
                 ))
               ) : sorted.length === 0 ? (
-                <div className="col-span-full bg-white rounded-2xl border border-slate-100 p-14 text-center flex flex-col items-center shadow-sm">
-                  <div className="w-16 h-16 bg-blue-50 rounded-2xl flex items-center justify-center mb-4">
-                    <Building2 className="w-8 h-8 text-blue-300" strokeWidth={1.5} />
+                <div className="col-span-full space-y-6">
+                  <div className="bg-white rounded-2xl border border-slate-100 p-14 text-center flex flex-col items-center shadow-sm">
+                    <div className="w-16 h-16 bg-blue-50 rounded-2xl flex items-center justify-center mb-4">
+                      <Building2 className="w-8 h-8 text-blue-300" strokeWidth={1.5} />
+                    </div>
+                    <h3 className="font-bold text-slate-900 mb-1.5">No properties found</h3>
+                    <p className="text-sm text-slate-500 mb-5 max-w-xs">Try adjusting or clearing your filters to see more results.</p>
+                    {hasFilters && (
+                      <button onClick={clearFilters}
+                        className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-xl transition-colors shadow-sm shadow-blue-600/25">
+                        Clear all filters
+                      </button>
+                    )}
                   </div>
-                  <h3 className="font-bold text-slate-900 mb-1.5">No properties found</h3>
-                  <p className="text-sm text-slate-500 mb-5 max-w-xs">Try adjusting or clearing your filters to see more results.</p>
-                  {hasFilters && (
-                    <button onClick={clearFilters}
-                      className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-xl transition-colors shadow-sm shadow-blue-600/25">
-                      Clear all filters
-                    </button>
-                  )}
+                  <NotifyWhenAvailableForm
+                    title="Get notified when matching listings arrive"
+                    description="Submit your email and we’ll email you once new verified properties match your search criteria."
+                    subject={`Listing alert: ${typeLabel} in ${locationLabel}`}
+                    details={`Search: ${typeLabel}, Location: ${locationLabel}, Price: ${priceLabel}, Bedrooms: ${bedsLabel}`}
+                  />
                 </div>
               ) : (
                 sorted.map(p => (

@@ -4,6 +4,7 @@ import { MapPin, ShieldCheck, ArrowRight, Building2, ChevronDown, Search } from 
 import PublicNavbar from '@/components/layout/PublicNavbar'
 import SEO from '@/components/SEO'
 import PropertyCard from '@/components/property/PropertyCard'
+import NotifyWhenAvailableForm from '@/components/sections/NotifyWhenAvailableForm'
 import { Link } from '@/lib/navigation'
 import { createClient, isSupabaseConfigured } from '@/lib/supabase'
 import type { PropertyWithLandlord } from '@/types'
