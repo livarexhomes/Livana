@@ -198,8 +198,8 @@ export default function HomePageClient({ initialProperties }: { initialPropertie
         {/* Full-bleed background image */}
         <div className="absolute inset-0 overflow-hidden">
           <img
-            src="https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=1800&q=90"
-            alt=""
+            src="/opengraph.jpg"
+            alt="Modern Nigerian residential and commercial property exterior"
             className="w-full h-full object-cover object-center"
           />
           {/* Multi-layer overlay: dark left, lighter right */}
@@ -409,7 +409,13 @@ export default function HomePageClient({ initialProperties }: { initialPropertie
 
                         {/* No results */}
                         {q && filteredStates.length === 0 && filteredAreas.length === 0 && (
-                          <p className="px-3 py-6 text-sm text-gray-400 text-center">No locations match &quot;{locationQuery}&quot;</p>
+                          <div className="px-3 py-6 text-sm text-gray-400 text-center space-y-3">
+                            <p>No locations match "{locationQuery}"</p>
+                            <p className="text-xs text-gray-400">Abuja, Port Harcourt, Ibadan and more cities are coming soon.</p>
+                            <Link href="/contact" className="inline-flex items-center justify-center mx-auto rounded-full bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-500 transition-all">
+                              Get notified
+                            </Link>
+                          </div>
                         )}
                       </div>
                     </div>

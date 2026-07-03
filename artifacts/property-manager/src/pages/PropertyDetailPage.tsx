@@ -445,7 +445,7 @@ export default function PropertyDetailPage() {
                       activeImg === i ? 'ring-2 ring-gray-900 ring-offset-1' : 'opacity-50 hover:opacity-80'
                     }`}
                   >
-                    <img src={getSupabaseImageUrl(img.storage_path)} className="w-full h-full object-cover" alt="" />
+                    <img src={getSupabaseImageUrl(img.storage_path)} className="w-full h-full object-cover" alt={img.alt_text || property.title} />
                   </button>
                 ))}
               </div>

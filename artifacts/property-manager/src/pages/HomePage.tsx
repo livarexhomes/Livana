@@ -899,7 +899,7 @@ export default function HomePage() {
 
             {/* Lagos — large feature card, full height */}
             <Link
-              href="/listings?city=Lagos"
+              href="/properties-in/lagos"
               className="relative group overflow-hidden rounded-3xl md:col-span-2 shadow-sm hover:shadow-2xl transition-all duration-500"
               style={{ minHeight: '420px' }}
             >
@@ -927,7 +927,7 @@ export default function HomePage() {
 
               {/* Ogun */}
               <Link
-                href="/listings?city=Ogun"
+                href="/properties-in/ogun"
                 className="relative group overflow-hidden rounded-3xl shadow-sm hover:shadow-2xl transition-all duration-500 flex-1"
                 style={{ minHeight: '200px' }}
               >

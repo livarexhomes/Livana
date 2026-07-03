@@ -65,6 +65,13 @@ const LOCATIONS: Record<string, {
     description: "Browse all verified properties for rent and lease in Lagos. From Lekki to Ikeja, Victoria Island to Surulere — LIVAREX has verified homes across Lagos State.",
     neighborhoods: ['Lekki', 'Ikeja', 'Victoria Island', 'Surulere', 'Yaba', 'Ajah'],
   },
+  ogun: {
+    city: 'Ogun', area: '',
+    title: 'Properties in Ogun',
+    subtitle: 'Verified homes and commercial space across Ogun State',
+    description: 'Browse verified homes, apartments and commercial spaces for rent and lease in Ogun State. Every listing on LIVAREX is reviewed and landlord-verified — no agents, no hidden fees.',
+    neighborhoods: ['Abeokuta', 'Sagamu', 'Ota', 'Ifo', 'Ijebu-Ode'],
+  },
   'victoria-island': {
     city: 'Lagos', area: 'Victoria Island',
     title: 'Properties in Victoria Island, Lagos',
