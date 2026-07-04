@@ -19,6 +19,10 @@ function getCoverImage(p: any): string | null {
   return null
 }
 
+function formatLocation(p: any): string {
+  return [p.address, p.city, p.state].filter(Boolean).join(', ')
+}
+
 const TYPE_BADGE: Record<string, { label: string; cls: string }> = {
   sale: { label: 'For Sale', cls: 'bg-blue-600 text-white' },
   rent: { label: 'For Rent', cls: 'bg-emerald-500 text-white' },
@@ -48,8 +52,8 @@ const AMENITIES = [
   { icon: Package, label: 'Storage Room' },
 ]
 
-type EditForm = { title: string; city: string; price: string; type: string; status: string; bedrooms: string; bathrooms: string; amenities: string[]; latitude: string; longitude: string }
-const emptyEdit: EditForm = { title: '', city: '', price: '', type: 'rent', status: 'available', bedrooms: '', bathrooms: '', amenities: [], latitude: '', longitude: '' }
+type EditForm = { title: string; address: string; city: string; state: string; price: string; type: string; status: string; bedrooms: string; bathrooms: string; amenities: string[]; latitude: string; longitude: string }
+const emptyEdit: EditForm = { title: '', address: '', city: '', state: '', price: '', type: 'rent', status: 'available', bedrooms: '', bathrooms: '', amenities: [], latitude: '', longitude: '' }
 
 type AddForm = {
   landlord_id: string; title: string; address: string; city: string; state: string
@@ -188,7 +192,9 @@ export default function AdminProperties() {
       const q = search.toLowerCase()
       list = list.filter(p =>
         p.title?.toLowerCase().includes(q) ||
+        p.address?.toLowerCase().includes(q) ||
         p.city?.toLowerCase().includes(q) ||
+        p.state?.toLowerCase().includes(q) ||
         p.property_type?.toLowerCase().includes(q)
       )
     }
@@ -212,7 +218,9 @@ export default function AdminProperties() {
     setEditingProp(p)
     setEditForm({
       title: p.title ?? '',
+      address: p.address ?? '',
       city: p.city ?? '',
+      state: p.state ?? '',
       price: p.price != null ? String(p.price) : '',
       type: p.type ?? 'rent',
       status: p.status ?? 'available',
@@ -312,7 +320,9 @@ export default function AdminProperties() {
     const supabase = createClient()
     const patch = {
       title: editForm.title,
+      address: editForm.address,
       city: editForm.city,
+      state: editForm.state || null,
       price: editForm.price ? Number(editForm.price) : null,
       type: editForm.type,
       status: editForm.status,
@@ -508,7 +518,7 @@ export default function AdminProperties() {
 
                         <div className="flex items-center gap-1 text-xs text-gray-400 mb-3">
                           <MapPin className="w-3 h-3 shrink-0" />
-                          <span className="truncate">{p.city}{p.landlords?.full_name ? ` · ${p.landlords.full_name}` : ''}</span>
+                          <span className="truncate">{formatLocation(p)}{p.landlords?.full_name ? ` · ${p.landlords.full_name}` : ''}</span>
                         </div>
 
                         {(p.bedrooms != null || p.bathrooms != null) && (
@@ -571,7 +581,7 @@ export default function AdminProperties() {
                                 <div className="min-w-0">
                                   <p className="font-semibold text-gray-900 text-sm leading-tight truncate max-w-[180px]">{p.title}</p>
                                   <div className="flex items-center gap-1.5 text-[11px] text-gray-400 mt-0.5">
-                                    <MapPin className="w-3 h-3 shrink-0" />{p.city}
+                                    <MapPin className="w-3 h-3 shrink-0" />{formatLocation(p)}
                                     <span className={`px-1.5 py-0.5 rounded-md text-[10px] font-bold ${badge.cls}`}>{badge.label}</span>
                                   </div>
                                 </div>
@@ -632,6 +642,12 @@ export default function AdminProperties() {
                   <input value={editForm.title} onChange={e => setEditForm(f => ({ ...f, title: e.target.value }))}
                     className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gray-50 focus:bg-white transition-all" />
                 </div>
+                <div>
+                  <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5 block">Full Address</label>
+                  <input value={editForm.address} onChange={e => setEditForm(f => ({ ...f, address: e.target.value }))}
+                    placeholder="e.g. 24 Victoria Island Road"
+                    className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gray-50 focus:bg-white transition-all" />
+                </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5 block">City</label>
@@ -639,12 +655,18 @@ export default function AdminProperties() {
                       className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gray-50 focus:bg-white transition-all" />
                   </div>
                   <div>
-                    <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5 block">Price (₦)</label>
-                    <input type="number" value={editForm.price} onChange={e => setEditForm(f => ({ ...f, price: e.target.value }))}
+                    <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5 block">State</label>
+                    <input value={editForm.state} onChange={e => setEditForm(f => ({ ...f, state: e.target.value }))}
+                      placeholder="e.g. Lagos State"
                       className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gray-50 focus:bg-white transition-all" />
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5 block">Price (₦)</label>
+                    <input type="number" value={editForm.price} onChange={e => setEditForm(f => ({ ...f, price: e.target.value }))}
+                      className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gray-50 focus:bg-white transition-all" />
+                  </div>
                   <div>
                     <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5 block">Type</label>
                     <select value={editForm.type} onChange={e => setEditForm(f => ({ ...f, type: e.target.value }))}
@@ -655,16 +677,16 @@ export default function AdminProperties() {
                       <option value="commercial">Commercial</option>
                     </select>
                   </div>
-                  <div>
-                    <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5 block">Status</label>
-                    <select value={editForm.status} onChange={e => setEditForm(f => ({ ...f, status: e.target.value }))}
-                      className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50 focus:bg-white transition-all">
-                      <option value="available">Available</option>
-                      <option value="taken">Taken</option>
-                      <option value="under_negotiation">Under Negotiation</option>
-                      <option value="coming_soon">Coming Soon</option>
-                    </select>
-                  </div>
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5 block">Status</label>
+                  <select value={editForm.status} onChange={e => setEditForm(f => ({ ...f, status: e.target.value }))}
+                    className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50 focus:bg-white transition-all">
+                    <option value="available">Available</option>
+                    <option value="taken">Taken</option>
+                    <option value="under_negotiation">Under Negotiation</option>
+                    <option value="coming_soon">Coming Soon</option>
+                  </select>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
@@ -863,11 +885,11 @@ export default function AdminProperties() {
                   className="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
               </div>
 
-              {/* Area / Neighbourhood */}
+              {/* Address */}
               <div>
-                <label className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1.5 block">Area / Neighbourhood *</label>
+                <label className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1.5 block">Full Address *</label>
                 <input value={addForm.address} onChange={e => setAddForm(f => ({ ...f, address: e.target.value }))}
-                  placeholder="e.g. Lekki Phase 1, Maitama, GRA"
+                  placeholder="e.g. 24 Victoria Island Road, Lekki Phase 1"
                   className="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
               </div>
 

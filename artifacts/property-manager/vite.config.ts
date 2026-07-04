@@ -13,12 +13,10 @@ export default defineConfig(async ({ isSsrBuild }) => ({
   plugins: [
     react(),
     tailwindcss(),
-    ...(isSsrBuild
-      ? []
-      : [
+    ...(!isSsrBuild && process.env.NODE_ENV !== "production"
+      ? [
           runtimeErrorOverlay(),
-          ...(process.env.NODE_ENV !== "production" &&
-          process.env.REPL_ID !== undefined
+          ...(process.env.REPL_ID !== undefined
             ? [
                 await import("@replit/vite-plugin-cartographer").then((m) =>
                   m.cartographer({
@@ -30,7 +28,8 @@ export default defineConfig(async ({ isSsrBuild }) => ({
                 ),
               ]
             : []),
-        ]),
+        ]
+      : []),
   ],
   resolve: {
     alias: {
@@ -44,6 +43,7 @@ export default defineConfig(async ({ isSsrBuild }) => ({
       ? path.resolve(import.meta.dirname, "dist/server")
       : path.resolve(import.meta.dirname, "dist/public"),
     emptyOutDir: true,
+    sourcemap: false,
   },
   server: {
     port,
