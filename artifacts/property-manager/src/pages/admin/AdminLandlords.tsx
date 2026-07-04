@@ -237,20 +237,29 @@ export default function AdminLandlords() {
     if (!deleteTarget) return
     setDeleteLoading(true)
     const supabase = createClient()
-    const session = await supabase.auth.getSession()
-    const token = session.data.session?.access_token
-    const res = await fetch('/api/delete-user', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: token ? `Bearer ${token}` : '' },
-      body: JSON.stringify({ user_id: deleteTarget.userId }),
-    })
-    const body = await res.json().catch(() => ({}))
-    if (!res.ok) {
-      showToast(`Failed to delete: ${body.error ?? res.statusText}`)
+
+    const deleteProperties = await supabase.from('properties').delete().eq('landlord_id', deleteTarget.landlordId)
+    if (deleteProperties.error) {
+      showToast(`Failed to delete listings: ${deleteProperties.error.message}`)
+      setDeleteLoading(false)
+      return
+    }
+
+    const deleteSettings = await supabase.from('landlord_settings').delete().eq('landlord_id', deleteTarget.landlordId)
+    if (deleteSettings.error) {
+      showToast(`Failed to delete landlord settings: ${deleteSettings.error.message}`)
+      setDeleteLoading(false)
+      return
+    }
+
+    const deleteLandlord = await supabase.from('landlords').delete().eq('id', deleteTarget.landlordId)
+    if (deleteLandlord.error) {
+      showToast(`Failed to delete landlord: ${deleteLandlord.error.message}`)
     } else {
       setClients(cs => cs.filter(c => c.id !== deleteTarget.landlordId))
       showToast(`${deleteTarget.name} has been deleted.`)
     }
+
     setDeleteLoading(false)
     setDeleteTarget(null)
   }

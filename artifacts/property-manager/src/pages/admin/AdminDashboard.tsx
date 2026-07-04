@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { Link } from '@/lib/navigation'
 import {
   TrendingUp, TrendingDown, Building2, Users,
-  CheckCircle, MessageSquare, MapPin, ArrowRight, Clock,
+  CheckCircle, MessageSquare, MapPin, ArrowRight, Clock, ShieldCheck,
 } from 'lucide-react'
 import AdminHeader from '../../components/layout/AdminHeader'
 import {
@@ -207,72 +207,87 @@ export default function AdminDashboard() {
               </div>
             ) : (
               <>
-                {/* Pending alert */}
                 {stats.pendingLandlords > 0 && (
-                  <div className="flex items-center justify-between gap-3 bg-amber-50 border border-amber-200 rounded-2xl px-5 py-3.5">
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full bg-amber-100 flex items-center justify-center shrink-0">
-                        <Clock className="w-4 h-4 text-amber-600" />
+                  <div className="flex flex-col gap-3 rounded-3xl border border-amber-200 bg-amber-50 p-5 md:p-6 shadow-sm md:flex-row md:items-center md:justify-between">
+                    <div className="flex items-start gap-3">
+                      <div className="w-10 h-10 rounded-2xl bg-amber-100 flex items-center justify-center shrink-0">
+                        <Clock className="w-5 h-5 text-amber-600" />
                       </div>
                       <div>
-                        <p className="text-sm font-bold text-amber-900">{stats.pendingLandlords} landlord{stats.pendingLandlords > 1 ? 's' : ''} awaiting approval</p>
-                        <p className="text-xs text-amber-600 mt-0.5">Review and approve to activate their accounts</p>
+                        <p className="text-sm font-bold text-amber-900">{stats.pendingLandlords} landlord{stats.pendingLandlords > 1 ? 's' : ''} awaiting review</p>
+                        <p className="text-sm text-amber-700">Review submissions to activate accounts and keep listings moving.</p>
                       </div>
                     </div>
                     <Link href="/admin/landlords"
-                      className="shrink-0 px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold rounded-xl transition-colors">
-                      Review Now
+                      className="inline-flex items-center justify-center rounded-2xl bg-amber-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-amber-700 transition-colors">
+                      Review now
                     </Link>
                   </div>
                 )}
 
-                {/* ── Hero card ── */}
-                <div className="relative overflow-hidden rounded-3xl h-52 md:h-60 shadow-xl shadow-black/10">
-                  <img
-                    src="https://images.unsplash.com/photo-1486325212027-8081e485255e?w=1400&q=80"
-                    alt="Platform" className="absolute inset-0 w-full h-full object-cover" />
-                  <div className="absolute inset-0 bg-gradient-to-r from-black/85 via-black/60 to-black/20" />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-                  <div className="relative h-full flex flex-col justify-between p-5 md:p-7">
-                    <div className="flex items-start justify-between">
-                      <div className="inline-flex items-center gap-1.5 bg-white/10 backdrop-blur-md border border-white/20 text-white/90 text-xs font-bold px-3 py-1.5 rounded-full">
-                        <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
-                        LIVAREX Admin
+                <div className="grid gap-4 xl:grid-cols-[1.55fr_0.95fr]">
+                  <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+                    <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                      <div className="space-y-3">
+                        <p className="text-xs uppercase tracking-[0.32em] text-slate-400">Admin overview</p>
+                        <h1 className="text-3xl font-extrabold text-slate-950">Welcome back, {displayName}</h1>
+                        <p className="max-w-2xl text-sm text-slate-500">Monitor listings, clients, KYC, and enquiries from one central dashboard.</p>
                       </div>
-                      <div className="hidden sm:flex items-center gap-2.5">
-                        {[
-                          { label: 'Properties', value: stats.properties },
-                          { label: 'Landlords', value: stats.landlords },
-                          { label: 'Pending', value: stats.pendingLandlords },
-                        ].map(s => (
-                          <div key={s.label} className="backdrop-blur-md bg-white/10 border border-white/20 rounded-2xl px-4 py-2 text-center min-w-[60px]">
-                            <p className="text-white text-lg font-extrabold leading-none">{s.value}</p>
-                            <p className="text-white/55 text-[10px] font-medium mt-0.5">{s.label}</p>
-                          </div>
-                        ))}
+                      <div className="flex flex-wrap gap-2">
+                        <Link href="/admin/properties" className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100 transition-colors">
+                          <Building2 className="w-4 h-4" /> Listings
+                        </Link>
+                        <Link href="/admin/landlords" className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100 transition-colors">
+                          <Users className="w-4 h-4" /> Clients
+                        </Link>
+                        <Link href="/admin/kyc" className="inline-flex items-center gap-2 rounded-2xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 transition-colors">
+                          <ShieldCheck className="w-4 h-4" /> KYC
+                        </Link>
                       </div>
                     </div>
-                    <div className="flex items-end justify-between gap-4">
-                      <div>
-                        <p className="text-white/60 text-sm font-medium">{greeting()},</p>
-                        <h2 className="text-white text-2xl md:text-3xl font-extrabold tracking-tight leading-tight mt-0.5">{displayName}</h2>
-                        <p className="text-white/50 text-xs mt-1.5">
-                          {stats.pendingLandlords > 0
-                            ? `${stats.pendingLandlords} landlord${stats.pendingLandlords > 1 ? 's' : ''} awaiting approval`
-                            : `${stats.properties.toLocaleString()} total listings · ${occupancyRate}% occupancy`}
-                        </p>
+
+                    <div className="mt-6 grid gap-3 sm:grid-cols-3">
+                      {STAT_CARDS.slice(0, 3).map(s => {
+                        const Icon = s.icon
+                        return (
+                          <div key={s.label} className="rounded-3xl bg-slate-50 p-4">
+                            <div className="flex items-center justify-between mb-3">
+                              <span className={`inline-flex h-10 w-10 items-center justify-center rounded-2xl ${s.bg}`}>
+                                <Icon className={`w-5 h-5 ${s.color}`} strokeWidth={1.8} />
+                              </span>
+                              <span className={`rounded-full px-2 py-1 text-[11px] font-semibold ${s.up ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-600'}`}>
+                                {s.trend}
+                              </span>
+                            </div>
+                            <p className="text-2xl font-extrabold text-slate-950">{s.value.toLocaleString()}</p>
+                            <p className="text-xs uppercase tracking-[0.24em] text-slate-400 mt-1">{s.label}</p>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </div>
+
+                  <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+                    <h2 className="text-sm font-bold text-slate-950">Insights</h2>
+                    <p className="text-xs text-slate-400 mt-1">Fast access to the most important platform metrics</p>
+                    <div className="mt-5 space-y-3">
+                      <div className="rounded-3xl bg-slate-50 p-4">
+                        <p className="text-sm font-semibold text-slate-900">Open enquiries</p>
+                        <p className="text-2xl font-extrabold text-slate-950 mt-2">{stats.enquiries}</p>
                       </div>
-                      <Link href="/admin/landlords"
-                        className="shrink-0 flex items-center gap-2 px-5 py-2.5 bg-white hover:bg-gray-50 text-gray-900 text-sm font-bold rounded-2xl transition-colors shadow-lg shadow-black/20">
-                        <ArrowRight className="w-4 h-4" />
-                        <span className="hidden sm:inline">Review Clients</span>
-                      </Link>
+                      <div className="rounded-3xl bg-slate-50 p-4">
+                        <p className="text-sm font-semibold text-slate-900">Pending landlords</p>
+                        <p className="text-2xl font-extrabold text-slate-950 mt-2">{stats.pendingLandlords}</p>
+                      </div>
+                      <div className="rounded-3xl bg-slate-50 p-4">
+                        <p className="text-sm font-semibold text-slate-900">Occupancy rate</p>
+                        <p className="text-2xl font-extrabold text-slate-950 mt-2">{occupancyRate}%</p>
+                      </div>
                     </div>
                   </div>
                 </div>
 
-                {/* Stat cards */}
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 md:gap-4">
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-5">
                   {STAT_CARDS.map(s => {
                     const Icon = s.icon
                     return (

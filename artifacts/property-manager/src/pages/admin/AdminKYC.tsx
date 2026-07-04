@@ -147,23 +147,39 @@ export default function AdminKYC() {
           <main className="flex-1 overflow-y-auto p-4 md:p-5 pb-24 md:pb-6">
             <div className="grid gap-4 xl:grid-cols-[1.3fr_0.95fr]">
               <div className="space-y-4">
-                <div className="rounded-[32px] border border-slate-200 bg-white p-5 shadow-[0_20px_80px_-40px_rgba(15,23,42,0.14)]">
-                  <div className="space-y-3">
-                    <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">KYC dashboard</p>
-                    <h2 className="text-3xl font-extrabold text-slate-950">Review identity checks quickly</h2>
-                    <p className="text-sm leading-6 text-slate-500">Manage landlord KYC submissions, track statuses, and approve verified accounts.</p>
+                <div className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-[0_20px_80px_-40px_rgba(15,23,42,0.14)]">
+                  <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+                    <div className="space-y-3">
+                      <p className="text-xs uppercase tracking-[0.28em] text-slate-400">KYC dashboard</p>
+                      <h2 className="text-3xl font-extrabold text-slate-950">Review identity checks quickly</h2>
+                      <p className="max-w-2xl text-sm leading-6 text-slate-500">Manage landlord KYC submissions, track statuses, and approve verified accounts from one place.</p>
+                    </div>
+                    <div className="rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700">
+                      {landlords.length.toLocaleString()} landlords · {pending} pending review
+                    </div>
+                  </div>
+
+                  <div className="mt-6 grid gap-3 sm:grid-cols-4">
+                    {[
+                      { label: 'Pending', value: pending, labelClass: 'text-amber-700', valueClass: 'text-amber-900', subtitle: 'Needs action' },
+                      { label: 'Approved', value: landlords.filter(l => l.status === 'approved').length, labelClass: 'text-emerald-700', valueClass: 'text-emerald-900', subtitle: 'Verified accounts' },
+                      { label: 'Suspended', value: landlords.filter(l => l.status === 'suspended').length, labelClass: 'text-orange-700', valueClass: 'text-orange-900', subtitle: 'Restricted access' },
+                      { label: 'Not submitted', value: landlords.filter(l => l.status === 'not_submitted').length, labelClass: 'text-slate-600', valueClass: 'text-slate-950', subtitle: 'No documents' },
+                    ].map(card => (
+                      <div key={card.label} className="rounded-3xl border border-slate-200 bg-slate-50 p-4">
+                        <p className={`text-xs font-semibold uppercase tracking-[0.28em] ${card.labelClass}`}>{card.label}</p>
+                        <p className={`mt-3 text-3xl font-extrabold ${card.valueClass}`}>{card.value}</p>
+                        <p className="mt-2 text-xs text-slate-500">{card.subtitle}</p>
+                      </div>
+                    ))}
                   </div>
                 </div>
 
                 <div className="rounded-[32px] border border-slate-200 bg-white p-4 shadow-sm">
                   <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
-                    <div className="flex flex-wrap items-center gap-2">
-                      {STATUS_TABS.map(tab => (
-                        <button key={tab.key} type="button" onClick={() => setStatusFilter(tab.key)}
-                          className={`rounded-full px-3 py-1.5 text-sm font-semibold transition ${statusFilter === tab.key ? 'bg-slate-950 text-white shadow' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}>
-                          {tab.label}
-                        </button>
-                      ))}
+                    <div className="space-y-2">
+                      <p className="text-xs uppercase tracking-[0.28em] text-slate-400">Filter and search</p>
+                      <h3 className="text-lg font-semibold text-slate-950">Find submissions fast</h3>
                     </div>
                     <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
                       <div className="flex items-center gap-2 rounded-3xl border border-slate-200 bg-slate-100 px-3 py-2 shadow-sm">
@@ -171,6 +187,14 @@ export default function AdminKYC() {
                         <input value={search} onChange={e => setSearch(e.target.value)}
                           placeholder="Search by name or WhatsApp"
                           className="w-full bg-transparent text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none" />
+                      </div>
+                      <div className="flex flex-wrap items-center gap-2">
+                        {STATUS_TABS.map(tab => (
+                          <button key={tab.key} type="button" onClick={() => setStatusFilter(tab.key)}
+                            className={`rounded-full px-3 py-1.5 text-sm font-semibold transition ${statusFilter === tab.key ? 'bg-slate-950 text-white shadow' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}>
+                            {tab.label}
+                          </button>
+                        ))}
                       </div>
                       <div className="rounded-3xl border border-slate-200 bg-white px-3 py-2.5 text-sm font-semibold text-slate-700 shadow-sm">
                         {filtered.length} result{filtered.length === 1 ? '' : 's'}
@@ -242,76 +266,95 @@ export default function AdminKYC() {
                 </div>
 
                 {selected && (
-                  <div className="hidden xl:block rounded-[32px] border border-slate-200 bg-white p-5 shadow-sm">
-                    <div className="flex items-center justify-between gap-4">
-                      <div className="flex items-center gap-3">
-                        <div className={`flex h-12 w-12 items-center justify-center rounded-3xl bg-gradient-to-br ${avatarGrad(selected.full_name)}`}>
-                          <span className="text-sm font-semibold text-white">{getInitials(selected.full_name)}</span>
+                  <div className="rounded-[32px] border border-slate-200 bg-white p-5 shadow-sm">
+                    <div className="flex flex-col gap-4">
+                      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className={`flex h-12 w-12 items-center justify-center rounded-3xl bg-gradient-to-br ${avatarGrad(selected.full_name)}`}>
+                            <span className="text-sm font-semibold text-white">{getInitials(selected.full_name)}</span>
+                          </div>
+                          <div>
+                            <p className="text-base font-semibold text-slate-950">{selected.full_name}</p>
+                            <p className="text-sm text-slate-500">{selected.whatsapp || 'No WhatsApp'}</p>
+                          </div>
                         </div>
-                        <div>
-                          <p className="text-base font-semibold text-slate-950">{selected.full_name}</p>
-                          <p className="text-sm text-slate-500">{selected.whatsapp || 'No WhatsApp'}</p>
+                        <button onClick={() => { setSelected(null); setKycDocs([]); setImgErrors({}) }}
+                          className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 transition-colors">
+                          <X className="h-4 w-4" />
+                        </button>
+                      </div>
+
+                      <div className="flex flex-wrap gap-2 items-center">
+                        <div className="rounded-full bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-700">
+                          {STATUS_META[selected.status]?.label ?? 'Pending'}
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          {selected.status !== 'approved' && (
+                            <button type="button" onClick={() => updateStatus(selected.id, 'approved')}
+                              disabled={processing === selected.id}
+                              className="rounded-2xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700 transition-colors disabled:opacity-50">
+                              Approve
+                            </button>
+                          )}
+                          {selected.status !== 'rejected' && (
+                            <button type="button" onClick={() => updateStatus(selected.id, 'rejected')}
+                              disabled={processing === selected.id}
+                              className="rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-colors disabled:opacity-50">
+                              Reject
+                            </button>
+                          )}
                         </div>
                       </div>
-                      <button onClick={() => { setSelected(null); setKycDocs([]); setImgErrors({}) }}
-                        className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 transition-colors">
-                        <X className="h-4 w-4" />
-                      </button>
-                    </div>
-                    <div className="mt-3 rounded-3xl bg-slate-50 p-3">
-                      <p className="text-xs uppercase tracking-[0.25em] text-slate-400">Status</p>
-                      <div className="mt-3 inline-flex items-center gap-2 rounded-full bg-white px-3 py-2 text-sm font-semibold text-slate-900 shadow-sm">
-                        <span className={`h-2.5 w-2.5 rounded-full ${STATUS_META[selected.status]?.dot ?? STATUS_META.pending.dot}`} />
-                        {STATUS_META[selected.status]?.label ?? 'Pending'}
+
+                      <div className="grid gap-2 sm:grid-cols-2">
+                        {[
+                          ['Joined', fmtDate(selected.created_at)],
+                          ['NIN', selected.nin],
+                          ['ID type', selected.id_type],
+                          ['ID number', selected.id_number],
+                        ].map(([label, value]) => (
+                          <div key={label} className="rounded-3xl bg-slate-50 p-4">
+                            <p className="text-[10px] uppercase tracking-[0.25em] text-slate-400">{label}</p>
+                            <p className="mt-2 text-sm font-semibold text-slate-950">{value || '—'}</p>
+                          </div>
+                        ))}
                       </div>
-                    </div>
-                    <div className="mt-3 grid gap-2 sm:grid-cols-2">
-                      {[
-                        ['Joined', fmtDate(selected.created_at)],
-                        ['NIN', selected.nin],
-                        ['ID type', selected.id_type],
-                        ['ID number', selected.id_number],
-                      ].map(([label, value]) => (
-                        <div key={label} className="rounded-3xl bg-slate-50 p-4">
-                          <p className="text-[10px] uppercase tracking-[0.25em] text-slate-400">{label}</p>
-                          <p className="mt-2 text-sm font-semibold text-slate-950">{value || '—'}</p>
+
+                      <div className="rounded-3xl border border-slate-200 bg-slate-50 p-4">
+                        <div className="flex items-center justify-between gap-4">
+                          <div>
+                            <p className="text-xs uppercase tracking-[0.25em] text-slate-400">Uploaded documents</p>
+                            <p className="mt-1 text-sm text-slate-500">Open each file for review.</p>
+                          </div>
+                          <p className="text-sm font-semibold text-slate-700">{kycDocs.length} file{kycDocs.length === 1 ? '' : 's'}</p>
                         </div>
-                      ))}
-                    </div>
-                    <div className="mt-4 rounded-3xl border border-slate-200 bg-slate-50 p-4">
-                      <div className="flex items-center justify-between gap-4">
-                        <div>
-                          <p className="text-xs uppercase tracking-[0.25em] text-slate-400">Uploaded documents</p>
-                          <p className="mt-1 text-sm text-slate-500">Open each file for review.</p>
+                        <div className="mt-4 space-y-3">
+                          {docsLoading ? (
+                            <div className="rounded-3xl bg-white p-4 text-sm text-slate-500">Loading documents…</div>
+                          ) : kycDocs.length === 0 ? (
+                            <div className="rounded-3xl bg-white p-4 text-sm text-slate-500">No documents uploaded for this landlord.</div>
+                          ) : kycDocs.map(doc => {
+                            const isImage = /\.(jpe?g|png|webp)$/i.test(doc.file_name)
+                            return (
+                              <a key={doc.doc_type} href={doc.url} target="_blank" rel="noreferrer"
+                                className="flex items-center gap-3 rounded-3xl border border-slate-200 bg-white p-3 transition hover:border-slate-300">
+                                <div className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-3xl bg-slate-100">
+                                  {isImage && !imgErrors[doc.doc_type] ? (
+                                    <img src={doc.url} alt={doc.file_name} className="h-full w-full object-cover"
+                                      onError={() => setImgErrors(prev => ({ ...prev, [doc.doc_type]: true }))} />
+                                  ) : (
+                                    <FileText className="h-6 w-6 text-slate-400" />
+                                  )}
+                                </div>
+                                <div className="min-w-0 flex-1">
+                                  <p className="text-sm font-semibold text-slate-950">{DOC_LABELS[doc.doc_type] ?? doc.doc_type}</p>
+                                  <p className="mt-1 truncate text-sm text-slate-500">{doc.file_name}</p>
+                                </div>
+                                <span className="rounded-full bg-slate-100 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">View</span>
+                              </a>
+                            )
+                          })}
                         </div>
-                        <p className="text-sm font-semibold text-slate-700">{kycDocs.length} file{kycDocs.length === 1 ? '' : 's'}</p>
-                      </div>
-                      <div className="mt-4 space-y-3">
-                        {docsLoading ? (
-                          <div className="rounded-3xl bg-white p-4 text-sm text-slate-500">Loading documents…</div>
-                        ) : kycDocs.length === 0 ? (
-                          <div className="rounded-3xl bg-white p-4 text-sm text-slate-500">No documents uploaded for this landlord.</div>
-                        ) : kycDocs.map(doc => {
-                          const isImage = /\.(jpe?g|png|webp)$/i.test(doc.file_name)
-                          return (
-                            <a key={doc.doc_type} href={doc.url} target="_blank" rel="noreferrer"
-                              className="flex items-center gap-3 rounded-3xl border border-slate-200 bg-white p-3 transition hover:border-slate-300">
-                              <div className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-3xl bg-slate-100">
-                                {isImage && !imgErrors[doc.doc_type] ? (
-                                  <img src={doc.url} alt={doc.file_name} className="h-full w-full object-cover"
-                                    onError={() => setImgErrors(prev => ({ ...prev, [doc.doc_type]: true }))} />
-                                ) : (
-                                  <FileText className="h-6 w-6 text-slate-400" />
-                                )}
-                              </div>
-                              <div className="min-w-0 flex-1">
-                                <p className="text-sm font-semibold text-slate-950">{DOC_LABELS[doc.doc_type] ?? doc.doc_type}</p>
-                                <p className="mt-1 truncate text-sm text-slate-500">{doc.file_name}</p>
-                              </div>
-                              <span className="rounded-full bg-slate-100 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">View</span>
-                            </a>
-                          )
-                        })}
                       </div>
                     </div>
                   </div>

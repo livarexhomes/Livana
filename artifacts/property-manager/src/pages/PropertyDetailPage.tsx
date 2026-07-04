@@ -315,6 +315,12 @@ export default function PropertyDetailPage() {
         ? 'https://schema.org/InStock'
         : 'https://schema.org/SoldOut',
     },
+    provider: {
+      '@type': 'RealEstateAgent',
+      name: 'LIVAREX',
+      url: 'https://livarex.com.ng',
+    },
+    mainEntityOfPage: `https://livarex.com.ng/property/${property.id}`,
   } : undefined
 
   return (

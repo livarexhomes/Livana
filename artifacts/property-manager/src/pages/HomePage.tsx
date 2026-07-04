@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { Link } from '@/lib/navigation'
-import { ArrowRight, ShieldCheck, Building2, Users, TrendingUp, Star, CheckCircle2, CheckCircle, MapPin, ChevronRight, Calendar, ChevronDown, Search, Send, Home, Sparkles } from 'lucide-react'
+import { ArrowRight, ShieldCheck, Building2, Users, TrendingUp, Star, CheckCircle2, CheckCircle, MapPin, ChevronRight, Calendar, ChevronDown, Search, Send, Home, Sparkles, X } from 'lucide-react'
 import PublicNavbar from '../components/layout/PublicNavbar'
 import Footer from '../components/layout/Footer'
 import SEO from '../components/SEO'
@@ -30,19 +30,23 @@ function progressColor(p: number) {
 }
 
 function AnimatedCounter({ target, suffix = '' }: { target: number; suffix?: string }) {
-  const [count, setCount] = useState(0)
+  const [count, setCount] = useState(Math.min(target, 12))
   const ref = useRef<HTMLSpanElement>(null)
 
   useEffect(() => {
     const observer = new IntersectionObserver(([entry]) => {
       if (entry.isIntersecting) {
-        let start = 0
-        const duration = 2000
+        let start = Math.min(target, 12)
+        const duration = 1800
         const step = target / (duration / 16)
-        const timer = setInterval(() => {
+        const timer = window.setInterval(() => {
           start += step
-          if (start >= target) { setCount(target); clearInterval(timer) }
-          else setCount(Math.floor(start))
+          if (start >= target) {
+            setCount(target)
+            window.clearInterval(timer)
+          } else {
+            setCount(Math.floor(start))
+          }
         }, 16)
         observer.disconnect()
       }
@@ -68,6 +72,7 @@ export default function HomePage() {
   const [priceMin, setPriceMin] = useState(0)
   const [priceMax, setPriceMax] = useState(500_000_000)
   const [openDropdown, setOpenDropdown] = useState<'location' | 'propertyType' | 'beds' | 'price' | null>(null)
+  const [mobileSearchOpen, setMobileSearchOpen] = useState(false)
   const [locationQuery, setLocationQuery] = useState('')
   const searchBarRef = useRef<HTMLDivElement>(null)
   const [allProjects, setAllProjects] = useState<Project[]>([])
@@ -194,6 +199,37 @@ export default function HomePage() {
     : `${fmtPrice(priceMin)} – ${fmtPrice(priceMax)}`
 
   const PROPERTY_TYPES = ['Studio Apartment', 'Apartment', 'Detached', 'Semi-Detached', 'Terrace', 'Land', 'Bungalow', 'Maisonette', 'Self Contained', 'Hostel', 'Penthouse']
+  const homeSchema = {
+    '@context': 'https://schema.org',
+    '@graph': [
+      {
+        '@type': 'Organization',
+        '@id': 'https://livarex.com.ng/#organization',
+        name: 'LIVAREX',
+        url: 'https://livarex.com.ng',
+        logo: 'https://livarex.com.ng/opengraph.jpg',
+        description: 'Verified property marketplace for homes, apartments and commercial spaces in Nigeria.',
+      },
+      {
+        '@type': 'WebSite',
+        '@id': 'https://livarex.com.ng/#website',
+        name: 'LIVAREX',
+        url: 'https://livarex.com.ng',
+        publisher: { '@id': 'https://livarex.com.ng/#organization' },
+        potentialAction: {
+          '@type': 'SearchAction',
+          target: 'https://livarex.com.ng/listings?city={search_term_string}',
+          'query-input': 'required name=search_term_string',
+        },
+      },
+    ],
+  }
+  const stats = [
+    { value: 300, suffix: '+', label: 'Verified Properties' },
+    { value: 100, suffix: '+', label: 'Verified Landlords' },
+    { value: 80, suffix: '+', label: 'Requests Processed' },
+    { value: 2, suffix: ' hrs', label: 'Avg Response Time' },
+  ]
 
   return (
     <div className="min-h-screen flex flex-col bg-white">
@@ -201,20 +237,23 @@ export default function HomePage() {
         title="Nigeria's Verified Property Marketplace"
         description="Find verified homes, apartments and commercial properties for rent, lease and sale across Nigeria. Every landlord is vetted, every listing is real."
         url="/"
+        schema={homeSchema}
       />
       <PublicNavbar />
 
       {/* ── HERO ── */}
       <section
         className="relative"
-        style={{ minHeight: 'calc(100vh - 80px)', marginTop: '80px', paddingTop: '4rem', paddingBottom: '4rem' }}
+        style={{ minHeight: 'calc(90vh - 80px)', marginTop: '80px', paddingTop: '2.5rem', paddingBottom: '2.5rem' }}
       >
         {/* Full-bleed background image */}
         <div className="absolute inset-0 overflow-hidden">
           <img
-            src="https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=1800&q=90"
-            alt=""
+            src="https://images.unsplash.com/photo-1512918728675-ed5a9ecdebfd?w=1800&q=90"
+            alt="Modern architectural house model in a premium real estate setting"
             className="w-full h-full object-cover object-center"
+            loading="eager"
+            decoding="async"
           />
           {/* Multi-layer overlay: dark left, lighter right */}
           <div className="absolute inset-0 bg-gradient-to-r from-black/85 via-black/60 to-black/30" />
@@ -227,9 +266,9 @@ export default function HomePage() {
 
         {/* Content */}
         <div className="relative max-w-7xl mx-auto px-5 sm:px-8 lg:px-12 flex flex-col justify-center"
-          style={{ minHeight: 'calc(100vh - 80px)' }}>
+          style={{ minHeight: 'calc(90vh - 80px)' }}>
 
-          <div className="max-w-2xl pt-12 pb-16 lg:pt-0 lg:pb-0" ref={searchBarRef}>
+          <div className="max-w-2xl pt-8 pb-10 lg:pt-0 lg:pb-0" ref={searchBarRef}>
 
             {/* Eyebrow */}
             <div className="inline-flex items-center gap-2.5 mb-8">
@@ -288,7 +327,7 @@ export default function HomePage() {
             </div> */}
 
             {/* Search card */}
-            <div className="mb-12">
+            <div className="mb-8">
               {/* Tabs */}
               <div className="flex gap-1 mb-4">
                 {(['Rent', 'Lease'] as Tab[]).map(t => (
@@ -546,55 +585,105 @@ export default function HomePage() {
               </div>
 
               {/* Mobile search */}
-              <form onSubmit={handleSearch} className="sm:hidden bg-white rounded-2xl shadow-[0_8px_40px_rgba(0,0,0,0.35)] overflow-hidden">
-                {/* Location row */}
-                <div className="relative border-b border-gray-100">
-                  <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-blue-500 pointer-events-none z-10" />
-                  <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-300 pointer-events-none z-10" />
-                  <select value={searchState} onChange={e => setSearchState(e.target.value)}
-                    className="w-full pl-11 pr-10 py-4 text-sm text-gray-800 appearance-none bg-transparent focus:outline-none">
-                    <option value="">Any Location</option>
-                    {NIGERIAN_STATES.map(s => <option key={s} value={s}>{s}</option>)}
-                  </select>
-                </div>
-                {/* Type + Beds row */}
-                <div className="grid grid-cols-2 border-b border-gray-100">
-                  <div className="relative border-r border-gray-100">
-                    <span className="absolute left-3 top-2.5 text-[9px] font-black uppercase tracking-widest text-gray-400 pointer-events-none z-10">Type</span>
-                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-300 pointer-events-none z-10" />
-                    <select value={selectedPropertyTypes[0] ?? ''} onChange={e => setSelectedPropertyTypes(e.target.value ? [e.target.value] : [])}
-                      className="w-full pl-3 pr-8 pt-6 pb-3 text-sm font-semibold text-gray-800 appearance-none bg-transparent focus:outline-none">
-                      <option value="">Any</option>
-                      {PROPERTY_TYPES.map(pt => <option key={pt} value={pt}>{pt}</option>)}
-                    </select>
+              <div className="sm:hidden">
+                <button
+                  type="button"
+                  onClick={() => setMobileSearchOpen(true)}
+                  className="w-full rounded-2xl bg-white px-4 py-4 shadow-[0_8px_40px_rgba(0,0,0,0.35)] flex items-center justify-between"
+                >
+                  <div className="text-left">
+                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">Quick search</p>
+                    <p className="text-sm font-semibold text-gray-900">
+                      {searchState || 'Any location'} • {propertyTypeLabel} • {bedsBathsLabel}
+                    </p>
                   </div>
-                  <div className="relative">
-                    <span className="absolute left-3 top-2.5 text-[9px] font-black uppercase tracking-widest text-gray-400 pointer-events-none z-10">Beds</span>
-                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-300 pointer-events-none z-10" />
-                    <select value={searchBeds} onChange={e => setSearchBeds(e.target.value)}
-                      className="w-full pl-3 pr-8 pt-6 pb-3 text-sm font-semibold text-gray-800 appearance-none bg-transparent focus:outline-none">
-                      <option value="">Any</option>
-                      {['1', '2', '3', '4', '5'].map(n => <option key={n} value={n}>{n}+</option>)}
-                    </select>
+                  <div className="rounded-full bg-blue-50 p-2.5 text-blue-600">
+                    <Search className="w-4 h-4" />
                   </div>
-                </div>
-                {/* Search button */}
-                <button type="submit"
-                  className="w-full bg-blue-600 active:bg-blue-700 text-white font-black py-4 text-sm flex items-center justify-center gap-2">
-                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
-                  Search Properties
                 </button>
-              </form>
+
+                {mobileSearchOpen && (
+                  <div className="fixed inset-0 z-[70] flex items-end bg-black/50 sm:hidden" role="dialog" aria-modal="true">
+                    <div className="absolute inset-0" onClick={() => setMobileSearchOpen(false)} />
+                    <div className="relative w-full rounded-t-[24px] bg-white p-4 shadow-2xl">
+                      <div className="flex items-center justify-between mb-4">
+                        <div>
+                          <p className="text-xs font-black uppercase tracking-[0.2em] text-blue-600">Mobile search</p>
+                          <h3 className="text-lg font-black text-gray-900">Find a home faster</h3>
+                        </div>
+                        <button type="button" onClick={() => setMobileSearchOpen(false)} className="rounded-full p-2 text-gray-400 hover:bg-gray-100">
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+
+                      <div className="space-y-4">
+                        <label className="block">
+                          <span className="mb-2 block text-xs font-black uppercase tracking-[0.2em] text-gray-400">Location</span>
+                          <select value={searchState} onChange={e => setSearchState(e.target.value)}
+                            className="w-full rounded-2xl border border-gray-200 bg-gray-50 px-3 py-3 text-sm text-gray-800 focus:border-blue-400 focus:outline-none">
+                            <option value="">Any Location</option>
+                            {NIGERIAN_STATES.map(s => <option key={s} value={s}>{s}</option>)}
+                          </select>
+                        </label>
+
+                        <div>
+                          <span className="mb-2 block text-xs font-black uppercase tracking-[0.2em] text-gray-400">Property type</span>
+                          <div className="flex flex-wrap gap-2">
+                            <button type="button" onClick={() => togglePropertyType('')} className={`rounded-full px-3 py-2 text-sm font-semibold ${selectedPropertyTypes.length === 0 ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-600'}`}>Any</button>
+                            {PROPERTY_TYPES.map(pt => (
+                              <button key={pt} type="button" onClick={() => togglePropertyType(pt)} className={`rounded-full px-3 py-2 text-sm font-semibold ${selectedPropertyTypes.includes(pt) ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600'}`}>
+                                {pt}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+
+                        <div>
+                          <span className="mb-2 block text-xs font-black uppercase tracking-[0.2em] text-gray-400">Bedrooms</span>
+                          <div className="flex flex-wrap gap-2">
+                            <button type="button" onClick={() => setSearchBeds('')} className={`rounded-full px-3 py-2 text-sm font-semibold ${searchBeds === '' ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-600'}`}>Any</button>
+                            {['1', '2', '3', '4', '5'].map(n => (
+                              <button key={n} type="button" onClick={() => setSearchBeds(n)} className={`rounded-full px-3 py-2 text-sm font-semibold ${searchBeds === n ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600'}`}>
+                                {n}+ Beds
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+
+                        <div>
+                          <span className="mb-2 block text-xs font-black uppercase tracking-[0.2em] text-gray-400">Budget</span>
+                          <div className="flex flex-wrap gap-2">
+                            {[
+                              { label: 'Any', min: 0, max: 500_000_000 },
+                              { label: 'Up to ₦2M', min: 0, max: 2_000_000 },
+                              { label: '₦2M–₦10M', min: 2_000_000, max: 10_000_000 },
+                              { label: '₦10M+', min: 10_000_000, max: 500_000_000 },
+                            ].map(option => (
+                              <button key={option.label} type="button" onClick={() => { setPriceMin(option.min); setPriceMax(option.max) }} className={`rounded-full px-3 py-2 text-sm font-semibold ${priceMin === option.min && priceMax === option.max ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600'}`}>
+                                {option.label}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="mt-5 flex gap-2">
+                        <button type="button" onClick={() => { setSearchState(''); setSelectedPropertyTypes([]); setSearchBeds(''); setPriceMin(0); setPriceMax(500_000_000) }} className="flex-1 rounded-2xl border border-gray-200 px-4 py-3 text-sm font-semibold text-gray-600">
+                          Reset
+                        </button>
+                        <button type="button" onClick={() => { setMobileSearchOpen(false); handleSearch() }} className="flex-1 rounded-2xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white">
+                          Search properties
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* Stats row */}
             <div className="grid grid-cols-2 sm:flex sm:items-center gap-y-5 gap-x-0 sm:gap-8">
-              {[
-                { value: 307, suffix: '+', label: 'Verified Properties' },
-                { value: 108, suffix: '+', label: 'Verified Landlords' },
-                { value: 80, suffix: '+', label: 'Requests Processed' },
-                { value: 2, suffix: 'h', label: 'Avg Response Time' },
-              ].map((s, i) => (
+              {stats.map((s, i) => (
                 <div key={s.label} className="flex items-center gap-4 sm:gap-8">
                   {i > 0 && <div className="hidden sm:block w-px h-8 bg-white/20" />}
                   <div>
@@ -674,7 +763,7 @@ export default function HomePage() {
       </section>
 
       {/* ── PROPERTIES ── */}
-      <section className="bg-[#F8F8F6] py-20 md:py-25">
+      <section className="bg-[#F8F8F6] py-16 md:py-20">
         <div className="max-w-7xl mx-auto px-5 sm:px-8">
 
           {/* Header */}
@@ -881,7 +970,7 @@ export default function HomePage() {
       </section>
 
       {/* ── CITIES ── */}
-      <section className="bg-white py-20 md:py-28">
+      <section className="bg-white py-16 md:py-20">
         <div className="max-w-7xl mx-auto px-5 sm:px-8">
           <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-10 gap-4">
             <div>

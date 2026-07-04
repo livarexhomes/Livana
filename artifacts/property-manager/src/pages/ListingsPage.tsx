@@ -401,12 +401,6 @@ export default function ListingsPage() {
                       </button>
                     )}
                   </div>
-                  <NotifyWhenAvailableForm
-                    title="Get notified when matching listings arrive"
-                    description="Submit your email and we’ll email you once new verified properties match your search criteria."
-                    subject={`Listing alert: ${typeLabel} in ${locationLabel}`}
-                    details={`Search: ${typeLabel}, Location: ${locationLabel}, Price: ${priceLabel}, Bedrooms: ${bedsLabel}`}
-                  />
                 </div>
               ) : (
                 sorted.map(p => (

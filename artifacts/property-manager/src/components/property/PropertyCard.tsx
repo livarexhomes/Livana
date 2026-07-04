@@ -100,6 +100,8 @@ export default function PropertyCard({ property: p, saved: initialSaved = false,
             <img
               src={coverUrl}
               alt={p.title}
+              loading="lazy"
+              decoding="async"
               className="w-full h-full object-cover group-hover:scale-[1.06] transition-transform duration-700 ease-out"
             />
           ) : (

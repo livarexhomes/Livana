@@ -266,16 +266,23 @@ export default function AdminUsers() {
       if (!tenant.user_id) {
         showToast('Unable to delete: missing user ID.')
       } else {
-        const session = await supabase.auth.getSession()
-        const token = session.data.session?.access_token
-        const res = await fetch('/api/delete-user', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', Authorization: token ? `Bearer ${token}` : '' },
-          body: JSON.stringify({ user_id: tenant.user_id }),
-        })
-        const body = await res.json().catch(() => ({}))
-        if (!res.ok) {
-          showToast(`Failed to delete: ${body.error ?? res.statusText}`)
+        const deleteEnquiries = await supabase.from('enquiries').delete().eq('tenant_id', tenant.id)
+        if (deleteEnquiries.error) {
+          showToast(`Failed to delete enquiries: ${deleteEnquiries.error.message}`)
+          setActionLoading(false)
+          return
+        }
+
+        const deleteSaved = await supabase.from('saved_properties').delete().eq('tenant_id', tenant.id)
+        if (deleteSaved.error) {
+          showToast(`Failed to delete saved properties: ${deleteSaved.error.message}`)
+          setActionLoading(false)
+          return
+        }
+
+        const deleteTenant = await supabase.from('tenants').delete().eq('id', tenant.id)
+        if (deleteTenant.error) {
+          showToast(`Failed to delete tenant: ${deleteTenant.error.message}`)
         } else {
           setTenants(prev => prev.filter(t => t.id !== tenant.id))
           showToast(`${tenant.full_name} has been deleted.`)
