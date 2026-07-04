@@ -647,10 +647,15 @@ export default function AdminProperties() {
                 </div>
                 <div>
                   <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5 block">Location / Address</label>
-                  <input value={editForm.address} onChange={e => setEditForm(f => ({ ...f, address: e.target.value }))}
-                    placeholder="e.g. 24 Victoria Island Road, Lekki Phase 1"
-                    className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gray-50 focus:bg-white transition-all" />
-                  <p className="text-xs text-gray-400 mt-2">Use a full address to make this listing easier to search and display.</p>
+                  <div className="flex flex-col gap-2">
+                    <input value={editForm.address} onChange={e => setEditForm(f => ({ ...f, address: e.target.value }))}
+                      placeholder="Google Maps address or street address"
+                      className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gray-50 focus:bg-white transition-all" />
+                    <div className="flex flex-wrap items-center gap-2 text-xs text-gray-500">
+                      <span>Paste a Google Maps address or street address.</span>
+                      <a href="https://maps.google.com" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">Open Google Maps</a>
+                    </div>
+                  </div>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
@@ -745,7 +750,7 @@ export default function AdminProperties() {
                     <span>{showEditCoordinates ? 'Hide exact map coordinates' : 'Add exact map coordinates (optional)'}</span>
                     <span className="text-slate-400">{showEditCoordinates ? '−' : '+'}</span>
                   </button>
-                  <p className="mt-3 text-xs text-gray-400">Only fill coordinates if you have the exact map pin. Otherwise the address is enough.</p>
+                  <p className="mt-3 text-xs text-gray-400">Enter a Google Maps address above, or optionally provide latitude/longitude for a precise pin.</p>
                   {showEditCoordinates && (
                     <div className="mt-4 grid grid-cols-2 gap-4">
                       <div>
@@ -902,10 +907,16 @@ export default function AdminProperties() {
               {/* Address */}
               <div>
                 <label className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1.5 block">Location / Address *</label>
-                <input value={addForm.address} onChange={e => setAddForm(f => ({ ...f, address: e.target.value }))}
-                  placeholder="e.g. 24 Victoria Island Road, Lekki Phase 1"
-                  className="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
-                <p className="text-xs text-gray-400 mt-2">Include the full street address so your listing appears correctly in search.</p>
+                <div className="flex flex-col gap-2">
+                  <input value={addForm.address} onChange={e => setAddForm(f => ({ ...f, address: e.target.value }))}
+                    placeholder="Google Maps address or street address"
+                    className="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                  <div className="flex flex-wrap items-center gap-2 text-xs text-gray-500">
+                    <span>Paste a Google Maps address or street address.</span>
+                    <a href="https://maps.google.com" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">Open Google Maps</a>
+                  </div>
+                </div>
+                <p className="text-xs text-gray-400 mt-2">Exact coordinates are optional for a precise pin.</p>
               </div>
 
               {/* City + State */}
@@ -1029,7 +1040,7 @@ export default function AdminProperties() {
                   <span>{showAddCoordinates ? 'Hide exact map coordinates' : 'Add exact map coordinates (optional)'}</span>
                   <span className="text-slate-400">{showAddCoordinates ? '−' : '+'}</span>
                 </button>
-                <p className="mt-3 text-xs text-gray-400">Only enter coordinates if you want an exact pin on the map; otherwise leave this blank.</p>
+                <p className="mt-3 text-xs text-gray-400">Enter a Google Maps address above, or optionally provide latitude/longitude for a precise pin.</p>
                 {showAddCoordinates && (
                   <div className="mt-4 grid grid-cols-2 gap-4">
                     <div>
