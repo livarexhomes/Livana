@@ -85,9 +85,11 @@ export default function AdminProperties() {
   const [addOpen, setAddOpen] = useState(false)
   const [addForm, setAddForm] = useState<AddForm>(emptyAdd)
   const [addSaving, setAddSaving] = useState(false)
+  const [showAddCoordinates, setShowAddCoordinates] = useState(false)
   const [landlords, setLandlords] = useState<{ id: string; full_name: string }[]>([])
   const [currentAdminId, setCurrentAdminId] = useState<string | null>(null)
   const [authUid, setAuthUid] = useState<string | null>(null)
+  const [showEditCoordinates, setShowEditCoordinates] = useState(false)
   // Add modal image state
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [imageFiles, setImageFiles] = useState<File[]>([])
@@ -230,6 +232,7 @@ export default function AdminProperties() {
       latitude: p.latitude ? String(p.latitude) : '',
       longitude: p.longitude ? String(p.longitude) : '',
     })
+    setShowEditCoordinates(!!p.latitude || !!p.longitude)
     setExistingImages(p.property_images ?? [])
     setEditImageFiles([])
     setEditImagePreviews([])
@@ -395,7 +398,7 @@ export default function AdminProperties() {
             title="Listings"
             subtitle={`${properties.length.toLocaleString()} total listings`}
             action={
-              <button type="button" onClick={() => { setAddForm({ ...emptyAdd, assigned_to: currentAdminId ?? '' }); setAddOpen(true) }}
+              <button type="button" onClick={() => { setAddForm({ ...emptyAdd, assigned_to: currentAdminId ?? '' }); setShowAddCoordinates(false); setAddOpen(true) }}
                 className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-xl transition-colors shadow-sm">
                 <Plus className="w-4 h-4" />
                 <span className="hidden sm:inline">Add Listing</span>
@@ -643,10 +646,11 @@ export default function AdminProperties() {
                     className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gray-50 focus:bg-white transition-all" />
                 </div>
                 <div>
-                  <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5 block">Full Address</label>
+                  <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5 block">Location / Address</label>
                   <input value={editForm.address} onChange={e => setEditForm(f => ({ ...f, address: e.target.value }))}
-                    placeholder="e.g. 24 Victoria Island Road"
+                    placeholder="e.g. 24 Victoria Island Road, Lekki Phase 1"
                     className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gray-50 focus:bg-white transition-all" />
+                  <p className="text-xs text-gray-400 mt-2">Use a full address to make this listing easier to search and display.</p>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
@@ -735,21 +739,31 @@ export default function AdminProperties() {
                 </div>
 
                 {/* Coordinates */}
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5 block">Latitude</label>
-                    <input type="number" step="any" value={editForm.latitude}
-                      onChange={e => setEditForm(f => ({ ...f, latitude: e.target.value }))}
-                      placeholder="e.g. 6.5244"
-                      className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50 focus:bg-white transition-all" />
-                  </div>
-                  <div>
-                    <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5 block">Longitude</label>
-                    <input type="number" step="any" value={editForm.longitude}
-                      onChange={e => setEditForm(f => ({ ...f, longitude: e.target.value }))}
-                      placeholder="e.g. 3.3792"
-                      className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50 focus:bg-white transition-all" />
-                  </div>
+                <div className="rounded-3xl border border-dashed border-gray-200 bg-slate-50 p-4">
+                  <button type="button" onClick={() => setShowEditCoordinates(v => !v)}
+                    className="flex w-full items-center justify-between rounded-2xl bg-white px-4 py-3 text-left text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-100">
+                    <span>{showEditCoordinates ? 'Hide exact map coordinates' : 'Add exact map coordinates (optional)'}</span>
+                    <span className="text-slate-400">{showEditCoordinates ? '−' : '+'}</span>
+                  </button>
+                  <p className="mt-3 text-xs text-gray-400">Only fill coordinates if you have the exact map pin. Otherwise the address is enough.</p>
+                  {showEditCoordinates && (
+                    <div className="mt-4 grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5 block">Latitude</label>
+                        <input type="number" step="any" value={editForm.latitude}
+                          onChange={e => setEditForm(f => ({ ...f, latitude: e.target.value }))}
+                          placeholder="6.5244"
+                          className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white transition-all" />
+                      </div>
+                      <div>
+                        <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5 block">Longitude</label>
+                        <input type="number" step="any" value={editForm.longitude}
+                          onChange={e => setEditForm(f => ({ ...f, longitude: e.target.value }))}
+                          placeholder="3.3792"
+                          className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white transition-all" />
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
               {/* Photos */}
@@ -887,10 +901,11 @@ export default function AdminProperties() {
 
               {/* Address */}
               <div>
-                <label className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1.5 block">Full Address *</label>
+                <label className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1.5 block">Location / Address *</label>
                 <input value={addForm.address} onChange={e => setAddForm(f => ({ ...f, address: e.target.value }))}
                   placeholder="e.g. 24 Victoria Island Road, Lekki Phase 1"
                   className="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                <p className="text-xs text-gray-400 mt-2">Include the full street address so your listing appears correctly in search.</p>
               </div>
 
               {/* City + State */}
@@ -1008,23 +1023,32 @@ export default function AdminProperties() {
               </div>
 
               {/* Coordinates */}
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1.5 block">Latitude</label>
-                  <input type="number" step="any" value={addForm.latitude}
-                    onChange={e => setAddForm(f => ({ ...f, latitude: e.target.value }))}
-                    placeholder="e.g. 6.5244"
-                    className="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
-                </div>
-                <div>
-                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1.5 block">Longitude</label>
-                  <input type="number" step="any" value={addForm.longitude}
-                    onChange={e => setAddForm(f => ({ ...f, longitude: e.target.value }))}
-                    placeholder="e.g. 3.3792"
-                    className="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
-                </div>
+              <div className="rounded-3xl border border-dashed border-gray-200 bg-slate-50 p-4">
+                <button type="button" onClick={() => setShowAddCoordinates(v => !v)}
+                  className="flex w-full items-center justify-between rounded-2xl bg-white px-4 py-3 text-left text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-100">
+                  <span>{showAddCoordinates ? 'Hide exact map coordinates' : 'Add exact map coordinates (optional)'}</span>
+                  <span className="text-slate-400">{showAddCoordinates ? '−' : '+'}</span>
+                </button>
+                <p className="mt-3 text-xs text-gray-400">Only enter coordinates if you want an exact pin on the map; otherwise leave this blank.</p>
+                {showAddCoordinates && (
+                  <div className="mt-4 grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5 block">Latitude</label>
+                      <input type="number" step="any" value={addForm.latitude}
+                        onChange={e => setAddForm(f => ({ ...f, latitude: e.target.value }))}
+                        placeholder="6.5244"
+                        className="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                    </div>
+                    <div>
+                      <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5 block">Longitude</label>
+                      <input type="number" step="any" value={addForm.longitude}
+                        onChange={e => setAddForm(f => ({ ...f, longitude: e.target.value }))}
+                        placeholder="3.3792"
+                        className="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                    </div>
+                  </div>
+                )}
               </div>
-              <p className="text-xs text-gray-400 -mt-3">Optional: Add coordinates for map location. Find on <a href="https://maps.google.com" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">Google Maps</a>.</p>
 
               {/* ── Photos ── */}
               <div className="border border-gray-100 rounded-2xl p-4 space-y-4">
