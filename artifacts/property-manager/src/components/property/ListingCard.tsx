@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link, useLocation } from '@/lib/navigation'
-import { MapPin, BedDouble, Bath, Heart, ShieldCheck, Building2, Maximize2, Star } from 'lucide-react'
+import { MapPin, BedDouble, Bath, Bookmark, ShieldCheck, Building2, Phone, MessageCircle } from 'lucide-react'
 import type { PropertyWithLandlord } from '@/types'
 import { getSupabaseImageUrl, createClient } from '@/lib/supabase'
 import { formatDistanceToNow } from 'date-fns'
@@ -47,13 +47,14 @@ export default function ListingCard({
   const [, navigate] = useLocation()
   const [saved, setSaved] = useState(initialSaved)
   const [saving, setSaving] = useState(false)
+  const [activeImageIdx, setActiveImageIdx] = useState(0)
 
-  const cover = p.property_images?.find(i => i.is_cover) ?? p.property_images?.[0]
+  const images = p.property_images ?? []
+  const cover = images.find(i => i.is_cover) ?? images[0]
   const coverUrl = cover ? getSupabaseImageUrl(cover.storage_path) : null
   const cfg = TYPE_CONFIG[p.type] ?? TYPE_CONFIG.rent
   const period = PERIOD[p.type] ?? ''
   const timeAgo = formatDistanceToNow(new Date(p.created_at), { addSuffix: false })
-  const isVerified = p.landlords?.is_verified
 
   async function handleSave(e: React.MouseEvent) {
     e.preventDefault()
@@ -83,24 +84,24 @@ export default function ListingCard({
       href={`/listings/${p.id}`}
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
-      className={`block group outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded-2xl h-full ${
+      className={`block group outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded-3xl h-full ${
         highlighted ? 'ring-2 ring-blue-500 ring-offset-2' : ''
       }`}
     >
-      <article className={`bg-white rounded-2xl overflow-hidden h-full flex flex-col transition-all duration-200 ease-out ${
+      <article className={`bg-white rounded-3xl overflow-hidden h-full flex transition-all duration-200 ease-out ${
         highlighted
           ? 'shadow-xl shadow-blue-500/10'
-          : 'shadow-sm border border-slate-100 hover:shadow-[0_8px_30px_rgba(0,0,0,0.10)] hover:-translate-y-1'
+          : 'shadow-sm border border-slate-100 hover:shadow-[0_12px_40px_rgba(0,0,0,0.12)] hover:-translate-y-1'
       }`}>
 
-        {/* IMAGE BLOCK */}
-        <div className="relative flex-shrink-0 h-52 bg-slate-100 overflow-hidden">
+        {/* LEFT SIDE: IMAGE CAROUSEL */}
+        <div className="flex-shrink-0 w-80 h-80 bg-slate-100 overflow-hidden relative group/img">
           {coverUrl ? (
             <img
               src={coverUrl}
               alt={p.title}
               loading="lazy"
-              className="w-full h-full object-cover group-hover:scale-[1.05] transition-transform duration-500 ease-out"
+              className="w-full h-full object-cover group-hover/img:scale-[1.05] transition-transform duration-500 ease-out"
             />
           ) : (
             <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100 gap-2">
@@ -111,110 +112,145 @@ export default function ListingCard({
             </div>
           )}
 
-          {/* Gradient scrim */}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/15 to-transparent" />
-
-          {/* TOP ROW: type badge + save */}
-          <div className="absolute top-3 left-3 right-3 flex items-start justify-between">
-            <span className={`inline-flex items-center px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider backdrop-blur-sm ${cfg.cls}`}>
-              {cfg.label}
-            </span>
-            <button
-              onClick={handleSave}
-              disabled={saving}
-              aria-label={saved ? 'Unsave' : 'Save'}
-              className={`w-8 h-8 rounded-xl flex items-center justify-center backdrop-blur-sm shadow-md transition-all duration-200 active:scale-90 ${
-                saved
-                  ? 'bg-rose-500 text-white shadow-rose-500/40'
-                  : 'bg-white/90 text-slate-400 hover:text-rose-500 hover:bg-white'
-              }`}
-            >
-              <Heart className={`w-3.5 h-3.5 ${saved ? 'fill-current' : ''}`} />
-            </button>
-          </div>
-
-          {/* FEATURED ribbon */}
-          {p.featured && (
-            <div className="absolute top-11 left-0">
-              <div className="flex items-center gap-1 bg-amber-400 text-amber-900 text-[9px] font-black uppercase tracking-widest px-3 py-1 shadow-md">
-                <Star className="w-2.5 h-2.5 fill-current" /> Featured
-              </div>
+          {/* Image carousel indicators */}
+          {images.length > 1 && (
+            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-2">
+              {images.map((_, i) => (
+                <button
+                  key={i}
+                  onClick={e => { e.preventDefault(); setActiveImageIdx(i) }}
+                  className={`w-2 h-2 rounded-full transition-all ${i === activeImageIdx ? 'bg-white w-6' : 'bg-white/50'}`}
+                />
+              ))}
             </div>
           )}
 
-          {/* BOTTOM OVERLAY: time + price */}
-          <div className="absolute bottom-0 left-0 right-0 px-3.5 pb-3.5 pt-8 flex items-end justify-between gap-2">
-            <div className="flex flex-col gap-1">
-              {isVerified && (
-                <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-emerald-500/90 backdrop-blur-sm text-white text-[10px] font-bold rounded-md w-fit">
-                  <ShieldCheck className="w-2.5 h-2.5" /> Verified
-                </span>
-              )}
-              <span className="text-white/60 text-[10px] font-medium">
-                Listed {timeAgo} ago
-              </span>
-            </div>
-            <div className="text-right shrink-0">
-              <p className="text-white font-extrabold text-xl leading-none tracking-tight drop-shadow-md">
-                {formatPrice(Number(p.price))}
-              </p>
-              {period && (
-                <p className="text-white/55 text-[10px] font-semibold mt-0.5">{period}</p>
-              )}
+          {/* "Listed X ago" badge */}
+          <div className="absolute top-4 left-4">
+            <div className="inline-flex items-center px-3 py-2 rounded-2xl bg-slate-900/80 backdrop-blur-sm text-white text-xs font-semibold">
+              Listed {timeAgo} ago
             </div>
           </div>
         </div>
 
-        {/* CONTENT BLOCK */}
-        <div className="p-3.5 flex flex-col flex-1">
-          {/* Title */}
-          <h3 className="font-semibold text-slate-900 text-[14px] leading-snug line-clamp-1 mb-1 group-hover:text-blue-600 transition-colors duration-200">
-            {p.title}
-          </h3>
-
-          {/* Location */}
-          <div className="flex items-center gap-1 text-slate-400 text-xs mb-3">
-            <MapPin className="w-3 h-3 shrink-0 text-blue-400" />
-            <span className="truncate">{p.address ? `${p.address}, ${p.city}` : p.city}</span>
+        {/* RIGHT SIDE: DETAILS PANEL */}
+        <div className="flex-1 flex flex-col p-6 gap-6">
+          
+          {/* Top row: Price + Save button */}
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex-1">
+              <p className="text-4xl font-extrabold text-slate-900">
+                {formatPrice(Number(p.price))}
+              </p>
+              {period && (
+                <p className="text-sm text-slate-500 font-medium mt-1">{period === '/yr' ? 'annually' : 'period'}</p>
+              )}
+            </div>
+            <button
+              onClick={handleSave}
+              disabled={saving}
+              aria-label={saved ? 'Unsave' : 'Save'}
+              className={`w-12 h-12 rounded-full flex items-center justify-center transition-all duration-200 active:scale-90 shrink-0 ${
+                saved
+                  ? 'bg-blue-100 text-blue-600'
+                  : 'bg-slate-100 text-slate-400 hover:text-slate-600 hover:bg-slate-200'
+              }`}
+            >
+              <Bookmark className={`w-5 h-5 ${saved ? 'fill-current' : ''}`} />
+            </button>
           </div>
 
-          {/* Specs row */}
-          <div className="flex items-center gap-2 mt-auto pt-3 border-t border-slate-50">
-            <div className="flex items-center gap-1.5 text-xs text-slate-500">
-              <div className="w-6 h-6 rounded-lg bg-slate-50 flex items-center justify-center">
-                <BedDouble className="w-3 h-3 text-slate-400" strokeWidth={1.5} />
-              </div>
-              <span className="font-semibold text-slate-700">{p.bedrooms}</span>
-              <span>bed{p.bedrooms !== 1 ? 's' : ''}</span>
+          {/* Location */}
+          <div className="flex items-start gap-3">
+            <MapPin className="w-5 h-5 text-slate-400 shrink-0 mt-0.5" />
+            <div>
+              <p className="text-lg font-semibold text-slate-900">{p.address ? `${p.address}` : p.city}</p>
+              <p className="text-sm text-slate-500">{p.city}{p.state ? `, ${p.state}` : ''}</p>
             </div>
+          </div>
 
-            <span className="w-px h-3 bg-slate-100" />
-
-            <div className="flex items-center gap-1.5 text-xs text-slate-500">
-              <div className="w-6 h-6 rounded-lg bg-slate-50 flex items-center justify-center">
-                <Bath className="w-3 h-3 text-slate-400" strokeWidth={1.5} />
-              </div>
-              <span className="font-semibold text-slate-700">{p.bathrooms}</span>
-              <span>bath</span>
-            </div>
-
-            {p.area_sqft ? (
-              <>
-                <span className="w-px h-3 bg-slate-100" />
-                <div className="flex items-center gap-1.5 text-xs text-slate-500">
-                  <div className="w-6 h-6 rounded-lg bg-slate-50 flex items-center justify-center">
-                    <Maximize2 className="w-3 h-3 text-slate-400" strokeWidth={1.5} />
-                  </div>
-                  <span>{p.area_sqft.toLocaleString()} sqft</span>
+          {/* Property specs */}
+          <div className="flex items-center gap-4 py-4 border-y border-slate-200">
+            {p.bedrooms != null && (
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center">
+                  <BedDouble className="w-4 h-4 text-slate-600" strokeWidth={1.5} />
                 </div>
-              </>
-            ) : null}
+                <div className="text-sm">
+                  <p className="font-semibold text-slate-900">{p.bedrooms}</p>
+                  <p className="text-xs text-slate-500">Bed{p.bedrooms !== 1 ? 's' : ''}</p>
+                </div>
+              </div>
+            )}
 
-            {/* Arrow CTA */}
-            <div className="ml-auto w-7 h-7 rounded-xl bg-slate-50 group-hover:bg-blue-600 flex items-center justify-center transition-all duration-200 shrink-0">
-              <svg className="w-3.5 h-3.5 text-slate-400 group-hover:text-white transition-colors duration-200" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M7 17L17 7M17 7H7M17 7v10" />
-              </svg>
+            {p.bathrooms != null && (
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center">
+                  <Bath className="w-4 h-4 text-slate-600" strokeWidth={1.5} />
+                </div>
+                <div className="text-sm">
+                  <p className="font-semibold text-slate-900">{p.bathrooms}</p>
+                  <p className="text-xs text-slate-500">Bath</p>
+                </div>
+              </div>
+            )}
+
+            {p.property_type && (
+              <div className="text-sm">
+                <p className="font-semibold text-slate-900">{p.property_type}</p>
+                <p className="text-xs text-slate-500">Type</p>
+              </div>
+            )}
+          </div>
+
+          {/* Owner's Agent section */}
+          <div className="mt-auto pt-4 flex items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              {p.landlords?.avatar_url ? (
+                <img
+                  src={getSupabaseImageUrl(p.landlords.avatar_url)}
+                  alt={p.landlords.full_name}
+                  className="w-12 h-12 rounded-full object-cover bg-slate-100"
+                />
+              ) : (
+                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white font-bold text-sm">
+                  {p.landlords?.full_name?.[0] ?? 'A'}
+                </div>
+              )}
+              <div className="text-sm">
+                <p className="font-semibold text-slate-900">{p.landlords?.full_name ?? 'Owner'}</p>
+                <p className="text-xs text-slate-500">
+                  {p.landlords?.is_verified ? (
+                    <span className="inline-flex items-center gap-1 text-emerald-600">
+                      <ShieldCheck className="w-3 h-3" /> Verified
+                    </span>
+                  ) : (
+                    'Agent'
+                  )}
+                </p>
+              </div>
+            </div>
+
+            {/* Contact buttons */}
+            <div className="flex items-center gap-2">
+              <a
+                href={`tel:+234${p.landlords?.whatsapp?.replace(/\D/g, '').slice(-10) ?? ''}`}
+                onClick={e => e.stopPropagation()}
+                className="w-10 h-10 rounded-full bg-emerald-100 hover:bg-emerald-200 text-emerald-600 flex items-center justify-center transition-colors"
+                aria-label="Call"
+              >
+                <Phone className="w-4 h-4" />
+              </a>
+              <a
+                href={`https://wa.me/234${p.landlords?.whatsapp?.replace(/\D/g, '').slice(-10) ?? ''}?text=Hi, I'm interested in your property`}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={e => e.stopPropagation()}
+                className="w-10 h-10 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white flex items-center justify-center transition-colors"
+                aria-label="WhatsApp"
+              >
+                <MessageCircle className="w-4 h-4" />
+              </a>
             </div>
           </div>
         </div>
