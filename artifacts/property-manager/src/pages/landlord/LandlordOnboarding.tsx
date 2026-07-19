@@ -243,14 +243,21 @@ export default function LandlordOnboarding() {
   }
 
   async function resendOtp() {
+    if (!userEmail) return
     setOtpResending(true); setOtpError('')
-    await fetch('/api/send-otp', {
+
+    const res = await fetch('/api/send-otp', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email: userEmail, full_name: profile.full_name }),
     })
+
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}))
+      setOtpError(body.error ?? 'Failed to resend verification code. Please try again.')
+    }
+
     setOtpResending(false)
-    setOtpCode('')
   }
 
   // ── OTP verification screen ──────────────────────────────
