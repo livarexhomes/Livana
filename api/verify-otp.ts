@@ -55,7 +55,6 @@ function parseJsonBody(req: any): Promise<Record<string, unknown> | null> {
 export default async function handler(req: any, res: any) {
   const SUPABASE_URL = getEnv('SUPABASE_URL') || ''
   const SUPABASE_SERVICE_KEY = getEnv('SUPABASE_SERVICE_KEY') || getEnv('SUPABASE_SERVICE_ROLE_KEY') || ''
-
   if (!SUPABASE_URL || !SUPABASE_SERVICE_KEY) {
     return sendJson(res, 500, {
       error: 'Missing Supabase environment variables',
@@ -63,37 +62,45 @@ export default async function handler(req: any, res: any) {
     })
   }
 
-  if (req.method !== 'POST') {
-    return sendJson(res, 405, { error: 'Method not allowed' })
-  }
+  if (req.method !== 'POST') return sendJson(res, 405, { error: 'Method not allowed' })
 
   const body = await parseJsonBody(req)
-  if (!body || typeof body.email !== 'string' || typeof body.otp !== 'string') {
-    return sendJson(res, 400, { error: 'Invalid request body' })
-  }
+  if (!body || typeof body.email !== 'string' || typeof body.otp !== 'string') return sendJson(res, 400, { error: 'Invalid request body' })
 
-  const email = body.email.trim()
-  const otp = body.otp.trim()
-  if (!email || !otp) {
-    return sendJson(res, 400, { error: 'Email and OTP are required' })
-  }
+  const email = String(body.email).trim()
+  const otp = String(body.otp).trim()
+  if (!email || !otp) return sendJson(res, 400, { error: 'Email and OTP are required' })
 
   try {
-    const response = await fetch(`${SUPABASE_URL}/auth/v1/otp`, {
-      method: 'POST',
+    const now = new Date().toISOString()
+    const q = `${SUPABASE_URL}/rest/v1/verification_codes?email=eq.${encodeURIComponent(email)}&code=eq.${encodeURIComponent(otp)}&expires_at=gt.${encodeURIComponent(now)}&select=id,expires_at`
+    const listResp = await fetch(q, {
       headers: {
         Authorization: `Bearer ${SUPABASE_SERVICE_KEY}`,
         apikey: SUPABASE_SERVICE_KEY,
-        'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ email, token: otp }),
     })
 
-    if (!response.ok) {
-      const errorBody = await response.json().catch(() => null)
-      return sendJson(res, response.status || 500, {
-        error: errorBody?.error || errorBody?.message || 'Failed to verify OTP',
-      })
+    if (!listResp.ok) {
+      const errBody = await listResp.json().catch(() => null)
+      return sendJson(res, listResp.status || 500, { error: errBody?.message || 'Failed to query verification codes' })
+    }
+
+    const rows = await listResp.json().catch(() => []) as any[]
+    if (!Array.isArray(rows) || rows.length === 0) {
+      return sendJson(res, 400, { error: 'Invalid or expired code' })
+    }
+
+    const id = rows[0].id
+    if (id) {
+      // delete used code
+      await fetch(`${SUPABASE_URL}/rest/v1/verification_codes?id=eq.${encodeURIComponent(id)}`, {
+        method: 'DELETE',
+        headers: {
+          Authorization: `Bearer ${SUPABASE_SERVICE_KEY}`,
+          apikey: SUPABASE_SERVICE_KEY,
+        },
+      }).catch(() => null)
     }
 
     return sendJson(res, 200, { success: true })
