@@ -1,5 +1,4 @@
-import type { IncomingMessage, ServerResponse } from 'http'
-import { createClient as createSupabaseClient } from '@supabase/supabase-js'
+declare const process: { env: Record<string, string | undefined> }
 
 const SUPABASE_URL = process.env.SUPABASE_URL || ''
 const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY || ''
@@ -7,13 +6,6 @@ const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY || ''
 if (!SUPABASE_URL || !SUPABASE_SERVICE_KEY) {
   throw new Error('SUPABASE_URL and SUPABASE_SERVICE_KEY must be set in the environment.')
 }
-
-const supabase = createSupabaseClient(SUPABASE_URL, SUPABASE_SERVICE_KEY, {
-  auth: {
-    autoRefreshToken: false,
-    persistSession: false,
-  },
-})
 
 interface Body {
   email: string
@@ -24,69 +16,100 @@ interface Body {
   bio?: string | null
 }
 
-export default async function handler(req: Request): Promise<Response> {
+function sendJson(res: any, status: number, body: unknown) {
+  res.status(status)
+  res.setHeader('Content-Type', 'application/json')
+  res.end(JSON.stringify(body))
+}
+
+export default async function handler(req: any, res: any) {
   if (req.method !== 'POST') {
-    return new Response(JSON.stringify({ error: 'Method not allowed' }), {
-      status: 405,
-      headers: { 'Content-Type': 'application/json' },
-    })
+    return sendJson(res, 405, { error: 'Method not allowed' })
   }
 
-  let body: Body
-  try {
-    body = await req.json()
-  } catch {
-    return new Response(JSON.stringify({ error: 'Invalid JSON body' }), {
-      status: 400,
-      headers: { 'Content-Type': 'application/json' },
-    })
+  let body: Body | null = null
+  if (typeof req.body === 'string') {
+    try {
+      body = JSON.parse(req.body)
+    } catch {
+      return sendJson(res, 400, { error: 'Invalid JSON body' })
+    }
+  } else if (req.body && typeof req.body === 'object') {
+    body = req.body
+  } else if (typeof req.json === 'function') {
+    try {
+      body = await req.json()
+    } catch {
+      return sendJson(res, 400, { error: 'Invalid JSON body' })
+    }
+  }
+
+  if (!body) {
+    return sendJson(res, 400, { error: 'Invalid JSON body' })
   }
 
   const { email, password, full_name, whatsapp, city = null, bio = null } = body
 
   if (!email || !password || !full_name || !whatsapp) {
-    return new Response(JSON.stringify({ error: 'Missing required registration fields' }), {
-      status: 400,
-      headers: { 'Content-Type': 'application/json' },
+    return sendJson(res, 400, { error: 'Missing required registration fields' })
+  }
+
+  const userResponse = await fetch(`${SUPABASE_URL}/auth/v1/admin/users`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${SUPABASE_SERVICE_KEY}`,
+      apikey: SUPABASE_SERVICE_KEY,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      email,
+      password,
+      email_confirm: true,
+      user_metadata: { full_name, whatsapp, city, bio },
+    }),
+  })
+
+  const userData = await userResponse.json().catch(() => null)
+  const userId = userData?.id
+  if (!userResponse.ok || typeof userId !== 'string') {
+    return sendJson(res, userResponse.status || 400, {
+      error: userData?.message || 'Failed to create user',
     })
   }
 
-  const { data: signUpData, error: signUpError } = await supabase.auth.admin.createUser({
-    email,
-    password,
-    email_confirm: true,
-    user_metadata: { full_name, whatsapp, city, bio },
+  const profileResponse = await fetch(`${SUPABASE_URL}/rest/v1/landlords`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${SUPABASE_SERVICE_KEY}`,
+      apikey: SUPABASE_SERVICE_KEY,
+      'Content-Type': 'application/json',
+      Prefer: 'return=minimal',
+    },
+    body: JSON.stringify({
+      user_id: userId,
+      full_name,
+      whatsapp,
+      city,
+      bio,
+      status: 'not_submitted',
+      is_verified: false,
+    }),
   })
 
-  if (signUpError || !signUpData.user) {
-    return new Response(JSON.stringify({ error: signUpError?.message ?? 'Failed to create user' }), {
-      status: 400,
-      headers: { 'Content-Type': 'application/json' },
+  if (!profileResponse.ok) {
+    await fetch(`${SUPABASE_URL}/auth/v1/admin/users/${userId}`, {
+      method: 'DELETE',
+      headers: {
+        Authorization: `Bearer ${SUPABASE_SERVICE_KEY}`,
+        apikey: SUPABASE_SERVICE_KEY,
+      },
+    }).catch(() => null)
+
+    const profileError = await profileResponse.json().catch(() => null)
+    return sendJson(res, profileResponse.status || 500, {
+      error: profileError?.message || 'Failed to create landlord profile',
     })
   }
 
-  const userId = signUpData.user.id
-
-  const { error: insertError } = await supabase.from('landlords').insert({
-    user_id: userId,
-    full_name,
-    whatsapp,
-    city,
-    bio,
-    status: 'not_submitted',
-    is_verified: false,
-  })
-
-  if (insertError) {
-    await supabase.auth.admin.deleteUser(userId).catch(() => null)
-    return new Response(JSON.stringify({ error: insertError.message || 'Failed to create landlord profile' }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' },
-    })
-  }
-
-  return new Response(JSON.stringify({ success: true }), {
-    status: 200,
-    headers: { 'Content-Type': 'application/json' },
-  })
+  return sendJson(res, 200, { success: true })
 }
