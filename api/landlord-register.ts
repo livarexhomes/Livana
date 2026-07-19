@@ -24,31 +24,49 @@ function sendJson(res: any, status: number, body: unknown) {
   res.end(JSON.stringify(body))
 }
 
+function parseJsonBody(req: any): Promise<Body | null> {
+  return new Promise((resolve, reject) => {
+    if (typeof req.body === 'string') {
+      try {
+        return resolve(JSON.parse(req.body))
+      } catch {
+        return resolve(null)
+      }
+    }
+
+    if (req.body && typeof req.body === 'object') {
+      return resolve(req.body)
+    }
+
+    if (typeof req.json === 'function') {
+      req.json().then(resolve).catch(() => resolve(null))
+      return
+    }
+
+    let raw = ''
+    req.on('data', (chunk: Buffer | string) => { raw += chunk.toString() })
+    req.on('end', () => {
+      if (!raw) return resolve(null)
+      try {
+        resolve(JSON.parse(raw))
+      } catch {
+        resolve(null)
+      }
+    })
+    req.on('error', () => resolve(null))
+  })
+}
+
 export default async function handler(req: any, res: any) {
-  if (req.method !== 'POST') {
-    return sendJson(res, 405, { error: 'Method not allowed' })
-  }
+  try {
+    if (req.method !== 'POST') {
+      return sendJson(res, 405, { error: 'Method not allowed' })
+    }
 
-  let body: Body | null = null
-  if (typeof req.body === 'string') {
-    try {
-      body = JSON.parse(req.body)
-    } catch {
+    const body = await parseJsonBody(req)
+    if (!body) {
       return sendJson(res, 400, { error: 'Invalid JSON body' })
     }
-  } else if (req.body && typeof req.body === 'object') {
-    body = req.body
-  } else if (typeof req.json === 'function') {
-    try {
-      body = await req.json()
-    } catch {
-      return sendJson(res, 400, { error: 'Invalid JSON body' })
-    }
-  }
-
-  if (!body) {
-    return sendJson(res, 400, { error: 'Invalid JSON body' })
-  }
 
   const { email, password, full_name, whatsapp, city = null, bio = null } = body
 
