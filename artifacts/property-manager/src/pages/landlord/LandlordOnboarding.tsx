@@ -17,15 +17,13 @@ const ID_TYPES = [
   'National ID Card (NIN)',
   "Voter's Card",
   "Driver's License",
-  'International Passport',
-  'BVN (Bank Verification Number)',
 ]
 
 const DOC_SLOTS = [
   { key: 'id_front',     label: 'ID Card — Front',      required: true  },
   { key: 'id_back',      label: 'ID Card — Back',        required: true  },
   { key: 'utility_bill', label: 'Utility Bill / Proof of Address', required: true },
-  { key: 'selfie',       label: 'Selfie with ID',        required: true  },
+  // { key: 'selfie',       label: 'Selfie with ID',        required: true  },
 ]
 
 const STEPS = [
