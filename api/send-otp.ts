@@ -55,6 +55,12 @@ function parseJsonBody(req: any): Promise<Record<string, unknown> | null> {
 export default async function handler(req: any, res: any) {
   const SUPABASE_URL = getEnv('SUPABASE_URL') || ''
   const SUPABASE_SERVICE_KEY = getEnv('SUPABASE_SERVICE_KEY') || getEnv('SUPABASE_SERVICE_ROLE_KEY') || ''
+  const RESEND_API_KEY = getEnv('RESEND_API_KEY') || ''
+  const RESEND_FROM = getEnv('RESEND_FROM') || 'no-reply@livarex.com'
+
+  if (!RESEND_API_KEY) {
+    return sendJson(res, 500, { error: 'Missing RESEND_API_KEY environment variable' })
+  }
 
   if (!SUPABASE_URL || !SUPABASE_SERVICE_KEY) {
     return sendJson(res, 500, {
@@ -63,36 +69,54 @@ export default async function handler(req: any, res: any) {
     })
   }
 
-  if (req.method !== 'POST') {
-    return sendJson(res, 405, { error: 'Method not allowed' })
-  }
+  if (req.method !== 'POST') return sendJson(res, 405, { error: 'Method not allowed' })
 
   const body = await parseJsonBody(req)
-  if (!body || typeof body.email !== 'string') {
-    return sendJson(res, 400, { error: 'Invalid request body' })
-  }
+  if (!body || typeof body.email !== 'string') return sendJson(res, 400, { error: 'Invalid request body' })
 
-  const email = body.email.trim()
-  if (!email) {
-    return sendJson(res, 400, { error: 'Email is required' })
-  }
+  const email = String(body.email).trim()
+  if (!email) return sendJson(res, 400, { error: 'Email is required' })
 
+  // Generate 6-digit numeric OTP
+  const code = String(Math.floor(100000 + Math.random() * 900000))
+  const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString() // 10 minutes
+
+  // Try to persist the code in Supabase `verification_codes` table (best-effort)
   try {
-    const response = await fetch(`${SUPABASE_URL}/auth/v1/otp`, {
+    await fetch(`${SUPABASE_URL}/rest/v1/verification_codes`, {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${SUPABASE_SERVICE_KEY}`,
         apikey: SUPABASE_SERVICE_KEY,
         'Content-Type': 'application/json',
+        Prefer: 'return=representation',
       },
-      body: JSON.stringify({ email, type: 'otp' }),
+      body: JSON.stringify([{ email, code, expires_at: expiresAt }]),
+    }).then(r => r.ok ? r : Promise.resolve(r)).catch(() => null)
+  } catch (err) {
+    // ignore persistence errors — we'll still attempt to send email
+  }
+
+  // Send email via Resend
+  try {
+    const html = `<p>Your verification code is <strong>${code}</strong>.</p><p>It expires in 10 minutes.</p>`
+    const resendResp = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${RESEND_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        from: RESEND_FROM,
+        to: email,
+        subject: 'Your Livarex verification code',
+        html,
+      }),
     })
 
-    if (!response.ok) {
-      const errorBody = await response.json().catch(() => null)
-      return sendJson(res, response.status || 500, {
-        error: errorBody?.error || errorBody?.message || 'Failed to send OTP',
-      })
+    if (!resendResp.ok) {
+      const payload = await resendResp.json().catch(() => null)
+      return sendJson(res, resendResp.status || 502, { error: payload?.message || 'Failed to send email via Resend' })
     }
 
     return sendJson(res, 200, { success: true })
