@@ -19,6 +19,12 @@ const ID_TYPES = [
   "Driver's License",
 ]
 
+const ID_TYPE_LENGTHS: Record<string, number> = {
+  'National ID Card (NIN)': 11,
+  "Voter's Card": 10,
+  "Driver's License": 11,
+}
+
 const DOC_SLOTS = [
   { key: 'id_front',     label: 'ID Card — Front',      required: true  },
   { key: 'id_back',      label: 'ID Card — Back',        required: true  },
@@ -134,6 +140,21 @@ export default function LandlordOnboarding() {
   // ── Step 2 save ──────────────────────────────────────────
   async function saveKyc() {
     if (!landlordId) return
+    const max = ID_TYPE_LENGTHS[kyc.id_type] ?? 20
+    const normalized = kyc.id_number.replace(/\D/g, '')
+    if (!normalized) {
+      setError('Please enter your ID number.')
+      return
+    }
+    if (normalized.length > max) {
+      setError(`ID number must be at most ${max} digits.`)
+      return
+    }
+    if (normalized !== kyc.id_number) {
+      setError('ID number may only contain digits.')
+      return
+    }
+
     setSaving(true); setError('')
     const supabase = createClient()
     const { error: err } = await supabase.from('landlords').update({
@@ -422,15 +443,26 @@ export default function LandlordOnboarding() {
               </div>
               <div>
                 <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">ID Type *</label>
-                <select required value={kyc.id_type} onChange={e => setK('id_type', e.target.value)} className={SELECT}>
+                <select required value={kyc.id_type} onChange={e => {
+                  const selected = e.target.value
+                  setK('id_type', selected)
+                  const max = ID_TYPE_LENGTHS[selected] ?? 20
+                  if (kyc.id_number.length > max) setK('id_number', kyc.id_number.slice(0, max))
+                }} className={SELECT}>
                   <option value="">Select ID type…</option>
                   {ID_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
                 </select>
               </div>
               <div>
                 <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">ID Number *</label>
-                <input required value={kyc.id_number} onChange={e => setK('id_number', e.target.value)}
+                <input required value={kyc.id_number} onChange={e => {
+                  const max = ID_TYPE_LENGTHS[kyc.id_type] ?? 20
+                  setK('id_number', e.target.value.replace(/\D/g, '').slice(0, max))
+                }}
                   placeholder="Enter your ID number" className={FIELD} />
+                <p className="text-xs text-gray-400 mt-1">
+                  Numbers only{kyc.id_type ? ` — max ${ID_TYPE_LENGTHS[kyc.id_type]} digits` : ''}
+                </p>
               </div>
 
             </div>
