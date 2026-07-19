@@ -2,11 +2,11 @@
 
 declare const process: { env: Record<string, string | undefined> }
 
-const SUPABASE_URL = process.env.SUPABASE_URL || ''
-const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY || ''
-
-if (!SUPABASE_URL || !SUPABASE_SERVICE_KEY) {
-  throw new Error('SUPABASE_URL and SUPABASE_SERVICE_KEY must be set in the environment.')
+function getEnv(key: string): string | undefined {
+  if (typeof process !== 'undefined' && process.env) {
+    return process.env[key]
+  }
+  return undefined
 }
 
 interface Body {
@@ -62,6 +62,16 @@ function parseJsonBody(req: any): Promise<Body | null> {
 }
 
 export default async function handler(req: any, res: any) {
+  const SUPABASE_URL = getEnv('SUPABASE_URL') || ''
+  const SUPABASE_SERVICE_KEY = getEnv('SUPABASE_SERVICE_KEY') || ''
+
+  if (!SUPABASE_URL || !SUPABASE_SERVICE_KEY) {
+    return sendJson(res, 500, {
+      error: 'Missing Supabase environment variables',
+      details: 'SUPABASE_URL and SUPABASE_SERVICE_KEY must be configured',
+    })
+  }
+
   try {
     if (req.method !== 'POST') {
       return sendJson(res, 405, { error: 'Method not allowed' })
