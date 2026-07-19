@@ -19,7 +19,7 @@ interface Body {
 }
 
 function sendJson(res: any, status: number, body: unknown) {
-  res.status(status)
+  res.statusCode = status
   res.setHeader('Content-Type', 'application/json')
   res.end(JSON.stringify(body))
 }
