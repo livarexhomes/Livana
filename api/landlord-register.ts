@@ -24,6 +24,14 @@ function sendJson(res: any, status: number, body: unknown) {
   res.end(JSON.stringify(body))
 }
 
+function getErrorMessage(data: unknown): string {
+  if (!data || typeof data !== 'object') return ''
+  const err = data as Record<string, unknown>
+  return (
+    String(err.error || err.message || err.msg || err.details || err.hint || err.error_description || '')
+  ).trim()
+}
+
 function parseJsonBody(req: any): Promise<Body | null> {
   return new Promise((resolve) => {
     if (typeof req.body === 'string') {
@@ -117,8 +125,9 @@ export default async function handler(req: any, res: any) {
     const userData = await userResponse.json().catch(() => null)
     const userId = userData?.id
     if (!userResponse.ok || typeof userId !== 'string') {
+      const errorMessage = getErrorMessage(userData) || 'Failed to create user'
       return sendJson(res, userResponse.status || 400, {
-        error: userData?.message || 'Failed to create user',
+        error: errorMessage,
       })
     }
 
@@ -144,7 +153,7 @@ export default async function handler(req: any, res: any) {
     if (!profileResponse.ok) {
       const profileError = await profileResponse.json().catch(() => null)
       return sendJson(res, profileResponse.status || 500, {
-        error: profileError?.message || 'Failed to create landlord profile',
+        error: getErrorMessage(profileError) || 'Failed to create landlord profile',
       })
     }
 
