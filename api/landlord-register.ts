@@ -122,13 +122,13 @@ export default async function handler(req: any, res: any) {
       })
     }
 
-    const profileResponse = await fetch(`${SUPABASE_URL}/rest/v1/landlords`, {
+    const profileResponse = await fetch(`${SUPABASE_URL}/rest/v1/landlords?on_conflict=user_id`, {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${SUPABASE_SERVICE_KEY}`,
         apikey: SUPABASE_SERVICE_KEY,
         'Content-Type': 'application/json',
-        Prefer: 'return=minimal',
+        Prefer: 'return=minimal,resolution=merge-duplicates',
       },
       body: JSON.stringify({
         user_id: userId,
@@ -142,14 +142,6 @@ export default async function handler(req: any, res: any) {
     })
 
     if (!profileResponse.ok) {
-      await fetch(`${SUPABASE_URL}/auth/v1/admin/users/${userId}`, {
-        method: 'DELETE',
-        headers: {
-          Authorization: `Bearer ${SUPABASE_SERVICE_KEY}`,
-          apikey: SUPABASE_SERVICE_KEY,
-        },
-      }).catch(() => null)
-
       const profileError = await profileResponse.json().catch(() => null)
       return sendJson(res, profileResponse.status || 500, {
         error: profileError?.message || 'Failed to create landlord profile',
