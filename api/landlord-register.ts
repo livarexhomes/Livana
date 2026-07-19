@@ -63,13 +63,14 @@ function parseJsonBody(req: any): Promise<Body | null> {
 
 export default async function handler(req: any, res: any) {
   const SUPABASE_URL = getEnv('SUPABASE_URL') || ''
-  const SUPABASE_SERVICE_KEY = getEnv('SUPABASE_SERVICE_KEY') || ''
+  const SUPABASE_SERVICE_KEY = getEnv('SUPABASE_SERVICE_KEY') || getEnv('SUPABASE_SERVICE_ROLE_KEY') || ''
   const VITE_SUPABASE_URL = getEnv('VITE_SUPABASE_URL') || ''
   const VITE_SUPABASE_ANON_KEY = getEnv('VITE_SUPABASE_ANON_KEY') || ''
 
   const envStatus = {
     SUPABASE_URL: Boolean(SUPABASE_URL),
-    SUPABASE_SERVICE_KEY: Boolean(SUPABASE_SERVICE_KEY),
+    SUPABASE_SERVICE_KEY: Boolean(getEnv('SUPABASE_SERVICE_KEY')),
+    SUPABASE_SERVICE_ROLE_KEY: Boolean(getEnv('SUPABASE_SERVICE_ROLE_KEY')),
     VITE_SUPABASE_URL: Boolean(VITE_SUPABASE_URL),
     VITE_SUPABASE_ANON_KEY: Boolean(VITE_SUPABASE_ANON_KEY),
   }
@@ -77,7 +78,7 @@ export default async function handler(req: any, res: any) {
   if (!SUPABASE_URL || !SUPABASE_SERVICE_KEY) {
     return sendJson(res, 500, {
       error: 'Missing Supabase environment variables',
-      details: 'SUPABASE_URL and SUPABASE_SERVICE_KEY must be configured',
+      details: 'SUPABASE_URL and a service key (SUPABASE_SERVICE_KEY or SUPABASE_SERVICE_ROLE_KEY) must be configured',
       env: envStatus,
     })
   }
