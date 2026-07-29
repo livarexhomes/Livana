@@ -141,7 +141,14 @@ export default async function handler(req, res) {
       system,
       messages: normalised,
     })
-    const reply = response.content[0].text
+
+    // agentrouter may return OpenAI-format (choices) or Anthropic-format (content)
+    const raw = response
+    const reply =
+      raw?.content?.[0]?.text ||                        // Anthropic format
+      raw?.choices?.[0]?.message?.content ||            // OpenAI format
+      'Sorry, I could not generate a response.'
+
     return res.status(200).json({ reply })
   } catch (err) {
     console.error('Chat handler error:', err?.message ?? err)
