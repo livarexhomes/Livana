@@ -236,7 +236,7 @@ export default function RegisterPage() {
 
           <p className="text-center text-xs text-gray-400 mt-3">
             Are you a landlord?{' '}
-            <Link href="/partners" className="text-blue-600 hover:text-blue-700 font-semibold">Apply here</Link>
+            <Link href="/landlord/register" className="text-blue-600 hover:text-blue-700 font-semibold">Apply here</Link>
           </p>
         </div>
       </div>
