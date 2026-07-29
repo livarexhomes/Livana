@@ -74,27 +74,6 @@ export default function HomePageClient({ initialProperties }: { initialPropertie
   const [locationQuery, setLocationQuery] = useState('')
   const searchBarRef = useRef<HTMLDivElement>(null)
   const [allProjects, setAllProjects] = useState<Project[]>([])
-  const [heroIdx, setHeroIdx] = useState(0)
-  const [heroVisible, setHeroVisible] = useState(true)
-
-  const HERO_LISTINGS = [
-    { label: 'Just Listed', title: '3 Bed Detached • Lekki', price: '₦4,500,000', suffix: '/yr' },
-    { label: 'New Build', title: '4 Bed Semi-Detached • Ikoyi', price: '₦85,000,000', suffix: '' },
-    { label: 'Hot Deal', title: '2 Bed Apartment • VI', price: '₦2,800,000', suffix: '/yr' },
-    { label: 'Off-Plan', title: '5 Bed Duplex • Abuja', price: '₦120,000,000', suffix: '' },
-    { label: 'Just Listed', title: '3 Bed Terrace • Lekki Phase 2', price: '₦3,200,000', suffix: '/yr' },
-  ]
-
-  useEffect(() => {
-    const id = setInterval(() => {
-      setHeroVisible(false)
-      setTimeout(() => {
-        setHeroIdx(i => (i + 1) % HERO_LISTINGS.length)
-        setHeroVisible(true)
-      }, 350)
-    }, 3500)
-    return () => clearInterval(id)
-  }, [])
 
   useEffect(() => { setAllProjects(loadProjects()) }, [])
 
@@ -563,39 +542,6 @@ export default function HomePageClient({ initialProperties }: { initialPropertie
             </div>
           </div>
 
-          {/* Floating property card — bottom right */}
-          <div className="hidden lg:block absolute bottom-10 right-10 w-72">
-            <div className="bg-white rounded-2xl shadow-2xl p-5 border border-white/20">
-              <div
-                className="transition-all duration-300"
-                style={{ opacity: heroVisible ? 1 : 0, transform: heroVisible ? 'translateY(0)' : 'translateY(8px)' }}
-              >
-                <div className="flex items-center justify-between mb-3">
-                  <span className="bg-blue-600 text-white text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full">
-                    {HERO_LISTINGS[heroIdx].label}
-                  </span>
-                  <div className="flex items-center gap-1 text-amber-400">
-                    {[...Array(5)].map((_, i) => <Star key={i} className="w-3 h-3 fill-current" />)}
-                  </div>
-                </div>
-                <h3 className="font-bold text-gray-900 text-sm mb-1 leading-snug">{HERO_LISTINGS[heroIdx].title}</h3>
-                <p className="text-blue-600 font-black text-xl mb-4">
-                  {HERO_LISTINGS[heroIdx].price}
-                  {HERO_LISTINGS[heroIdx].suffix && <span className="text-xs text-gray-400 font-normal ml-1">{HERO_LISTINGS[heroIdx].suffix}</span>}
-                </p>
-              </div>
-              <div className="flex items-center gap-3">
-                <div className="flex items-center gap-1">
-                  {HERO_LISTINGS.map((_, i) => (
-                    <button key={i}
-                      onClick={() => { setHeroVisible(false); setTimeout(() => { setHeroIdx(i); setHeroVisible(true) }, 200) }}
-                      className={`rounded-full transition-all duration-300 ${i === heroIdx ? 'w-4 h-1.5 bg-blue-600' : 'w-1.5 h-1.5 bg-gray-300 hover:bg-gray-400'}`}
-                    />
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
 
         </div>
       </section>

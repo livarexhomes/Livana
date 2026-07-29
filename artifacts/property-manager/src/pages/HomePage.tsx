@@ -76,29 +76,8 @@ export default function HomePage() {
   const [locationQuery, setLocationQuery] = useState('')
   const searchBarRef = useRef<HTMLDivElement>(null)
   const [allProjects, setAllProjects] = useState<Project[]>([])
-  const [heroIdx, setHeroIdx] = useState(0)
-  const [heroVisible, setHeroVisible] = useState(true)
   const [visibleSteps, setVisibleSteps] = useState<Set<number>>(new Set())
   const [activeHiwStep, setActiveHiwStep] = useState<number | null>(null)
-
-  const HERO_LISTINGS = [
-    { label: 'Just Listed', title: '3 Bed Detached • Lekki', price: '₦4,500,000', suffix: '/yr' },
-    { label: 'New Build', title: '4 Bed Semi-Detached • Ikoyi', price: '₦85,000,000', suffix: '' },
-    { label: 'Hot Deal', title: '2 Bed Apartment • VI', price: '₦2,800,000', suffix: '/yr' },
-    { label: 'Off-Plan', title: '5 Bed Duplex • Abuja', price: '₦120,000,000', suffix: '' },
-    { label: 'Just Listed', title: '3 Bed Terrace • Lekki Phase 2', price: '₦3,200,000', suffix: '/yr' },
-  ]
-
-  useEffect(() => {
-    const id = setInterval(() => {
-      setHeroVisible(false)
-      setTimeout(() => {
-        setHeroIdx(i => (i + 1) % HERO_LISTINGS.length)
-        setHeroVisible(true)
-      }, 350)
-    }, 3500)
-    return () => clearInterval(id)
-  }, [])
 
   useEffect(() => { setAllProjects(loadProjects()) }, [])
 
@@ -298,23 +277,6 @@ export default function HomePage() {
             </p>
 
             {/* Mobile animated listing pill */}
-            <div className="sm:hidden mb-5">
-              <div
-                className="inline-flex items-center gap-3 bg-white/10 backdrop-blur-sm border border-white/20 rounded-2xl px-4 py-3 transition-all duration-300"
-                style={{ opacity: heroVisible ? 1 : 0, transform: heroVisible ? 'translateY(0)' : 'translateY(6px)' }}
-              >
-                <span className="bg-blue-500 text-white text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full shrink-0">
-                  {HERO_LISTINGS[heroIdx].label}
-                </span>
-                <div className="min-w-0">
-                  <p className="text-white text-xs font-semibold truncate">{HERO_LISTINGS[heroIdx].title}</p>
-                  <p className="text-blue-300 text-xs font-black">{HERO_LISTINGS[heroIdx].price}<span className="text-white/40 font-normal">{HERO_LISTINGS[heroIdx].suffix}</span></p>
-                </div>
-                <div className="flex gap-1 shrink-0">
-                  {[...Array(5)].map((_, i) => <Star key={i} className="w-2.5 h-2.5 text-amber-400 fill-current" />)}
-                </div>
-              </div>
-            </div>
 
             {/* <div className="flex flex-col sm:flex-row gap-4 mb-12">
               <Link href="/listings" className="inline-flex items-center justify-center rounded-full bg-blue-600 px-8 py-4 text-sm font-bold text-white shadow-lg shadow-blue-600/25 hover:bg-blue-500 transition-all">
@@ -691,43 +653,6 @@ export default function HomePage() {
             </div>
           </div>
 
-          {/* Floating property card — bottom right */}
-          <div className="hidden lg:block absolute bottom-10 right-10 w-72">
-            <div className="bg-white rounded-2xl shadow-2xl p-5 border border-white/20">
-              <div
-                className="transition-all duration-300"
-                style={{ opacity: heroVisible ? 1 : 0, transform: heroVisible ? 'translateY(0)' : 'translateY(8px)' }}
-              >
-                <div className="flex items-center justify-between mb-3">
-                  <span className="bg-blue-600 text-white text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full">
-                    {HERO_LISTINGS[heroIdx].label}
-                  </span>
-                  <div className="flex items-center gap-1 text-amber-400">
-                    {[...Array(5)].map((_, i) => <Star key={i} className="w-3 h-3 fill-current" />)}
-                  </div>
-                </div>
-                <h3 className="font-bold text-gray-900 text-sm mb-1 leading-snug">{HERO_LISTINGS[heroIdx].title}</h3>
-                <p className="text-blue-600 font-black text-xl mb-4">
-                  {HERO_LISTINGS[heroIdx].price}
-                  {HERO_LISTINGS[heroIdx].suffix && <span className="text-xs text-gray-400 font-normal ml-1">{HERO_LISTINGS[heroIdx].suffix}</span>}
-                </p>
-              </div>
-              <div className="flex items-center gap-3">
-                {/* <Link href="/listings"
-                  className="flex-1 bg-gray-900 hover:bg-gray-800 text-white py-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-colors">
-                  View Listings <ArrowRight className="w-3.5 h-3.5" />
-                </Link> */}
-                <div className="flex items-center gap-1">
-                  {HERO_LISTINGS.map((_, i) => (
-                    <button key={i}
-                      onClick={() => { setHeroVisible(false); setTimeout(() => { setHeroIdx(i); setHeroVisible(true) }, 200) }}
-                      className={`rounded-full transition-all duration-300 ${i === heroIdx ? 'w-4 h-1.5 bg-blue-600' : 'w-1.5 h-1.5 bg-gray-300 hover:bg-gray-400'}`}
-                    />
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
 
         </div>
       </section>
@@ -1241,7 +1166,7 @@ export default function HomePage() {
 
             <div className="relative z-10">
               <h4 className="text-2xl font-bold text-white mb-2">Ready to start?</h4>
-              <p className="text-slate-400 text-sm">Join thousands of happy tenants in Lagos.</p>
+              <p className="text-slate-400 text-sm">Find your next verified home in Lagos or Ogun.</p>
             </div>
 
             <div className="flex flex-col sm:flex-row items-center gap-4 relative z-10 w-full md:w-auto">
@@ -1334,7 +1259,7 @@ export default function HomePage() {
                   Ready to find your<br />perfect home?
                 </h2>
                 <p className="text-gray-400 text-base leading-relaxed mb-8 max-w-md">
-                  Join thousands of Nigerians who've found verified properties on LIVAREX. No agents, no hidden fees — start your search today for free.
+                  Browse verified properties in Lagos and Ogun with no agent fees. Every landlord is screened — start your search today for free.
                 </p>
                 <ul className="space-y-2 mb-8">
                   {['Verified properties only', 'Transparent pricing', 'Secure inspection booking'].map(item => (

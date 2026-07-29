@@ -21,7 +21,7 @@ const team = [
   { name: 'Shorinmade Ibrahim', role: 'CEO & Co-Founder',    bio: 'Former real estate agent who spent 8 years watching good tenants get scammed. Built Livarex to fix it.', initials: 'SI', accent: 'from-blue-500 to-blue-700' },
   { name: 'Seidu Tesleem',      role: 'CTO & Co-Founder',    bio: 'Full-stack engineer and product thinker. Obsessed with making complex things feel simple and fast.', initials: 'ST', accent: 'from-violet-500 to-violet-700' },
   { name: 'Micheal Kolawole',   role: 'Head of Operations',  bio: 'Runs the landlord verification engine and ensures every listing on the platform meets our standards.', initials: 'MK', accent: 'from-emerald-500 to-emerald-700' },
-  { name: 'Spacze',             role: 'Head of Growth',      bio: 'Connects landlords and renters. Grew our Lagos coverage from 40 listings to 1,200 in under 18 months.', initials: 'SP', accent: 'from-rose-500 to-rose-700' },
+  { name: 'Spacze',             role: 'Head of Growth',      bio: 'Connects landlords and renters. Leads our Lagos & Ogun expansion and grows the verified landlord network.', initials: 'SP', accent: 'from-rose-500 to-rose-700' },
 ]
 
 export default function AboutPage() {

@@ -120,6 +120,9 @@ function Router() {
         <Route path="/user/saved" component={UserSaved} />
         <Route path="/user/enquiries" component={UserEnquiries} />
 
+        {/* Blog is coming soon — redirect to homepage to avoid stale-cache fallback */}
+        <Redirect from="/blog" to="/" />
+
         <Route component={NotFound} />
       </Switch>
     </Suspense>
