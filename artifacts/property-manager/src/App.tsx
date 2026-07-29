@@ -16,6 +16,7 @@ const AboutPage = lazy(() => import("@/pages/AboutPage"));
 const ContactPage = lazy(() => import("@/pages/ContactPage"));
 const TermsPage = lazy(() => import("@/pages/TermsPage"));
 const PrivacyPage = lazy(() => import("@/pages/PrivacyPage"));
+const CookiePolicyPage = lazy(() => import("@/pages/CookiePolicyPage"));
 const HowWeVerifyPage = lazy(() => import("@/pages/HowWeVerifyPage"));
 const LocationLandingPage = lazy(() => import("@/pages/LocationLandingPage"));
 
@@ -90,6 +91,7 @@ function Router() {
         <Route path="/contact" component={ContactPage} />
         <Route path="/terms" component={TermsPage} />
         <Route path="/privacy-policy" component={PrivacyPage} />
+        <Route path="/cookie-policy" component={CookiePolicyPage} />
 
         <Route path="/landlord/register" component={LandlordRegisterPage} />
         <Route path="/landlord" component={LandlordDashboard} />

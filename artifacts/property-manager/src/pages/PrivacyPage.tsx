@@ -7,7 +7,7 @@ export default function PrivacyPage() {
       <PublicNavbar />
 
       <main className="flex-1">
-        <div className="bg-gray-900 text-white py-16 px-4">
+        <div className="bg-gray-900 text-white pt-[88px] pb-16 px-4">
           <div className="max-w-3xl mx-auto">
             <p className="text-xs font-bold uppercase tracking-widest text-blue-400 mb-3">Legal</p>
             <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight mb-4">Privacy Policy</h1>
