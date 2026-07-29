@@ -267,8 +267,8 @@ export default function AdminSettings() {
   })
 
   const [emailConfig, setEmailConfig] = useState<EmailConfig>({
-    fromEmail: 'noreply@livarex.com.ng',
-    fromName: 'Livana',
+    fromEmail: 'livarexhomes@gmail.com',
+    fromName: 'Livarex Homes',
     enabled: false,
     resendApiKey: '',
   })
@@ -735,14 +735,14 @@ export default function AdminSettings() {
                           onChange={v => setEmailConfig(c => ({ ...c, fromEmail: v }))}
                           icon={Mail}
                           mono
-                          placeholder="noreply@livarex.com.ng"
+                          placeholder="livarexhomes@gmail.com"
                         />
                         <FieldInput
                           label="From Name"
                           value={emailConfig.fromName}
                           onChange={v => setEmailConfig(c => ({ ...c, fromName: v }))}
                           icon={User}
-                          placeholder="Livana"
+                          placeholder="Livarex Homes"
                         />
                       </div>
                     </div>

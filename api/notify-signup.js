@@ -86,7 +86,7 @@ export default async function handler(req, res) {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        from: 'Livarex Homes <noreply@livarex.com.ng>',
+        from: process.env.RESEND_FROM || 'Livarex Homes <livarexhomes@gmail.com>',
         to: [email],
         subject: `You're on the Livarex property alert list! 🏡`,
         html,

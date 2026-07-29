@@ -10,7 +10,7 @@ const _baseURL =
   process.env.AI_INTEGRATIONS_ANTHROPIC_BASE_URL ||
   process.env.ANTHROPIC_BASE_URL ||
   process.env.AGENTROUTER_BASE_URL ||
-  undefined
+  'https://agentrouter.org/'
 
 const _apiKey =
   process.env.AI_INTEGRATIONS_ANTHROPIC_API_KEY ||
