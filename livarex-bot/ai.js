@@ -3,9 +3,13 @@ import Anthropic from "@anthropic-ai/sdk"
 import { getConversationHistory, saveMessage } from "./memory.js"
 import { fetchListings, formatListingsForAI } from "./listings.js"
 
+// Use Replit-managed integration when available, otherwise fall back to a
+// standard ANTHROPIC_API_KEY (needed when deployed outside Replit e.g. on a VPS)
 const client = new Anthropic({
-  baseURL: process.env.AI_INTEGRATIONS_ANTHROPIC_BASE_URL,
-  apiKey:  process.env.AI_INTEGRATIONS_ANTHROPIC_API_KEY,
+  ...(process.env.AI_INTEGRATIONS_ANTHROPIC_BASE_URL
+    ? { baseURL: process.env.AI_INTEGRATIONS_ANTHROPIC_BASE_URL }
+    : {}),
+  apiKey: process.env.AI_INTEGRATIONS_ANTHROPIC_API_KEY || process.env.ANTHROPIC_API_KEY,
 })
 
 const SYSTEM_PROMPT = `You are Livarex Bot — the official AI property assistant for Livarex Homes (www.livarex.com.ng), Nigeria's verified property marketplace.
