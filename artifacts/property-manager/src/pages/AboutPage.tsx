@@ -205,7 +205,7 @@ export default function AboutPage() {
                 { icon: Globe,      label: 'Lagos & Ogun',   sub: 'Active coverage',      from: 'from-blue-500/15',    border: 'border-blue-500/20',   text: 'text-blue-400' },
                 { icon: Shield,     label: '100% Verified',  sub: 'Landlord rate',        from: 'from-emerald-500/15', border: 'border-emerald-500/20',text: 'text-emerald-400' },
                 { icon: TrendingUp, label: '₦0 Fees',        sub: 'Always free to browse',from: 'from-violet-500/15',  border: 'border-violet-500/20', text: 'text-violet-400' },
-                { icon: Heart,      label: '4.9/5 Rating',   sub: 'Average user review',  from: 'from-rose-500/15',    border: 'border-rose-500/20',   text: 'text-rose-400' },
+                { icon: Heart,      label: '< 2hr Reply',    sub: 'On business days',     from: 'from-rose-500/15',    border: 'border-rose-500/20',   text: 'text-rose-400' },
               ].map(card => {
                 const Icon = card.icon
                 return (
@@ -232,7 +232,7 @@ export default function AboutPage() {
             Find your next home —<br />the honest way.
           </h2>
           <p className="text-gray-500 text-lg mb-10 leading-relaxed">
-            Join thousands of Nigerians who found their home without a single agent fee.
+            Find a verified home in Lagos or Ogun — no agent fees, no scams, no stress.
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <Link href="/listings" className="inline-flex items-center justify-center gap-2 px-8 py-4 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-2xl transition-all shadow-2xl shadow-blue-600/25 hover:shadow-blue-600/40 text-sm">

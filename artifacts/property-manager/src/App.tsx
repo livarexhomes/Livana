@@ -76,9 +76,11 @@ function Router() {
         <Route path="/" component={HomePage} />
         <Route path="/listings" component={ListingsPage} />
         <Route path="/listings/:id" component={PropertyDetailPage} />
-        <Route path="/properties/lagos"><Redirect to="/listings?type=rent" /></Route>
-        <Route path="/properties/ogun"><Redirect to="/listings?type=rent" /></Route>
-        <Route path="/properties-in/:slug"><Redirect to="/listings?type=rent" /></Route>
+        <Route path="/properties/lagos"><Redirect to="/listings?city=Lagos" /></Route>
+        <Route path="/properties/ogun"><Redirect to="/listings?city=Ogun" /></Route>
+        <Route path="/properties-in/lagos"><Redirect to="/listings?city=Lagos" /></Route>
+        <Route path="/properties-in/ogun"><Redirect to="/listings?city=Ogun" /></Route>
+        <Route path="/properties-in/:slug"><Redirect to="/listings" /></Route>
         <Route path="/how-we-verify" component={HowWeVerifyPage} />
         <Route path="/login" component={LoginPage} />
         <Route path="/register" component={RegisterPage} />
