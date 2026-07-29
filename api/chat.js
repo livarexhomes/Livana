@@ -142,12 +142,23 @@ export default async function handler(req, res) {
       messages: normalised,
     })
 
+    // Log the full response so we can see agentrouter's exact shape
+    console.log('agentrouter raw response:', JSON.stringify(response))
+
     // agentrouter may return OpenAI-format (choices) or Anthropic-format (content)
     const raw = response
     const reply =
       raw?.content?.[0]?.text ||                        // Anthropic format
       raw?.choices?.[0]?.message?.content ||            // OpenAI format
-      'Sorry, I could not generate a response.'
+      raw?.output?.[0]?.content?.[0]?.text ||           // possible wrapper format
+      undefined
+
+    if (!reply) {
+      console.error('Unrecognised response shape:', JSON.stringify(raw))
+      return res.status(200).json({
+        reply: `DEBUG — unrecognised response shape. Keys: ${Object.keys(raw ?? {}).join(', ')}`
+      })
+    }
 
     return res.status(200).json({ reply })
   } catch (err) {
