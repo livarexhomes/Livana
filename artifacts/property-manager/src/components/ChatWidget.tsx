@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
-import { X, Send, MessageSquare, Paperclip, ChevronDown, User } from 'lucide-react'
+import { X, Send, MessageSquare, Paperclip, ChevronDown, User, LayoutGrid } from 'lucide-react'
 import { createClient } from '../lib/supabase'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -72,6 +72,7 @@ export default function ChatWidget() {
   const [unread, setUnread]         = useState(false)
   const [pendingImg, setPendingImg] = useState<{ url: string; data: string; mediaType: string } | null>(null)
   const [actionsUsed, setActionsUsed] = useState(false)
+  const [showMenu, setShowMenu] = useState(false)
 
   // ── Agent form state ──────────────────────────────────────────────────────
   const [showAgentForm, setShowAgentForm]       = useState(false)
@@ -114,6 +115,7 @@ export default function ChatWidget() {
   // ── Agent form ────────────────────────────────────────────────────────────────
   function triggerAgentForm() {
     setActionsUsed(true)
+    setShowMenu(false)
     setShowAgentForm(true)
   }
 
@@ -146,6 +148,7 @@ export default function ChatWidget() {
   async function sendMessage(text: string, img: typeof pendingImg) {
     if (!text.trim() && !img) return
     setActionsUsed(true)
+    setShowMenu(false)
 
     const userContent: ContentBlock[] = []
     if (img) userContent.push({ type: 'image_url', url: img.url, mediaType: img.mediaType, data: img.data })
@@ -318,6 +321,27 @@ export default function ChatWidget() {
             </div>
           </div>
 
+          {/* Menu button — only visible once a conversation has started */}
+          {actionsUsed && (
+            <button
+              onClick={() => setShowMenu(v => !v)}
+              title="Show menu"
+              style={{
+                width:32, height:32, borderRadius:8,
+                background: showMenu ? 'rgba(255,255,255,0.22)' : 'rgba(255,255,255,0.08)',
+                border:'none', cursor:'pointer',
+                display:'flex', alignItems:'center', justifyContent:'center',
+                color: showMenu ? '#fff' : 'rgba(255,255,255,0.65)',
+                transition:'background 0.15s, color 0.15s',
+                flexShrink:0,
+              }}
+              onMouseEnter={e=>(e.currentTarget.style.background='rgba(255,255,255,0.18)')}
+              onMouseLeave={e=>(e.currentTarget.style.background= showMenu ? 'rgba(255,255,255,0.22)' : 'rgba(255,255,255,0.08)')}
+            >
+              <LayoutGrid size={14}/>
+            </button>
+          )}
+
           {/* WhatsApp */}
           <a href="https://wa.me/2347061370742?text=Hello%20Livarex!"
             target="_blank" rel="noopener noreferrer"
@@ -379,14 +403,23 @@ export default function ChatWidget() {
             </div>
           </div>
 
-          {/* Quick action cards (disappear once conversation starts) */}
-          {!actionsUsed && messages.length === 0 && (
+          {/* Quick action cards — shown on first open, or when Menu button is pressed */}
+          {(!actionsUsed && messages.length === 0) || showMenu ? (
             <div style={{
               display:'grid', gridTemplateColumns:'1fr 1fr',
-              gap:8, marginTop:4,
-              animation:'cwFadeUp 0.45s 0.1s ease both', opacity:0,
-              animationFillMode:'forwards',
+              gap:8, marginTop: showMenu ? 8 : 4,
+              animation:'cwFadeUp 0.3s ease both',
             }}>
+              {showMenu && (
+                <div style={{
+                  gridColumn:'1 / -1',
+                  fontSize:10.5, fontWeight:700, color:'#94a3b8',
+                  textTransform:'uppercase', letterSpacing:'0.08em',
+                  paddingBottom:2,
+                }}>
+                  What can I help you with?
+                </div>
+              )}
               {ACTIONS.map(a => (
                 <button
                   key={a.title}
@@ -409,7 +442,7 @@ export default function ChatWidget() {
                 </button>
               ))}
             </div>
-          )}
+          ) : null}
 
           {/* Conversation messages */}
           {messages.map((msg, i) => (
