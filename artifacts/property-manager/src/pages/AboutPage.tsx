@@ -122,26 +122,73 @@ export default function AboutPage() {
       </section>
 
       {/* ── VALUES ── */}
-      <section className="bg-gray-950 py-28 relative overflow-hidden">
-        <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'radial-gradient(circle at 1px 1px, white 1px, transparent 0)', backgroundSize: '32px 32px' }} />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[700px] bg-blue-600/8 rounded-full blur-[100px] pointer-events-none" />
+      <section className="bg-[#080c14] py-28 relative overflow-hidden">
+        {/* Ambient orbs */}
+        <div className="absolute -top-32 -left-32 w-[500px] h-[500px] bg-blue-600/10 rounded-full blur-[120px] pointer-events-none" />
+        <div className="absolute -bottom-32 -right-32 w-[500px] h-[500px] bg-violet-600/8 rounded-full blur-[120px] pointer-events-none" />
+        {/* Subtle grid */}
+        <div className="absolute inset-0 opacity-[0.025]"
+          style={{ backgroundImage: 'linear-gradient(rgba(255,255,255,0.5) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.5) 1px,transparent 1px)', backgroundSize: '60px 60px' }} />
+
         <div className="relative z-10 max-w-6xl mx-auto px-5 sm:px-8">
-          <div className="text-center mb-16">
-            <p className="text-xs font-bold uppercase tracking-widest text-blue-400 mb-4">What We Stand For</p>
-            <h2 className="text-4xl font-extrabold text-white tracking-tight mb-3">Our core values</h2>
-            <p className="text-gray-500 max-w-md mx-auto text-sm leading-relaxed">These aren't aspirations on a wall. They're the decisions we make every single day.</p>
+
+          {/* Header */}
+          <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6 mb-16">
+            <div>
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 mb-5">
+                <span className="w-1.5 h-1.5 rounded-full bg-blue-400" />
+                <span className="text-[11px] font-bold uppercase tracking-widest text-blue-400">What We Stand For</span>
+              </div>
+              <h2 className="text-4xl md:text-5xl font-extrabold text-white tracking-tight leading-tight">
+                Our core values
+              </h2>
+            </div>
+            <p className="text-gray-500 text-sm leading-relaxed max-w-xs lg:text-right">
+              These aren't aspirations on a wall.<br />
+              They're the decisions we make every single day.
+            </p>
           </div>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {values.map(v => {
+
+          {/* Cards — 2 × 2 on md+, stacked on mobile */}
+          <div className="grid sm:grid-cols-2 gap-4">
+            {values.map((v, i) => {
               const Icon = v.icon
+              const colors: Record<string, { border: string; glow: string; iconBg: string; numColor: string; bar: string }> = {
+                'from-blue-500 to-blue-600':    { border: 'hover:border-blue-500/40',   glow: 'hover:shadow-blue-500/10',   iconBg: 'bg-blue-500/15 text-blue-400',   numColor: 'text-blue-500/20',   bar: 'from-blue-500 to-blue-600' },
+                'from-violet-500 to-violet-600':{ border: 'hover:border-violet-500/40', glow: 'hover:shadow-violet-500/10', iconBg: 'bg-violet-500/15 text-violet-400',numColor: 'text-violet-500/20', bar: 'from-violet-500 to-violet-600' },
+                'from-emerald-500 to-emerald-600':{ border:'hover:border-emerald-500/40',glow:'hover:shadow-emerald-500/10',iconBg:'bg-emerald-500/15 text-emerald-400',numColor:'text-emerald-500/20',bar:'from-emerald-500 to-emerald-600'},
+                'from-amber-500 to-amber-600':  { border: 'hover:border-amber-500/40',  glow: 'hover:shadow-amber-500/10',  iconBg: 'bg-amber-500/15 text-amber-400',  numColor: 'text-amber-500/20',  bar: 'from-amber-500 to-amber-600' },
+              }
+              const c = colors[v.accent]
               return (
-                <div key={v.title} className="group relative bg-white/[0.04] border border-white/8 rounded-3xl p-7 hover:bg-white/[0.07] hover:border-white/15 transition-all duration-300 overflow-hidden">
-                  <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500" style={{ background: 'radial-gradient(circle at 50% 0%, rgba(255,255,255,0.04) 0%, transparent 70%)' }} />
-                  <div className={`relative w-12 h-12 rounded-2xl bg-gradient-to-br ${v.accent} flex items-center justify-center mb-5 shadow-lg ${v.glow} group-hover:scale-110 transition-transform duration-300`}>
-                    <Icon className="w-5 h-5 text-white" />
+                <div
+                  key={v.title}
+                  className={`group relative rounded-3xl border border-white/[0.06] bg-white/[0.03] backdrop-blur-sm overflow-hidden transition-all duration-500 hover:-translate-y-1 hover:bg-white/[0.06] hover:border-white/[0.12] hover:shadow-2xl ${c.glow} ${c.border} cursor-default`}
+                >
+                  {/* Gradient top bar */}
+                  <div className={`h-px w-full bg-gradient-to-r ${c.bar} opacity-0 group-hover:opacity-100 transition-opacity duration-500`} />
+
+                  {/* Inner glow on hover */}
+                  <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none"
+                    style={{ background: 'radial-gradient(ellipse at 20% 0%, rgba(255,255,255,0.03) 0%, transparent 60%)' }} />
+
+                  <div className="p-8">
+                    {/* Top row: number + icon */}
+                    <div className="flex items-start justify-between mb-8">
+                      {/* Oversized ghost number */}
+                      <span className={`text-8xl font-black leading-none select-none ${c.numColor} transition-all duration-300 group-hover:opacity-40`}>
+                        0{i + 1}
+                      </span>
+                      {/* Icon pill */}
+                      <div className={`w-12 h-12 rounded-2xl ${c.iconBg} flex items-center justify-center shrink-0 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3`}>
+                        <Icon className="w-5 h-5" />
+                      </div>
+                    </div>
+
+                    {/* Text */}
+                    <h3 className="text-white font-extrabold text-xl mb-3 tracking-tight">{v.title}</h3>
+                    <p className="text-gray-500 text-sm leading-relaxed group-hover:text-gray-400 transition-colors duration-300">{v.desc}</p>
                   </div>
-                  <h3 className="text-white font-bold text-base mb-3 relative">{v.title}</h3>
-                  <p className="text-gray-500 text-sm leading-relaxed relative">{v.desc}</p>
                 </div>
               )
             })}
