@@ -106,7 +106,7 @@ export default async function handler(req, res) {
   const apiKey = process.env.OPENROUTER_API_KEY
   if (!apiKey) return res.status(500).json({ error: 'OPENROUTER_API_KEY not configured' })
 
-  const model = process.env.OPENROUTER_MODEL || 'anthropic/claude-opus-4'
+  const model = process.env.OPENROUTER_MODEL || 'google/gemini-2.0-flash-exp:free'
 
   // Flatten messages to plain strings for OpenAI format
   const flatMessages = messages.map(m => ({
