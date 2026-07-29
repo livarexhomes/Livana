@@ -137,7 +137,13 @@ export default async function handler(req, res) {
     : `${SYSTEM_PROMPT}\n\n--- LISTINGS: None available right now. Direct users to www.livarex.com.ng/listings ---`
 
   try {
-    const apiRes = await fetch(`${baseURL}/v1/messages`, {
+    // Build endpoint: if baseURL already ends with /v1 just add /messages,
+    // otherwise add the full /v1/messages path
+    const messagesUrl = baseURL.endsWith('/v1')
+      ? `${baseURL}/messages`
+      : `${baseURL}/v1/messages`
+
+    const apiRes = await fetch(messagesUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
