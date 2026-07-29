@@ -7,6 +7,7 @@ import {
   handleKYCEvent,
 } from "./notifications.js"
 import { startFollowUpScheduler } from "./followUp.js"
+import { processWebMessage } from "./ai.js"
 
 const app = express()
 app.use(express.json())
@@ -28,6 +29,34 @@ app.post("/events/kyc",        handleKYCEvent)
 app.get("/", (_, res) =>
   res.json({ status: "ok", service: "Livarex WhatsApp Bot 🏡", time: new Date().toISOString() })
 )
+
+// ── Web Chat API (used by livarex.com.ng chatbot widget) ───────────────────
+const chatApp = express()
+chatApp.use(express.json())
+chatApp.use((req, res, next) => {
+  res.setHeader("Access-Control-Allow-Origin", "*")
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type")
+  res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS")
+  if (req.method === "OPTIONS") return res.sendStatus(200)
+  next()
+})
+
+chatApp.post("/api/chat", async (req, res) => {
+  try {
+    const { messages } = req.body
+    if (!Array.isArray(messages) || messages.length === 0) {
+      return res.status(400).json({ error: "messages array required" })
+    }
+    const reply = await processWebMessage(messages)
+    res.json({ reply })
+  } catch (err) {
+    console.error("Chat API error:", err.message)
+    res.status(500).json({ error: "Something went wrong. Please try again." })
+  }
+})
+
+const CHAT_PORT = parseInt(process.env.CHAT_PORT || "3001")
+chatApp.listen(CHAT_PORT, () => console.log(`💬 Livarex Chat API on port ${CHAT_PORT}`))
 
 // ── Start ───────────────────────────────────────────────────────────────────
 startFollowUpScheduler()

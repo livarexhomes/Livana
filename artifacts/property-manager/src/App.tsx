@@ -3,6 +3,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { lazy, Suspense } from "react";
+import ChatWidget from "@/components/ChatWidget";
 
 const HomePage = lazy(() => import("@/pages/HomePage"));
 const ListingsPage = lazy(() => import("@/pages/ListingsPage"));
@@ -139,6 +140,7 @@ function App() {
           <Router />
         </WouterRouter>
         <Toaster />
+        <ChatWidget />
       </TooltipProvider>
     </QueryClientProvider>
   );

@@ -94,6 +94,39 @@ export async function processMessage(phone, name, userMessage) {
   return reply
 }
 
+/**
+ * processWebMessage — lightweight version for the website chatbot widget.
+ * No DB persistence; caller passes the full messages array each time.
+ */
+/**
+ * processWebMessage — web chatbot (no DB). Supports text + image messages.
+ * Each message may have content as a string OR an array of content blocks
+ * (text + base64 image) following Anthropic's vision format.
+ */
+export async function processWebMessage(messages) {
+  const listings = await fetchListings()
+  const listingsContext = formatListingsForAI(listings)
+
+  const systemWithListings = listingsContext
+    ? `${SYSTEM_PROMPT}\n\n--- CURRENT VERIFIED LISTINGS ---\n${listingsContext}\n--- END LISTINGS ---`
+    : `${SYSTEM_PROMPT}\n\n--- LISTINGS: None available right now. Tell users to check www.livarex.com.ng/listings for the latest or leave their requirements and the team will reach out. ---`
+
+  // Normalise messages: ensure content is always an array of blocks
+  const normalised = messages.map(m => ({
+    role: m.role,
+    content: Array.isArray(m.content) ? m.content : [{ type: "text", text: m.content }],
+  }))
+
+  const response = await client.messages.create({
+    model: "claude-sonnet-4-6",
+    max_tokens: 1024,
+    system: systemWithListings,
+    messages: normalised,
+  })
+
+  return response.content[0].text
+}
+
 export async function generateFollowUpMessage(lead, history) {
   const FOLLOW_UP_PROMPT = `You are the Livarex property assistant sending a brief, friendly follow-up WhatsApp message.
 
