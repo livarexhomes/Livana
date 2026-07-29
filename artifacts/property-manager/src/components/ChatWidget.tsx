@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
-import { X, Send, MessageSquare, Paperclip, ChevronDown } from 'lucide-react'
+import { X, Send, MessageSquare, Paperclip, ChevronDown, User } from 'lucide-react'
+import { createClient } from '../lib/supabase'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -24,7 +25,12 @@ const ACTIONS = [
   { icon: '🏠', title: 'Find a home',       sub: 'Browse verified rentals', msg: 'Show me available verified rentals in Lagos and Ogun.' },
   { icon: '📅', title: 'Book inspection',   sub: 'Schedule a viewing',      msg: 'I want to book a property inspection. How do I do that?' },
   { icon: '🏢', title: 'List my property',  sub: 'Become a landlord',       msg: 'I am a landlord and want to list my property on Livarex.' },
-  { icon: '💰', title: 'Pricing & fees',    sub: 'Zero agent fees',         msg: 'What are the costs and fees for tenants and landlords?' },
+  { icon: '👤', title: 'Talk to Agent',     sub: 'Get human support',       msg: null },
+]
+
+const ESCALATION_KEYWORDS = [
+  'human agent', 'connect you with', 'real person', 'team member',
+  'speak to a', 'connecting you', 'livarex agent',
 ]
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -67,6 +73,14 @@ export default function ChatWidget() {
   const [pendingImg, setPendingImg] = useState<{ url: string; data: string; mediaType: string } | null>(null)
   const [actionsUsed, setActionsUsed] = useState(false)
 
+  // ── Agent form state ──────────────────────────────────────────────────────
+  const [showAgentForm, setShowAgentForm]       = useState(false)
+  const [agentName, setAgentName]               = useState('')
+  const [agentNote, setAgentNote]               = useState('')
+  const [agentPhone, setAgentPhone]             = useState('')
+  const [agentSubmitting, setAgentSubmitting]   = useState(false)
+  const [agentSubmitted, setAgentSubmitted]     = useState(false)
+
   const bottomRef = useRef<HTMLDivElement>(null)
   const inputRef  = useRef<HTMLInputElement>(null)
   const fileRef   = useRef<HTMLInputElement>(null)
@@ -95,6 +109,37 @@ export default function ChatWidget() {
   function removePendingImg() {
     if (pendingImg) URL.revokeObjectURL(pendingImg.url)
     setPendingImg(null)
+  }
+
+  // ── Agent form ────────────────────────────────────────────────────────────────
+  function triggerAgentForm() {
+    setActionsUsed(true)
+    setShowAgentForm(true)
+  }
+
+  async function submitAgentForm(e: React.FormEvent) {
+    e.preventDefault()
+    const name = agentName.trim()
+    const note = agentNote.trim()
+    if (!name || !note || agentSubmitting) return
+    setAgentSubmitting(true)
+    try {
+      const supabase = createClient()
+      const { error } = await supabase.from('chat_inquiries').insert({
+        name,
+        note,
+        phone: agentPhone.trim() || null,
+      })
+      if (error) throw error
+      setAgentSubmitted(true)
+    } catch (err) {
+      console.error('Agent form error:', err)
+      // fall back to WhatsApp on failure
+      window.open(`https://wa.me/2347061370742?text=${encodeURIComponent(`Hi, I'm ${name}. ${note}`)}`, '_blank')
+      setAgentSubmitted(true)
+    } finally {
+      setAgentSubmitting(false)
+    }
   }
 
   // ── Send ──────────────────────────────────────────────────────────────────────
@@ -128,11 +173,16 @@ export default function ChatWidget() {
         body: JSON.stringify({ messages: apiMessages }),
       })
       const data = await res.json()
+      const reply = data.reply || data.error || 'Something went wrong.'
       setMessages(m => [...m, {
         role: 'assistant',
-        content: [{ type: 'text', text: data.reply || data.error || 'Something went wrong.' }],
+        content: [{ type: 'text', text: reply }],
       }])
       if (!open) setUnread(true)
+      // If bot is escalating to human, auto-show the form
+      if (!agentSubmitted && !showAgentForm && ESCALATION_KEYWORDS.some(kw => reply.toLowerCase().includes(kw))) {
+        setTimeout(() => setShowAgentForm(true), 700)
+      }
     } catch {
       setMessages(m => [...m, {
         role: 'assistant',
@@ -341,7 +391,7 @@ export default function ChatWidget() {
                 <button
                   key={a.title}
                   className="cw-action"
-                  onClick={() => sendMessage(a.msg, null)}
+                  onClick={() => a.msg ? sendMessage(a.msg, null) : triggerAgentForm()}
                   style={{
                     background:'#fff', border:'1px solid #e2e8f0',
                     borderRadius:12, padding:'11px 12px',
@@ -413,6 +463,119 @@ export default function ChatWidget() {
               </div>
             </div>
           ))}
+
+          {/* ── Agent contact form ──────────────────────────────────────────── */}
+          {showAgentForm && (
+            <div style={{
+              display:'flex', gap:8, alignItems:'flex-start',
+              animation:'cwFadeUp 0.35s ease both',
+            }}>
+              <div style={{
+                width:28, height:28, borderRadius:'50%',
+                background:'linear-gradient(135deg,#3b82f6,#6366f1)',
+                display:'flex', alignItems:'center', justifyContent:'center',
+                flexShrink:0, fontSize:10, fontWeight:900, color:'#fff', marginTop:2,
+              }}>L</div>
+              <div style={{
+                flex:1, background:'#fff', borderRadius:'16px 16px 16px 4px',
+                border:'1px solid rgba(0,0,0,0.07)',
+                boxShadow:'0 1px 4px rgba(0,0,0,0.06)',
+                padding:'14px 16px', maxWidth:'88%',
+              }}>
+                {agentSubmitted ? (
+                  <div style={{ textAlign:'center', padding:'8px 0' }}>
+                    <div style={{
+                      width:36, height:36, borderRadius:'50%',
+                      background:'#dcfce7', display:'flex', alignItems:'center',
+                      justifyContent:'center', margin:'0 auto 10px',
+                    }}>
+                      <span style={{ fontSize:18 }}>✓</span>
+                    </div>
+                    <p style={{ fontSize:13, fontWeight:700, color:'#166534', margin:0 }}>
+                      Request received!
+                    </p>
+                    <p style={{ fontSize:12, color:'#64748b', marginTop:4 }}>
+                      Our team will reach out within 2 hours on business days.
+                    </p>
+                  </div>
+                ) : (
+                  <form onSubmit={submitAgentForm} style={{ display:'flex', flexDirection:'column', gap:10 }}>
+                    <div style={{ display:'flex', alignItems:'center', gap:7, marginBottom:2 }}>
+                      <div style={{
+                        width:26, height:26, borderRadius:8,
+                        background:'#eff6ff', display:'flex', alignItems:'center', justifyContent:'center',
+                      }}>
+                        <User size={13} color="#2563eb" />
+                      </div>
+                      <div>
+                        <p style={{ fontSize:12, fontWeight:700, color:'#1e293b', margin:0 }}>Talk to a Livarex agent</p>
+                        <p style={{ fontSize:10.5, color:'#94a3b8', margin:0 }}>We reply within 2 hours on business days</p>
+                      </div>
+                    </div>
+                    <div style={{ display:'flex', flexDirection:'column', gap:4 }}>
+                      <label style={{ fontSize:11, fontWeight:600, color:'#475569' }}>Your name *</label>
+                      <input
+                        value={agentName}
+                        onChange={e => setAgentName(e.target.value)}
+                        placeholder="e.g. Adebayo Okafor"
+                        required
+                        style={{
+                          fontSize:12, padding:'7px 11px', borderRadius:8,
+                          border:'1px solid #e2e8f0', background:'#f8fafc',
+                          outline:'none', color:'#1e293b',
+                        }}
+                      />
+                    </div>
+                    <div style={{ display:'flex', flexDirection:'column', gap:4 }}>
+                      <label style={{ fontSize:11, fontWeight:600, color:'#475569' }}>What do you need help with? *</label>
+                      <textarea
+                        value={agentNote}
+                        onChange={e => setAgentNote(e.target.value)}
+                        placeholder="Briefly describe what you need…"
+                        required
+                        rows={2}
+                        style={{
+                          fontSize:12, padding:'7px 11px', borderRadius:8,
+                          border:'1px solid #e2e8f0', background:'#f8fafc',
+                          outline:'none', color:'#1e293b', resize:'none',
+                          fontFamily:'inherit',
+                        }}
+                      />
+                    </div>
+                    <div style={{ display:'flex', flexDirection:'column', gap:4 }}>
+                      <label style={{ fontSize:11, fontWeight:600, color:'#475569' }}>Phone number (optional)</label>
+                      <input
+                        value={agentPhone}
+                        onChange={e => setAgentPhone(e.target.value)}
+                        placeholder="+234 …"
+                        type="tel"
+                        style={{
+                          fontSize:12, padding:'7px 11px', borderRadius:8,
+                          border:'1px solid #e2e8f0', background:'#f8fafc',
+                          outline:'none', color:'#1e293b',
+                        }}
+                      />
+                    </div>
+                    <button
+                      type="submit"
+                      disabled={!agentName.trim() || !agentNote.trim() || agentSubmitting}
+                      style={{
+                        marginTop:2, padding:'9px 0', borderRadius:10, border:'none',
+                        background: (!agentName.trim() || !agentNote.trim() || agentSubmitting)
+                          ? '#e2e8f0' : 'linear-gradient(135deg,#2563eb,#3b82f6)',
+                        color: (!agentName.trim() || !agentNote.trim() || agentSubmitting)
+                          ? '#94a3b8' : '#fff',
+                        fontSize:12, fontWeight:700, cursor: agentSubmitting ? 'wait' : 'pointer',
+                        transition:'all 0.15s',
+                      }}
+                    >
+                      {agentSubmitting ? 'Sending…' : 'Send Request'}
+                    </button>
+                  </form>
+                )}
+              </div>
+            </div>
+          )}
 
           {/* Typing indicator */}
           {loading && (

@@ -41,6 +41,16 @@ interface Enquiry {
   properties?: { title: string | null; city: string | null; address: string | null } | null
 }
 
+interface ChatInquiry {
+  id: string
+  name: string
+  note: string
+  phone: string | null
+  status: 'open' | 'replied' | 'closed'
+  created_at: string
+  updated_at: string
+}
+
 interface EnquiryReply {
   id: string
   enquiry_id: string
@@ -771,26 +781,234 @@ function InboxTab() {
   )
 }
 
+// ── ChatRequestsTab ───────────────────────────────────────────────────────────
+
+function ChatRequestsTab() {
+  const [inquiries, setInquiries]   = useState<ChatInquiry[]>([])
+  const [loading, setLoading]       = useState(true)
+  const [selectedId, setSelectedId] = useState<string | null>(null)
+  const [filterStatus, setFilterStatus] = useState<string>('all')
+  const [updating, setUpdating]     = useState(false)
+
+  useEffect(() => {
+    const supabase = createClient()
+    supabase
+      .from('chat_inquiries')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .then(({ data }) => { setInquiries((data as ChatInquiry[]) ?? []); setLoading(false) })
+
+    const channel = supabase.channel('admin_chat_inquiries')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'chat_inquiries' },
+        (payload) => setInquiries(prev => [payload.new as ChatInquiry, ...prev]))
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'chat_inquiries' },
+        (payload) => setInquiries(prev => prev.map(i => i.id === payload.new.id ? { ...i, ...payload.new } as ChatInquiry : i)))
+      .subscribe()
+    return () => { supabase.removeChannel(channel) }
+  }, [])
+
+  async function changeStatus(id: string, status: ChatInquiry['status']) {
+    setUpdating(true)
+    const supabase = createClient()
+    await supabase.from('chat_inquiries').update({ status }).eq('id', id)
+    setInquiries(prev => prev.map(i => i.id === id ? { ...i, status } : i))
+    if (selectedId === id && status === 'closed') setSelectedId(null)
+    setUpdating(false)
+  }
+
+  const filtered = filterStatus === 'all' ? inquiries : inquiries.filter(i => i.status === filterStatus)
+  const selected = inquiries.find(i => i.id === selectedId) ?? null
+  const counts = {
+    all:     inquiries.length,
+    open:    inquiries.filter(i => i.status === 'open').length,
+    replied: inquiries.filter(i => i.status === 'replied').length,
+    closed:  inquiries.filter(i => i.status === 'closed').length,
+  }
+
+  return (
+    <div className="flex flex-1 overflow-hidden gap-3">
+      {/* List */}
+      <div className={`flex flex-col border border-slate-200 bg-white w-full lg:w-64 xl:w-72 shrink-0 overflow-hidden ${selected ? 'hidden lg:flex' : 'flex'}`}>
+        <div className="px-4 py-3 border-b border-slate-200">
+          <div className="flex items-center justify-between gap-2">
+            <div>
+              <p className="text-[10px] uppercase tracking-[0.3em] text-slate-400">Web chat</p>
+              <h2 className="text-base font-bold text-slate-950">Chat Requests</h2>
+            </div>
+            <span className="text-[11px] text-slate-500">{inquiries.length} total</span>
+          </div>
+          <div className="mt-3 flex flex-wrap gap-2">
+            {(['all', 'open', 'replied', 'closed'] as const).map(key => (
+              <button key={key} onClick={() => setFilterStatus(key)}
+                className={`shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-2xl text-xs font-semibold border transition-all ${
+                  filterStatus === key ? 'bg-slate-900 text-white border-slate-900' : 'bg-slate-100 text-slate-600 border-slate-200 hover:border-slate-300'
+                }`}>
+                {key === 'all' ? 'All' : ENQUIRY_STATUS_META[key].label}
+                <span className={`text-[10px] font-bold ${filterStatus === key ? 'text-white/70' : 'text-slate-400'}`}>{counts[key]}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+        <div className="flex-1 overflow-y-auto p-3 space-y-2">
+          {loading ? (
+            <div className="space-y-2">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <div key={i} className="h-24 rounded-3xl bg-slate-100 animate-pulse" />
+              ))}
+            </div>
+          ) : filtered.length === 0 ? (
+            <div className="flex flex-col items-center justify-center h-full p-8 text-center">
+              <MessageSquare className="w-10 h-10 text-slate-200 mb-3" />
+              <p className="text-sm font-semibold text-slate-400">No chat requests yet</p>
+              <p className="text-xs text-slate-400 mt-1">They appear when users request a human agent on the website.</p>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {filtered.map(inq => {
+                const s = ENQUIRY_STATUS_META[inq.status]
+                const isActive = selectedId === inq.id
+                const initial = inq.name[0]?.toUpperCase() ?? 'U'
+                return (
+                  <button key={inq.id} onClick={() => setSelectedId(inq.id)}
+                    className={`w-full text-left rounded-2xl border px-3 py-3 transition-all ${isActive ? 'border-slate-900 bg-slate-950 text-white shadow-lg' : 'border-slate-200 bg-white hover:border-slate-300 hover:shadow-sm'}`}>
+                    <div className="flex items-start justify-between gap-2">
+                      <p className={`font-semibold text-sm truncate ${isActive ? 'text-white' : 'text-slate-950'}`}>{inq.name}</p>
+                      <span className={`shrink-0 inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full ${isActive ? 'bg-white/15 text-white' : `${s.bg} ${s.color}`}`}>
+                        <span className={`w-1.5 h-1.5 rounded-full ${isActive ? 'bg-white' : s.dot}`} />{s.label}
+                      </span>
+                    </div>
+                    {inq.phone && (
+                      <p className={`text-xs truncate mt-1 ${isActive ? 'text-white/70' : 'text-slate-400'}`}>{inq.phone}</p>
+                    )}
+                    <p className={`text-[10px] mt-2 line-clamp-2 ${isActive ? 'text-white/70' : 'text-slate-500'}`}>{inq.note}</p>
+                    <p className={`text-[11px] mt-2 ${isActive ? 'text-white/50' : 'text-slate-400'}`}>
+                      {formatDistanceToNow(new Date(inq.created_at), { addSuffix: true })}
+                    </p>
+                  </button>
+                )
+              })}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Detail */}
+      <div className={`flex-1 min-w-0 p-3 ${selected ? 'flex' : 'hidden lg:flex'} flex-col`}>
+        {selected ? (
+          <div className="flex flex-col h-full bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+            {/* Header */}
+            <div className="flex items-center gap-3 px-4 py-3 border-b border-gray-100 shrink-0">
+              <button onClick={() => setSelectedId(null)} className="lg:hidden p-1.5 rounded-lg hover:bg-gray-100 text-gray-500 transition-colors">
+                <ChevronLeft className="w-4 h-4" />
+              </button>
+              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-500 flex items-center justify-center shrink-0 shadow-sm">
+                <span className="text-sm font-bold text-white">{selected.name[0]?.toUpperCase() ?? 'U'}</span>
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <p className="font-bold text-gray-900 text-sm">{selected.name}</p>
+                  <span className={`shrink-0 inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full ${ENQUIRY_STATUS_META[selected.status].bg} ${ENQUIRY_STATUS_META[selected.status].color}`}>
+                    <span className={`w-1.5 h-1.5 rounded-full ${ENQUIRY_STATUS_META[selected.status].dot}`} />
+                    {ENQUIRY_STATUS_META[selected.status].label}
+                  </span>
+                </div>
+                <p className="text-xs text-gray-400 mt-0.5">
+                  {selected.phone && <span>{selected.phone} · </span>}
+                  {format(new Date(selected.created_at), 'dd MMM yyyy, h:mm a')}
+                </p>
+              </div>
+              <div className="relative shrink-0">
+                <select value={selected.status} onChange={e => changeStatus(selected.id, e.target.value as ChatInquiry['status'])}
+                  disabled={updating}
+                  className="appearance-none pl-3 pr-7 py-1.5 rounded-xl border border-gray-200 text-xs font-semibold bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer disabled:opacity-50">
+                  <option value="open">Open</option>
+                  <option value="replied">Replied</option>
+                  <option value="closed">Closed</option>
+                </select>
+                {updating
+                  ? <Loader2 className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 animate-spin text-gray-400 pointer-events-none" />
+                  : <RefreshCw className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-gray-400 pointer-events-none" />}
+              </div>
+            </div>
+
+            {/* Body */}
+            <div className="flex-1 overflow-y-auto px-5 py-5 space-y-4">
+              {/* Note card */}
+              <div className="rounded-2xl bg-slate-50 border border-slate-100 p-5">
+                <p className="text-[10px] uppercase tracking-[0.25em] text-slate-400 mb-2">Message</p>
+                <p className="text-sm text-slate-800 leading-relaxed whitespace-pre-wrap">{selected.note}</p>
+              </div>
+
+              {/* Contact info */}
+              {selected.phone && (
+                <div className="flex items-center gap-3 rounded-2xl bg-blue-50 border border-blue-100 p-4">
+                  <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center shrink-0">
+                    <User className="w-4 h-4 text-white" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-blue-600 font-semibold">{selected.phone}</p>
+                    <a href={`https://wa.me/${selected.phone.replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer"
+                      className="text-[11px] text-blue-400 hover:text-blue-600 underline transition-colors">
+                      Open on WhatsApp →
+                    </a>
+                  </div>
+                </div>
+              )}
+
+              <div className="flex gap-3">
+                <button onClick={() => changeStatus(selected.id, 'replied')} disabled={selected.status === 'replied' || selected.status === 'closed' || updating}
+                  className="flex-1 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 disabled:opacity-40 text-white text-xs font-bold transition-colors">
+                  Mark as Replied
+                </button>
+                <button onClick={() => changeStatus(selected.id, 'closed')} disabled={selected.status === 'closed' || updating}
+                  className="flex-1 py-2.5 rounded-xl bg-gray-100 hover:bg-gray-200 disabled:opacity-40 text-gray-700 text-xs font-bold transition-colors">
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="flex-1 flex flex-col items-center justify-center bg-white rounded-2xl border border-gray-100 shadow-sm text-center p-6 h-full">
+            <div className="w-16 h-16 rounded-2xl bg-gray-50 flex items-center justify-center mb-4">
+              <MessageSquare className="w-8 h-8 text-gray-300" />
+            </div>
+            <p className="font-bold text-gray-900 mb-1">Select a request</p>
+            <p className="text-sm text-gray-400">Choose a chat request to view details and update status.</p>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
 // ── Main Page ─────────────────────────────────────────────────────────────────
 
 export default function AdminSupportPage() {
   const [user, setUser]   = useState<{ email?: string } | null>(null)
-  const [tab, setTab]     = useState<'support' | 'inbox'>('support')
-  const [openCount, setOpenCount] = useState(0)
+  const [tab, setTab]     = useState<'support' | 'inbox' | 'chat'>('support')
+  const [openCount, setOpenCount]     = useState(0)
+  const [chatOpenCount, setChatOpenCount] = useState(0)
 
   useEffect(() => {
     const supabase = createClient()
     supabase.auth.getUser().then(({ data: { user } }) => setUser({ email: user?.email }))
-    // Badge count: open enquiries
-    supabase.from('enquiries').select('id', { count: 'exact', head: true }).eq('status', 'open')
-      .then(({ count }) => setOpenCount(count ?? 0))
-    const channel = supabase.channel('enquiry_badge')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'enquiries' }, () => {
-        supabase.from('enquiries').select('id', { count: 'exact', head: true }).eq('status', 'open')
-          .then(({ count }) => setOpenCount(count ?? 0))
-      })
+
+    // Badge counts
+    const fetchCounts = () => {
+      supabase.from('enquiries').select('id', { count: 'exact', head: true }).eq('status', 'open')
+        .then(({ count }) => setOpenCount(count ?? 0))
+      supabase.from('chat_inquiries').select('id', { count: 'exact', head: true }).eq('status', 'open')
+        .then(({ count }) => setChatOpenCount(count ?? 0))
+    }
+    fetchCounts()
+
+    const ch1 = supabase.channel('enquiry_badge')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'enquiries' }, fetchCounts)
       .subscribe()
-    return () => { supabase.removeChannel(channel) }
+    const ch2 = supabase.channel('chat_inquiry_badge')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'chat_inquiries' }, fetchCounts)
+      .subscribe()
+    return () => { supabase.removeChannel(ch1); supabase.removeChannel(ch2) }
   }, [])
 
   const displayName = user?.email ? user.email.split('@')[0] : 'Admin'
@@ -810,9 +1028,15 @@ export default function AdminSupportPage() {
                   <h1 className="mt-2 text-3xl font-semibold tracking-tight">Support & enquiries</h1>
                   <p className="mt-1 max-w-2xl text-sm text-slate-300">Streamline customer tickets and enquiries in a premium dashboard.</p>
                 </div>
-                <div className="rounded-3xl border border-white/10 bg-white/10 px-3 py-1.5 text-sm shadow-sm">
-                  <p className="text-[10px] uppercase tracking-[0.3em] text-slate-300">Open enquiries</p>
-                  <p className="mt-1 text-lg font-semibold text-white">{openCount}</p>
+                <div className="flex gap-3">
+                  <div className="rounded-3xl border border-white/10 bg-white/10 px-3 py-1.5 text-sm shadow-sm">
+                    <p className="text-[10px] uppercase tracking-[0.3em] text-slate-300">Open enquiries</p>
+                    <p className="mt-1 text-lg font-semibold text-white">{openCount}</p>
+                  </div>
+                  <div className="rounded-3xl border border-white/10 bg-white/10 px-3 py-1.5 text-sm shadow-sm">
+                    <p className="text-[10px] uppercase tracking-[0.3em] text-slate-300">Chat requests</p>
+                    <p className="mt-1 text-lg font-semibold text-white">{chatOpenCount}</p>
+                  </div>
                 </div>
               </div>
             </div>
@@ -841,11 +1065,25 @@ export default function AdminSupportPage() {
                 </span>
               )}
             </button>
+            <button onClick={() => setTab('chat')}
+              className={`flex items-center gap-2 px-3 py-1.5 rounded-2xl text-sm font-semibold transition-all relative ${
+                tab === 'chat' ? 'bg-white text-slate-950 shadow-sm' : 'text-slate-300 hover:text-white hover:bg-slate-800'
+              }`}>
+              <MessageSquare className="w-4 h-4" />
+              Chat Requests
+              {chatOpenCount > 0 && (
+                <span className={`inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full text-[10px] font-bold ${
+                  tab === 'chat' ? 'bg-white text-slate-950' : 'bg-emerald-500 text-white'
+                }`}>
+                  {chatOpenCount > 99 ? '99+' : chatOpenCount}
+                </span>
+              )}
+            </button>
           </div>
 
           {/* Tab content */}
           <div className="flex flex-1 overflow-hidden">
-            {tab === 'support' ? <SupportTab /> : <InboxTab />}
+            {tab === 'support' ? <SupportTab /> : tab === 'inbox' ? <InboxTab /> : <ChatRequestsTab />}
           </div>
         </div>
       </div>
