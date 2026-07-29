@@ -56,7 +56,7 @@ export default async function handler(req: any, res: any) {
   const SUPABASE_URL = getEnv('SUPABASE_URL') || ''
   const SUPABASE_SERVICE_KEY = getEnv('SUPABASE_SERVICE_KEY') || getEnv('SUPABASE_SERVICE_ROLE_KEY') || ''
   const RESEND_API_KEY = getEnv('RESEND_API_KEY') || ''
-  const RESEND_FROM = getEnv('RESEND_FROM') || 'Livarex Homes <livarexhomes@gmail.com>'
+  const RESEND_FROM = getEnv('RESEND_FROM') || 'Livarex Homes <noreply@livarex.com.ng>'
 
   if (!RESEND_API_KEY) {
     return sendJson(res, 500, { error: 'Missing RESEND_API_KEY environment variable' })
