@@ -145,11 +145,13 @@ export default async function handler(req, res) {
 
     const apiRes = await fetch(messagesUrl, {
       method: 'POST',
+      redirect: 'manual', // never silently follow redirects
       headers: {
         'Content-Type': 'application/json',
         'x-api-key': apiKey,
         'Authorization': `Bearer ${apiKey}`,
         'anthropic-version': '2023-06-01',
+        'anthropic-beta': 'messages-2023-12-15',
       },
       body: JSON.stringify({
         model: 'claude-opus-4-8',
@@ -159,10 +161,28 @@ export default async function handler(req, res) {
       }),
     })
 
+    // Redirect = wrong URL or auth rejected with a login-page redirect
+    if (apiRes.status >= 300 && apiRes.status < 400) {
+      const location = apiRes.headers.get('location') ?? '(no location header)'
+      console.error('Redirect detected to:', location, 'from:', messagesUrl)
+      return res.status(500).json({
+        error: `Agentrouter redirected to ${location} — endpoint URL or API key is wrong`
+      })
+    }
+
+    // Guard: only parse JSON responses; HTML = wrong endpoint or key
+    const ct = apiRes.headers.get('content-type') ?? ''
+    if (!ct.includes('application/json')) {
+      const body = await apiRes.text()
+      console.error('Non-JSON response from AI API:', apiRes.status, body.slice(0, 300))
+      return res.status(500).json({
+        error: `AI API returned ${apiRes.status} non-JSON (${ct}) — check AGENTROUTER_BASE_URL and API key`
+      })
+    }
+
     if (!apiRes.ok) {
       const err = await apiRes.text()
       console.error('AI API error:', apiRes.status, err)
-      // Return the actual error detail so it surfaces in chat during debugging
       return res.status(500).json({ error: `AI error ${apiRes.status}: ${err.slice(0, 200)}` })
     }
 
