@@ -1,14 +1,14 @@
-// Vercel Serverless Function — /api/chat
-// Calls OpenRouter (openrouter.ai) using OpenAI-compatible format.
-// Works from Vercel — no WAF/IP issues.
+// Vercel EDGE Function — /api/chat
+// Edge runtime runs on Cloudflare PoP nodes (different IPs from Lambda).
+// This bypasses agentrouter.org's Alibaba Cloud WAF that blocks Lambda IPs.
 //
 // Required Vercel env vars:
-//   OPENROUTER_API_KEY   — from openrouter.ai/keys
-//
-// Optional:
-//   OPENROUTER_MODEL     — default: anthropic/claude-opus-4
-//   VITE_SUPABASE_URL    — for live listings
+//   AGENTROUTER_API_KEY  (or ANTHROPIC_API_KEY)   — your agentrouter key
+//   AGENTROUTER_BASE_URL (or ANTHROPIC_BASE_URL)  — https://agentrouter.org
+//   VITE_SUPABASE_URL
 //   SUPABASE_SERVICE_ROLE_KEY
+
+export const config = { runtime: 'edge' }
 
 const SYSTEM_PROMPT = `You are Livarex Bot — the official AI property assistant for Livarex Homes (www.livarex.com.ng), Nigeria's verified property marketplace.
 
@@ -59,10 +59,22 @@ const SYSTEM_PROMPT = `You are Livarex Bot — the official AI property assistan
 - "How long does it take?" → Inquiries within 2 hours; inspection confirmation within 24 hours
 - "What areas are covered?" → Lagos (Lekki, VI, Ikoyi, Surulere, Yaba, Ajah, Ikeja, Magodo, Sangotedo) and Ogun State`
 
-// ── Supabase listings ─────────────────────────────────────────────────────────
+// ── Helpers ───────────────────────────────────────────────────────────────────
+function json(data, status = 200) {
+  return new Response(JSON.stringify(data), {
+    status,
+    headers: {
+      'Content-Type': 'application/json',
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Headers': 'Content-Type',
+      'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    },
+  })
+}
+
 async function fetchListings() {
-  const url = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY
+  const url = globalThis.process?.env?.VITE_SUPABASE_URL
+  const key = globalThis.process?.env?.SUPABASE_SERVICE_ROLE_KEY
   if (!url || !key) return []
   try {
     const res = await fetch(
@@ -90,25 +102,41 @@ function formatListings(listings) {
   ).join('\n\n')
 }
 
-// ── Handler ───────────────────────────────────────────────────────────────────
-export default async function handler(req, res) {
-  res.setHeader('Access-Control-Allow-Origin', '*')
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type')
-  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS')
-  if (req.method === 'OPTIONS') return res.status(200).end()
-  if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
+// ── Edge Handler ──────────────────────────────────────────────────────────────
+export default async function handler(request) {
+  // CORS preflight
+  if (request.method === 'OPTIONS') return json({}, 200)
+  if (request.method !== 'POST') return json({ error: 'Method not allowed' }, 405)
 
-  const { messages } = req.body ?? {}
+  let body
+  try { body = await request.json() } catch { return json({ error: 'Invalid JSON body' }, 400) }
+
+  const { messages } = body ?? {}
   if (!Array.isArray(messages) || messages.length === 0) {
-    return res.status(400).json({ error: 'messages array required' })
+    return json({ error: 'messages array required' }, 400)
   }
 
-  const apiKey = process.env.OPENROUTER_API_KEY
-  if (!apiKey) return res.status(500).json({ error: 'OPENROUTER_API_KEY not configured' })
+  // Resolve agentrouter credentials (same priority as livarex-bot)
+  const apiKey =
+    process.env.AI_INTEGRATIONS_ANTHROPIC_API_KEY ||
+    process.env.ANTHROPIC_API_KEY ||
+    process.env.AGENTROUTER_API_KEY
 
-  const model = process.env.OPENROUTER_MODEL || 'google/gemini-2.0-flash-exp:free'
+  const baseURL = (
+    process.env.AI_INTEGRATIONS_ANTHROPIC_BASE_URL ||
+    process.env.ANTHROPIC_BASE_URL ||
+    process.env.AGENTROUTER_BASE_URL ||
+    'https://api.anthropic.com'
+  ).replace(/\/$/, '')
 
-  // Flatten messages to plain strings for OpenAI format
+  if (!apiKey) return json({ error: 'API key not configured' }, 500)
+
+  // agentrouter uses OpenAI-compatible format: /v1/chat/completions
+  const endpoint = baseURL.endsWith('/v1')
+    ? `${baseURL}/chat/completions`
+    : `${baseURL}/v1/chat/completions`
+
+  // Flatten messages to plain strings
   const flatMessages = messages.map(m => ({
     role: m.role,
     content: Array.isArray(m.content)
@@ -116,7 +144,7 @@ export default async function handler(req, res) {
       : String(m.content),
   }))
 
-  // Build system prompt with live listings
+  // System prompt + live listings
   const listings = await fetchListings()
   const listingsCtx = formatListings(listings)
   const systemContent = listingsCtx
@@ -129,28 +157,42 @@ export default async function handler(req, res) {
   ]
 
   try {
-    const apiRes = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+    const aiRes = await fetch(endpoint, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${apiKey}`,
-        'HTTP-Referer': 'https://www.livarex.com.ng',
         'X-Title': 'Livarex Property Assistant',
       },
-      body: JSON.stringify({ model, messages: openAiMessages }),
+      body: JSON.stringify({
+        model: 'claude-opus-4-8',
+        max_tokens: 512,
+        messages: openAiMessages,
+      }),
     })
 
-    if (!apiRes.ok) {
-      const err = await apiRes.text()
-      console.error('OpenRouter error:', apiRes.status, err)
-      return res.status(500).json({ error: `AI error ${apiRes.status}: ${err.slice(0, 200)}` })
+    const ct = aiRes.headers.get('content-type') ?? ''
+    if (!ct.includes('application/json')) {
+      const text = await aiRes.text()
+      console.error('Non-JSON from agentrouter:', aiRes.status, text.slice(0, 200))
+      return json({ error: `agentrouter returned ${aiRes.status} non-JSON — WAF may still be active on edge` }, 500)
     }
 
-    const data = await apiRes.json()
-    const reply = data?.choices?.[0]?.message?.content ?? 'Sorry, I could not generate a response.'
-    return res.status(200).json({ reply })
+    if (!aiRes.ok) {
+      const err = await aiRes.text()
+      console.error('agentrouter error:', aiRes.status, err)
+      return json({ error: `AI error ${aiRes.status}: ${err.slice(0, 200)}` }, 500)
+    }
+
+    const data = await aiRes.json()
+    const reply =
+      data?.choices?.[0]?.message?.content ||
+      data?.content?.[0]?.text ||
+      'Sorry, I could not generate a response.'
+
+    return json({ reply })
   } catch (err) {
-    console.error('Chat handler error:', err?.message ?? err)
-    return res.status(500).json({ error: err?.message ?? 'Something went wrong.' })
+    console.error('Edge handler error:', err?.message ?? err)
+    return json({ error: err?.message ?? 'Something went wrong.' }, 500)
   }
 }
