@@ -1,4 +1,4 @@
-import { Switch, Route, Router as WouterRouter } from "wouter";
+import { Switch, Route, Router as WouterRouter, Redirect } from "wouter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -15,7 +15,6 @@ const AboutPage = lazy(() => import("@/pages/AboutPage"));
 const ContactPage = lazy(() => import("@/pages/ContactPage"));
 const TermsPage = lazy(() => import("@/pages/TermsPage"));
 const PrivacyPage = lazy(() => import("@/pages/PrivacyPage"));
-const LocationLandingPage = lazy(() => import("@/pages/LocationLandingPage"));
 const HowWeVerifyPage = lazy(() => import("@/pages/HowWeVerifyPage"));
 
 const LandlordRegisterPage = lazy(() => import("@/pages/landlord/LandlordRegisterPage"));
@@ -77,9 +76,9 @@ function Router() {
         <Route path="/" component={HomePage} />
         <Route path="/listings" component={ListingsPage} />
         <Route path="/listings/:id" component={PropertyDetailPage} />
-        <Route path="/properties/lagos" component={ListingsPage} />
-        <Route path="/properties/ogun" component={ListingsPage} />
-        <Route path="/properties-in/:slug" component={LocationLandingPage} />
+        <Route path="/properties/lagos"><Redirect to="/listings?type=rent" /></Route>
+        <Route path="/properties/ogun"><Redirect to="/listings?type=rent" /></Route>
+        <Route path="/properties-in/:slug"><Redirect to="/listings?type=rent" /></Route>
         <Route path="/how-we-verify" component={HowWeVerifyPage} />
         <Route path="/login" component={LoginPage} />
         <Route path="/register" component={RegisterPage} />

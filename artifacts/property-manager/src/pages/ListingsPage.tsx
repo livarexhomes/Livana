@@ -140,15 +140,15 @@ export default function ListingsPage() {
 
         {/* ── Filter bar ──────────────────────────────────────────────────────── */}
         <div className="z-40 bg-white/95 backdrop-blur-md border-b border-slate-200/60 flex-shrink-0 shadow-[0_1px_8px_rgba(0,0,0,0.06)]">
-          <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 h-14 flex items-center gap-2 relative">
+          <div className="max-w-screen-2xl mx-auto px-3 sm:px-6 h-14 flex items-center gap-2 relative">
 
-            {/* Filter pills */}
-            <div className="flex items-center gap-1.5 flex-1 min-w-0">
+            {/* Filter pills — horizontally scrollable on mobile */}
+            <div className="flex items-center gap-1.5 flex-1 min-w-0 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
 
               {/* LOCATION pill */}
               <button
                 onClick={() => togglePanel('location')}
-                className={`group flex items-center gap-2 h-9 px-3.5 rounded-xl border text-sm font-medium transition-all duration-150 shrink-0 ${
+                className={`group flex items-center gap-1.5 h-9 px-3 rounded-xl border text-sm font-medium transition-all duration-150 shrink-0 ${
                   (stateFilter || areaFilter)
                     ? 'bg-blue-600 border-blue-600 text-white shadow-sm shadow-blue-600/25'
                     : openPanel === 'location'
@@ -157,14 +157,14 @@ export default function ListingsPage() {
                 }`}
               >
                 <MapPin className="w-3.5 h-3.5 shrink-0" />
-                <span className="truncate max-w-[100px]">{locationLabel}</span>
+                <span className="truncate max-w-[80px] sm:max-w-[120px]">{locationLabel}</span>
                 <ChevronDown className={`w-3 h-3 shrink-0 opacity-60 transition-transform ${openPanel === 'location' ? 'rotate-180' : ''}`} />
               </button>
 
               {/* TYPE pill */}
               <button
                 onClick={() => togglePanel('type')}
-                className={`group flex items-center gap-2 h-9 px-3.5 rounded-xl border text-sm font-medium transition-all duration-150 shrink-0 ${
+                className={`group flex items-center gap-1.5 h-9 px-3 rounded-xl border text-sm font-medium transition-all duration-150 shrink-0 ${
                   typeFilter
                     ? 'bg-blue-600 border-blue-600 text-white shadow-sm shadow-blue-600/25'
                     : openPanel === 'type'
@@ -179,7 +179,7 @@ export default function ListingsPage() {
               {/* BEDS pill */}
               <button
                 onClick={() => togglePanel('beds')}
-                className={`group flex items-center gap-2 h-9 px-3.5 rounded-xl border text-sm font-medium transition-all duration-150 shrink-0 ${
+                className={`group flex items-center gap-1.5 h-9 px-3 rounded-xl border text-sm font-medium transition-all duration-150 shrink-0 ${
                   bedsFilter
                     ? 'bg-blue-600 border-blue-600 text-white shadow-sm shadow-blue-600/25'
                     : openPanel === 'beds'
@@ -187,14 +187,14 @@ export default function ListingsPage() {
                     : 'bg-white border-slate-200 text-slate-700 hover:border-slate-300 hover:bg-slate-50'
                 }`}
               >
-                <span>{bedsLabel}</span>
+                <span className="whitespace-nowrap">{bedsLabel}</span>
                 <ChevronDown className={`w-3 h-3 shrink-0 opacity-60 transition-transform ${openPanel === 'beds' ? 'rotate-180' : ''}`} />
               </button>
 
               {/* PRICE pill */}
               <button
                 onClick={() => togglePanel('price')}
-                className={`group flex items-center gap-2 h-9 px-3.5 rounded-xl border text-sm font-medium transition-all duration-150 shrink-0 ${
+                className={`group flex items-center gap-1.5 h-9 px-3 rounded-xl border text-sm font-medium transition-all duration-150 shrink-0 ${
                   (minPrice || maxPrice)
                     ? 'bg-blue-600 border-blue-600 text-white shadow-sm shadow-blue-600/25'
                     : openPanel === 'price'
@@ -202,18 +202,18 @@ export default function ListingsPage() {
                     : 'bg-white border-slate-200 text-slate-700 hover:border-slate-300 hover:bg-slate-50'
                 }`}
               >
-                <span>{priceLabel}</span>
+                <span className="whitespace-nowrap">{priceLabel}</span>
                 <ChevronDown className={`w-3 h-3 shrink-0 opacity-60 transition-transform ${openPanel === 'price' ? 'rotate-180' : ''}`} />
               </button>
 
-              {/* Active filter badge + clear */}
+              {/* Clear filters */}
               {hasFilters && (
                 <button
                   onClick={clearFilters}
-                  className="flex items-center gap-1.5 h-9 px-3 rounded-xl text-sm font-medium text-red-500 hover:text-red-600 hover:bg-red-50 border border-transparent hover:border-red-100 transition-all duration-150 shrink-0"
+                  className="flex items-center gap-1 h-9 px-2.5 rounded-xl text-sm font-medium text-red-500 hover:text-red-600 hover:bg-red-50 border border-transparent hover:border-red-100 transition-all duration-150 shrink-0"
                 >
                   <X className="w-3.5 h-3.5" />
-                  <span>Clear</span>
+                  <span className="hidden sm:inline">Clear</span>
                   {activeCount > 0 && (
                     <span className="w-4 h-4 rounded-full bg-red-100 text-red-600 text-[10px] font-bold flex items-center justify-center">
                       {activeCount}
@@ -224,15 +224,15 @@ export default function ListingsPage() {
             </div>
 
             {/* Right controls */}
-            <div className="flex items-center gap-2 pl-3 border-l border-slate-100 shrink-0">
+            <div className="flex items-center gap-1.5 pl-2 border-l border-slate-100 shrink-0">
               <div className="relative">
                 <select value={sortBy} onChange={e => setSortBy(e.target.value)}
-                  className="appearance-none h-9 pl-3 pr-7 rounded-xl border border-slate-200 text-xs bg-white text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/30 cursor-pointer font-medium hover:border-slate-300 transition-colors">
+                  className="appearance-none h-9 pl-2.5 pr-6 rounded-xl border border-slate-200 text-xs bg-white text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/30 cursor-pointer font-medium hover:border-slate-300 transition-colors">
                   <option value="newest">Newest</option>
                   <option value="price_asc">Price ↑</option>
                   <option value="price_desc">Price ↓</option>
                 </select>
-                <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-400 pointer-events-none" />
+                <ChevronDown className="absolute right-1.5 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-400 pointer-events-none" />
               </div>
 
               {/* Map toggle — desktop only */}
@@ -249,9 +249,9 @@ export default function ListingsPage() {
               </button>
             </div>
 
-            {/* ── Dropdown panels ───────────────────────────────────────────── */}
+            {/* ── Dropdown panels — anchored left-0 on mobile, smart on desktop ── */}
             {openPanel === 'location' && (
-              <div className="absolute left-4 top-[calc(100%+8px)] w-76 bg-white rounded-2xl shadow-[0_8px_32px_rgba(0,0,0,0.12)] border border-slate-100 p-4 z-50">
+              <div className="absolute left-2 right-2 sm:left-4 sm:right-auto sm:w-76 top-[calc(100%+8px)] bg-white rounded-2xl shadow-[0_8px_32px_rgba(0,0,0,0.12)] border border-slate-100 p-4 z-50">
                 <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2.5">State</p>
                 <div className="grid grid-cols-3 gap-1.5 mb-4">
                   {['', 'Lagos', 'Ogun'].map(v => (
@@ -277,7 +277,7 @@ export default function ListingsPage() {
             )}
 
             {openPanel === 'type' && (
-              <div className="absolute left-[168px] top-[calc(100%+8px)] w-52 bg-white rounded-2xl shadow-[0_8px_32px_rgba(0,0,0,0.12)] border border-slate-100 p-3 z-50">
+              <div className="absolute left-2 right-2 sm:left-auto sm:right-auto sm:w-52 top-[calc(100%+8px)] bg-white rounded-2xl shadow-[0_8px_32px_rgba(0,0,0,0.12)] border border-slate-100 p-3 z-50">
                 <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2 px-1">Property type</p>
                 {TYPE_TABS.map(t => (
                   <button key={t.value} onClick={() => { setTypeFilter(t.value); setOpenPanel(null) }}
@@ -289,7 +289,7 @@ export default function ListingsPage() {
             )}
 
             {openPanel === 'beds' && (
-              <div className="absolute left-[288px] top-[calc(100%+8px)] w-64 bg-white rounded-2xl shadow-[0_8px_32px_rgba(0,0,0,0.12)] border border-slate-100 p-3 z-50">
+              <div className="absolute left-2 right-2 sm:left-auto sm:right-auto sm:w-64 top-[calc(100%+8px)] bg-white rounded-2xl shadow-[0_8px_32px_rgba(0,0,0,0.12)] border border-slate-100 p-3 z-50">
                 <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2 px-1">Bedrooms</p>
                 <div className="grid grid-cols-3 gap-1.5 mb-4">
                   {[['', 'Any'], ['1', '1+'], ['2', '2+'], ['3', '3+'], ['4', '4+'], ['5', '5+']].map(([v, l]) => (
@@ -314,7 +314,7 @@ export default function ListingsPage() {
             )}
 
             {openPanel === 'price' && (
-              <div className="absolute left-[400px] top-[calc(100%+8px)] w-72 bg-white rounded-2xl shadow-[0_8px_32px_rgba(0,0,0,0.12)] border border-slate-100 p-4 z-50">
+              <div className="absolute left-2 right-2 sm:left-auto sm:right-4 sm:w-72 top-[calc(100%+8px)] bg-white rounded-2xl shadow-[0_8px_32px_rgba(0,0,0,0.12)] border border-slate-100 p-4 z-50">
                 <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-3">Price range (₦)</p>
                 <div className="grid grid-cols-2 gap-2 mb-4">
                   <div>
