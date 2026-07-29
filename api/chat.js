@@ -137,27 +137,34 @@ export default async function handler(req, res) {
     : `${SYSTEM_PROMPT}\n\n--- LISTINGS: None available right now. Direct users to www.livarex.com.ng/listings ---`
 
   try {
-    // Build endpoint: if baseURL already ends with /v1 just add /messages,
-    // otherwise add the full /v1/messages path
+    // agentrouter.org uses OpenAI-compatible format
     const messagesUrl = baseURL.endsWith('/v1')
-      ? `${baseURL}/messages`
-      : `${baseURL}/v1/messages`
+      ? `${baseURL}/chat/completions`
+      : `${baseURL}/v1/chat/completions`
+
+    // agentrouter.org uses OpenAI-compatible format: /v1/chat/completions
+    // System prompt goes as first message with role "system"
+    const openAiMessages = [
+      { role: 'system', content: system },
+      ...normalised.map(m => ({
+        role: m.role,
+        content: Array.isArray(m.content)
+          ? m.content.filter(b => b.type === 'text').map(b => b.text).join('\n')
+          : String(m.content),
+      })),
+    ]
 
     const apiRes = await fetch(messagesUrl, {
       method: 'POST',
-      redirect: 'manual', // never silently follow redirects
+      redirect: 'manual',
       headers: {
         'Content-Type': 'application/json',
-        'x-api-key': apiKey,
         'Authorization': `Bearer ${apiKey}`,
-        'anthropic-version': '2023-06-01',
-        'anthropic-beta': 'messages-2023-12-15',
       },
       body: JSON.stringify({
         model: 'claude-opus-4-8',
         max_tokens: 1024,
-        system,
-        messages: normalised,
+        messages: openAiMessages,
       }),
     })
 
@@ -187,7 +194,8 @@ export default async function handler(req, res) {
     }
 
     const data = await apiRes.json()
-    const reply = data?.content?.[0]?.text ?? 'Sorry, I could not generate a response.'
+    // OpenAI-format response: choices[0].message.content
+    const reply = data?.choices?.[0]?.message?.content ?? 'Sorry, I could not generate a response.'
     return res.status(200).json({ reply })
   } catch (err) {
     console.error('Chat handler error:', err)
