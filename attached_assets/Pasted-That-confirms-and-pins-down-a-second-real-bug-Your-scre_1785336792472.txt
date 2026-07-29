@@ -1,0 +1,23 @@
+That confirms and pins down a second real bug. Your screenshot shows agentrouter offering claude-opus-4-8 and claude-opus-5 — no claude-sonnet-4-6 anywhere in that picker. ai.js hardcodes "claude-sonnet-4-6" in three places (lines 90, 131, 152). If agentrouter doesn't serve that exact model slug, every call will fail with a "model not found"-style error — separate from, and in addition to, the base-URL/key mismatch I flagged earlier.
+
+So there are two independent things to fix:
+
+Base URL — make sure AGENTROUTER_BASE_URL=https://agentrouter.org/ is set alongside your key, or the SDK defaults to api.anthropic.com and rejects the key outright.
+Model name — claude-sonnet-4-6 needs to match whatever agentrouter actually lists in its picker. Since your screenshot only shows Opus options, check agentrouter's console for the full model list (there's likely a Sonnet entry too, just not visible in that cropped tooltip) and update ai.js to use the exact string agentrouter expects — it won't necessarily match Anthropic's own naming.
+
+Can you scroll/expand that model picker in agentrouter and share the full list? Then I can update all three model: lines in ai.js to the correct slug and push a fix.
+
+Diagnosed API token restrictions and prescribed configuration solutions
+Diagnosed API token restrictions and prescribed configuration solutions
+
+That's the smoking gun. This is the token's access restriction settings on agentrouter — your API key is currently locked to only allow claude-opus-4-8 and claude-opus-5. Since ai.js requests "claude-sonnet-4-6", which isn't on that allowlist, every request gets rejected by the restriction — regardless of whether the base URL or key format is otherwise correct.
+
+Note the platform itself even says "Not necessary, model restrictions are not recommended" — this restriction isn't required, it's just been set.
+
+Two ways to fix, pick one:
+
+Option A — remove the restriction (simplest):
+On that same screen, click the × on both claude-opus-4-8 and claude-opus-5 chips to clear the list, so the token can call any model. Since the panel says restrictions aren't recommended, this is probably the easiest fix.
+
+Option B — keep the restriction, update the code to match:
+Leave the restriction as-is and change ai.js to use one of the allowed models instead. Since your bot needs speed for WhatsApp replies (not just raw reasoning power), that trade-off is worth knowing before you pick.

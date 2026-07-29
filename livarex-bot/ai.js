@@ -87,7 +87,7 @@ export async function processMessage(phone, name, userMessage) {
     : `${SYSTEM_PROMPT}\n\n--- LISTINGS: None available right now. Tell users to check www.livarex.com.ng/listings for the latest or leave their requirements and the team will reach out. ---`
 
   const response = await client.messages.create({
-    model: "claude-sonnet-4-6",
+    model: "claude-opus-4-8",
     max_tokens: 8192,
     system: systemWithListings,
     messages: [
@@ -128,7 +128,7 @@ export async function processWebMessage(messages) {
   }))
 
   const response = await client.messages.create({
-    model: "claude-sonnet-4-6",
+    model: "claude-opus-4-8",
     max_tokens: 1024,
     system: systemWithListings,
     messages: normalised,
@@ -149,7 +149,7 @@ Rules:
 - Do not say "I noticed you haven't replied" or anything that sounds automated`
 
   const response = await client.messages.create({
-    model: "claude-sonnet-4-6",
+    model: "claude-opus-4-8",
     max_tokens: 8192,
     system: FOLLOW_UP_PROMPT,
     messages: [
