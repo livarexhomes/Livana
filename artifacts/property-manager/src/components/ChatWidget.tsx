@@ -212,25 +212,70 @@ export default function ChatWidget() {
         .chat-scroll::-webkit-scrollbar { width: 4px; }
         .chat-scroll::-webkit-scrollbar-track { background: transparent; }
         .chat-scroll::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 4px; }
+
+        /* ── Desktop panel ── */
+        .chat-panel {
+          position: fixed;
+          bottom: 72px; right: 18px;
+          z-index: 9999;
+          width: 360px;
+          height: 520px;
+          display: flex; flex-direction: column;
+          border-radius: 20px;
+          overflow: hidden;
+          box-shadow: 0 20px 60px rgba(0,0,0,0.16), 0 4px 16px rgba(0,0,0,0.1);
+          background: #fff;
+          border: 1px solid rgba(0,0,0,0.07);
+          transform-origin: bottom right;
+          transition: transform 0.26s cubic-bezier(0.34,1.56,0.64,1), opacity 0.18s ease;
+        }
+        .chat-panel.open  { transform: scale(1) translateY(0);    opacity: 1; pointer-events: auto; }
+        .chat-panel.closed{ transform: scale(0.88) translateY(16px); opacity: 0; pointer-events: none; }
+
+        /* ── Mobile: full-width bottom sheet ── */
+        @media (max-width: 480px) {
+          .chat-panel {
+            left: 0; right: 0;
+            bottom: 0;
+            width: 100%;
+            height: 92svh;
+            border-radius: 20px 20px 0 0;
+            transform-origin: bottom center;
+          }
+          .chat-panel.open  { transform: translateY(0);    opacity: 1; pointer-events: auto; }
+          .chat-panel.closed{ transform: translateY(100%); opacity: 0; pointer-events: none; }
+
+          /* drag handle */
+          .chat-panel-handle {
+            display: block !important;
+          }
+        }
+
+        .chat-toggle {
+          position: fixed;
+          bottom: 18px; right: 18px;
+          z-index: 9999;
+          width: 44px; height: 44px;
+          border-radius: 50%;
+          background: #2563eb;
+          border: none; cursor: pointer;
+          display: flex; align-items: center; justify-content: center;
+          box-shadow: 0 6px 20px rgba(37,99,235,0.45);
+          transition: all 0.2s ease;
+        }
+        .chat-toggle.open { background: #1d4ed8; transform: rotate(8deg) scale(0.95); }
+        .chat-toggle:not(.open):hover { transform: scale(1.1); }
+
+        @media (max-width: 480px) {
+          .chat-toggle {
+            bottom: 16px; right: 16px;
+            width: 48px; height: 48px;
+          }
+        }
       `}</style>
 
       {/* ── Popup panel ─────────────────────────────────────────────────────── */}
-      <div style={{
-        position: 'fixed', bottom: 72, right: 18, zIndex: 9999,
-        width: 360, maxWidth: 'calc(100vw - 28px)',
-        display: 'flex', flexDirection: 'column',
-        borderRadius: 20,
-        overflow: 'hidden',
-        boxShadow: '0 20px 60px rgba(0,0,0,0.16), 0 4px 16px rgba(0,0,0,0.1)',
-        background: '#fff',
-        border: '1px solid rgba(0,0,0,0.07)',
-        transformOrigin: 'bottom right',
-        transform: open ? 'scale(1) translateY(0)' : 'scale(0.88) translateY(16px)',
-        opacity: open ? 1 : 0,
-        pointerEvents: open ? 'auto' : 'none',
-        transition: 'transform 0.26s cubic-bezier(0.34,1.56,0.64,1), opacity 0.18s ease',
-        height: 520,
-      }}>
+      <div className={`chat-panel ${open ? 'open' : 'closed'}`}>
 
         {/* Header */}
         <div style={{
@@ -443,19 +488,10 @@ export default function ChatWidget() {
       </div>
 
       {/* ── Floating toggle button ───────────────────────────────────────────── */}
-      <button onClick={() => setOpen(o => !o)} aria-label="Open Livarex chat"
-        style={{
-          position: 'fixed', bottom: 18, right: 18, zIndex: 9999,
-          width: 44, height: 44, borderRadius: '50%',
-          background: open ? '#1d4ed8' : '#2563eb',
-          border: 'none', cursor: 'pointer',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          boxShadow: '0 6px 20px rgba(37,99,235,0.45)',
-          transition: 'all 0.2s ease',
-          transform: open ? 'rotate(8deg) scale(0.95)' : 'scale(1)',
-        }}
-        onMouseEnter={e => { if (!open) (e.currentTarget as HTMLButtonElement).style.transform = 'scale(1.1)' }}
-        onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.transform = open ? 'rotate(8deg) scale(0.95)' : 'scale(1)' }}
+      <button
+        onClick={() => setOpen(o => !o)}
+        aria-label="Open Livarex chat"
+        className={`chat-toggle${open ? ' open' : ''}`}
       >
         {open ? <X size={17} color="#fff" /> : <MessageSquare size={17} color="#fff" />}
         {!open && unread && (
