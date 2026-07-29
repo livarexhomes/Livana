@@ -349,7 +349,7 @@ export default function ListingsPageClient({
               ))
             ) : sorted.length > 0 ? (
               sorted.map((property) => (
-                <div key={property.id} data-id={property.id}>
+                <div key={property.id} data-id={property.id} className="h-full">
                   <ListingCard
                     property={property}
                     saved={savedIds.has(property.id)}

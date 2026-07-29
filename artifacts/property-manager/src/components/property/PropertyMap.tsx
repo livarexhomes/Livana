@@ -128,22 +128,23 @@ export default function PropertyMap({ properties, hoveredId, onMarkerClick, heig
             key={p.id}
             position={coords}
             mapPaneName={OverlayView.OVERLAY_MOUSE_TARGET}
+            getPixelPositionOffset={(w, h) => ({ x: -(w / 2), y: -h - 6 })}
           >
             <div
               onClick={() => onMarkerClick(p.id)}
               style={{
                 background: hoveredId === p.id ? '#16a34a' : '#1e293b',
                 color: '#fff',
-                padding: '4px 9px',
+                padding: '4px 10px',
                 borderRadius: '20px',
                 fontSize: '12px',
                 fontWeight: 700,
                 whiteSpace: 'nowrap',
-                boxShadow: '0 2px 8px rgba(0,0,0,.25)',
+                boxShadow: '0 2px 8px rgba(0,0,0,.3)',
                 border: '2px solid #fff',
                 cursor: 'pointer',
-                transform: 'translate(-50%, -100%)',
                 transition: 'background 0.15s',
+                userSelect: 'none',
               }}
             >
               {formatPrice(p.price)}

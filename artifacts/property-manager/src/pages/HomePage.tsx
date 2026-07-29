@@ -1,6 +1,14 @@
 import { useState, useEffect, useRef } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 import { Link } from '@/lib/navigation'
 import { ArrowRight, ShieldCheck, Building2, Users, TrendingUp, Star, CheckCircle2, CheckCircle, MapPin, ChevronRight, Calendar, ChevronDown, Search, Send, Home, Sparkles, X } from 'lucide-react'
+
+const HERO_IMAGES = [
+  { src: 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=1800&q=90', alt: 'Luxury apartment with pool' },
+  { src: 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=1800&q=90', alt: 'Modern apartment interior' },
+  { src: 'https://images.unsplash.com/photo-1512918728675-ed5a9ecdebfd?w=1800&q=90', alt: 'Premium residential building' },
+  { src: 'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=1800&q=90', alt: 'Elegant living space' },
+]
 import PublicNavbar from '../components/layout/PublicNavbar'
 import Footer from '../components/layout/Footer'
 import SEO from '../components/SEO'
@@ -59,6 +67,7 @@ function AnimatedCounter({ target, suffix = '' }: { target: number; suffix?: str
 }
 
 export default function HomePage() {
+  const [heroSlide, setHeroSlide] = useState(0)
   const [activeTab, setActiveTab] = useState<Tab>('Rent')
   const [properties, setProperties] = useState<PropertyWithLandlord[]>([])
   const [loading, setLoading] = useState(true)
@@ -80,6 +89,11 @@ export default function HomePage() {
   const [activeHiwStep, setActiveHiwStep] = useState<number | null>(null)
 
   useEffect(() => { setAllProjects(loadProjects()) }, [])
+
+  useEffect(() => {
+    const id = setInterval(() => setHeroSlide(s => (s + 1) % HERO_IMAGES.length), 5000)
+    return () => clearInterval(id)
+  }, [])
 
   useEffect(() => {
     function handleClick(e: MouseEvent) {
@@ -225,18 +239,33 @@ export default function HomePage() {
         className="relative mt-[80px] py-10 sm:py-0"
         style={{ minHeight: 'clamp(480px, 90vh - 80px, 900px)' }}
       >
-        {/* Full-bleed background image */}
+        {/* Full-bleed slideshow background */}
         <div className="absolute inset-0 overflow-hidden">
-          <img
-            src="https://images.unsplash.com/photo-1512918728675-ed5a9ecdebfd?w=1800&q=90"
-            alt="Modern architectural house model in a premium real estate setting"
-            className="w-full h-full object-cover object-center"
-            loading="eager"
-            decoding="async"
-          />
-          {/* Multi-layer overlay: dark left, lighter right */}
+          <AnimatePresence mode="sync">
+            <motion.img
+              key={heroSlide}
+              src={HERO_IMAGES[heroSlide].src}
+              alt={HERO_IMAGES[heroSlide].alt}
+              className="absolute inset-0 w-full h-full object-cover object-center"
+              initial={{ opacity: 0, scale: 1.04 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 1.2, ease: 'easeInOut' }}
+            />
+          </AnimatePresence>
+          {/* Overlays */}
           <div className="absolute inset-0 bg-gradient-to-r from-black/85 via-black/60 to-black/30" />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+          {/* Slide dots */}
+          <div className="absolute bottom-5 left-1/2 -translate-x-1/2 flex gap-2 z-10">
+            {HERO_IMAGES.map((_, i) => (
+              <button
+                key={i}
+                onClick={() => setHeroSlide(i)}
+                className={`h-1.5 rounded-full transition-all duration-300 ${i === heroSlide ? 'w-6 bg-white' : 'w-1.5 bg-white/40 hover:bg-white/60'}`}
+              />
+            ))}
+          </div>
         </div>
 
         {/* Subtle noise texture */}
@@ -1329,6 +1358,27 @@ export default function HomePage() {
       </section>
 
       <Footer />
+
+      {/* ── FLOATING WHATSAPP CHAT BUTTON ── */}
+      <a
+        href="https://wa.me/2347061370742?text=Hello%20Livarex!%20I%20need%20help%20finding%20a%20property."
+        target="_blank"
+        rel="noopener noreferrer"
+        className="fixed bottom-6 right-6 z-50 group flex items-center gap-3"
+        aria-label="Chat with Livarex on WhatsApp"
+      >
+        {/* Tooltip */}
+        <span className="pointer-events-none opacity-0 group-hover:opacity-100 translate-x-2 group-hover:translate-x-0 transition-all duration-200 bg-gray-900 text-white text-xs font-semibold px-3 py-1.5 rounded-xl whitespace-nowrap shadow-lg">
+          Chat with us
+        </span>
+        {/* Button */}
+        <div className="relative w-14 h-14 bg-[#25D366] hover:bg-[#1ebe5d] rounded-full flex items-center justify-center shadow-2xl shadow-emerald-500/40 transition-all duration-200 hover:scale-110 active:scale-95">
+          <span className="absolute inset-0 rounded-full bg-[#25D366] animate-ping opacity-25" />
+          <svg className="w-7 h-7 fill-white relative z-10" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+          </svg>
+        </div>
+      </a>
     </div>
   )
 }
