@@ -192,8 +192,8 @@ export default function HomePageClient({ initialProperties }: { initialPropertie
 
       {/* ── HERO ── */}
       <section
-        className="relative"
-        style={{ minHeight: 'calc(100vh - 80px)', marginTop: '80px', paddingTop: '4rem', paddingBottom: '4rem' }}
+        className="relative mt-[80px] py-14 sm:py-0"
+        style={{ minHeight: 'clamp(480px, 90vh - 80px, 900px)' }}
       >
         {/* Full-bleed background image */}
         <div className="absolute inset-0 overflow-hidden">
@@ -212,8 +212,7 @@ export default function HomePageClient({ initialProperties }: { initialPropertie
           style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=\'0 0 256 256\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'noise\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.9\' numOctaves=\'4\' stitchTiles=\'stitch\'/%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23noise)\'/%3E%3C/svg%3E")' }} />
 
         {/* Content */}
-        <div className="relative max-w-7xl mx-auto px-5 sm:px-8 lg:px-12 flex flex-col justify-center"
-          style={{ minHeight: 'calc(100vh - 80px)' }}>
+        <div className="relative max-w-7xl mx-auto px-5 sm:px-8 lg:px-12 flex flex-col justify-center">
 
           <div className="max-w-2xl pt-12 pb-16 lg:pt-0 lg:pb-0" ref={searchBarRef}>
 
@@ -229,7 +228,7 @@ export default function HomePageClient({ initialProperties }: { initialPropertie
             </div>
 
             {/* Headline */}
-            <h1 className="text-5xl sm:text-6xl xl:text-7xl font-black leading-[1.0] tracking-tight text-white mb-6">
+            <h1 className="text-4xl sm:text-6xl xl:text-7xl font-black leading-[1.05] tracking-tight text-white mb-6">
               Nigeria&apos;s Verified<br />
               <span className="relative inline-block">
                 <span className="relative z-10 text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-blue-300 to-indigo-400">
@@ -870,7 +869,7 @@ export default function HomePageClient({ initialProperties }: { initialPropertie
           </div>
 
           {/* Bento grid */}
-          <div className="grid grid-cols-2 md:grid-cols-4 auto-rows-[140px] md:grid-rows-[280px_200px] gap-3 md:gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 auto-rows-[200px] sm:auto-rows-[160px] md:grid-rows-[280px_200px] gap-3 md:gap-4">
             {/* Lagos — large feature cell (2 cols × 2 rows) — ACTIVE */}
             <Link
               href="/listings?type=rent"

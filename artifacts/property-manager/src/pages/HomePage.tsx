@@ -243,8 +243,8 @@ export default function HomePage() {
 
       {/* ── HERO ── */}
       <section
-        className="relative"
-        style={{ minHeight: 'calc(90vh - 80px)', marginTop: '80px', paddingTop: '2.5rem', paddingBottom: '2.5rem' }}
+        className="relative mt-[80px] py-10 sm:py-0"
+        style={{ minHeight: 'clamp(480px, 90vh - 80px, 900px)' }}
       >
         {/* Full-bleed background image */}
         <div className="absolute inset-0 overflow-hidden">
@@ -265,8 +265,7 @@ export default function HomePage() {
           style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=\'0 0 256 256\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'noise\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.9\' numOctaves=\'4\' stitchTiles=\'stitch\'/%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23noise)\'/%3E%3C/svg%3E")' }} />
 
         {/* Content */}
-        <div className="relative max-w-7xl mx-auto px-5 sm:px-8 lg:px-12 flex flex-col justify-center"
-          style={{ minHeight: 'calc(90vh - 80px)' }}>
+        <div className="relative max-w-7xl mx-auto px-5 sm:px-8 lg:px-12 flex flex-col justify-center">
 
           <div className="max-w-2xl pt-8 pb-10 lg:pt-0 lg:pb-0" ref={searchBarRef}>
 
@@ -1141,7 +1140,7 @@ export default function HomePage() {
                 <div className="w-2 h-2 rounded-full bg-blue-600 animate-pulse" />
                 <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500">Security-First Process</span>
               </div>
-              <h2 className="text-5xl md:text-6xl font-black text-slate-950 tracking-tight leading-[0.95]">
+              <h2 className="text-3xl sm:text-5xl md:text-6xl font-black text-slate-950 tracking-tight leading-[1.0] md:leading-[0.95]">
                 Your journey to <br />
                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-slate-900 via-slate-500 to-slate-900">a new home.</span>
               </h2>
@@ -1285,8 +1284,8 @@ export default function HomePage() {
             ].map((t, i) => (
               <div
                 key={i}
-                className={`relative rounded-3xl p-8 flex flex-col gap-6 transition-all duration-300 ${t.featured
-                  ? 'bg-blue-600 shadow-2xl shadow-blue-600/30 scale-[1.02]'
+                className={`relative rounded-3xl p-6 sm:p-8 flex flex-col gap-6 transition-all duration-300 ${t.featured
+                  ? 'bg-blue-600 shadow-2xl shadow-blue-600/30 md:scale-[1.02]'
                   : 'bg-white/5 border border-white/10 hover:bg-white/8'
                   }`}
               >
@@ -1325,7 +1324,7 @@ export default function HomePage() {
       <section className="py-20 md:py-28 px-5 sm:px-8 bg-gray-50">
         <div className="max-w-7xl mx-auto">
           <div className="relative overflow-hidden rounded-[2rem] bg-gray-950">
-            <div className="relative z-10 p-10 md:p-16 flex flex-col md:flex-row items-center justify-between gap-10">
+            <div className="relative z-10 p-6 sm:p-10 md:p-16 flex flex-col md:flex-row items-center justify-between gap-8 md:gap-10">
               <div className="max-w-xl">
                 <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 border border-white/15 text-xs font-semibold uppercase tracking-widest text-blue-400 mb-6">
                   <ShieldCheck className="w-3.5 h-3.5" />
