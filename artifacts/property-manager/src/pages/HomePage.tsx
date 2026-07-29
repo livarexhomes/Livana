@@ -236,8 +236,8 @@ export default function HomePage() {
 
       {/* ── HERO ── */}
       <section
-        className="relative mt-[80px] py-10 sm:py-0"
-        style={{ minHeight: 'clamp(480px, 90vh - 80px, 900px)' }}
+        className="relative py-10 sm:py-0"
+        style={{ minHeight: 'clamp(560px, 92vh, 960px)' }}
       >
         {/* Full-bleed slideshow background */}
         <div className="absolute inset-0 overflow-hidden">

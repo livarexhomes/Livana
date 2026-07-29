@@ -233,12 +233,12 @@ export default function AdminSettings() {
   const [platform, setPlatform] = useState<PlatformSettings>({
     name: 'Livana Property Manager',
     tagline: "Nigeria's most trusted property platform",
-    email: 'support@livana.ng',
+    email: 'support@livarex.com.ng',
     phone: '+234 800 548 2621',
     address: '14 Bourdillon Road, Ikoyi, Lagos',
     currency: 'NGN',
     country: 'Nigeria',
-    website: 'https://livana.ng',
+    website: 'https://livarex.com.ng',
   })
 
   const [notifications, setNotifications] = useState<NotificationSettings>({
@@ -247,7 +247,7 @@ export default function AdminSettings() {
     newProperty: false,
     weeklyReport: true,
     smsAlerts: false,
-    adminEmail: 'admin@livana.ng',
+    adminEmail: 'admin@livarex.com.ng',
   })
 
   const [security, setSecurity] = useState<SecuritySettings>({
@@ -267,7 +267,7 @@ export default function AdminSettings() {
   })
 
   const [emailConfig, setEmailConfig] = useState<EmailConfig>({
-    fromEmail: 'noreply@livana.ng',
+    fromEmail: 'noreply@livarex.com.ng',
     fromName: 'Livana',
     enabled: false,
     resendApiKey: '',
@@ -620,7 +620,7 @@ export default function AdminSettings() {
                           onChange={v => setNotifications(n => ({ ...n, adminEmail: v }))}
                           icon={Mail}
                           mono
-                          placeholder="admin@livana.ng"
+                          placeholder="admin@livarex.com.ng"
                         />
                       </div>
                       <div className="pt-5">
@@ -735,7 +735,7 @@ export default function AdminSettings() {
                           onChange={v => setEmailConfig(c => ({ ...c, fromEmail: v }))}
                           icon={Mail}
                           mono
-                          placeholder="noreply@livana.ng"
+                          placeholder="noreply@livarex.com.ng"
                         />
                         <FieldInput
                           label="From Name"
@@ -800,7 +800,7 @@ export default function AdminSettings() {
                           <p className="text-sm font-semibold text-gray-900 mb-2">Resend Setup Guide</p>
                           <ol className="text-xs text-gray-600 space-y-1.5 list-decimal list-inside">
                             <li>Sign up at <a href="https://resend.com" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">resend.com</a></li>
-                            <li>Verify your domain (e.g., livana.ng)</li>
+                            <li>Verify your domain (e.g., livarex.com.ng)</li>
                             <li>Create an API key with &quot;sending&quot; permissions</li>
                             <li>Copy the API key (starts with <code className="bg-blue-100 px-1 rounded">re_</code>)</li>
                             <li>Paste it above and click Save Changes</li>

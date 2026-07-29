@@ -44,6 +44,18 @@ export default function NotifyWhenAvailableForm({
         message,
       })
       if (insertError) throw insertError
+
+      // Send confirmation email via Resend (best-effort — won't throw if it fails)
+      try {
+        await fetch('/api/notify-signup', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, subject, details }),
+        })
+      } catch {
+        // Email is non-critical; the subscription row is already saved
+      }
+
       setSuccess(true)
       setEmail('')
     } catch (err: any) {

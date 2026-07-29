@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import {
   HelpCircle, ChevronDown, ChevronUp, MessageSquare, Mail,
-  Phone, BookOpen, Video, ExternalLink, Search,
+  Phone, BookOpen, Video, ExternalLink, Search, Loader2,
 } from 'lucide-react'
 import AdminSidebar from '../../components/layout/AdminSidebar'
 import AuthGuard from '../../components/auth/AuthGuard'
@@ -52,15 +52,17 @@ const DOCS = [
 ]
 
 export default function AdminHelp() {
-  const [user, setUser] = useState<{ email?: string } | null>(null)
+  const [user, setUser] = useState<{ email?: string; id?: string } | null>(null)
   const [openFaq, setOpenFaq] = useState<number | null>(null)
   const [search, setSearch] = useState('')
   const [ticket, setTicket] = useState({ subject: '', message: '', priority: 'normal' })
   const [submitted, setSubmitted] = useState(false)
+  const [submitting, setSubmitting] = useState(false)
+  const [submitError, setSubmitError] = useState('')
 
   useEffect(() => {
     const supabase = createClient()
-    supabase.auth.getUser().then(({ data: { user } }) => setUser({ email: user?.email }))
+    supabase.auth.getUser().then(({ data: { user } }) => setUser({ email: user?.email, id: user?.id }))
   }, [])
 
   const filteredFaqs = FAQS.filter(f =>
@@ -69,10 +71,42 @@ export default function AdminHelp() {
     f.a.toLowerCase().includes(search.toLowerCase())
   )
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    setSubmitted(true)
-    setTimeout(() => { setSubmitted(false); setTicket({ subject: '', message: '', priority: 'normal' }) }, 4000)
+    setSubmitting(true)
+    setSubmitError('')
+    try {
+      const supabase = createClient()
+
+      // Create the support ticket (no tenant_id / landlord_id — admin-originated)
+      const { data: newTicket, error: ticketErr } = await supabase
+        .from('support_tickets')
+        .insert({
+          subject: ticket.subject.trim(),
+          priority: ticket.priority as 'low' | 'normal' | 'high' | 'urgent',
+          status: 'open',
+        })
+        .select()
+        .single()
+
+      if (ticketErr || !newTicket) throw new Error(ticketErr?.message ?? 'Failed to create ticket')
+
+      // Post first message, tagged as admin
+      const { error: msgErr } = await supabase.from('support_messages').insert({
+        ticket_id: newTicket.id,
+        sender_role: 'admin',
+        body: ticket.message.trim(),
+      })
+      if (msgErr) throw new Error(msgErr.message)
+
+      setSubmitted(true)
+      setTicket({ subject: '', message: '', priority: 'normal' })
+      setTimeout(() => setSubmitted(false), 6000)
+    } catch (err: any) {
+      setSubmitError(err.message || 'Something went wrong. Please try again.')
+    } finally {
+      setSubmitting(false)
+    }
   }
 
   const displayName = user?.email ? user.email.split('@')[0] : 'Admin'
@@ -239,9 +273,13 @@ export default function AdminHelp() {
                             placeholder="Tell us more about the issue..."
                             className="w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-200 resize-none" />
                         </div>
-                        <button type="submit"
-                          className="w-full rounded-3xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-blue-600/10 hover:bg-blue-700 transition-colors">
-                          Submit Ticket
+                        {submitError && (
+                          <p className="text-sm text-red-600 rounded-2xl bg-red-50 border border-red-100 px-4 py-3">{submitError}</p>
+                        )}
+                        <button type="submit" disabled={submitting}
+                          className="w-full rounded-3xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-blue-600/10 hover:bg-blue-700 transition-colors disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2">
+                          {submitting && <Loader2 className="w-4 h-4 animate-spin" />}
+                          {submitting ? 'Submitting…' : 'Submit Ticket'}
                         </button>
                       </form>
                     )}

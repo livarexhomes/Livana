@@ -48,10 +48,14 @@ export default function PublicNavbar() {
   ]
 
   const isHomePage = location === '/'
+  // Transparent mode: only on homepage before the user has scrolled
+  const isTransparent = isHomePage && !scrolled
 
   return (
-    <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 bg-white/95 nav-blur border-b border-gray-100 ${
-      scrolled ? 'shadow-sm' : ''
+    <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
+      isTransparent
+        ? 'bg-transparent border-b border-transparent'
+        : 'bg-white/95 nav-blur border-b border-gray-100 shadow-sm'
     }`}>
       <div className="max-w-7xl mx-auto px-5 sm:px-8 flex items-center justify-between md:grid md:grid-cols-3" style={{ height: '72px' }}>
         {/* Logo */}
@@ -64,9 +68,13 @@ export default function PublicNavbar() {
           {navLinks.map(({ href, label, comingSoon }) => (
             comingSoon ? (
               <span key={label}
-                className="px-4 py-2 rounded-lg text-sm font-medium text-gray-300 cursor-default select-none flex items-center gap-1.5">
+                className={`px-4 py-2 rounded-lg text-sm font-medium cursor-default select-none flex items-center gap-1.5 ${
+                  isTransparent ? 'text-white/40' : 'text-gray-300'
+                }`}>
                 {label}
-                <span className="text-[9px] font-bold uppercase tracking-wider bg-gray-100 text-gray-400 px-1.5 py-0.5 rounded-md">Soon</span>
+                <span className={`text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-md ${
+                  isTransparent ? 'bg-white/10 text-white/50' : 'bg-gray-100 text-gray-400'
+                }`}>Soon</span>
               </span>
             ) : (
               <Link
@@ -75,13 +83,15 @@ export default function PublicNavbar() {
                 className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all ${
                   (isActive(href!) && href !== '/') || (href === '/' && location === '/')
                     ? 'bg-blue-600 text-white shadow-md'
-                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                    : isTransparent
+                      ? 'text-white/90 hover:text-white hover:bg-white/10'
+                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
                 }`}
               >
                 {label === 'Rent' ? (
                   <>
                     <span className="w-7 h-7 rounded-lg bg-white/10 flex items-center justify-center">
-                      <Building2 className={`w-4 h-4 ${isActive(href!) ? 'text-white' : 'text-blue-600'}`} />
+                      <Building2 className={`w-4 h-4 ${isActive(href!) ? 'text-white' : isTransparent ? 'text-white/80' : 'text-blue-600'}`} />
                     </span>
                     <span>{label}</span>
                   </>
@@ -98,16 +108,22 @@ export default function PublicNavbar() {
           {user ? (
             <>
               {user.isAdmin && (
-                <Link href="/admin" className="text-sm font-medium px-4 py-2 rounded-lg transition-all text-gray-600 hover:text-gray-900 hover:bg-gray-50">
+                <Link href="/admin" className={`text-sm font-medium px-4 py-2 rounded-lg transition-all ${
+                  isTransparent ? 'text-white/90 hover:text-white hover:bg-white/10' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                }`}>
                   Admin
                 </Link>
               )}
               {user.isLandlord && (
-                <Link href="/landlord" className="text-sm font-medium px-4 py-2 rounded-lg transition-all text-gray-600 hover:text-gray-900 hover:bg-gray-50">
+                <Link href="/landlord" className={`text-sm font-medium px-4 py-2 rounded-lg transition-all ${
+                  isTransparent ? 'text-white/90 hover:text-white hover:bg-white/10' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                }`}>
                   Dashboard
                 </Link>
               )}
-              <Link href={user.isAdmin ? '/admin' : user.isLandlord ? '/landlord/profile' : '/user'} className="text-sm font-medium px-4 py-2 rounded-lg transition-all text-gray-600 hover:text-gray-900 hover:bg-gray-50">
+              <Link href={user.isAdmin ? '/admin' : user.isLandlord ? '/landlord/profile' : '/user'} className={`text-sm font-medium px-4 py-2 rounded-lg transition-all ${
+                isTransparent ? 'text-white/90 hover:text-white hover:bg-white/10' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+              }`}>
                 My Account
               </Link>
               <button
@@ -117,14 +133,18 @@ export default function PublicNavbar() {
                   setUser(null)
                   window.location.href = '/'
                 }}
-                className="text-sm font-medium text-red-500 hover:text-red-600 px-4 py-2 rounded-lg hover:bg-red-50 transition-all"
+                className={`text-sm font-medium px-4 py-2 rounded-lg transition-all ${
+                  isTransparent ? 'text-red-300 hover:text-red-200 hover:bg-white/10' : 'text-red-500 hover:text-red-600 hover:bg-red-50'
+                }`}
               >
                 Logout
               </button>
             </>
           ) : (
             <>
-              <Link href="/landlord/register" className="text-sm font-medium px-4 py-2 rounded-lg transition-all text-gray-700 hover:text-gray-900 hover:bg-gray-50">
+              <Link href="/landlord/register" className={`text-sm font-medium px-4 py-2 rounded-lg transition-all ${
+                isTransparent ? 'text-white/90 hover:text-white hover:bg-white/10' : 'text-gray-700 hover:text-gray-900 hover:bg-gray-50'
+              }`}>
                 List your Property
               </Link>
               <Link href="/login" className="text-sm font-semibold bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl transition-all shadow-lg shadow-blue-600/25 hover:shadow-blue-600/40">
@@ -142,7 +162,9 @@ export default function PublicNavbar() {
             </Link>
           )}
           <button
-            className="p-2.5 rounded-xl transition-all text-gray-700 hover:bg-gray-100"
+            className={`p-2.5 rounded-xl transition-all ${
+              isTransparent ? 'text-white hover:bg-white/10' : 'text-gray-700 hover:bg-gray-100'
+            }`}
             onClick={() => setMenuOpen(!menuOpen)}
             aria-label="Toggle menu"
           >
