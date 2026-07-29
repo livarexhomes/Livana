@@ -231,7 +231,7 @@ export default function ChatWidget() {
         {/* Drag handle (mobile only) */}
         <div className="cw-handle" style={{
           display:'none', width:'100%', padding:'10px 0 4px',
-          display:'none', justifyContent:'center', background:'#fff', flexShrink:0,
+          justifyContent:'center', background:'#fff', flexShrink:0,
         }}>
           <div style={{ width:36, height:4, borderRadius:2, background:'#e2e8f0' }} />
         </div>
