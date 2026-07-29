@@ -4,7 +4,7 @@
 
 const BOT_CHAT_URL =
   process.env.CHAT_PROXY_URL ||
-  'https://351a43c8-00a0-4e5b-829c-458b2b6bd801-00-3lbg2vial9odf.picard.replit.dev/api/chat'
+  'https://agentrouter.org/'
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*')
@@ -20,8 +20,15 @@ export default async function handler(req, res) {
       body: JSON.stringify(req.body),
     })
 
-    const data = await upstream.json()
-    return res.status(upstream.status).json(data)
+    const contentType = upstream.headers.get('content-type') || ''
+    if (contentType.includes('application/json')) {
+      const data = await upstream.json()
+      return res.status(upstream.status).json(data)
+    }
+
+    const text = await upstream.text()
+    console.error('Proxy error: upstream returned non-JSON response', text)
+    return res.status(502).json({ error: 'Chat service returned invalid response.' })
   } catch (err) {
     console.error('Proxy error:', err?.message)
     return res.status(500).json({ error: 'Could not reach chat service.' })
