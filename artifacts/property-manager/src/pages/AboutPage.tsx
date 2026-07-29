@@ -4,9 +4,9 @@ import PublicNavbar from '@/components/layout/PublicNavbar'
 import Footer from '@/components/layout/Footer'
 
 const stats = [
-  { value: '2,400+', label: 'Active Listings', sub: 'Across Nigeria' },
-  { value: '850+',   label: 'Verified Landlords', sub: 'KYC approved' },
-  { value: '36',     label: 'Cities Covered', sub: 'And growing' },
+  { value: 'Lagos',  label: 'State Coverage', sub: '& Ogun — expanding soon' },
+  { value: '100%',   label: 'Verified Landlords', sub: 'KYC approved before listing' },
+  { value: 'Early',  label: 'Access Phase', sub: 'Inventory growing daily' },
   { value: '₦0',     label: 'Agent Fees', sub: 'Always free' },
 ]
 
@@ -202,7 +202,7 @@ export default function AboutPage() {
             </div>
             <div className="grid grid-cols-2 gap-4">
               {[
-                { icon: Globe,      label: '36 Cities',      sub: 'Across Nigeria',       from: 'from-blue-500/15',    border: 'border-blue-500/20',   text: 'text-blue-400' },
+                { icon: Globe,      label: 'Lagos & Ogun',   sub: 'Active coverage',      from: 'from-blue-500/15',    border: 'border-blue-500/20',   text: 'text-blue-400' },
                 { icon: Shield,     label: '100% Verified',  sub: 'Landlord rate',        from: 'from-emerald-500/15', border: 'border-emerald-500/20',text: 'text-emerald-400' },
                 { icon: TrendingUp, label: '₦0 Fees',        sub: 'Always free to browse',from: 'from-violet-500/15',  border: 'border-violet-500/20', text: 'text-violet-400' },
                 { icon: Heart,      label: '4.9/5 Rating',   sub: 'Average user review',  from: 'from-rose-500/15',    border: 'border-rose-500/20',   text: 'text-rose-400' },

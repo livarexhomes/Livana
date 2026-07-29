@@ -548,23 +548,18 @@ export default function HomePageClient({ initialProperties }: { initialPropertie
               </form>
             </div>
 
-            {/* Stats row */}
-            <div className="flex items-center gap-8">
+            {/* Trust badges row */}
+            <div className="flex flex-wrap items-center gap-3">
               {[
-                { value: 307, suffix: '+', label: 'Verified Properties', prefix: '' },
-                { value: 108, suffix: '+', label: 'Verified Landlords', prefix: '' },
-                { value: 80, suffix: '+', label: 'Requests Processed', prefix: '' },
-                { value: 2, suffix: 'h', label: 'Avg Response Time', prefix: '' },
-              ].map((s, i) => (
-                <div key={s.label} className="flex items-center gap-8">
-                  {i > 0 && <div className="w-px h-8 bg-white/20" />}
-                  <div>
-                    <p className="font-black text-white text-2xl leading-none tracking-tight">
-                      {s.prefix ?? ''}<AnimatedCounter target={s.value} suffix={s.suffix ?? ''} />
-                    </p>
-                    <p className="text-xs text-white/40 mt-1 font-medium">{s.label}</p>
-                  </div>
-                </div>
+                'Verified landlords only',
+                'Lagos & Ogun coverage',
+                '₦0 agent fees',
+                '< 2h avg response',
+              ].map((badge) => (
+                <span key={badge} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/10 border border-white/15 text-white/80 text-xs font-semibold">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0" />
+                  {badge}
+                </span>
               ))}
             </div>
           </div>
@@ -1021,21 +1016,11 @@ export default function HomePageClient({ initialProperties }: { initialPropertie
                 </div>
               </div>
 
-              <div className="hidden md:flex items-center gap-8 shrink-0 bg-white/5 border border-white/10 rounded-2xl px-8 py-5">
-                {[
-                  { num: '307+', label: 'Verified Properties' },
-                  { num: '108+', label: 'Verified Landlords' },
-                  { num: '80+', label: 'Requests Processed' },
-                  { num: '4.9★', label: 'Average Rating' },
-                ].map((item, i) => (
-                  <div key={item.label} className="flex items-center gap-8">
-                    {i > 0 && <div className="w-px h-8 bg-white/20" />}
-                    <div>
-                      <p className="font-black text-white text-2xl leading-none tracking-tight">{item.num}</p>
-                      <p className="text-xs text-white/40 mt-1 font-medium">{item.label}</p>
-                    </div>
-                  </div>
-                ))}
+              <div className="hidden md:flex items-center shrink-0 bg-white/5 border border-white/10 rounded-2xl px-8 py-5">
+                <div className="text-center">
+                  <p className="font-extrabold text-white text-lg leading-snug">Now onboarding</p>
+                  <p className="text-xs text-white/50 mt-1">Verified landlords across Lagos & Ogun</p>
+                </div>
               </div>
             </div>
           </div>

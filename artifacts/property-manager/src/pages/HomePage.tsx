@@ -224,11 +224,11 @@ export default function HomePage() {
       },
     ],
   }
-  const stats = [
-    { value: 300, suffix: '+', label: 'Verified Properties' },
-    { value: 100, suffix: '+', label: 'Verified Landlords' },
-    { value: 80, suffix: '+', label: 'Requests Processed' },
-    { value: 2, suffix: ' hrs', label: 'Avg Response Time' },
+  const trustBadges = [
+    { label: 'Verified landlords only' },
+    { label: 'Lagos & Ogun coverage' },
+    { label: '₦0 agent fees' },
+    { label: '< 2h avg response' },
   ]
 
   return (
@@ -681,18 +681,13 @@ export default function HomePage() {
               </div>
             </div>
 
-            {/* Stats row */}
-            <div className="grid grid-cols-2 sm:flex sm:items-center gap-y-5 gap-x-0 sm:gap-8">
-              {stats.map((s, i) => (
-                <div key={s.label} className="flex items-center gap-4 sm:gap-8">
-                  {i > 0 && <div className="hidden sm:block w-px h-8 bg-white/20" />}
-                  <div>
-                    <p className="font-black text-white text-2xl leading-none tracking-tight">
-                      <AnimatedCounter target={s.value} suffix={s.suffix} />
-                    </p>
-                    <p className="text-xs text-white/40 mt-1 font-medium">{s.label}</p>
-                  </div>
-                </div>
+            {/* Trust badges row */}
+            <div className="flex flex-wrap items-center gap-3">
+              {trustBadges.map((badge) => (
+                <span key={badge.label} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/10 border border-white/15 text-white/80 text-xs font-semibold">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0" />
+                  {badge.label}
+                </span>
               ))}
             </div>
           </div>
@@ -1366,18 +1361,11 @@ export default function HomePage() {
                 </div>
               </div>
 
-              <div className="hidden md:grid grid-cols-2 gap-3 shrink-0">
-                {[
-                  { num: '307+', label: 'Verified Properties' },
-                  { num: '108+', label: 'Verified Landlords' },
-                  { num: '80+', label: 'Requests Processed' },
-                  { num: '4.9★', label: 'Average Rating' },
-                ].map(item => (
-                  <div key={item.label} className="bg-white/5 border border-white/10 rounded-2xl px-6 py-5 text-center hover:bg-white/8 transition-all">
-                    <p className="text-2xl font-extrabold text-white">{item.num}</p>
-                    <p className="text-gray-500 text-xs mt-1 font-medium">{item.label}</p>
-                  </div>
-                ))}
+              <div className="hidden md:flex items-center shrink-0 bg-white/5 border border-white/10 rounded-2xl px-8 py-5">
+                <div className="text-center">
+                  <p className="font-extrabold text-white text-lg leading-snug">Now onboarding</p>
+                  <p className="text-xs text-white/50 mt-1">Verified landlords across Lagos & Ogun</p>
+                </div>
               </div>
             </div>
           </div>
@@ -1394,7 +1382,7 @@ export default function HomePage() {
               </div>
               <div>
                 <h3 className="text-xl font-extrabold text-gray-900">Own a property? List it free.</h3>
-                <p className="text-gray-500 text-sm mt-1 max-w-md">Join 108+ verified landlords who reach serious, pre-screened tenants with zero agent fees. Livarex handles all the coordination for you.</p>
+                <p className="text-gray-500 text-sm mt-1 max-w-md">List your property and reach serious, pre-screened tenants with zero agent fees. Livarex handles all the coordination for you.</p>
                 <div className="flex flex-wrap gap-4 mt-3">
                   {['No agent fees', 'Verified tenants only', 'Inspection scheduling included'].map(point => (
                     <span key={point} className="flex items-center gap-1.5 text-xs font-semibold text-blue-700">

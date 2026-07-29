@@ -392,13 +392,23 @@ export default function ListingsPage() {
                     <div className="w-16 h-16 bg-blue-50 rounded-2xl flex items-center justify-center mb-4">
                       <Building2 className="w-8 h-8 text-blue-300" strokeWidth={1.5} />
                     </div>
-                    <h3 className="font-bold text-slate-900 mb-1.5">No properties found</h3>
-                    <p className="text-sm text-slate-500 mb-5 max-w-xs">Try adjusting or clearing your filters to see more results.</p>
-                    {hasFilters && (
+                    <h3 className="font-bold text-slate-900 mb-1.5">{hasFilters ? 'No properties match your filters' : 'New listings added daily'}</h3>
+                    <p className="text-sm text-slate-500 mb-5 max-w-xs">
+                      {hasFilters
+                        ? 'Try adjusting or clearing your filters to see more results.'
+                        : 'We\'re onboarding verified landlords across Lagos & Ogun. Check back soon — or contact us to request a specific property type.'}
+                    </p>
+                    {hasFilters ? (
                       <button onClick={clearFilters}
                         className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-xl transition-colors shadow-sm shadow-blue-600/25">
                         Clear all filters
                       </button>
+                    ) : (
+                      <a href="https://wa.me/2347061370742?text=Hi%20Livarex%2C%20I%27d%20like%20to%20request%20a%20property"
+                        target="_blank" rel="noopener noreferrer"
+                        className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-xl transition-colors shadow-sm shadow-blue-600/25 inline-flex items-center gap-2">
+                        Request a property via WhatsApp
+                      </a>
                     )}
                   </div>
                 </div>
