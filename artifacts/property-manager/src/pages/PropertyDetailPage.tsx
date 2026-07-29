@@ -363,8 +363,8 @@ export default function PropertyDetailPage() {
               )}
             </AnimatePresence>
 
-            {/* Dark gradient overlay at bottom */}
-            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent pointer-events-none" />
+            {/* Subtle vignette — keeps top controls readable */}
+            <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-transparent pointer-events-none" />
 
             {/* Top controls */}
             <div className="absolute top-6 left-6 right-6 flex items-center justify-between">
@@ -397,38 +397,6 @@ export default function PropertyDetailPage() {
               </div>
             </div>
 
-            {/* Bottom info overlay */}
-            <div className="absolute bottom-0 left-0 right-0 p-6 md:p-8">
-              <div className="flex flex-wrap items-center gap-2 mb-3">
-                <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold ${statusCfg.bg} ${statusCfg.text} backdrop-blur-sm`}>
-                  <span className={`w-1.5 h-1.5 rounded-full ${statusCfg.dot} animate-pulse`} />
-                  {statusCfg.label}
-                </span>
-                <span className="px-3 py-1 rounded-full text-xs font-bold bg-white/15 backdrop-blur-sm text-white border border-white/20">
-                  {TYPE_LABEL[property.type]}
-                </span>
-                {landlord?.is_verified && (
-                  <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/20 backdrop-blur-sm text-emerald-300 border border-emerald-400/30">
-                    <ShieldCheck className="w-3 h-3" /> Verified
-                  </span>
-                )}
-                {property.featured && (
-                  <span className="px-3 py-1 rounded-full text-xs font-bold bg-amber-500/20 backdrop-blur-sm text-amber-300 border border-amber-400/30">
-                    ⭐ Featured
-                  </span>
-                )}
-              </div>
-              <h1 className="text-2xl md:text-4xl font-black text-white tracking-tight leading-tight mb-2 drop-shadow-sm">
-                {property.title}
-              </h1>
-              <div className="flex items-center gap-2 text-white/70 text-sm">
-                <MapPin className="w-3.5 h-3.5 text-white/50 shrink-0" />
-                {locationText}, Nigeria
-              </div>
-              {!addressVisible && (
-                <div className="mt-2 text-xs text-white/80">Create a free account to unlock the full address and contact details.</div>
-              )}
-            </div>
 
             {/* Image counter */}
             {images.length > 1 && (
@@ -459,6 +427,44 @@ export default function PropertyDetailPage() {
           )}
         </div>
       </section>
+
+      {/* ── TITLE BLOCK — below hero in white space ── */}
+      <div className="bg-white border-b border-gray-100">
+        <div className="max-w-7xl mx-auto px-4 md:px-6 py-6 md:py-8">
+          {/* Badges */}
+          <div className="flex flex-wrap items-center gap-2 mb-4">
+            <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold ${statusCfg.bg} ${statusCfg.text}`}>
+              <span className={`w-1.5 h-1.5 rounded-full ${statusCfg.dot} animate-pulse`} />
+              {statusCfg.label}
+            </span>
+            <span className="px-3 py-1 rounded-full text-xs font-bold bg-gray-100 text-gray-700 border border-gray-200">
+              {TYPE_LABEL[property.type]}
+            </span>
+            {landlord?.is_verified && (
+              <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                <ShieldCheck className="w-3 h-3" /> Verified Landlord
+              </span>
+            )}
+            {property.featured && (
+              <span className="px-3 py-1 rounded-full text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200">
+                ⭐ Featured
+              </span>
+            )}
+          </div>
+          {/* Title */}
+          <h1 className="text-2xl md:text-3xl lg:text-4xl font-black text-gray-900 tracking-tight leading-tight mb-3">
+            {property.title}
+          </h1>
+          {/* Location */}
+          <div className="flex items-center gap-1.5 text-gray-500 text-sm">
+            <MapPin className="w-4 h-4 text-gray-400 shrink-0" />
+            <span>{locationText}, Nigeria</span>
+          </div>
+          {!addressVisible && (
+            <p className="mt-2 text-xs text-gray-400">Create a free account to unlock the full address and contact details.</p>
+          )}
+        </div>
+      </div>
 
       {/* ── MAIN CONTENT ── */}
       <main className="max-w-7xl mx-auto px-4 md:px-6 py-10 pb-32 lg:pb-12">
