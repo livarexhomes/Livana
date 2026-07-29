@@ -9,9 +9,7 @@ import {
   Droplets, TreePine, UtensilsCrossed, Tv, Lock, Sun, Package,
   Eye, Phone, X,
 } from 'lucide-react'
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet'
-import 'leaflet/dist/leaflet.css'
-import L from 'leaflet'
+import PropertyDetailMap from '../components/property/PropertyDetailMap'
 import PublicNavbar from '../components/layout/PublicNavbar'
 import Footer from '../components/layout/Footer'
 import SEO from '../components/SEO'
@@ -19,12 +17,6 @@ import { createClient, isSupabaseConfigured, getSupabaseImageUrl } from '../lib/
 import { isAdminUser } from '../lib/auth'
 import type { PropertyWithLandlord, PropertyImage, Landlord } from '@/types'
 
-delete (L.Icon.Default.prototype as unknown as Record<string, unknown>)._getIconUrl
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
-  iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
-  shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
-})
 
 const AMENITIES = [
   { icon: Wifi,            label: 'High-Speed WiFi' },
@@ -467,8 +459,8 @@ export default function PropertyDetailPage() {
       </div>
 
       {/* ── MAIN CONTENT ── */}
-      <main className="max-w-7xl mx-auto px-4 md:px-6 py-10 pb-32 lg:pb-12">
-        <div className="grid lg:grid-cols-[1fr_400px] gap-10 xl:gap-14">
+      <main className="max-w-7xl mx-auto px-4 md:px-6 py-6 md:py-10 pb-32 lg:pb-12">
+        <div className="grid lg:grid-cols-[1fr_400px] gap-6 lg:gap-10 xl:gap-14">
 
           {/* LEFT COLUMN */}
           <motion.div
@@ -618,24 +610,12 @@ export default function PropertyDetailPage() {
                       </div>
 
                       {property.latitude && property.longitude ? (
-                        <div className="rounded-2xl overflow-hidden border border-gray-100 h-[300px] md:h-[360px] shadow-sm">
-                          <MapContainer
-                            center={[property.latitude, property.longitude]}
-                            zoom={15}
-                            scrollWheelZoom={false}
-                            className="w-full h-full"
-                          >
-                            <TileLayer
-                              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-                              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                            />
-                            <Marker position={[property.latitude, property.longitude]}>
-                              <Popup>
-                                <span className="font-semibold text-gray-900 text-xs">{property.title}</span><br />
-                                <span className="text-gray-400 text-xs">{addressVisible ? fullLocation : property.city}</span>
-                              </Popup>
-                            </Marker>
-                          </MapContainer>
+                        <div className="rounded-2xl overflow-hidden border border-gray-100 h-[260px] md:h-[360px] shadow-sm">
+                          <PropertyDetailMap
+                            lat={property.latitude}
+                            lng={property.longitude}
+                            title={property.title}
+                          />
                         </div>
                       ) : (
                         <div className="rounded-2xl border border-gray-100 h-[200px] flex items-center justify-center bg-gray-50">
@@ -651,11 +631,11 @@ export default function PropertyDetailPage() {
           </motion.div>
 
           {/* RIGHT SIDEBAR */}
-          <aside className="lg:block">
+          <aside>
             <div className="sticky top-24 space-y-4">
 
-              {/* Price + CTA card */}
-              <div className="bg-white rounded-3xl border border-gray-100 shadow-xl shadow-gray-100/80 overflow-hidden">
+              {/* Price + CTA card — hidden on mobile (sticky bar handles it) */}
+              <div className="hidden lg:block bg-white rounded-3xl border border-gray-100 shadow-xl shadow-gray-100/80 overflow-hidden">
                 {/* Price header */}
                 <div className="px-7 pt-7 pb-5 border-b border-gray-50">
                   <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">
@@ -895,7 +875,7 @@ export default function PropertyDetailPage() {
                 )}
               </div>
 
-              {/* Safety tip */}
+              {/* Safety tip — shown on all sizes */}
               <div className="rounded-2xl border border-gray-100 bg-white p-5">
                 <div className="flex gap-3">
                   <div className="w-8 h-8 rounded-xl bg-blue-50 flex items-center justify-center shrink-0">
