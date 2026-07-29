@@ -148,6 +148,7 @@ export default async function handler(req, res) {
       headers: {
         'Content-Type': 'application/json',
         'x-api-key': apiKey,
+        'Authorization': `Bearer ${apiKey}`,
         'anthropic-version': '2023-06-01',
       },
       body: JSON.stringify({
@@ -161,7 +162,8 @@ export default async function handler(req, res) {
     if (!apiRes.ok) {
       const err = await apiRes.text()
       console.error('AI API error:', apiRes.status, err)
-      return res.status(500).json({ error: 'AI service error. Please try again.' })
+      // Return the actual error detail so it surfaces in chat during debugging
+      return res.status(500).json({ error: `AI error ${apiRes.status}: ${err.slice(0, 200)}` })
     }
 
     const data = await apiRes.json()
