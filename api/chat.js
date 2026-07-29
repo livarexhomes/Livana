@@ -1,13 +1,14 @@
 // Vercel Serverless Function — /api/chat
-// Uses @anthropic-ai/sdk exactly like livarex-bot/ai.js (proven working).
+// Calls OpenRouter (openrouter.ai) using OpenAI-compatible format.
+// Works from Vercel — no WAF/IP issues.
 //
-// Vercel env vars needed:
-//   ANTHROPIC_API_KEY      — your agentrouter key (sk-bRFV…)
-//   ANTHROPIC_BASE_URL     — https://agentrouter.org  (same as Replit secret)
-//   VITE_SUPABASE_URL      — for live listings
-//   SUPABASE_SERVICE_ROLE_KEY — for live listings
-
-import Anthropic from '@anthropic-ai/sdk'
+// Required Vercel env vars:
+//   OPENROUTER_API_KEY   — from openrouter.ai/keys
+//
+// Optional:
+//   OPENROUTER_MODEL     — default: anthropic/claude-opus-4
+//   VITE_SUPABASE_URL    — for live listings
+//   SUPABASE_SERVICE_ROLE_KEY
 
 const SYSTEM_PROMPT = `You are Livarex Bot — the official AI property assistant for Livarex Homes (www.livarex.com.ng), Nigeria's verified property marketplace.
 
@@ -89,25 +90,6 @@ function formatListings(listings) {
   ).join('\n\n')
 }
 
-// ── Anthropic client (same setup as livarex-bot/ai.js) ───────────────────────
-function makeClient() {
-  const baseURL =
-    process.env.AI_INTEGRATIONS_ANTHROPIC_BASE_URL ||
-    process.env.ANTHROPIC_BASE_URL ||
-    process.env.AGENTROUTER_BASE_URL ||
-    undefined
-
-  const apiKey =
-    process.env.AI_INTEGRATIONS_ANTHROPIC_API_KEY ||
-    process.env.ANTHROPIC_API_KEY ||
-    process.env.AGENTROUTER_API_KEY
-
-  return new Anthropic({
-    ...(baseURL ? { baseURL } : {}),
-    apiKey,
-  })
-}
-
 // ── Handler ───────────────────────────────────────────────────────────────────
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*')
@@ -121,45 +103,51 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'messages array required' })
   }
 
-  // Normalise: content must be array of blocks
-  const normalised = messages.map(m => ({
+  const apiKey = process.env.OPENROUTER_API_KEY
+  if (!apiKey) return res.status(500).json({ error: 'OPENROUTER_API_KEY not configured' })
+
+  const model = process.env.OPENROUTER_MODEL || 'anthropic/claude-opus-4'
+
+  // Flatten messages to plain strings for OpenAI format
+  const flatMessages = messages.map(m => ({
     role: m.role,
-    content: Array.isArray(m.content) ? m.content : [{ type: 'text', text: String(m.content) }],
+    content: Array.isArray(m.content)
+      ? m.content.filter(b => b.type === 'text').map(b => b.text).join('\n')
+      : String(m.content),
   }))
 
+  // Build system prompt with live listings
   const listings = await fetchListings()
   const listingsCtx = formatListings(listings)
-  const system = listingsCtx
+  const systemContent = listingsCtx
     ? `${SYSTEM_PROMPT}\n\n--- CURRENT VERIFIED LISTINGS ---\n${listingsCtx}\n--- END LISTINGS ---`
     : `${SYSTEM_PROMPT}\n\n--- LISTINGS: None right now. Direct users to www.livarex.com.ng/listings ---`
 
+  const openAiMessages = [
+    { role: 'system', content: systemContent },
+    ...flatMessages,
+  ]
+
   try {
-    const client = makeClient()
-    const response = await client.messages.create({
-      model: 'claude-opus-4-8',
-      max_tokens: 1024,
-      system,
-      messages: normalised,
+    const apiRes = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`,
+        'HTTP-Referer': 'https://www.livarex.com.ng',
+        'X-Title': 'Livarex Property Assistant',
+      },
+      body: JSON.stringify({ model, messages: openAiMessages }),
     })
 
-    // Log the full response so we can see agentrouter's exact shape
-    console.log('agentrouter raw response:', JSON.stringify(response))
-
-    // agentrouter may return OpenAI-format (choices) or Anthropic-format (content)
-    const raw = response
-    const reply =
-      raw?.content?.[0]?.text ||                        // Anthropic format
-      raw?.choices?.[0]?.message?.content ||            // OpenAI format
-      raw?.output?.[0]?.content?.[0]?.text ||           // possible wrapper format
-      undefined
-
-    if (!reply) {
-      console.error('Unrecognised response shape:', JSON.stringify(raw))
-      return res.status(200).json({
-        reply: `DEBUG — unrecognised response shape. Keys: ${Object.keys(raw ?? {}).join(', ')}`
-      })
+    if (!apiRes.ok) {
+      const err = await apiRes.text()
+      console.error('OpenRouter error:', apiRes.status, err)
+      return res.status(500).json({ error: `AI error ${apiRes.status}: ${err.slice(0, 200)}` })
     }
 
+    const data = await apiRes.json()
+    const reply = data?.choices?.[0]?.message?.content ?? 'Sorry, I could not generate a response.'
     return res.status(200).json({ reply })
   } catch (err) {
     console.error('Chat handler error:', err?.message ?? err)
