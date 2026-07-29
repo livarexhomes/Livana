@@ -102,7 +102,7 @@ export default function AboutPage() {
               </div>
               <div className="absolute -top-6 -right-6 bg-blue-600 text-white rounded-2xl px-5 py-4 shadow-2xl shadow-blue-600/40">
                 <Building2 className="w-6 h-6 mb-1.5 text-blue-200" />
-                <p className="text-3xl font-extrabold leading-none">36</p>
+                <p className="text-3xl font-extrabold leading-none">2</p>
                 <p className="text-blue-200 text-xs mt-1 font-medium">Cities Covered</p>
               </div>
               <div className="absolute -bottom-5 -left-5 bg-white border border-gray-100 rounded-2xl px-5 py-4 shadow-xl">
