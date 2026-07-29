@@ -1,8 +1,8 @@
 // ── Lead tracking (Supabase + in-memory fallback) ─────────────────────────
 //
-// Run this SQL once in Supabase:
+// Run this SQL once in Supabase (SQL Editor):
 //
-//   create table bot_leads (
+//   create table if not exists bot_leads (
 //     phone text primary key,
 //     name text,
 //     last_message text,
@@ -13,8 +13,8 @@
 //     created_at timestamptz default now()
 //   );
 
-const SUPABASE_URL         = process.env.SUPABASE_URL
-const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY
+const SUPABASE_URL         = process.env.VITE_SUPABASE_URL
+const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY
 const useSupabase          = !!(SUPABASE_URL && SUPABASE_SERVICE_KEY)
 const leadsStore           = new Map()  // fallback
 
@@ -25,7 +25,7 @@ async function sbFetch(path, options = {}) {
       apikey: SUPABASE_SERVICE_KEY,
       Authorization: `Bearer ${SUPABASE_SERVICE_KEY}`,
       "Content-Type": "application/json",
-      Prefer: options.method === "POST" ? "resolution=merge-duplicates" : "return=representation",
+      Prefer: options.method === "POST" ? "resolution=merge-duplicates,return=minimal" : "return=representation",
       ...(options.headers || {}),
     },
   })
@@ -46,7 +46,6 @@ export async function upsertLead(phone, name, message) {
       await sbFetch("/bot_leads", {
         method: "POST",
         body: JSON.stringify(record),
-        headers: { Prefer: "resolution=merge-duplicates,return=minimal" },
       })
       return
     } catch (err) {
@@ -64,8 +63,7 @@ export async function scheduleFollowUp(phone, delayHours = 24) {
     try {
       await sbFetch("/bot_leads", {
         method: "POST",
-        body: JSON.stringify({ phone, follow_up_due_at: dueAt }),
-        headers: { Prefer: "resolution=merge-duplicates,return=minimal" },
+        body: JSON.stringify({ phone, follow_up_due_at: dueAt, follow_up_sent_at: null }),
       })
       return
     } catch (err) { console.error("scheduleFollowUp failed:", err.message) }
@@ -97,15 +95,22 @@ export async function getLeadsDueForFollowUp() {
 
 export async function markFollowUpSent(phone) {
   const now = new Date().toISOString()
+  const lead = useSupabase ? null : (leadsStore.get(phone) || { phone })
 
   if (useSupabase) {
     try {
+      // Use an RPC to atomically increment follow_up_count
+      await sbFetch("/rpc/increment_follow_up_count", {
+        method: "POST",
+        body: JSON.stringify({ p_phone: phone }),
+        headers: { Prefer: "return=minimal" },
+      }).catch(() => null)  // fallback: increment separately below
+
       await sbFetch(`/bot_leads?phone=eq.${encodeURIComponent(phone)}`, {
         method: "PATCH",
         body: JSON.stringify({
           follow_up_sent_at: now,
           follow_up_due_at: null,
-          follow_up_count: undefined,  // use SQL increment below
         }),
         headers: { Prefer: "return=minimal" },
       })
@@ -113,7 +118,6 @@ export async function markFollowUpSent(phone) {
     } catch (err) { console.error("markFollowUpSent failed:", err.message) }
   }
 
-  const lead = leadsStore.get(phone) || { phone }
   leadsStore.set(phone, {
     ...lead,
     follow_up_sent_at: now,

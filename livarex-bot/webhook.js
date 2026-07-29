@@ -3,10 +3,11 @@ import { sendText, sendButtons, markRead } from "./whatsapp.js"
 import { processMessage } from "./ai.js"
 import { getSession, saveSession } from "./sessions.js"
 import { upsertLead, scheduleFollowUp } from "./leads.js"
+import { getConversationHistory } from "./memory.js"
 
-const VERIFY_TOKEN = process.env.WHATSAPP_VERIFY_TOKEN || "livarex_verify_token"
-const AGENT_KEYWORDS  = ["agent", "human", "speak to", "call me", "call back"]
-const GREETING_KEYWORDS = ["hi", "hello", "hey", "good morning", "good afternoon", "good evening", "start", "helo"]
+const VERIFY_TOKEN     = process.env.WHATSAPP_VERIFY_TOKEN || "livarex_verify_token"
+const AGENT_KEYWORDS   = ["agent", "human", "speak to", "call me", "call back", "real person"]
+const GREETING_KEYWORDS = ["hi", "hello", "hey", "good morning", "good afternoon", "good evening", "start", "helo", "howdy", "sup"]
 
 // Meta's webhook verification handshake
 export function verifyWebhook(req, res) {
@@ -78,9 +79,9 @@ async function handleMessage(phone, contactName, msg) {
         phone,
         `Hello ${name}! 👋 Welcome to *Livarex Homes* — Nigeria's Verified Property Marketplace. 🏡\n\nI'm your personal property rep. What are you looking for today?`,
         [
-          { id: "rent",    title: "🔑 Rent a Property" },
-          { id: "buy",     title: "🏠 Buy a Property"  },
-          { id: "invest",  title: "📈 Investment"      },
+          { id: "rent",      title: "🔑 Rent a Property" },
+          { id: "lease",     title: "📋 Lease a Property" },
+          { id: "list_prop", title: "🏘️ List My Property" },
         ]
       )
       return
@@ -95,9 +96,8 @@ async function handleMessage(phone, contactName, msg) {
     await scheduleFollowUp(phone, 24)
 
     // Offer next step every 6 turns
-    const turns = (await import("./memory.js")).then(m => m.getConversationHistory(phone))
-      .then(h => h.length).catch(() => 0)
-    if ((await turns) > 0 && (await turns) % 6 === 0) {
+    const history = await getConversationHistory(phone)
+    if (history.length > 0 && history.length % 6 === 0) {
       await sendButtons(
         phone,
         "Would you like to take the next step? 😊",
@@ -131,10 +131,9 @@ async function notifyAdminOfEscalation(phone, name, lastMessage) {
   const adminPhone = process.env.ADMIN_PHONE_NUMBER
   if (!adminPhone) return
   try {
-    const { sendText: send } = await import("./whatsapp.js")
-    await send(
+    await sendText(
       adminPhone,
-      `🚨 *Agent Request*\n\nClient: ${name}\nPhone: ${phone}\nMessage: "${lastMessage.slice(0, 100)}"\n\nPlease follow up immediately.`
+      `🚨 *Agent Request*\n\nClient: ${name}\nPhone: +${phone}\nMessage: "${lastMessage.slice(0, 120)}"\n\nPlease follow up immediately.`
     )
   } catch (e) {
     console.error("Admin escalation notify failed:", e.message)

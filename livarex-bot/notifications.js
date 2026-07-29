@@ -8,23 +8,26 @@
 //      Table: enquiries | Event: UPDATE
 //      URL: https://your-bot-url.com/events/inspection
 //      HTTP Method: POST
+//      Header: x-webhook-secret: <your WEBHOOK_SECRET>
 //
 //   2. New tenant signup
 //      Table: tenants | Event: INSERT
 //      URL: https://your-bot-url.com/events/signup
 //      HTTP Method: POST
+//      Header: x-webhook-secret: <your WEBHOOK_SECRET>
 //
 //   3. Landlord KYC submission
-//      Table: landlords | Event: INSERT | UPDATE (filter: status = 'pending')
+//      Table: landlords | Event: INSERT, UPDATE
 //      URL: https://your-bot-url.com/events/kyc
 //      HTTP Method: POST
+//      Header: x-webhook-secret: <your WEBHOOK_SECRET>
 //
 // Supabase sends: { type, table, schema, record, old_record }
 
 import { sendText } from "./whatsapp.js"
 
-const ADMIN_PHONE = process.env.ADMIN_PHONE_NUMBER
-const WEBHOOK_SECRET = process.env.WEBHOOK_SECRET  // optional extra security
+const ADMIN_PHONE    = process.env.ADMIN_PHONE_NUMBER
+const WEBHOOK_SECRET = process.env.WEBHOOK_SECRET
 
 function verifySecret(req) {
   if (!WEBHOOK_SECRET) return true
@@ -34,17 +37,14 @@ function verifySecret(req) {
 // ── 1. Inspection / Enquiry status update → notify tenant ─────────────────
 export async function handleInspectionEvent(req, res) {
   res.sendStatus(200)
-  if (!verifySecret(req)) return
+  if (!verifySecret(req)) { console.warn("⚠️ Inspection webhook: invalid secret"); return }
 
   try {
     const { type, record, old_record } = req.body || {}
     if (!record) return
-
-    // Only act on status changes
     if (type !== "UPDATE") return
     if (old_record?.status === record.status) return
 
-    // We need the tenant's phone. Fetch from tenants table.
     const tenantPhone = await fetchTenantPhone(record.tenant_id)
     if (!tenantPhone) {
       console.log("No phone for tenant:", record.tenant_id)
@@ -55,14 +55,14 @@ export async function handleInspectionEvent(req, res) {
     const newStatus     = record.status
 
     const messages = {
-      replied: `✅ *Update from Livarex!*\n\nThe landlord has replied to your enquiry for *${propertyTitle}*.\n\nLog in to www.livarex.com.ng to see their response. 🏡`,
-      closed:  `📋 *Enquiry Closed*\n\nYour enquiry for *${propertyTitle}* has been closed.\n\nHave questions? Visit www.livarex.com.ng or reply here.`,
-      approved:`🎉 *Inspection Approved!*\n\nYour inspection request for *${propertyTitle}* has been *approved*!\n\nThe landlord will be in touch to confirm the date. 🏡`,
-      rejected:`❌ *Inspection Update*\n\nUnfortunately, your inspection request for *${propertyTitle}* could not be confirmed at this time.\n\nWe have other great options — visit www.livarex.com.ng to explore.`,
+      replied:  `✅ *Update from Livarex!*\n\nThe landlord has replied to your enquiry for *${propertyTitle}*.\n\nLog in to www.livarex.com.ng to see their response. 🏡`,
+      closed:   `📋 *Enquiry Closed*\n\nYour enquiry for *${propertyTitle}* has been closed.\n\nHave questions? Visit www.livarex.com.ng or reply here.`,
+      approved: `🎉 *Inspection Approved!*\n\nYour inspection request for *${propertyTitle}* has been *approved*!\n\nOur team will send you the details shortly. 🏡`,
+      rejected: `❌ *Inspection Update*\n\nYour inspection request for *${propertyTitle}* could not be confirmed at this time.\n\nWe have other verified options — reply here or visit www.livarex.com.ng to explore.`,
     }
 
     const msg = messages[newStatus]
-    if (!msg) return  // no message for this status
+    if (!msg) return
 
     await sendText(tenantPhone, msg)
     console.log(`📤 Inspection update (${newStatus}) sent to ${tenantPhone}`)
@@ -74,7 +74,7 @@ export async function handleInspectionEvent(req, res) {
 // ── 2. New tenant signup → admin alert ────────────────────────────────────
 export async function handleNewSignupEvent(req, res) {
   res.sendStatus(200)
-  if (!verifySecret(req)) return
+  if (!verifySecret(req)) { console.warn("⚠️ Signup webhook: invalid secret"); return }
 
   try {
     const { type, record } = req.body || {}
@@ -100,7 +100,7 @@ export async function handleNewSignupEvent(req, res) {
 // ── 3. Landlord KYC submission → admin alert ──────────────────────────────
 export async function handleKYCEvent(req, res) {
   res.sendStatus(200)
-  if (!verifySecret(req)) return
+  if (!verifySecret(req)) { console.warn("⚠️ KYC webhook: invalid secret"); return }
 
   try {
     const { type, record, old_record } = req.body || {}
@@ -136,13 +136,13 @@ export async function handleKYCEvent(req, res) {
 
 // ── Internal: fetch tenant phone from Supabase ─────────────────────────────
 async function fetchTenantPhone(tenantId) {
-  const SUPABASE_URL = process.env.SUPABASE_URL
-  const SERVICE_KEY  = process.env.SUPABASE_SERVICE_KEY
+  const SUPABASE_URL = process.env.VITE_SUPABASE_URL
+  const SERVICE_KEY  = process.env.SUPABASE_SERVICE_ROLE_KEY
   if (!SUPABASE_URL || !SERVICE_KEY || !tenantId) return null
 
   try {
     const res = await fetch(
-      `${SUPABASE_URL}/rest/v1/tenants?id=eq.${tenantId}&select=phone,email&limit=1`,
+      `${SUPABASE_URL}/rest/v1/tenants?id=eq.${tenantId}&select=phone&limit=1`,
       {
         headers: {
           apikey: SERVICE_KEY,

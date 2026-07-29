@@ -1,21 +1,21 @@
 // ── Conversation memory (Supabase + in-memory fallback) ───────────────────
 //
-// Run this SQL once in Supabase:
+// Run this SQL once in Supabase (SQL Editor):
 //
-//   create table bot_messages (
+//   create table if not exists bot_messages (
 //     id uuid primary key default gen_random_uuid(),
 //     phone text not null,
 //     role text not null check (role in ('user','assistant')),
 //     content text not null,
 //     created_at timestamptz default now()
 //   );
-//   create index on bot_messages (phone, created_at);
+//   create index if not exists bot_messages_phone_idx on bot_messages (phone, created_at);
 
-const SUPABASE_URL      = process.env.SUPABASE_URL
-const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY
-const MAX_HISTORY       = 20
-const useSupabase       = !!(SUPABASE_URL && SUPABASE_SERVICE_KEY)
-const memoryStore       = new Map()
+const SUPABASE_URL         = process.env.VITE_SUPABASE_URL
+const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY
+const MAX_HISTORY          = 20
+const useSupabase          = !!(SUPABASE_URL && SUPABASE_SERVICE_KEY)
+const memoryStore          = new Map()
 
 async function supabaseFetch(path, options = {}) {
   const res = await fetch(`${SUPABASE_URL}/rest/v1${path}`, {
