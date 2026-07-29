@@ -221,6 +221,80 @@ export default function AboutPage() {
         </div>
       </section>
 
+      {/* ── VERIFICATION PROCESS ── */}
+      <section className="bg-white border-y border-gray-100 py-20">
+        <div className="max-w-6xl mx-auto px-5 sm:px-8">
+
+          {/* Header */}
+          <div className="text-center mb-14">
+            <p className="text-blue-600 font-semibold text-xs uppercase tracking-widest mb-3">Verified for Safety</p>
+            <h2 className="text-3xl md:text-4xl font-extrabold text-gray-900 mb-4">How Livarex verifies every landlord</h2>
+            <p className="text-gray-500 max-w-xl mx-auto text-sm leading-relaxed">
+              We combine phone checks, ID screening, ownership review, and manual approval so you can book a home with confidence.
+            </p>
+          </div>
+
+          <div className="grid gap-10 lg:grid-cols-[1.4fr_1fr] items-start">
+
+            {/* Steps */}
+            <div className="grid sm:grid-cols-2 gap-5">
+              {[
+                { n: 1, title: 'Government ID Verified',       desc: 'Every landlord submits a valid government-issued ID — NIN, passport, or driver\'s licence — before their account is created.' },
+                { n: 2, title: 'Phone Number Authenticated',   desc: 'We verify the phone number tied to the account is active and reachable. No anonymous listings.' },
+                { n: 3, title: 'Ownership & Listing Review',   desc: 'Our team reviews proof of ownership or agency authority for every property before it goes live on the platform.' },
+                { n: 4, title: 'Manual Admin Approval',        desc: 'A Livarex admin personally approves each landlord account. Only then can they publish listings and communicate with tenants.' },
+              ].map(step => (
+                <div key={step.n} className="rounded-2xl border border-gray-100 bg-gray-50 p-6 flex flex-col gap-4">
+                  <span className="inline-flex h-9 w-9 items-center justify-center rounded-2xl bg-blue-600 text-white text-sm font-bold shrink-0">
+                    {step.n}
+                  </span>
+                  <div>
+                    <p className="font-bold text-gray-900 text-sm mb-1">{step.title}</p>
+                    <p className="text-gray-500 text-xs leading-relaxed">{step.desc}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Request card */}
+            <div className="rounded-3xl border border-gray-200 bg-gradient-to-br from-blue-50 to-white p-8 flex flex-col gap-6 lg:sticky lg:top-24">
+              <div className="w-12 h-12 rounded-2xl bg-blue-600/10 flex items-center justify-center">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#2563eb" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>
+                </svg>
+              </div>
+              <div>
+                <p className="font-bold text-gray-900 mb-2">Can't find what you need?</p>
+                <p className="text-gray-500 text-sm leading-relaxed">
+                  Tell us your ideal location, budget, and move-in date. Our team will notify landlords and match you faster.
+                </p>
+              </div>
+              <Link href="/contact" className="inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-2xl bg-blue-600 text-white font-semibold hover:bg-blue-500 transition-all text-sm shadow-lg shadow-blue-600/20">
+                Request a property
+                <ArrowRight className="w-4 h-4" />
+              </Link>
+              <div className="border-t border-blue-100 pt-5 space-y-2.5">
+                {[
+                  '100% landlord-verified listings',
+                  'Zero agent fees — ever',
+                  'Response within 2 hours',
+                ].map(point => (
+                  <div key={point} className="flex items-center gap-2.5">
+                    <div className="w-4 h-4 rounded-full bg-blue-600 flex items-center justify-center shrink-0">
+                      <svg width="8" height="8" viewBox="0 0 12 12" fill="none">
+                        <path d="M2 6l3 3 5-5" stroke="#fff" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+                      </svg>
+                    </div>
+                    <span className="text-xs text-gray-600 font-medium">{point}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </section>
+
       {/* ── CTA ── */}
       <section className="bg-white py-28 relative overflow-hidden">
         <div className="absolute inset-0 bg-[linear-gradient(rgba(59,130,246,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(59,130,246,0.03)_1px,transparent_1px)] bg-[size:60px_60px]" />
