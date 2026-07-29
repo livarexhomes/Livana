@@ -53,7 +53,7 @@ export interface PropertyImage {
 }
 
 export interface PropertyWithLandlord extends Property {
-  landlords: Pick<Landlord, 'full_name' | 'whatsapp' | 'is_verified'> | null
+  landlords: Pick<Landlord, 'full_name' | 'whatsapp' | 'is_verified' | 'avatar_url'> | null
   property_images: Pick<PropertyImage, 'id' | 'storage_path' | 'alt_text' | 'is_cover' | 'sort_order'>[]
 }
 

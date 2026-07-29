@@ -1,9 +1,20 @@
 import { useState } from 'react'
 import { Link, useLocation } from '@/lib/navigation'
-import { MapPin, BedDouble, Bath, Bookmark, ShieldCheck, Building2 } from 'lucide-react'
+import { MapPin, BedDouble, Bath, Bookmark, ShieldCheck, Building2, Phone, MessageCircle } from 'lucide-react'
 import type { PropertyWithLandlord } from '@/types'
 import { getSupabaseImageUrl, createClient } from '@/lib/supabase'
 import { formatDistanceToNow } from 'date-fns'
+
+function waLink(raw: string) {
+  const digits = raw.replace(/\D/g, '')
+  const normalized = digits.startsWith('0') ? '234' + digits.slice(1) : digits
+  return `https://wa.me/${normalized}`
+}
+function telLink(raw: string) {
+  const digits = raw.replace(/\D/g, '')
+  const normalized = digits.startsWith('0') ? '+234' + digits.slice(1) : '+' + digits
+  return `tel:${normalized}`
+}
 
 interface Props {
   property: PropertyWithLandlord
@@ -186,6 +197,55 @@ export default function ListingCard({
               )}
             </div>
           )}
+
+          {/* Landlord / Livarex contact row */}
+          {(() => {
+            const LIVAREX_WA = '07061370742'
+            const contactNum  = p.landlords?.whatsapp ?? LIVAREX_WA
+            const displayName = p.landlords?.full_name ?? 'Livarex'
+            const avatarUrl   = p.landlords?.avatar_url ?? null
+            const initials    = displayName.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()
+            return (
+              <div className="flex items-center gap-2 pt-2 border-t border-slate-100">
+                {/* Avatar */}
+                <div className="w-7 h-7 rounded-full bg-slate-100 overflow-hidden shrink-0 flex items-center justify-center">
+                  {avatarUrl ? (
+                    <img src={avatarUrl} alt={displayName} className="w-full h-full object-cover" />
+                  ) : (
+                    <span className="text-[10px] font-bold text-slate-500">{initials}</span>
+                  )}
+                </div>
+                {/* Name */}
+                <p className="text-xs font-semibold text-slate-600 truncate flex-1 min-w-0">
+                  {displayName}
+                </p>
+                {/* Call */}
+                <button
+                  onClick={e => {
+                    e.preventDefault(); e.stopPropagation()
+                    if (!isAuthenticated) { navigate('/login'); return }
+                    window.location.href = telLink(contactNum)
+                  }}
+                  aria-label="Call"
+                  className="w-7 h-7 rounded-full bg-blue-50 hover:bg-blue-100 flex items-center justify-center text-blue-600 transition-colors active:scale-90 shrink-0"
+                >
+                  <Phone className="w-3.5 h-3.5" />
+                </button>
+                {/* WhatsApp */}
+                <button
+                  onClick={e => {
+                    e.preventDefault(); e.stopPropagation()
+                    if (!isAuthenticated) { navigate('/login'); return }
+                    window.open(waLink(contactNum), '_blank', 'noopener')
+                  }}
+                  aria-label="WhatsApp"
+                  className="w-7 h-7 rounded-full bg-emerald-50 hover:bg-emerald-100 flex items-center justify-center text-emerald-600 transition-colors active:scale-90 shrink-0"
+                >
+                  <MessageCircle className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            )
+          })()}
         </div>
 
       </article>

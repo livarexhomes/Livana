@@ -1,4 +1,4 @@
-modules = ["nodejs-24", "python-3.11"]
+modules = ["nodejs-24", "python-3.11", "postgresql-16"]
 
 [deployment]
 router = "application"
@@ -57,3 +57,6 @@ externalPort = 80
 ADMIN_PHONE_NUMBER = "2347060528437"
 WHATSAPP_VERIFY_TOKEN = "livarex_verify_2025"
 WEBHOOK_SECRET = "lvrx_3d98c3f3d6c3d665f4eb9874ea23d23c"
+
+[nix]
+channel = "stable-25_05"

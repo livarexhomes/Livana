@@ -66,7 +66,7 @@ export default function ListingsPage() {
     const supabase = createClient()
     let query = supabase
       .from('properties')
-      .select('*, landlords(full_name, whatsapp, is_verified), property_images(storage_path, alt_text, is_cover)')
+      .select('*, landlords(full_name, whatsapp, is_verified, avatar_url), property_images(storage_path, alt_text, is_cover)')
       .eq('status', 'available')
       .order('featured', { ascending: false })
       .order('created_at', { ascending: false })
