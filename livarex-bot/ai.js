@@ -3,21 +3,23 @@ import Anthropic from "@anthropic-ai/sdk"
 import { getConversationHistory, saveMessage } from "./memory.js"
 import { fetchListings, formatListingsForAI } from "./listings.js"
 
-// Priority order for base URL:
-//   1. Replit-managed integration base URL  (AI_INTEGRATIONS_ANTHROPIC_BASE_URL)
-//   2. Custom proxy base URL                (ANTHROPIC_BASE_URL  — e.g. agentrouter.org)
-//   3. Default Anthropic API                (no baseURL override)
-// Priority order for API key:
-//   1. Replit-managed integration key       (AI_INTEGRATIONS_ANTHROPIC_API_KEY)
-//   2. Standard key / custom proxy key      (ANTHROPIC_API_KEY)
+// Accepts any of these naming conventions (first defined wins):
+//   Base URL : AI_INTEGRATIONS_ANTHROPIC_BASE_URL → ANTHROPIC_BASE_URL → AGENTROUTER_BASE_URL
+//   API key  : AI_INTEGRATIONS_ANTHROPIC_API_KEY  → ANTHROPIC_API_KEY  → AGENTROUTER_API_KEY
 const _baseURL =
   process.env.AI_INTEGRATIONS_ANTHROPIC_BASE_URL ||
   process.env.ANTHROPIC_BASE_URL ||
+  process.env.AGENTROUTER_BASE_URL ||
   undefined
+
+const _apiKey =
+  process.env.AI_INTEGRATIONS_ANTHROPIC_API_KEY ||
+  process.env.ANTHROPIC_API_KEY ||
+  process.env.AGENTROUTER_API_KEY
 
 const client = new Anthropic({
   ...(_baseURL ? { baseURL: _baseURL } : {}),
-  apiKey: process.env.AI_INTEGRATIONS_ANTHROPIC_API_KEY || process.env.ANTHROPIC_API_KEY,
+  apiKey: _apiKey,
 })
 
 const SYSTEM_PROMPT = `You are Livarex Bot — the official AI property assistant for Livarex Homes (www.livarex.com.ng), Nigeria's verified property marketplace.
