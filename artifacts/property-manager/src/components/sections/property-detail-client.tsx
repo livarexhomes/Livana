@@ -12,21 +12,13 @@ import {
   Droplets, TreePine, UtensilsCrossed, Tv, Lock, Sun, Package,
   Eye, Phone, X,
 } from 'lucide-react'
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet'
-import 'leaflet/dist/leaflet.css'
-import L from 'leaflet'
+import PropertyDetailMap from '@/components/property/PropertyDetailMap'
 import PublicNavbar from '@/components/layout/PublicNavbar'
 import Footer from '@/components/layout/Footer'
 import { createClient, isSupabaseConfigured, getSupabaseImageUrl } from '@/lib/supabase'
 import { isAdminUser } from '@/lib/auth'
 import type { PropertyWithLandlord, PropertyImage, Landlord } from '@/types'
 
-delete (L.Icon.Default.prototype as unknown as Record<string, unknown>)._getIconUrl
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
-  iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
-  shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
-})
 
 const AMENITIES = [
   { icon: Wifi,            label: 'High-Speed WiFi' },
@@ -311,20 +303,11 @@ export default function PropertyDetailClient({ property }: { property: FullPrope
                     <h3 className="text-lg font-bold text-gray-900 mb-4">Location</h3>
                     <div className="bg-gray-50 rounded-2xl overflow-hidden h-80">
                       {property.latitude && property.longitude ? (
-                        <MapContainer
-                          center={[property.latitude, property.longitude]}
-                          zoom={15}
-                          scrollWheelZoom={false}
-                          className="w-full h-full"
-                        >
-                          <TileLayer
-                            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                          />
-                          <Marker position={[property.latitude, property.longitude]}>
-                            <Popup>{property.title}</Popup>
-                          </Marker>
-                        </MapContainer>
+                        <PropertyDetailMap
+                          lat={property.latitude}
+                          lng={property.longitude}
+                          title={property.title}
+                        />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center text-gray-400">
                           <MapPin className="w-8 h-8 mr-2" />
