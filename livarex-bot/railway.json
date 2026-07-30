@@ -1,10 +1,13 @@
 {
-    "$schema": "https://railway.app/railway.schema.json",
-    "build": {
-        "builder": "NIXPACKS",
-        "buildCommand": "npm ci"
-    },
-    "deploy": {
-        "startCommand": "node index.js"
-    }
+  "$schema": "https://railway.app/railway.schema.json",
+  "build": {
+    "builder": "NIXPACKS",
+    "buildCommand": "npm ci"
+  },
+  "deploy": {
+    "startCommand": "node index.js"
+  },
+  "env": {
+    "NIXPACKS_NODE_VERSION": "20"
+  }
 }
