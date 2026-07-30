@@ -1,5 +1,4 @@
 [phases.install]
 cmds = [
-  "npm install -g pnpm@9.15.9",
-  "pnpm install --frozen-lockfile"
+  "npm install",
 ]
