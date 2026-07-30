@@ -43,6 +43,7 @@ export default async function handler(req, res) {
     // Build headers; include Authorization when calling AgentRouter directly
     const baseHeaders = {
       'Content-Type': 'application/json',
+      'Accept': 'application/json',
       'x-forwarded-host': req.headers.host || '',
       'x-forwarded-for': req.headers['x-real-ip'] || req.socket?.remoteAddress || '',
     }
@@ -60,60 +61,57 @@ export default async function handler(req, res) {
         console.warn('[chat] Failed to construct AgentRouter URL, falling back to configured BOT_CHAT_URL')
         finalUpstreamUrl = upstreamUrl
       }
+    } else {
+      // If the configured BOT_CHAT_URL is a root URL, append a sensible fallback path.
+      try {
+        const parsed = new URL(upstreamUrl)
+        if (parsed.pathname === '/' || parsed.pathname === '') {
+          parsed.pathname = arPathOrRoot(req)
+          finalUpstreamUrl = parsed.toString()
+          console.log('[chat] Resolved BOT_CHAT_URL to:', finalUpstreamUrl)
+        }
+      } catch (e) {
+        // BOT_CHAT_URL may be relative; leave it as-is.
+      }
     }
 
-    const upstream = await fetch(finalUpstreamUrl, {
-      method: 'POST',
-      headers: finalHeaders,
-      body: JSON.stringify(req.body),
-      signal: controller.signal,
-    })
-
-    clearTimeout(timeoutId)
+    let upstream
+    try {
+      upstream = await fetch(finalUpstreamUrl, {
+        method: 'POST',
+        headers: finalHeaders,
+        body: JSON.stringify(req.body),
+        signal: controller.signal,
+      })
+    } finally {
+      clearTimeout(timeoutId)
+    }
 
     const contentType = (upstream.headers.get('content-type') || '').toLowerCase()
+    const responseText = await upstream.text()
+
     if (contentType.includes('application/json')) {
-      const data = await upstream.json()
-      return res.status(upstream.status).json(data)
+      try {
+        const data = responseText ? JSON.parse(responseText) : {}
+        return res.status(upstream.status).json(data)
+      } catch (parseErr) {
+        const snippet = responseText ? responseText.slice(0, 800) : ''
+        console.error('[chat] Proxy error: invalid JSON body from upstream', {
+          status: upstream.status,
+          contentType,
+          snippet,
+        })
+        return res.status(502).json({ error: 'Chat service returned invalid JSON', upstreamStatus: upstream.status, contentType, snippet })
+      }
     }
 
-    // Non-JSON response — capture a short snippet for debug logs (avoid huge bodies)
-    const text = await upstream.text()
-    const snippet = text ? text.slice(0, 800) : ''
+    const snippet = responseText ? responseText.slice(0, 800) : ''
     console.error('[chat] Proxy error: upstream returned non-JSON response', {
       status: upstream.status,
       contentType,
       snippet,
     })
-    // If AgentRouter env is configured, attempt a fallback direct call
-    if (AR_BASE && AR_KEY) {
-      try {
-        console.log('[chat] Attempting fallback to AgentRouter base URL')
-        const arResp = await fetch(new URL(arPathOrRoot(req), AR_BASE).toString(), {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${AR_KEY}`,
-          },
-          body: JSON.stringify(req.body),
-          signal: undefined,
-        })
-
-        const arContentType = (arResp.headers.get('content-type') || '').toLowerCase()
-        if (arContentType.includes('application/json')) {
-          const data = await arResp.json()
-          return res.status(arResp.status).json(data)
-        }
-        const arText = await arResp.text()
-        console.error('[chat] AgentRouter fallback returned non-JSON', { status: arResp.status, arContentType, snippet: arText.slice(0, 800) })
-        return res.status(502).json({ error: 'AgentRouter fallback returned non-JSON', upstreamStatus: arResp.status, contentType: arContentType })
-      } catch (e) {
-        console.error('[chat] AgentRouter fallback failed', e?.message || e)
-        // Fall through to return original upstream info below
-      }
-    }
-
-    return res.status(502).json({ error: 'Chat service returned invalid response', upstreamStatus: upstream.status, contentType, snippet })
+    return res.status(502).json({ error: 'Chat service returned non-JSON', upstreamStatus: upstream.status, contentType, snippet })
   } catch (err) {
     if (err && err.name === 'AbortError') {
       console.error('[chat] Proxy error: upstream request timed out')
