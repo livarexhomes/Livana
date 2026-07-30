@@ -62,13 +62,14 @@ export default async function handler(req, res) {
         finalUpstreamUrl = upstreamUrl
       }
     } else {
-      // If the configured BOT_CHAT_URL is a root URL, append a sensible fallback path.
+      // If the configured BOT_CHAT_URL is a root URL, forward to the same incoming path.
       try {
         const parsed = new URL(upstreamUrl)
         if (parsed.pathname === '/' || parsed.pathname === '') {
-          parsed.pathname = arPathOrRoot(req)
+          const incomingPath = (req.url || '/api/chat').split('?')[0]
+          parsed.pathname = incomingPath || '/api/chat'
           finalUpstreamUrl = parsed.toString()
-          console.log('[chat] Resolved BOT_CHAT_URL to:', finalUpstreamUrl)
+          console.log('[chat] Resolved BOT_CHAT_URL root to:', finalUpstreamUrl)
         }
       } catch (e) {
         // BOT_CHAT_URL may be relative; leave it as-is.
