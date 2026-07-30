@@ -1,5 +1,0 @@
-[phases.install]
-cmds = [
-  "npm install -g npm@10",
-  "npm ci --no-audit --no-fund"
-]
