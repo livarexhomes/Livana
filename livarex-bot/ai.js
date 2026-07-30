@@ -17,10 +17,27 @@ const _apiKey =
   process.env.ANTHROPIC_API_KEY ||
   process.env.AGENTROUTER_API_KEY
 
-const client = new Anthropic({
-  ...(_baseURL ? { baseURL: _baseURL } : {}),
-  apiKey: _apiKey,
-})
+if (!_apiKey) {
+  console.warn(
+    '[ai] Missing Anthropic/AgentRouter API key. Set AI_INTEGRATIONS_ANTHROPIC_API_KEY, ANTHROPIC_API_KEY, or AGENTROUTER_API_KEY.'
+  )
+}
+
+const client = _apiKey
+  ? new Anthropic({
+      ...(_baseURL ? { baseURL: _baseURL } : {}),
+      apiKey: _apiKey,
+    })
+  : null
+
+function requireAiClient() {
+  if (!client) {
+    throw new Error(
+      'Missing AI API key. Set AI_INTEGRATIONS_ANTHROPIC_API_KEY, ANTHROPIC_API_KEY, or AGENTROUTER_API_KEY.'
+    )
+  }
+  return client
+}
 
 const SYSTEM_PROMPT = `You are Livarex Bot — the official AI property assistant for Livarex Homes (www.livarex.com.ng), Nigeria's verified property marketplace.
 
@@ -86,7 +103,7 @@ export async function processMessage(phone, name, userMessage) {
     ? `${SYSTEM_PROMPT}\n\n--- CURRENT VERIFIED LISTINGS ---\n${listingsContext}\n--- END LISTINGS ---`
     : `${SYSTEM_PROMPT}\n\n--- LISTINGS: None available right now. Tell users to check www.livarex.com.ng/listings for the latest or leave their requirements and the team will reach out. ---`
 
-  const response = await client.messages.create({
+  const response = await requireAiClient().messages.create({
     model: "claude-opus-4-8",
     max_tokens: 8192,
     system: systemWithListings,
@@ -127,7 +144,7 @@ export async function processWebMessage(messages) {
     content: Array.isArray(m.content) ? m.content : [{ type: "text", text: m.content }],
   }))
 
-  const response = await client.messages.create({
+  const response = await requireAiClient().messages.create({
     model: "claude-opus-4-8",
     max_tokens: 1024,
     system: systemWithListings,

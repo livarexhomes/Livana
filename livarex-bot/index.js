@@ -51,6 +51,11 @@ app.post("/api/chat", async (req, res) => {
     res.json({ reply })
   } catch (err) {
     console.error("Chat API error:", err?.message || err)
+    if (err?.message?.includes("Missing AI API key")) {
+      return res.status(500).json({
+        error: "AI service not configured. Please set AI_INTEGRATIONS_ANTHROPIC_API_KEY, ANTHROPIC_API_KEY, or AGENTROUTER_API_KEY.",
+      })
+    }
     res.status(500).json({ error: "Something went wrong. Please try again." })
   }
 })
