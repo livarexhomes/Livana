@@ -269,6 +269,67 @@ export interface Database {
           created_at?: string
         }
       }
+      chat_inquiries: {
+        Row: {
+          id: string
+          name: string
+          note: string
+          phone: string | null
+          visitor_id: string | null
+          read_by_admin: boolean
+          status: 'open' | 'replied' | 'closed'
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          name: string
+          note: string
+          phone?: string | null
+          visitor_id?: string | null
+          read_by_admin?: boolean
+          status?: 'open' | 'replied' | 'closed'
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          name?: string
+          note?: string
+          phone?: string | null
+          visitor_id?: string | null
+          read_by_admin?: boolean
+          status?: 'open' | 'replied' | 'closed'
+          created_at?: string
+          updated_at?: string
+        }
+      }
+      chat_messages: {
+        Row: {
+          id: string
+          inquiry_id: string
+          sender: 'visitor' | 'admin'
+          body: string
+          read_by_admin: boolean
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          inquiry_id: string
+          sender: 'visitor' | 'admin'
+          body: string
+          read_by_admin?: boolean
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          inquiry_id?: string
+          sender?: 'visitor' | 'admin'
+          body?: string
+          read_by_admin?: boolean
+          created_at?: string
+        }
+      }
     }
     Views: Record<string, never>
     Functions: Record<string, never>

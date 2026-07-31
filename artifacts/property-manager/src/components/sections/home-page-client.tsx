@@ -24,7 +24,7 @@ const typeMap: Record<Tab, string> = { Buy: 'sale', Rent: 'rent', Lease: 'lease'
 
 type Project = {
   id: string; name: string; developer: string; location: string
-  description: string; image: string; price: number; down: number
+  map_link?: string; description: string; image: string; price: number; down: number
   completion: string; progress: number; units: number; sold: number
   category: string; status: string; type: string
 }
@@ -84,7 +84,20 @@ export default function HomePageClient({ initialProperties }: { initialPropertie
   const searchBarRef = useRef<HTMLDivElement>(null)
   const [allProjects, setAllProjects] = useState<Project[]>([])
 
-  useEffect(() => { setAllProjects(loadProjects()) }, [])
+  useEffect(() => {
+    setAllProjects(loadProjects())
+    if (isSupabaseConfigured()) {
+      const supabase = createClient()
+      supabase.from('projects').select('*').order('created_at', { ascending: false })
+        .then(({ data }) => {
+          const rows = (data as Project[] | null) ?? []
+          if (rows.length > 0) {
+            setAllProjects(rows)
+            try { localStorage.setItem('livana_admin_projects', JSON.stringify(rows)) } catch { }
+          }
+        })
+    }
+  }, [])
 
   useEffect(() => {
     const id = setInterval(() => setHeroSlide(s => (s + 1) % HERO_IMAGES.length), 5000)
@@ -785,6 +798,15 @@ export default function HomePageClient({ initialProperties }: { initialPropertie
                             <span className="truncate">{proj.location}</span>
                             <span className="text-gray-300">·</span>
                             <span>{proj.developer}</span>
+                            {proj.map_link && (
+                              <>
+                                <span className="text-gray-300">·</span>
+                                <a href={proj.map_link} target="_blank" rel="noopener noreferrer"
+                                  className="text-blue-600 font-semibold hover:underline shrink-0">
+                                  View on map
+                                </a>
+                              </>
+                            )}
                           </div>
 
                           {proj.description && (

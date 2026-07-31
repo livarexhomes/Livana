@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, type ReactNode } from 'react'
 import { X, Send, MessageSquare, Paperclip, ChevronDown, User, LayoutGrid, Check } from 'lucide-react'
-import { createClient } from '../lib/supabase'
+import { createClient, isSupabaseConfigured } from '../lib/supabase'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -11,6 +11,14 @@ type ContentBlock =
 interface Message {
   role: 'user' | 'assistant'
   content: ContentBlock[]
+}
+
+interface AgentMessage {
+  id: string
+  inquiry_id: string
+  sender: 'visitor' | 'admin'
+  body: string
+  created_at: string
 }
 
 // ── Config ────────────────────────────────────────────────────────────────────
@@ -120,6 +128,14 @@ export default function ChatWidget() {
   const [agentSubmitting, setAgentSubmitting]   = useState(false)
   const [agentSubmitted, setAgentSubmitted]     = useState(false)
 
+  // ── Live agent-thread state (two-way chat with admin) ─────────────────────
+  const [inquiryId, setInquiryId]               = useState<string | null>(null)
+  const [agentThread, setAgentThread]           = useState<AgentMessage[]>([])
+  const [agentThreadLoading, setAgentThreadLoading] = useState(false)
+  const [agentInput, setAgentInput]             = useState('')
+  const [agentSending, setAgentSending]         = useState(false)
+  const [agentUnread, setAgentUnread]           = useState(false)
+
   const bottomRef = useRef<HTMLDivElement>(null)
   const inputRef  = useRef<HTMLInputElement>(null)
   const fileRef   = useRef<HTMLInputElement>(null)
@@ -131,9 +147,64 @@ export default function ChatWidget() {
   useEffect(() => {
     if (open) {
       setUnread(false)
+      setAgentUnread(false)
       setTimeout(() => inputRef.current?.focus(), 220)
     }
   }, [open])
+
+  // ── Anonymous sign-in + restore any active agent thread ─────────────────────
+  useEffect(() => {
+    if (!isSupabaseConfigured()) return
+    const supabase = createClient()
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      if (!session) {
+        // Quietly sign the visitor in anonymously; if the Supabase project
+        // doesn't allow anonymous sign-ins, fall back to one-shot behavior.
+        await supabase.auth.signInAnonymously().catch(() => {})
+      }
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+      // Reconnect the visitor to their most recent open thread (if any)
+      const { data: inquiries } = await supabase
+        .from('chat_inquiries')
+        .select('id')
+        .eq('visitor_id', user.id)
+        .in('status', ['open', 'replied'])
+        .order('created_at', { ascending: false })
+        .limit(1)
+      if (inquiries && inquiries.length > 0) {
+        setInquiryId(inquiries[0].id)
+        setShowAgentForm(false)
+        setAgentSubmitted(true)
+      }
+    })
+  }, [])
+
+  // ── Load + subscribe to the agent thread ────────────────────────────────────
+  useEffect(() => {
+    if (!inquiryId) return
+    const supabase = createClient()
+    setAgentThreadLoading(true)
+    supabase.from('chat_messages').select('*')
+      .eq('inquiry_id', inquiryId)
+      .order('created_at', { ascending: true })
+      .then(({ data, error }) => {
+        if (error) console.error('Agent thread load error:', error)
+        setAgentThread((data as AgentMessage[]) ?? [])
+        setAgentThreadLoading(false)
+      })
+
+    const channel = supabase.channel(`visitor_chat:${inquiryId}`)
+      .on('postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'chat_messages', filter: `inquiry_id=eq.${inquiryId}` },
+        (payload) => {
+          const msg = payload.new as AgentMessage
+          setAgentThread(prev => prev.find(m => m.id === msg.id) ? prev : [...prev, msg])
+          if (msg.sender === 'admin' && !open) setAgentUnread(true)
+        })
+      .subscribe()
+    return () => { supabase.removeChannel(channel) }
+  }, [inquiryId])
 
   // ── Image attach ─────────────────────────────────────────────────────────────
   async function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
@@ -165,13 +236,27 @@ export default function ChatWidget() {
     setAgentSubmitting(true)
     try {
       const supabase = createClient()
-      const { error } = await supabase.from('chat_inquiries').insert({
+      const { data: { user } } = await supabase.auth.getUser()
+      const { data: inserted, error } = await supabase.from('chat_inquiries').insert({
         name,
         note,
         phone: agentPhone.trim() || null,
-      })
+        visitor_id: user?.id ?? null,
+      }).select('id, read_by_admin').single()
       if (error) throw error
       setAgentSubmitted(true)
+      if (inserted?.id) {
+        // Enter the live thread — the visitor's note is the first message
+        setInquiryId(inserted.id)
+        setShowAgentForm(false)
+        setAgentThread([{
+          id: `initial-${inserted.id}`,
+          inquiry_id: inserted.id,
+          sender: 'visitor',
+          body: note,
+          created_at: new Date().toISOString(),
+        }])
+      }
     } catch (err) {
       console.error('Agent form error:', err)
       // fall back to WhatsApp on failure
@@ -181,6 +266,36 @@ export default function ChatWidget() {
       setAgentSubmitting(false)
     }
   }
+
+  // ── Live agent-thread send ─────────────────────────────────────────────────
+  async function sendAgentMessage(e: React.FormEvent) {
+    e.preventDefault()
+    const body = agentInput.trim()
+    if (!body || agentSending || !inquiryId) return
+    setAgentSending(true)
+    setAgentInput('')
+    const optId = `opt-${Date.now()}`
+    setAgentThread(prev => [...prev, {
+      id: optId, inquiry_id: inquiryId, sender: 'visitor', body, created_at: new Date().toISOString(),
+    }])
+    const supabase = createClient()
+    try {
+      const { data: inserted, error } = await supabase.from('chat_messages')
+        .insert({ inquiry_id: inquiryId, sender: 'visitor', body }).select().single()
+      if (error) throw error
+      if (inserted) setAgentThread(prev => prev.map(m => m.id === optId ? inserted as AgentMessage : m))
+      // Flag the inquiry as unread for the admin
+      await supabase.from('chat_inquiries').update({ read_by_admin: false }).eq('id', inquiryId)
+    } catch (err) {
+      console.error('Agent message send error:', err)
+      setAgentThread(prev => prev.filter(m => m.id !== optId))
+      setAgentInput(body)
+    } finally {
+      setAgentSending(false)
+    }
+  }
+
+  const agentCanSend = agentInput.trim().length > 0 && !agentSending
 
   // ── Send ──────────────────────────────────────────────────────────────────────
   async function sendMessage(text: string, img: typeof pendingImg) {
@@ -471,8 +586,8 @@ export default function ChatWidget() {
             </div>
           ))}
 
-          {/* ── Agent contact form ──────────────────────────────────────────── */}
-          {showAgentForm && (
+          {/* ── Agent contact form (shown until a live thread exists) ─────── */}
+          {showAgentForm && !inquiryId && (
             <div className="flex items-start gap-2" style={{ animation:'cwFadeUp 0.35s ease both' }}>
               <Avatar small />
               <div className="max-w-[88%] flex-1 rounded-[16px_16px_16px_4px] border border-border/70 bg-card p-4 shadow-[0_1px_3px_rgba(2,6,23,0.05)]">
@@ -544,6 +659,54 @@ export default function ChatWidget() {
             </div>
           )}
 
+          {/* ── Live agent thread (two-way chat with admin) ───────────────── */}
+          {inquiryId && (
+            <>
+              <div className="flex justify-center">
+                <span className="rounded-full border border-border/60 bg-muted/60 px-2.5 py-1 text-[10px] font-semibold text-muted-foreground"
+                  style={{ animation:'cwFadeUp 0.3s ease both' }}>
+                  Connected to a Livarex agent
+                </span>
+              </div>
+              {agentThreadLoading ? (
+                <div className="flex items-end gap-2" style={{ animation:'cwFadeUp 0.25s ease both' }}>
+                  <Avatar small />
+                  <div className="rounded-[16px_16px_16px_4px] border border-border/60 bg-card shadow-[0_1px_3px_rgba(2,6,23,0.05)]">
+                    <TypingDots />
+                  </div>
+                </div>
+              ) : (
+                agentThread.map((msg) => {
+                  const isVisitor = msg.sender === 'visitor'
+                  return (
+                    <div key={msg.id} className="flex items-end gap-2"
+                      style={{ justifyContent: isVisitor ? 'flex-end' : 'flex-start', animation:'cwFadeUp 0.3s ease both' }}>
+                      {!isVisitor && <AgentAvatar />}
+                      <div className="flex max-w-[80%] flex-col gap-1"
+                        style={{ alignItems: isVisitor ? 'flex-end' : 'flex-start' }}>
+                        <div className="px-3 py-2 text-[13px] leading-relaxed break-words"
+                          style={{
+                            borderRadius: isVisitor ? '16px 16px 4px 16px' : '16px 16px 16px 4px',
+                            whiteSpace:'pre-wrap',
+                            background: isVisitor ? 'linear-gradient(135deg,#059669,#10b981)' : 'hsl(var(--card))',
+                            color: isVisitor ? '#fff' : 'hsl(var(--card-foreground))',
+                            boxShadow: isVisitor ? '0 2px 8px rgba(5,150,105,0.25)' : '0 1px 3px rgba(2,6,23,0.05)',
+                            border: isVisitor ? 'none' : '1px solid hsl(var(--border) / 0.6)',
+                            opacity: msg.id.startsWith('opt-') ? 0.6 : 1,
+                          }}>
+                          {msg.body}
+                        </div>
+                        <span className="px-1 text-[10px] text-muted-foreground">
+                          {isVisitor ? 'You' : 'Agent'}
+                        </span>
+                      </div>
+                    </div>
+                  )
+                })
+              )}
+            </>
+          )}
+
           {/* Typing indicator */}
           {loading && (
             <div className="flex items-end gap-2" style={{ animation:'cwFadeUp 0.25s ease both' }}>
@@ -574,44 +737,77 @@ export default function ChatWidget() {
 
         {/* ── Input bar ────────────────────────────────────────────────────────── */}
         <div className="cw-input-bar flex shrink-0 items-center gap-2 border-t border-border/60 bg-card px-3 py-2.5">
-          {/* Attach */}
-          <button
-            onClick={() => fileRef.current?.click()}
-            title="Attach image"
-            aria-label="Attach image"
-            className="cw-attach grid size-8.5 shrink-0 cursor-pointer place-items-center rounded-[10px] border-none text-muted-foreground transition-colors hover:bg-muted focus-visible:outline-2 focus-visible:outline-ring"
-            style={{ background:'hsl(var(--muted))' }}
-          >
-            <Paperclip size={15} />
-          </button>
-          <input ref={fileRef} type="file" accept="image/*" onChange={handleFile} style={{ display:'none' }}/>
+          {/* Attach (bot mode only) */}
+          {!inquiryId && (
+            <>
+              <button
+                onClick={() => fileRef.current?.click()}
+                title="Attach image"
+                aria-label="Attach image"
+                className="cw-attach grid size-8.5 shrink-0 cursor-pointer place-items-center rounded-[10px] border-none text-muted-foreground transition-colors hover:bg-muted focus-visible:outline-2 focus-visible:outline-ring"
+                style={{ background:'hsl(var(--muted))' }}
+              >
+                <Paperclip size={15} />
+              </button>
+              <input ref={fileRef} type="file" accept="image/*" onChange={handleFile} style={{ display:'none' }}/>
+            </>
+          )}
 
-          {/* Text */}
-          <input
-            ref={inputRef}
-            className="cw-input flex-1 rounded-[22px] border border-transparent px-3.5 py-2 text-[16px] text-card-foreground outline-none transition-shadow focus:border-transparent sm:text-[13px]"
-            value={input}
-            onChange={e => setInput(e.target.value)}
-            onKeyDown={handleKey}
-            placeholder="Message Livarex AI…"
-            disabled={loading}
-            style={{ background:'hsl(var(--muted))' }}
-          />
+          {/* Text — agent mode when a live thread is active */}
+          {inquiryId ? (
+            <form onSubmit={sendAgentMessage} className="flex flex-1 items-center gap-2">
+              <input
+                className="cw-input flex-1 rounded-[22px] border border-transparent px-3.5 py-2 text-[16px] text-card-foreground outline-none transition-shadow focus:border-transparent sm:text-[13px]"
+                value={agentInput}
+                onChange={e => setAgentInput(e.target.value)}
+                placeholder="Message the agent…"
+                disabled={agentSending}
+                style={{ background:'hsl(var(--muted))' }}
+              />
+              <button
+                type="submit"
+                disabled={!agentCanSend}
+                aria-label="Send message to agent"
+                className="cw-send grid size-9 shrink-0 place-items-center rounded-full border-none transition-all cursor-pointer disabled:cursor-default"
+                style={{
+                  background: agentCanSend ? 'linear-gradient(135deg,#059669,#10b981)' : 'hsl(var(--muted-foreground) / 0.25)',
+                  boxShadow: agentCanSend ? '0 4px 12px rgba(5,150,105,0.35)' : 'none',
+                  transform: agentCanSend ? 'scale(1)' : 'scale(0.92)',
+                }}
+              >
+                <Send size={14} color={agentCanSend ? '#fff' : 'hsl(var(--muted-foreground))'} className="translate-x-px" />
+              </button>
+            </form>
+          ) : (
+            <>
+              {/* Text */}
+              <input
+                ref={inputRef}
+                className="cw-input flex-1 rounded-[22px] border border-transparent px-3.5 py-2 text-[16px] text-card-foreground outline-none transition-shadow focus:border-transparent sm:text-[13px]"
+                value={input}
+                onChange={e => setInput(e.target.value)}
+                onKeyDown={handleKey}
+                placeholder="Message Livarex AI…"
+                disabled={loading}
+                style={{ background:'hsl(var(--muted))' }}
+              />
 
-          {/* Send */}
-          <button
-            onClick={handleSend}
-            disabled={!canSend}
-            aria-label="Send message"
-            className="cw-send grid size-9 shrink-0 place-items-center rounded-full border-none transition-all cursor-pointer disabled:cursor-default"
-            style={{
-              background: canSend ? 'linear-gradient(135deg,#2563eb,#3b82f6)' : 'hsl(var(--muted-foreground) / 0.25)',
-              boxShadow: canSend ? '0 4px 12px rgba(37,99,235,0.35)' : 'none',
-              transform: canSend ? 'scale(1)' : 'scale(0.92)',
-            }}
-          >
-            <Send size={14} color={canSend ? '#fff' : 'hsl(var(--muted-foreground))'} className="translate-x-px" />
-          </button>
+              {/* Send */}
+              <button
+                onClick={handleSend}
+                disabled={!canSend}
+                aria-label="Send message"
+                className="cw-send grid size-9 shrink-0 place-items-center rounded-full border-none transition-all cursor-pointer disabled:cursor-default"
+                style={{
+                  background: canSend ? 'linear-gradient(135deg,#2563eb,#3b82f6)' : 'hsl(var(--muted-foreground) / 0.25)',
+                  boxShadow: canSend ? '0 4px 12px rgba(37,99,235,0.35)' : 'none',
+                  transform: canSend ? 'scale(1)' : 'scale(0.92)',
+                }}
+              >
+                <Send size={14} color={canSend ? '#fff' : 'hsl(var(--muted-foreground))'} className="translate-x-px" />
+              </button>
+            </>
+          )}
         </div>
       </div>
 
@@ -625,7 +821,7 @@ export default function ChatWidget() {
           ? <X size={18} color="#fff"/>
           : <MessageSquare size={17} color="#fff"/>
         }
-        {!open && unread && (
+        {!open && (unread || agentUnread) && (
           <span className="absolute -top-0.5 -right-0.5 size-3 rounded-full border-2 border-white bg-destructive" aria-hidden />
         )}
         {!open && (
@@ -650,6 +846,19 @@ function Avatar({ small = false }: { small?: boolean }) {
       {small && (
         <span className="absolute -bottom-0.5 -right-0.5 size-2.5 rounded-full border-2 border-white bg-emerald-400" aria-hidden />
       )}
+    </div>
+  )
+}
+
+function AgentAvatar() {
+  return (
+    <div className="relative shrink-0 grid size-7 place-items-center rounded-full text-white"
+      style={{
+        fontSize: 10, fontWeight: 900,
+        background:'linear-gradient(135deg,#059669,#10b981)',
+      }}>
+      A
+      <span className="absolute -bottom-0.5 -right-0.5 size-2.5 rounded-full border-2 border-white bg-emerald-400" aria-hidden />
     </div>
   )
 }

@@ -16,6 +16,7 @@ type Project = {
   name: string
   developer: string
   location: string
+  map_link: string
   description: string
   image: string
   price: number
@@ -44,7 +45,7 @@ const STATUS_META: Record<ProjectStatus, { label: string; bg: string; text: stri
 }
 
 const EMPTY_FORM = {
-  name: '', developer: '', location: '', description: '',
+  name: '', developer: '', location: '', map_link: '', description: '',
   image: '', price: 0, down: 20, completion: '', progress: 0,
   units: 0, sold: 0, category: 'Residential', status: 'active' as ProjectStatus,
   type: 'sale',
@@ -61,6 +62,26 @@ function progressText(pct: number) {
   if (pct >= 50) return 'text-blue-600'
   if (pct >= 30) return 'text-amber-600'
   return 'text-rose-500'
+}
+
+// Builds an embeddable Google Maps iframe src from a Share link.
+// Works with full google.com/maps links (coordinates or ?q=). Short
+// maps.app.goo.gl links can't be framed, so we return null and let the
+// UI prompt for the full link instead.
+function mapEmbedSrc(link: string): string | null {
+  const l = link.trim()
+  if (!l) return null
+  if (!/^https?:\/\/www\.google\.com\/maps/i.test(l)) return null
+  const u = new URL(l)
+  if (u.hostname !== 'www.google.com' || !u.pathname.startsWith('/maps')) return null
+  // Keep only the location payload — strip extra UI params like UIstate
+  const loc = u.searchParams.get('q')
+  if (loc) return `https://www.google.com/maps?q=${encodeURIComponent(loc)}&output=embed`
+  const m = u.pathname.match(/\/maps\/place\/[^/]+/)
+  if (m) return `https://www.google.com/maps${m[0]}?output=embed`
+  const c = u.searchParams.get('ll') ?? u.searchParams.get('center')
+  if (c) return `https://www.google.com/maps?q=${encodeURIComponent(c)}&output=embed`
+  return null
 }
 
 
@@ -83,11 +104,20 @@ export default function AdminProjects() {
   const [uploading, setUploading]         = useState(false)
   const fileInputRef                      = useRef<HTMLInputElement>(null)
 
+  function syncLocalCache(ps: Project[]) {
+    try { localStorage.setItem('livana_admin_projects', JSON.stringify(ps)) } catch { }
+  }
+
   useEffect(() => {
     const supabase = createClient()
     supabase.auth.getUser().then(({ data: { user } }) => setUser({ email: user?.email }))
     supabase.from('projects').select('*').order('created_at', { ascending: false })
-      .then(({ data }) => { setProjects((data as Project[]) ?? []); setLoading(false) })
+      .then(({ data }) => {
+        const rows = (data as Project[] | null) ?? []
+        setProjects(rows)
+        syncLocalCache(rows)
+        setLoading(false)
+      })
   }, [])
 
   function showToast(msg: string, ok = true) {
@@ -100,7 +130,7 @@ export default function AdminProjects() {
   }
   function openEdit(p: Project) {
     setEditing(p)
-    setForm({ name: p.name, developer: p.developer, location: p.location, description: p.description,
+    setForm({ name: p.name, developer: p.developer, location: p.location, map_link: p.map_link ?? '', description: p.description,
       image: p.image, price: p.price, down: p.down, completion: p.completion, progress: p.progress,
       units: p.units, sold: p.sold, category: p.category, status: p.status, type: p.type ?? 'sale' })
     setModalOpen(true)
@@ -117,11 +147,13 @@ export default function AdminProjects() {
     if (editing) {
       const { error } = await supabase.from('projects').update(form).eq('id', editing.id)
       if (error) { showToast(`Save failed: ${error.message}`, false); setSaving(false); return }
-      setProjects(ps => ps.map(p => p.id === editing.id ? { ...editing, ...form } : p))
+      const next = projects.map(p => p.id === editing.id ? { ...editing, ...form } : p)
+      setProjects(next); syncLocalCache(next)
     } else {
       const { data, error } = await supabase.from('projects').insert(form).select().single()
       if (error) { showToast(`Create failed: ${error.message}`, false); setSaving(false); return }
-      setProjects(ps => [data as Project, ...ps])
+      const next = [data as Project, ...projects]
+      setProjects(next); syncLocalCache(next)
     }
     setSaving(false)
     setModalOpen(false)
@@ -133,7 +165,8 @@ export default function AdminProjects() {
     const supabase = createClient()
     const { error } = await supabase.from('projects').delete().eq('id', deleteId)
     if (error) { showToast(`Delete failed: ${error.message}`, false); return }
-    setProjects(ps => ps.filter(p => p.id !== deleteId))
+    const next = projects.filter(p => p.id !== deleteId)
+    setProjects(next); syncLocalCache(next)
     setDeleteId(null)
     showToast('Project deleted.')
   }
@@ -142,7 +175,8 @@ export default function AdminProjects() {
     const supabase = createClient()
     const { error } = await supabase.from('projects').update({ status }).eq('id', id)
     if (error) { showToast(`Status update failed: ${error.message}`, false); return }
-    setProjects(ps => ps.map(p => p.id === id ? { ...p, status } : p))
+    const next = projects.map(p => p.id === id ? { ...p, status } : p)
+    setProjects(next); syncLocalCache(next)
     setMenuOpen(null)
   }
 
@@ -456,123 +490,187 @@ export default function AdminProjects() {
               </button>
             </div>
 
-            <div className="flex-1 overflow-y-auto px-6 py-5 space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="col-span-2 sm:col-span-1">
-                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1.5 block">Project Name *</label>
-                  <input value={form.name} onChange={F('name')} placeholder="e.g. Skyline Residences"
-                    className="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+            <div className="flex-1 overflow-y-auto px-6 py-5 space-y-6">
+              {/* ── Section: Basic Info ── */}
+              <div className="space-y-4">
+                <div>
+                  <p className="text-sm font-extrabold text-gray-900">Basic Info</p>
+                  <p className="text-xs text-gray-400 mt-0.5">What buyers see first — name, developer and where it is.</p>
                 </div>
-                <div className="col-span-2 sm:col-span-1">
-                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1.5 block">Developer *</label>
-                  <input value={form.developer} onChange={F('developer')} placeholder="e.g. Mixta Africa"
-                    className="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
-                </div>
-                <div className="col-span-2">
-                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1.5 block">Location *</label>
-                  <input value={form.location} onChange={F('location')} placeholder="e.g. Victoria Island, Lagos"
-                    className="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
-                </div>
-                <div className="col-span-2">
-                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1.5 block">Description</label>
-                  <textarea value={form.description} onChange={F('description')} rows={3} placeholder="Brief description..."
-                    className="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none" />
-                </div>
-                <div className="col-span-2">
-                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1.5 block">Cover Picture</label>
-                  <input ref={fileInputRef} type="file" accept="image/*" onChange={handleCoverUpload} className="hidden" />
-                  {form.image ? (
-                    <div className="relative rounded-xl overflow-hidden border border-gray-200 group h-40">
-                      <img src={form.image} alt="Cover" className="w-full h-full object-cover" />
-                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3">
-                        <button type="button" onClick={() => fileInputRef.current?.click()} disabled={uploading}
-                          className="flex items-center gap-1.5 px-3 py-2 bg-white text-gray-800 text-xs font-bold rounded-lg hover:bg-gray-100 transition-colors">
-                          {uploading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Upload className="w-3.5 h-3.5" />}
-                          Replace
-                        </button>
-                        <button type="button" onClick={() => setForm(f => ({ ...f, image: '' }))}
-                          className="flex items-center gap-1.5 px-3 py-2 bg-red-600 text-white text-xs font-bold rounded-lg hover:bg-red-700 transition-colors">
-                          <X className="w-3.5 h-3.5" /> Remove
-                        </button>
-                      </div>
-                    </div>
-                  ) : (
-                    <button type="button" onClick={() => fileInputRef.current?.click()} disabled={uploading}
-                      className="w-full h-36 border-2 border-dashed border-gray-200 rounded-xl flex flex-col items-center justify-center gap-2 text-gray-400 hover:border-blue-400 hover:text-blue-500 hover:bg-blue-50/40 transition-all group">
-                      {uploading ? (
-                        <>
-                          <Loader2 className="w-7 h-7 animate-spin text-blue-500" />
-                          <span className="text-xs font-semibold text-blue-500">Uploading…</span>
-                        </>
-                      ) : (
-                        <>
-                          <div className="w-11 h-11 rounded-xl bg-gray-100 group-hover:bg-blue-100 flex items-center justify-center transition-colors">
-                            <ImageIcon className="w-5 h-5" />
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="col-span-2 sm:col-span-1">
+                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1.5 block">Project Name *</label>
+                    <input value={form.name} onChange={F('name')} placeholder="e.g. Skyline Residences"
+                      className="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                  </div>
+                  <div className="col-span-2 sm:col-span-1">
+                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1.5 block">Developer *</label>
+                    <input value={form.developer} onChange={F('developer')} placeholder="e.g. Mixta Africa"
+                      className="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                  </div>
+                  <div className="col-span-2">
+                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1.5 block">Location Name *</label>
+                    <input value={form.location} onChange={F('location')} placeholder="e.g. Victoria Island, Lagos"
+                      className="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                    <p className="text-[11px] text-gray-400 mt-1">The display text shown on the project card.</p>
+                  </div>
+                  <div className="col-span-2">
+                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1.5 block">Google Maps Link</label>
+                    <input value={form.map_link} onChange={F('map_link')} placeholder="Paste the Share link from Google Maps"
+                      className="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                    <p className="text-[11px] text-gray-400 mt-1">
+                      On Google Maps, tap <span className="font-semibold">Share → Copy link</span>, then paste it here.
+                    </p>
+                    {(() => {
+                      const src = mapEmbedSrc(form.map_link)
+                      if (src) {
+                        return (
+                          <div className="mt-2 rounded-xl overflow-hidden border border-gray-200">
+                            <iframe src={src} title="Project location preview" className="w-full h-44"
+                              loading="lazy" referrerPolicy="no-referrer-when-downgrade" />
                           </div>
-                          <span className="text-xs font-semibold">Click to upload cover picture</span>
-                          <span className="text-[11px]">JPG, PNG, WebP — recommended 1200×800</span>
-                        </>
-                      )}
-                    </button>
-                  )}
+                        )
+                      }
+                      if (form.map_link.trim() && !/^https?:\/\/maps\.app\.goo\.gl\//i.test(form.map_link.trim())) {
+                        return (
+                          <p className="text-[11px] text-amber-600 mt-1.5">
+                            Couldn't preview this link. Use a full <span className="font-semibold">google.com/maps</span> link (with a place name or coordinates) to see the live preview.
+                          </p>
+                        )
+                      }
+                      return null
+                    })()}
+                  </div>
+                  <div className="col-span-2">
+                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1.5 block">Description</label>
+                    <textarea value={form.description} onChange={F('description')} rows={3} placeholder="Brief description..."
+                      className="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none" />
+                  </div>
                 </div>
+              </div>
+
+              {/* ── Section: Cover Picture ── */}
+              <div className="space-y-4">
                 <div>
-                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1.5 block">Starting Price (₦)</label>
-                  <input type="number" min={0} value={form.price} onChange={F('price')} placeholder="85000000"
-                    className="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                  <p className="text-sm font-extrabold text-gray-900">Cover Picture</p>
+                  <p className="text-xs text-gray-400 mt-0.5">The hero image on the project card — recommended 1200×800.</p>
                 </div>
+                <input ref={fileInputRef} type="file" accept="image/*" onChange={handleCoverUpload} className="hidden" />
+                {form.image ? (
+                  <div className="relative rounded-xl overflow-hidden border border-gray-200 group h-40">
+                    <img src={form.image} alt="Cover" className="w-full h-full object-cover" />
+                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3">
+                      <button type="button" onClick={() => fileInputRef.current?.click()} disabled={uploading}
+                        className="flex items-center gap-1.5 px-3 py-2 bg-white text-gray-800 text-xs font-bold rounded-lg hover:bg-gray-100 transition-colors">
+                        {uploading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Upload className="w-3.5 h-3.5" />}
+                        Replace
+                      </button>
+                      <button type="button" onClick={() => setForm(f => ({ ...f, image: '' }))}
+                        className="flex items-center gap-1.5 px-3 py-2 bg-red-600 text-white text-xs font-bold rounded-lg hover:bg-red-700 transition-colors">
+                        <X className="w-3.5 h-3.5" /> Remove
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <button type="button" onClick={() => fileInputRef.current?.click()} disabled={uploading}
+                    className="w-full h-36 border-2 border-dashed border-gray-200 rounded-xl flex flex-col items-center justify-center gap-2 text-gray-400 hover:border-blue-400 hover:text-blue-500 hover:bg-blue-50/40 transition-all group">
+                    {uploading ? (
+                      <>
+                        <Loader2 className="w-7 h-7 animate-spin text-blue-500" />
+                        <span className="text-xs font-semibold text-blue-500">Uploading…</span>
+                      </>
+                    ) : (
+                      <>
+                        <div className="w-11 h-11 rounded-xl bg-gray-100 group-hover:bg-blue-100 flex items-center justify-center transition-colors">
+                          <ImageIcon className="w-5 h-5" />
+                        </div>
+                        <span className="text-xs font-semibold">Click to upload cover picture</span>
+                        <span className="text-[11px]">JPG, PNG, WebP — recommended 1200×800</span>
+                      </>
+                    )}
+                  </button>
+                )}
+              </div>
+
+              {/* ── Section: Pricing & Units ── */}
+              <div className="space-y-4">
                 <div>
-                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1.5 block">Down Payment %</label>
-                  <input type="number" min={0} max={100} value={form.down} onChange={F('down')}
-                    className="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                  <p className="text-sm font-extrabold text-gray-900">Pricing & Units</p>
+                  <p className="text-xs text-gray-400 mt-0.5">The price buyers start from and how many units are available.</p>
                 </div>
-                <div>
-                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1.5 block">Total Units</label>
-                  <input type="number" min={0} value={form.units} onChange={F('units')}
-                    className="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1.5 block">Starting Price (₦)</label>
+                    <input type="number" min={0} value={form.price} onChange={F('price')} placeholder="85000000"
+                      className="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                    <p className="text-[11px] text-gray-400 mt-1">Lowest price a buyer can enter at.</p>
+                  </div>
+                  <div>
+                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1.5 block">Down Payment (%)</label>
+                    <input type="number" min={0} max={100} value={form.down} onChange={F('down')}
+                      className="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                    <p className="text-[11px] text-gray-400 mt-1">Minimum deposit buyers pay upfront, as % of the price.</p>
+                  </div>
+                  <div>
+                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1.5 block">Total Units</label>
+                    <input type="number" min={0} value={form.units} onChange={F('units')}
+                      className="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                  </div>
+                  <div>
+                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1.5 block">Units Sold</label>
+                    <input type="number" min={0} value={form.sold} onChange={F('sold')}
+                      className="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                    <p className="text-[11px] text-gray-400 mt-1">Shouldn't exceed total units.</p>
+                  </div>
+                  <div>
+                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1.5 block">Construction Progress (%)</label>
+                    <input type="number" min={0} max={100} value={form.progress} onChange={F('progress')}
+                      className="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                    <p className="text-[11px] text-gray-400 mt-1">0 = not started · 100 = finished.</p>
+                  </div>
+                  <div>
+                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1.5 block">Completion Date</label>
+                    <input value={form.completion} onChange={F('completion')} placeholder="e.g. Q3 2026"
+                      className="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                  </div>
                 </div>
+              </div>
+
+              {/* ── Section: Classification & Status ── */}
+              <div className="space-y-4">
                 <div>
-                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1.5 block">Units Sold</label>
-                  <input type="number" min={0} value={form.sold} onChange={F('sold')}
-                    className="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                  <p className="text-sm font-extrabold text-gray-900">Classification & Status</p>
+                  <p className="text-xs text-gray-400 mt-0.5">How this project is categorised and its current state.</p>
                 </div>
-                <div>
-                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1.5 block">Construction % (0–100)</label>
-                  <input type="number" min={0} max={100} value={form.progress} onChange={F('progress')}
-                    className="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
-                </div>
-                <div>
-                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1.5 block">Completion Date</label>
-                  <input value={form.completion} onChange={F('completion')} placeholder="e.g. Q3 2026"
-                    className="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
-                </div>
-                <div>
-                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1.5 block">Category</label>
-                  <select value={form.category} onChange={F('category')}
-                    className="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white cursor-pointer">
-                    <option>Residential</option><option>Mixed Use</option><option>Luxury</option><option>Commercial</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1.5 block">Listing Type</label>
-                  <select value={form.type} onChange={F('type')}
-                    className="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white cursor-pointer">
-                    <option value="sale">Buy / Sale</option>
-                    <option value="rent">Rent</option>
-                    <option value="lease">Lease</option>
-                    <option value="commercial">Commercial</option>
-                  </select>
-                  <p className="text-[11px] text-gray-400 mt-1">Determines which tab this project appears under on the homepage.</p>
-                </div>
-                <div>
-                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1.5 block">Status</label>
-                  <select value={form.status} onChange={F('status')}
-                    className="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white cursor-pointer">
-                    <option value="active">Active</option>
-                    <option value="coming_soon">Coming Soon</option>
-                    <option value="completed">Completed</option>
-                    <option value="on_hold">On Hold</option>
-                  </select>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1.5 block">Category</label>
+                    <select value={form.category} onChange={F('category')}
+                      className="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white cursor-pointer">
+                      <option>Residential</option><option>Mixed Use</option><option>Luxury</option><option>Commercial</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1.5 block">Listing Type</label>
+                    <select value={form.type} onChange={F('type')}
+                      className="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white cursor-pointer">
+                      <option value="sale">Buy / Sale</option>
+                      <option value="rent">Rent</option>
+                      <option value="lease">Lease</option>
+                      <option value="commercial">Commercial</option>
+                    </select>
+                    <p className="text-[11px] text-gray-400 mt-1">Determines which tab this project appears under on the homepage.</p>
+                  </div>
+                  <div className="col-span-2">
+                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1.5 block">Status</label>
+                    <select value={form.status} onChange={F('status')}
+                      className="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white cursor-pointer">
+                      <option value="active">Active</option>
+                      <option value="coming_soon">Coming Soon</option>
+                      <option value="completed">Completed</option>
+                      <option value="on_hold">On Hold</option>
+                    </select>
+                  </div>
                 </div>
               </div>
             </div>

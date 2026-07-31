@@ -1,7 +1,11 @@
 {
   "permissions": {
     "allow": [
-      "Shell(node -e \" import('./ai.js').then(async (ai) => { // Simulate a WAF HTML body flowing through assertJsonBody try { ai.assertJsonBody('<!doctypehtml><meta name=\\\"aliyun_waf_aa\\\"content=\\\"abc\\\">', 'TestProvider') console.log('FAIL: should have thrown') } catch (e) { console.log('OK: WAF body ->', e.status, e.message.slice(0, 60)) } // And a JSON body should pass ai.assertJsonBody('{\\\"ok\\\":true}', 'TestProvider') console.log('OK: JSON body passes through') }).catch((e) => { console.error('MODULE LOAD FAILED:', e.message); process.exit(1) }) \")"
+      "Shell(node -e \" import('./ai.js').then(async (ai) => { // Simulate a WAF HTML body flowing through assertJsonBody try { ai.assertJsonBody('<!doctypehtml><meta name=\\\"aliyun_waf_aa\\\"content=\\\"abc\\\">', 'TestProvider') console.log('FAIL: should have thrown') } catch (e) { console.log('OK: WAF body ->', e.status, e.message.slice(0, 60)) } // And a JSON body should pass ai.assertJsonBody('{\\\"ok\\\":true}', 'TestProvider') console.log('OK: JSON body passes through') }).catch((e) => { console.error('MODULE LOAD FAILED:', e.message); process.exit(1) }) \")",
+      "Shell(git stash list >/dev/null 2>&1; git status --short)",
+      "Shell(pnpm:*)",
+      "Shell(which psql pg_ctl postgres 2>/dev/null; echo \"---\"; psql --version 2>/dev/null; echo \"---\"; ls /usr/lib/postgresql/ 2>/dev/null || true)",
+      "Shell(grep:*)"
     ],
     "deny": [],
     "defaultMode": "default"

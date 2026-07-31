@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useMemo } from 'react'
 import {
   HeadphonesIcon, Send, Loader2, MessageSquare,
   Clock, CheckCircle2, XCircle, User,
@@ -46,9 +46,20 @@ interface ChatInquiry {
   name: string
   note: string
   phone: string | null
+  visitor_id: string | null
+  read_by_admin: boolean
   status: 'open' | 'replied' | 'closed'
   created_at: string
   updated_at: string
+}
+
+interface ChatMessage {
+  id: string
+  inquiry_id: string
+  sender: 'visitor' | 'admin'
+  body: string
+  read_by_admin: boolean
+  created_at: string
 }
 
 interface EnquiryReply {
@@ -517,6 +528,191 @@ function EnquiryDetail({ enquiry, onBack, onStatusChange }: {
   )
 }
 
+// ── ChatRequestDetail ─────────────────────────────────────────────────────────
+
+function ChatRequestDetail({ inquiry, onBack, onMarkRead, onStatusChange }: {
+  inquiry: ChatInquiry
+  onBack: () => void
+  onMarkRead: (id: string) => void
+  onStatusChange: (id: string, status: ChatInquiry['status']) => void
+}) {
+  const [messages, setMessages]   = useState<ChatMessage[]>([])
+  const [loading, setLoading]     = useState(true)
+  const [input, setInput]         = useState('')
+  const [sending, setSending]     = useState(false)
+  const [updating, setUpdating]   = useState(false)
+  const bottomRef = useRef<HTMLDivElement>(null)
+
+  const s = ENQUIRY_STATUS_META[inquiry.status]
+
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [messages])
+
+  useEffect(() => {
+    const supabase = createClient()
+    supabase.from('chat_messages').select('*')
+      .eq('inquiry_id', inquiry.id)
+      .order('created_at', { ascending: true })
+      .then(({ data, error }) => {
+        if (error) console.error('Error loading chat messages:', error)
+        setMessages((data as ChatMessage[]) ?? [])
+        setLoading(false)
+      })
+
+    const channel = supabase.channel(`admin_chat_inquiry:${inquiry.id}`)
+      .on('postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'chat_messages', filter: `inquiry_id=eq.${inquiry.id}` },
+        (payload) => {
+          setMessages(prev => prev.find(m => m.id === payload.new.id) ? prev : [...prev, payload.new as ChatMessage])
+        })
+      .subscribe()
+
+    // Opening the thread marks it as read
+    supabase.from('chat_inquiries').update({ read_by_admin: true }).eq('id', inquiry.id)
+    onMarkRead(inquiry.id)
+
+    return () => { supabase.removeChannel(channel) }
+  }, [inquiry.id])
+
+  async function sendReply(e: React.FormEvent) {
+    e.preventDefault()
+    const body = input.trim()
+    if (!body || sending) return
+    setSending(true); setInput('')
+    const optId = `opt-${Date.now()}`
+    setMessages(prev => [...prev, { id: optId, inquiry_id: inquiry.id, sender: 'admin', body, read_by_admin: true, created_at: new Date().toISOString() }])
+    const supabase = createClient()
+    const { data: inserted } = await supabase.from('chat_messages')
+      .insert({ inquiry_id: inquiry.id, sender: 'admin', body }).select().single()
+    if (inserted) setMessages(prev => prev.map(m => m.id === optId ? inserted as ChatMessage : m))
+    // Reply counts as read; auto-advance status open → replied
+    await supabase.from('chat_inquiries').update({ read_by_admin: true }).eq('id', inquiry.id)
+    onMarkRead(inquiry.id)
+    if (inquiry.status === 'open') {
+      await supabase.from('chat_inquiries').update({ status: 'replied' }).eq('id', inquiry.id)
+      onStatusChange(inquiry.id, 'replied')
+    }
+    setSending(false)
+  }
+
+  async function changeStatus(newStatus: ChatInquiry['status']) {
+    setUpdating(true)
+    const supabase = createClient()
+    await supabase.from('chat_inquiries').update({ status: newStatus }).eq('id', inquiry.id)
+    onStatusChange(inquiry.id, newStatus)
+    setUpdating(false)
+  }
+
+  return (
+    <div className="flex flex-col h-full bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+      {/* Header */}
+      <div className="flex items-center gap-3 px-4 py-3 border-b border-gray-100 shrink-0">
+        <button onClick={onBack} className="lg:hidden p-1.5 rounded-lg hover:bg-gray-100 text-gray-500 transition-colors">
+          <ChevronLeft className="w-4 h-4" />
+        </button>
+        <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shrink-0 shadow-sm">
+          <span className="text-sm font-bold text-white">{inquiry.name[0]?.toUpperCase() ?? 'U'}</span>
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 flex-wrap">
+            <p className="font-bold text-gray-900 text-sm">{inquiry.name}</p>
+            <span className={`shrink-0 inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full ${s.bg} ${s.color}`}>
+              <span className={`w-1.5 h-1.5 rounded-full ${s.dot}`} />{s.label}
+            </span>
+          </div>
+          <p className="text-xs text-gray-400 mt-0.5">
+            {inquiry.phone && <span>{inquiry.phone} · </span>}
+            {format(new Date(inquiry.created_at), 'dd MMM yyyy, h:mm a')}
+          </p>
+        </div>
+        <div className="relative shrink-0">
+          <select value={inquiry.status} onChange={e => changeStatus(e.target.value as ChatInquiry['status'])}
+            disabled={updating}
+            className="appearance-none pl-3 pr-7 py-1.5 rounded-xl border border-gray-200 text-xs font-semibold bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer disabled:opacity-50">
+            <option value="open">Open</option>
+            <option value="replied">Replied</option>
+            <option value="closed">Closed</option>
+          </select>
+          {updating
+            ? <Loader2 className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 animate-spin text-gray-400 pointer-events-none" />
+            : <RefreshCw className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-gray-400 pointer-events-none" />}
+        </div>
+      </div>
+
+      {/* Body — chat thread */}
+      <div className="flex-1 overflow-y-auto px-5 py-4 space-y-3">
+        {/* Original visitor message */}
+        <div className="flex items-end gap-2 justify-start">
+          <div className="w-7 h-7 rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shrink-0 shadow-sm">
+            <span className="text-xs font-bold text-white">{inquiry.name[0]?.toUpperCase() ?? 'U'}</span>
+          </div>
+          <div className="max-w-[75%] flex flex-col gap-1 items-start">
+            <div className="px-4 py-2.5 rounded-2xl text-sm leading-relaxed bg-gray-100 text-gray-800 rounded-bl-sm">
+              {inquiry.note}
+            </div>
+            <span className="text-[10px] text-gray-400 px-1">
+              {inquiry.name} · {format(new Date(inquiry.created_at), 'h:mm a')}
+            </span>
+          </div>
+        </div>
+
+        {/* Thread messages */}
+        {loading ? (
+          <div className="flex items-center justify-center py-6">
+            <Loader2 className="w-5 h-5 animate-spin text-gray-300" />
+          </div>
+        ) : (
+          messages.map(msg => {
+            const isAdmin = msg.sender === 'admin'
+            return (
+              <div key={msg.id} className={`flex items-end gap-2 ${isAdmin ? 'justify-end' : 'justify-start'}`}>
+                {!isAdmin && (
+                  <div className="w-7 h-7 rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shrink-0 shadow-sm">
+                    <span className="text-xs font-bold text-white">{inquiry.name[0]?.toUpperCase() ?? 'U'}</span>
+                  </div>
+                )}
+                <div className={`max-w-[75%] flex flex-col gap-1 ${isAdmin ? 'items-end' : 'items-start'}`}>
+                  <div className={`px-4 py-2.5 rounded-2xl text-sm leading-relaxed whitespace-pre-wrap ${isAdmin ? 'bg-emerald-600 text-white rounded-br-sm' : 'bg-gray-100 text-gray-800 rounded-bl-sm'} ${msg.id.startsWith('opt-') ? 'opacity-60' : ''}`}>
+                    {msg.body}
+                  </div>
+                  <span className="text-[10px] text-gray-400 px-1">
+                    {isAdmin ? 'You' : inquiry.name} · {format(new Date(msg.created_at), 'h:mm a')}
+                  </span>
+                </div>
+                {isAdmin && (
+                  <div className="w-7 h-7 rounded-full bg-emerald-600 flex items-center justify-center shrink-0 shadow-sm">
+                    <HeadphonesIcon className="w-3.5 h-3.5 text-white" />
+                  </div>
+                )}
+              </div>
+            )
+          })
+        )}
+        <div ref={bottomRef} />
+      </div>
+
+      {/* Reply input */}
+      {inquiry.status !== 'closed' ? (
+        <form onSubmit={sendReply} className="px-4 py-3 border-t border-gray-100 flex items-end gap-2 shrink-0">
+          <textarea rows={1} value={input} onChange={e => setInput(e.target.value)}
+            onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendReply(e as any) } }}
+            placeholder={`Reply to ${inquiry.name}… (Enter to send)`}
+            className="flex-1 px-4 py-2.5 rounded-xl border border-gray-200 text-sm bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all resize-none" />
+          <button type="submit" disabled={!input.trim() || sending}
+            className="w-10 h-10 rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-40 text-white flex items-center justify-center transition-all shrink-0">
+            {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+          </button>
+        </form>
+      ) : (
+        <div className="px-5 py-3 border-t border-gray-100 text-center text-xs text-gray-400 shrink-0">
+          This request is closed. Change status to reopen.
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ── SupportTab ────────────────────────────────────────────────────────────────
 
 function SupportTab() {
@@ -654,66 +850,149 @@ function SupportTab() {
 
 // ── InboxTab ──────────────────────────────────────────────────────────────────
 
+type InboxItemType = 'enquiry' | 'chat'
+
+interface InboxItem {
+  id: string
+  type: InboxItemType
+  name: string
+  subtitle: string
+  body: string
+  status: 'open' | 'replied' | 'closed'
+  unread: boolean
+  created_at: string
+  enquiry?: Enquiry
+  chatInquiry?: ChatInquiry
+}
+
+function toChatItem(c: ChatInquiry): InboxItem {
+  return {
+    id: c.id,
+    type: 'chat',
+    name: c.name,
+    subtitle: c.phone ?? 'Web chat',
+    body: c.note,
+    status: c.status,
+    unread: !c.read_by_admin,
+    created_at: c.created_at,
+    chatInquiry: c,
+  }
+}
+
+function toEnquiryItem(e: Enquiry): InboxItem {
+  return {
+    id: e.id,
+    type: 'enquiry',
+    name: e.tenants?.full_name ?? 'Tenant',
+    subtitle: e.properties?.title ?? 'Property',
+    body: e.message,
+    status: e.status,
+    unread: false,
+    created_at: e.created_at,
+    enquiry: e,
+  }
+}
+
 function InboxTab() {
   const [enquiries, setEnquiries]   = useState<Enquiry[]>([])
+  const [chats, setChats]           = useState<ChatInquiry[]>([])
   const [loading, setLoading]       = useState(true)
-  const [selectedId, setSelectedId] = useState<string | null>(null)
+  const [selectedKey, setSelectedKey] = useState<string | null>(null)
+  const [filterType, setFilterType]   = useState<'all' | InboxItemType>('all')
   const [filterStatus, setFilterStatus] = useState<string>('all')
 
   useEffect(() => {
     const supabase = createClient()
-    supabase
-      .from('enquiries')
-      .select('*, tenants(full_name, phone), properties(title, city, address)')
+    supabase.from('enquiries').select('*, tenants(full_name, phone), properties(title, city, address)')
       .order('created_at', { ascending: false })
-      .then(({ data }) => { setEnquiries((data as Enquiry[]) ?? []); setLoading(false) })
+      .then(({ data }) => setEnquiries((data as Enquiry[]) ?? []))
+    supabase.from('chat_inquiries').select('*')
+      .order('created_at', { ascending: false })
+      .then(({ data }) => { setChats((data as ChatInquiry[]) ?? []); setLoading(false) })
 
-    const channel = supabase.channel('admin_enquiries_list')
+    const enqChannel = supabase.channel('admin_enquiries_list')
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'enquiries' },
         async (payload) => {
           const supabase2 = createClient()
-          const { data } = await supabase2
-            .from('enquiries')
+          const { data } = await supabase2.from('enquiries')
             .select('*, tenants(full_name, phone), properties(title, city, address)')
-            .eq('id', payload.new.id)
-            .single()
+            .eq('id', payload.new.id).single()
           if (data) setEnquiries(prev => [data as Enquiry, ...prev])
         })
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'enquiries' },
         (payload) => setEnquiries(prev => prev.map(e => e.id === payload.new.id ? { ...e, ...payload.new } as Enquiry : e)))
       .subscribe()
-    return () => { supabase.removeChannel(channel) }
+
+    const chatChannel = supabase.channel('admin_chat_inquiries')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'chat_inquiries' },
+        (payload) => setChats(prev => [payload.new as ChatInquiry, ...prev]))
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'chat_inquiries' },
+        (payload) => setChats(prev => prev.map(i => i.id === payload.new.id ? { ...i, ...payload.new } as ChatInquiry : i)))
+      .subscribe()
+
+    return () => { supabase.removeChannel(enqChannel); supabase.removeChannel(chatChannel) }
   }, [])
 
-  function handleStatusChange(id: string, status: Enquiry['status']) {
+  const items = useMemo(() => {
+    const combined: InboxItem[] = [
+      ...chats.map(toChatItem),
+      ...enquiries.map(toEnquiryItem),
+    ]
+    return combined.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+  }, [chats, enquiries])
+
+  const typeFiltered = filterType === 'all' ? items : items.filter(i => i.type === filterType)
+  const filtered = filterStatus === 'all' ? typeFiltered : typeFiltered.filter(i => i.status === filterStatus)
+  const selected = items.find(i => `${i.type}:${i.id}` === selectedKey) ?? null
+
+  const counts = {
+    all:     typeFiltered.length,
+    open:    typeFiltered.filter(i => i.status === 'open').length,
+    replied: typeFiltered.filter(i => i.status === 'replied').length,
+    closed:  typeFiltered.filter(i => i.status === 'closed').length,
+  }
+
+  function handleEnquiryStatusChange(id: string, status: Enquiry['status']) {
     setEnquiries(prev => prev.map(e => e.id === id ? { ...e, status } : e))
   }
 
-  const filtered = filterStatus === 'all' ? enquiries : enquiries.filter(e => e.status === filterStatus)
-  const selected = enquiries.find(e => e.id === selectedId) ?? null
-  const counts = {
-    all:     enquiries.length,
-    open:    enquiries.filter(e => e.status === 'open').length,
-    replied: enquiries.filter(e => e.status === 'replied').length,
-    closed:  enquiries.filter(e => e.status === 'closed').length,
+  function handleChatMarkRead(id: string) {
+    setChats(prev => prev.map(c => c.id === id ? { ...c, read_by_admin: true } : c))
+  }
+
+  function handleChatStatusChange(id: string, status: ChatInquiry['status']) {
+    setChats(prev => prev.map(c => c.id === id ? { ...c, status } : c))
   }
 
   return (
     <div className="flex flex-1 overflow-hidden gap-3">
-      {/* Enquiry list */}
+      {/* List */}
       <div className={`flex flex-col border border-slate-200 bg-white w-full lg:w-64 xl:w-72 shrink-0 overflow-hidden ${selected ? 'hidden lg:flex' : 'flex'}`}>
         <div className="px-4 py-3 border-b border-slate-200">
           <div className="flex items-center justify-between gap-2">
             <div>
               <p className="text-[10px] uppercase tracking-[0.3em] text-slate-400">Inbox queue</p>
-              <h2 className="text-base font-bold text-slate-950">Enquiries</h2>
+              <h2 className="text-base font-bold text-slate-950">Enquiries & chat</h2>
             </div>
-            <span className="text-[11px] text-slate-500">{enquiries.length} total</span>
+            <span className="text-[11px] text-slate-500">{items.length} total</span>
           </div>
           <div className="mt-3 flex flex-wrap gap-2">
+            {(['all', 'enquiry', 'chat'] as const).map(key => (
+              <button key={key} onClick={() => setFilterType(key)}
+                className={`shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-2xl text-xs font-semibold border transition-all ${
+                  filterType === key ? 'bg-slate-900 text-white border-slate-900' : 'bg-slate-100 text-slate-600 border-slate-200 hover:border-slate-300'
+                }`}>
+                {key === 'all' ? 'All' : key === 'enquiry' ? 'Enquiries' : 'Chat'}
+                <span className={`text-[10px] font-bold ${filterType === key ? 'text-white/70' : 'text-slate-400'}`}>
+                  {key === 'all' ? items.length : key === 'enquiry' ? enquiries.length : chats.length}
+                </span>
+              </button>
+            ))}
+          </div>
+          <div className="mt-2 flex flex-wrap gap-2">
             {(['all', 'open', 'replied', 'closed'] as const).map(key => (
               <button key={key} onClick={() => setFilterStatus(key)}
-                className={`shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-2xl text-xs font-semibold border transition-all ${
+                className={`shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border transition-all ${
                   filterStatus === key ? 'bg-slate-900 text-white border-slate-900' : 'bg-slate-100 text-slate-600 border-slate-200 hover:border-slate-300'
                 }`}>
                 {key === 'all' ? 'All' : ENQUIRY_STATUS_META[key].label}
@@ -726,163 +1005,42 @@ function InboxTab() {
           {loading ? (
             <div className="space-y-2">
               {Array.from({ length: 4 }).map((_, i) => (
-                <div key={i} className="h-28 rounded-3xl bg-slate-100 animate-pulse" />
-              ))}
-            </div>
-          ) : filtered.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-full p-8 text-center">
-              <Inbox className="w-10 h-10 text-slate-200 mb-3" />
-              <p className="text-sm font-semibold text-slate-400">No enquiries yet</p>
-            </div>
-          ) : (
-            <div className="space-y-2">
-              {filtered.map(enq => {
-                const s = ENQUIRY_STATUS_META[enq.status]
-                const isActive = selectedId === enq.id
-                const tenantName = enq.tenants?.full_name ?? 'Tenant'
-                const propertyTitle = enq.properties?.title ?? 'Property'
-                return (
-                  <button key={enq.id} onClick={() => setSelectedId(enq.id)}
-                    className={`w-full text-left rounded-2xl border px-3 py-3 transition-all ${isActive ? 'border-slate-900 bg-slate-950 text-white shadow-lg' : 'border-slate-200 bg-white hover:border-slate-300 hover:shadow-sm'}`}>
-                    <div className="flex items-start justify-between gap-2">
-                      <p className={`font-semibold text-sm truncate ${isActive ? 'text-white' : 'text-slate-950'}`}>{tenantName}</p>
-                      <span className={`shrink-0 inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full ${isActive ? 'bg-white/15 text-white' : `${s.bg} ${s.color}`}`}>
-                        <span className={`w-1.5 h-1.5 rounded-full ${isActive ? 'bg-white' : s.dot}`} />{s.label}
-                      </span>
-                    </div>
-                    <p className={`text-xs truncate mt-1 ${isActive ? 'text-white/80' : 'text-slate-500'}`}>{propertyTitle}</p>
-                    <p className={`text-[10px] mt-2 line-clamp-2 ${isActive ? 'text-white/70' : 'text-slate-500'}`}>{enq.message}</p>
-                    <p className={`text-[11px] mt-2 ${isActive ? 'text-white/50' : 'text-slate-400'}`}>
-                      {formatDistanceToNow(new Date(enq.created_at), { addSuffix: true })}
-                    </p>
-                  </button>
-                )
-              })}
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Enquiry detail */}
-      <div className={`flex-1 min-w-0 p-3 ${selected ? 'flex' : 'hidden lg:flex'} flex-col`}>
-        {selected ? (
-          <EnquiryDetail key={selected.id} enquiry={selected} onBack={() => setSelectedId(null)} onStatusChange={handleStatusChange} />
-        ) : (
-          <div className="flex-1 flex flex-col items-center justify-center bg-white rounded-2xl border border-gray-100 shadow-sm text-center p-6 h-full">
-            <div className="w-16 h-16 rounded-2xl bg-gray-50 flex items-center justify-center mb-4">
-              <Inbox className="w-8 h-8 text-gray-300" />
-            </div>
-            <p className="font-bold text-gray-900 mb-1">Select an enquiry</p>
-            <p className="text-sm text-gray-400">Choose an enquiry from the list to view details.</p>
-          </div>
-        )}
-      </div>
-    </div>
-  )
-}
-
-// ── ChatRequestsTab ───────────────────────────────────────────────────────────
-
-function ChatRequestsTab() {
-  const [inquiries, setInquiries]   = useState<ChatInquiry[]>([])
-  const [loading, setLoading]       = useState(true)
-  const [selectedId, setSelectedId] = useState<string | null>(null)
-  const [filterStatus, setFilterStatus] = useState<string>('all')
-  const [updating, setUpdating]     = useState(false)
-
-  useEffect(() => {
-    const supabase = createClient()
-    supabase
-      .from('chat_inquiries')
-      .select('*')
-      .order('created_at', { ascending: false })
-      .then(({ data }) => { setInquiries((data as ChatInquiry[]) ?? []); setLoading(false) })
-
-    const channel = supabase.channel('admin_chat_inquiries')
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'chat_inquiries' },
-        (payload) => setInquiries(prev => [payload.new as ChatInquiry, ...prev]))
-      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'chat_inquiries' },
-        (payload) => setInquiries(prev => prev.map(i => i.id === payload.new.id ? { ...i, ...payload.new } as ChatInquiry : i)))
-      .subscribe()
-    return () => { supabase.removeChannel(channel) }
-  }, [])
-
-  async function changeStatus(id: string, status: ChatInquiry['status']) {
-    setUpdating(true)
-    const supabase = createClient()
-    await supabase.from('chat_inquiries').update({ status }).eq('id', id)
-    setInquiries(prev => prev.map(i => i.id === id ? { ...i, status } : i))
-    if (selectedId === id && status === 'closed') setSelectedId(null)
-    setUpdating(false)
-  }
-
-  const filtered = filterStatus === 'all' ? inquiries : inquiries.filter(i => i.status === filterStatus)
-  const selected = inquiries.find(i => i.id === selectedId) ?? null
-  const counts = {
-    all:     inquiries.length,
-    open:    inquiries.filter(i => i.status === 'open').length,
-    replied: inquiries.filter(i => i.status === 'replied').length,
-    closed:  inquiries.filter(i => i.status === 'closed').length,
-  }
-
-  return (
-    <div className="flex flex-1 overflow-hidden gap-3">
-      {/* List */}
-      <div className={`flex flex-col border border-slate-200 bg-white w-full lg:w-64 xl:w-72 shrink-0 overflow-hidden ${selected ? 'hidden lg:flex' : 'flex'}`}>
-        <div className="px-4 py-3 border-b border-slate-200">
-          <div className="flex items-center justify-between gap-2">
-            <div>
-              <p className="text-[10px] uppercase tracking-[0.3em] text-slate-400">Web chat</p>
-              <h2 className="text-base font-bold text-slate-950">Chat Requests</h2>
-            </div>
-            <span className="text-[11px] text-slate-500">{inquiries.length} total</span>
-          </div>
-          <div className="mt-3 flex flex-wrap gap-2">
-            {(['all', 'open', 'replied', 'closed'] as const).map(key => (
-              <button key={key} onClick={() => setFilterStatus(key)}
-                className={`shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-2xl text-xs font-semibold border transition-all ${
-                  filterStatus === key ? 'bg-slate-900 text-white border-slate-900' : 'bg-slate-100 text-slate-600 border-slate-200 hover:border-slate-300'
-                }`}>
-                {key === 'all' ? 'All' : ENQUIRY_STATUS_META[key].label}
-                <span className={`text-[10px] font-bold ${filterStatus === key ? 'text-white/70' : 'text-slate-400'}`}>{counts[key]}</span>
-              </button>
-            ))}
-          </div>
-        </div>
-        <div className="flex-1 overflow-y-auto p-3 space-y-2">
-          {loading ? (
-            <div className="space-y-2">
-              {Array.from({ length: 3 }).map((_, i) => (
                 <div key={i} className="h-24 rounded-3xl bg-slate-100 animate-pulse" />
               ))}
             </div>
           ) : filtered.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-full p-8 text-center">
-              <MessageSquare className="w-10 h-10 text-slate-200 mb-3" />
-              <p className="text-sm font-semibold text-slate-400">No chat requests yet</p>
-              <p className="text-xs text-slate-400 mt-1">They appear when users request a human agent on the website.</p>
+              <Inbox className="w-10 h-10 text-slate-200 mb-3" />
+              <p className="text-sm font-semibold text-slate-400">No messages yet</p>
+              <p className="text-xs text-slate-400 mt-1">Property enquiries and web chat requests appear here.</p>
             </div>
           ) : (
             <div className="space-y-2">
-              {filtered.map(inq => {
-                const s = ENQUIRY_STATUS_META[inq.status]
-                const isActive = selectedId === inq.id
-                const initial = inq.name[0]?.toUpperCase() ?? 'U'
+              {filtered.map(item => {
+                const s = ENQUIRY_STATUS_META[item.status]
+                const isActive = `${item.type}:${item.id}` === selectedKey
+                const isChat = item.type === 'chat'
                 return (
-                  <button key={inq.id} onClick={() => setSelectedId(inq.id)}
+                  <button key={`${item.type}:${item.id}`} onClick={() => setSelectedKey(`${item.type}:${item.id}`)}
                     className={`w-full text-left rounded-2xl border px-3 py-3 transition-all ${isActive ? 'border-slate-900 bg-slate-950 text-white shadow-lg' : 'border-slate-200 bg-white hover:border-slate-300 hover:shadow-sm'}`}>
                     <div className="flex items-start justify-between gap-2">
-                      <p className={`font-semibold text-sm truncate ${isActive ? 'text-white' : 'text-slate-950'}`}>{inq.name}</p>
-                      <span className={`shrink-0 inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full ${isActive ? 'bg-white/15 text-white' : `${s.bg} ${s.color}`}`}>
-                        <span className={`w-1.5 h-1.5 rounded-full ${isActive ? 'bg-white' : s.dot}`} />{s.label}
+                      <p className={`font-semibold text-sm truncate ${isActive ? 'text-white' : 'text-slate-950'}`}>{item.name}</p>
+                      <span className="flex items-center gap-1.5 shrink-0">
+                        {isChat && item.unread && (
+                          <span className={`size-2 rounded-full ${isActive ? 'bg-emerald-400' : 'bg-emerald-500'}`} title="Unread" aria-label="Unread" />
+                        )}
+                        <span className={`shrink-0 inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full ${isChat ? 'bg-emerald-50 text-emerald-700' : 'bg-blue-50 text-blue-700'} ${isActive ? '!bg-white/15 !text-white' : ''}`}>
+                          {isChat ? 'Chat' : 'Enquiry'}
+                        </span>
+                        <span className={`inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full ${isActive ? 'bg-white/15 text-white' : `${s.bg} ${s.color}`}`}>
+                          <span className={`w-1.5 h-1.5 rounded-full ${isActive ? 'bg-white' : s.dot}`} />{s.label}
+                        </span>
                       </span>
                     </div>
-                    {inq.phone && (
-                      <p className={`text-xs truncate mt-1 ${isActive ? 'text-white/70' : 'text-slate-400'}`}>{inq.phone}</p>
-                    )}
-                    <p className={`text-[10px] mt-2 line-clamp-2 ${isActive ? 'text-white/70' : 'text-slate-500'}`}>{inq.note}</p>
+                    <p className={`text-xs truncate mt-1 ${isActive ? 'text-white/70' : 'text-slate-500'}`}>{item.subtitle}</p>
+                    <p className={`text-[10px] mt-2 line-clamp-2 ${isActive ? 'text-white/70' : 'text-slate-500'}`}>{item.body}</p>
                     <p className={`text-[11px] mt-2 ${isActive ? 'text-white/50' : 'text-slate-400'}`}>
-                      {formatDistanceToNow(new Date(inq.created_at), { addSuffix: true })}
+                      {formatDistanceToNow(new Date(item.created_at), { addSuffix: true })}
                     </p>
                   </button>
                 )
@@ -895,85 +1053,23 @@ function ChatRequestsTab() {
       {/* Detail */}
       <div className={`flex-1 min-w-0 p-3 ${selected ? 'flex' : 'hidden lg:flex'} flex-col`}>
         {selected ? (
-          <div className="flex flex-col h-full bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-            {/* Header */}
-            <div className="flex items-center gap-3 px-4 py-3 border-b border-gray-100 shrink-0">
-              <button onClick={() => setSelectedId(null)} className="lg:hidden p-1.5 rounded-lg hover:bg-gray-100 text-gray-500 transition-colors">
-                <ChevronLeft className="w-4 h-4" />
-              </button>
-              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-500 flex items-center justify-center shrink-0 shadow-sm">
-                <span className="text-sm font-bold text-white">{selected.name[0]?.toUpperCase() ?? 'U'}</span>
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <p className="font-bold text-gray-900 text-sm">{selected.name}</p>
-                  <span className={`shrink-0 inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full ${ENQUIRY_STATUS_META[selected.status].bg} ${ENQUIRY_STATUS_META[selected.status].color}`}>
-                    <span className={`w-1.5 h-1.5 rounded-full ${ENQUIRY_STATUS_META[selected.status].dot}`} />
-                    {ENQUIRY_STATUS_META[selected.status].label}
-                  </span>
-                </div>
-                <p className="text-xs text-gray-400 mt-0.5">
-                  {selected.phone && <span>{selected.phone} · </span>}
-                  {format(new Date(selected.created_at), 'dd MMM yyyy, h:mm a')}
-                </p>
-              </div>
-              <div className="relative shrink-0">
-                <select value={selected.status} onChange={e => changeStatus(selected.id, e.target.value as ChatInquiry['status'])}
-                  disabled={updating}
-                  className="appearance-none pl-3 pr-7 py-1.5 rounded-xl border border-gray-200 text-xs font-semibold bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer disabled:opacity-50">
-                  <option value="open">Open</option>
-                  <option value="replied">Replied</option>
-                  <option value="closed">Closed</option>
-                </select>
-                {updating
-                  ? <Loader2 className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 animate-spin text-gray-400 pointer-events-none" />
-                  : <RefreshCw className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-gray-400 pointer-events-none" />}
-              </div>
-            </div>
-
-            {/* Body */}
-            <div className="flex-1 overflow-y-auto px-5 py-5 space-y-4">
-              {/* Note card */}
-              <div className="rounded-2xl bg-slate-50 border border-slate-100 p-5">
-                <p className="text-[10px] uppercase tracking-[0.25em] text-slate-400 mb-2">Message</p>
-                <p className="text-sm text-slate-800 leading-relaxed whitespace-pre-wrap">{selected.note}</p>
-              </div>
-
-              {/* Contact info */}
-              {selected.phone && (
-                <div className="flex items-center gap-3 rounded-2xl bg-blue-50 border border-blue-100 p-4">
-                  <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center shrink-0">
-                    <User className="w-4 h-4 text-white" />
-                  </div>
-                  <div>
-                    <p className="text-xs text-blue-600 font-semibold">{selected.phone}</p>
-                    <a href={`https://wa.me/${selected.phone.replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer"
-                      className="text-[11px] text-blue-400 hover:text-blue-600 underline transition-colors">
-                      Open on WhatsApp →
-                    </a>
-                  </div>
-                </div>
-              )}
-
-              <div className="flex gap-3">
-                <button onClick={() => changeStatus(selected.id, 'replied')} disabled={selected.status === 'replied' || selected.status === 'closed' || updating}
-                  className="flex-1 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 disabled:opacity-40 text-white text-xs font-bold transition-colors">
-                  Mark as Replied
-                </button>
-                <button onClick={() => changeStatus(selected.id, 'closed')} disabled={selected.status === 'closed' || updating}
-                  className="flex-1 py-2.5 rounded-xl bg-gray-100 hover:bg-gray-200 disabled:opacity-40 text-gray-700 text-xs font-bold transition-colors">
-                  Close
-                </button>
-              </div>
-            </div>
-          </div>
+          selected.type === 'chat' && selected.chatInquiry ? (
+            <ChatRequestDetail key={selected.id} inquiry={selected.chatInquiry}
+              onBack={() => setSelectedKey(null)}
+              onMarkRead={handleChatMarkRead}
+              onStatusChange={handleChatStatusChange} />
+          ) : selected.enquiry ? (
+            <EnquiryDetail key={selected.id} enquiry={selected.enquiry}
+              onBack={() => setSelectedKey(null)}
+              onStatusChange={handleEnquiryStatusChange} />
+          ) : null
         ) : (
           <div className="flex-1 flex flex-col items-center justify-center bg-white rounded-2xl border border-gray-100 shadow-sm text-center p-6 h-full">
             <div className="w-16 h-16 rounded-2xl bg-gray-50 flex items-center justify-center mb-4">
-              <MessageSquare className="w-8 h-8 text-gray-300" />
+              <Inbox className="w-8 h-8 text-gray-300" />
             </div>
-            <p className="font-bold text-gray-900 mb-1">Select a request</p>
-            <p className="text-sm text-gray-400">Choose a chat request to view details and update status.</p>
+            <p className="font-bold text-gray-900 mb-1">Select a message</p>
+            <p className="text-sm text-gray-400">Choose an enquiry or chat request to view and reply.</p>
           </div>
         )}
       </div>
@@ -985,7 +1081,7 @@ function ChatRequestsTab() {
 
 export default function AdminSupportPage() {
   const [user, setUser]   = useState<{ email?: string } | null>(null)
-  const [tab, setTab]     = useState<'support' | 'inbox' | 'chat'>('support')
+  const [tab, setTab]     = useState<'support' | 'inbox'>('support')
   const [openCount, setOpenCount]     = useState(0)
   const [chatOpenCount, setChatOpenCount] = useState(0)
 
@@ -997,7 +1093,7 @@ export default function AdminSupportPage() {
     const fetchCounts = () => {
       supabase.from('enquiries').select('id', { count: 'exact', head: true }).eq('status', 'open')
         .then(({ count }) => setOpenCount(count ?? 0))
-      supabase.from('chat_inquiries').select('id', { count: 'exact', head: true }).eq('status', 'open')
+      supabase.from('chat_inquiries').select('id', { count: 'exact', head: true }).eq('read_by_admin', false)
         .then(({ count }) => setChatOpenCount(count ?? 0))
     }
     fetchCounts()
@@ -1012,6 +1108,7 @@ export default function AdminSupportPage() {
   }, [])
 
   const displayName = user?.email ? user.email.split('@')[0] : 'Admin'
+  const inboxCount = openCount + chatOpenCount
 
   return (
     <AuthGuard require="admin">
@@ -1034,7 +1131,7 @@ export default function AdminSupportPage() {
                     <p className="mt-1 text-lg font-semibold text-white">{openCount}</p>
                   </div>
                   <div className="rounded-3xl border border-white/10 bg-white/10 px-3 py-1.5 text-sm shadow-sm">
-                    <p className="text-[10px] uppercase tracking-[0.3em] text-slate-300">Chat requests</p>
+                    <p className="text-[10px] uppercase tracking-[0.3em] text-slate-300">Unread chats</p>
                     <p className="mt-1 text-lg font-semibold text-white">{chatOpenCount}</p>
                   </div>
                 </div>
@@ -1056,26 +1153,12 @@ export default function AdminSupportPage() {
                 tab === 'inbox' ? 'bg-white text-slate-950 shadow-sm' : 'text-slate-300 hover:text-white hover:bg-slate-800'
               }`}>
               <Inbox className="w-4 h-4" />
-              Enquiries
-              {openCount > 0 && (
+              Inbox
+              {inboxCount > 0 && (
                 <span className={`inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full text-[10px] font-bold ${
                   tab === 'inbox' ? 'bg-white text-slate-950' : 'bg-blue-600 text-white'
                 }`}>
-                  {openCount > 99 ? '99+' : openCount}
-                </span>
-              )}
-            </button>
-            <button onClick={() => setTab('chat')}
-              className={`flex items-center gap-2 px-3 py-1.5 rounded-2xl text-sm font-semibold transition-all relative ${
-                tab === 'chat' ? 'bg-white text-slate-950 shadow-sm' : 'text-slate-300 hover:text-white hover:bg-slate-800'
-              }`}>
-              <MessageSquare className="w-4 h-4" />
-              Chat Requests
-              {chatOpenCount > 0 && (
-                <span className={`inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full text-[10px] font-bold ${
-                  tab === 'chat' ? 'bg-white text-slate-950' : 'bg-emerald-500 text-white'
-                }`}>
-                  {chatOpenCount > 99 ? '99+' : chatOpenCount}
+                  {inboxCount > 99 ? '99+' : inboxCount}
                 </span>
               )}
             </button>
@@ -1083,7 +1166,7 @@ export default function AdminSupportPage() {
 
           {/* Tab content */}
           <div className="flex flex-1 overflow-hidden">
-            {tab === 'support' ? <SupportTab /> : tab === 'inbox' ? <InboxTab /> : <ChatRequestsTab />}
+            {tab === 'support' ? <SupportTab /> : <InboxTab />}
           </div>
         </div>
       </div>
