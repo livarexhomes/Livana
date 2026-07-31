@@ -13,14 +13,16 @@ export async function fetchListings() {
 
   if (SUPABASE_URL && SUPABASE_SERVICE_KEY) {
     try {
-      // No status filter in the query itself — different admin flows / environments
-      // may use different status values ('approved', 'active', 'published', 'live'),
-      // and a hardcoded `status=eq.approved` filter silently returns zero rows the
-      // moment it doesn't match, with no error to tell you why. Instead we fetch
-      // recent properties and filter client-side against a configurable allow-list,
-      // so a mismatch is loud (logged) instead of silent.
+      // Column names must match the live `properties` schema (see
+      // artifacts/property-manager/src/pages/landlord/LandlordListingForm.tsx):
+      // `type`, `address`, `city`, `price`, `status` — there is no
+      // `property_type` or `state` column. No status filter in the query
+      // itself — different admin flows may use different status values, so we
+      // fetch recent properties and filter client-side against a
+      // configurable allow-list; a mismatch is logged loudly instead of
+      // silently returning zero rows.
       const res = await fetch(
-        `${SUPABASE_URL}/rest/v1/properties?select=id,title,property_type,city,state,price,bedrooms,bathrooms,description,status&order=created_at.desc&limit=50`,
+        `${SUPABASE_URL}/rest/v1/properties?select=id,title,type,address,city,price,bedrooms,bathrooms,description,status&order=created_at.desc&limit=50`,
         {
           headers: {
             apikey: SUPABASE_SERVICE_KEY,
@@ -32,7 +34,10 @@ export async function fetchListings() {
       if (res.ok) {
         const data = await res.json()
 
-        const allowedStatuses = (process.env.LISTING_APPROVED_STATUSES || "approved,active,published,live")
+        // 'available' is the status the main app uses for live listings
+        // (ListingsPage.tsx filters properties by status=available). The rest
+        // are accepted variants from other admin flows.
+        const allowedStatuses = (process.env.LISTING_APPROVED_STATUSES || "available,approved,active,published,live")
           .split(",")
           .map((s) => s.trim().toLowerCase())
           .filter(Boolean)
@@ -51,8 +56,8 @@ export async function fetchListings() {
         cachedListings = approved.slice(0, 15).map((p) => ({
           id: p.id,
           title: p.title,
-          type: p.property_type || "Property",
-          location: [p.city, p.state].filter(Boolean).join(", "),
+          type: p.type || "Property",
+          location: [p.city, p.address].filter(Boolean).join(", "),
           price: p.price ? `₦${Number(p.price).toLocaleString()}` : "Price on request",
           bedrooms: p.bedrooms,
           bathrooms: p.bathrooms,
