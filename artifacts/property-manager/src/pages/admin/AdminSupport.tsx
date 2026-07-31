@@ -942,9 +942,17 @@ function InboxTab() {
   }, [chats, enquiries])
 
   const typeFiltered = filterType === 'all' ? items : items.filter(i => i.type === filterType)
+  const statusFiltered = filterStatus === 'all' ? items : items.filter(i => i.status === filterStatus)
   const filtered = filterStatus === 'all' ? typeFiltered : typeFiltered.filter(i => i.status === filterStatus)
   const selected = items.find(i => `${i.type}:${i.id}` === selectedKey) ?? null
 
+  // Each chip counts the items that would be visible if it were selected
+  // (honouring the other filter), so both "All" chips always agree.
+  const typeCounts = {
+    all:     statusFiltered.length,
+    enquiry: statusFiltered.filter(i => i.type === 'enquiry').length,
+    chat:    statusFiltered.filter(i => i.type === 'chat').length,
+  }
   const counts = {
     all:     typeFiltered.length,
     open:    typeFiltered.filter(i => i.status === 'open').length,
@@ -984,7 +992,7 @@ function InboxTab() {
                 }`}>
                 {key === 'all' ? 'All' : key === 'enquiry' ? 'Enquiries' : 'Chat'}
                 <span className={`text-[10px] font-bold ${filterType === key ? 'text-white/70' : 'text-slate-400'}`}>
-                  {key === 'all' ? items.length : key === 'enquiry' ? enquiries.length : chats.length}
+                  {typeCounts[key]}
                 </span>
               </button>
             ))}

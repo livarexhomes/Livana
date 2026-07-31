@@ -144,14 +144,22 @@ export default function AdminProjects() {
     }
     setSaving(true)
     const supabase = createClient()
+    // Strip fields the live DB may not have yet (map_link), retrying once.
+    const trySave = async (payload: Partial<typeof form>) => {
+      if (editing) return supabase.from('projects').update(payload).eq('id', editing.id)
+      return supabase.from('projects').insert(payload).select().single()
+    }
+    let result = await trySave({ ...form })
+    if (result.error && result.error.message?.toLowerCase().includes('map_link')) {
+      const { map_link: _map_link, ...rest } = form
+      result = await trySave(rest)
+    }
+    const { data, error } = result
+    if (error) { showToast(`Create failed: ${error.message}`, false); setSaving(false); return }
     if (editing) {
-      const { error } = await supabase.from('projects').update(form).eq('id', editing.id)
-      if (error) { showToast(`Save failed: ${error.message}`, false); setSaving(false); return }
       const next = projects.map(p => p.id === editing.id ? { ...editing, ...form } : p)
       setProjects(next); syncLocalCache(next)
     } else {
-      const { data, error } = await supabase.from('projects').insert(form).select().single()
-      if (error) { showToast(`Create failed: ${error.message}`, false); setSaving(false); return }
       const next = [data as Project, ...projects]
       setProjects(next); syncLocalCache(next)
     }
@@ -199,6 +207,16 @@ export default function AdminProjects() {
 
   const F = (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) =>
     setForm(f => ({ ...f, [k]: e.target.type === 'number' ? Number(e.target.value) : e.target.value }))
+
+  // Numeric field helper: renders blank when the value is 0 (so there's no
+  // literal "0" to type around) and selects all text on focus so typing
+  // overwrites cleanly instead of appending.
+  const N = (k: keyof typeof form) => ({
+    value: form[k] === 0 ? '' : (form[k] as number),
+    onFocus: (e: React.FocusEvent<HTMLInputElement>) => e.target.select(),
+    onChange: (e: React.ChangeEvent<HTMLInputElement>) =>
+      setForm(f => ({ ...f, [k]: e.target.value === '' ? 0 : Number(e.target.value) })),
+  })
 
   async function handleCoverUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
@@ -601,30 +619,30 @@ export default function AdminProjects() {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1.5 block">Starting Price (₦)</label>
-                    <input type="number" min={0} value={form.price} onChange={F('price')} placeholder="85000000"
+                    <input type="number" min={0} {...N('price')} placeholder="85000000"
                       className="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
                     <p className="text-[11px] text-gray-400 mt-1">Lowest price a buyer can enter at.</p>
                   </div>
                   <div>
                     <label className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1.5 block">Down Payment (%)</label>
-                    <input type="number" min={0} max={100} value={form.down} onChange={F('down')}
+                    <input type="number" min={0} max={100} {...N('down')}
                       className="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
                     <p className="text-[11px] text-gray-400 mt-1">Minimum deposit buyers pay upfront, as % of the price.</p>
                   </div>
                   <div>
                     <label className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1.5 block">Total Units</label>
-                    <input type="number" min={0} value={form.units} onChange={F('units')}
+                    <input type="number" min={0} {...N('units')}
                       className="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
                   </div>
                   <div>
                     <label className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1.5 block">Units Sold</label>
-                    <input type="number" min={0} value={form.sold} onChange={F('sold')}
+                    <input type="number" min={0} {...N('sold')}
                       className="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
                     <p className="text-[11px] text-gray-400 mt-1">Shouldn't exceed total units.</p>
                   </div>
                   <div>
                     <label className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1.5 block">Construction Progress (%)</label>
-                    <input type="number" min={0} max={100} value={form.progress} onChange={F('progress')}
+                    <input type="number" min={0} max={100} {...N('progress')}
                       className="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
                     <p className="text-[11px] text-gray-400 mt-1">0 = not started · 100 = finished.</p>
                   </div>
@@ -708,6 +726,16 @@ export default function AdminProjects() {
                 Delete
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Toast ── */}
+      {toast && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[60]">
+          <div className={`flex items-center gap-2 px-5 py-3 rounded-2xl shadow-2xl text-sm font-semibold border ${toast.ok ? 'bg-emerald-600 text-white border-emerald-500' : 'bg-red-600 text-white border-red-500'}`}>
+            {toast.ok ? <CheckCircle className="w-4 h-4" /> : <AlertCircle className="w-4 h-4" />}
+            {toast.msg}
           </div>
         </div>
       )}
