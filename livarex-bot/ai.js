@@ -1,42 +1,136 @@
 // ── Claude AI — message processing ────────────────────────────────────────
 import Anthropic from "@anthropic-ai/sdk"
+import Groq from "groq-sdk"
 import { getConversationHistory, saveMessage } from "./memory.js"
 import { fetchListings, formatListingsForAI } from "./listings.js"
 
-// Accepts any of these naming conventions (first defined wins):
-//   Base URL : AI_INTEGRATIONS_ANTHROPIC_BASE_URL → ANTHROPIC_BASE_URL → AGENTROUTER_BASE_URL
-//   API key  : AI_INTEGRATIONS_ANTHROPIC_API_KEY  → ANTHROPIC_API_KEY  → AGENTROUTER_API_KEY
-const _baseURL =
-  process.env.AI_INTEGRATIONS_ANTHROPIC_BASE_URL ||
-  process.env.ANTHROPIC_BASE_URL ||
-  process.env.AGENTROUTER_BASE_URL ||
-  'https://agentrouter.org/'
+const ANTHROPIC_MODEL = "claude-haiku-4-5-20251001"
+const OPENROUTER_MODEL = "anthropic/claude-haiku-4.5"
+const GROQ_MODEL = "llama-3.3-70b-versatile"
 
-const _apiKey =
-  process.env.AI_INTEGRATIONS_ANTHROPIC_API_KEY ||
-  process.env.ANTHROPIC_API_KEY ||
-  process.env.AGENTROUTER_API_KEY
+const anthropicApiKey = process.env.ANTHROPIC_API_KEY
+const openRouterApiKey = process.env.OPENROUTER_API_KEY
+const groqApiKey = process.env.GROQ_API_KEY
 
-if (!_apiKey) {
-  console.warn(
-    '[ai] Missing Anthropic/AgentRouter API key. Set AI_INTEGRATIONS_ANTHROPIC_API_KEY, ANTHROPIC_API_KEY, or AGENTROUTER_API_KEY.'
-  )
+if (!anthropicApiKey && !openRouterApiKey && !groqApiKey) {
+  console.warn('[ai] No AI provider keys configured. Set ANTHROPIC_API_KEY and optionally OPENROUTER_API_KEY or GROQ_API_KEY.')
 }
 
-const client = _apiKey
+const anthropicClient = anthropicApiKey
+  ? new Anthropic({ apiKey: anthropicApiKey })
+  : null
+
+const openRouterClient = openRouterApiKey
   ? new Anthropic({
-      ...(_baseURL ? { baseURL: _baseURL } : {}),
-      apiKey: _apiKey,
+      apiKey: openRouterApiKey,
+      baseURL: "https://openrouter.ai/api/v1",
     })
   : null
 
-function requireAiClient() {
-  if (!client) {
-    throw new Error(
-      'Missing AI API key. Set AI_INTEGRATIONS_ANTHROPIC_API_KEY, ANTHROPIC_API_KEY, or AGENTROUTER_API_KEY.'
-    )
+const groqClient = groqApiKey
+  ? new Groq({ apiKey: groqApiKey })
+  : null
+
+export function shouldFallbackToNextTier(err) {
+  if (!err) return false
+
+  const status = err.status || err.statusCode || err.response?.status
+  if (typeof status === 'number') {
+    if (status === 401 || status === 403 || status >= 500) return true
+    return false
   }
-  return client
+
+  const message = String(err.message || err.error?.message || '').toLowerCase()
+  return /timed out|timeout|temporar|service unavailable|overloaded|socket hang up|econnreset|etimedout/i.test(message)
+}
+
+export function normalizeResponseText(provider, response) {
+  if (provider === 'Groq') {
+    const content = response?.choices?.[0]?.message?.content
+    if (typeof content === 'string') return content
+    if (Array.isArray(content)) {
+      return content.map((item) => (typeof item === 'string' ? item : item?.text || '')).join('')
+    }
+    return ''
+  }
+
+  const content = response?.content?.[0]?.text
+  if (typeof content === 'string') return content
+  return ''
+}
+
+async function callWithFallback({ system, messages, maxTokens }) {
+  const providers = [
+    {
+      name: 'Anthropic',
+      client: anthropicClient,
+      run: async () => {
+        const response = await anthropicClient.messages.create({
+          model: ANTHROPIC_MODEL,
+          max_tokens: maxTokens,
+          system,
+          messages,
+        })
+        return {
+          provider: 'Anthropic',
+          text: normalizeResponseText('Anthropic', response),
+        }
+      },
+    },
+    {
+      name: 'OpenRouter',
+      client: openRouterClient,
+      run: async () => {
+        const response = await openRouterClient.messages.create({
+          model: OPENROUTER_MODEL,
+          max_tokens: maxTokens,
+          system,
+          messages,
+        })
+        return {
+          provider: 'OpenRouter',
+          text: normalizeResponseText('OpenRouter', response),
+        }
+      },
+    },
+    {
+      name: 'Groq',
+      client: groqClient,
+      run: async () => {
+        const response = await groqClient.chat.completions.create({
+          model: GROQ_MODEL,
+          messages: [{ role: 'system', content: system }, ...messages],
+          max_tokens: maxTokens,
+        })
+        return {
+          provider: 'Groq',
+          text: normalizeResponseText('Groq', response),
+        }
+      },
+    },
+  ]
+
+  let lastError = null
+
+  for (const provider of providers) {
+    if (!provider.client) {
+      continue
+    }
+
+    try {
+      const result = await provider.run()
+      console.log(`Served by: ${result.provider}`)
+      return result
+    } catch (err) {
+      lastError = err
+      if (!shouldFallbackToNextTier(err)) {
+        throw err
+      }
+      console.error(`[ai] ${provider.name} failed, trying next provider:`, err?.message || err)
+    }
+  }
+
+  throw new Error(`All AI providers failed. Last error: ${lastError?.message || 'No provider available'}`)
 }
 
 const SYSTEM_PROMPT = `You are Livarex Bot — the official AI property assistant for Livarex Homes (www.livarex.com.ng), Nigeria's verified property marketplace.
@@ -103,17 +197,16 @@ export async function processMessage(phone, name, userMessage) {
     ? `${SYSTEM_PROMPT}\n\n--- CURRENT VERIFIED LISTINGS ---\n${listingsContext}\n--- END LISTINGS ---`
     : `${SYSTEM_PROMPT}\n\n--- LISTINGS: None available right now. Tell users to check www.livarex.com.ng/listings for the latest or leave their requirements and the team will reach out. ---`
 
-  const response = await requireAiClient().messages.create({
-    model: "claude-opus-4-8",
-    max_tokens: 8192,
+  const response = await callWithFallback({
     system: systemWithListings,
     messages: [
       ...history,
       { role: "user", content: userMessage },
     ],
+    maxTokens: 8192,
   })
 
-  const reply = response.content[0].text
+  const reply = response.text
 
   await saveMessage(phone, "user", userMessage)
   await saveMessage(phone, "assistant", reply)
@@ -144,14 +237,13 @@ export async function processWebMessage(messages) {
     content: Array.isArray(m.content) ? m.content : [{ type: "text", text: m.content }],
   }))
 
-  const response = await requireAiClient().messages.create({
-    model: "claude-opus-4-8",
-    max_tokens: 1024,
+  const response = await callWithFallback({
     system: systemWithListings,
     messages: normalised,
+    maxTokens: 1024,
   })
 
-  return response.content[0].text
+  return response.text
 }
 
 export async function generateFollowUpMessage(lead, history) {
@@ -165,9 +257,7 @@ Rules:
 - Sound human, not automated
 - Do not say "I noticed you haven't replied" or anything that sounds automated`
 
-  const response = await client.messages.create({
-    model: "claude-opus-4-8",
-    max_tokens: 8192,
+  const response = await callWithFallback({
     system: FOLLOW_UP_PROMPT,
     messages: [
       ...history.slice(-6),
@@ -176,7 +266,8 @@ Rules:
         content: `Generate a follow-up for: ${lead.name || "this contact"}. Follow-up #${(lead.follow_up_count || 0) + 1} of 3. Their last message: "${lead.last_message}"`,
       },
     ],
+    maxTokens: 8192,
   })
 
-  return response.content[0].text
+  return response.text
 }
