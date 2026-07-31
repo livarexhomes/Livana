@@ -39,31 +39,11 @@ cp .env.example .env
 
 ### Step 4 — Supabase database tables
 
-Run this SQL once in your Supabase project (SQL Editor):
+Run `supabase-schema.sql` once in your Supabase project (SQL Editor). It creates:
 
-```sql
--- Bot conversation history
-create table if not exists bot_messages (
-  id uuid primary key default gen_random_uuid(),
-  phone text not null,
-  role text not null check (role in ('user','assistant')),
-  content text not null,
-  created_at timestamptz default now()
-);
-create index if not exists bot_messages_phone_idx on bot_messages (phone, created_at);
-
--- Lead tracking
-create table if not exists bot_leads (
-  phone text primary key,
-  name text,
-  last_message text,
-  last_message_at timestamptz default now(),
-  follow_up_count int default 0,
-  follow_up_due_at timestamptz,
-  follow_up_sent_at timestamptz,
-  created_at timestamptz default now()
-);
-```
+- `bot_messages` — conversation memory
+- `bot_leads` — lead tracking + `increment_follow_up_count` RPC
+- `bot_inspection_requests` — inspection requests booked through the WhatsApp `book_inspection` tool
 
 ### Step 5 — Supabase Database Webhooks
 
@@ -72,6 +52,7 @@ In Supabase → Database → Webhooks → Create webhook:
 | Webhook | Table | Events | URL |
 |---|---|---|---|
 | Inspection updates | `enquiries` | UPDATE | `https://your-bot.com/events/inspection` |
+| Bot inspection updates | `bot_inspection_requests` | UPDATE | `https://your-bot.com/events/bot-inspection` |
 | New tenant signup | `tenants` | INSERT | `https://your-bot.com/events/signup` |
 | Landlord KYC | `landlords` | INSERT, UPDATE | `https://your-bot.com/events/kyc` |
 
@@ -139,3 +120,5 @@ Supabase Events
 | `webhook.js` | WhatsApp message routing + greeting/escalation logic |
 | `followUp.js` | Scheduled follow-up messages |
 | `notifications.js` | Inspection updates + admin alerts via Supabase webhooks |
+| `inspections.js` | `book_inspection` tool — writes bot inspection requests to Supabase |
+| `supabase-schema.sql` | One-shot SQL: bot tables + `increment_follow_up_count` RPC |

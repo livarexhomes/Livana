@@ -51,7 +51,7 @@ export async function handleInspectionEvent(req, res) {
       return
     }
 
-    const propertyTitle = record.property_title || "your enquiry"
+    const propertyTitle = record.property_title || (await fetchPropertyTitle(record.property_id)) || "your enquiry"
     const newStatus     = record.status
 
     const messages = {
@@ -71,7 +71,46 @@ export async function handleInspectionEvent(req, res) {
   }
 }
 
-// ── 2. New tenant signup → admin alert ────────────────────────────────────
+// ── 2. Bot inspection request status change → notify tenant ───────────────
+// Watches the bot's own bot_inspection_requests table (rows created by the
+// WhatsApp book_inspection tool). Unlike the website's enquiries table, the
+// phone is stored right on the row — no tenant lookup needed.
+export async function handleBotInspectionEvent(req, res) {
+  res.sendStatus(200)
+  if (!verifySecret(req)) { console.warn("⚠️ Bot inspection webhook: invalid secret"); return }
+
+  try {
+    const { type, record, old_record } = req.body || {}
+    if (!record) return
+    if (type !== "UPDATE") return
+    if (old_record?.status === record.status) return
+
+    const tenantPhone = record.phone
+    if (!tenantPhone) {
+      console.log("No phone for bot inspection request:", record.id)
+      return
+    }
+
+    const propertyTitle = record.property_title || "your inspection request"
+    const newStatus     = record.status
+
+    const messages = {
+      contacted: `✅ *Update from Livarex!*\n\nWe're working on your inspection request for *${propertyTitle}* and will confirm a time with you shortly. 🏡`,
+      confirmed: `🎉 *Inspection Confirmed!*\n\nYour inspection for *${propertyTitle}* has been *confirmed*!\n\nOur team will send you the exact address and time shortly. 🏡`,
+      rejected:  `❌ *Inspection Update*\n\nUnfortunately your inspection for *${propertyTitle}* could not be confirmed at this time.\n\nWe have other verified options — reply here or visit www.livarex.com.ng to explore.`,
+    }
+
+    const msg = messages[newStatus]
+    if (!msg) return
+
+    await sendText(tenantPhone, msg)
+    console.log(`📤 Bot inspection update (${newStatus}) sent to ${tenantPhone}`)
+  } catch (err) {
+    console.error("handleBotInspectionEvent error:", err.message)
+  }
+}
+
+// ── 3. New tenant signup → admin alert ────────────────────────────────────
 export async function handleNewSignupEvent(req, res) {
   res.sendStatus(200)
   if (!verifySecret(req)) { console.warn("⚠️ Signup webhook: invalid secret"); return }
@@ -153,6 +192,31 @@ async function fetchTenantPhone(tenantId) {
     if (!res.ok) return null
     const data = await res.json()
     return data?.[0]?.phone || null
+  } catch {
+    return null
+  }
+}
+
+// ── Internal: resolve a property's title from its id ───────────────────────
+async function fetchPropertyTitle(propertyId) {
+  if (!propertyId) return null
+  const SUPABASE_URL = process.env.VITE_SUPABASE_URL
+  const SERVICE_KEY  = process.env.SUPABASE_SERVICE_ROLE_KEY
+  if (!SUPABASE_URL || !SERVICE_KEY) return null
+
+  try {
+    const res = await fetch(
+      `${SUPABASE_URL}/rest/v1/properties?id=eq.${propertyId}&select=title&limit=1`,
+      {
+        headers: {
+          apikey: SERVICE_KEY,
+          Authorization: `Bearer ${SERVICE_KEY}`,
+        },
+      }
+    )
+    if (!res.ok) return null
+    const data = await res.json()
+    return data?.[0]?.title || null
   } catch {
     return null
   }

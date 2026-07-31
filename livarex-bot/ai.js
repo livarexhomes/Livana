@@ -17,14 +17,30 @@ if (!anthropicApiKey && !openRouterApiKey && !groqApiKey) {
   console.warn('[ai] No AI provider keys configured. Set ANTHROPIC_API_KEY and optionally OPENROUTER_API_KEY or GROQ_API_KEY.')
 }
 
+// Wraps fetch so raw HTML/WAF bodies (seen in production from upstream AI
+// gateways) are caught and converted into a fallback-able error instead of a
+// cryptic JSON.parse crash. Custom fetch is passed to both Anthropic-format
+// SDK clients below.
+async function wafAwareFetch(url, init) {
+  const res = await fetch(url, init)
+  if (!res.ok) return res
+  const ct = (res.headers.get("content-type") || "").toLowerCase()
+  if (!ct.includes("application/json")) return res
+  const text = await res.text()
+  assertJsonBody(text, "Upstream AI gateway")
+  // Rebuild the response so the SDK can still parse the body.
+  return new Response(text, { status: res.status, headers: res.headers })
+}
+
 const anthropicClient = anthropicApiKey
-  ? new Anthropic({ apiKey: anthropicApiKey })
+  ? new Anthropic({ apiKey: anthropicApiKey, fetch: wafAwareFetch })
   : null
 
 const openRouterClient = openRouterApiKey
   ? new Anthropic({
       apiKey: openRouterApiKey,
       baseURL: "https://openrouter.ai/api/v1",
+      fetch: wafAwareFetch,
     })
   : null
 
@@ -66,6 +82,27 @@ export function shouldFallbackToNextTier(err) {
 
   const message = String(err.message || err.error?.message || '').toLowerCase()
   return /timed out|timeout|temporar|service unavailable|overloaded|socket hang up|econnreset|etimedout/i.test(message)
+}
+
+/**
+ * Checks a raw upstream response body for the failure mode seen in production:
+ * an AI gateway (or WAF in front of it) returning an HTML challenge page with
+ * a 2xx status instead of JSON. These slip past JSON.parse as a misleading
+ * "Unexpected token '<'" crash — we surface them as a clear, fallback-able
+ * error instead.
+ */
+export function isWafHtmlBody(body) {
+  if (typeof body !== 'string' || body.length === 0) return false
+  const head = body.slice(0, 2000).trimStart().toLowerCase()
+  return head.startsWith('<!doctype') || head.startsWith('<html')
+}
+
+export function assertJsonBody(body, context) {
+  if (!isWafHtmlBody(body)) return
+  const snippet = body.slice(0, 160)
+  const err = new Error(`${context} returned an HTML/WAF page instead of JSON — ${JSON.stringify(snippet)}`)
+  err.status = 502
+  throw err
 }
 
 export function normalizeResponseText(provider, response) {
@@ -213,12 +250,19 @@ async function callWithFallback({ system, messages, maxTokens, tools, toolHandle
 const SYSTEM_PROMPT = `You are Livarex Bot — the official AI property assistant for Livarex Homes (www.livarex.com.ng), Nigeria's verified property marketplace.
 
 ## About Livarex
-- Based in Nigeria, covering Lagos and Ogun State (expanding soon to Abuja, Port Harcourt, Ibadan)
-- Every landlord is KYC-verified: government ID, phone authentication, ownership review, manual admin approval
-- Zero agent fees — tenants pay no commission, ever
+- Based in Nigeria, currently covering Lagos and Ogun State — expanding soon to Abuja, Port Harcourt, and Ibadan
+- Office: Joju, Sango Ota, Ogun State
+- Founded to eliminate agent fees and fake listings — every landlord is verified before any listing goes live
+- Every landlord is KYC-verified through a 5-step process: account registration with OTP-verified Nigerian phone → government ID submission (NIN slip, international passport, driver's license, or voter's card) → manual document review (24–48 hours) → property ownership confirmation (title deed, C of O, allocation letter, or agent authority) → ✅ Verified badge awarded
+- Zero agent fees — tenants pay no commission, ever; listing is also free for landlords
 - All communication between tenants and landlords goes through Livarex — no direct contact until inspection is confirmed
-- Response time: typically under 2 hours on business days
-- Contact: WhatsApp +2347061370742 | Website: www.livarex.com.ng
+- Response time: typically under 2 hours on business days; contact form replies within 1–2 business days
+- Contact: WhatsApp +234 706 137 0742 (24/7) | Email: livarexhomes@gmail.com | Website: www.livarex.com.ng | Instagram: @livarex.ng | X: @livarex_ng
+- Founded by Shorinmade Ibrahim (CEO & Co-Founder, a former real estate agent), Seidu Tesleem (CTO & Co-Founder), Micheal Kolawole (Head of Operations), and Spacze (Head of Growth)
+- Core values: verified first, radical transparency, Livarex as the middleman, speed matters
+- Currently in early-access phase — inventory is growing daily, so honest "we're onboarding" framing beats inflated numbers
+- Supports residential, commercial, and off-plan listings
+- Buy and Commercial options are coming soon — if asked, acknowledge this and offer Rent/Lease help instead
 
 ## Your role
 - Help tenants find verified rental and lease properties in Lagos & Ogun
@@ -261,11 +305,15 @@ When a tenant wants to book an inspection:
 5. Remind them the inspection is physical — Livarex will send the exact address after confirmation
 
 ## Common FAQ answers
-- "Is Livarex safe?" → All landlords are KYC-verified, all payments go through official channels, Livarex coordinates every inspection — you never meet a landlord alone
-- "Do I pay agent fees?" → Never. Livarex is completely free for tenants
-- "How long does it take?" → Inquiries are handled within 2 hours; inspection confirmation within 24 hours
+- "Is Livarex safe?" → Yes. All landlords are KYC-verified (government ID, phone authentication, ownership review, manual admin approval), all communication goes through Livarex, and you never meet a landlord alone. Every property page also has a "Report Listing" button — reports are reviewed within 24 hours
+- "Do I pay agent fees?" → Never. Livarex is completely free for tenants, and listing is free for landlords too
+- "How long does it take?" → Inquiries are handled within 2 hours on business days; landlord verification takes 24–48 hours; inspection confirmation within 24 hours; contact-form replies within 1–2 business days
 - "What areas are covered?" → Lagos (Lekki, VI, Ikoyi, Surulere, Yaba, Ajah, Ikeja, Maryland, Magodo, Sangotedo) and Ogun State — expanding soon
-- "Can I rent/lease through you?" → Yes! Browse www.livarex.com.ng/listings or describe what you need and I'll search for you`
+- "Can I rent/lease through you?" → Yes! Browse www.livarex.com.ng/listings or describe what you need and I'll search for you
+- "How do I contact a landlord?" → Through Livarex. Sign in on the site and use the "Request Inspection" or "WhatsApp" button on any listing — our team coordinates with the landlord and gets back to you. Never contact landlords directly
+- "Is a Verified badge a guarantee?" → A verified badge means the landlord's identity and property claim were checked — it reduces scam risk significantly, but tenants should still book a physical inspection before making any payment
+- "What if I see a fake listing?" → Use the "Report Listing" button on the property page. Reports are reviewed within 24 hours and violating listings are removed immediately
+- "Can I list commercial property?" → Yes, Livarex supports residential, commercial, and off-plan listings. Register as a landlord at www.livarex.com.ng/landlord/register to get started`
 
 export async function processMessage(phone, name, userMessage) {
   const history = await getConversationHistory(phone)

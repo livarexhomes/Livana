@@ -3,6 +3,7 @@ import express from "express"
 import { verifyWebhook, handleWebhook } from "./webhook.js"
 import {
   handleInspectionEvent,
+  handleBotInspectionEvent,
   handleNewSignupEvent,
   handleKYCEvent,
 } from "./notifications.js"
@@ -18,12 +19,14 @@ app.post("/webhook", handleWebhook)
 
 // ── Supabase Database Webhook events ───────────────────────────────────────
 // Set these as webhooks in Supabase → Database → Webhooks
-//   /events/inspection  → table: enquiries, events: UPDATE
-//   /events/signup      → table: tenants,   events: INSERT
-//   /events/kyc         → table: landlords,  events: INSERT | UPDATE (status=pending)
-app.post("/events/inspection", handleInspectionEvent)
-app.post("/events/signup",     handleNewSignupEvent)
-app.post("/events/kyc",        handleKYCEvent)
+//   /events/inspection     → table: enquiries,               events: UPDATE
+//   /events/bot-inspection → table: bot_inspection_requests, events: UPDATE
+//   /events/signup         → table: tenants,                 events: INSERT
+//   /events/kyc            → table: landlords,               events: INSERT | UPDATE (status=pending)
+app.post("/events/inspection",     handleInspectionEvent)
+app.post("/events/bot-inspection", handleBotInspectionEvent)
+app.post("/events/signup",         handleNewSignupEvent)
+app.post("/events/kyc",            handleKYCEvent)
 
 // ── Health check ───────────────────────────────────────────────────────────
 app.get("/", (_, res) =>
