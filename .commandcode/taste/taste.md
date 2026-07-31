@@ -1,7 +1,12 @@
 # Taste
 
-- Treats AI claiming a completed action (e.g., "inspection booked") as a bug when no real tool call or database write happened — AI should perform actions via real tools, not role-play them in text. Confidence: 0.8
-- Wants chatbots/product AI grounded in accurate, complete company facts sourced from the actual product (site pages, docs, repo), not generic or stale prompt content. Confidence: 0.8
-- Wants backend integrations fully wired to the real data store (e.g., Supabase) — silent in-memory fallbacks that lose data on restart are considered "not fully linked" and unacceptable. Confidence: 0.8
-- Wants graceful, fallback-able handling of upstream provider failures (e.g., HTML/WAF challenge pages returned with 2xx) instead of cryptic 500/JSON.parse crashes. Confidence: 0.7
-- Prefers pointing the assistant at the live repo URL ("check here") so work is based on real code, not pasted transcript fragments. Confidence: 0.6
+## AI / bot behavior
+- Wants an AI assistant's claims to be backed by real actions: if the bot says it booked/scheduled something, it must actually write to the database via a real tool call — text-only role-play of completed actions is a bug. Confidence: 0.8
+- Wants the bot to have complete, accurate company knowledge in its system prompt — mined from real company sources (site pages, docs), not generic or stale content. Confidence: 0.8
+- Wants the bot to "handle responses well": graceful, fallback-able handling of upstream AI provider failures (non-JSON/HTML/WAF pages with 2xx status) instead of cryptic JSON.parse crashes or 500s. Confidence: 0.8
+
+## Backend / data
+- Wants integrations fully linked to the real backend (e.g., Supabase): committed schema/migrations for every table the code depends on — in-memory fallbacks that silently lose data on restart are not acceptable. Confidence: 0.8
+
+## Workflow
+- Prefers the assistant to work from the actual live repo (points to GitHub URL) rather than relying on pasted transcript fragments. Confidence: 0.6
