@@ -363,7 +363,10 @@ export default function ChatWidget() {
   }
 
   function startConversation() {
-    triggerLiveSupport()
+    // Intercom-style: entering the chat view brings the composer up
+    // immediately. Live support (name/email form) is one tap away via the
+    // "Live Support" chip — it's not what the primary CTA should block on.
+    setView('chat')
   }
 
   function browseHelp() {
