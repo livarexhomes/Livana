@@ -46,6 +46,7 @@ interface ChatInquiry {
   name: string
   note: string
   phone: string | null
+  email: string | null
   visitor_id: string | null
   read_by_admin: boolean
   status: 'open' | 'replied' | 'closed'
@@ -571,13 +572,16 @@ function ChatRequestDetail({ inquiry, onBack, onMarkRead, onStatusChange }: {
   const [input, setInput]         = useState('')
   const [sending, setSending]     = useState(false)
   const [updating, setUpdating]   = useState(false)
+  const [visitorTyping, setVisitorTyping] = useState(false)
   const bottomRef = useRef<HTMLDivElement>(null)
+  const visitorTypingTimer = useRef<number | null>(null)
+  const typingSentAt = useRef(0)
 
   const s = ENQUIRY_STATUS_META[inquiry.status]
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [messages])
+  }, [messages, visitorTyping])
 
   useEffect(() => {
     const supabase = createClient()
@@ -596,14 +600,36 @@ function ChatRequestDetail({ inquiry, onBack, onMarkRead, onStatusChange }: {
         (payload) => {
           setMessages(prev => prev.find(m => m.id === payload.new.id) ? prev : [...prev, payload.new as ChatMessage])
         })
+      .on('broadcast', { event: 'typing' }, ({ payload }) => {
+        if (payload?.sender === 'visitor') {
+          setVisitorTyping(true)
+          if (visitorTypingTimer.current) window.clearTimeout(visitorTypingTimer.current)
+          visitorTypingTimer.current = window.setTimeout(() => setVisitorTyping(false), 2500)
+        }
+      })
       .subscribe()
 
     // Opening the thread marks it as read
     supabase.from('chat_inquiries').update({ read_by_admin: true }).eq('id', inquiry.id)
     onMarkRead(inquiry.id)
 
-    return () => { supabase.removeChannel(channel) }
+    return () => {
+      supabase.removeChannel(channel)
+      if (visitorTypingTimer.current) window.clearTimeout(visitorTypingTimer.current)
+    }
   }, [inquiry.id])
+
+  /** Broadcast "typing" to the visitor (throttled to ~1.5s). */
+  function broadcastTyping() {
+    if (!inquiry.id) return
+    const now = Date.now()
+    if (now - typingSentAt.current < 1500) return
+    typingSentAt.current = now
+    const supabase = createClient()
+    supabase.channel(`admin_chat_inquiry:${inquiry.id}`)
+      .send({ type: 'broadcast', event: 'typing', payload: { sender: 'admin' } })
+      .catch(() => { /* best-effort */ })
+  }
 
   async function sendReply(e: React.FormEvent) {
     e.preventDefault()
@@ -652,6 +678,7 @@ function ChatRequestDetail({ inquiry, onBack, onMarkRead, onStatusChange }: {
             </span>
           </div>
           <p className="text-xs text-gray-400 mt-0.5">
+            {inquiry.email && <span>{inquiry.email} · </span>}
             {inquiry.phone && <span>{inquiry.phone} · </span>}
             {format(new Date(inquiry.created_at), 'dd MMM yyyy, h:mm a')}
           </p>
@@ -724,16 +751,24 @@ function ChatRequestDetail({ inquiry, onBack, onMarkRead, onStatusChange }: {
 
       {/* Reply input */}
       {inquiry.status !== 'closed' ? (
-        <form onSubmit={sendReply} className="px-4 py-3 border-t border-gray-100 flex items-end gap-2 shrink-0">
-          <textarea rows={1} value={input} onChange={e => setInput(e.target.value)}
-            onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendReply(e as any) } }}
-            placeholder={`Reply to ${inquiry.name}… (Enter to send)`}
-            className="flex-1 px-4 py-2.5 rounded-xl border border-gray-200 text-sm bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all resize-none" />
-          <button type="submit" disabled={!input.trim() || sending}
-            className="w-10 h-10 rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-40 text-white flex items-center justify-center transition-all shrink-0">
-            {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-          </button>
-        </form>
+        <>
+          {visitorTyping && (
+            <div className="px-5 pb-1 flex items-center gap-1.5 text-[11px] text-emerald-700">
+              <span className="inline-block size-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              {inquiry.name} is typing…
+            </div>
+          )}
+          <form onSubmit={sendReply} className="px-4 py-3 border-t border-gray-100 flex items-end gap-2 shrink-0">
+            <textarea rows={1} value={input} onChange={e => { setInput(e.target.value); broadcastTyping() }}
+              onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendReply(e as any) } }}
+              placeholder={`Reply to ${inquiry.name}… (Enter to send)`}
+              className="flex-1 px-4 py-2.5 rounded-xl border border-gray-200 text-sm bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all resize-none" />
+            <button type="submit" disabled={!input.trim() || sending}
+              className="w-10 h-10 rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-40 text-white flex items-center justify-center transition-all shrink-0">
+              {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+            </button>
+          </form>
+        </>
       ) : (
         <div className="px-5 py-3 border-t border-gray-100 text-center text-xs text-gray-400 shrink-0">
           This request is closed. Change status to reopen.
@@ -980,7 +1015,7 @@ function toChatItem(c: ChatInquiry): InboxItem {
     id: c.id,
     type: 'chat',
     name: c.name,
-    subtitle: c.phone ?? 'Web chat',
+    subtitle: c.email ?? c.phone ?? 'Web chat',
     body: c.note,
     status: c.status,
     unread: !c.read_by_admin,

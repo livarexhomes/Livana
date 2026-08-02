@@ -284,6 +284,7 @@ export interface Database {
           name: string
           note: string
           phone: string | null
+          email: string | null
           visitor_id: string | null
           read_by_admin: boolean
           status: 'open' | 'replied' | 'closed'
@@ -295,6 +296,7 @@ export interface Database {
           name: string
           note: string
           phone?: string | null
+          email?: string | null
           visitor_id?: string | null
           read_by_admin?: boolean
           status?: 'open' | 'replied' | 'closed'
@@ -306,6 +308,7 @@ export interface Database {
           name?: string
           note?: string
           phone?: string | null
+          email?: string | null
           visitor_id?: string | null
           read_by_admin?: boolean
           status?: 'open' | 'replied' | 'closed'

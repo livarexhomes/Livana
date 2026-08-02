@@ -116,9 +116,10 @@ export default function AdminHeader({ title, subtitle, action, pendingCount = 0 
   useEffect(() => {
     loadNotifs()
 
+    const supabase = createClient()
+
     // Realtime: re-fetch on new enquiries, support tickets, tenants, landlords,
     // contact messages, chat inquiries, or properties.
-    const supabase = createClient()
     const channel = supabase
       .channel('admin-notif-watch')
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'enquiries' }, loadNotifs)
@@ -131,7 +132,23 @@ export default function AdminHeader({ title, subtitle, action, pendingCount = 0 
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'properties' }, loadNotifs)
       .subscribe()
 
-    return () => { supabase.removeChannel(channel) }
+    // Presence: while this admin is on the dashboard, mark them online for the
+    // website chat widget (live support availability). The presence state is
+    // shared via the Realtime presence channel.
+    const presence = supabase.channel('livarex-admin-presence')
+    presence
+      .on('presence', { event: 'sync' }, () => { /* other admins' presence syncs */ })
+      .subscribe(async (status) => {
+        if (status === 'SUBSCRIBED') {
+          try {
+            await presence.track({ role: 'admin', online_at: new Date().toISOString() })
+          } catch (err) {
+            console.warn('[AdminHeader] presence track failed:', err)
+          }
+        }
+      })
+
+    return () => { supabase.removeChannel(channel); supabase.removeChannel(presence) }
   }, [])
 
   function relAgo(ts: string) {

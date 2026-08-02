@@ -17,6 +17,7 @@ CREATE TABLE IF NOT EXISTS chat_inquiries (
 -- Upgrade existing tables that predate the two-way chat columns
 ALTER TABLE chat_inquiries ADD COLUMN IF NOT EXISTS visitor_id UUID;
 ALTER TABLE chat_inquiries ADD COLUMN IF NOT EXISTS read_by_admin BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE chat_inquiries ADD COLUMN IF NOT EXISTS email TEXT;
 
 -- Auto-update updated_at on every row change
 CREATE OR REPLACE FUNCTION update_chat_inquiries_updated_at()
