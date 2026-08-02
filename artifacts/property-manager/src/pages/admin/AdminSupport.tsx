@@ -1091,56 +1091,57 @@ function InboxTab() {
     <div className="flex flex-1 overflow-hidden gap-3">
       {/* Inbox queue */}
       <div className={`flex flex-col rounded-xl border border-slate-200 bg-white w-full lg:w-64 xl:w-72 shrink-0 overflow-hidden shadow-[0_1px_2px_rgba(15,23,42,0.04)] ${selected ? 'hidden lg:flex' : 'flex'}`}>
-        <div className="px-3.5 pt-3 pb-2.5 border-b border-slate-100">
-          <div className="flex items-baseline justify-between gap-2">
-            <div className="min-w-0">
-              <p className="text-[9px] uppercase tracking-[0.22em] text-slate-400 font-bold">Inbox queue</p>
-              <h2 className="mt-0.5 text-[15px] font-bold text-slate-950 leading-tight tracking-tight">Enquiries & chat</h2>
-            </div>
-            <div className="shrink-0 text-right">
-              <p className="text-[9px] uppercase tracking-[0.18em] text-slate-400 font-bold">Total</p>
-              <p className="mt-0.5 text-[15px] font-bold text-slate-900 leading-tight tabular-nums">{items.length}</p>
-            </div>
+        <div className="px-3.5 pt-2.5 pb-2 border-b border-slate-100">
+          {/* Header — single line: title + total */}
+          <div className="flex items-center justify-between gap-2">
+            <h2 className="text-[14px] font-bold text-slate-950 leading-tight tracking-tight">Inbox <span className="text-slate-400 font-semibold">({items.length})</span></h2>
+            <span className="text-[10px] uppercase tracking-[0.14em] text-slate-400 font-bold">Enquiries &amp; Chats</span>
           </div>
 
           {/* Type filters */}
-          <div className="mt-2.5 flex items-center gap-1.5 flex-wrap">
-            {(['all', 'enquiry', 'chat', 'contact'] as const).map(key => {
-              const active = filterType === key
-              return (
-                <button key={key} onClick={() => setFilterType(key)}
-                  className={`inline-flex items-center gap-1.5 h-6 px-2.5 rounded-lg text-[11px] font-semibold border transition-all ${
-                    active
-                      ? 'bg-blue-600 text-white border-blue-600 shadow-sm shadow-blue-600/20'
-                      : 'bg-white text-slate-500 border-slate-200 hover:border-slate-300 hover:bg-slate-50 hover:text-slate-700'
-                  }`}>
-                  {key === 'all' ? 'All' : key === 'enquiry' ? 'Enquiries' : key === 'chat' ? 'Chat' : 'Contact'}
-                  <span className={`min-w-[15px] inline-flex items-center justify-center h-[15px] px-1 rounded text-[9px] font-bold tabular-nums ${
-                    active ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-500'
-                  }`}>{typeCounts[key]}</span>
-                </button>
-              )
-            })}
+          <div className="mt-2 flex items-center gap-1.5">
+            <span className="shrink-0 text-[9px] uppercase tracking-[0.14em] text-slate-400 font-bold w-8">Type</span>
+            <div className="flex items-center gap-1 flex-wrap min-w-0">
+              {(['all', 'enquiry', 'chat', 'contact'] as const).map(key => {
+                const active = filterType === key
+                return (
+                  <button key={key} onClick={() => setFilterType(key)}
+                    className={`inline-flex items-center gap-1 h-6 px-2 rounded-md text-[11px] font-semibold border transition-all ${
+                      active
+                        ? 'bg-blue-600 text-white border-blue-600 shadow-sm shadow-blue-600/20'
+                        : 'bg-white text-slate-500 border-slate-200 hover:border-slate-300 hover:bg-slate-50 hover:text-slate-700'
+                    }`}>
+                    {key === 'all' ? 'All' : key === 'enquiry' ? 'Enquiries' : key === 'chat' ? 'Chat' : 'Contact'}
+                    <span className={`min-w-[14px] inline-flex items-center justify-center h-[14px] px-0.5 rounded text-[9px] font-bold tabular-nums ${
+                      active ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-500'
+                    }`}>{typeCounts[key]}</span>
+                  </button>
+                )
+              })}
+            </div>
           </div>
 
           {/* Status filters */}
-          <div className="mt-1.5 flex items-center gap-1.5 flex-wrap">
-            {(['all', 'open', 'replied', 'closed'] as const).map(key => {
-              const active = filterStatus === key
-              return (
-                <button key={key} onClick={() => setFilterStatus(key)}
-                  className={`inline-flex items-center gap-1.5 h-6 px-2.5 rounded-lg text-[11px] font-semibold border transition-all ${
-                    active
-                      ? 'bg-slate-900 text-white border-slate-900 shadow-sm'
-                      : 'bg-white text-slate-500 border-slate-200 hover:border-slate-300 hover:bg-slate-50 hover:text-slate-700'
-                  }`}>
-                  {key === 'all' ? 'All' : ENQUIRY_STATUS_META[key].label}
-                  <span className={`min-w-[15px] inline-flex items-center justify-center h-[15px] px-1 rounded text-[9px] font-bold tabular-nums ${
-                    active ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-500'
-                  }`}>{counts[key]}</span>
-                </button>
-              )
-            })}
+          <div className="mt-1.5 flex items-center gap-1.5">
+            <span className="shrink-0 text-[9px] uppercase tracking-[0.14em] text-slate-400 font-bold w-8">Status</span>
+            <div className="flex items-center gap-1 flex-wrap min-w-0">
+              {(['all', 'open', 'replied', 'closed'] as const).map(key => {
+                const active = filterStatus === key
+                return (
+                  <button key={key} onClick={() => setFilterStatus(key)}
+                    className={`inline-flex items-center gap-1 h-6 px-2 rounded-md text-[11px] font-semibold border transition-all ${
+                      active
+                        ? 'bg-slate-900 text-white border-slate-900 shadow-sm'
+                        : 'bg-white text-slate-500 border-slate-200 hover:border-slate-300 hover:bg-slate-50 hover:text-slate-700'
+                    }`}>
+                    {key === 'all' ? 'All' : ENQUIRY_STATUS_META[key].label}
+                    <span className={`min-w-[14px] inline-flex items-center justify-center h-[14px] px-0.5 rounded text-[9px] font-bold tabular-nums ${
+                      active ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-500'
+                    }`}>{counts[key]}</span>
+                  </button>
+                )
+              })}
+            </div>
           </div>
         </div>
 
