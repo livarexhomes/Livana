@@ -48,4 +48,5 @@ ective, Current Issues, Improvements, Goal) rather than terse verbal directions.
 
  tiny uppercase labels (e.g., "Type"/"Status") in fixed-width columns with uniform compact pill sizing and per-group active colors (e.g., blue primary for one group, slate-900 for the other), rather than large headings or visually identical groups. Confidence: 0.7
 - Prefers to hand the AI builder structured, professional written specs for UI work (Page, Objective, Current Issues, Improvements, Goal) rather than terse verbal directions. Confidence: 0.4
+- Wants public-facing floating UI (e.g., the chat widget) to appear ONLY on public marketing pages and to be completely hidden inside all authenticated dashboards (`/admin/*`, `/landlord/*`, `/user/*`, `/dashboard/*`) — dashboard users already have dedicated support/messaging features, and the floating widget overlaps important interface elements (e.g., the message composer/send button). Visibility should be route-detected inside the globally-mounted widget itself so no other component needs changes. Confidence: 0.8
 

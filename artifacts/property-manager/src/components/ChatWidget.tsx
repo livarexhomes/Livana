@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, type ReactNode } from 'react'
 import { X, Send, MessageSquare, Paperclip, ChevronDown, User, LayoutGrid, Check } from 'lucide-react'
+import { useLocation } from '../lib/navigation'
 import { createClient, isSupabaseConfigured } from '../lib/supabase'
 import { getPlatformSettings, getNotificationSettings, phoneToWaLink } from '../lib/platform-settings'
 
@@ -112,6 +113,8 @@ function formatInline(text: string): ReactNode[] {
 // ── Component ─────────────────────────────────────────────────────────────────
 
 export default function ChatWidget() {
+  const [location] = useLocation()
+
   const [open, setOpen]             = useState(false)
   const [messages, setMessages]     = useState<Message[]>([])
   const [input, setInput]           = useState('')
@@ -398,6 +401,17 @@ export default function ChatWidget() {
   }
 
   const canSend = (input.trim().length > 0 || !!pendingImg) && !loading
+
+  // The floating chat widget is for website visitors only. Hide it inside all
+  // authenticated dashboards so it never overlaps admin/landlord/user UI.
+  const path = (location || '').split('?')[0]
+  const isDashboardRoute =
+    path.startsWith('/admin') ||
+    path.startsWith('/landlord') ||
+    path.startsWith('/user') ||
+    path.startsWith('/dashboard')
+
+  if (isDashboardRoute) return null
 
   // ── Render ────────────────────────────────────────────────────────────────────
   return (
