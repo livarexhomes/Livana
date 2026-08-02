@@ -552,6 +552,11 @@ export default function ChatWidget() {
 
   const canSend = (input.trim().length > 0 || !!pendingImg) && !loading
 
+  // A "live" conversation is any actual exchange: a live agent thread, or AI
+  // bot messages. Until one exists, only the welcome screen with its single
+  // "Start Conversation" CTA is shown — no composer, no attachment, no send.
+  const hasActiveChat = !!inquiryId || messages.length > 0
+
   // The floating chat widget is for website visitors only. Hide it inside all
   // authenticated dashboards so it never overlaps admin/landlord/user UI.
   const path = (location || '').split('?')[0]
@@ -1094,7 +1099,7 @@ export default function ChatWidget() {
         </div>
 
         {/* ── Pending attachment preview ──────────────────────────────────────── */}
-        {pendingImg && (
+        {hasActiveChat && pendingImg && (
           <div className="flex shrink-0 items-center gap-2 border-t border-border/60 bg-muted/40 px-3.5 py-2">
             <div className="relative">
               <img src={pendingImg.url} alt="preview" className="size-12 rounded-lg border border-border object-cover" />
@@ -1108,7 +1113,8 @@ export default function ChatWidget() {
           </div>
         )}
 
-        {/* ── Composer ────────────────────────────────────────────────────────── */}
+        {/* ── Composer (only once a conversation is active) ──────────────────── */}
+        {hasActiveChat && (
         <div className="cw-input-bar flex shrink-0 items-center gap-2 border-t border-border/60 bg-card px-3 py-2.5">
           {/* Attach (bot mode only) */}
           {!inquiryId && (
@@ -1182,6 +1188,7 @@ export default function ChatWidget() {
             </>
           )}
         </div>
+        )}
       </div>
 
       {/* ── Toggle button ─────────────────────────────────────────────────────── */}
