@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, type ReactNode } from 'react'
-import { X, Send, MessageSquare, Paperclip, ChevronDown, User, LayoutGrid, Check } from 'lucide-react'
-import { useLocation } from '../lib/navigation'
+import { X, Send, MessageSquare, Paperclip, ChevronDown, User, Check, ArrowRight } from 'lucide-react'
+import { useLocation, redirect } from '../lib/navigation'
 import { createClient, isSupabaseConfigured } from '../lib/supabase'
 import { getPlatformSettings, getNotificationSettings, phoneToWaLink } from '../lib/platform-settings'
 
@@ -13,6 +13,7 @@ type ContentBlock =
 interface Message {
   role: 'user' | 'assistant'
   content: ContentBlock[]
+  time?: number
 }
 
 interface AgentMessage {
@@ -29,13 +30,13 @@ const CHAT_API_URL = import.meta.env.VITE_CHAT_API_URL
   ? `${import.meta.env.VITE_CHAT_API_URL}/api/chat`
   : '/api/chat'
 
-// ── Quick action cards shown inline after welcome ─────────────────────────────
+// ── Quick action chips shown above the composer ───────────────────────────────
 
 const ACTIONS = [
-  { icon: '🏠', title: 'Find a home',       sub: 'Browse verified rentals', msg: 'Show me available verified rentals in Lagos and Ogun.' },
-  { icon: '📅', title: 'Book inspection',   sub: 'Schedule a viewing',      msg: 'I want to book a property inspection. How do I do that?' },
-  { icon: '🏢', title: 'List my property',  sub: 'Become a landlord',       msg: 'I am a landlord and want to list my property on Livarex.' },
-  { icon: '👤', title: 'Talk to Agent',     sub: 'Get human support',       msg: null },
+  { icon: '🏠', title: 'Find a Property', msg: 'Show me available verified rentals in Lagos and Ogun.' },
+  { icon: '📅', title: 'Book an Inspection', msg: 'I want to book a property inspection. How do I do that?' },
+  { icon: '🏢', title: 'List My Property', msg: 'I am a landlord and want to list my property on Livarex.' },
+  { icon: '👤', title: 'Talk to an Agent', msg: null },
 ]
 
 const ESCALATION_KEYWORDS = [
@@ -56,6 +57,11 @@ function fileToBase64(file: File): Promise<{ data: string; mediaType: string }> 
     r.onerror = reject
     r.readAsDataURL(file)
   })
+}
+
+function formatTime(ts?: number) {
+  if (!ts) return ''
+  return new Date(ts).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
 }
 
 /**
@@ -121,8 +127,8 @@ export default function ChatWidget() {
   const [loading, setLoading]       = useState(false)
   const [unread, setUnread]         = useState(false)
   const [pendingImg, setPendingImg] = useState<{ url: string; data: string; mediaType: string } | null>(null)
-  const [actionsUsed, setActionsUsed] = useState(false)
-  const [showMenu, setShowMenu] = useState(false)
+  const [view, setView]             = useState<'welcome' | 'chat'>('welcome')
+  const [launcherDismissed, setLauncherDismissed] = useState(false)
 
   // Admin phone (from Settings) used for the header WhatsApp link + fallbacks.
   const [waHref, setWaHref] = useState('https://wa.me/2347061370742?text=Hello%20Livarex!')
@@ -155,15 +161,16 @@ export default function ChatWidget() {
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [messages, loading, open])
+  }, [messages, loading, open, agentThread, agentThreadLoading])
 
   useEffect(() => {
     if (open) {
       setUnread(false)
       setAgentUnread(false)
-      setTimeout(() => inputRef.current?.focus(), 220)
+      // If nothing happened yet, keep the welcome view; else focus the composer.
+      if (view === 'chat') setTimeout(() => inputRef.current?.focus(), 250)
     }
-  }, [open])
+  }, [open, view])
 
   // ── Anonymous sign-in + restore any active agent thread ─────────────────────
   useEffect(() => {
@@ -189,6 +196,7 @@ export default function ChatWidget() {
         setInquiryId(inquiries[0].id)
         setShowAgentForm(false)
         setAgentSubmitted(true)
+        setView('chat')
       }
     })
   }, [])
@@ -235,9 +243,19 @@ export default function ChatWidget() {
   }
 
   // ── Agent form ────────────────────────────────────────────────────────────────
+  function startConversation() {
+    setLauncherDismissed(true)
+    setView('chat')
+    setShowAgentForm(true)
+  }
+
+  function browseHelp() {
+    setLauncherDismissed(true)
+    setOpen(false)
+    redirect('/contact')
+  }
+
   function triggerAgentForm() {
-    setActionsUsed(true)
-    setShowMenu(false)
     setShowAgentForm(true)
   }
 
@@ -335,14 +353,13 @@ export default function ChatWidget() {
   // ── Send ──────────────────────────────────────────────────────────────────────
   async function sendMessage(text: string, img: typeof pendingImg) {
     if (!text.trim() && !img) return
-    setActionsUsed(true)
-    setShowMenu(false)
+    setView('chat')
 
     const userContent: ContentBlock[] = []
     if (img) userContent.push({ type: 'image_url', url: img.url, mediaType: img.mediaType, data: img.data })
     if (text.trim()) userContent.push({ type: 'text', text: text.trim() })
 
-    const userMsg: Message = { role: 'user', content: userContent }
+    const userMsg: Message = { role: 'user', content: userContent, time: Date.now() }
     const next = [...messages, userMsg]
     setMessages(next)
     setPendingImg(null)
@@ -368,6 +385,7 @@ export default function ChatWidget() {
       setMessages(m => [...m, {
         role: 'assistant',
         content: [{ type: 'text', text: reply }],
+        time: Date.now(),
       }])
       if (!open) setUnread(true)
       // If bot is escalating to human, auto-show the form
@@ -379,11 +397,13 @@ export default function ChatWidget() {
         setMessages(m => [...m, {
           role: 'assistant',
           content: [{ type: 'text', text: `Connection issue. Reach us on WhatsApp: ${s.phone}.` }],
+          time: Date.now(),
         }])
       }).catch(() => {
         setMessages(m => [...m, {
           role: 'assistant',
           content: [{ type: 'text', text: 'Connection issue. Reach us on WhatsApp: +234 800 548 2621.' }],
+          time: Date.now(),
         }])
       })
     } finally {
@@ -423,34 +443,51 @@ export default function ChatWidget() {
           30%          { transform:translateY(-5px); }
         }
         @keyframes cwPulse {
-          0%  { transform:scale(1);   opacity:0.5; }
-          70% { transform:scale(1.8); opacity:0;   }
-          100%{ transform:scale(1.8); opacity:0;   }
+          0%  { transform:scale(1);   opacity:0.6; }
+          70% { transform:scale(1.7); opacity:0;   }
+          100%{ transform:scale(1.7); opacity:0;   }
         }
         @keyframes cwFadeUp {
           from { opacity:0; transform:translateY(8px); }
           to   { opacity:1; transform:translateY(0);   }
         }
+        @keyframes cwPop {
+          from { opacity:0; transform:scale(0.92) translateY(10px); }
+          to   { opacity:1; transform:scale(1) translateY(0); }
+        }
 
         /* ── Panel ── */
         .cw-panel {
-          position:fixed; bottom:calc(72px + env(safe-area-inset-bottom)); right:18px; z-index:9999;
-          width:380px; height:560px; max-height:calc(100dvh - 96px);
+          position:fixed; bottom:calc(84px + env(safe-area-inset-bottom)); right:18px; z-index:9999;
+          width:400px; height:580px; max-height:calc(100dvh - 110px);
           display:flex; flex-direction:column;
-          border-radius:16px; overflow:hidden;
+          border-radius:20px; overflow:hidden;
           background:hsl(var(--background));
-          box-shadow:0 24px 64px rgba(2,6,23,0.2),0 4px 16px rgba(2,6,23,0.08);
+          border:1px solid hsl(var(--border) / 0.8);
+          box-shadow:0 24px 70px rgba(2,6,23,0.22),0 4px 18px rgba(2,6,23,0.08);
           transform-origin:bottom right;
-          transition:transform 0.28s cubic-bezier(0.34,1.56,0.64,1),opacity 0.18s ease;
+          transition:transform 0.28s cubic-bezier(0.34,1.56,0.64,1),opacity 0.2s ease;
         }
         .cw-panel.open   { transform:scale(1) translateY(0);     opacity:1; pointer-events:auto;  }
-        .cw-panel.closed { transform:scale(0.86) translateY(18px); opacity:0; pointer-events:none; }
+        .cw-panel.closed { transform:scale(0.9) translateY(24px); opacity:0; pointer-events:none; }
+
+        /* ── Launcher card (closed state) ── */
+        .cw-launcher {
+          position:fixed; bottom:calc(84px + env(safe-area-inset-bottom)); right:18px; z-index:9998;
+          width:300px; max-width:calc(100vw - 36px);
+          background:hsl(var(--card)); border:1px solid hsl(var(--border));
+          border-radius:16px; box-shadow:0 16px 48px rgba(2,6,23,0.16);
+          padding:14px 16px; cursor:pointer;
+          animation:cwPop 0.3s cubic-bezier(0.34,1.56,0.64,1) both;
+          transition:transform 0.15s ease, box-shadow 0.15s ease;
+        }
+        .cw-launcher:hover { transform:translateY(-2px); box-shadow:0 20px 54px rgba(2,6,23,0.2); }
 
         /* ── Mobile bottom sheet ── */
         @media(max-width:640px){
           .cw-panel {
-            left:0;right:0;bottom:0;width:100%;height:92dvh;max-height:none;
-            border-radius:16px 16px 0 0;
+            left:0;right:0;bottom:0;width:100%;height:94dvh;max-height:none;
+            border-radius:20px 20px 0 0; border-bottom:none;
             transform-origin:bottom center;
           }
           .cw-panel.open   { transform:translateY(0);    opacity:1; pointer-events:auto; }
@@ -473,14 +510,15 @@ export default function ChatWidget() {
         /* ── Toggle button ── */
         .cw-toggle {
           position:fixed; bottom:calc(18px + env(safe-area-inset-bottom)); right:calc(18px + env(safe-area-inset-right)); z-index:9999;
-          width:52px; height:52px; border-radius:50%;
-          background:hsl(var(--primary)); border:none; cursor:pointer;
+          width:54px; height:54px; border-radius:50%;
+          background:linear-gradient(135deg,hsl(var(--primary)),hsl(var(--primary) / 0.85));
+          border:none; cursor:pointer;
           display:flex; align-items:center; justify-content:center;
-          box-shadow:0 6px 20px hsl(var(--primary) / 0.45);
+          box-shadow:0 8px 24px hsl(var(--primary) / 0.4);
           transition:transform 0.2s ease, background 0.2s;
         }
-        .cw-toggle.open { background:hsl(var(--primary) / 0.9); transform:rotate(8deg) scale(0.94); }
-        .cw-toggle:not(.open):hover { transform:scale(1.08); }
+        .cw-toggle.open { transform:rotate(90deg) scale(0.94); }
+        .cw-toggle:not(.open):hover { transform:scale(1.07); }
         .cw-toggle:focus-visible { outline:2px solid hsl(var(--ring)); outline-offset:3px; }
 
         /* ── Messages scroll ── */
@@ -488,24 +526,55 @@ export default function ChatWidget() {
         .cw-scroll::-webkit-scrollbar { width:5px; }
         .cw-scroll::-webkit-scrollbar-thumb { background:hsl(var(--border)); border-radius:5px; }
 
-        /* ── Action card hover ── */
-        .cw-action:hover { border-color:hsl(var(--primary)) !important; background:hsl(var(--primary) / 0.06) !important; }
-        .cw-action:hover .cw-action-title { color:hsl(var(--primary)) !important; }
+        /* ── Action chip hover ── */
+        .cw-chip:hover { border-color:hsl(var(--primary) / 0.5) !important; background:hsl(var(--primary) / 0.06) !important; }
+        .cw-chip:hover .cw-chip-title { color:hsl(var(--primary)) !important; }
 
         /* ── Input focus ── */
-        .cw-input:focus { box-shadow:0 0 0 2px hsl(var(--ring) / 0.25); }
+        .cw-input:focus { box-shadow:0 0 0 2px hsl(var(--ring) / 0.25); border-color:hsl(var(--ring) / 0.5) !important; }
 
         /* ── Reduced motion ── */
         @media (prefers-reduced-motion: reduce) {
-          .cw-panel, .cw-toggle { transition-duration:0.001s; }
+          .cw-panel, .cw-toggle, .cw-launcher { transition-duration:0.001s; }
           .cw-panel.open, .cw-panel.closed { transform:none; }
           [class*='cw-'] { animation:none !important; }
         }
       `}</style>
 
+      {/* ── Launcher welcome card (closed, not yet interacted) ─────────────── */}
+      {!open && !launcherDismissed && (
+        <div
+          className="cw-launcher"
+          role="button"
+          tabIndex={0}
+          aria-label="Open chat — hi there, need help finding a property?"
+          onClick={() => { setLauncherDismissed(true); setOpen(true) }}
+          onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setLauncherDismissed(true); setOpen(true) } }}
+        >
+          <div className="flex items-start gap-2.5">
+            <Avatar small />
+            <div className="min-w-0 flex-1">
+              <p className="text-[13px] font-bold text-card-foreground leading-snug">Hi there! 👋</p>
+              <p className="mt-0.5 text-[12px] text-muted-foreground leading-snug">Need help finding a property?</p>
+              <div className="mt-1.5 flex items-center gap-1 text-[11px] font-semibold text-primary">
+                Chat with us <ArrowRight size={12} />
+              </div>
+            </div>
+            <button
+              onClick={(e) => { e.stopPropagation(); setLauncherDismissed(true) }}
+              aria-label="Dismiss"
+              className="shrink-0 grid size-5 place-items-center rounded-md text-muted-foreground hover:bg-muted transition-colors"
+            >
+              <X size={12} />
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* ── Chat panel ────────────────────────────────────────────────────────── */}
       <div className={`cw-panel ${open ? 'open' : 'closed'}`}
-        role="dialog" aria-label="Livarex AI chat">
+        role="dialog" aria-label="Livarex support chat"
+        aria-hidden={!open}>
 
         {/* Drag handle (mobile only) */}
         <div className="cw-handle" style={{
@@ -516,46 +585,35 @@ export default function ChatWidget() {
         </div>
 
         {/* ── Header ──────────────────────────────────────────────────────────── */}
-        <div className="relative shrink-0 flex items-center gap-3 px-4 py-3.5 overflow-hidden"
+        <div className="relative shrink-0 flex items-center gap-3 px-4 py-3 overflow-hidden"
           style={{
-            background:'linear-gradient(160deg,hsl(var(--sidebar-primary) / 0.95) 0%, hsl(var(--primary) / 0.85) 100%)',
+            background:'linear-gradient(160deg,hsl(var(--sidebar-primary) / 0.96) 0%, hsl(var(--primary) / 0.88) 100%)',
           }}>
+          <div className="absolute inset-0 opacity-[0.05]" style={{ backgroundImage:'radial-gradient(circle at 1px 1px, white 1px, transparent 0)', backgroundSize:'22px 22px' }} aria-hidden />
+
           {/* Avatar */}
           <div className="relative shrink-0 flex items-center justify-center size-10 rounded-full text-[15px] font-black text-white"
-            style={{ background:'linear-gradient(135deg,#3b82f6,#6366f1)', boxShadow:'0 0 0 3px rgba(255,255,255,0.15)' }}>
+            style={{ background:'linear-gradient(135deg,#3b82f6,#6366f1)', boxShadow:'0 0 0 3px rgba(255,255,255,0.18)' }}>
             L
             <span className="absolute -bottom-0.5 -right-0.5 size-3 rounded-full border-2 border-white bg-emerald-400" aria-hidden />
           </div>
 
           {/* Name + status */}
           <div className="min-w-0 flex-1 text-white">
-            <div className="truncate text-[14px] font-bold tracking-[-0.01em]">Livarex AI</div>
-            <div className="mt-0.5 flex items-center gap-1.5 text-[11px] text-white/70">
+            <div className="truncate text-[14px] font-bold tracking-[-0.01em]">Livarex Support</div>
+            <div className="mt-0.5 flex items-center gap-1.5 text-[11px] text-white/75">
               <span className="inline-block size-1.5 rounded-full bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.9)]" aria-hidden />
-              Online · Property assistant
+              Online now · replies in ~5 min
             </div>
           </div>
-
-          {/* Menu button — only visible once a conversation has started */}
-          {actionsUsed && (
-            <button
-              onClick={() => setShowMenu(v => !v)}
-              title="Show menu"
-              aria-label="Show menu"
-              className="grid size-8 shrink-0 place-items-center rounded-lg border-none text-white/65 transition-colors cursor-pointer focus-visible:outline-2 focus-visible:outline-white/70 hover:bg-white/15"
-              style={{ background: showMenu ? 'rgba(255,255,255,0.22)' : 'rgba(255,255,255,0.08)' }}
-            >
-              <LayoutGrid size={14} />
-            </button>
-          )}
 
           {/* WhatsApp */}
           <a href={waHref}
             target="_blank" rel="noopener noreferrer"
             title="Continue on WhatsApp"
             aria-label="Continue on WhatsApp"
-            className="grid size-8 shrink-0 place-items-center rounded-lg text-white/65 transition-colors hover:bg-white/15 focus-visible:outline-2 focus-visible:outline-white/70"
-            style={{ background:'rgba(255,255,255,0.08)' }}
+            className="grid size-8 shrink-0 place-items-center rounded-lg text-white/70 transition-colors hover:bg-white/15 focus-visible:outline-2 focus-visible:outline-white/70"
+            style={{ background:'rgba(255,255,255,0.1)' }}
           >
             <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
               <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
@@ -565,51 +623,54 @@ export default function ChatWidget() {
           {/* Minimise */}
           <button onClick={() => setOpen(false)}
             aria-label="Minimise chat"
-            className="grid size-8 shrink-0 place-items-center rounded-lg border-none text-white/65 transition-colors cursor-pointer hover:bg-white/15 focus-visible:outline-2 focus-visible:outline-white/70"
-            style={{ background:'rgba(255,255,255,0.08)' }}
+            className="grid size-8 shrink-0 place-items-center rounded-lg text-white/70 transition-colors hover:bg-white/15 focus-visible:outline-2 focus-visible:outline-white/70"
+            style={{ background:'rgba(255,255,255,0.1)' }}
           >
             <ChevronDown size={16} />
           </button>
         </div>
 
-        {/* ── Messages ────────────────────────────────────────────────────────── */}
-        <div className="cw-scroll flex-1 overflow-y-auto px-3.5 py-4 flex flex-col gap-3"
-          style={{ background:'hsl(var(--muted) / 0.5)' }}>
+        {/* ── Body ────────────────────────────────────────────────────────────── */}
+        <div className="cw-scroll flex-1 overflow-y-auto px-3.5 py-4 flex flex-col gap-2.5"
+          style={{ background:'hsl(var(--muted) / 0.45)' }}>
 
-          {/* Welcome card (always shown) */}
-          <div style={{ animation:'cwFadeUp 0.4s ease both' }}>
-            <div className="flex items-end gap-2">
-              <Avatar small />
-              <div className="max-w-[82%] rounded-[16px_16px_16px_4px] border border-border/60 bg-card px-3.5 py-2.5 text-[13px] leading-relaxed text-card-foreground shadow-[0_1px_3px_rgba(2,6,23,0.05)]">
-                Hi there! 👋 I'm <strong>Livarex AI</strong> — your property assistant.<br/>
-                How can I help you today?
+          {/* ── Welcome hero (shown on first open) ── */}
+          {view === 'welcome' && !inquiryId && messages.length === 0 && !showAgentForm && (
+            <div className="flex flex-col items-center text-center px-2 pt-6 pb-2" style={{ animation:'cwFadeUp 0.4s ease both' }}>
+              <div className="relative mb-4">
+                <div className="size-16 rounded-2xl flex items-center justify-center text-3xl"
+                  style={{ background:'linear-gradient(135deg,#3b82f6,#6366f1)', boxShadow:'0 12px 32px rgba(59,130,246,0.35)' }}>
+                  <MessageSquare size={28} color="#fff" />
+                </div>
+                <span className="absolute -bottom-1 -right-1 size-4 rounded-full border-[3px] border-white bg-emerald-400" aria-hidden />
+              </div>
+              <h2 className="text-[17px] font-bold text-card-foreground tracking-tight">Hi there! 👋</h2>
+              <p className="mt-1.5 text-[13px] text-muted-foreground leading-relaxed max-w-[260px]">
+                Need help finding a property? Our team is online and ready to assist you.
+              </p>
+
+              <button
+                onClick={startConversation}
+                className="mt-5 w-full rounded-xl py-3 text-[13px] font-bold text-white transition-all hover:opacity-90 active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-ring"
+                style={{ background:'linear-gradient(135deg,hsl(var(--primary)),hsl(var(--primary) / 0.85))', boxShadow:'0 8px 20px hsl(var(--primary) / 0.3)' }}
+              >
+                Start Conversation
+              </button>
+              <button
+                onClick={browseHelp}
+                className="mt-2 w-full rounded-xl py-3 text-[13px] font-semibold text-card-foreground border border-border bg-card transition-all hover:bg-muted active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-ring"
+              >
+                Browse Help Center
+              </button>
+
+              <div className="mt-4 flex items-center gap-1.5 text-[11px] text-muted-foreground">
+                <span className="inline-block size-1.5 rounded-full bg-emerald-400" aria-hidden />
+                Average response time: under 5 minutes
               </div>
             </div>
-          </div>
+          )}
 
-          {/* Quick action cards — shown on first open, or when Menu button is pressed */}
-          {(!actionsUsed && messages.length === 0) || showMenu ? (
-            <div className="grid grid-cols-2 gap-2" style={{ animation:'cwFadeUp 0.3s ease both' }}>
-              {showMenu && (
-                <div className="col-span-2 pb-0.5 text-[10.5px] font-bold uppercase tracking-[0.08em] text-muted-foreground">
-                  What can I help you with?
-                </div>
-              )}
-              {ACTIONS.map(a => (
-                <button
-                  key={a.title}
-                  className="cw-action flex flex-col gap-1 rounded-xl border border-border bg-card p-3 text-left transition-all cursor-pointer hover:border-primary hover:bg-primary/5 focus-visible:outline-2 focus-visible:outline-ring"
-                  onClick={() => a.msg ? sendMessage(a.msg, null) : triggerAgentForm()}
-                >
-                  <span className="text-xl leading-none" aria-hidden>{a.icon}</span>
-                  <span className="cw-action-title text-xs font-bold leading-tight text-card-foreground transition-colors">{a.title}</span>
-                  <span className="text-[10.5px] leading-tight text-muted-foreground">{a.sub}</span>
-                </button>
-              ))}
-            </div>
-          ) : null}
-
-          {/* Conversation messages */}
+          {/* ── Conversation messages (AI bot) ── */}
           {messages.map((msg, i) => (
             <div key={i} className="flex items-end gap-2"
               style={{ justifyContent: msg.role === 'user' ? 'flex-end' : 'flex-start', animation:'cwFadeUp 0.3s ease both' }}>
@@ -620,36 +681,56 @@ export default function ChatWidget() {
                   block.type === 'image_url' ? (
                     <img key={j} src={block.url} alt="attachment" className="max-h-40 max-w-[200px] rounded-xl border-2 border-white/40 object-cover" />
                   ) : (
-                    <div key={j} className="px-3 py-2 text-[13px] leading-relaxed break-words"
+                    <div key={j} className="px-3.5 py-2.5 text-[13px] leading-relaxed break-words"
                       style={{
-                        borderRadius: msg.role === 'user' ? '16px 16px 4px 16px' : '16px 16px 16px 4px',
+                        borderRadius: msg.role === 'user' ? '18px 18px 6px 18px' : '18px 18px 18px 6px',
                         whiteSpace:'pre-wrap',
                         background: msg.role === 'user' ? 'linear-gradient(135deg,#2563eb,#3b82f6)' : 'hsl(var(--card))',
                         color: msg.role === 'user' ? '#fff' : 'hsl(var(--card-foreground))',
                         boxShadow: msg.role === 'assistant'
-                          ? '0 1px 3px rgba(2,6,23,0.05)'
-                          : '0 2px 8px rgba(37,99,235,0.25)',
-                        border: msg.role === 'assistant' ? '1px solid hsl(var(--border) / 0.6)' : 'none',
+                          ? '0 1px 3px rgba(2,6,23,0.06)'
+                          : '0 2px 10px rgba(37,99,235,0.28)',
+                        border: msg.role === 'assistant' ? '1px solid hsl(var(--border) / 0.7)' : 'none',
                       }}>
                       {msg.role === 'user' ? block.text : renderBotText(block.text)}
                     </div>
                   )
                 )}
+                <span className="px-1 text-[9.5px] text-muted-foreground/70">
+                  {formatTime(msg.time)}
+                  {msg.role === 'user' && <span className="ml-1 text-emerald-500">✓ Sent</span>}
+                </span>
               </div>
             </div>
           ))}
+
+          {/* ── Quick action chips (shown after welcome, in bot mode) ── */}
+          {view === 'chat' && !inquiryId && !showAgentForm && (
+            <div className="flex flex-wrap gap-1.5 pt-1" style={{ animation:'cwFadeUp 0.3s ease both' }}>
+              {ACTIONS.map(a => (
+                <button
+                  key={a.title}
+                  className="cw-chip inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1.5 text-[11.5px] font-semibold text-card-foreground transition-all cursor-pointer hover:shadow-sm focus-visible:outline-2 focus-visible:outline-ring"
+                  onClick={() => a.msg ? sendMessage(a.msg, null) : triggerAgentForm()}
+                >
+                  <span aria-hidden>{a.icon}</span>
+                  <span className="cw-chip-title">{a.title}</span>
+                </button>
+              ))}
+            </div>
+          )}
 
           {/* ── Agent contact form (shown until a live thread exists) ─────── */}
           {showAgentForm && !inquiryId && (
             <div className="flex items-start gap-2" style={{ animation:'cwFadeUp 0.35s ease both' }}>
               <Avatar small />
-              <div className="max-w-[88%] flex-1 rounded-[16px_16px_16px_4px] border border-border/70 bg-card p-4 shadow-[0_1px_3px_rgba(2,6,23,0.05)]">
+              <div className="max-w-[88%] flex-1 rounded-[18px_18px_18px_6px] border border-border/70 bg-card p-4 shadow-[0_1px_3px_rgba(2,6,23,0.06)]">
                 {agentSubmitted ? (
                   <div className="py-2 text-center">
-                    <div className="mx-auto mb-2.5 grid size-9 place-items-center rounded-full bg-emerald-100">
+                    <div className="mx-auto mb-2.5 grid size-10 place-items-center rounded-full bg-emerald-100">
                       <Check size={18} className="text-emerald-700" />
                     </div>
-                    <p className="m-0 text-[13px] font-bold text-emerald-800">Request received!</p>
+                    <p className="m-0 text-[13px] font-bold text-emerald-800">Message received!</p>
                     <p className="mt-1 text-xs text-muted-foreground">
                       Our team will reach out within 2 hours on business days.
                     </p>
@@ -661,8 +742,8 @@ export default function ChatWidget() {
                         <User size={13} className="text-primary" />
                       </div>
                       <div>
-                        <p className="m-0 text-xs font-bold text-card-foreground">Talk to a Livarex agent</p>
-                        <p className="m-0 text-[10.5px] text-muted-foreground">We reply within 2 hours on business days</p>
+                        <p className="m-0 text-xs font-bold text-card-foreground">Start a conversation</p>
+                        <p className="m-0 text-[10.5px] text-muted-foreground">Leave your details and we'll get back to you</p>
                       </div>
                     </div>
                     <Field label="Your name *">
@@ -674,16 +755,6 @@ export default function ChatWidget() {
                         className="w-full rounded-lg border border-input bg-muted/40 px-3 py-2 text-xs text-card-foreground outline-none transition-shadow focus-visible:ring-2 focus-visible:ring-ring/50"
                       />
                     </Field>
-                    <Field label="What do you need help with? *">
-                      <textarea
-                        value={agentNote}
-                        onChange={e => setAgentNote(e.target.value)}
-                        placeholder="Briefly describe what you need…"
-                        required
-                        rows={2}
-                        className="w-full resize-none rounded-lg border border-input bg-muted/40 px-3 py-2 text-xs text-card-foreground outline-none transition-shadow focus-visible:ring-2 focus-visible:ring-ring/50"
-                      />
-                    </Field>
                     <Field label="Phone number (optional)">
                       <input
                         value={agentPhone}
@@ -693,10 +764,20 @@ export default function ChatWidget() {
                         className="w-full rounded-lg border border-input bg-muted/40 px-3 py-2 text-xs text-card-foreground outline-none transition-shadow focus-visible:ring-2 focus-visible:ring-ring/50"
                       />
                     </Field>
+                    <Field label="How can we help? *">
+                      <textarea
+                        value={agentNote}
+                        onChange={e => setAgentNote(e.target.value)}
+                        placeholder="Briefly describe what you need…"
+                        required
+                        rows={2}
+                        className="w-full resize-none rounded-lg border border-input bg-muted/40 px-3 py-2 text-xs text-card-foreground outline-none transition-shadow focus-visible:ring-2 focus-visible:ring-ring/50"
+                      />
+                    </Field>
                     <button
                       type="submit"
                       disabled={!agentName.trim() || !agentNote.trim() || agentSubmitting}
-                      className="mt-1 rounded-[10px] border-none py-2 text-xs font-bold transition-all cursor-pointer disabled:cursor-default focus-visible:outline-2 focus-visible:outline-ring"
+                      className="mt-1 rounded-[10px] border-none py-2.5 text-xs font-bold transition-all cursor-pointer disabled:cursor-default focus-visible:outline-2 focus-visible:outline-ring"
                       style={{
                         background: (!agentName.trim() || !agentNote.trim() || agentSubmitting)
                           ? 'hsl(var(--muted-foreground) / 0.2)' : 'linear-gradient(135deg,#2563eb,#3b82f6)',
@@ -724,7 +805,7 @@ export default function ChatWidget() {
               {agentThreadLoading ? (
                 <div className="flex items-end gap-2" style={{ animation:'cwFadeUp 0.25s ease both' }}>
                   <Avatar small />
-                  <div className="rounded-[16px_16px_16px_4px] border border-border/60 bg-card shadow-[0_1px_3px_rgba(2,6,23,0.05)]">
+                  <div className="rounded-[18px_18px_18px_6px] border border-border/60 bg-card shadow-[0_1px_3px_rgba(2,6,23,0.06)]">
                     <TypingDots />
                   </div>
                 </div>
@@ -737,20 +818,21 @@ export default function ChatWidget() {
                       {!isVisitor && <AgentAvatar />}
                       <div className="flex max-w-[80%] flex-col gap-1"
                         style={{ alignItems: isVisitor ? 'flex-end' : 'flex-start' }}>
-                        <div className="px-3 py-2 text-[13px] leading-relaxed break-words"
+                        <div className="px-3.5 py-2.5 text-[13px] leading-relaxed break-words"
                           style={{
-                            borderRadius: isVisitor ? '16px 16px 4px 16px' : '16px 16px 16px 4px',
+                            borderRadius: isVisitor ? '18px 18px 6px 18px' : '18px 18px 18px 6px',
                             whiteSpace:'pre-wrap',
                             background: isVisitor ? 'linear-gradient(135deg,#059669,#10b981)' : 'hsl(var(--card))',
                             color: isVisitor ? '#fff' : 'hsl(var(--card-foreground))',
-                            boxShadow: isVisitor ? '0 2px 8px rgba(5,150,105,0.25)' : '0 1px 3px rgba(2,6,23,0.05)',
-                            border: isVisitor ? 'none' : '1px solid hsl(var(--border) / 0.6)',
+                            boxShadow: isVisitor ? '0 2px 10px rgba(5,150,105,0.3)' : '0 1px 3px rgba(2,6,23,0.06)',
+                            border: isVisitor ? 'none' : '1px solid hsl(var(--border) / 0.7)',
                             opacity: msg.id.startsWith('opt-') ? 0.6 : 1,
                           }}>
                           {msg.body}
                         </div>
-                        <span className="px-1 text-[10px] text-muted-foreground">
-                          {isVisitor ? 'You' : 'Agent'}
+                        <span className="px-1 text-[9.5px] text-muted-foreground/70">
+                          {formatTime(new Date(msg.created_at).getTime())}
+                          {isVisitor && <span className="ml-1 text-emerald-500">✓ Sent</span>}
                         </span>
                       </div>
                     </div>
@@ -764,8 +846,11 @@ export default function ChatWidget() {
           {loading && (
             <div className="flex items-end gap-2" style={{ animation:'cwFadeUp 0.25s ease both' }}>
               <Avatar small />
-              <div className="rounded-[16px_16px_16px_4px] border border-border/60 bg-card shadow-[0_1px_3px_rgba(2,6,23,0.05)]">
-                <TypingDots/>
+              <div className="rounded-[18px_18px_18px_6px] border border-border/60 bg-card shadow-[0_1px_3px_rgba(2,6,23,0.06)]">
+                <div className="px-3.5 py-2.5 flex items-center gap-2">
+                  <TypingDots />
+                  <span className="text-[10.5px] text-muted-foreground">Support is typing…</span>
+                </div>
               </div>
             </div>
           )}
@@ -773,7 +858,7 @@ export default function ChatWidget() {
           <div ref={bottomRef}/>
         </div>
 
-        {/* ── Pending image preview ────────────────────────────────────────────── */}
+        {/* ── Pending attachment preview ──────────────────────────────────────── */}
         {pendingImg && (
           <div className="flex shrink-0 items-center gap-2 border-t border-border/60 bg-muted/40 px-3.5 py-2">
             <div className="relative">
@@ -788,7 +873,7 @@ export default function ChatWidget() {
           </div>
         )}
 
-        {/* ── Input bar ────────────────────────────────────────────────────────── */}
+        {/* ── Composer ────────────────────────────────────────────────────────── */}
         <div className="cw-input-bar flex shrink-0 items-center gap-2 border-t border-border/60 bg-card px-3 py-2.5">
           {/* Attach (bot mode only) */}
           {!inquiryId && (
@@ -797,7 +882,7 @@ export default function ChatWidget() {
                 onClick={() => fileRef.current?.click()}
                 title="Attach image"
                 aria-label="Attach image"
-                className="cw-attach grid size-8.5 shrink-0 cursor-pointer place-items-center rounded-[10px] border-none text-muted-foreground transition-colors hover:bg-muted focus-visible:outline-2 focus-visible:outline-ring"
+                className="cw-attach grid size-9 shrink-0 cursor-pointer place-items-center rounded-full border-none text-muted-foreground transition-colors hover:bg-muted focus-visible:outline-2 focus-visible:outline-ring"
                 style={{ background:'hsl(var(--muted))' }}
               >
                 <Paperclip size={15} />
@@ -810,10 +895,10 @@ export default function ChatWidget() {
           {inquiryId ? (
             <form onSubmit={sendAgentMessage} className="flex flex-1 items-center gap-2">
               <input
-                className="cw-input flex-1 rounded-[22px] border border-transparent px-3.5 py-2 text-[16px] text-card-foreground outline-none transition-shadow focus:border-transparent sm:text-[13px]"
+                className="cw-input flex-1 rounded-full border border-border px-4 py-2.5 text-[16px] text-card-foreground outline-none transition-all sm:text-[13px]"
                 value={agentInput}
                 onChange={e => setAgentInput(e.target.value)}
-                placeholder="Message the agent…"
+                placeholder="Type your message…"
                 disabled={agentSending}
                 style={{ background:'hsl(var(--muted))' }}
               />
@@ -836,11 +921,11 @@ export default function ChatWidget() {
               {/* Text */}
               <input
                 ref={inputRef}
-                className="cw-input flex-1 rounded-[22px] border border-transparent px-3.5 py-2 text-[16px] text-card-foreground outline-none transition-shadow focus:border-transparent sm:text-[13px]"
+                className="cw-input flex-1 rounded-full border border-border px-4 py-2.5 text-[16px] text-card-foreground outline-none transition-all sm:text-[13px]"
                 value={input}
                 onChange={e => setInput(e.target.value)}
                 onKeyDown={handleKey}
-                placeholder="Message Livarex AI…"
+                placeholder="Type your message…"
                 disabled={loading}
                 style={{ background:'hsl(var(--muted))' }}
               />
@@ -867,18 +952,21 @@ export default function ChatWidget() {
       {/* ── Toggle button ─────────────────────────────────────────────────────── */}
       <button
         className={`cw-toggle${open ? ' open' : ''}`}
-        onClick={() => setOpen(o => !o)}
+        onClick={() => { setLauncherDismissed(true); setOpen(o => !o) }}
         aria-label={open ? 'Close Livarex chat' : 'Open Livarex chat'}
+        aria-expanded={open}
       >
         {open
-          ? <X size={18} color="#fff"/>
-          : <MessageSquare size={17} color="#fff"/>
+          ? <X size={19} color="#fff"/>
+          : <MessageSquare size={19} color="#fff"/>
         }
         {!open && (unread || agentUnread) && (
-          <span className="absolute -top-0.5 -right-0.5 size-3 rounded-full border-2 border-white bg-destructive" aria-hidden />
-        )}
-        {!open && (
-          <span className="absolute inset-0 rounded-full bg-primary" style={{ animation:'cwPulse 2.8s ease-out infinite' }} aria-hidden />
+          <>
+            <span className="absolute inset-0 rounded-full bg-primary" style={{ animation:'cwPulse 2.2s ease-out infinite' }} aria-hidden />
+            <span className="absolute -top-0.5 -right-0.5 size-4 rounded-full border-2 border-white bg-red-500 grid place-items-center" aria-hidden>
+              <span className="text-[8px] font-black text-white">•</span>
+            </span>
+          </>
         )}
       </button>
     </>
@@ -918,7 +1006,7 @@ function AgentAvatar() {
 
 function TypingDots() {
   return (
-    <div className="flex items-center gap-1.5 px-3.5 py-3">
+    <div className="flex items-center gap-1">
       {[0, 1, 2].map(i => (
         <span key={i} className="inline-block size-[7px] rounded-full bg-muted-foreground/50"
           style={{ animation:'cwBounce 1.3s infinite ease-in-out', animationDelay:`${i * 0.18}s` }} />
