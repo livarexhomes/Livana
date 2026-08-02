@@ -42,5 +42,10 @@ branded, mobile-responsive HTML template — logo, brand colors, professional ty
 - Prefers mobile navigation to encourage account creation with a single "Get Started" CTA linking to sign-up instead of showing multiple redundant Sign In options. Confidence: 0.5
 - Prefers ruthlessly cutting redundant UI text: fewer headings/labels, single-line headers with inline counts (e.g., "Inbox (2)") instead of stacked heading blocks, and removing anything that competes with the essential controls (filters + total count) — "nothing else should compete for attention." Confidence: 0.8
 - Prefers multiple filter groups on a page to be visually distinct via tiny uppercase labels (e.g., "Type"/"Status") in fixed-width columns with uniform compact pill sizing and per-group active colors (e.g., blue primary for one group, slate-900 for the other), rather than large headings or visually identical groups. Confidence: 0.7
+- Prefers to hand the AI builder structured, professional written specs for UI work (section structure varies per spec — e.g., Page, Objective, Current Issues, Improvements, Goal) rather than terse verbal directions. Confidence: 0.5
+
+ective, Current Issues, Improvements, Goal) rather than terse verbal directions. Confidence: 0.4
+
+ tiny uppercase labels (e.g., "Type"/"Status") in fixed-width columns with uniform compact pill sizing and per-group active colors (e.g., blue primary for one group, slate-900 for the other), rather than large headings or visually identical groups. Confidence: 0.7
 - Prefers to hand the AI builder structured, professional written specs for UI work (Page, Objective, Current Issues, Improvements, Goal) rather than terse verbal directions. Confidence: 0.4
 
