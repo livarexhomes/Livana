@@ -11,6 +11,8 @@ import {
 import AdminSidebar from '../../components/layout/AdminSidebar'
 import AuthGuard from '../../components/auth/AuthGuard'
 import { createClient } from '../../lib/supabase'
+import { invalidateFeeConfig } from '../../lib/fees'
+import { notifyListingRulesChange } from '../../lib/settings-store'
 
 const SECTIONS = [
   { id: 'platform',      label: 'Platform',       icon: Building2  },
@@ -54,6 +56,7 @@ interface ListingSettings {
   requireImages: boolean
   requireDescription: boolean
   allowNegotiation: boolean
+  agencyFeePercent: number
 }
 
 interface EmailConfig {
@@ -264,6 +267,7 @@ export default function AdminSettings() {
     requireImages: true,
     requireDescription: true,
     allowNegotiation: true,
+    agencyFeePercent: 10,
   })
 
   const [emailConfig, setEmailConfig] = useState<EmailConfig>({
@@ -330,6 +334,13 @@ export default function AdminSettings() {
         updated_by: user?.id,
         updated_at: new Date().toISOString(),
       }, { onConflict: 'key' })
+
+    // Listing Rules changed → invalidate the cached agency fee percentage and
+    // notify any open forms so they re-fetch immediately.
+    if (!error && key === 'listing_rules') {
+      invalidateFeeConfig()
+      notifyListingRulesChange()
+    }
 
     setSaving(false)
     if (!error) {
@@ -1022,10 +1033,38 @@ export default function AdminSettings() {
                     </div>
                   </div>
 
+                  {/* Agency fee percentage */}
+                  <div className="mt-4 bg-white border border-gray-200 rounded-xl p-5">
+                    <div className="flex items-center gap-2.5 mb-4">
+                      <div className="w-7 h-7 rounded-lg bg-gray-100 flex items-center justify-center">
+                        <DollarSign className="w-3.5 h-3.5 text-gray-400" strokeWidth={1.8} />
+                      </div>
+                      <div>
+                        <p className="text-sm font-semibold text-gray-900">Agency Fee Percentage</p>
+                        <p className="text-xs text-gray-400">Applied automatically to every listing's Agency Fee</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-4">
+                      <input
+                        type="number" min={0} max={100} step={1}
+                        value={listing.agencyFeePercent}
+                        onChange={e => {
+                          const v = Number(e.target.value)
+                          setListing(l => ({ ...l, agencyFeePercent: Number.isFinite(v) ? v : 0 }))
+                        }}
+                        className="w-24 border border-gray-200 rounded-lg px-3 py-2 text-sm font-mono font-bold text-gray-900 text-center focus:outline-none focus:ring-2 focus:ring-blue-500/40 bg-white"
+                      />
+                      <span className="text-sm font-semibold text-gray-500">%</span>
+                      <p className="text-xs text-gray-400">
+                        This is the single source of truth — Agency Fee is always calculated as rent × this percentage.
+                      </p>
+                    </div>
+                  </div>
+
                   <div className="mt-3 flex items-center gap-2 px-4 py-3 rounded-lg bg-blue-50 border border-blue-100">
                     <CheckCircle className="w-4 h-4 text-blue-600 shrink-0" strokeWidth={2} />
                     <p className="text-sm text-blue-700">
-                      {[listing.autoApprove, listing.requireImages, listing.requireDescription, listing.allowNegotiation].filter(Boolean).length} of 4 rules active
+                      {[listing.autoApprove, listing.requireImages, listing.requireDescription, listing.allowNegotiation].filter(Boolean).length} of 4 rules active · Agency Fee {listing.agencyFeePercent}%
                     </p>
                   </div>
                 </div>

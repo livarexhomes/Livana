@@ -408,7 +408,7 @@ export default function LandlordDashboard() {
                                   <span className="text-green-700 font-semibold">Verified Owner</span>
                                 </>
                               ) : (
-                                <span className="text-gray-400">Direct to Owner's Agent</span>
+                                <span className="text-gray-400">Direct to Owner</span>
                               )}
                             </div>
                           </div>

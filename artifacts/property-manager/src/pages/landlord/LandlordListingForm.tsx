@@ -5,18 +5,26 @@ import {
   Maximize2, Tag, CheckCircle, ArrowLeft, ImagePlus, X, Star,
   Wifi, Car, Dumbbell, Waves, Wind, Shield, Zap,
   Droplets, TreePine, UtensilsCrossed, Tv, Lock, Sun, Package,
+  ReceiptText,
 } from 'lucide-react'
 import LandlordSidebar from '../../components/layout/LandlordSidebar'
 import AuthGuard from '../../components/auth/AuthGuard'
 import { createClient, getSupabaseImageUrl } from '../../lib/supabase'
 import type { Landlord } from '@/types'
 import { NIGERIAN_STATES, POPULAR_AREAS } from '../../lib/nigerianStates'
+import LocationField from '../../components/property/LocationField'
+import { MoneyInput } from '../../components/ui/money-input'
+import { digitsToNumber, formatNaira } from '../../lib/currency'
+import { getFeeConfig, calcFeeBreakdown, type FeeConfig } from '../../lib/fees'
+import { subscribeListingRulesChange } from '../../lib/settings-store'
 
 type FormData = {
   title: string; description: string; address: string; city: string
   price: string; bedrooms: string; bathrooms: string; area_sqft: string
   type: string; status: string; featured: boolean
   amenities: string[]
+  agreement_fee: string
+  other_charges: string
   latitude: string
   longitude: string
 }
@@ -45,7 +53,7 @@ const AMENITIES = [
 const emptyForm: FormData = {
   title: '', description: '', address: '', city: '', price: '',
   bedrooms: '1', bathrooms: '1', area_sqft: '', type: 'rent', status: 'available', featured: false,
-  amenities: [], latitude: '', longitude: '',
+  amenities: [], agreement_fee: '', other_charges: '', latitude: '', longitude: '',
 }
 
 const FIELD_CLASS = 'w-full px-4 py-3 rounded-xl border border-gray-200 text-sm text-gray-900 bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all'
@@ -62,6 +70,7 @@ export default function LandlordListingForm() {
   const [loading, setLoading]   = useState(false)
   const [loadingData, setLoadingData] = useState(isEdit)
   const [error, setError]       = useState('')
+  const [feeConfig, setFeeConfig] = useState<FeeConfig | null>(null)
 
   const [imageFiles, setImageFiles] = useState<File[]>([])
   const [imagePreviews, setImagePreviews] = useState<string[]>([])
@@ -112,6 +121,8 @@ export default function LandlordListingForm() {
           status:      p.status ?? 'available',
           featured:    p.featured ?? false,
           amenities:   p.amenities ?? [],
+          agreement_fee: p.agreement_fee != null ? String(p.agreement_fee) : '',
+          other_charges: p.other_charges != null ? String(p.other_charges) : '',
           latitude:    p.latitude ? String(p.latitude) : '',
           longitude:   p.longitude ? String(p.longitude) : '',
         })
@@ -120,6 +131,17 @@ export default function LandlordListingForm() {
       }
     })
   }, [isEdit, id])
+
+  // Load the configured Agency Fee percentage once and keep it in sync when
+  // the admin saves new Listing Rules while this form is open.
+  useEffect(() => {
+    let active = true
+    getFeeConfig().then(cfg => { if (active) setFeeConfig(cfg) })
+    const unsub = subscribeListingRulesChange(() => {
+      getFeeConfig({ refresh: true }).then(cfg => { if (active) setFeeConfig(cfg) })
+    })
+    return () => { active = false; unsub() }
+  }, [])
 
   function addFiles(files: FileList | null) {
     if (!files) return
@@ -236,7 +258,9 @@ export default function LandlordListingForm() {
       landlord_id: landlord.id,
       title: form.title.trim(), description: form.description.trim() || null,
       address: form.address.trim(), city: form.city.trim(),
-      price: Number(form.price),
+      price: digitsToNumber(form.price),
+      agreement_fee: form.agreement_fee ? digitsToNumber(form.agreement_fee) : null,
+      other_charges: form.other_charges ? digitsToNumber(form.other_charges) : null,
       bedrooms: Number(form.bedrooms), bathrooms: Number(form.bathrooms),
       area_sqft: form.area_sqft ? Number(form.area_sqft) : null,
       type: form.type, status: form.status, featured: form.featured,
@@ -268,6 +292,24 @@ export default function LandlordListingForm() {
   function set(field: keyof FormData, value: string | boolean) {
     setForm(f => ({ ...f, [field]: value }))
   }
+
+  function handleLocation(loc: { latitude: number; longitude: number; address: string }) {
+    setForm(f => ({
+      ...f,
+      latitude: loc.latitude ? String(loc.latitude) : '',
+      longitude: loc.longitude ? String(loc.longitude) : '',
+      address: loc.address || f.address,
+    }))
+  }
+
+  const breakdown = calcFeeBreakdown(
+    {
+      price: digitsToNumber(form.price),
+      agreement_fee: form.agreement_fee ? digitsToNumber(form.agreement_fee) : 0,
+      other_charges: form.other_charges ? digitsToNumber(form.other_charges) : 0,
+    },
+    feeConfig ?? undefined,
+  )
 
   if (loadingData) {
     return (
@@ -374,15 +416,63 @@ export default function LandlordListingForm() {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {/* Smart location: search, Google Maps link or current location */}
+                  <div className="rounded-2xl border border-gray-100 bg-gray-50/50 p-4">
+                    <LocationField
+                      onLocation={handleLocation}
+                      initialLatitude={form.latitude ? Number(form.latitude) : null}
+                      initialLongitude={form.longitude ? Number(form.longitude) : null}
+                      initialAddress={form.address}
+                    />
+                  </div>
+
+                  {/* Charges */}
+                  <div className="space-y-4">
                     <div>
                       <label className="flex items-center gap-1.5 text-sm font-semibold text-gray-700 mb-2">
-                        <DollarSign className="w-3.5 h-3.5 text-gray-400" /> Price (₦) *
+                        <DollarSign className="w-3.5 h-3.5 text-gray-400" /> Rent Amount (₦) *
                       </label>
-                      <input required type="number" min="0" value={form.price}
-                        onChange={e => set('price', e.target.value)}
-                        placeholder="1500000"
-                        className={FIELD_CLASS} />
+                      <MoneyInput
+                        size="lg"
+                        value={form.price}
+                        onChange={v => set('price', v)}
+                        placeholder="e.g. 1,500,000"
+                      />
+                    </div>
+                    <div>
+                      <label className="flex items-center gap-1.5 text-sm font-semibold text-gray-700 mb-2">
+                        <ReceiptText className="w-3.5 h-3.5 text-gray-400" /> Agency Fee (auto)
+                      </label>
+                      <div className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-gray-100 text-sm text-gray-900 font-semibold flex items-center justify-between">
+                        <span>{formatNaira(breakdown.agencyFee)}</span>
+                        <span className="text-xs font-medium text-gray-400">
+                          {feeConfig ? `${feeConfig.agencyFeePercent}% of rent` : '…'}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <label className="flex items-center gap-1.5 text-sm font-semibold text-gray-700 mb-2">
+                          <ReceiptText className="w-3.5 h-3.5 text-gray-400" /> Agreement Fee (₦)
+                        </label>
+                        <MoneyInput
+                          size="lg"
+                          value={form.agreement_fee}
+                          onChange={v => set('agreement_fee', v)}
+                          placeholder="Optional"
+                        />
+                      </div>
+                      <div>
+                        <label className="flex items-center gap-1.5 text-sm font-semibold text-gray-700 mb-2">
+                          <ReceiptText className="w-3.5 h-3.5 text-gray-400" /> Other Charges (₦)
+                        </label>
+                        <MoneyInput
+                          size="lg"
+                          value={form.other_charges}
+                          onChange={v => set('other_charges', v)}
+                          placeholder="Optional"
+                        />
+                      </div>
                     </div>
                     <div>
                       <label className="flex items-center gap-1.5 text-sm font-semibold text-gray-700 mb-2">
@@ -395,23 +485,35 @@ export default function LandlordListingForm() {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="text-sm font-semibold text-gray-700 mb-2 block">Latitude</label>
-                      <input type="number" step="any" value={form.latitude}
-                        onChange={e => set('latitude', e.target.value)}
-                        placeholder="e.g. 6.5244"
-                        className={FIELD_CLASS} />
+                  {/* Total Payable */}
+                  <div className="rounded-2xl border border-blue-100 bg-blue-50/60 p-5">
+                    <div className="flex items-center gap-2 pb-2 border-b border-blue-100">
+                      <ReceiptText className="w-4 h-4 text-blue-600" />
+                      <h3 className="text-sm font-bold text-gray-900">Total Payable</h3>
                     </div>
-                    <div>
-                      <label className="text-sm font-semibold text-gray-700 mb-2 block">Longitude</label>
-                      <input type="number" step="any" value={form.longitude}
-                        onChange={e => set('longitude', e.target.value)}
-                        placeholder="e.g. 3.3792"
-                        className={FIELD_CLASS} />
+                    <div className="mt-3 space-y-1.5 text-sm">
+                      <div className="flex items-center justify-between text-gray-600">
+                        <span>Rent Amount</span><span className="font-semibold text-gray-900">{formatNaira(breakdown.rent)}</span>
+                      </div>
+                      <div className="flex items-center justify-between text-gray-600">
+                        <span>Agency Fee ({feeConfig ? `${feeConfig.agencyFeePercent}%` : '—'})</span><span className="font-semibold text-gray-900">{formatNaira(breakdown.agencyFee)}</span>
+                      </div>
+                      {breakdown.agreementFee > 0 && (
+                        <div className="flex items-center justify-between text-gray-600">
+                          <span>Agreement Fee</span><span className="font-semibold text-gray-900">{formatNaira(breakdown.agreementFee)}</span>
+                        </div>
+                      )}
+                      {breakdown.otherCharges > 0 && (
+                        <div className="flex items-center justify-between text-gray-600">
+                          <span>Other Charges</span><span className="font-semibold text-gray-900">{formatNaira(breakdown.otherCharges)}</span>
+                        </div>
+                      )}
+                      <div className="flex items-center justify-between pt-2 border-t border-blue-100">
+                        <span className="font-bold text-gray-900">Total Payable</span>
+                        <span className="font-extrabold text-blue-700">{formatNaira(breakdown.total)}</span>
+                      </div>
                     </div>
                   </div>
-                  <p className="text-xs text-gray-400">Optional: Add coordinates for precise map location. Find coordinates on <a href="https://maps.google.com" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">Google Maps</a>.</p>
                 </div>
 
                 {/* Amenities */}

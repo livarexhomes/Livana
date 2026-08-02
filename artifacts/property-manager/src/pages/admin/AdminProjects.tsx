@@ -8,6 +8,8 @@ import AdminSidebar from '../../components/layout/AdminSidebar'
 import AdminHeader from '../../components/layout/AdminHeader'
 import AuthGuard from '../../components/auth/AuthGuard'
 import { createClient, getSupabaseProjectImageUrl } from '../../lib/supabase'
+import { MoneyInput } from '../../components/ui/money-input'
+import { digitsToNumber } from '../../lib/currency'
 
 type ProjectStatus = 'active' | 'coming_soon' | 'completed' | 'on_hold'
 
@@ -619,8 +621,11 @@ export default function AdminProjects() {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1.5 block">Starting Price (₦)</label>
-                    <input type="number" min={0} {...N('price')} placeholder="85000000"
-                      className="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                    <MoneyInput
+                      value={form.price === 0 ? '' : String(form.price)}
+                      onChange={v => setForm(f => ({ ...f, price: digitsToNumber(v) }))}
+                      placeholder="85000000"
+                    />
                     <p className="text-[11px] text-gray-400 mt-1">Lowest price a buyer can enter at.</p>
                   </div>
                   <div>

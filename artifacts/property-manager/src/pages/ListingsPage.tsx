@@ -7,6 +7,7 @@ import {
 import PublicNavbar from '../components/layout/PublicNavbar'
 import SEO from '../components/SEO'
 import ListingCard from '../components/property/ListingCard'
+import { MoneyInput } from '../components/ui/money-input'
 import { createClient, isSupabaseConfigured } from '../lib/supabase'
 import { isAdminUser } from '../lib/auth'
 import type { PropertyWithLandlord } from '@/types'
@@ -319,15 +320,11 @@ export default function ListingsPage() {
                 <div className="grid grid-cols-2 gap-2 mb-4">
                   <div>
                     <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1.5 block">Min</label>
-                    <input type="number" value={minPrice} onChange={e => setMinPrice(e.target.value)}
-                      placeholder="500,000"
-                      className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 transition-colors placeholder:text-slate-400" />
+                    <MoneyInput value={minPrice} onChange={setMinPrice} placeholder="500,000" className="bg-white" />
                   </div>
                   <div>
                     <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1.5 block">Max</label>
-                    <input type="number" value={maxPrice} onChange={e => setMaxPrice(e.target.value)}
-                      placeholder="5,000,000"
-                      className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 transition-colors placeholder:text-slate-400" />
+                    <MoneyInput value={maxPrice} onChange={setMaxPrice} placeholder="5,000,000" className="bg-white" />
                   </div>
                 </div>
                 <button onClick={() => setOpenPanel(null)}

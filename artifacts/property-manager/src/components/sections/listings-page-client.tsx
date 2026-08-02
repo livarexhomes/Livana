@@ -9,6 +9,7 @@ import {
 } from 'lucide-react'
 import PublicNavbar from '@/components/layout/PublicNavbar'
 import ListingCard from '@/components/property/ListingCard'
+import { MoneyInput } from '@/components/ui/money-input'
 import { createClient, isSupabaseConfigured } from '@/lib/supabase'
 import { isAdminUser } from '@/lib/auth'
 import type { PropertyWithLandlord } from '@/types'
@@ -267,13 +268,11 @@ export default function ListingsPageClient({
                 <div className="grid grid-cols-2 gap-2 mb-3">
                   <div>
                     <label className="text-xs text-gray-400 mb-1 block">Min</label>
-                    <input type="number" value={minPrice} onChange={e => setMinPrice(e.target.value)}
-                      placeholder="Min" className="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900" />
+                    <MoneyInput value={minPrice} onChange={setMinPrice} placeholder="Min" className="bg-white" />
                   </div>
                   <div>
                     <label className="text-xs text-gray-400 mb-1 block">Max</label>
-                    <input type="number" value={maxPrice} onChange={e => setMaxPrice(e.target.value)}
-                      placeholder="Max" className="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900" />
+                    <MoneyInput value={maxPrice} onChange={setMaxPrice} placeholder="Max" className="bg-white" />
                   </div>
                 </div>
                 <button onClick={applyAndClose} className="w-full py-2 bg-gray-900 text-white text-sm font-semibold rounded-xl hover:bg-gray-800">Apply</button>

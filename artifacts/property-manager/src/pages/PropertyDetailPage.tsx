@@ -7,7 +7,7 @@ import {
   Building2, Calendar, ShieldCheck, Info,
   Mail, Wifi, Car, Dumbbell, Waves, Wind, Shield, Zap,
   Droplets, TreePine, UtensilsCrossed, Tv, Lock, Sun, Package,
-  Eye, Phone, X,
+  Eye, Phone, X, ReceiptText,
 } from 'lucide-react'
 import PropertyDetailMap from '../components/property/PropertyDetailMap'
 import PublicNavbar from '../components/layout/PublicNavbar'
@@ -15,6 +15,9 @@ import Footer from '../components/layout/Footer'
 import SEO from '../components/SEO'
 import { createClient, isSupabaseConfigured, getSupabaseImageUrl } from '../lib/supabase'
 import { isAdminUser } from '../lib/auth'
+import { calcFeeBreakdown, getFeeConfig, type FeeConfig } from '../lib/fees'
+import { formatNaira } from '../lib/currency'
+import { subscribeListingRulesChange } from '../lib/settings-store'
 import type { PropertyWithLandlord, PropertyImage, Landlord } from '@/types'
 
 
@@ -89,6 +92,19 @@ export default function PropertyDetailPage() {
 
   const [activeTab, setActiveTab] = useState<ActiveTab>('overview')
   const [copied, setCopied]       = useState(false)
+  const [feeConfig, setFeeConfig] = useState<FeeConfig | null>(null)
+
+  // Load the configured Agency Fee percentage (for the Total Payable card) and
+  // keep it in sync if the admin updates Listing Rules while this page is open.
+  useEffect(() => {
+    if (!isSupabaseConfigured()) return
+    let active = true
+    getFeeConfig().then(cfg => { if (active) setFeeConfig(cfg) })
+    const unsub = subscribeListingRulesChange(() => {
+      getFeeConfig({ refresh: true }).then(cfg => { if (active) setFeeConfig(cfg) })
+    })
+    return () => { active = false; unsub() }
+  }, [])
 
   useEffect(() => {
     if (!isSupabaseConfigured() || !id) { setLoading(false); return }
@@ -276,6 +292,7 @@ export default function PropertyDetailPage() {
   const publicLocation = property ? property.city : ''
   const fullLocation = property ? [property.address, property.city].filter(Boolean).join(', ') : ''
   const locationText = addressVisible ? fullLocation : publicLocation
+  const breakdown = property ? calcFeeBreakdown(property, feeConfig ?? undefined) : null
 
   function handleBookInspection() {
     if (userRole === 'guest') { navigate('/login'); return }
@@ -643,13 +660,55 @@ export default function PropertyDetailPage() {
                   </p>
                   <div className="flex items-baseline gap-1.5">
                     <span className="text-3xl font-black text-gray-900 tracking-tight">
-                      ₦{Number(property.price).toLocaleString()}
+                      {formatNaira(property.price)}
                     </span>
                     {property.type === 'rent' && (
                       <span className="text-sm text-gray-400 font-medium">/year</span>
                     )}
                   </div>
                 </div>
+
+                {/* Total Payable breakdown */}
+                {breakdown && (
+                  <div className="px-7 py-4 border-b border-gray-50 bg-blue-50/40">
+                    <div className="flex items-center gap-2 mb-3">
+                      <ReceiptText className="w-4 h-4 text-blue-600" />
+                      <p className="text-xs font-bold text-gray-900 uppercase tracking-widest">What you'll pay</p>
+                    </div>
+                    <div className="space-y-1.5 text-sm">
+                      <div className="flex items-center justify-between text-gray-600">
+                        <span>Rent</span>
+                        <span className="font-semibold text-gray-900">{formatNaira(breakdown.rent)}</span>
+                      </div>
+                      <div className="flex items-center justify-between text-gray-600">
+                        <span>Agency Fee{feeConfig ? ` (${feeConfig.agencyFeePercent}%)` : ''}</span>
+                        <span className="font-semibold text-gray-900">{formatNaira(breakdown.agencyFee)}</span>
+                      </div>
+                      {breakdown.agreementFee > 0 && (
+                        <div className="flex items-center justify-between text-gray-600">
+                          <span>Agreement Fee</span>
+                          <span className="font-semibold text-gray-900">{formatNaira(breakdown.agreementFee)}</span>
+                        </div>
+                      )}
+                      {breakdown.commissionFee > 0 && (
+                        <div className="flex items-center justify-between text-gray-600">
+                          <span>Commission Fee</span>
+                          <span className="font-semibold text-gray-900">{formatNaira(breakdown.commissionFee)}</span>
+                        </div>
+                      )}
+                      {breakdown.otherCharges > 0 && (
+                        <div className="flex items-center justify-between text-gray-600">
+                          <span>Other Charges</span>
+                          <span className="font-semibold text-gray-900">{formatNaira(breakdown.otherCharges)}</span>
+                        </div>
+                      )}
+                      <div className="flex items-center justify-between pt-2 border-t border-blue-100">
+                        <span className="font-bold text-gray-900">Total Payable</span>
+                        <span className="font-extrabold text-blue-700">{formatNaira(breakdown.total)}</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
 
                 <div className="p-5 space-y-3">
                   {/* Contact Options - WhatsApp + Request Inspection */}
@@ -909,7 +968,7 @@ export default function PropertyDetailPage() {
       <div className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-xl border-t border-gray-100 px-4 py-3 flex items-center justify-between gap-4">
         <div>
           <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Price</p>
-          <p className="text-xl font-black text-gray-900 tracking-tight">₦{Number(property.price).toLocaleString()}</p>
+          <p className="text-xl font-black text-gray-900 tracking-tight">{formatNaira(property.price)}</p>
         </div>
         <div className="flex gap-2">
           {userRole === 'tenant' && (

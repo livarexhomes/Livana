@@ -23,6 +23,9 @@ export interface Property {
   address: string
   city: string
   price: number
+  agreement_fee: number | null
+  commission_fee: number | null
+  other_charges: number | null
   bedrooms: number
   bathrooms: number
   area_sqft: number | null

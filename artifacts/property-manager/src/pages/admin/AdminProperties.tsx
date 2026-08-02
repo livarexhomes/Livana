@@ -6,11 +6,17 @@ import {
   CheckCircle, Clock, XCircle, X, Save, Loader2, ImagePlus, Star,
   Wifi, Car, Dumbbell, Waves, Wind, Shield, Zap,
   Droplets, TreePine, UtensilsCrossed, Tv, Lock, Sun, Package,
+  ReceiptText,
 } from 'lucide-react'
 import AdminSidebar from '../../components/layout/AdminSidebar'
 import AdminHeader from '../../components/layout/AdminHeader'
 import AuthGuard from '../../components/auth/AuthGuard'
 import { createClient, getSupabaseImageUrl } from '../../lib/supabase'
+import LocationField from '../../components/property/LocationField'
+import { MoneyInput } from '../../components/ui/money-input'
+import { digitsToNumber, formatNaira } from '../../lib/currency'
+import { getFeeConfig, calcFeeBreakdown, type FeeConfig, type FeeBreakdown } from '../../lib/fees'
+import { subscribeListingRulesChange } from '../../lib/settings-store'
 
 function getCoverImage(p: any): string | null {
   const images = p.property_images ?? []
@@ -52,8 +58,47 @@ const AMENITIES = [
   { icon: Package, label: 'Storage Room' },
 ]
 
-type EditForm = { title: string; address: string; city: string; state: string; price: string; type: string; status: string; bedrooms: string; bathrooms: string; amenities: string[]; latitude: string; longitude: string }
-const emptyEdit: EditForm = { title: '', address: '', city: '', state: '', price: '', type: 'rent', status: 'available', bedrooms: '', bathrooms: '', amenities: [], latitude: '', longitude: '' }
+// Shared Total Payable summary used by both the Add and Edit property modals.
+function FeesSummary({ breakdown, percent }: { breakdown: FeeBreakdown; percent?: number | null }) {
+  return (
+    <div className="rounded-2xl border border-blue-100 bg-blue-50/60 p-4">
+      <div className="flex items-center gap-2 pb-2 border-b border-blue-100">
+        <ReceiptText className="w-4 h-4 text-blue-600" />
+        <h3 className="text-sm font-bold text-gray-900">Total Payable</h3>
+      </div>
+      <div className="mt-3 space-y-1.5 text-sm">
+        <div className="flex items-center justify-between text-gray-600">
+          <span>Rent Amount</span><span className="font-semibold text-gray-900">{formatNaira(breakdown.rent)}</span>
+        </div>
+        <div className="flex items-center justify-between text-gray-600">
+          <span>Agency Fee ({percent != null ? `${percent}%` : '—'})</span><span className="font-semibold text-gray-900">{formatNaira(breakdown.agencyFee)}</span>
+        </div>
+        {breakdown.agreementFee > 0 && (
+          <div className="flex items-center justify-between text-gray-600">
+            <span>Agreement Fee</span><span className="font-semibold text-gray-900">{formatNaira(breakdown.agreementFee)}</span>
+          </div>
+        )}
+        {breakdown.commissionFee > 0 && (
+          <div className="flex items-center justify-between text-gray-600">
+            <span>Commission Fee</span><span className="font-semibold text-gray-900">{formatNaira(breakdown.commissionFee)}</span>
+          </div>
+        )}
+        {breakdown.otherCharges > 0 && (
+          <div className="flex items-center justify-between text-gray-600">
+            <span>Other Charges</span><span className="font-semibold text-gray-900">{formatNaira(breakdown.otherCharges)}</span>
+          </div>
+        )}
+        <div className="flex items-center justify-between pt-2 border-t border-blue-100">
+          <span className="font-bold text-gray-900">Total Payable</span>
+          <span className="font-extrabold text-blue-700">{formatNaira(breakdown.total)}</span>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+type EditForm = { title: string; address: string; city: string; state: string; price: string; type: string; status: string; bedrooms: string; bathrooms: string; amenities: string[]; latitude: string; longitude: string; agreement_fee: string; commission_fee: string; other_charges: string }
+const emptyEdit: EditForm = { title: '', address: '', city: '', state: '', price: '', type: 'rent', status: 'available', bedrooms: '', bathrooms: '', amenities: [], latitude: '', longitude: '', agreement_fee: '', commission_fee: '', other_charges: '' }
 
 type AddForm = {
   landlord_id: string; title: string; address: string; city: string; state: string
@@ -61,12 +106,14 @@ type AddForm = {
   property_type: string; type: string; status: string
   price: string; bedrooms: string; bathrooms: string; description: string
   amenities: string[]; latitude: string; longitude: string
+  agreement_fee: string; commission_fee: string; other_charges: string
 }
 const emptyAdd: AddForm = {
   landlord_id: '', title: '', address: '', city: '', state: '', assigned_to: '',
   property_type: 'Apartment', type: 'rent', status: 'available',
   price: '', bedrooms: '', bathrooms: '', description: '',
   amenities: [], latitude: '', longitude: '',
+  agreement_fee: '', commission_fee: '', other_charges: '',
 }
 
 export default function AdminProperties() {
@@ -85,11 +132,10 @@ export default function AdminProperties() {
   const [addOpen, setAddOpen] = useState(false)
   const [addForm, setAddForm] = useState<AddForm>(emptyAdd)
   const [addSaving, setAddSaving] = useState(false)
-  const [showAddCoordinates, setShowAddCoordinates] = useState(false)
   const [landlords, setLandlords] = useState<{ id: string; full_name: string }[]>([])
   const [currentAdminId, setCurrentAdminId] = useState<string | null>(null)
   const [authUid, setAuthUid] = useState<string | null>(null)
-  const [showEditCoordinates, setShowEditCoordinates] = useState(false)
+  const [feeConfig, setFeeConfig] = useState<FeeConfig | null>(null)
   // Add modal image state
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [imageFiles, setImageFiles] = useState<File[]>([])
@@ -186,6 +232,16 @@ export default function AdminProperties() {
       .then(({ data }) => setLandlords(data ?? []))
   }, [])
 
+  // Load the configured Agency Fee percentage and keep it in sync.
+  useEffect(() => {
+    let active = true
+    getFeeConfig().then(cfg => { if (active) setFeeConfig(cfg) })
+    const unsub = subscribeListingRulesChange(() => {
+      getFeeConfig({ refresh: true }).then(cfg => { if (active) setFeeConfig(cfg) })
+    })
+    return () => { active = false; unsub() }
+  }, [])
+
 
   useEffect(() => {
     let list = [...properties]
@@ -231,12 +287,33 @@ export default function AdminProperties() {
       amenities: p.amenities ?? [],
       latitude: p.latitude ? String(p.latitude) : '',
       longitude: p.longitude ? String(p.longitude) : '',
+      agreement_fee: p.agreement_fee != null ? String(p.agreement_fee) : '',
+      commission_fee: p.commission_fee != null ? String(p.commission_fee) : '',
+      other_charges: p.other_charges != null ? String(p.other_charges) : '',
     })
-    setShowEditCoordinates(!!p.latitude || !!p.longitude)
     setExistingImages(p.property_images ?? [])
     setEditImageFiles([])
     setEditImagePreviews([])
     setEditCoverIdx(0)
+  }
+
+  // Location handlers sync coordinates from LocationField into form state.
+  function handleEditLocation(loc: { latitude: number; longitude: number; address: string }) {
+    setEditForm(f => ({
+      ...f,
+      latitude: loc.latitude ? String(loc.latitude) : '',
+      longitude: loc.longitude ? String(loc.longitude) : '',
+      address: loc.address || f.address,
+    }))
+  }
+
+  function handleAddLocation(loc: { latitude: number; longitude: number; address: string }) {
+    setAddForm(f => ({
+      ...f,
+      latitude: loc.latitude ? String(loc.latitude) : '',
+      longitude: loc.longitude ? String(loc.longitude) : '',
+      address: loc.address || f.address,
+    }))
   }
 
   async function handleAddSave() {
@@ -260,7 +337,10 @@ export default function AdminProperties() {
         property_type: addForm.property_type,
         type: addForm.type,
         status: addForm.status,
-        price: Number(addForm.price),
+        price: digitsToNumber(addForm.price),
+        agreement_fee: addForm.agreement_fee ? digitsToNumber(addForm.agreement_fee) : null,
+        commission_fee: addForm.commission_fee ? digitsToNumber(addForm.commission_fee) : null,
+        other_charges: addForm.other_charges ? digitsToNumber(addForm.other_charges) : null,
         bedrooms: addForm.bedrooms ? Number(addForm.bedrooms) : null,
         bathrooms: addForm.bathrooms ? Number(addForm.bathrooms) : null,
         description: addForm.description.trim() || null,
@@ -326,7 +406,10 @@ export default function AdminProperties() {
       address: editForm.address,
       city: editForm.city,
       state: editForm.state || null,
-      price: editForm.price ? Number(editForm.price) : null,
+      price: editForm.price ? digitsToNumber(editForm.price) : null,
+      agreement_fee: editForm.agreement_fee ? digitsToNumber(editForm.agreement_fee) : null,
+      commission_fee: editForm.commission_fee ? digitsToNumber(editForm.commission_fee) : null,
+      other_charges: editForm.other_charges ? digitsToNumber(editForm.other_charges) : null,
       type: editForm.type,
       status: editForm.status,
       bedrooms: editForm.bedrooms ? Number(editForm.bedrooms) : null,
@@ -382,6 +465,25 @@ export default function AdminProperties() {
   const available = properties.filter(p => p.status === 'available').length
   const taken = properties.filter(p => p.status === 'taken').length
 
+  const editBreakdown = calcFeeBreakdown(
+    {
+      price: digitsToNumber(editForm.price),
+      agreement_fee: editForm.agreement_fee ? digitsToNumber(editForm.agreement_fee) : 0,
+      commission_fee: editForm.commission_fee ? digitsToNumber(editForm.commission_fee) : 0,
+      other_charges: editForm.other_charges ? digitsToNumber(editForm.other_charges) : 0,
+    },
+    feeConfig ?? undefined,
+  )
+  const addBreakdown = calcFeeBreakdown(
+    {
+      price: digitsToNumber(addForm.price),
+      agreement_fee: addForm.agreement_fee ? digitsToNumber(addForm.agreement_fee) : 0,
+      commission_fee: addForm.commission_fee ? digitsToNumber(addForm.commission_fee) : 0,
+      other_charges: addForm.other_charges ? digitsToNumber(addForm.other_charges) : 0,
+    },
+    feeConfig ?? undefined,
+  )
+
   const STATUS_TABS = [
     { key: 'all', label: 'All', count: properties.length },
     { key: 'available', label: 'Available', count: available },
@@ -398,7 +500,7 @@ export default function AdminProperties() {
             title="Listings"
             subtitle={`${properties.length.toLocaleString()} total listings`}
             action={
-              <button type="button" onClick={() => { setAddForm({ ...emptyAdd, assigned_to: currentAdminId ?? '' }); setShowAddCoordinates(false); setAddOpen(true) }}
+              <button type="button" onClick={() => { setAddForm({ ...emptyAdd, assigned_to: currentAdminId ?? '' }); setAddOpen(true) }}
                 className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-xl transition-colors shadow-sm">
                 <Plus className="w-4 h-4" />
                 <span className="hidden sm:inline">Add Listing</span>
@@ -672,20 +774,57 @@ export default function AdminProperties() {
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5 block">Price (₦)</label>
-                    <input type="number" value={editForm.price} onChange={e => setEditForm(f => ({ ...f, price: e.target.value }))}
-                      className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gray-50 focus:bg-white transition-all" />
+                    <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5 block">Rent Amount (₦)</label>
+                    <MoneyInput
+                      value={editForm.price}
+                      onChange={v => setEditForm(f => ({ ...f, price: v }))}
+                      placeholder="e.g. 1,500,000"
+                    />
                   </div>
                   <div>
-                    <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5 block">Type</label>
-                    <select value={editForm.type} onChange={e => setEditForm(f => ({ ...f, type: e.target.value }))}
-                      className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50 focus:bg-white transition-all">
-                      <option value="rent">Rent</option>
-                      <option value="sale">Buy / Sale</option>
-                      <option value="lease">Lease</option>
-                      <option value="commercial">Commercial</option>
-                    </select>
+                    <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5 block">Agency Fee (auto)</label>
+                    <div className="w-full px-4 py-2.5 rounded-xl border border-gray-200 bg-gray-100 text-sm text-gray-900 font-semibold flex items-center justify-between">
+                      <span>{formatNaira(editBreakdown.agencyFee)}</span>
+                      <span className="text-xs font-medium text-gray-400">{feeConfig ? `${feeConfig.agencyFeePercent}%` : '…'}</span>
+                    </div>
                   </div>
+                </div>
+                <div className="grid grid-cols-3 gap-4">
+                  <div>
+                    <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5 block">Agreement Fee (₦)</label>
+                    <MoneyInput
+                      value={editForm.agreement_fee}
+                      onChange={v => setEditForm(f => ({ ...f, agreement_fee: v }))}
+                      placeholder="Optional"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5 block">Commission Fee (₦)</label>
+                    <MoneyInput
+                      value={editForm.commission_fee}
+                      onChange={v => setEditForm(f => ({ ...f, commission_fee: v }))}
+                      placeholder="Optional"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5 block">Other Charges (₦)</label>
+                    <MoneyInput
+                      value={editForm.other_charges}
+                      onChange={v => setEditForm(f => ({ ...f, other_charges: v }))}
+                      placeholder="Optional"
+                    />
+                  </div>
+                </div>
+                <FeesSummary breakdown={editBreakdown} percent={feeConfig?.agencyFeePercent} />
+                <div>
+                  <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5 block">Type</label>
+                  <select value={editForm.type} onChange={e => setEditForm(f => ({ ...f, type: e.target.value }))}
+                    className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50 focus:bg-white transition-all">
+                    <option value="rent">Rent</option>
+                    <option value="sale">Buy / Sale</option>
+                    <option value="lease">Lease</option>
+                    <option value="commercial">Commercial</option>
+                  </select>
                 </div>
                 <div>
                   <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5 block">Status</label>
@@ -743,32 +882,14 @@ export default function AdminProperties() {
                   </div>
                 </div>
 
-                {/* Coordinates */}
+                {/* Location */}
                 <div className="rounded-3xl border border-dashed border-gray-200 bg-slate-50 p-4">
-                  <button type="button" onClick={() => setShowEditCoordinates(v => !v)}
-                    className="flex w-full items-center justify-between rounded-2xl bg-white px-4 py-3 text-left text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-100">
-                    <span>{showEditCoordinates ? 'Hide exact map coordinates' : 'Add exact map coordinates (optional)'}</span>
-                    <span className="text-slate-400">{showEditCoordinates ? '−' : '+'}</span>
-                  </button>
-                  <p className="mt-3 text-xs text-gray-400">Enter a Google Maps address above, or optionally provide latitude/longitude for a precise pin.</p>
-                  {showEditCoordinates && (
-                    <div className="mt-4 grid grid-cols-2 gap-4">
-                      <div>
-                        <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5 block">Latitude</label>
-                        <input type="number" step="any" value={editForm.latitude}
-                          onChange={e => setEditForm(f => ({ ...f, latitude: e.target.value }))}
-                          placeholder="6.5244"
-                          className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white transition-all" />
-                      </div>
-                      <div>
-                        <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5 block">Longitude</label>
-                        <input type="number" step="any" value={editForm.longitude}
-                          onChange={e => setEditForm(f => ({ ...f, longitude: e.target.value }))}
-                          placeholder="3.3792"
-                          className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white transition-all" />
-                      </div>
-                    </div>
-                  )}
+                  <LocationField
+                    onLocation={handleEditLocation}
+                    initialLatitude={editForm.latitude ? Number(editForm.latitude) : null}
+                    initialLongitude={editForm.longitude ? Number(editForm.longitude) : null}
+                    initialAddress={editForm.address}
+                  />
                 </div>
               </div>
               {/* Photos */}
@@ -956,14 +1077,56 @@ export default function AdminProperties() {
                 </div>
               </div>
 
-              {/* Price + Status */}
+              {/* Rent + Status */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1.5 block">Price (₦) *</label>
-                  <input type="number" min="0" value={addForm.price} onChange={e => setAddForm(f => ({ ...f, price: e.target.value }))}
-                    placeholder="e.g. 2500000"
-                    className="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1.5 block">Rent Amount (₦) *</label>
+                  <MoneyInput
+                    value={addForm.price}
+                    onChange={v => setAddForm(f => ({ ...f, price: v }))}
+                    placeholder="e.g. 1,500,000"
+                  />
                 </div>
+                <div>
+                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1.5 block">Agency Fee (auto)</label>
+                  <div className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 bg-gray-100 text-sm text-gray-900 font-semibold flex items-center justify-between">
+                    <span>{formatNaira(addBreakdown.agencyFee)}</span>
+                    <span className="text-xs font-medium text-gray-400">{feeConfig ? `${feeConfig.agencyFeePercent}%` : '…'}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Optional fees */}
+              <div className="grid grid-cols-3 gap-4">
+                <div>
+                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1.5 block">Agreement Fee (₦)</label>
+                  <MoneyInput
+                    value={addForm.agreement_fee}
+                    onChange={v => setAddForm(f => ({ ...f, agreement_fee: v }))}
+                    placeholder="Optional"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1.5 block">Commission Fee (₦)</label>
+                  <MoneyInput
+                    value={addForm.commission_fee}
+                    onChange={v => setAddForm(f => ({ ...f, commission_fee: v }))}
+                    placeholder="Optional"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1.5 block">Other Charges (₦)</label>
+                  <MoneyInput
+                    value={addForm.other_charges}
+                    onChange={v => setAddForm(f => ({ ...f, other_charges: v }))}
+                    placeholder="Optional"
+                  />
+                </div>
+              </div>
+
+              <FeesSummary breakdown={addBreakdown} percent={feeConfig?.agencyFeePercent} />
+
+              <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1.5 block">Status</label>
                   <select value={addForm.status} onChange={e => setAddForm(f => ({ ...f, status: e.target.value }))}
@@ -1033,32 +1196,14 @@ export default function AdminProperties() {
                 </div>
               </div>
 
-              {/* Coordinates */}
+              {/* Location */}
               <div className="rounded-3xl border border-dashed border-gray-200 bg-slate-50 p-4">
-                <button type="button" onClick={() => setShowAddCoordinates(v => !v)}
-                  className="flex w-full items-center justify-between rounded-2xl bg-white px-4 py-3 text-left text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-100">
-                  <span>{showAddCoordinates ? 'Hide exact map coordinates' : 'Add exact map coordinates (optional)'}</span>
-                  <span className="text-slate-400">{showAddCoordinates ? '−' : '+'}</span>
-                </button>
-                <p className="mt-3 text-xs text-gray-400">Enter a Google Maps address above, or optionally provide latitude/longitude for a precise pin.</p>
-                {showAddCoordinates && (
-                  <div className="mt-4 grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5 block">Latitude</label>
-                      <input type="number" step="any" value={addForm.latitude}
-                        onChange={e => setAddForm(f => ({ ...f, latitude: e.target.value }))}
-                        placeholder="6.5244"
-                        className="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
-                    </div>
-                    <div>
-                      <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5 block">Longitude</label>
-                      <input type="number" step="any" value={addForm.longitude}
-                        onChange={e => setAddForm(f => ({ ...f, longitude: e.target.value }))}
-                        placeholder="3.3792"
-                        className="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
-                    </div>
-                  </div>
-                )}
+                <LocationField
+                  onLocation={handleAddLocation}
+                  initialLatitude={addForm.latitude ? Number(addForm.latitude) : null}
+                  initialLongitude={addForm.longitude ? Number(addForm.longitude) : null}
+                  initialAddress={addForm.address}
+                />
               </div>
 
               {/* ── Photos ── */}
