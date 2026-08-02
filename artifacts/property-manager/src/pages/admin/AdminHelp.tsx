@@ -6,6 +6,7 @@ import {
 import AdminSidebar from '../../components/layout/AdminSidebar'
 import AuthGuard from '../../components/auth/AuthGuard'
 import { createClient } from '../../lib/supabase'
+import { getPlatformSettings, getNotificationSettings } from '../../lib/platform-settings'
 
 const FAQS = [
   {
@@ -60,9 +61,20 @@ export default function AdminHelp() {
   const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState('')
 
+  // Support contact details from Settings — single source of truth.
+  const [supportPhone, setSupportPhone] = useState('+234 800 548 2621')
+  const [supportEmail, setSupportEmail] = useState('support@livarex.com.ng')
+
   useEffect(() => {
     const supabase = createClient()
     supabase.auth.getUser().then(({ data: { user } }) => setUser({ email: user?.email, id: user?.id }))
+    let active = true
+    Promise.all([getPlatformSettings(), getNotificationSettings()]).then(([platform, notif]) => {
+      if (!active) return
+      setSupportPhone(platform.phone)
+      setSupportEmail(platform.email || notif.adminEmail)
+    })
+    return () => { active = false }
   }, [])
 
   const filteredFaqs = FAQS.filter(f =>
@@ -160,8 +172,8 @@ export default function AdminHelp() {
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     {[
                       { icon: MessageSquare, title: 'Live Chat', desc: 'Quick replies during business hours', accent: 'bg-blue-600' },
-                      { icon: Mail, title: 'Email Support', desc: 'support@livarex.com', accent: 'bg-violet-600' },
-                      { icon: Phone, title: 'Phone Support', desc: '+234 800 548 2621', accent: 'bg-emerald-600' },
+                      { icon: Mail, title: 'Email Support', desc: supportEmail, accent: 'bg-violet-600' },
+                      { icon: Phone, title: 'Phone Support', desc: supportPhone, accent: 'bg-emerald-600' },
                     ].map(c => {
                       const Icon = c.icon
                       return (

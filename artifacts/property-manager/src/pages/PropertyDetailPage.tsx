@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Link, useParams, useLocation } from '@/lib/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
@@ -7,7 +7,7 @@ import {
   Building2, Calendar, ShieldCheck, Info,
   Mail, Wifi, Car, Dumbbell, Waves, Wind, Shield, Zap,
   Droplets, TreePine, UtensilsCrossed, Tv, Lock, Sun, Package,
-  Eye, Phone, X, ReceiptText,
+  Eye, Phone, X, ReceiptText, ChevronRight,
 } from 'lucide-react'
 import PropertyDetailMap from '../components/property/PropertyDetailMap'
 import PublicNavbar from '../components/layout/PublicNavbar'
@@ -18,6 +18,7 @@ import { isAdminUser } from '../lib/auth'
 import { calcFeeBreakdown, getFeeConfig, type FeeConfig } from '../lib/fees'
 import { formatNaira } from '../lib/currency'
 import { subscribeListingRulesChange } from '../lib/settings-store'
+import { getPlatformSettings } from '../lib/platform-settings'
 import type { PropertyWithLandlord, PropertyImage, Landlord } from '@/types'
 
 
@@ -78,6 +79,7 @@ export default function PropertyDetailPage() {
   const [saved, setSaved]       = useState(false)
   const [saving, setSaving]     = useState(false)
   const [activeImg, setActiveImg] = useState(0)
+  const [lightboxOpen, setLightboxOpen] = useState(false)
 
   const [userRole, setUserRole] = useState<'guest' | 'tenant' | 'landlord' | 'admin'>('guest')
   const [tenantId, setTenantId] = useState<string | null>(null)
@@ -89,6 +91,15 @@ export default function PropertyDetailPage() {
 
   const [contactModalOpen, setContactModalOpen] = useState(false)
   const [contactMethod, setContactMethod] = useState<'whatsapp' | 'form' | null>(null)
+
+  // Admin phone from Settings — single source of truth for WhatsApp support.
+  const [supportPhone, setSupportPhone] = useState('07061370742')
+
+  useEffect(() => {
+    let active = true
+    getPlatformSettings().then(s => { if (active) setSupportPhone(s.phone) })
+    return () => { active = false }
+  }, [])
 
   const [activeTab, setActiveTab] = useState<ActiveTab>('overview')
   const [copied, setCopied]       = useState(false)
@@ -157,6 +168,42 @@ export default function PropertyDetailPage() {
   const images = (property?.property_images ?? [])
     .sort((a, b) => (a.is_cover ? -1 : b.is_cover ? 1 : (a.sort_order ?? 0) - (b.sort_order ?? 0)))
 
+  function prevImage() {
+    setActiveImg(i => (images.length === 0 ? 0 : (i - 1 + images.length) % images.length))
+  }
+  function nextImage() {
+    setActiveImg(i => (images.length === 0 ? 0 : (i + 1) % images.length))
+  }
+
+  // Keyboard navigation for the lightbox (desktop arrows + Escape to close).
+  useEffect(() => {
+    if (!lightboxOpen) return
+    function onKey(e: KeyboardEvent) {
+      if (e.key === 'ArrowLeft') prevImage()
+      else if (e.key === 'ArrowRight') nextImage()
+      else if (e.key === 'Escape') setLightboxOpen(false)
+    }
+    window.addEventListener('keydown', onKey)
+    document.body.style.overflow = 'hidden'
+    return () => {
+      window.removeEventListener('keydown', onKey)
+      document.body.style.overflow = ''
+    }
+  }, [lightboxOpen, images.length])
+
+  // Touch swipe support for the lightbox on mobile.
+  const touchStartX = useRef<number | null>(null)
+  function onTouchStart(e: React.TouchEvent) { touchStartX.current = e.touches[0].clientX }
+  function onTouchEnd(e: React.TouchEvent) {
+    if (touchStartX.current === null) return
+    const dx = e.changedTouches[0].clientX - touchStartX.current
+    if (Math.abs(dx) > 50) {
+      if (dx > 0) prevImage()
+      else nextImage()
+    }
+    touchStartX.current = null
+  }
+
   async function handleSave() {
     if (userRole === 'guest') { navigate('/login'); return }
     if (userRole !== 'tenant' || !tenantId) return
@@ -218,11 +265,9 @@ export default function PropertyDetailPage() {
     }, 3000)
   }
 
-  const LIVAREX_SUPPORT_WHATSAPP = '07061370742'
-
   function handleWhatsAppContact() {
     if (userRole === 'guest') { navigate('/login'); return }
-    const cleanNumber = LIVAREX_SUPPORT_WHATSAPP.replace(/\D/g, '')
+    const cleanNumber = supportPhone.replace(/\D/g, '')
     const message = `Hi Livarex, I'm interested in a property: ${property?.title} (ID: ${property?.id}). Can you help me with an inspection?`
     const whatsappUrl = `https://wa.me/234${cleanNumber}?text=${encodeURIComponent(message)}`
     window.open(whatsappUrl, '_blank')
@@ -362,8 +407,9 @@ export default function PropertyDetailPage() {
                   exit={{ opacity: 0 }}
                   transition={{ duration: 0.5 }}
                   src={getSupabaseImageUrl(images[activeImg].storage_path)}
-                  className="w-full h-full object-cover"
-                  alt="Property"
+                  className="w-full h-full object-cover cursor-zoom-in"
+                  alt={images[activeImg].alt_text || property.title}
+                  onClick={() => setLightboxOpen(true)}
                 />
               ) : (
                 <div className="w-full h-full flex items-center justify-center bg-gray-100">
@@ -372,11 +418,20 @@ export default function PropertyDetailPage() {
               )}
             </AnimatePresence>
 
+            {/* Click anywhere on the hero to open the full-screen viewer */}
+            {images.length > 0 && (
+              <button
+                onClick={() => setLightboxOpen(true)}
+                aria-label="View photos"
+                className="absolute inset-0 z-[1] cursor-zoom-in"
+              />
+            )}
+
             {/* Subtle vignette — keeps top controls readable */}
             <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-transparent pointer-events-none" />
 
             {/* Top controls */}
-            <div className="absolute top-6 left-6 right-6 flex items-center justify-between">
+            <div className="absolute top-6 left-6 right-6 z-10 flex items-center justify-between">
               <button
                 onClick={() => navigate('/listings')}
                 className="flex items-center gap-2 px-4 py-2.5 bg-white/10 backdrop-blur-md border border-white/20 text-white rounded-2xl text-sm font-semibold hover:bg-white/20 transition-all active:scale-95"
@@ -409,7 +464,7 @@ export default function PropertyDetailPage() {
 
             {/* Image counter */}
             {images.length > 1 && (
-              <div className="absolute bottom-6 right-6 md:bottom-8 md:right-8 flex items-center gap-1.5 px-3 py-1.5 bg-black/40 backdrop-blur-md rounded-xl border border-white/10">
+              <div className="absolute bottom-6 right-6 z-10 md:bottom-8 md:right-8 flex items-center gap-1.5 px-3 py-1.5 bg-black/40 backdrop-blur-md rounded-xl border border-white/10">
                 <Eye className="w-3.5 h-3.5 text-white/70" />
                 <span className="text-white/80 text-xs font-semibold">{activeImg + 1} / {images.length}</span>
               </div>
@@ -440,25 +495,17 @@ export default function PropertyDetailPage() {
       {/* ── TITLE BLOCK — below hero in white space ── */}
       <div className="bg-white border-b border-gray-100">
         <div className="max-w-7xl mx-auto px-4 md:px-6 py-6 md:py-8">
-          {/* Badges */}
+          {/* Badges — only the availability badge (rent/sale) is shown to the
+              public. Featured / Verified Landlord exist internally but are not
+              displayed on the property details page. */}
           <div className="flex flex-wrap items-center gap-2 mb-4">
             <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold ${statusCfg.bg} ${statusCfg.text}`}>
               <span className={`w-1.5 h-1.5 rounded-full ${statusCfg.dot} animate-pulse`} />
-              {statusCfg.label}
+              {statusCfg.label}{property.type === 'rent' || property.type === 'lease' ? ' for Rent' : property.type === 'sale' ? ' for Sale' : ''}
             </span>
             <span className="px-3 py-1 rounded-full text-xs font-bold bg-gray-100 text-gray-700 border border-gray-200">
               {TYPE_LABEL[property.type]}
             </span>
-            {landlord?.is_verified && (
-              <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                <ShieldCheck className="w-3 h-3" /> Verified Landlord
-              </span>
-            )}
-            {property.featured && (
-              <span className="px-3 py-1 rounded-full text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200">
-                ⭐ Featured
-              </span>
-            )}
           </div>
           {/* Title */}
           <h1 className="text-2xl md:text-3xl lg:text-4xl font-black text-gray-900 tracking-tight leading-tight mb-3">
@@ -963,6 +1010,105 @@ export default function PropertyDetailPage() {
 
         </div>
       </main>
+
+      {/* ── Full-screen image viewer (lightbox) ── */}
+      <AnimatePresence>
+        {lightboxOpen && images.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="fixed inset-0 z-[100] bg-black/95 flex flex-col"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Property photos"
+            onClick={() => setLightboxOpen(false)}
+          >
+            {/* Top bar */}
+            <div className="flex items-center justify-between px-4 py-3 shrink-0" onClick={e => e.stopPropagation()}>
+              <span className="text-white/80 text-sm font-semibold">
+                {activeImg + 1} / {images.length}
+              </span>
+              <button
+                onClick={() => setLightboxOpen(false)}
+                aria-label="Close photo viewer"
+                className="p-2.5 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Image stage */}
+            <div
+              className="flex-1 flex items-center justify-center min-h-0 px-4 sm:px-16 select-none"
+              onClick={e => e.stopPropagation()}
+              onTouchStart={onTouchStart}
+              onTouchEnd={onTouchEnd}
+            >
+              <AnimatePresence mode="wait">
+                <motion.img
+                  key={activeImg}
+                  initial={{ opacity: 0, scale: 0.98 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.25 }}
+                  src={getSupabaseImageUrl(images[activeImg].storage_path, 1600)}
+                  alt={images[activeImg].alt_text || property.title}
+                  className="max-w-full max-h-full object-contain rounded-lg shadow-2xl"
+                  draggable={false}
+                />
+              </AnimatePresence>
+            </div>
+
+            {/* Prev / Next */}
+            {images.length > 1 && (
+              <>
+                <button
+                  onClick={(e) => { e.stopPropagation(); prevImage() }}
+                  aria-label="Previous photo"
+                  className="absolute left-2 sm:left-5 top-1/2 -translate-y-1/2 p-3 rounded-full bg-white/10 hover:bg-white/25 text-white transition-colors"
+                >
+                  <ArrowLeft className="w-5 h-5" />
+                </button>
+                <button
+                  onClick={(e) => { e.stopPropagation(); nextImage() }}
+                  aria-label="Next photo"
+                  className="absolute right-2 sm:right-5 top-1/2 -translate-y-1/2 p-3 rounded-full bg-white/10 hover:bg-white/25 text-white transition-colors"
+                >
+                  <ChevronRight className="w-5 h-5" />
+                </button>
+              </>
+            )}
+
+            {/* Thumbnails */}
+            {images.length > 1 && (
+              <div
+                className="flex items-center gap-2 justify-center px-4 py-4 overflow-x-auto shrink-0"
+                onClick={e => e.stopPropagation()}
+              >
+                {images.map((img, i) => (
+                  <button
+                    key={img.id}
+                    onClick={() => setActiveImg(i)}
+                    className={`relative shrink-0 w-14 h-10 rounded-lg overflow-hidden transition-all ${
+                      activeImg === i
+                        ? 'ring-2 ring-white ring-offset-2 ring-offset-black'
+                        : 'opacity-40 hover:opacity-80'
+                    }`}
+                  >
+                    <img
+                      src={getSupabaseImageUrl(img.storage_path, 200)}
+                      alt={img.alt_text || `Photo ${i + 1}`}
+                      className="w-full h-full object-cover"
+                    />
+                  </button>
+                ))}
+              </div>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Mobile sticky bar */}
       <div className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-xl border-t border-gray-100 px-4 py-3 flex items-center justify-between gap-4">

@@ -12,6 +12,7 @@ import ListingCard from '@/components/property/ListingCard'
 import { MoneyInput } from '@/components/ui/money-input'
 import { createClient, isSupabaseConfigured } from '@/lib/supabase'
 import { isAdminUser } from '@/lib/auth'
+import { getPlatformSettings, phoneToWaLink } from '@/lib/platform-settings'
 import type { PropertyWithLandlord } from '@/types'
 
 const PropertyMap = lazy(() => import('@/components/property/PropertyMap'))
@@ -47,6 +48,16 @@ export default function ListingsPageClient({
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [savedIds, setSavedIds] = useState<Set<string>>(new Set())
   const listRef = useRef<HTMLDivElement>(null)
+  const [waHref, setWaHref] = useState('https://wa.me/2347061370742?text=Hi%20Livarex%2C%20I%27m%20looking%20for%20a%20property')
+
+  // Admin phone from Settings — single source of truth.
+  useEffect(() => {
+    let active = true
+    getPlatformSettings().then(s => {
+      if (active) setWaHref(phoneToWaLink(s.phone, "Hi Livarex, I'm looking for a property"))
+    })
+    return () => { active = false }
+  }, [])
 
   useEffect(() => {
     if (!isSupabaseConfigured()) return
@@ -387,7 +398,7 @@ export default function ListingsPageClient({
                 </p>
                 <div className="flex flex-col sm:flex-row gap-3 justify-center">
                   <a
-                    href="https://wa.me/2347061370742?text=Hi%20Livarex%2C%20I%27m%20looking%20for%20a%20property"
+                    href={waHref}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-green-600 hover:bg-green-500 text-white text-sm font-bold rounded-xl transition-colors shadow-lg shadow-green-600/20"

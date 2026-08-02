@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, type ReactNode } from 'react'
 import { X, Send, MessageSquare, Paperclip, ChevronDown, User, LayoutGrid, Check } from 'lucide-react'
 import { createClient, isSupabaseConfigured } from '../lib/supabase'
+import { getPlatformSettings, getNotificationSettings, phoneToWaLink } from '../lib/platform-settings'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -119,6 +120,15 @@ export default function ChatWidget() {
   const [pendingImg, setPendingImg] = useState<{ url: string; data: string; mediaType: string } | null>(null)
   const [actionsUsed, setActionsUsed] = useState(false)
   const [showMenu, setShowMenu] = useState(false)
+
+  // Admin phone (from Settings) used for the header WhatsApp link + fallbacks.
+  const [waHref, setWaHref] = useState('https://wa.me/2347061370742?text=Hello%20Livarex!')
+
+  useEffect(() => {
+    getPlatformSettings().then(s => {
+      setWaHref(phoneToWaLink(s.phone, 'Hello Livarex!'))
+    }).catch(() => { /* keep default */ })
+  }, [])
 
   // ── Agent form state ──────────────────────────────────────────────────────
   const [showAgentForm, setShowAgentForm]       = useState(false)
@@ -256,11 +266,33 @@ export default function ChatWidget() {
           body: note,
           created_at: new Date().toISOString(),
         }])
+
+        // Notify the admin (email + notification bell picks it up via realtime).
+        getNotificationSettings().then(notif => {
+          fetch('/api/send-support-notification', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              event: 'chat',
+              adminEmail: notif.adminEmail,
+              userName: name,
+              userEmail: '',
+              subject: 'Website chat inquiry',
+              message: note,
+              ticketId: inserted.id,
+              channel: 'Live chat',
+            }),
+          }).catch(() => { /* non-fatal */ })
+        }).catch(() => { /* non-fatal */ })
       }
     } catch (err) {
       console.error('Agent form error:', err)
       // fall back to WhatsApp on failure
-      window.open(`https://wa.me/2347061370742?text=${encodeURIComponent(`Hi, I'm ${name}. ${note}`)}`, '_blank')
+      getPlatformSettings().then(s => {
+        window.open(phoneToWaLink(s.phone, `Hi, I'm ${name}. ${note}`), '_blank')
+      }).catch(() => {
+        window.open('https://wa.me/2347061370742', '_blank')
+      })
       setAgentSubmitted(true)
     } finally {
       setAgentSubmitting(false)
@@ -340,10 +372,17 @@ export default function ChatWidget() {
         setTimeout(() => setShowAgentForm(true), 700)
       }
     } catch {
-      setMessages(m => [...m, {
-        role: 'assistant',
-        content: [{ type: 'text', text: 'Connection issue. Reach us on WhatsApp: +234 706 137 0742.' }],
-      }])
+      getPlatformSettings().then(s => {
+        setMessages(m => [...m, {
+          role: 'assistant',
+          content: [{ type: 'text', text: `Connection issue. Reach us on WhatsApp: ${s.phone}.` }],
+        }])
+      }).catch(() => {
+        setMessages(m => [...m, {
+          role: 'assistant',
+          content: [{ type: 'text', text: 'Connection issue. Reach us on WhatsApp: +234 800 548 2621.' }],
+        }])
+      })
     } finally {
       setLoading(false)
     }
@@ -497,7 +536,7 @@ export default function ChatWidget() {
           )}
 
           {/* WhatsApp */}
-          <a href="https://wa.me/2347061370742?text=Hello%20Livarex!"
+          <a href={waHref}
             target="_blank" rel="noopener noreferrer"
             title="Continue on WhatsApp"
             aria-label="Continue on WhatsApp"

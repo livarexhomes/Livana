@@ -10,6 +10,7 @@ import ListingCard from '../components/property/ListingCard'
 import { MoneyInput } from '../components/ui/money-input'
 import { createClient, isSupabaseConfigured } from '../lib/supabase'
 import { isAdminUser } from '../lib/auth'
+import { getPlatformSettings, phoneToWaLink } from '../lib/platform-settings'
 import type { PropertyWithLandlord } from '@/types'
 
 const PropertyMap = lazy(() => import('../components/property/PropertyMap'))
@@ -42,6 +43,16 @@ export default function ListingsPage() {
   const [savedIds,        setSavedIds]        = useState<Set<string>>(new Set())
   const [openPanel,       setOpenPanel]       = useState<'location' | 'type' | 'beds' | 'price' | null>(null)
   const listRef = useRef<HTMLDivElement>(null)
+  const [waHref, setWaHref] = useState('https://wa.me/2347061370742?text=Hi%20Livarex%2C%20I%27d%20like%20to%20request%20a%20property')
+
+  // Admin phone from Settings — single source of truth.
+  useEffect(() => {
+    let active = true
+    getPlatformSettings().then(s => {
+      if (active) setWaHref(phoneToWaLink(s.phone, "Hi Livarex, I'd like to request a property"))
+    })
+    return () => { active = false }
+  }, [])
 
   useEffect(() => {
     if (!isSupabaseConfigured()) return
@@ -401,7 +412,7 @@ export default function ListingsPage() {
                         Clear all filters
                       </button>
                     ) : (
-                      <a href="https://wa.me/2347061370742?text=Hi%20Livarex%2C%20I%27d%20like%20to%20request%20a%20property"
+                      <a href={waHref}
                         target="_blank" rel="noopener noreferrer"
                         className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-xl transition-colors shadow-sm shadow-blue-600/25 inline-flex items-center gap-2">
                         Request a property via WhatsApp

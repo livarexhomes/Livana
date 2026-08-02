@@ -157,8 +157,8 @@ export default function PublicNavbar() {
         {/* Mobile: right-side controls */}
         <div className="flex items-center gap-2 md:hidden">
           {!user && (
-            <Link href="/login" className="text-xs font-semibold bg-blue-600 text-white px-3 py-2 rounded-xl hover:bg-blue-700 transition-all whitespace-nowrap">
-              Sign In
+            <Link href="/register" className="text-xs font-semibold bg-blue-600 text-white px-3 py-2 rounded-xl hover:bg-blue-700 transition-all whitespace-nowrap">
+              Get Started
             </Link>
           )}
           <button
@@ -216,7 +216,8 @@ export default function PublicNavbar() {
             ) : (
               <>
                 <Link href="/landlord/register" onClick={() => setMenuOpen(false)} className="block px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 rounded-xl">List your Property</Link>
-                <Link href="/login" onClick={() => setMenuOpen(false)} className="block px-4 py-3 text-sm font-semibold bg-blue-600 text-white rounded-xl text-center hover:bg-blue-700 transition-colors shadow-lg shadow-blue-600/25">Sign In</Link>
+                <Link href="/register" onClick={() => setMenuOpen(false)} className="block px-4 py-3 text-sm font-semibold bg-blue-600 text-white rounded-xl text-center hover:bg-blue-700 transition-colors shadow-lg shadow-blue-600/25">Get Started</Link>
+                <Link href="/login" onClick={() => setMenuOpen(false)} className="block px-4 py-3 text-sm font-medium text-gray-500 hover:bg-gray-50 rounded-xl text-center">Already have an account? Sign in</Link>
               </>
             )}
           </div>

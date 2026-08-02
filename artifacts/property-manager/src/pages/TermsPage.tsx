@@ -1,7 +1,22 @@
+import { useState, useEffect } from 'react'
 import PublicNavbar from '@/components/layout/PublicNavbar'
 import Footer from '@/components/layout/Footer'
+import { getPlatformSettings } from '@/lib/platform-settings'
 
 export default function TermsPage() {
+  const [phone, setPhone] = useState('07060528437')
+  const [email, setEmail] = useState('livarexhomes@gmail.com')
+
+  useEffect(() => {
+    let active = true
+    getPlatformSettings().then(s => {
+      if (!active) return
+      setPhone(s.phone)
+      if (s.email) setEmail(s.email)
+    })
+    return () => { active = false }
+  }, [])
+
   return (
     <div className="min-h-screen bg-[#F8F8F6] flex flex-col">
       <PublicNavbar />
@@ -174,8 +189,8 @@ export default function TermsPage() {
 
           <Section title="19. Contact Information">
             <ul>
-              <li><strong>Email:</strong> <a href="mailto:livarexhomes@gmail.com" className="text-blue-600 hover:underline">livarexhomes@gmail.com</a></li>
-              <li><strong>Phone:</strong> 07060528437</li>
+              <li><strong>Email:</strong> <a href={`mailto:${email}`} className="text-blue-600 hover:underline">{email}</a></li>
+              <li><strong>Phone:</strong> {phone}</li>
               <li><strong>Address:</strong> Lagos, Nigeria</li>
               <li><strong>Website:</strong> <a href="https://www.livarex.com.ng" className="text-blue-600 hover:underline">www.livarex.com.ng</a></li>
             </ul>

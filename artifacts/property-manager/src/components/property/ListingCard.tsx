@@ -1,8 +1,9 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link, useLocation } from '@/lib/navigation'
 import { MapPin, BedDouble, Bath, Bookmark, ShieldCheck, Building2, Phone, MessageCircle } from 'lucide-react'
 import type { PropertyWithLandlord } from '@/types'
 import { getSupabaseImageUrl, createClient } from '@/lib/supabase'
+import { getPlatformSettings } from '@/lib/platform-settings'
 import { formatDistanceToNow } from 'date-fns'
 
 function waLink(raw: string) {
@@ -51,8 +52,6 @@ function formatPrice(n: number) {
   return `₦${n.toLocaleString('en-NG')}`
 }
 
-const LIVAREX_WA = '07061370742'
-
 export default function ListingCard({
   property: p,
   saved: initialSaved = false,
@@ -64,6 +63,15 @@ export default function ListingCard({
   const [, navigate] = useLocation()
   const [saved, setSaved]   = useState(initialSaved)
   const [saving, setSaving] = useState(false)
+  const [fallbackNum, setFallbackNum] = useState('07061370742')
+
+  // Load the admin phone (Admin → Settings) as the WhatsApp fallback when a
+  // landlord has no number of their own — single source of truth.
+  useEffect(() => {
+    let active = true
+    getPlatformSettings().then(s => { if (active) setFallbackNum(s.phone) })
+    return () => { active = false }
+  }, [])
 
   const images   = p.property_images ?? []
   const cover    = images.find(i => i.is_cover) ?? images[0]
@@ -73,7 +81,7 @@ export default function ListingCard({
   const period    = PERIOD[p.type] ?? ''
   const timeAgo   = formatDistanceToNow(new Date(p.created_at), { addSuffix: false })
 
-  const contactNum  = p.landlords?.whatsapp ?? LIVAREX_WA
+  const contactNum  = p.landlords?.whatsapp ?? fallbackNum
   const displayName = p.landlords?.full_name ?? 'Livarex'
   const avatarUrl   = p.landlords?.avatar_url ?? null
   const initials    = displayName.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()

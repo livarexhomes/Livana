@@ -6,13 +6,14 @@ import {
   FileText, DollarSign, Hash, Users, BarChart3,
   ArrowUpRight, AlertCircle,
   Eye, EyeOff, Send, TestTube, Trash2, Plus,
-  Key, Smartphone, Webhook, Loader2, Check, X,
+  Key, Smartphone, Webhook, Loader2, Check, X, FileDown,
 } from 'lucide-react'
 import AdminSidebar from '../../components/layout/AdminSidebar'
 import AuthGuard from '../../components/auth/AuthGuard'
 import { createClient } from '../../lib/supabase'
 import { invalidateFeeConfig } from '../../lib/fees'
 import { notifyListingRulesChange } from '../../lib/settings-store'
+import { invalidatePlatformSettings } from '../../lib/platform-settings'
 
 const SECTIONS = [
   { id: 'platform',      label: 'Platform',       icon: Building2  },
@@ -37,7 +38,6 @@ interface NotificationSettings {
   newLandlord: boolean
   newEnquiry: boolean
   newProperty: boolean
-  weeklyReport: boolean
   smsAlerts: boolean
   adminEmail: string
 }
@@ -68,13 +68,13 @@ interface EmailConfig {
 
 // ── UI Components ────────────────────────────────────────────────────────────
 
-function Toggle({ enabled, onChange, loading = false }: { enabled: boolean; onChange: () => void; loading?: boolean }) {
+function Toggle({ enabled, onChange, loading = false, disabled = false }: { enabled: boolean; onChange: () => void; loading?: boolean; disabled?: boolean }) {
   return (
     <button
       type="button"
       role="switch"
       aria-checked={enabled}
-      disabled={loading}
+      disabled={loading || disabled}
       onClick={e => { e.stopPropagation(); onChange() }}
       className={`relative w-11 h-6 rounded-full transition-colors duration-200 shrink-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 disabled:opacity-50 ${
         enabled ? 'bg-blue-600' : 'bg-gray-300'
@@ -142,7 +142,7 @@ function FieldInput({
 }
 
 function ToggleRow({
-  label, desc, enabled, onChange, icon: Icon, tag, loading = false,
+  label, desc, enabled, onChange, icon: Icon, tag, loading = false, disabled = false,
 }: {
   label: string
   desc: string
@@ -151,15 +151,17 @@ function ToggleRow({
   icon?: ElementType
   tag?: string
   loading?: boolean
+  disabled?: boolean
 }) {
   return (
     <div
       className={`flex items-center justify-between gap-4 px-4 py-3.5 rounded-xl border cursor-pointer transition-all duration-150 ${
-        enabled
+        disabled ? 'bg-gray-50/60 border-gray-200 opacity-70 cursor-not-allowed'
+        : enabled
           ? 'bg-blue-50/40 border-blue-100'
           : 'bg-white border-gray-200 hover:border-gray-300 hover:bg-gray-50'
       }`}
-      onClick={!loading ? onChange : undefined}
+      onClick={!loading && !disabled ? onChange : undefined}
     >
       <div className="flex items-center gap-3 min-w-0">
         {Icon && (
@@ -176,6 +178,7 @@ function ToggleRow({
               <span className={`text-[9px] font-bold tracking-widest uppercase px-1.5 py-0.5 rounded ${
                 tag === 'live' ? 'bg-green-100 text-green-700' :
                 tag === 'test' ? 'bg-amber-100 text-amber-700' :
+                tag === 'soon' ? 'bg-blue-100 text-blue-700' :
                 'bg-gray-100 text-gray-400'
               }`}>{tag}</span>
             )}
@@ -183,7 +186,7 @@ function ToggleRow({
           <p className="text-xs text-gray-400 mt-0.5 truncate">{desc}</p>
         </div>
       </div>
-      <Toggle enabled={enabled} onChange={onChange} loading={loading} />
+      <Toggle enabled={enabled} onChange={onChange} loading={loading} disabled={disabled} />
     </div>
   )
 }
@@ -231,7 +234,6 @@ export default function AdminSettings() {
   const [loading, setLoading] = useState(true)
   const [testEmailLoading, setTestEmailLoading] = useState(false)
   const [testEmailResult, setTestEmailResult] = useState<{success?: boolean; message?: string} | null>(null)
-  const [newIp, setNewIp] = useState('')
 
   const [platform, setPlatform] = useState<PlatformSettings>({
     name: 'Livana Property Manager',
@@ -248,7 +250,6 @@ export default function AdminSettings() {
     newLandlord: true,
     newEnquiry: true,
     newProperty: false,
-    weeklyReport: true,
     smsAlerts: false,
     adminEmail: 'admin@livarex.com.ng',
   })
@@ -342,6 +343,12 @@ export default function AdminSettings() {
       notifyListingRulesChange()
     }
 
+    // Any settings change → drop the platform-settings cache so the public
+    // site (phone, email, notification toggles) picks up the new values.
+    if (!error) {
+      invalidatePlatformSettings()
+    }
+
     setSaving(false)
     if (!error) {
       setSaved(true)
@@ -393,63 +400,127 @@ export default function AdminSettings() {
     setTestEmailResult(null)
 
     try {
-      const supabase = createClient()
-      
-      // First check if edge function is accessible
-      const { data, error } = await supabase.functions.invoke('send-admin-email', {
-        body: {
-          to: notifications.adminEmail,
-          subject: 'Test Email from Livana Admin',
-          html: `
-            <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-              <h1 style="color: #2563eb;">Test Email Successful!</h1>
-              <p>Your Resend email configuration is working correctly.</p>
-              <p style="color: #666; font-size: 14px;">Sent from Livana Admin Settings</p>
-            </div>
-          `,
+      const res = await fetch('/api/send-support-notification', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          event: 'test',
+          adminEmail: notifications.adminEmail,
           from: `${emailConfig.fromName} <${emailConfig.fromEmail}>`,
-        },
+        }),
       })
-
-      if (error) {
-        console.error('Edge function error:', error)
-        throw new Error(error.message || `Edge function error: ${error}`)
-      }
-
-      if (data?.success) {
+      const data = await res.json().catch(() => ({}))
+      if (res.ok && data?.success) {
         setTestEmailResult({ success: true, message: 'Test email sent successfully! Check your inbox.' })
       } else {
-        setTestEmailResult({ success: false, message: data?.error || 'Unknown error from edge function' })
+        setTestEmailResult({ success: false, message: data?.error || 'Unknown error sending test email' })
       }
     } catch (err: any) {
       console.error('Test email error:', err)
-      setTestEmailResult({ 
-        success: false, 
-        message: err.message || 'Failed to connect to edge function. Make sure RESEND_API_KEY secret is set in Supabase.' 
+      setTestEmailResult({
+        success: false,
+        message: err.message || 'Failed to send test email. Make sure RESEND_API_KEY is set in Vercel env.',
       })
     } finally {
       setTestEmailLoading(false)
     }
   }
 
-  // Add IP to allowlist
-  const addIp = () => {
-    if (!newIp || security.allowedIps.includes(newIp)) return
-    const ipRegex = /^(\d{1,3}\.){3}\d{1,3}$/
-    if (!ipRegex.test(newIp)) {
-      alert('Please enter a valid IP address')
-      return
-    }
-    setSecurity(prev => ({ ...prev, allowedIps: [...prev.allowedIps, newIp] }))
-    setNewIp('')
-  }
-
-  // Remove IP from allowlist
-  const removeIp = (ip: string) => {
-    setSecurity(prev => ({ ...prev, allowedIps: prev.allowedIps.filter(i => i !== ip) }))
-  }
-
   const displayName = user?.email ? user.email.split('@')[0] : 'Admin'
+
+  // ── Weekly report download (CSV, Excel-compatible) ─────────────────────────
+  const [reportLoading, setReportLoading] = useState(false)
+  const [reportMessage, setReportMessage] = useState<{ success: boolean; message: string } | null>(null)
+
+  async function handleDownloadReport() {
+    setReportLoading(true)
+    setReportMessage(null)
+    try {
+      const supabase = createClient()
+      const cutoff = new Date()
+      cutoff.setDate(cutoff.getDate() - 7)
+      const since = cutoff.toISOString()
+
+      const fetchCount = async (table: string, extra?: (q: any) => any): Promise<number> => {
+        let q = supabase.from(table).select('id', { count: 'exact', head: true })
+        if (extra) q = extra(q)
+        const { count } = await q
+        return count ?? 0
+      }
+
+      const [
+        totalUsers,
+        newUsers,
+        totalLandlords,
+        newLandlords,
+        totalProperties,
+        newProperties,
+        openEnquiries,
+        newEnquiries,
+        openTickets,
+        newTickets,
+        kycPending,
+        newKyc,
+        totalContacts,
+        newContacts,
+      ] = await Promise.all([
+        fetchCount('tenants'),
+        fetchCount('tenants', q => q.gte('created_at', since)),
+        fetchCount('landlords'),
+        fetchCount('landlords', q => q.gte('created_at', since)),
+        fetchCount('properties'),
+        fetchCount('properties', q => q.gte('created_at', since)),
+        fetchCount('enquiries', q => q.eq('status', 'open')),
+        fetchCount('enquiries', q => q.gte('created_at', since)),
+        fetchCount('support_tickets', q => q.eq('status', 'open')),
+        fetchCount('support_tickets', q => q.gte('created_at', since)),
+        fetchCount('landlords', q => q.eq('status', 'pending')),
+        fetchCount('landlords', q => q.gte('created_at', since).eq('status', 'pending')),
+        fetchCount('contact_messages'),
+        fetchCount('contact_messages', q => q.gte('created_at', since)),
+      ])
+
+      const rows: [string, string][] = [
+        ['Livarex Platform Report', ''],
+        ['Generated', new Date().toLocaleString('en-GB')],
+        ['Period', 'Last 7 days'],
+        ['', ''],
+        ['Metric', 'Value'],
+        ['Total Users', String(totalUsers)],
+        ['New Users (7d)', String(newUsers)],
+        ['Total Landlords', String(totalLandlords)],
+        ['New Landlords (7d)', String(newLandlords)],
+        ['Total Properties Listed', String(totalProperties)],
+        ['New Properties (7d)', String(newProperties)],
+        ['Open Enquiries', String(openEnquiries)],
+        ['New Enquiries (7d)', String(newEnquiries)],
+        ['Open Support Tickets', String(openTickets)],
+        ['New Support Tickets (7d)', String(newTickets)],
+        ['KYC Pending Review', String(kycPending)],
+        ['KYC Submissions (7d)', String(newKyc)],
+        ['Contact Messages', String(totalContacts)],
+        ['New Contact Messages (7d)', String(newContacts)],
+      ]
+
+      const csv = '\uFEFF' + rows.map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(',')).join('\r\n')
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `livarex-weekly-report-${new Date().toISOString().slice(0, 10)}.csv`
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      URL.revokeObjectURL(url)
+
+      setReportMessage({ success: true, message: 'Report downloaded. Open it in Excel, Google Sheets, or any CSV viewer.' })
+    } catch (err: any) {
+      console.error('Report download error:', err)
+      setReportMessage({ success: false, message: err?.message || 'Failed to generate report' })
+    } finally {
+      setReportLoading(false)
+    }
+  }
 
   if (loading) {
     return (
@@ -671,29 +742,52 @@ export default function AdminSettings() {
                       icon={Building2} 
                       tag="email"
                     />
-                    <ToggleRow
-                      label="Weekly Summary Report" 
-                      desc="Analytics digest delivered every Monday morning"
-                      enabled={notifications.weeklyReport} 
-                      onChange={() => setNotifications(n => ({ ...n, weeklyReport: !n.weeklyReport }))}
-                      icon={BarChart3} 
-                      tag="digest"
-                    />
+                    <div className="bg-white border border-gray-200 rounded-xl p-4 flex flex-col sm:flex-row sm:items-center gap-3">
+                      <div className="flex items-center gap-3 min-w-0 flex-1">
+                        <div className="w-7 h-7 rounded-lg bg-gray-100 flex items-center justify-center shrink-0">
+                          <BarChart3 className="w-3.5 h-3.5 text-gray-400" strokeWidth={1.8} />
+                        </div>
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm font-semibold text-gray-800">Weekly Summary Report</span>
+                          </div>
+                          <p className="text-xs text-gray-400 mt-0.5">Download platform statistics for the last 7 days (CSV — opens in Excel)</p>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={handleDownloadReport}
+                        disabled={reportLoading}
+                        className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white text-xs font-bold rounded-lg transition-colors shrink-0"
+                      >
+                        {reportLoading ? (
+                          <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Generating…</>
+                        ) : (
+                          <><FileDown className="w-3.5 h-3.5" /> Download Report</>
+                        )}
+                      </button>
+                      {reportMessage && (
+                        <p className={`w-full sm:w-auto text-[11px] sm:max-w-[220px] sm:text-right ${reportMessage.success ? 'text-green-600' : 'text-red-600'}`}>
+                          {reportMessage.message}
+                        </p>
+                      )}
+                    </div>
                     <ToggleRow
                       label="SMS Alerts" 
                       desc="Critical platform alerts sent via SMS (requires Twilio)"
                       enabled={notifications.smsAlerts} 
                       onChange={() => setNotifications(n => ({ ...n, smsAlerts: !n.smsAlerts }))}
                       icon={Smartphone} 
-                      tag="paid"
+                      tag="soon"
+                      disabled
                     />
                   </div>
                   <Divider />
-                  <div className="grid grid-cols-3 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                     {[
-                      { label: 'Email On', val: [notifications.newLandlord, notifications.newEnquiry, notifications.newProperty, notifications.weeklyReport].filter(Boolean).length, of: 4 },
-                      { label: 'SMS On', val: notifications.smsAlerts ? 1 : 0, of: 1 },
-                      { label: 'Total Active', val: Object.values(notifications).filter(v => typeof v === 'boolean' && v).length, of: 5 },
+                      { label: 'Email On', val: [notifications.newLandlord, notifications.newEnquiry, notifications.newProperty].filter(Boolean).length, of: 3 },
+                      { label: 'Admin Email', val: notifications.adminEmail ? 1 : 0, of: 1 },
+                      { label: 'Total Active', val: [notifications.newLandlord, notifications.newEnquiry, notifications.newProperty].filter(Boolean).length, of: 3 },
                     ].map(s => (
                       <div key={s.label} className="bg-white border border-gray-200 rounded-xl p-4 text-center">
                         <p className="text-2xl font-extrabold text-gray-900 font-mono">{s.val}<span className="text-sm text-gray-300">/{s.of}</span></p>
@@ -837,7 +931,8 @@ export default function AdminSettings() {
                       enabled={security.twoFactorAuth}
                       onChange={() => setSecurity(s => ({ ...s, twoFactorAuth: !s.twoFactorAuth }))}
                       icon={Lock}
-                      tag={security.twoFactorAuth ? 'critical' : undefined}
+                      tag="soon"
+                      disabled
                     />
                     <ToggleRow
                       label="Login Notifications"
@@ -845,6 +940,8 @@ export default function AdminSettings() {
                       enabled={security.loginNotifications}
                       onChange={() => setSecurity(s => ({ ...s, loginNotifications: !s.loginNotifications }))}
                       icon={BellRing}
+                      tag="soon"
+                      disabled
                     />
                     <ToggleRow
                       label="IP Allowlist"
@@ -852,12 +949,13 @@ export default function AdminSettings() {
                       enabled={security.ipAllowlist}
                       onChange={() => setSecurity(s => ({ ...s, ipAllowlist: !s.ipAllowlist }))}
                       icon={Wifi}
-                      tag="enterprise"
+                      tag="soon"
+                      disabled
                     />
                   </div>
 
                   {/* Session Timeout */}
-                  <div className="mt-4 bg-white border border-gray-200 rounded-xl p-5">
+                  <div className="mt-4 bg-white border border-gray-200 rounded-xl p-5 opacity-70">
                     <div className="flex items-center gap-2.5 mb-4">
                       <div className="w-7 h-7 rounded-lg bg-gray-100 flex items-center justify-center">
                         <Timer className="w-3.5 h-3.5 text-gray-400" strokeWidth={1.8} />
@@ -866,18 +964,20 @@ export default function AdminSettings() {
                         <p className="text-sm font-semibold text-gray-900">Session Timeout</p>
                         <p className="text-xs text-gray-400">Minutes of inactivity before auto-logout</p>
                       </div>
+                      <span className="ml-auto text-[9px] font-bold tracking-widest uppercase px-1.5 py-0.5 rounded bg-blue-100 text-blue-700">Soon</span>
                     </div>
                     <div className="flex items-center gap-4">
                       <input
                         type="range" min={5} max={120} step={5}
                         value={security.sessionTimeout}
+                        disabled
                         onChange={e => setSecurity(s => ({ ...s, sessionTimeout: Number(e.target.value) }))}
                         style={{ accentColor: '#2563eb' }}
                         className="flex-1 h-1.5 rounded-full"
                       />
                       <div className="flex items-center gap-2">
                         <input
-                          type="number" min={5} max={120}
+                          type="number" min={5} max={120} disabled
                           value={security.sessionTimeout}
                           onChange={e => setSecurity(s => ({ ...s, sessionTimeout: Number(e.target.value) }))}
                           className="w-14 border border-gray-200 rounded-lg px-2 py-1.5 text-sm font-mono font-bold text-gray-900 text-center focus:outline-none focus:ring-2 focus:ring-blue-500/40 bg-white"
@@ -887,76 +987,17 @@ export default function AdminSettings() {
                     </div>
                   </div>
 
-                  {/* IP Allowlist Management */}
-                  {security.ipAllowlist && (
-                    <div className="mt-4 bg-white border border-gray-200 rounded-xl p-5">
-                      <div className="flex items-center justify-between mb-3">
-                        <p className="text-sm font-semibold text-gray-900">Allowed IP Addresses</p>
-                        <span className="text-xs text-gray-400">{security.allowedIps.length} IPs configured</span>
-                      </div>
-                      <div className="flex items-center gap-2 mb-3">
-                        <input
-                          type="text"
-                          value={newIp}
-                          onChange={e => setNewIp(e.target.value)}
-                          placeholder="192.168.1.1"
-                          className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/40"
-                          onKeyDown={e => e.key === 'Enter' && addIp()}
-                        />
-                        <button
-                          onClick={addIp}
-                          disabled={!newIp}
-                          className="px-3 py-2 bg-gray-900 hover:bg-gray-800 disabled:bg-gray-300 text-white text-xs font-semibold rounded-lg transition-colors"
-                        >
-                          <Plus className="w-4 h-4" />
-                        </button>
-                      </div>
-                      <div className="space-y-1.5 max-h-40 overflow-y-auto">
-                        {security.allowedIps.length === 0 ? (
-                          <p className="text-xs text-gray-400 text-center py-4">No IPs added yet</p>
-                        ) : (
-                          security.allowedIps.map(ip => (
-                            <div key={ip} className="flex items-center justify-between px-3 py-2 bg-gray-50 rounded-lg">
-                              <code className="text-xs font-mono text-gray-700">{ip}</code>
-                              <button
-                                onClick={() => removeIp(ip)}
-                                className="p-1 hover:bg-red-100 rounded transition-colors text-red-500"
-                              >
-                                <Trash2 className="w-3.5 h-3.5" />
-                              </button>
-                            </div>
-                          ))
-                        )}
-                      </div>
-                    </div>
-                  )}
-
                   <Divider />
-                  {/* Security Score */}
-                  <div className="flex items-center gap-5 p-5 rounded-xl bg-gray-900 text-white">
-                    <div className="shrink-0">
-                      <p className="text-[10px] font-bold uppercase tracking-widest text-gray-500 mb-1">Security Score</p>
-                      <p className="text-4xl font-extrabold font-mono text-white">
-                        {[
-                          security.twoFactorAuth,
-                          security.loginNotifications,
-                          security.ipAllowlist,
-                          security.sessionTimeout <= 30,
-                        ].filter(Boolean).length * 20}
-                        <span className="text-xl text-gray-500">/100</span>
-                      </p>
+                  {/* Coming soon notice */}
+                  <div className="flex items-start gap-4 p-5 rounded-xl bg-blue-50/60 border border-blue-100">
+                    <div className="w-9 h-9 rounded-xl bg-blue-100 flex items-center justify-center shrink-0">
+                      <Lock className="w-4 h-4 text-blue-600" />
                     </div>
-                    <div className="flex-1 space-y-2">
-                      <div className="h-2 rounded-full bg-gray-800 overflow-hidden">
-                        <div 
-                          className="h-full rounded-full bg-blue-500 transition-all" 
-                          style={{ width: `${[security.twoFactorAuth, security.loginNotifications, security.ipAllowlist, security.sessionTimeout <= 30].filter(Boolean).length * 20}%` }} 
-                        />
-                      </div>
-                      <p className="text-xs text-gray-500">
-                        {!security.twoFactorAuth && 'Enable 2FA for maximum security. '}
-                        {!security.loginNotifications && 'Turn on login notifications. '}
-                        {security.sessionTimeout > 30 && 'Reduce session timeout. '}
+                    <div>
+                      <p className="text-sm font-semibold text-gray-900">Advanced security controls are on the roadmap</p>
+                      <p className="text-xs text-gray-500 mt-1 leading-relaxed">
+                        Two-factor authentication, login notifications, IP allowlisting, and session timeouts are planned.
+                        Your account is currently protected by Supabase's built-in authentication.
                       </p>
                     </div>
                   </div>

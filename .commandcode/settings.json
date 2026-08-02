@@ -5,7 +5,8 @@
       "Shell(git stash list >/dev/null 2>&1; git status --short)",
       "Shell(pnpm:*)",
       "Shell(which psql pg_ctl postgres 2>/dev/null; echo \"---\"; psql --version 2>/dev/null; echo \"---\"; ls /usr/lib/postgresql/ 2>/dev/null || true)",
-      "Shell(grep:*)"
+      "Shell(grep:*)",
+      "Shell(npx tsc --noEmit -p tsconfig.json 2 >& 1)"
     ],
     "deny": [],
     "defaultMode": "default"

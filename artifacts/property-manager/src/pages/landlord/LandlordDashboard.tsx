@@ -181,7 +181,7 @@ export default function LandlordDashboard() {
                     <AlertCircle className="w-5 h-5 text-red-500 shrink-0 mt-0.5" />
                     <div>
                       <p className="text-sm font-bold text-red-800">Account not approved</p>
-                      <p className="text-xs text-red-600 mt-0.5">Contact support@livarex.com to resolve this.</p>
+                      <p className="text-xs text-red-600 mt-0.5">Contact support@livarex.com.ng to resolve this.</p>
                     </div>
                   </div>
                 )}

@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, ReactNode } from 'react'
 import { useLocation } from '@/lib/navigation'
 import { Search, Bell, X, Building2, Users, MessageSquare, ArrowRight, ChevronRight, ShieldCheck, Headphones } from 'lucide-react'
 import { createClient } from '@/lib/supabase'
+import { getNotificationSettings } from '@/lib/platform-settings'
 
 type SearchResult = {
   id: string
@@ -39,10 +40,14 @@ export default function AdminHeader({ title, subtitle, action, pendingCount = 0 
   const notifRef  = useRef<HTMLDivElement>(null)
   const inputRef  = useRef<HTMLInputElement>(null)
 
-  // Load notifications: KYC pending + new signups (last 48h) + open enquiries + open support tickets
+  // Load notifications: KYC pending + new signups (last 48h) + open enquiries +
+  // open support tickets + contact messages + chat inquiries. The
+  // newLandlord / newEnquiry / newProperty toggles from Admin Settings gate
+  // their respective items.
   async function loadNotifs() {
     const supabase = createClient()
     const cutoff = new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString()
+    const prefs = await getNotificationSettings({ refresh: true }).catch(() => null)
 
     const [
       { data: kycPending },
@@ -50,12 +55,18 @@ export default function AdminHeader({ title, subtitle, action, pendingCount = 0 
       { data: newTenants },
       { data: enqs },
       { data: tickets },
+      { data: contacts },
+      { data: chats },
+      { data: newProps },
     ] = await Promise.all([
       supabase.from('landlords').select('id, full_name').eq('status', 'pending').order('created_at', { ascending: false }).limit(5),
       supabase.from('landlords').select('id, full_name, created_at').gte('created_at', cutoff).order('created_at', { ascending: false }).limit(5),
       supabase.from('tenants').select('id, full_name, created_at').gte('created_at', cutoff).order('created_at', { ascending: false }).limit(5),
       supabase.from('enquiries').select('id, message, status, properties(title)').eq('status', 'open').order('created_at', { ascending: false }).limit(5),
       supabase.from('support_tickets').select('id, subject, created_at, tenants(full_name)').eq('status', 'open').order('created_at', { ascending: false }).limit(5),
+      supabase.from('contact_messages').select('id, name, subject, created_at').order('created_at', { ascending: false }).limit(5),
+      supabase.from('chat_inquiries').select('id, name, note, read_by_admin, created_at').eq('read_by_admin', false).order('created_at', { ascending: false }).limit(5),
+      supabase.from('properties').select('id, title, city, created_at').gte('created_at', cutoff).order('created_at', { ascending: false }).limit(5),
     ])
 
     const items: Notif[] = []
@@ -67,20 +78,35 @@ export default function AdminHeader({ title, subtitle, action, pendingCount = 0 
         items.push({ id: `kyc-${l.id}`, label: `${l.full_name} submitted KYC`, sub: 'Awaiting your review', href: '/admin/kyc', type: 'kyc' })
       }
     }
-    for (const l of newLandlords ?? []) {
-      if (!seen.has(l.id)) {
-        seen.add(l.id)
-        items.push({ id: `ll-${l.id}`, label: `${l.full_name} signed up as landlord`, sub: relAgo(l.created_at), href: '/admin/kyc', type: 'signup' })
+    if (prefs?.newLandlord !== false) {
+      for (const l of newLandlords ?? []) {
+        if (!seen.has(l.id)) {
+          seen.add(l.id)
+          items.push({ id: `ll-${l.id}`, label: `${l.full_name} signed up as landlord`, sub: relAgo(l.created_at), href: '/admin/kyc', type: 'signup' })
+        }
       }
     }
     for (const t of newTenants ?? []) {
       items.push({ id: `tn-${t.id}`, label: `${t.full_name} created an account`, sub: relAgo(t.created_at), href: '/admin/activity', type: 'signup' })
     }
-    for (const e of enqs ?? []) {
-      items.push({ id: `eq-${e.id}`, label: (e as any).properties?.title ?? 'Property enquiry', sub: (e.message ?? '').slice(0, 55), href: '/admin/properties', type: 'info' })
+    if (prefs?.newEnquiry !== false) {
+      for (const e of enqs ?? []) {
+        items.push({ id: `eq-${e.id}`, label: (e as any).properties?.title ?? 'Property enquiry', sub: (e.message ?? '').slice(0, 55), href: '/admin/properties', type: 'info' })
+      }
+    }
+    if (prefs?.newProperty !== false) {
+      for (const p of newProps ?? []) {
+        items.push({ id: `np-${p.id}`, label: `New listing: ${p.title}`, sub: `${p.city ?? ''} · ${relAgo(p.created_at)}`, href: '/admin/properties', type: 'info' })
+      }
     }
     for (const tk of tickets ?? []) {
       items.push({ id: `tk-${tk.id}`, label: `Support: ${tk.subject}`, sub: `From ${(tk as any).tenants?.full_name ?? 'tenant'} · ${relAgo(tk.created_at)}`, href: '/admin/support', type: 'info' })
+    }
+    for (const c of contacts ?? []) {
+      items.push({ id: `cm-${c.id}`, label: `${c.name} sent a contact message`, sub: (c.subject ?? 'No subject').slice(0, 55), href: '/admin/support', type: 'info' })
+    }
+    for (const ch of chats ?? []) {
+      items.push({ id: `ci-${ch.id}`, label: `${ch.name} started a chat`, sub: (ch.note ?? '').slice(0, 55), href: '/admin/support', type: 'info' })
     }
 
     setNotifs(items)
@@ -90,7 +116,8 @@ export default function AdminHeader({ title, subtitle, action, pendingCount = 0 
   useEffect(() => {
     loadNotifs()
 
-    // Realtime: re-fetch on new enquiry or support ticket
+    // Realtime: re-fetch on new enquiries, support tickets, tenants, landlords,
+    // contact messages, chat inquiries, or properties.
     const supabase = createClient()
     const channel = supabase
       .channel('admin-notif-watch')
@@ -98,6 +125,10 @@ export default function AdminHeader({ title, subtitle, action, pendingCount = 0 
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'support_tickets' }, loadNotifs)
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'tenants' }, loadNotifs)
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'landlords' }, loadNotifs)
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'contact_messages' }, loadNotifs)
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'chat_inquiries' }, loadNotifs)
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'chat_inquiries' }, loadNotifs)
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'properties' }, loadNotifs)
       .subscribe()
 
     return () => { supabase.removeChannel(channel) }
@@ -185,7 +216,7 @@ export default function AdminHeader({ title, subtitle, action, pendingCount = 0 
 
       <div className="flex items-center gap-2 shrink-0">
         {/* Search */}
-        <div ref={searchRef} className="relative hidden sm:block">
+        <div ref={searchRef} className="relative">
           {showSearch ? (
             <div className="flex items-center gap-2 bg-white border-2 border-blue-500 rounded-xl px-3 py-2 w-56 md:w-72 shadow-lg shadow-blue-500/10 transition-all">
               <Search className="w-3.5 h-3.5 text-blue-500 shrink-0" />
@@ -201,14 +232,14 @@ export default function AdminHeader({ title, subtitle, action, pendingCount = 0 
             </div>
           ) : (
             <button type="button" onClick={openSearch}
-              className="flex items-center gap-2 bg-gray-50 border border-gray-200 hover:border-blue-400 hover:bg-blue-50 rounded-xl px-3 py-2 w-36 md:w-48 transition-all group">
+              className="flex items-center gap-2 bg-gray-50 border border-gray-200 hover:border-blue-400 hover:bg-blue-50 rounded-xl px-3 py-2 w-9 sm:w-36 md:w-48 transition-all group justify-center sm:justify-start">
               <Search className="w-3.5 h-3.5 text-gray-400 group-hover:text-blue-500 shrink-0 transition-colors" />
-              <span className="text-xs text-gray-400 group-hover:text-blue-500 transition-colors">Search…</span>
+              <span className="text-xs text-gray-400 group-hover:text-blue-500 transition-colors hidden sm:inline">Search…</span>
             </button>
           )}
 
           {showSearch && (searching || results.length > 0 || query.trim()) && (
-            <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl shadow-2xl border border-gray-100 py-2 z-50 overflow-hidden min-w-[280px]">
+            <div className="absolute top-full right-0 mt-2 bg-white rounded-2xl shadow-2xl border border-gray-100 py-2 z-50 overflow-hidden w-[280px] max-w-[calc(100vw-8rem)]">
               {searching && (
                 <div className="flex items-center gap-2 px-4 py-3 text-xs text-gray-400">
                   <div className="w-3 h-3 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />

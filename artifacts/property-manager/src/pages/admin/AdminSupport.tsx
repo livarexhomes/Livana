@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useMemo } from 'react'
 import {
   HeadphonesIcon, Send, Loader2, MessageSquare,
   Clock, CheckCircle2, XCircle, User,
-  ChevronLeft, RefreshCw, Inbox, Building2,
+  ChevronLeft, RefreshCw, Inbox, Building2, Mail,
 } from 'lucide-react'
 import AdminSidebar from '../../components/layout/AdminSidebar'
 import AuthGuard from '../../components/auth/AuthGuard'
@@ -59,6 +59,16 @@ interface ChatMessage {
   sender: 'visitor' | 'admin'
   body: string
   read_by_admin: boolean
+  created_at: string
+}
+
+interface ContactMessage {
+  id: string
+  name: string
+  email: string
+  role: string
+  subject: string
+  message: string
   created_at: string
 }
 
@@ -757,43 +767,61 @@ function SupportTab() {
   }
 
   return (
-    <div className="flex flex-1 overflow-hidden gap-3">
+    <div className="flex flex-1 overflow-hidden gap-3 p-3">
       {/* Ticket list */}
-      <div className={`flex flex-col border border-slate-200 bg-white w-full lg:w-64 xl:w-72 shrink-0 overflow-hidden ${selected ? 'hidden lg:flex' : 'flex'}`}>
-        <div className="px-4 py-3 border-b border-slate-200">
+      <div className={`flex flex-col rounded-2xl border border-slate-200 bg-white w-full lg:w-72 xl:w-80 shrink-0 overflow-hidden shadow-sm ${selected ? 'hidden lg:flex' : 'flex'}`}>
+        {/* Header */}
+        <div className="px-4 pt-3.5 pb-3 border-b border-slate-100">
           <div className="flex items-center justify-between gap-2">
-            <div>
-              <p className="text-[10px] uppercase tracking-[0.3em] text-slate-400">Support queue</p>
-              <h2 className="text-base font-bold text-slate-950">Tickets</h2>
+            <div className="min-w-0">
+              <p className="text-[10px] uppercase tracking-[0.25em] text-slate-400 font-semibold">Support queue</p>
+              <h2 className="mt-0.5 text-base font-bold text-slate-950 leading-tight">Tickets</h2>
             </div>
-            <span className="text-[11px] text-slate-500">{tickets.length} total</span>
+            <div className="shrink-0 text-right">
+              <p className="text-[10px] uppercase tracking-[0.15em] text-slate-400 font-semibold">Total</p>
+              <p className="mt-0.5 text-sm font-bold text-slate-900 leading-tight">{tickets.length}</p>
+            </div>
           </div>
-          <div className="mt-3 flex flex-wrap gap-2">
-            {(['all', 'open', 'in_progress', 'resolved', 'closed'] as const).map(key => (
-              <button key={key} onClick={() => setFilterStatus(key)}
-                className={`shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border transition-all ${
-                  filterStatus === key ? 'bg-slate-950 text-white border-slate-950' : 'bg-slate-100 text-slate-600 border-slate-200 hover:border-slate-300 hover:bg-slate-50'
-                }`}>
-                {key === 'all' ? 'All' : STATUS_META[key].label}
-                <span className={`text-[10px] font-bold ${filterStatus === key ? 'text-white/70' : 'text-slate-400'}`}>{counts[key]}</span>
-              </button>
-            ))}
+
+          {/* Status filters — single compact row */}
+          <div className="mt-3 flex items-center gap-1.5 overflow-x-auto -mx-1 px-1 pb-0.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            {(['all', 'open', 'in_progress', 'resolved', 'closed'] as const).map(key => {
+              const active = filterStatus === key
+              return (
+                <button key={key} onClick={() => setFilterStatus(key)}
+                  className={`shrink-0 inline-flex items-center gap-1.5 h-7 px-2.5 rounded-lg text-xs font-semibold border transition-all ${
+                    active
+                      ? 'bg-blue-600 text-white border-blue-600 shadow-sm shadow-blue-600/25'
+                      : 'bg-white text-slate-500 border-slate-200 hover:border-slate-300 hover:bg-slate-50 hover:text-slate-700'
+                  }`}>
+                  {key === 'all' ? 'All' : STATUS_META[key].label}
+                  <span className={`min-w-[16px] inline-flex items-center justify-center h-4 px-1 rounded-md text-[10px] font-bold tabular-nums ${
+                    active ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-400'
+                  }`}>{counts[key]}</span>
+                </button>
+              )
+            })}
           </div>
         </div>
-        <div className="flex-1 overflow-y-auto p-3 space-y-2">
+
+        {/* Ticket list */}
+        <div className="flex-1 overflow-y-auto p-2.5 space-y-1.5">
           {loading ? (
-            <div className="space-y-2">
-              {Array.from({ length: 4 }).map((_, i) => (
-                <div key={i} className="h-24 rounded-3xl bg-slate-100 animate-pulse" />
+            <div className="space-y-1.5">
+              {Array.from({ length: 5 }).map((_, i) => (
+                <div key={i} className="h-16 rounded-xl bg-slate-100 animate-pulse" />
               ))}
             </div>
           ) : filtered.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-full p-8 text-center">
-              <MessageSquare className="w-10 h-10 text-slate-200 mb-3" />
-              <p className="text-sm font-semibold text-slate-400">No tickets</p>
+            <div className="flex flex-col items-center justify-center h-full py-10 px-4 text-center">
+              <div className="w-9 h-9 rounded-lg bg-slate-50 flex items-center justify-center mb-2">
+                <MessageSquare className="w-4 h-4 text-slate-300" />
+              </div>
+              <p className="text-xs font-semibold text-slate-400">No tickets</p>
+              <p className="text-[11px] text-slate-300 mt-0.5">Nothing in this view yet</p>
             </div>
           ) : (
-            <div className="space-y-2">
+            <div className="space-y-1.5">
               {filtered.map(ticket => {
                 const s = STATUS_META[ticket.status]
                 const p = PRIORITY_META[ticket.priority]
@@ -804,21 +832,21 @@ function SupportTab() {
                   : (ticket.tenants?.full_name ?? 'Tenant')
                 return (
                   <button key={ticket.id} onClick={() => setSelectedId(ticket.id)}
-                    className={`w-full text-left rounded-3xl border px-3 py-2 transition-all ${isActive ? 'border-slate-900 bg-slate-950 text-white shadow-lg' : 'border-slate-200 bg-white hover:border-slate-300 hover:shadow-sm'}`}>
-                    <div className="flex items-start justify-between gap-2">
-                      <p className={`font-semibold text-sm truncate ${isActive ? 'text-white' : 'text-slate-950'}`}>{ticket.subject}</p>
-                      <span className={`shrink-0 inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full ${isActive ? 'bg-white/15 text-white' : `${s.bg} ${s.color}`}`}>
-                        <span className={`w-1.5 h-1.5 rounded-full ${isActive ? 'bg-white' : s.dot}`} />{s.label}
+                    className={`w-full text-left rounded-xl border px-3 py-2.5 transition-all ${isActive ? 'border-blue-600 bg-blue-50/50 ring-1 ring-blue-600/10' : 'border-slate-200 bg-white hover:border-slate-300 hover:shadow-sm'}`}>
+                    <div className="flex items-center justify-between gap-2">
+                      <p className={`font-semibold text-[13px] truncate ${isActive ? 'text-blue-900' : 'text-slate-900'}`}>{ticket.subject}</p>
+                      <span className={`shrink-0 inline-flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded-md ${s.bg} ${s.color}`}>
+                        <span className={`w-1 h-1 rounded-full ${s.dot}`} />{s.label}
                       </span>
                     </div>
-                    <div className="mt-2 flex flex-wrap items-center gap-2 text-[10px]">
-                      <span className={`inline-flex items-center gap-1 ${isActive ? 'text-white/70' : 'text-slate-500'}`}>
-                        <User className="w-3 h-3" />
-                        {isLandlordTicket && <span className="rounded-full bg-violet-100 px-2 py-0.5 text-violet-700">LL</span>}
-                        {senderName}
+                    <div className="mt-1.5 flex items-center gap-2 text-[11px]">
+                      <span className={`inline-flex items-center gap-1 min-w-0 ${isActive ? 'text-blue-800/70' : 'text-slate-500'}`}>
+                        <User className="w-3 h-3 shrink-0" />
+                        {isLandlordTicket && <span className="rounded-md bg-violet-100 px-1 py-px text-[9px] font-bold text-violet-700 leading-none">LL</span>}
+                        <span className="truncate">{senderName}</span>
                       </span>
-                      <span className={`inline-flex items-center gap-1 rounded-full px-2 py-1 text-[10px] font-semibold ${isActive ? 'bg-white/10 text-white/80' : `${p.bg} ${p.color}`}`}>{p.label}</span>
-                      <span className={`ml-auto text-[11px] ${isActive ? 'text-white/50' : 'text-slate-400'}`}>
+                      <span className={`shrink-0 inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[10px] font-semibold ${p.bg} ${p.color}`}>{p.label}</span>
+                      <span className={`ml-auto shrink-0 text-[10px] tabular-nums ${isActive ? 'text-blue-800/50' : 'text-slate-400'}`}>
                         {formatDistanceToNow(new Date(ticket.updated_at), { addSuffix: true })}
                       </span>
                     </div>
@@ -831,13 +859,13 @@ function SupportTab() {
       </div>
 
       {/* Chat thread */}
-      <div className={`flex-1 min-w-0 p-3 ${selected ? 'flex' : 'hidden lg:flex'} flex-col`}>
+      <div className={`flex-1 min-w-0 ${selected ? 'flex' : 'hidden lg:flex'} flex-col`}>
         {selected ? (
           <AdminChatThread key={selected.id} ticket={selected} onBack={() => setSelectedId(null)} onStatusChange={handleStatusChange} />
         ) : (
           <div className="flex-1 flex flex-col items-center justify-center bg-white rounded-2xl border border-gray-100 shadow-sm text-center p-8 h-full">
-            <div className="w-16 h-16 rounded-2xl bg-gray-50 flex items-center justify-center mb-4">
-              <HeadphonesIcon className="w-8 h-8 text-gray-300" />
+            <div className="w-14 h-14 rounded-2xl bg-gray-50 flex items-center justify-center mb-3">
+              <HeadphonesIcon className="w-7 h-7 text-gray-300" />
             </div>
             <p className="font-bold text-gray-900 mb-1">Select a ticket</p>
             <p className="text-sm text-gray-400">Choose a ticket from the list to reply.</p>
@@ -848,9 +876,70 @@ function SupportTab() {
   )
 }
 
+// ── ContactDetail ─────────────────────────────────────────────────────────────
+
+function ContactDetail({ contact, onBack }: {
+  contact: ContactMessage
+  onBack: () => void
+}) {
+  return (
+    <div className="flex flex-col h-full bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+      {/* Header */}
+      <div className="flex items-center gap-3 px-4 py-3 border-b border-gray-100 shrink-0">
+        <button onClick={onBack} className="lg:hidden p-1.5 rounded-lg hover:bg-gray-100 text-gray-500 transition-colors">
+          <ChevronLeft className="w-4 h-4" />
+        </button>
+        <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center shrink-0 shadow-sm">
+          <span className="text-sm font-bold text-white">{contact.name[0]?.toUpperCase() ?? 'C'}</span>
+        </div>
+        <div className="min-w-0 flex-1">
+          <p className="font-bold text-gray-900 text-sm truncate">{contact.name}</p>
+          <p className="text-xs text-gray-400 truncate">{contact.email}</p>
+        </div>
+        <span className="shrink-0 inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-violet-50 text-violet-700">
+          Contact form
+        </span>
+      </div>
+
+      {/* Body */}
+      <div className="flex-1 overflow-y-auto p-5 space-y-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="rounded-xl bg-gray-50 border border-gray-100 px-4 py-3">
+            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Role</p>
+            <p className="text-sm font-semibold text-gray-800">{contact.role || '—'}</p>
+          </div>
+          <div className="rounded-xl bg-gray-50 border border-gray-100 px-4 py-3">
+            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Received</p>
+            <p className="text-sm font-semibold text-gray-800">{format(contact.created_at, 'd MMM yyyy, h:mm a')}</p>
+          </div>
+          <div className="sm:col-span-2 rounded-xl bg-gray-50 border border-gray-100 px-4 py-3">
+            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Subject</p>
+            <p className="text-sm font-semibold text-gray-800">{contact.subject || 'No subject'}</p>
+          </div>
+        </div>
+
+        <div>
+          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">Message</p>
+          <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap bg-gray-50 border border-gray-100 rounded-xl p-4">{contact.message}</p>
+        </div>
+      </div>
+
+      {/* Footer — reply via email */}
+      <div className="px-5 py-3 border-t border-gray-100 shrink-0">
+        <a
+          href={`mailto:${contact.email}?subject=${encodeURIComponent(`Re: ${contact.subject || 'Your message'}`)}`}
+          className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold transition-colors"
+        >
+          <Mail className="w-4 h-4" /> Reply via Email
+        </a>
+      </div>
+    </div>
+  )
+}
+
 // ── InboxTab ──────────────────────────────────────────────────────────────────
 
-type InboxItemType = 'enquiry' | 'chat'
+type InboxItemType = 'enquiry' | 'chat' | 'contact'
 
 interface InboxItem {
   id: string
@@ -863,6 +952,7 @@ interface InboxItem {
   created_at: string
   enquiry?: Enquiry
   chatInquiry?: ChatInquiry
+  contact?: ContactMessage
 }
 
 function toChatItem(c: ChatInquiry): InboxItem {
@@ -876,6 +966,20 @@ function toChatItem(c: ChatInquiry): InboxItem {
     unread: !c.read_by_admin,
     created_at: c.created_at,
     chatInquiry: c,
+  }
+}
+
+function toContactItem(c: ContactMessage): InboxItem {
+  return {
+    id: c.id,
+    type: 'contact',
+    name: c.name,
+    subtitle: c.email,
+    body: c.message,
+    status: 'open',
+    unread: true,
+    created_at: c.created_at,
+    contact: c,
   }
 }
 
@@ -896,6 +1000,7 @@ function toEnquiryItem(e: Enquiry): InboxItem {
 function InboxTab() {
   const [enquiries, setEnquiries]   = useState<Enquiry[]>([])
   const [chats, setChats]           = useState<ChatInquiry[]>([])
+  const [contacts, setContacts]     = useState<ContactMessage[]>([])
   const [loading, setLoading]       = useState(true)
   const [selectedKey, setSelectedKey] = useState<string | null>(null)
   const [filterType, setFilterType]   = useState<'all' | InboxItemType>('all')
@@ -908,7 +1013,10 @@ function InboxTab() {
       .then(({ data }) => setEnquiries((data as Enquiry[]) ?? []))
     supabase.from('chat_inquiries').select('*')
       .order('created_at', { ascending: false })
-      .then(({ data }) => { setChats((data as ChatInquiry[]) ?? []); setLoading(false) })
+      .then(({ data }) => setChats((data as ChatInquiry[]) ?? []))
+    supabase.from('contact_messages').select('*')
+      .order('created_at', { ascending: false })
+      .then(({ data }) => { setContacts((data as ContactMessage[]) ?? []); setLoading(false) })
 
     const enqChannel = supabase.channel('admin_enquiries_list')
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'enquiries' },
@@ -930,16 +1038,22 @@ function InboxTab() {
         (payload) => setChats(prev => prev.map(i => i.id === payload.new.id ? { ...i, ...payload.new } as ChatInquiry : i)))
       .subscribe()
 
-    return () => { supabase.removeChannel(enqChannel); supabase.removeChannel(chatChannel) }
+    const contactChannel = supabase.channel('admin_contact_messages')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'contact_messages' },
+        (payload) => setContacts(prev => [payload.new as ContactMessage, ...prev]))
+      .subscribe()
+
+    return () => { supabase.removeChannel(enqChannel); supabase.removeChannel(chatChannel); supabase.removeChannel(contactChannel) }
   }, [])
 
   const items = useMemo(() => {
     const combined: InboxItem[] = [
       ...chats.map(toChatItem),
       ...enquiries.map(toEnquiryItem),
+      ...contacts.map(toContactItem),
     ]
     return combined.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-  }, [chats, enquiries])
+  }, [chats, enquiries, contacts])
 
   const typeFiltered = filterType === 'all' ? items : items.filter(i => i.type === filterType)
   const statusFiltered = filterStatus === 'all' ? items : items.filter(i => i.status === filterStatus)
@@ -952,6 +1066,7 @@ function InboxTab() {
     all:     statusFiltered.length,
     enquiry: statusFiltered.filter(i => i.type === 'enquiry').length,
     chat:    statusFiltered.filter(i => i.type === 'chat').length,
+    contact: statusFiltered.filter(i => i.type === 'contact').length,
   }
   const counts = {
     all:     typeFiltered.length,
@@ -985,12 +1100,12 @@ function InboxTab() {
             <span className="text-[11px] text-slate-500">{items.length} total</span>
           </div>
           <div className="mt-3 flex flex-wrap gap-2">
-            {(['all', 'enquiry', 'chat'] as const).map(key => (
+            {(['all', 'enquiry', 'chat', 'contact'] as const).map(key => (
               <button key={key} onClick={() => setFilterType(key)}
                 className={`shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-2xl text-xs font-semibold border transition-all ${
                   filterType === key ? 'bg-slate-900 text-white border-slate-900' : 'bg-slate-100 text-slate-600 border-slate-200 hover:border-slate-300'
                 }`}>
-                {key === 'all' ? 'All' : key === 'enquiry' ? 'Enquiries' : 'Chat'}
+                {key === 'all' ? 'All' : key === 'enquiry' ? 'Enquiries' : key === 'chat' ? 'Chat' : 'Contact'}
                 <span className={`text-[10px] font-bold ${filterType === key ? 'text-white/70' : 'text-slate-400'}`}>
                   {typeCounts[key]}
                 </span>
@@ -1028,17 +1143,20 @@ function InboxTab() {
                 const s = ENQUIRY_STATUS_META[item.status]
                 const isActive = `${item.type}:${item.id}` === selectedKey
                 const isChat = item.type === 'chat'
+                const isContact = item.type === 'contact'
+                const typeLabel = isChat ? 'Chat' : isContact ? 'Contact' : 'Enquiry'
+                const typeStyle = isChat ? 'bg-emerald-50 text-emerald-700' : isContact ? 'bg-violet-50 text-violet-700' : 'bg-blue-50 text-blue-700'
                 return (
                   <button key={`${item.type}:${item.id}`} onClick={() => setSelectedKey(`${item.type}:${item.id}`)}
                     className={`w-full text-left rounded-2xl border px-3 py-3 transition-all ${isActive ? 'border-slate-900 bg-slate-950 text-white shadow-lg' : 'border-slate-200 bg-white hover:border-slate-300 hover:shadow-sm'}`}>
                     <div className="flex items-start justify-between gap-2">
                       <p className={`font-semibold text-sm truncate ${isActive ? 'text-white' : 'text-slate-950'}`}>{item.name}</p>
                       <span className="flex items-center gap-1.5 shrink-0">
-                        {isChat && item.unread && (
+                        {(isChat || isContact) && item.unread && (
                           <span className={`size-2 rounded-full ${isActive ? 'bg-emerald-400' : 'bg-emerald-500'}`} title="Unread" aria-label="Unread" />
                         )}
-                        <span className={`shrink-0 inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full ${isChat ? 'bg-emerald-50 text-emerald-700' : 'bg-blue-50 text-blue-700'} ${isActive ? '!bg-white/15 !text-white' : ''}`}>
-                          {isChat ? 'Chat' : 'Enquiry'}
+                        <span className={`shrink-0 inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full ${typeStyle} ${isActive ? '!bg-white/15 !text-white' : ''}`}>
+                          {typeLabel}
                         </span>
                         <span className={`inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full ${isActive ? 'bg-white/15 text-white' : `${s.bg} ${s.color}`}`}>
                           <span className={`w-1.5 h-1.5 rounded-full ${isActive ? 'bg-white' : s.dot}`} />{s.label}
@@ -1066,6 +1184,9 @@ function InboxTab() {
               onBack={() => setSelectedKey(null)}
               onMarkRead={handleChatMarkRead}
               onStatusChange={handleChatStatusChange} />
+          ) : selected.type === 'contact' && selected.contact ? (
+            <ContactDetail key={selected.id} contact={selected.contact}
+              onBack={() => setSelectedKey(null)} />
           ) : selected.enquiry ? (
             <EnquiryDetail key={selected.id} enquiry={selected.enquiry}
               onBack={() => setSelectedKey(null)}
@@ -1092,6 +1213,7 @@ export default function AdminSupportPage() {
   const [tab, setTab]     = useState<'support' | 'inbox'>('support')
   const [openCount, setOpenCount]     = useState(0)
   const [chatOpenCount, setChatOpenCount] = useState(0)
+  const [contactCount, setContactCount]   = useState(0)
 
   useEffect(() => {
     const supabase = createClient()
@@ -1103,6 +1225,8 @@ export default function AdminSupportPage() {
         .then(({ count }) => setOpenCount(count ?? 0))
       supabase.from('chat_inquiries').select('id', { count: 'exact', head: true }).eq('read_by_admin', false)
         .then(({ count }) => setChatOpenCount(count ?? 0))
+      supabase.from('contact_messages').select('id', { count: 'exact', head: true })
+        .then(({ count }) => setContactCount(count ?? 0))
     }
     fetchCounts()
 
@@ -1112,11 +1236,14 @@ export default function AdminSupportPage() {
     const ch2 = supabase.channel('chat_inquiry_badge')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'chat_inquiries' }, fetchCounts)
       .subscribe()
-    return () => { supabase.removeChannel(ch1); supabase.removeChannel(ch2) }
+    const ch3 = supabase.channel('contact_message_badge')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'contact_messages' }, fetchCounts)
+      .subscribe()
+    return () => { supabase.removeChannel(ch1); supabase.removeChannel(ch2); supabase.removeChannel(ch3) }
   }, [])
 
   const displayName = user?.email ? user.email.split('@')[0] : 'Admin'
-  const inboxCount = openCount + chatOpenCount
+  const inboxCount = openCount + chatOpenCount + contactCount
 
   return (
     <AuthGuard require="admin">
@@ -1133,7 +1260,7 @@ export default function AdminSupportPage() {
                   <h1 className="mt-2 text-3xl font-semibold tracking-tight">Support & enquiries</h1>
                   <p className="mt-1 max-w-2xl text-sm text-slate-300">Streamline customer tickets and enquiries in a premium dashboard.</p>
                 </div>
-                <div className="flex gap-3">
+                <div className="flex flex-wrap gap-3">
                   <div className="rounded-3xl border border-white/10 bg-white/10 px-3 py-1.5 text-sm shadow-sm">
                     <p className="text-[10px] uppercase tracking-[0.3em] text-slate-300">Open enquiries</p>
                     <p className="mt-1 text-lg font-semibold text-white">{openCount}</p>
@@ -1141,6 +1268,10 @@ export default function AdminSupportPage() {
                   <div className="rounded-3xl border border-white/10 bg-white/10 px-3 py-1.5 text-sm shadow-sm">
                     <p className="text-[10px] uppercase tracking-[0.3em] text-slate-300">Unread chats</p>
                     <p className="mt-1 text-lg font-semibold text-white">{chatOpenCount}</p>
+                  </div>
+                  <div className="rounded-3xl border border-white/10 bg-white/10 px-3 py-1.5 text-sm shadow-sm">
+                    <p className="text-[10px] uppercase tracking-[0.3em] text-slate-300">Contact msgs</p>
+                    <p className="mt-1 text-lg font-semibold text-white">{contactCount}</p>
                   </div>
                 </div>
               </div>

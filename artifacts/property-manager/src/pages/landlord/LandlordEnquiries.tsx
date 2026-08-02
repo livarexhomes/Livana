@@ -3,6 +3,7 @@ import { MessageSquare, MapPin, Phone, User, Clock, CheckCircle, X, Headphones, 
 import LandlordSidebar from '../../components/layout/LandlordSidebar'
 import AuthGuard from '../../components/auth/AuthGuard'
 import { createClient } from '../../lib/supabase'
+import { getPlatformSettings, getNotificationSettings, phoneToWaLink } from '../../lib/platform-settings'
 import type { Landlord } from '@/types'
 
 const STATUS_META: Record<string, { label: string; bg: string; text: string; dot: string }> = {
@@ -10,9 +11,6 @@ const STATUS_META: Record<string, { label: string; bg: string; text: string; dot
   replied: { label: 'Replied', bg: 'bg-emerald-50', text: 'text-emerald-700', dot: 'bg-emerald-500' },
   closed:  { label: 'Closed', bg: 'bg-gray-100',   text: 'text-gray-500',   dot: 'bg-gray-400'   },
 }
-
-const ADMIN_WHATSAPP = '+2348005482621'
-const ADMIN_EMAIL    = 'support@livarex.com'
 
 const AVATAR_GRADS = [
   'from-violet-500 to-purple-600', 'from-blue-500 to-blue-700',
@@ -34,6 +32,20 @@ export default function LandlordEnquiries() {
   const [contactMsg, setContactMsg]     = useState('')
   const [contactSent, setContactSent]   = useState(false)
   const [contactLoading, setContactLoading] = useState(false)
+
+  // Admin contact details from Settings — single source of truth.
+  const [adminWhatsApp, setAdminWhatsApp] = useState('+234 800 548 2621')
+  const [adminEmail, setAdminEmail]       = useState('support@livarex.com.ng')
+
+  useEffect(() => {
+    let active = true
+    Promise.all([getPlatformSettings(), getNotificationSettings()]).then(([platform, notif]) => {
+      if (!active) return
+      setAdminWhatsApp(platform.phone)
+      setAdminEmail(platform.email || notif.adminEmail)
+    })
+    return () => { active = false }
+  }, [])
 
   useEffect(() => {
     const supabase = createClient()
@@ -132,7 +144,7 @@ export default function LandlordEnquiries() {
                 {/* Quick contact links */}
                 <div className="grid grid-cols-2 gap-3 mb-5">
                   <a
-                    href={`https://wa.me/${ADMIN_WHATSAPP.replace(/\D/g, '')}?text=${encodeURIComponent('Hi LIVAREX Support, I need help with my account.')}`}
+                    href={phoneToWaLink(adminWhatsApp, 'Hi LIVAREX Support, I need help with my account.')}
                     target="_blank" rel="noopener noreferrer"
                     className="flex items-center justify-center gap-2.5 py-3 rounded-xl border-2 border-[#25D366]/30 bg-[#25D366]/5 hover:bg-[#25D366]/10 transition-colors group"
                   >
@@ -146,7 +158,7 @@ export default function LandlordEnquiries() {
                   </a>
 
                   <a
-                    href={`mailto:${ADMIN_EMAIL}?subject=Landlord Support - ${landlord?.full_name ?? ''}`}
+                    href={`mailto:${adminEmail}?subject=Landlord Support - ${landlord?.full_name ?? ''}`}
                     className="flex items-center justify-center gap-2.5 py-3 rounded-xl border-2 border-blue-200/60 bg-blue-50/40 hover:bg-blue-50 transition-colors"
                   >
                     <div className="w-5 h-5 flex items-center justify-center">
@@ -156,7 +168,7 @@ export default function LandlordEnquiries() {
                     </div>
                     <div className="text-left">
                       <p className="text-xs font-bold text-gray-800">Email</p>
-                      <p className="text-[11px] text-gray-400">{ADMIN_EMAIL}</p>
+                      <p className="text-[11px] text-gray-400">{adminEmail}</p>
                     </div>
                   </a>
                 </div>

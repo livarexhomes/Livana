@@ -518,7 +518,7 @@ export default function AdminProperties() {
                       <h2 className="mt-3 text-3xl font-extrabold text-slate-950">Control listings with clarity</h2>
                       <p className="mt-3 text-sm leading-6 text-slate-500">Find, filter, and manage your portfolio from a polished admin workspace.</p>
                     </div>
-                    <div className="grid grid-cols-3 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                       {[
                         { label: 'Total listings', value: properties.length, accent: 'text-blue-700 bg-blue-500/10' },
                         { label: 'Available', value: available, accent: 'text-emerald-700 bg-emerald-500/10' },

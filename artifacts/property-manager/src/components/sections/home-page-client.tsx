@@ -942,8 +942,8 @@ export default function HomePageClient({ initialProperties }: { initialPropertie
           <div className="grid md:grid-cols-3 gap-5">
             {[
               { name: 'Adebayo O.', role: 'Tenant', city: 'Lagos', text: 'Found my perfect 3-bedroom in Lekki within a week. Livarex handled all the coordination — I never had to chase anyone. Absolutely recommend LIVAREX!', avatar: 'AO', featured: false },
-              { name: 'Chidinma E.', role: 'Landlord', city: 'Abuja', text: 'Listed my property on a Friday, had 3 serious inspection requests by Monday. Livarex screens and coordinates everything — I only meet verified, serious tenants.', avatar: 'CE', featured: true },
-              { name: 'Emeka N.', role: 'Tenant', city: 'Port Harcourt', text: 'Livarex scheduled my inspection and handled all communication on my behalf. I secured a verified apartment without any agent stress.', avatar: 'EN', featured: false },
+              { name: 'Chidinma E.', role: 'Landlord', city: 'Lagos', text: 'Listed my property on a Friday, had 3 serious inspection requests by Monday. Livarex screens and coordinates everything — I only meet verified, serious tenants.', avatar: 'CE', featured: true },
+              { name: 'Emeka N.', role: 'Tenant', city: 'Opebi', text: 'Livarex scheduled my inspection and handled all communication on my behalf. I secured a verified apartment without any agent stress.', avatar: 'EN', featured: false },
             ].map((t, i) => (
               <div
                 key={i}

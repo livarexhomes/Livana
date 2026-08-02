@@ -1,9 +1,10 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link } from '@/lib/navigation'
 import { Mail, Phone, MapPin, MessageCircle, Globe, ArrowRight, CheckCircle, Clock, ChevronDown, Instagram, Twitter, Send } from 'lucide-react'
 import PublicNavbar from '@/components/layout/PublicNavbar'
 import Footer from '@/components/layout/Footer'
 import { createClient, isSupabaseConfigured } from '@/lib/supabase'
+import { getPlatformSettings, getNotificationSettings, phoneToWaLink, phoneToTelLink, type PlatformSettings } from '@/lib/platform-settings'
 
 const faqs = [
   { q: 'How do I contact a landlord?', a: 'Sign in to your tenant account, then use the "Request Inspection" or "WhatsApp" button on any listing. All messages go through Livarex — our team coordinates with the landlord and gets back to you.' },
@@ -14,19 +15,30 @@ const faqs = [
   { q: 'Can I list commercial properties?', a: 'Yes. Livarex supports residential, commercial, and off-plan listings. Select the appropriate type when creating your listing.' },
 ]
 
-const channels = [
-  { icon: Mail,          label: 'Email',     value: 'livarexhomes@gmail.com',      href: 'mailto:livarexhomes@gmail.com',   note: 'Reply within 1–2 business days',   accent: 'bg-blue-600',    glow: 'shadow-blue-500/25'    },
-  { icon: MessageCircle, label: 'WhatsApp',  value: '+234 706 137 0742',            href: 'https://wa.me/2347061370742',     note: 'Livarex support on WhatsApp',      accent: 'bg-[#25D366]',   glow: 'shadow-green-500/25'   },
-  { icon: Phone,         label: 'Phone',     value: '+234 706 137 0742',            href: 'tel:+2347061370742',              note: '24/7 available',                   accent: 'bg-emerald-600', glow: 'shadow-emerald-500/25' },
-  { icon: MapPin,        label: 'Office',    value: 'Joju, Sango Ota, Ogun State', href: 'https://maps.google.com/?q=Joju+Sango+Ota+Ogun+State+Nigeria', note: 'Visit us in Ogun State', accent: 'bg-rose-600', glow: 'shadow-rose-500/25' },
-]
-
 export default function ContactPage() {
+  const [platform, setPlatform] = useState<PlatformSettings | null>(null)
   const [form, setForm] = useState({ name: '', email: '', role: 'renter', subject: '', message: '' })
   const [loading, setLoading] = useState(false)
   const [success, setSuccess] = useState(false)
   const [error, setError] = useState('')
   const [openFaq, setOpenFaq] = useState<number | null>(null)
+
+  // Load the admin phone + email from Admin Settings — the single source of truth.
+  useEffect(() => {
+    let active = true
+    getPlatformSettings().then(s => { if (active) setPlatform(s) })
+    return () => { active = false }
+  }, [])
+
+  const phone = platform?.phone || '+234 800 548 2621'
+  const email = platform?.email || 'support@livarex.com.ng'
+
+  const channels = [
+    { icon: Mail,          label: 'Email',     value: email,                            href: `mailto:${email}`,                       note: 'Reply within 1–2 business days',   accent: 'bg-blue-600',    glow: 'shadow-blue-500/25'    },
+    { icon: MessageCircle, label: 'WhatsApp',  value: phone,                            href: phoneToWaLink(phone),                   note: 'Livarex support on WhatsApp',      accent: 'bg-[#25D366]',   glow: 'shadow-green-500/25'   },
+    { icon: Phone,         label: 'Phone',     value: phone,                            href: phoneToTelLink(phone),                  note: '24/7 available',                   accent: 'bg-emerald-600', glow: 'shadow-emerald-500/25' },
+    { icon: MapPin,        label: 'Office',    value: platform?.address || 'Joju, Sango Ota, Ogun State', href: `https://maps.google.com/?q=${encodeURIComponent(platform?.address || 'Joju Sango Ota Ogun State Nigeria')}`, note: 'Visit us', accent: 'bg-rose-600', glow: 'shadow-rose-500/25' },
+  ]
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -36,6 +48,23 @@ export default function ContactPage() {
         const supabase = createClient()
         const { error: err } = await supabase.from('contact_messages').insert(form)
         if (err) throw new Error(err.message)
+
+        // Fire the email side (admin notification + user confirmation).
+        // Best-effort — the row is already saved, so a failure here is non-fatal.
+        const notif = await getNotificationSettings()
+        fetch('/api/send-support-notification', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            event: 'contact',
+            adminEmail: notif.adminEmail,
+            userName: form.name,
+            userEmail: form.email,
+            subject: form.subject,
+            message: form.message,
+            channel: 'Contact form',
+          }),
+        }).catch(() => { /* non-fatal */ })
       }
       setSuccess(true)
     } catch (err: any) {
@@ -76,7 +105,7 @@ export default function ContactPage() {
                 <a href="#contact-form" className="inline-flex items-center gap-2 px-6 py-3.5 bg-blue-600 hover:bg-blue-500 text-white text-sm font-bold rounded-xl transition-all shadow-xl shadow-blue-600/25">
                   Send a Message <ArrowRight className="w-4 h-4" />
                 </a>
-                <a href="tel:+2347061370742" className="inline-flex items-center gap-2 px-6 py-3.5 bg-white/6 hover:bg-white/10 text-white text-sm font-semibold rounded-xl transition-all border border-white/10">
+                <a href={phoneToTelLink(phone)} className="inline-flex items-center gap-2 px-6 py-3.5 bg-white/6 hover:bg-white/10 text-white text-sm font-semibold rounded-xl transition-all border border-white/10">
                   <Phone className="w-4 h-4" /> Call Us
                 </a>
               </div>

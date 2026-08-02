@@ -9,7 +9,7 @@ import {
 } from 'lucide-react'
 import LandlordSidebar from '../../components/layout/LandlordSidebar'
 import AuthGuard from '../../components/auth/AuthGuard'
-import { createClient, getSupabaseImageUrl } from '../../lib/supabase'
+import { createClient, getSupabaseImageUrl, isSupabaseConfigured } from '../../lib/supabase'
 import type { Landlord } from '@/types'
 import { NIGERIAN_STATES, POPULAR_AREAS } from '../../lib/nigerianStates'
 import LocationField from '../../components/property/LocationField'
@@ -17,6 +17,7 @@ import { MoneyInput } from '../../components/ui/money-input'
 import { digitsToNumber, formatNaira } from '../../lib/currency'
 import { getFeeConfig, calcFeeBreakdown, type FeeConfig } from '../../lib/fees'
 import { subscribeListingRulesChange } from '../../lib/settings-store'
+import { getListingSettings, type ListingSettings } from '../../lib/platform-settings'
 
 type FormData = {
   title: string; description: string; address: string; city: string
@@ -78,6 +79,19 @@ export default function LandlordListingForm() {
   const [existingImages, setExistingImages] = useState<ExistingImage[]>([])
   const [deletingImg, setDeletingImg] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+
+  // Listing rules from Admin → Settings (single source of truth).
+  const [listingRules, setListingRules] = useState<ListingSettings | null>(null)
+
+  useEffect(() => {
+    if (!isSupabaseConfigured()) return
+    let active = true
+    getListingSettings().then(s => { if (active) setListingRules(s) })
+    const unsub = subscribeListingRulesChange(() => {
+      getListingSettings({ refresh: true }).then(s => { if (active) setListingRules(s) })
+    })
+    return () => { active = false; unsub() }
+  }, [])
 
   useEffect(() => {
     const supabase = createClient()
@@ -246,17 +260,35 @@ export default function LandlordListingForm() {
     e.preventDefault()
     if (!landlord) return
 
-    // Client-side validation before hitting the DB
+    const supabase = createClient()
+    const rules = listingRules
+    const hasImages = imageFiles.length > 0 || existingImages.length > 0
+    const description = form.description.trim()
+
+    // Client-side validation before hitting the DB (honours admin Listing Rules)
     if (!form.title.trim())   { setError('Please enter a property title.'); return }
     if (!form.city.trim())    { setError('Please select a state.'); return }
     if (!form.address.trim()) { setError('Please enter an area or neighbourhood.'); return }
     if (!form.price || Number(form.price) <= 0) { setError('Please enter a valid price.'); return }
+    if (rules?.requireDescription && !description) { setError('A property description is required for this listing.'); return }
+    if (rules?.requireImages && !hasImages) { setError('At least one photo is required for this listing.'); return }
+
+    // Enforce the per-landlord listing cap (new listings only).
+    if (!isEdit && rules && rules.maxPerLandlord > 0) {
+      const { count } = await supabase
+        .from('properties')
+        .select('id', { count: 'exact', head: true })
+        .eq('landlord_id', landlord.id)
+      if ((count ?? 0) >= rules.maxPerLandlord) {
+        setError(`You've reached the maximum of ${rules.maxPerLandlord} active listings allowed on your account.`)
+        return
+      }
+    }
 
     setLoading(true); setError('')
-    const supabase = createClient()
     const data = {
       landlord_id: landlord.id,
-      title: form.title.trim(), description: form.description.trim() || null,
+      title: form.title.trim(), description: description || null,
       address: form.address.trim(), city: form.city.trim(),
       price: digitsToNumber(form.price),
       agreement_fee: form.agreement_fee ? digitsToNumber(form.agreement_fee) : null,
@@ -596,7 +628,9 @@ export default function LandlordListingForm() {
                         <option value="available">Available</option>
                         <option value="taken">Taken</option>
                         <option value="coming_soon">Coming Soon</option>
-                        <option value="under_negotiation">Negotiating</option>
+                        {listingRules?.allowNegotiation !== false && (
+                          <option value="under_negotiation">Negotiating</option>
+                        )}
                       </select>
                     </div>
                   </div>
