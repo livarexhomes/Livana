@@ -768,35 +768,35 @@ function SupportTab() {
 
   return (
     <div className="flex flex-1 overflow-hidden gap-3 p-3">
-      {/* Ticket list */}
-      <div className={`flex flex-col rounded-2xl border border-slate-200 bg-white w-full lg:w-72 xl:w-80 shrink-0 overflow-hidden shadow-sm ${selected ? 'hidden lg:flex' : 'flex'}`}>
+      {/* Ticket queue */}
+      <div className={`flex flex-col rounded-xl border border-slate-200 bg-white w-full lg:w-72 xl:w-80 shrink-0 overflow-hidden shadow-[0_1px_2px_rgba(15,23,42,0.04)] ${selected ? 'hidden lg:flex' : 'flex'}`}>
         {/* Header */}
-        <div className="px-4 pt-3.5 pb-3 border-b border-slate-100">
-          <div className="flex items-center justify-between gap-2">
+        <div className="px-3.5 pt-3 pb-2.5 border-b border-slate-100">
+          <div className="flex items-baseline justify-between gap-2">
             <div className="min-w-0">
-              <p className="text-[10px] uppercase tracking-[0.25em] text-slate-400 font-semibold">Support queue</p>
-              <h2 className="mt-0.5 text-base font-bold text-slate-950 leading-tight">Tickets</h2>
+              <p className="text-[9px] uppercase tracking-[0.22em] text-slate-400 font-bold">Support queue</p>
+              <h2 className="mt-0.5 text-[15px] font-bold text-slate-950 leading-tight tracking-tight">Tickets</h2>
             </div>
             <div className="shrink-0 text-right">
-              <p className="text-[10px] uppercase tracking-[0.15em] text-slate-400 font-semibold">Total</p>
-              <p className="mt-0.5 text-sm font-bold text-slate-900 leading-tight">{tickets.length}</p>
+              <p className="text-[9px] uppercase tracking-[0.18em] text-slate-400 font-bold">Total Tickets</p>
+              <p className="mt-0.5 text-[15px] font-bold text-slate-900 leading-tight tabular-nums">{tickets.length}</p>
             </div>
           </div>
 
           {/* Status filters — single compact row */}
-          <div className="mt-3 flex items-center gap-1.5 overflow-x-auto -mx-1 px-1 pb-0.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <div className="mt-2.5 flex items-center gap-1.5 flex-wrap">
             {(['all', 'open', 'in_progress', 'resolved', 'closed'] as const).map(key => {
               const active = filterStatus === key
               return (
                 <button key={key} onClick={() => setFilterStatus(key)}
-                  className={`shrink-0 inline-flex items-center gap-1.5 h-7 px-2.5 rounded-lg text-xs font-semibold border transition-all ${
+                  className={`inline-flex items-center gap-1.5 h-6 px-2.5 rounded-lg text-[11px] font-semibold border transition-all ${
                     active
-                      ? 'bg-blue-600 text-white border-blue-600 shadow-sm shadow-blue-600/25'
+                      ? 'bg-blue-600 text-white border-blue-600 shadow-sm shadow-blue-600/20'
                       : 'bg-white text-slate-500 border-slate-200 hover:border-slate-300 hover:bg-slate-50 hover:text-slate-700'
                   }`}>
                   {key === 'all' ? 'All' : STATUS_META[key].label}
-                  <span className={`min-w-[16px] inline-flex items-center justify-center h-4 px-1 rounded-md text-[10px] font-bold tabular-nums ${
-                    active ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-400'
+                  <span className={`min-w-[15px] inline-flex items-center justify-center h-[15px] px-1 rounded text-[9px] font-bold tabular-nums ${
+                    active ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-500'
                   }`}>{counts[key]}</span>
                 </button>
               )
@@ -805,23 +805,23 @@ function SupportTab() {
         </div>
 
         {/* Ticket list */}
-        <div className="flex-1 overflow-y-auto p-2.5 space-y-1.5">
+        <div className="flex-1 overflow-y-auto p-2 space-y-1">
           {loading ? (
-            <div className="space-y-1.5">
+            <div className="space-y-1">
               {Array.from({ length: 5 }).map((_, i) => (
-                <div key={i} className="h-16 rounded-xl bg-slate-100 animate-pulse" />
+                <div key={i} className="h-14 rounded-lg bg-slate-100 animate-pulse" />
               ))}
             </div>
           ) : filtered.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-full py-10 px-4 text-center">
-              <div className="w-9 h-9 rounded-lg bg-slate-50 flex items-center justify-center mb-2">
-                <MessageSquare className="w-4 h-4 text-slate-300" />
+            <div className="flex flex-col items-center justify-center h-full py-8 px-4 text-center">
+              <div className="w-8 h-8 rounded-lg bg-slate-50 border border-slate-100 flex items-center justify-center mb-2">
+                <MessageSquare className="w-3.5 h-3.5 text-slate-300" />
               </div>
-              <p className="text-xs font-semibold text-slate-400">No tickets</p>
-              <p className="text-[11px] text-slate-300 mt-0.5">Nothing in this view yet</p>
+              <p className="text-xs font-semibold text-slate-500">No tickets in this view</p>
+              <p className="text-[11px] text-slate-400 mt-0.5">Tickets will appear here when created</p>
             </div>
           ) : (
-            <div className="space-y-1.5">
+            <div className="space-y-1">
               {filtered.map(ticket => {
                 const s = STATUS_META[ticket.status]
                 const p = PRIORITY_META[ticket.priority]
@@ -832,21 +832,21 @@ function SupportTab() {
                   : (ticket.tenants?.full_name ?? 'Tenant')
                 return (
                   <button key={ticket.id} onClick={() => setSelectedId(ticket.id)}
-                    className={`w-full text-left rounded-xl border px-3 py-2.5 transition-all ${isActive ? 'border-blue-600 bg-blue-50/50 ring-1 ring-blue-600/10' : 'border-slate-200 bg-white hover:border-slate-300 hover:shadow-sm'}`}>
+                    className={`w-full text-left rounded-lg border px-2.5 py-2 transition-all ${isActive ? 'border-blue-600 bg-blue-50/60 ring-1 ring-blue-600/10' : 'border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50/50'}`}>
                     <div className="flex items-center justify-between gap-2">
-                      <p className={`font-semibold text-[13px] truncate ${isActive ? 'text-blue-900' : 'text-slate-900'}`}>{ticket.subject}</p>
-                      <span className={`shrink-0 inline-flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded-md ${s.bg} ${s.color}`}>
+                      <p className={`font-semibold text-[12.5px] truncate ${isActive ? 'text-blue-900' : 'text-slate-900'}`}>{ticket.subject}</p>
+                      <span className={`shrink-0 inline-flex items-center gap-1 text-[9.5px] font-bold px-1.5 py-0.5 rounded ${s.bg} ${s.color}`}>
                         <span className={`w-1 h-1 rounded-full ${s.dot}`} />{s.label}
                       </span>
                     </div>
-                    <div className="mt-1.5 flex items-center gap-2 text-[11px]">
+                    <div className="mt-1 flex items-center gap-1.5 text-[10.5px]">
                       <span className={`inline-flex items-center gap-1 min-w-0 ${isActive ? 'text-blue-800/70' : 'text-slate-500'}`}>
-                        <User className="w-3 h-3 shrink-0" />
-                        {isLandlordTicket && <span className="rounded-md bg-violet-100 px-1 py-px text-[9px] font-bold text-violet-700 leading-none">LL</span>}
+                        <User className="w-2.5 h-2.5 shrink-0" />
+                        {isLandlordTicket && <span className="rounded bg-violet-100 px-1 py-px text-[8.5px] font-bold text-violet-700 leading-none">LL</span>}
                         <span className="truncate">{senderName}</span>
                       </span>
-                      <span className={`shrink-0 inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[10px] font-semibold ${p.bg} ${p.color}`}>{p.label}</span>
-                      <span className={`ml-auto shrink-0 text-[10px] tabular-nums ${isActive ? 'text-blue-800/50' : 'text-slate-400'}`}>
+                      <span className={`shrink-0 inline-flex items-center rounded px-1.5 py-0.5 text-[9.5px] font-semibold ${p.bg} ${p.color}`}>{p.label}</span>
+                      <span className={`ml-auto shrink-0 text-[9.5px] tabular-nums ${isActive ? 'text-blue-800/50' : 'text-slate-400'}`}>
                         {formatDistanceToNow(new Date(ticket.updated_at), { addSuffix: true })}
                       </span>
                     </div>
@@ -863,12 +863,12 @@ function SupportTab() {
         {selected ? (
           <AdminChatThread key={selected.id} ticket={selected} onBack={() => setSelectedId(null)} onStatusChange={handleStatusChange} />
         ) : (
-          <div className="flex-1 flex flex-col items-center justify-center bg-white rounded-2xl border border-gray-100 shadow-sm text-center p-8 h-full">
-            <div className="w-14 h-14 rounded-2xl bg-gray-50 flex items-center justify-center mb-3">
-              <HeadphonesIcon className="w-7 h-7 text-gray-300" />
+          <div className="flex-1 flex flex-col items-center justify-center bg-white rounded-xl border border-slate-200 shadow-[0_1px_2px_rgba(15,23,42,0.04)] text-center p-8 h-full">
+            <div className="w-11 h-11 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center mb-3">
+              <HeadphonesIcon className="w-5 h-5 text-slate-300" />
             </div>
-            <p className="font-bold text-gray-900 mb-1">Select a ticket</p>
-            <p className="text-sm text-gray-400">Choose a ticket from the list to reply.</p>
+            <p className="font-semibold text-slate-700 mb-1">Select a ticket</p>
+            <p className="text-[13px] text-slate-400">Choose a ticket from the list to reply.</p>
           </div>
         )}
       </div>
