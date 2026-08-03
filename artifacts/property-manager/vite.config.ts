@@ -86,6 +86,33 @@ export default defineConfig(async ({ isSsrBuild }) => ({
       : path.resolve(import.meta.dirname, "dist/public"),
     emptyOutDir: true,
     sourcemap: false,
+    // Split heavy third-party libraries into their own cacheable chunks so no
+    // single bundle (entry or route) exceeds the 500 kB warning threshold and
+    // the browser can cache vendor code independently of app changes.
+    rollupOptions: isSsrBuild
+      ? undefined
+      : {
+          output: {
+            manualChunks(id) {
+              if (!id.includes("node_modules")) return undefined
+              if (id.includes("@supabase") || id.includes("supabase")) return "supabase"
+              if (id.includes("recharts") || id.includes("d3-")) return "recharts"
+              if (id.includes("@react-google-maps") || id.includes("google-maps")) return "maps"
+              if (id.includes("react-leaflet") || id.includes("leaflet")) return "maps"
+              if (id.includes("framer-motion")) return "framer-motion"
+              if (id.includes("lucide-react")) return "icons"
+              if (
+                id.includes("react") ||
+                id.includes("react-dom") ||
+                id.includes("scheduler") ||
+                id.includes("wouter")
+              ) {
+                return "react"
+              }
+              return undefined
+            },
+          },
+        },
   },
   server: {
     port,
