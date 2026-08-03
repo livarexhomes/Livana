@@ -15,7 +15,7 @@ import { useEffect, useRef } from 'react'
 import { createClient } from './supabase'
 import type { AgentRole, SupportStatus } from './live-support'
 
-const AWAY_AFTER_MS = 10 * 60 * 1000 // 10 minutes idle → away
+const AWAY_AFTER_MS = 12 * 60 * 1000 // 12 minutes idle → away (tunable, 10–15 min range)
 const ACTIVITY_THROTTLE_MS = 1000
 
 /** The agent identity + status carried on this client's presence entry. */

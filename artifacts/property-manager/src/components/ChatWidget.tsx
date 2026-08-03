@@ -30,10 +30,16 @@ interface AgentMessage {
   created_at: string
 }
 
-// Welcome (State 1) → Live (State 2/3). No more tangled view/liveStage.
+// Strict 3-state flow:
+//   welcome  → State 1: quick actions only (no composer, no chat area)
+//   bot      → AI conversation (active chat with composer)
+//   live     → State 2: two-way live agent thread (checking → active)
+//   offline  → State 3: offline support form (form → submitted)
 type WidgetView =
   | { name: 'welcome' }
-  | { name: 'live'; stage: 'checking' | 'active' | 'offline-form' | 'submitted' }
+  | { name: 'bot' }
+  | { name: 'live'; stage: 'checking' | 'active' }
+  | { name: 'offline'; stage: 'form' | 'submitted' }
 
 // ── Config ────────────────────────────────────────────────────────────────────
 
@@ -201,7 +207,7 @@ export default function ChatWidget() {
       setAgentUnread(false)
       setTimeout(() => {
         if (view.name === 'live' && inquiryId) agentInputRef.current?.focus()
-        else if (view.name === 'live' && !inquiryId) inputRef.current?.focus()
+        else if (view.name === 'bot') inputRef.current?.focus()
       }, 250)
     }
   }, [open, view, inquiryId])
@@ -332,7 +338,7 @@ export default function ChatWidget() {
       }
 
       // No agent online → offline message flow.
-      setView({ name: 'live', stage: 'offline-form' })
+      setView({ name: 'offline', stage: 'form' })
     }
     run()
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -431,23 +437,8 @@ export default function ChatWidget() {
       }).select('id, read_by_admin, ticket_no').single()
       if (error) throw error
       setAgentTicketNo(inserted?.ticket_no ?? null)
-      setView({ name: 'live', stage: 'submitted' })
+      setView({ name: 'offline', stage: 'submitted' })
       if (inserted?.id) {
-        // Land in a thread view so the visitor sees their message as a bubble
-        // and can receive admin replies later (realtime subscription below).
-        setInquiryId(inserted.id)
-        setAgentJoined(true)
-        setAgentThread([{
-          id: `initial-${inserted.id}`,
-          inquiry_id: inserted.id,
-          sender: 'visitor',
-          body: note,
-          read_by_admin: false,
-          read_by_visitor: true,
-          attachment_url: null,
-          attachment_name: null,
-          created_at: new Date().toISOString(),
-        }])
         // Notify the admin (email + notification bell picks it up via realtime).
         getNotificationSettings().then(notif => {
           fetch('/api/send-support-notification', {
@@ -475,7 +466,7 @@ export default function ChatWidget() {
       }).catch(() => {
         window.open('https://wa.me/2347061370742', '_blank')
       })
-      setView({ name: 'live', stage: 'submitted' })
+      setView({ name: 'offline', stage: 'submitted' })
     } finally {
       setAgentSubmitting(false)
     }
@@ -539,7 +530,7 @@ export default function ChatWidget() {
   // ── Send (AI bot) ─────────────────────────────────────────────────────────
   async function sendMessage(text: string, img: typeof pendingImg) {
     if (!text.trim() && !img) return
-    setView({ name: 'live', stage: 'active' })
+    setView({ name: 'bot' })
     setShowEmoji(false)
 
     const userContent: ContentBlock[] = []
@@ -575,8 +566,10 @@ export default function ChatWidget() {
         time: Date.now(),
       }])
       if (!open) setUnread(true)
-      // If bot is escalating to human, offer live support
-      if (!inquiryId && !agentJoined && ESCALATION_KEYWORDS.some(kw => reply.toLowerCase().includes(kw))) {
+      // If bot is escalating to human, offer live support. `goLive` reuses an
+      // existing live thread when one exists; otherwise it connects or shows
+      // the offline form based on agent availability.
+      if (ESCALATION_KEYWORDS.some(kw => reply.toLowerCase().includes(kw))) {
         setTimeout(() => goLive(), 700)
       }
     } catch {
@@ -609,9 +602,12 @@ export default function ChatWidget() {
 
   const canSend = (input.trim().length > 0 || !!pendingImg) && !loading
 
-  // A "live" conversation is any actual exchange: a live agent thread, or AI
-  // bot messages. Until one exists, only the welcome screen is shown.
-  const hasActiveChat = !!inquiryId || messages.length > 0
+  // The composer only ever appears inside an active conversation — never on
+  // the welcome screen or the offline form/submitted states.
+  const showComposer = view.name === 'bot' || (view.name === 'live' && view.stage === 'active')
+
+  // Back to the welcome quick-actions (keeps any bot/live conversation state).
+  const goWelcome = () => { setShowEmoji(false); setView({ name: 'welcome' }) }
 
   // Presence-driven status line.
   const presenceLine = liveState.online
@@ -826,6 +822,18 @@ export default function ChatWidget() {
             </svg>
           </a>
 
+          {/* Back to quick actions */}
+          {view.name !== 'welcome' && (
+            <button onClick={goWelcome}
+              aria-label="Back to quick actions"
+              title="Back to quick actions"
+              className="grid size-8 shrink-0 place-items-center rounded-lg text-white/70 transition-colors hover:bg-white/15 focus-visible:outline-2 focus-visible:outline-white/70"
+              style={{ background:'rgba(255,255,255,0.1)' }}
+            >
+              <ArrowRight size={16} style={{ transform:'rotate(180deg)' }} />
+            </button>
+          )}
+
           {/* Minimise */}
           <button onClick={() => setOpen(false)}
             aria-label="Minimise chat"
@@ -883,7 +891,7 @@ export default function ChatWidget() {
             </div>
           )}
 
-          {/* ── State 2/3: Live conversation ── */}
+          {/* ── State 2: Live conversation ── */}
           {view.name === 'live' && (
             <>
               {/* Checking for agents */}
@@ -896,8 +904,86 @@ export default function ChatWidget() {
                 </div>
               )}
 
+              {/* Live thread (connected) */}
+              {view.stage === 'active' && (
+                <> 
+              {/* Connected banner */}
+              {agentJoined && (
+                <div className="flex justify-center">
+                  <span className="rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[10px] font-semibold text-emerald-700"
+                    style={{ animation:'cwFadeUp 0.3s ease both' }}>
+                    🟢 You're connected to Livarex Support. An agent will reply shortly.
+                  </span>
+                </div>
+              )}
+              {/* Agent typing indicator */}
+              {agentTyping && !agentThreadLoading && (
+                <div className="flex items-end gap-2" style={{ animation:'cwFadeUp 0.25s ease both' }}>
+                  <AgentAvatar />
+                  <div className="rounded-[18px_18px_18px_6px] border border-border/60 bg-card px-3.5 py-2.5 shadow-[0_1px_3px_rgba(2,6,23,0.06)]">
+                    <div className="flex items-center gap-2">
+                      <TypingDots />
+                      <span className="text-[10.5px] text-muted-foreground">Support is typing…</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+              {agentThreadLoading ? (
+                <div className="flex items-end gap-2" style={{ animation:'cwFadeUp 0.25s ease both' }}>
+                  <Avatar small />
+                  <div className="rounded-[18px_18px_18px_6px] border border-border/60 bg-card shadow-[0_1px_3px_rgba(2,6,23,0.06)]">
+                    <TypingDots />
+                  </div>
+                </div>
+              ) : (
+                agentThread.map((msg) => {
+                  const isVisitor = msg.sender === 'visitor'
+                  const read = msg.read_by_admin
+                  return (
+                    <div key={msg.id} className="flex items-end gap-2"
+                      style={{ justifyContent: isVisitor ? 'flex-end' : 'flex-start', animation:'cwFadeUp 0.3s ease both' }}>
+                      {!isVisitor && <AgentAvatar />}
+                      <div className="flex max-w-[80%] flex-col gap-1"
+                        style={{ alignItems: isVisitor ? 'flex-end' : 'flex-start' }}>
+                        {msg.attachment_url && (
+                          <img src={msg.attachment_url} alt={msg.attachment_name ?? 'attachment'}
+                            className="max-h-40 max-w-[200px] rounded-xl border border-border/70 object-cover" />
+                        )}
+                        <div className="px-3.5 py-2.5 text-[13px] leading-relaxed break-words"
+                          style={{
+                            borderRadius: isVisitor ? '18px 18px 6px 18px' : '18px 18px 18px 6px',
+                            whiteSpace:'pre-wrap',
+                            background: isVisitor ? 'linear-gradient(135deg,#059669,#10b981)' : 'hsl(var(--card))',
+                            color: isVisitor ? '#fff' : 'hsl(var(--card-foreground))',
+                            boxShadow: isVisitor ? '0 2px 10px rgba(5,150,105,0.3)' : '0 1px 3px rgba(2,6,23,0.06)',
+                            border: isVisitor ? 'none' : '1px solid hsl(var(--border) / 0.7)',
+                            opacity: msg.id.startsWith('opt-') ? 0.6 : 1,
+                          }}>
+                          {msg.body}
+                        </div>
+                        <span className="px-1 text-[9.5px] text-muted-foreground/70">
+                          {formatTime(msg.created_at)}
+                          {isVisitor && !msg.id.startsWith('opt-') && (
+                            <span className={`ml-1 ${read ? 'text-emerald-500' : 'text-muted-foreground/60'}`}>
+                              {read ? '✓✓ Read' : '✓ Sent'}
+                            </span>
+                          )}
+                        </span>
+                      </div>
+                    </div>
+                  )
+                })
+              )}
+                </> 
+              )}
+            </>
+          )}
+
+          {/* ── State 3: Offline support ── */}
+          {view.name === 'offline' && (
+            <>
               {/* Offline form */}
-              {view.stage === 'offline-form' && (
+              {view.stage === 'form' && (
                 <div className="flex items-start gap-2" style={{ animation:'cwFadeUp 0.35s ease both' }}>
                   <Avatar small />
                   <div className="max-w-[88%] flex-1 rounded-[18px_18px_18px_6px] border border-border/70 bg-card p-4 shadow-[0_1px_3px_rgba(2,6,23,0.06)]">
@@ -994,84 +1080,11 @@ export default function ChatWidget() {
                   </div>
                 </div>
               )}
-
-              {/* Live thread (connected) */}
-              {(view.stage === 'active') && (
-                <>
-                  {/* Connected banner */}
-                  {agentJoined && (
-                    <div className="flex justify-center">
-                      <span className="rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[10px] font-semibold text-emerald-700"
-                        style={{ animation:'cwFadeUp 0.3s ease both' }}>
-                        🟢 You're connected to Livarex Support. An agent will reply shortly.
-                      </span>
-                    </div>
-                  )}
-                  {/* Agent typing indicator */}
-                  {agentTyping && !agentThreadLoading && (
-                    <div className="flex items-end gap-2" style={{ animation:'cwFadeUp 0.25s ease both' }}>
-                      <AgentAvatar />
-                      <div className="rounded-[18px_18px_18px_6px] border border-border/60 bg-card px-3.5 py-2.5 shadow-[0_1px_3px_rgba(2,6,23,0.06)]">
-                        <div className="flex items-center gap-2">
-                          <TypingDots />
-                          <span className="text-[10.5px] text-muted-foreground">Support is typing…</span>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                  {agentThreadLoading ? (
-                    <div className="flex items-end gap-2" style={{ animation:'cwFadeUp 0.25s ease both' }}>
-                      <Avatar small />
-                      <div className="rounded-[18px_18px_18px_6px] border border-border/60 bg-card shadow-[0_1px_3px_rgba(2,6,23,0.06)]">
-                        <TypingDots />
-                      </div>
-                    </div>
-                  ) : (
-                    agentThread.map((msg) => {
-                      const isVisitor = msg.sender === 'visitor'
-                      const read = msg.read_by_admin
-                      return (
-                        <div key={msg.id} className="flex items-end gap-2"
-                          style={{ justifyContent: isVisitor ? 'flex-end' : 'flex-start', animation:'cwFadeUp 0.3s ease both' }}>
-                          {!isVisitor && <AgentAvatar />}
-                          <div className="flex max-w-[80%] flex-col gap-1"
-                            style={{ alignItems: isVisitor ? 'flex-end' : 'flex-start' }}>
-                            {msg.attachment_url && (
-                              <img src={msg.attachment_url} alt={msg.attachment_name ?? 'attachment'}
-                                className="max-h-40 max-w-[200px] rounded-xl border border-border/70 object-cover" />
-                            )}
-                            <div className="px-3.5 py-2.5 text-[13px] leading-relaxed break-words"
-                              style={{
-                                borderRadius: isVisitor ? '18px 18px 6px 18px' : '18px 18px 18px 6px',
-                                whiteSpace:'pre-wrap',
-                                background: isVisitor ? 'linear-gradient(135deg,#059669,#10b981)' : 'hsl(var(--card))',
-                                color: isVisitor ? '#fff' : 'hsl(var(--card-foreground))',
-                                boxShadow: isVisitor ? '0 2px 10px rgba(5,150,105,0.3)' : '0 1px 3px rgba(2,6,23,0.06)',
-                                border: isVisitor ? 'none' : '1px solid hsl(var(--border) / 0.7)',
-                                opacity: msg.id.startsWith('opt-') ? 0.6 : 1,
-                              }}>
-                              {msg.body}
-                            </div>
-                            <span className="px-1 text-[9.5px] text-muted-foreground/70">
-                              {formatTime(msg.created_at)}
-                              {isVisitor && !msg.id.startsWith('opt-') && (
-                                <span className={`ml-1 ${read ? 'text-emerald-500' : 'text-muted-foreground/60'}`}>
-                                  {read ? '✓✓ Read' : '✓ Sent'}
-                                </span>
-                              )}
-                            </span>
-                          </div>
-                        </div>
-                      )
-                    })
-                  )}
-                </>
-              )}
             </>
           )}
 
           {/* ── AI bot messages (after a quick action seeds the chat) ── */}
-          {view.name === 'live' && messages.length > 0 && !inquiryId && (
+          {view.name === 'bot' && messages.length > 0 && (
             <>
               {messages.map((msg, i) => (
                 <div key={i} className="flex items-end gap-2"
@@ -1125,7 +1138,7 @@ export default function ChatWidget() {
         </div>
 
         {/* ── Pending attachment preview ──────────────────────────────────────── */}
-        {hasActiveChat && pendingImg && (
+        {showComposer && pendingImg && (
           <div className="flex shrink-0 items-center gap-2 border-t border-border/60 bg-muted/40 px-3.5 py-2">
             <div className="relative">
               <img src={pendingImg.url} alt="preview" className="size-12 rounded-lg border border-border object-cover" />
@@ -1139,8 +1152,8 @@ export default function ChatWidget() {
           </div>
         )}
 
-        {/* ── Composer (only once a conversation is active) ──────────────────── */}
-        {hasActiveChat && (
+        {/* ── Composer (only inside an active conversation) ──────────────────── */}
+        {showComposer && (
         <div className="cw-input-bar flex shrink-0 items-center gap-2 border-t border-border/60 bg-card px-3 py-2.5">
           {/* Attach (bot + live) */}
           <button
@@ -1169,10 +1182,10 @@ export default function ChatWidget() {
               <div className="absolute bottom-11 left-0 z-20 flex flex-wrap gap-1 rounded-xl border border-border bg-card p-2 shadow-lg" style={{ width:'max-content', maxWidth:'200px' }}>
                 {EMOJI.map(e => (
                   <button key={e} onClick={() => {
-                    if (inquiryId) setAgentInput(v => v + e)
+                    if (view.name === 'live' && inquiryId) setAgentInput(v => v + e)
                     else setInput(v => v + e)
                     setShowEmoji(false)
-                    ;(inquiryId ? agentInputRef : inputRef).current?.focus()
+                    ;(view.name === 'live' && inquiryId ? agentInputRef : inputRef).current?.focus()
                   }}
                     className="grid size-7 place-items-center rounded-lg text-lg hover:bg-muted transition-colors">
                     {e}

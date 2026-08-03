@@ -10,6 +10,7 @@ import { createClient } from './supabase'
 
 export type SupportAlertEvent =
   | { type: 'new_inquiry'; inquiry: { id: string; name: string; note: string } }
+  | { type: 'new_queued'; inquiry: { id: string; name: string; note: string; ticketNo?: string | null } }
   | { type: 'new_message'; inquiryId: string; inquiryName: string; body: string; sender: 'visitor' | 'admin' }
 
 const MUTE_KEY = 'livarex-support-sound-muted'
@@ -74,6 +75,19 @@ export function subscribeToSupportAlerts(
       { event: 'INSERT', schema: 'public', table: 'chat_inquiries' },
       (payload) => {
         const row = (payload.new ?? {}) as Record<string, unknown>
+        if (row.agent_status === 'queued') {
+          // Offline form submission (or a chat that had to be queued).
+          onChange({
+            type: 'new_queued',
+            inquiry: {
+              id: String(row.id ?? ''),
+              name: String(row.name ?? 'Guest'),
+              note: String(row.note ?? ''),
+              ticketNo: typeof row.ticket_no === 'string' ? row.ticket_no : null,
+            },
+          })
+          return
+        }
         onChange({
           type: 'new_inquiry',
           inquiry: {

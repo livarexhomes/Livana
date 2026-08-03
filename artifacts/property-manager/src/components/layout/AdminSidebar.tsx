@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react'
 import { Link, useLocation } from '@/lib/navigation'
 import { createClient } from '@/lib/supabase'
-import { useAdminPresence } from '@/lib/admin-presence'
+import { useAdminPresence, subscribeMySupportStatus, getMySupportStatus } from '@/lib/admin-presence'
+import { type SupportStatus } from '@/lib/live-support'
 import {
   LayoutDashboard, Building2, UserPlus, FolderKanban, UserCog,
   Settings, LogOut, Menu, X,
@@ -35,6 +36,11 @@ export default function AdminSidebar({ userEmail, userName }: Props) {
     try { return localStorage.getItem('admin-sidebar-collapsed') === 'true' } catch { return false }
   })
   const [openEnquiries, setOpenEnquiries] = useState(0)
+  const [supportStatus, setSupportStatus] = useState<SupportStatus>(getMySupportStatus)
+
+  useEffect(() => {
+    return subscribeMySupportStatus(setSupportStatus)
+  }, [])
 
   useEffect(() => {
     const supabase = createClient()
@@ -174,7 +180,14 @@ export default function AdminSidebar({ userEmail, userName }: Props) {
               <>
                 <div className="min-w-0 flex-1">
                   <p className="text-[13px] font-semibold text-white/90 truncate leading-tight">{displayName}</p>
-                  <p className="text-[11px] text-white/35 truncate mt-0.5">{userEmail ?? 'admin@livarex.com'}</p>
+                  <p className="text-[11px] text-white/35 truncate mt-0.5 flex items-center gap-1">
+                    <span className={`w-1.5 h-1.5 rounded-full ${
+                      supportStatus === 'online' ? 'bg-emerald-400'
+                      : supportStatus === 'away' ? 'bg-amber-400'
+                      : 'bg-slate-500'
+                    }`} />
+                    {supportStatus === 'online' ? 'Online' : supportStatus === 'away' ? 'Away' : 'Offline'}
+                  </p>
                 </div>
                 <button type="button" onClick={handleLogout} title="Sign out"
                   className="w-7 h-7 flex items-center justify-center rounded-lg text-white/30 hover:text-red-400 hover:bg-red-500/10 transition-colors shrink-0">

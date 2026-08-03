@@ -3,7 +3,7 @@ import {
   HeadphonesIcon, Send, Loader2, MessageSquare,
   Clock, CheckCircle2, XCircle, User,
   ChevronLeft, RefreshCw, Inbox, Building2, Mail,
-  UserPlus, Volume2, VolumeX, ShieldCheck,
+  UserPlus, Volume2, VolumeX, ShieldCheck, KeyRound, Trash2,
 } from 'lucide-react'
 import AdminSidebar from '../../components/layout/AdminSidebar'
 import AuthGuard from '../../components/auth/AuthGuard'
@@ -924,8 +924,9 @@ function ChatRequestDetail({ inquiry, onBack, onMarkRead, onStatusChange, agents
 
 // ── SupportTab ────────────────────────────────────────────────────────────────
 
-function SupportTab() {
+function SupportTab({ onOpenQueued }: { onOpenQueued: (id: string) => void }) {
   const [tickets, setTickets]       = useState<SupportTicket[]>([])
+  const [queued, setQueued]         = useState<ChatInquiry[]>([])
   const [loading, setLoading]       = useState(true)
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [filterStatus, setFilterStatus] = useState<string>('all')
@@ -951,6 +952,51 @@ function SupportTab() {
     return () => { supabase.removeChannel(channel) }
   }, [])
 
+  // Queued offline/live requests — no agent has claimed them yet.
+  useEffect(() => {
+    const supabase = createClient()
+    const loadQueued = () => {
+      supabase.from('chat_inquiries').select('*')
+        .eq('agent_status', 'queued')
+        .order('created_at', { ascending: false })
+        .then(({ data }) => setQueued((data as ChatInquiry[]) ?? []))
+    }
+    loadQueued()
+    const channel = supabase.channel('admin_queued_list')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'chat_inquiries' },
+        (payload) => {
+          const row = payload.new as ChatInquiry
+          if (row.agent_status === 'queued') setQueued(prev => [row, ...prev])
+        })
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'chat_inquiries' },
+        (payload) => {
+          const row = payload.new as ChatInquiry
+          // A claim/status change removes it from the queue; any re-queue adds it back.
+          setQueued(prev => {
+            const rest = prev.filter(q => q.id !== row.id)
+            return row.agent_status === 'queued' ? [row, ...rest] : rest
+          })
+        })
+      .subscribe()
+    return () => { supabase.removeChannel(channel) }
+  }, [])
+
+  // Claim a queued request for the current admin.
+  async function claimQueued(inquiryId: string) {
+    const supabase = createClient()
+    const { data: { session } } = await supabase.auth.getSession()
+    const userId = session?.user?.id
+    if (!userId) return
+    // Find the agents roster row for this admin (or fall back to the first
+    // active agent so a claim is always possible from the queue).
+    const { data: roster } = await supabase.from('agents').select('id').eq('user_id', userId).maybeSingle()
+    const agentId = (roster?.id as string | undefined)
+      ?? (await supabase.from('agents').select('id').eq('active', true).limit(1).maybeSingle()).data?.id as string | undefined
+    if (!agentId) return
+    const ok = await claimInquiry(inquiryId, agentId)
+    if (ok) setQueued(prev => prev.filter(q => q.id !== inquiryId))
+  }
+
   function handleStatusChange(id: string, status: SupportTicket['status']) {
     setTickets(prev => prev.map(t => t.id === id ? { ...t, status } : t))
   }
@@ -967,6 +1013,80 @@ function SupportTab() {
 
   return (
     <div className="flex flex-1 overflow-hidden gap-3 p-3">
+      {/* Queued requests — offline form submissions + chats waiting for an agent */}
+      <div className={`flex flex-col rounded-xl border border-slate-200 bg-white w-full lg:w-64 xl:w-72 shrink-0 overflow-hidden shadow-[0_1px_2px_rgba(15,23,42,0.04)] ${selected ? 'hidden lg:flex' : 'flex'}`}>
+        <div className="px-3.5 pt-3 pb-2.5 border-b border-slate-100">
+          <div className="flex items-baseline justify-between gap-2">
+            <div className="min-w-0">
+              <p className="text-[9px] uppercase tracking-[0.22em] text-slate-400 font-bold">Waiting for an agent</p>
+              <h2 className="mt-0.5 text-[15px] font-bold text-slate-950 leading-tight tracking-tight flex items-center gap-1.5">
+                <Clock className="w-3.5 h-3.5 text-amber-500" />
+                Queued
+              </h2>
+            </div>
+            <div className="shrink-0 text-right">
+              <p className="text-[9px] uppercase tracking-[0.18em] text-slate-400 font-bold">Waiting</p>
+              <p className="mt-0.5 text-[15px] font-bold text-slate-900 leading-tight tabular-nums">{queued.length}</p>
+            </div>
+          </div>
+          {queued.length > 0 && (
+            <p className="mt-1.5 text-[10.5px] leading-snug text-slate-400">
+              Visitors who couldn't reach a live agent. Claim one to start replying.
+            </p>
+          )}
+        </div>
+
+        <div className="flex-1 overflow-y-auto p-2 space-y-1">
+          {queued.length === 0 ? (
+            <div className="flex flex-col items-center justify-center h-full py-8 px-4 text-center">
+              <div className="w-8 h-8 rounded-lg bg-slate-50 border border-slate-100 flex items-center justify-center mb-2">
+                <CheckCircle2 className="w-3.5 h-3.5 text-slate-300" />
+              </div>
+              <p className="text-xs font-semibold text-slate-500">Queue is clear</p>
+              <p className="text-[11px] text-slate-400 mt-0.5">Offline requests will appear here</p>
+            </div>
+          ) : (
+            queued.map(q => (
+              <div key={q.id}
+                className="group w-full rounded-lg border border-slate-200 bg-white px-2.5 py-2 transition-all hover:border-slate-300 hover:bg-slate-50/50">
+                <div className="flex items-center justify-between gap-2">
+                  <p className="font-semibold text-[12.5px] truncate text-slate-900">{q.name}</p>
+                  {q.ticket_no && (
+                    <span className="shrink-0 inline-flex items-center text-[9px] font-bold px-1.5 py-0.5 rounded bg-amber-50 text-amber-700">
+                      {q.ticket_no}
+                    </span>
+                  )}
+                </div>
+                <div className="mt-1 flex items-center gap-1.5 text-[10.5px]">
+                  <span className="inline-flex items-center gap-1 min-w-0 text-slate-500">
+                    <Mail className="w-2.5 h-2.5 shrink-0" />
+                    <span className="truncate">{q.email ?? q.phone ?? 'No contact'}</span>
+                  </span>
+                  <span className={`ml-auto shrink-0 text-[9.5px] tabular-nums ${selected ? 'text-blue-800/50' : 'text-slate-400'}`}>
+                    {formatDistanceToNow(new Date(q.created_at), { addSuffix: true })}
+                  </span>
+                </div>
+                <p className="text-[10.5px] text-slate-400 mt-1 line-clamp-1 leading-snug">{q.note}</p>
+                <div className="mt-1.5 flex items-center gap-1.5">
+                  <button
+                    onClick={() => claimQueued(q.id)}
+                    className="inline-flex items-center gap-1 text-[10.5px] font-bold px-2 py-1 rounded-lg bg-blue-600 hover:bg-blue-700 text-white transition-colors"
+                  >
+                    <User className="w-2.5 h-2.5" />Assign to me
+                  </button>
+                  <button
+                    onClick={() => onOpenQueued(q.id)}
+                    className="inline-flex items-center gap-1 text-[10.5px] font-semibold px-2 py-1 rounded-lg border border-slate-200 bg-white text-slate-600 hover:text-slate-900 hover:border-slate-300 transition-colors"
+                  >
+                    Open thread
+                  </button>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+      </div>
+
       {/* Ticket queue */}
       <div className={`flex flex-col rounded-xl border border-slate-200 bg-white w-full lg:w-72 xl:w-80 shrink-0 overflow-hidden shadow-[0_1px_2px_rgba(15,23,42,0.04)] ${selected ? 'hidden lg:flex' : 'flex'}`}>
         {/* Header */}
@@ -1196,7 +1316,12 @@ function toEnquiryItem(e: Enquiry): InboxItem {
   }
 }
 
-function InboxTab({ liveState, onOpenThreadChange }: { liveState: LiveSupportState; onOpenThreadChange: (id: string | null) => void }) {
+function InboxTab({ liveState, onOpenThreadChange, initialChatId, onInitialChatConsumed }: {
+  liveState: LiveSupportState
+  onOpenThreadChange: (id: string | null) => void
+  initialChatId?: string | null
+  onInitialChatConsumed?: () => void
+}) {
   const [enquiries, setEnquiries]   = useState<Enquiry[]>([])
   const [chats, setChats]           = useState<ChatInquiry[]>([])
   const [contacts, setContacts]     = useState<ContactMessage[]>([])
@@ -1212,6 +1337,17 @@ function InboxTab({ liveState, onOpenThreadChange }: { liveState: LiveSupportSta
     if (selectedKey?.startsWith('chat:')) onOpenThreadChange(selectedKey.slice(5))
     else onOpenThreadChange(null)
   }, [selectedKey, onOpenThreadChange])
+
+  // When the admin clicks "Open thread" in the Queued section, jump straight
+  // to that chat in the inbox once it has loaded.
+  useEffect(() => {
+    if (!initialChatId) return
+    const found = chats.find(c => c.id === initialChatId)
+    if (found) {
+      setSelectedKey(`chat:${found.id}`)
+      onInitialChatConsumed?.()
+    }
+  }, [initialChatId, chats, onInitialChatConsumed])
 
   useEffect(() => {
     const supabase = createClient()
@@ -1466,6 +1602,38 @@ function InboxTab({ liveState, onOpenThreadChange }: { liveState: LiveSupportSta
 
 // ── AgentsTab ─────────────────────────────────────────────────────────────────
 
+function ConfirmAgentDelete({ agent, onConfirm, onCancel, loading }: {
+  agent: Agent
+  onConfirm: () => void
+  onCancel: () => void
+  loading: boolean
+}) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm px-4">
+      <div className="bg-white rounded-3xl shadow-2xl w-full max-w-sm p-6 border border-gray-100">
+        <div className="w-12 h-12 rounded-2xl bg-red-50 flex items-center justify-center mb-4">
+          <Trash2 className="w-5 h-5 text-red-600" />
+        </div>
+        <h3 className="text-base font-extrabold text-gray-900 mb-1">Delete agent</h3>
+        <p className="text-sm text-gray-500 mb-6 leading-relaxed">
+          This will permanently delete <span className="font-semibold text-gray-700">{agent.name}</span>'s account
+          ({agent.email}) and all their data. This cannot be undone.
+        </p>
+        <div className="flex gap-3">
+          <button onClick={onCancel} disabled={loading}
+            className="flex-1 px-4 py-2.5 rounded-2xl border border-gray-200 text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50">
+            Cancel
+          </button>
+          <button onClick={onConfirm} disabled={loading}
+            className="flex-1 px-4 py-2.5 rounded-2xl text-sm font-semibold bg-red-600 hover:bg-red-700 text-white transition-colors disabled:opacity-50">
+            {loading ? 'Deleting…' : 'Delete permanently'}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 function AgentsTab({ agents, setAgents, liveState, me }: {
   agents: Agent[]
   setAgents: React.Dispatch<React.SetStateAction<Agent[]>>
@@ -1474,36 +1642,59 @@ function AgentsTab({ agents, setAgents, liveState, me }: {
 }) {
   const [newEmail, setNewEmail] = useState('')
   const [newName, setNewName] = useState('')
+  const [newPassword, setNewPassword] = useState('')
+  const [mode, setMode] = useState<'create' | 'invite'>('create')
   const [adding, setAdding] = useState(false)
   const [addMsg, setAddMsg] = useState('')
+  const [busyId, setBusyId] = useState<string | null>(null)
+  const [deleteTarget, setDeleteTarget] = useState<Agent | null>(null)
+  const [deleting, setDeleting] = useState(false)
   const { toast } = useToast()
 
+  /** Attach the caller's session token so the API can verify they're an admin. */
+  async function authedFetch(url: string, body: unknown) {
+    const supabase = createClient()
+    const { data: { session } } = await supabase.auth.getSession()
+    return fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
+      },
+      body: JSON.stringify(body),
+    })
+  }
+
+  async function reloadAgents() {
+    const supabase = createClient()
+    const { data } = await supabase.from('agents').select('*').order('created_at', { ascending: false })
+    setAgents((data as Agent[]) ?? [])
+  }
+
   async function addAgent() {
-    if (!newEmail.trim() || adding) return
+    if (adding) return
+    if (!newEmail.trim() || (mode === 'create' && !newPassword.trim())) {
+      setAddMsg(mode === 'create' ? 'Email and password are required' : 'Email is required')
+      return
+    }
     setAdding(true)
     setAddMsg('')
     try {
-      const supabase = createClient()
-      const { data: { user } } = await supabase.auth.getUser()
-      const res = await fetch('/api/register-support-agent', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: me?.userId ?? user?.id, email: newEmail.trim(), name: newName.trim() || undefined }),
-      })
+      const res = await authedFetch('/api/manage-support-agent',
+        mode === 'create'
+          ? { action: 'create', email: newEmail.trim(), password: newPassword, name: newName.trim() || undefined }
+          : { action: 'invite', email: newEmail.trim(), name: newName.trim() || undefined },
+      )
       const data = await res.json()
       if (!res.ok) {
         setAddMsg(data.error || 'Failed to add agent')
         return
       }
-      if (data.agent) {
-        // Reload the roster (or optimistically add).
-        const { data: rows } = await supabase.from('agents').select('*').order('created_at', { ascending: false })
-        setAgents((rows as Agent[]) ?? [])
-      }
-      setAddMsg('')
+      await reloadAgents()
       setNewEmail('')
       setNewName('')
-      toast({ title: 'Agent added', description: 'They can now be assigned support chats.' })
+      setNewPassword('')
+      toast({ title: mode === 'create' ? 'Agent account created' : 'Agent invited', description: 'They can now log in to /admin and handle support chats.' })
     } catch (err) {
       setAddMsg(String(err))
     } finally {
@@ -1515,6 +1706,38 @@ function AgentsTab({ agents, setAgents, liveState, me }: {
     const supabase = createClient()
     await supabase.from('agents').update({ active: !agent.active }).eq('id', agent.id)
     setAgents(prev => prev.map(a => a.id === agent.id ? { ...a, active: !agent.active } : a))
+  }
+
+  async function resetPassword(agent: Agent) {
+    setBusyId(agent.id)
+    try {
+      const res = await authedFetch('/api/manage-support-agent', { action: 'reset-password', userId: agent.user_id })
+      const data = await res.json()
+      if (!res.ok) { toast({ title: 'Reset failed', description: data.error || 'Could not send reset email', variant: 'destructive' }) }
+      else toast({ title: 'Reset email sent', description: `${agent.name} will get a password reset link.` })
+    } catch {
+      toast({ title: 'Reset failed', description: 'Could not send reset email', variant: 'destructive' })
+    } finally {
+      setBusyId(null)
+    }
+  }
+
+  async function removeAgent(agent: Agent) {
+    setDeleting(true)
+    try {
+      const res = await authedFetch('/api/manage-support-agent', { action: 'remove', userId: agent.user_id })
+      const data = await res.json()
+      if (!res.ok) { toast({ title: 'Remove failed', description: data.error || 'Could not remove agent', variant: 'destructive' }) }
+      else {
+        setAgents(prev => prev.filter(a => a.id !== agent.id))
+        toast({ title: 'Agent removed', description: 'Their account was permanently deleted.' })
+      }
+    } catch {
+      toast({ title: 'Remove failed', description: 'Could not remove agent', variant: 'destructive' })
+    } finally {
+      setDeleting(false)
+      setDeleteTarget(null)
+    }
   }
 
   const onlineIds = new Set(liveState.onlineAgents.map(a => a.agent_id).filter(Boolean))
@@ -1529,16 +1752,33 @@ function AgentsTab({ agents, setAgents, liveState, me }: {
             <UserPlus className="w-4 h-4 text-blue-600" /> Add a support agent
           </h3>
           <p className="text-xs text-slate-500 mt-1">
-            Add an existing Livarex account as a support agent. They'll appear here and can be assigned chats.
+            Create a brand-new agent account, or invite an existing Livarex account as an agent.
           </p>
+
+          {/* Mode toggle */}
+          <div className="mt-3 inline-flex items-center gap-1 p-1 rounded-xl bg-slate-100">
+            <button onClick={() => setMode('create')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${mode === 'create' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>
+              Create account
+            </button>
+            <button onClick={() => setMode('invite')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${mode === 'invite' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>
+              Invite existing user
+            </button>
+          </div>
+
           <div className="mt-3 flex flex-col sm:flex-row gap-2">
-            <input value={newName} onChange={e => setNewName(e.target.value)} placeholder="Display name (optional)"
+            <input value={newName} onChange={e => setNewName(e.target.value)} placeholder="Display name"
               className="flex-1 px-3 py-2 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
-            <input value={newEmail} onChange={e => setNewEmail(e.target.value)} placeholder="Account email"
+            <input value={newEmail} onChange={e => setNewEmail(e.target.value)} placeholder="Email"
               type="email" className="flex-1 px-3 py-2 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
-            <button onClick={addAgent} disabled={adding || !newEmail.trim()}
+            {mode === 'create' && (
+              <input value={newPassword} onChange={e => setNewPassword(e.target.value)} placeholder="Temporary password"
+                type="text" className="flex-1 px-3 py-2 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+            )}
+            <button onClick={addAgent} disabled={adding || !newEmail.trim() || (mode === 'create' && !newPassword.trim())}
               className="shrink-0 px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 disabled:opacity-40 text-white text-sm font-semibold transition-colors flex items-center justify-center gap-1.5">
-              {adding ? <Loader2 className="w-4 h-4 animate-spin" /> : <UserPlus className="w-4 h-4" />} Add
+              {adding ? <Loader2 className="w-4 h-4 animate-spin" /> : <UserPlus className="w-4 h-4" />} {mode === 'create' ? 'Create' : 'Invite'}
             </button>
           </div>
           {addMsg && <p className="mt-2 text-xs text-red-600">{addMsg}</p>}
@@ -1553,15 +1793,16 @@ function AgentsTab({ agents, setAgents, liveState, me }: {
           {agents.length === 0 ? (
             <div className="px-4 py-10 text-center">
               <ShieldCheck className="w-8 h-8 text-slate-200 mx-auto mb-2" />
-              <p className="text-sm text-slate-500">No agents yet. Add one above, or the admin will auto-register on login.</p>
+              <p className="text-sm text-slate-500">No agents yet. Create one above, or the admin will auto-register on login.</p>
             </div>
           ) : (
             <div className="divide-y divide-slate-50">
               {agents.map(agent => {
                 const isOnline = onlineIds.has(agent.id)
                 const isAway = awayIds.has(agent.id)
+                const isBusy = busyId === agent.id
                 return (
-                  <div key={agent.id} className="flex items-center gap-3 px-4 py-3">
+                  <div key={agent.id} className="flex items-center gap-3 px-4 py-3 flex-wrap">
                     <div className="w-9 h-9 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shrink-0 shadow-sm">
                       <span className="text-xs font-bold text-white">{initialsOf(agent.name)}</span>
                     </div>
@@ -1580,12 +1821,22 @@ function AgentsTab({ agents, setAgents, liveState, me }: {
                       </div>
                       <p className="text-xs text-slate-400 mt-0.5 truncate">{agent.email}</p>
                     </div>
-                    <button onClick={() => toggleActive(agent)}
-                      className={`shrink-0 text-[11px] font-bold px-2.5 py-1.5 rounded-lg transition-colors ${
-                        agent.active ? 'bg-slate-100 text-slate-600 hover:bg-slate-200' : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
-                      }`}>
-                      {agent.active ? 'Deactivate' : 'Activate'}
-                    </button>
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      <button onClick={() => resetPassword(agent)} disabled={isBusy} title="Send password reset"
+                        className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-1.5 rounded-lg border border-gray-200 bg-white text-slate-600 hover:text-blue-700 hover:border-blue-200 disabled:opacity-40 transition-colors">
+                        {isBusy ? <Loader2 className="w-3 h-3 animate-spin" /> : <KeyRound className="w-3 h-3" />} Reset
+                      </button>
+                      <button onClick={() => toggleActive(agent)} disabled={isBusy}
+                        className={`inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-1.5 rounded-lg transition-colors ${
+                          agent.active ? 'bg-slate-100 text-slate-600 hover:bg-slate-200' : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
+                        }`}>
+                        {agent.active ? 'Deactivate' : 'Activate'}
+                      </button>
+                      <button onClick={() => setDeleteTarget(agent)} disabled={busyId === agent.id} title="Remove agent"
+                        className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-1.5 rounded-lg border border-gray-200 bg-white text-slate-500 hover:text-red-600 hover:border-red-200 disabled:opacity-40 transition-colors">
+                        <Trash2 className="w-3 h-3" /> Remove
+                      </button>
+                    </div>
                   </div>
                 )
               })}
@@ -1593,6 +1844,11 @@ function AgentsTab({ agents, setAgents, liveState, me }: {
           )}
         </div>
       </div>
+      {deleteTarget && (
+        <ConfirmAgentDelete agent={deleteTarget} loading={deleting}
+          onCancel={() => setDeleteTarget(null)}
+          onConfirm={() => removeAgent(deleteTarget)} />
+      )}
     </div>
   )
 }
@@ -1611,6 +1867,9 @@ export default function AdminSupportPage() {
   })
   const [agents, setAgents] = useState<Agent[]>([])
   const [muted, setMuted] = useState(getSoundMuted)
+  // Set when the admin clicks "Open thread" from the Queued section; the Inbox
+  // tab consumes it as its initial selection.
+  const [pendingChatId, setPendingChatId] = useState<string | null>(null)
   const { toast } = useToast()
 
   useEffect(() => {
@@ -1628,9 +1887,13 @@ export default function AdminSupportPage() {
       if (!user || user.is_anonymous) return
       setUser({ email: user.email, id: user.id })
       try {
+        const { data: { session } } = await supabase.auth.getSession()
         await fetch('/api/register-support-agent', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
+          },
           body: JSON.stringify({ userId: user.id, email: user.email }),
         })
       } catch {
@@ -1649,13 +1912,22 @@ export default function AdminSupportPage() {
   }, [])
   useEffect(() => {
     return subscribeToSupportAlerts((event) => {
+      const isOpenThread = event.type === 'new_message' && openInquiryIdRef.current === event.inquiryId
+      // Suppress sound (and toast) when the visitor is messaging inside the
+      // thread the admin is already looking at.
+      if (isOpenThread) return
       playSupportSound(getSoundMuted())
-      if (event.type === 'new_inquiry') {
+      if (event.type === 'new_queued') {
+        toast({
+          title: `Offline request from ${event.inquiry.name}`,
+          description: (event.inquiry.ticketNo ? `${event.inquiry.ticketNo} — ` : '') + (event.inquiry.note || '').slice(0, 60),
+        })
+      } else if (event.type === 'new_inquiry') {
         toast({
           title: `New chat from ${event.inquiry.name}`,
           description: (event.inquiry.note || '').slice(0, 80),
         })
-      } else if (event.type === 'new_message' && openInquiryIdRef.current !== event.inquiryId) {
+      } else if (event.type === 'new_message') {
         toast({
           title: 'New message from visitor',
           description: (event.body || '').slice(0, 80),
@@ -1710,13 +1982,32 @@ export default function AdminSupportPage() {
                   <p className="mt-0.5 text-[13px] text-slate-500">Manage customer enquiries and conversations.</p>
                 </div>
                 <div className="flex items-center gap-2.5 shrink-0 flex-wrap">
-                  <span className={`inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 shadow-[0_1px_2px_rgba(15,23,42,0.04)] ${SUPPORT_STATUS_META[supportStatus].text}`}>
-                    <span className={`w-2 h-2 rounded-full ${SUPPORT_STATUS_META[supportStatus].dot} ${supportStatus === 'online' ? 'animate-pulse' : ''}`} />
-                    <span className="text-[9px] uppercase tracking-[0.14em] font-bold leading-none">
-                      You · {SUPPORT_STATUS_META[supportStatus].label}
-                      {onlineAgentCount > 1 ? ` · ${onlineAgentCount} agents online` : ''}
+                  {/* Support status indicator — auto-managed via admin presence */}
+                  <div className="relative group">
+                    <span className={`inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 shadow-[0_1px_2px_rgba(15,23,42,0.04)] cursor-default ${SUPPORT_STATUS_META[supportStatus].text}`}>
+                      <span className={`w-2 h-2 rounded-full ${SUPPORT_STATUS_META[supportStatus].dot} ${supportStatus === 'online' ? 'animate-pulse' : ''}`} />
+                      <span className="text-[9px] uppercase tracking-[0.14em] font-bold leading-none">
+                        You · {SUPPORT_STATUS_META[supportStatus].label}
+                        {onlineAgentCount > 1 ? ` · ${onlineAgentCount} agents online` : ''}
+                      </span>
                     </span>
-                  </span>
+                    {/* Legend: what each status means */}
+                    <div className="absolute right-0 top-full mt-1.5 z-20 hidden group-hover:block w-52 rounded-lg border border-slate-200 bg-white p-2.5 shadow-lg">
+                      <p className="text-[9px] uppercase tracking-[0.18em] text-slate-400 font-bold mb-1.5">Support status</p>
+                      {(['online', 'away', 'offline'] as const).map(key => (
+                        <div key={key} className="flex items-center gap-1.5 py-1">
+                          <span className={`w-1.5 h-1.5 rounded-full ${SUPPORT_STATUS_META[key].dot}`} />
+                          <span className="text-[11px] font-semibold text-slate-700">{SUPPORT_STATUS_META[key].label}</span>
+                          <span className="text-[10px] text-slate-400 ml-auto">
+                            {key === 'online' ? 'Logged in' : key === 'away' ? 'Idle 12 min' : 'Signed out'}
+                          </span>
+                        </div>
+                      ))}
+                      <p className="mt-1.5 pt-1.5 border-t border-slate-100 text-[10px] text-slate-400 leading-snug">
+                        Updates automatically from your dashboard activity.
+                      </p>
+                    </div>
+                  </div>
                   <button
                     onClick={() => { const next = !muted; setMuted(next); setSoundMuted(next) }}
                     title={muted ? 'Unmute notifications' : 'Mute notifications'}
@@ -1774,8 +2065,8 @@ export default function AdminSupportPage() {
 
           {/* Tab content */}
           <div className="flex flex-1 overflow-hidden">
-            {tab === 'support' ? <SupportTab /> : tab === 'inbox' ? (
-              <InboxTab liveState={liveState} onOpenThreadChange={handleOpenThreadChange} />
+            {tab === 'support' ? <SupportTab onOpenQueued={(id) => { setPendingChatId(id); setTab('inbox') }} /> : tab === 'inbox' ? (
+              <InboxTab liveState={liveState} onOpenThreadChange={handleOpenThreadChange} initialChatId={pendingChatId} onInitialChatConsumed={() => setPendingChatId(null)} />
             ) : (
               <AgentsTab agents={agents} setAgents={setAgents} liveState={liveState} me={user ? { userId: user.id ?? '' } : null} />
             )}
