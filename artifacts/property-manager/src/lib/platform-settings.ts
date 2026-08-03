@@ -100,7 +100,6 @@ async function getSettings(options?: { refresh?: boolean }): Promise<Settings> {
       listing: DEFAULT_LISTING,
     }
     try {
-      const { createClient } = await import('./supabase')
       const supabase = createClient()
       const { data, error } = await supabase
         .from('admin_settings')

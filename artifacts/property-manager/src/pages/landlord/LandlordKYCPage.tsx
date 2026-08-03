@@ -1,4 +1,3 @@
-'use client'
 
 // /landlord/kyc is superseded by /landlord/onboarding (full 3-step flow).
 // Redirect any direct visits so nothing is broken.

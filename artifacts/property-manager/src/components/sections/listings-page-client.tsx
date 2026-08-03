@@ -1,4 +1,3 @@
-'use client'
 
 import { useState, useEffect, useRef, lazy, Suspense } from 'react'
 import { Link } from '@/lib/navigation'
