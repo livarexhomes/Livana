@@ -123,6 +123,17 @@ export function normalizeResponseText(provider, response) {
   return blocks.filter((b) => b.type === 'text').map((b) => b.text).join('\n').trim()
 }
 
+export function extractToolUseCalls(response) {
+  if (!response || !Array.isArray(response.content)) return []
+  return response.content
+    .filter((block) => block?.type === 'tool_use')
+    .map((block) => ({
+      id: block.id,
+      name: block.name,
+      input: block.input || {},
+    }))
+}
+
 /**
  * Runs one provider through a tool-use loop: call the model, and if it wants
  * to use a tool, execute the tool, feed the result back, and call again —
@@ -139,7 +150,7 @@ async function runProviderWithToolLoop(providerName, callModel, initialMessages,
 
   for (let round = 0; round < MAX_TOOL_ROUNDS; round++) {
     const response = await callModel(messages)
-    const toolUseBlocks = (response.content || []).filter((b) => b.type === 'tool_use')
+    const toolUseBlocks = extractToolUseCalls(response)
 
     if (toolUseBlocks.length === 0) {
       return { provider: providerName, text: normalizeResponseText(providerName, response) }

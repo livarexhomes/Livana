@@ -62,6 +62,7 @@ export async function fetchListings() {
           bedrooms: p.bedrooms,
           bathrooms: p.bathrooms,
           description: p.description || "",
+          status: p.status || null,
         }))
         cacheExpiry = Date.now() + CACHE_TTL
         console.log(`✅ Loaded ${cachedListings.length} listings from Supabase (of ${data.length} fetched)`)
@@ -84,7 +85,7 @@ export function formatListingsForAI(listings) {
     .slice(0, 10)
     .map(
       (p) =>
-        `• *${p.title}* (id: ${p.id}) | ${p.type} | ${p.location} | ${p.price} | ${p.bedrooms ?? "?"}bed/${p.bathrooms ?? "?"}bath\n  ${p.description.slice(0, 120)}`
+        `• *${p.title}* (${p.id}) | ${p.type} | ${p.location} | ${p.price} | ${p.bedrooms ?? "?"}bed/${p.bathrooms ?? "?"}bath\n  ${p.description.slice(0, 120)}`
     )
     .join("\n\n")
 }

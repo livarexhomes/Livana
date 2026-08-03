@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { shouldFallbackToNextTier, isWafHtmlBody, assertJsonBody } from './ai.js'
+import { shouldFallbackToNextTier, isWafHtmlBody, assertJsonBody, extractToolUseCalls } from './ai.js'
 
 test('falls back for auth, server, and timeout errors but not client-side request errors', () => {
   assert.equal(shouldFallbackToNextTier({ status: 401 }), true)
@@ -27,4 +27,34 @@ test('assertJsonBody throws a fallback-able 502 error on HTML bodies and passes 
     (err) => err.status === 502 && err.message.includes('Anthropic')
   )
   assert.doesNotThrow(() => assertJsonBody('{"ok":true}', 'Anthropic'))
+})
+
+test('extracts tool use calls from Anthropic style responses', () => {
+  const response = {
+    content: [
+      { type: 'text', text: 'I will book that for you.' },
+      {
+        type: 'tool_use',
+        id: 'toolu_123',
+        name: 'book_inspection',
+        input: {
+          property_title: 'Cozy Flat',
+          full_name: 'Ada',
+          preferred_date: 'Friday',
+          preferred_time: 'afternoon',
+        },
+      },
+    ],
+  }
+
+  assert.deepEqual(extractToolUseCalls(response), [{
+    id: 'toolu_123',
+    name: 'book_inspection',
+    input: {
+      property_title: 'Cozy Flat',
+      full_name: 'Ada',
+      preferred_date: 'Friday',
+      preferred_time: 'afternoon',
+    },
+  }])
 })
