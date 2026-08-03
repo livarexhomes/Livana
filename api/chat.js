@@ -4,12 +4,77 @@
 
 const BOT_CHAT_URL = process.env.CHAT_PROXY_URL || 'https://agentrouter.org/'
 
+function parseJsonBody(body) {
+  if (!body) return {}
+  if (typeof body === 'string') {
+    try { return JSON.parse(body) } catch { return { raw: body } }
+  }
+  if (typeof body === 'object') return body
+  return { raw: String(body) }
+}
+
+function extractReplyText(payload) {
+  if (typeof payload === 'string') {
+    const trimmed = payload.trim()
+    return trimmed ? trimmed : null
+  }
+
+  if (!payload || typeof payload !== 'object') return null
+
+  const candidates = [
+    payload.reply,
+    payload.message,
+    payload.text,
+    payload.error,
+    payload.content,
+    payload.output,
+    payload.response,
+  ]
+
+  for (const candidate of candidates) {
+    if (typeof candidate === 'string' && candidate.trim()) return candidate.trim()
+    if (Array.isArray(candidate)) {
+      const flattened = candidate
+        .map((item) => {
+          if (typeof item === 'string') return item
+          if (item && typeof item === 'object') {
+            if (typeof item.text === 'string') return item.text
+            if (typeof item.content === 'string') return item.content
+            if (typeof item.message === 'string') return item.message
+          }
+          return ''
+        })
+        .filter(Boolean)
+        .join('\n')
+      if (flattened.trim()) return flattened.trim()
+    }
+    if (candidate && typeof candidate === 'object') {
+      if (Array.isArray(candidate?.choices) && candidate.choices[0]?.message?.content) {
+        const content = candidate.choices[0].message.content
+        if (typeof content === 'string') return content.trim()
+        if (Array.isArray(content)) {
+          const text = content.map((item) => (typeof item === 'string' ? item : item?.text || '')).join('\n')
+          if (text.trim()) return text.trim()
+        }
+      }
+      if (Array.isArray(candidate?.content)) {
+        const text = candidate.content.map((item) => (typeof item === 'string' ? item : item?.text || '')).join('\n')
+        if (text.trim()) return text.trim()
+      }
+    }
+  }
+
+  return null
+}
+
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*')
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type')
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS')
   if (req.method === 'OPTIONS') return res.status(200).end()
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
+
+  const requestBody = parseJsonBody(req.body)
 
   // Log configured upstream for quick triage in deployment logs
   console.log('[chat] BOT_CHAT_URL=', BOT_CHAT_URL)
@@ -81,7 +146,7 @@ export default async function handler(req, res) {
       upstream = await fetch(finalUpstreamUrl, {
         method: 'POST',
         headers: finalHeaders,
-        body: JSON.stringify(req.body),
+        body: JSON.stringify(requestBody),
         signal: controller.signal,
       })
     } finally {
@@ -94,7 +159,18 @@ export default async function handler(req, res) {
     if (contentType.includes('application/json')) {
       try {
         const data = responseText ? JSON.parse(responseText) : {}
-        return res.status(upstream.status).json(data)
+        const reply = extractReplyText(data)
+        if (reply) {
+          return res.status(upstream.status).json({ reply, raw: data })
+        }
+
+        const snippet = responseText ? responseText.slice(0, 800) : ''
+        console.error('[chat] Proxy warning: upstream JSON did not include a reply payload', {
+          status: upstream.status,
+          contentType,
+          snippet,
+        })
+        return res.status(upstream.status).json({ reply: 'The chat service returned an unexpected response.', raw: data })
       } catch (parseErr) {
         const snippet = responseText ? responseText.slice(0, 800) : ''
         console.error('[chat] Proxy error: invalid JSON body from upstream', {
@@ -107,7 +183,7 @@ export default async function handler(req, res) {
     }
 
     const snippet = responseText ? responseText.slice(0, 800) : ''
-    console.error('[chat] Proxy error: upstream returned non-JSON response', {
+    console.error('[chat] Proxy warning: upstream returned non-JSON response', {
       status: upstream.status,
       contentType,
       snippet,

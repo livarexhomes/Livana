@@ -558,8 +558,19 @@ export default function ChatWidget() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ messages: apiMessages }),
       })
-      const data = await res.json()
-      const reply = data.reply || data.error || 'Something went wrong.'
+
+      const rawText = await res.text()
+      let reply = 'Something went wrong.'
+
+      if (rawText) {
+        try {
+          const data = JSON.parse(rawText)
+          reply = data.reply || data.message || data.text || data.error || reply
+        } catch {
+          reply = rawText.replace(/<[^>]+>/g, '').trim() || reply
+        }
+      }
+
       setMessages(m => [...m, {
         role: 'assistant',
         content: [{ type: 'text', text: reply }],
