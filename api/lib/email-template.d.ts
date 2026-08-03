@@ -30,6 +30,7 @@ export interface SupportConfirmationOptions {
   name?: string
   subject?: string
   ticketId?: string
+  ticketNo?: string
 }
 
 export interface AdminNotificationOptions {

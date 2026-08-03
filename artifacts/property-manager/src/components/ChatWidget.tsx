@@ -1,9 +1,10 @@
-import { useState, useRef, useEffect, type ReactNode } from 'react'
-import { X, Send, MessageSquare, Paperclip, ChevronDown, User, Check, ArrowRight, Loader2, Clock2 } from 'lucide-react'
+import { useState, useRef, useEffect, useCallback, type ReactNode } from 'react'
+import { X, Send, MessageSquare, Paperclip, ChevronDown, Check, ArrowRight, Loader2, Clock2, Smile } from 'lucide-react'
 import { useLocation, redirect } from '../lib/navigation'
 import { createClient, isSupabaseConfigured } from '../lib/supabase'
 import { getPlatformSettings, getNotificationSettings, phoneToWaLink } from '../lib/platform-settings'
-import { subscribeSupportPresence } from '../lib/live-support'
+import { subscribeLiveSupportPresence, type LiveSupportState } from '../lib/live-support'
+import { assignChatToAgent } from '../lib/support-assignment'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -22,8 +23,17 @@ interface AgentMessage {
   inquiry_id: string
   sender: 'visitor' | 'admin'
   body: string
+  read_by_admin: boolean
+  read_by_visitor: boolean
+  attachment_url: string | null
+  attachment_name: string | null
   created_at: string
 }
+
+// Welcome (State 1) → Live (State 2/3). No more tangled view/liveStage.
+type WidgetView =
+  | { name: 'welcome' }
+  | { name: 'live'; stage: 'checking' | 'active' | 'offline-form' | 'submitted' }
 
 // ── Config ────────────────────────────────────────────────────────────────────
 
@@ -31,14 +41,16 @@ const CHAT_API_URL = import.meta.env.VITE_CHAT_API_URL
   ? `${import.meta.env.VITE_CHAT_API_URL}/api/chat`
   : '/api/chat'
 
-// ── Quick action chips shown above the composer ───────────────────────────────
+// ── Quick actions (welcome screen, State 1) ───────────────────────────────────
 
 const ACTIONS = [
   { icon: '🏠', title: 'Find a Property', msg: 'Show me available verified rentals in Lagos and Ogun.' },
   { icon: '📅', title: 'Book an Inspection', msg: 'I want to book a property inspection. How do I do that?' },
   { icon: '🏢', title: 'List My Property', msg: 'I am a landlord and want to list my property on Livarex.' },
-  { icon: '👤', title: 'Live Support', msg: null, live: true },
+  { icon: '👤', title: 'Talk to an Agent', msg: null, live: true },
 ]
+
+const EMOJI = ['😀', '😂', '😊', '😍', '👍', '👏', '🙏', '🎉', '❤️', '🔥']
 
 const ESCALATION_KEYWORDS = [
   'human agent', 'connect you with', 'real person', 'team member',
@@ -60,7 +72,7 @@ function fileToBase64(file: File): Promise<{ data: string; mediaType: string }> 
   })
 }
 
-function formatTime(ts?: number) {
+function formatTime(ts?: number | string) {
   if (!ts) return ''
   return new Date(ts).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
 }
@@ -123,13 +135,16 @@ export default function ChatWidget() {
   const [location] = useLocation()
 
   const [open, setOpen]             = useState(false)
+  const [view, setView]             = useState<WidgetView>({ name: 'welcome' })
+  const [launcherDismissed, setLauncherDismissed] = useState(false)
+
+  // ── AI bot state ──────────────────────────────────────────────────────────
   const [messages, setMessages]     = useState<Message[]>([])
   const [input, setInput]           = useState('')
   const [loading, setLoading]       = useState(false)
   const [unread, setUnread]         = useState(false)
   const [pendingImg, setPendingImg] = useState<{ url: string; data: string; mediaType: string } | null>(null)
-  const [view, setView]             = useState<'welcome' | 'chat'>('welcome')
-  const [launcherDismissed, setLauncherDismissed] = useState(false)
+  const [showEmoji, setShowEmoji]   = useState(false)
 
   // Admin phone (from Settings) used for the header WhatsApp link + fallbacks.
   const [waHref, setWaHref] = useState('https://wa.me/2347061370742?text=Hello%20Livarex!')
@@ -146,16 +161,15 @@ export default function ChatWidget() {
   const [agentNote, setAgentNote]               = useState('')
   const [agentPhone, setAgentPhone]             = useState('')
   const [agentSubmitting, setAgentSubmitting]   = useState(false)
-  const [agentSubmitted, setAgentSubmitted]     = useState(false)
+  const [agentTicketNo, setAgentTicketNo]       = useState<string | null>(null)
 
   // ── Live support availability ─────────────────────────────────────────────
-  const [adminOnline, setAdminOnline] = useState(false)
-  // 'idle' | 'checking' | 'form' (guest needs name/email) | 'offline'
-  const [liveStage, setLiveStage] = useState<'idle' | 'checking' | 'form' | 'offline'>('idle')
+  const [liveState, setLiveState] = useState<LiveSupportState>({
+    status: 'offline', online: false, onlineAgents: [], awayAgents: [], agentCount: 0,
+  })
 
-  // Subscribe to admin presence — determines whether live chat is available.
   useEffect(() => {
-    const unsub = subscribeSupportPresence(({ online }) => setAdminOnline(online))
+    const unsub = subscribeLiveSupportPresence(setLiveState)
     return unsub
   }, [])
 
@@ -167,9 +181,11 @@ export default function ChatWidget() {
   const [agentSending, setAgentSending]         = useState(false)
   const [agentUnread, setAgentUnread]           = useState(false)
   const [agentTyping, setAgentTyping]           = useState(false)
+  const [agentJoined, setAgentJoined]           = useState(false)
 
   const bottomRef = useRef<HTMLDivElement>(null)
   const inputRef  = useRef<HTMLInputElement>(null)
+  const agentInputRef = useRef<HTMLInputElement>(null)
   const fileRef   = useRef<HTMLInputElement>(null)
   const agentTypingTimer = useRef<number | null>(null)
   const typingSentAt = useRef(0)
@@ -178,14 +194,17 @@ export default function ChatWidget() {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages, loading, open, agentThread, agentThreadLoading])
 
+  // Focus the correct composer when the panel opens.
   useEffect(() => {
     if (open) {
       setUnread(false)
       setAgentUnread(false)
-      // If nothing happened yet, keep the welcome view; else focus the composer.
-      if (view === 'chat') setTimeout(() => inputRef.current?.focus(), 250)
+      setTimeout(() => {
+        if (view.name === 'live' && inquiryId) agentInputRef.current?.focus()
+        else if (view.name === 'live' && !inquiryId) inputRef.current?.focus()
+      }, 250)
     }
-  }, [open, view])
+  }, [open, view, inquiryId])
 
   // ── Anonymous sign-in + restore any active agent thread ─────────────────────
   useEffect(() => {
@@ -202,15 +221,16 @@ export default function ChatWidget() {
       // Reconnect the visitor to their most recent open thread (if any)
       const { data: inquiries } = await supabase
         .from('chat_inquiries')
-        .select('id')
+        .select('id, ticket_no')
         .eq('visitor_id', user.id)
         .in('status', ['open', 'replied'])
         .order('created_at', { ascending: false })
         .limit(1)
       if (inquiries && inquiries.length > 0) {
         setInquiryId(inquiries[0].id)
-        setAgentSubmitted(true)
-        setView('chat')
+        setAgentTicketNo(inquiries[0].ticket_no)
+        setAgentJoined(true)
+        setView({ name: 'live', stage: 'active' })
       }
     })
   }, [])
@@ -236,6 +256,20 @@ export default function ChatWidget() {
           const msg = payload.new as AgentMessage
           setAgentThread(prev => prev.find(m => m.id === msg.id) ? prev : [...prev, msg])
           if (msg.sender === 'admin' && !open) setAgentUnread(true)
+          // Visitor-side read receipt: opening the thread marks admin messages read.
+          if (msg.sender === 'admin' && open) {
+            supabase.from('chat_messages')
+              .update({ read_by_visitor: true })
+              .eq('id', msg.id)
+              .then(() => {})
+          }
+        })
+      .on('postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'chat_messages', filter: `inquiry_id=eq.${inquiryId}` },
+        (payload) => {
+          // Merge read-receipt updates (admin marked messages as read).
+          const msg = payload.new as AgentMessage
+          setAgentThread(prev => prev.map(m => m.id === msg.id ? msg : m))
         })
       .on('broadcast', { event: 'typing' }, ({ payload }) => {
         if (payload?.sender === 'admin') {
@@ -249,9 +283,9 @@ export default function ChatWidget() {
       supabase.removeChannel(channel)
       if (agentTypingTimer.current) window.clearTimeout(agentTypingTimer.current)
     }
-  }, [inquiryId])
+  }, [inquiryId, open])
 
-  // ── Image attach ─────────────────────────────────────────────────────────────
+  // ── Image attach (bot + live) ────────────────────────────────────────────────
   async function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file) return
@@ -266,55 +300,53 @@ export default function ChatWidget() {
     setPendingImg(null)
   }
 
-  // ── Live support flow ─────────────────────────────────────────────────────────
-  // "Start Conversation" on the welcome screen and the "Live Support" chip both
-  // route here: check agent availability, auto-start for logged-in users, ask
-  // only name+email for guests, or fall back to the offline form.
-  async function triggerLiveSupport() {
+  // ── Welcome → live flow ──────────────────────────────────────────────────────
+  const goLive = useCallback(() => {
     setLauncherDismissed(true)
-    setView('chat')
-    setLiveStage('checking')
+    setView({ name: 'live', stage: 'checking' })
 
     // Already have a live thread — jump straight in.
     if (inquiryId) {
-      setLiveStage('idle')
+      setView({ name: 'live', stage: 'active' })
       return
     }
 
-    let user: { id?: string; email?: string; user_metadata?: Record<string, unknown> } | null = null
-    if (isSupabaseConfigured()) {
-      const supabase = createClient()
-      const { data: { user: u } } = await supabase.auth.getUser().catch(() => ({ data: { user: null } }))
-      user = u
-    }
+    const run = async () => {
+      let user: { id?: string; email?: string; user_metadata?: Record<string, unknown> } | null = null
+      if (isSupabaseConfigured()) {
+        const supabase = createClient()
+        const { data: { user: u } } = await supabase.auth.getUser().catch(() => ({ data: { user: null } }))
+        user = u
+      }
 
-    // Logged-in visitor with known identity → start immediately, no form.
-    if (user && !user.user_metadata?.is_anonymous) {
-      const meta = user.user_metadata ?? {}
-      const knownName = typeof meta.full_name === 'string' ? meta.full_name : (user.email?.split('@')[0] ?? '')
-      setAgentName(knownName)
-      setAgentEmail(user.email ?? '')
-      setLiveStage('idle')
-      openLiveThread({ name: knownName, email: user.email ?? '', firstMessage: '' })
-      return
-    }
+      // Online → instant connect, no form. Name comes from identity when known.
+      if (liveState.online) {
+        const meta = (user?.user_metadata ?? {}) as Record<string, unknown>
+        const name = typeof meta.full_name === 'string' && meta.full_name
+          ? meta.full_name
+          : (user?.email?.split('@')[0] ?? 'Guest')
+        setAgentName(name)
+        setAgentEmail(user?.email ?? '')
+        connectLiveThread({ name, email: user?.email ?? '', firstMessage: '' })
+        return
+      }
 
-    // Not logged in (or anonymous) → gate on availability.
-    if (adminOnline) {
-      // Ask only for name + email, then open the live thread.
-      setLiveStage('form')
-    } else {
       // No agent online → offline message flow.
-      setLiveStage('offline')
+      setView({ name: 'live', stage: 'offline-form' })
     }
-  }
+    run()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [inquiryId, liveState.online])
 
   /** Create (or resume) a live chat thread and enter it immediately. */
-  async function openLiveThread({ name, email, firstMessage }: { name: string; email: string; firstMessage: string }) {
+  async function connectLiveThread({ name, email, firstMessage }: { name: string; email: string; firstMessage: string }) {
     if (!name || !isSupabaseConfigured()) return
     const supabase = createClient()
     const { data: { user } } = await supabase.auth.getUser().catch(() => ({ data: { user: null } }))
     const note = firstMessage.trim() || `Hi, I'm ${name}. I'd like some help.`
+
+    // Auto-assign the least-loaded online agent, else queue.
+    const assignment = assignChatToAgent(liveState.onlineAgents)
 
     const { data: inserted, error } = await supabase.from('chat_inquiries').insert({
       name,
@@ -322,7 +354,9 @@ export default function ChatWidget() {
       note,
       phone: null,
       visitor_id: user?.id ?? null,
-    }).select('id, read_by_admin').single()
+      agent_id: assignment.agentId,
+      agent_status: assignment.agentStatus,
+    }).select('id, read_by_admin, ticket_no').single()
     if (error || !inserted) {
       console.error('Live thread error:', error)
       // fall back to WhatsApp
@@ -333,13 +367,18 @@ export default function ChatWidget() {
     }
 
     setInquiryId(inserted.id)
-    setAgentSubmitted(true)
-    setLiveStage('idle')
+    setAgentTicketNo(inserted.ticket_no)
+    setAgentJoined(true)
+    setView({ name: 'live', stage: 'active' })
     setAgentThread([{
       id: `initial-${inserted.id}`,
       inquiry_id: inserted.id,
       sender: 'visitor',
       body: note,
+      read_by_admin: false,
+      read_by_visitor: true,
+      attachment_url: null,
+      attachment_name: null,
       created_at: new Date().toISOString(),
     }])
 
@@ -356,17 +395,11 @@ export default function ChatWidget() {
           subject: 'Live support conversation',
           message: note,
           ticketId: inserted.id,
-          channel: 'Live chat',
+          ticketNo: inserted.ticket_no ?? '',
+          channel: assignment.agentId ? 'Live chat' : 'Live chat (queued)',
         }),
       }).catch(() => { /* non-fatal */ })
     }).catch(() => { /* non-fatal */ })
-  }
-
-  function startConversation() {
-    // Intercom-style: entering the chat view brings the composer up
-    // immediately. Live support (name/email form) is one tap away via the
-    // "Live Support" chip — it's not what the primary CTA should block on.
-    setView('chat')
   }
 
   function browseHelp() {
@@ -375,24 +408,13 @@ export default function ChatWidget() {
     redirect('/contact')
   }
 
-  function triggerAgentForm() {
-    triggerLiveSupport()
-  }
-
+  // ── Offline form submit ──────────────────────────────────────────────────────
   async function submitAgentForm(e: React.FormEvent) {
     e.preventDefault()
     const name = agentName.trim()
     const note = agentNote.trim()
     if (!name || !note || agentSubmitting) return
     setAgentSubmitting(true)
-
-    // Live path (agent online): we only asked for name + email. Open the thread
-    // immediately — the note becomes the first message.
-    if (liveStage === 'form') {
-      await openLiveThread({ name, email: agentEmail.trim(), firstMessage: note })
-      setAgentSubmitting(false)
-      return
-    }
 
     // Offline path: full form (name, email, phone, message) — save as an
     // inquiry so it lands in the Support Inbox, notify the admin, and confirm.
@@ -405,10 +427,27 @@ export default function ChatWidget() {
         note,
         phone: agentPhone.trim() || null,
         visitor_id: user?.id ?? null,
-      }).select('id, read_by_admin').single()
+        agent_status: 'queued',
+      }).select('id, read_by_admin, ticket_no').single()
       if (error) throw error
-      setAgentSubmitted(true)
+      setAgentTicketNo(inserted?.ticket_no ?? null)
+      setView({ name: 'live', stage: 'submitted' })
       if (inserted?.id) {
+        // Land in a thread view so the visitor sees their message as a bubble
+        // and can receive admin replies later (realtime subscription below).
+        setInquiryId(inserted.id)
+        setAgentJoined(true)
+        setAgentThread([{
+          id: `initial-${inserted.id}`,
+          inquiry_id: inserted.id,
+          sender: 'visitor',
+          body: note,
+          read_by_admin: false,
+          read_by_visitor: true,
+          attachment_url: null,
+          attachment_name: null,
+          created_at: new Date().toISOString(),
+        }])
         // Notify the admin (email + notification bell picks it up via realtime).
         getNotificationSettings().then(notif => {
           fetch('/api/send-support-notification', {
@@ -422,6 +461,7 @@ export default function ChatWidget() {
               subject: 'Offline support message',
               message: note,
               ticketId: inserted.id,
+              ticketNo: inserted.ticket_no ?? '',
               channel: 'Offline form',
             }),
           }).catch(() => { /* non-fatal */ })
@@ -435,7 +475,7 @@ export default function ChatWidget() {
       }).catch(() => {
         window.open('https://wa.me/2347061370742', '_blank')
       })
-      setAgentSubmitted(true)
+      setView({ name: 'live', stage: 'submitted' })
     } finally {
       setAgentSubmitting(false)
     }
@@ -445,17 +485,29 @@ export default function ChatWidget() {
   async function sendAgentMessage(e: React.FormEvent) {
     e.preventDefault()
     const body = agentInput.trim()
-    if (!body || agentSending || !inquiryId) return
+    if ((!body && !pendingImg) || agentSending || !inquiryId) return
     setAgentSending(true)
     setAgentInput('')
+    setShowEmoji(false)
     const optId = `opt-${Date.now()}`
+    const optBody = body || '📷 Image'
     setAgentThread(prev => [...prev, {
-      id: optId, inquiry_id: inquiryId, sender: 'visitor', body, created_at: new Date().toISOString(),
+      id: optId, inquiry_id: inquiryId, sender: 'visitor', body: optBody,
+      read_by_admin: false, read_by_visitor: true,
+      attachment_url: pendingImg ? pendingImg.url : null,
+      attachment_name: pendingImg ? 'attachment' : null,
+      created_at: new Date().toISOString(),
     }])
     const supabase = createClient()
     try {
       const { data: inserted, error } = await supabase.from('chat_messages')
-        .insert({ inquiry_id: inquiryId, sender: 'visitor', body }).select().single()
+        .insert({
+          inquiry_id: inquiryId,
+          sender: 'visitor',
+          body: optBody,
+          attachment_url: pendingImg ? pendingImg.url : null,
+          attachment_name: pendingImg ? 'attachment' : null,
+        }).select().single()
       if (error) throw error
       if (inserted) setAgentThread(prev => prev.map(m => m.id === optId ? inserted as AgentMessage : m))
       // Flag the inquiry as unread for the admin
@@ -466,10 +518,11 @@ export default function ChatWidget() {
       setAgentInput(body)
     } finally {
       setAgentSending(false)
+      if (pendingImg) { URL.revokeObjectURL(pendingImg.url); setPendingImg(null) }
     }
   }
 
-  const agentCanSend = agentInput.trim().length > 0 && !agentSending
+  const agentCanSend = (agentInput.trim().length > 0 || !!pendingImg) && !agentSending
 
   /** Broadcast "typing" to the admin (throttled to ~1.5s). */
   function broadcastTyping() {
@@ -483,10 +536,11 @@ export default function ChatWidget() {
       .catch(() => { /* best-effort */ })
   }
 
-  // ── Send ──────────────────────────────────────────────────────────────────────
+  // ── Send (AI bot) ─────────────────────────────────────────────────────────
   async function sendMessage(text: string, img: typeof pendingImg) {
     if (!text.trim() && !img) return
-    setView('chat')
+    setView({ name: 'live', stage: 'active' })
+    setShowEmoji(false)
 
     const userContent: ContentBlock[] = []
     if (img) userContent.push({ type: 'image_url', url: img.url, mediaType: img.mediaType, data: img.data })
@@ -522,8 +576,8 @@ export default function ChatWidget() {
       }])
       if (!open) setUnread(true)
       // If bot is escalating to human, offer live support
-      if (!agentSubmitted && liveStage === 'idle' && ESCALATION_KEYWORDS.some(kw => reply.toLowerCase().includes(kw))) {
-        setTimeout(() => triggerLiveSupport(), 700)
+      if (!inquiryId && !agentJoined && ESCALATION_KEYWORDS.some(kw => reply.toLowerCase().includes(kw))) {
+        setTimeout(() => goLive(), 700)
       }
     } catch {
       getPlatformSettings().then(s => {
@@ -556,9 +610,23 @@ export default function ChatWidget() {
   const canSend = (input.trim().length > 0 || !!pendingImg) && !loading
 
   // A "live" conversation is any actual exchange: a live agent thread, or AI
-  // bot messages. Until one exists, only the welcome screen with its single
-  // "Start Conversation" CTA is shown — no composer, no attachment, no send.
+  // bot messages. Until one exists, only the welcome screen is shown.
   const hasActiveChat = !!inquiryId || messages.length > 0
+
+  // Presence-driven status line.
+  const presenceLine = liveState.online
+    ? { dot: 'bg-emerald-400', text: `Online · ${liveState.onlineAgents[0]?.name ?? 'agent'} will reply shortly` }
+    : liveState.status === 'away'
+      ? { dot: 'bg-amber-400', text: 'Away · leave a message' }
+      : { dot: 'bg-slate-400', text: 'Offline · leave a message' }
+
+  // Escape closes the panel.
+  useEffect(() => {
+    if (!open) return
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setOpen(false) }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [open])
 
   // The floating chat widget is for website visitors only. Hide it inside all
   // authenticated dashboards so it never overlaps admin/landlord/user UI.
@@ -740,17 +808,8 @@ export default function ChatWidget() {
           <div className="min-w-0 flex-1 text-white">
             <div className="truncate text-[14px] font-bold tracking-[-0.01em]">Livarex Support</div>
             <div className="mt-0.5 flex items-center gap-1.5 text-[11px] text-white/75">
-              {adminOnline || inquiryId ? (
-                <>
-                  <span className="inline-block size-1.5 rounded-full bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.9)]" aria-hidden />
-                  Online now · replies in ~5 min
-                </>
-              ) : (
-                <>
-                  <span className="inline-block size-1.5 rounded-full bg-amber-400 shadow-[0_0_6px_rgba(251,191,36,0.9)]" aria-hidden />
-                  Away · leave a message
-                </>
-              )}
+              <span className={`inline-block size-1.5 rounded-full ${presenceLine.dot} shadow-[0_0_6px_rgba(52,211,153,0.9)]`} aria-hidden />
+              {presenceLine.text}
             </div>
           </div>
 
@@ -781,8 +840,8 @@ export default function ChatWidget() {
         <div className="cw-scroll flex-1 overflow-y-auto px-3.5 py-4 flex flex-col gap-2.5"
           style={{ background:'hsl(var(--muted) / 0.45)' }}>
 
-          {/* ── Welcome hero (shown on first open) ── */}
-          {view === 'welcome' && !inquiryId && messages.length === 0 && liveStage === 'idle' && (
+          {/* ── State 1: Welcome (quick actions only) ── */}
+          {view.name === 'welcome' && (
             <div className="flex flex-col items-center text-center px-2 pt-6 pb-2" style={{ animation:'cwFadeUp 0.4s ease both' }}>
               <div className="relative mb-4">
                 <div className="size-16 rounded-2xl flex items-center justify-center text-3xl"
@@ -793,309 +852,273 @@ export default function ChatWidget() {
               </div>
               <h2 className="text-[17px] font-bold text-card-foreground tracking-tight">Hi there! 👋</h2>
               <p className="mt-1.5 text-[13px] text-muted-foreground leading-relaxed max-w-[260px]">
-                Need help finding a property? Our team is online and ready to assist you.
+                How can we help you today?
               </p>
 
-              <button
-                onClick={startConversation}
-                className="mt-5 w-full rounded-xl py-3 text-[13px] font-bold text-white transition-all hover:opacity-90 active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-ring"
-                style={{ background:'linear-gradient(135deg,hsl(var(--primary)),hsl(var(--primary) / 0.85))', boxShadow:'0 8px 20px hsl(var(--primary) / 0.3)' }}
-              >
-                Start Conversation
-              </button>
+              {/* Quick actions — the ONLY way to enter a conversation */}
+              <div className="mt-5 grid w-full grid-cols-2 gap-2">
+                {ACTIONS.map(a => (
+                  <button
+                    key={a.title}
+                    onClick={() => a.live ? goLive() : sendMessage(a.msg ?? '', null)}
+                    className="group flex flex-col items-start gap-2 rounded-2xl border border-border bg-card p-3.5 text-left transition-all hover:shadow-md hover:-translate-y-0.5 active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-ring"
+                  >
+                    <span className="text-xl" aria-hidden>{a.icon}</span>
+                    <span className="cw-chip-title text-[12.5px] font-bold text-card-foreground leading-tight group-hover:text-primary transition-colors">{a.title}</span>
+                  </button>
+                ))}
+              </div>
+
               <button
                 onClick={browseHelp}
-                className="mt-2 w-full rounded-xl py-3 text-[13px] font-semibold text-card-foreground border border-border bg-card transition-all hover:bg-muted active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-ring"
+                className="mt-4 inline-flex items-center gap-1 text-[12px] font-semibold text-muted-foreground hover:text-primary transition-colors"
               >
-                Browse Help Center
+                Browse Help Center <ArrowRight size={12} />
               </button>
 
-              <div className="mt-4 flex items-center gap-1.5 text-[11px] text-muted-foreground">
-                <span className={`inline-block size-1.5 rounded-full ${adminOnline ? 'bg-emerald-400' : 'bg-amber-400'}`} aria-hidden />
-                {adminOnline ? 'We\'re online — start a live chat' : 'Live chat may be unavailable — we\'ll still get back to you'}
+              <div className="mt-3 flex items-center gap-1.5 text-[11px] text-muted-foreground">
+                <span className={`inline-block size-1.5 rounded-full ${presenceLine.dot}`} aria-hidden />
+                {liveState.online ? 'We\'re online — start a live chat' : 'Live chat may be unavailable — we\'ll still get back to you'}
               </div>
             </div>
           )}
 
-          {/* ── Conversation messages (AI bot) ── */}
-          {messages.map((msg, i) => (
-            <div key={i} className="flex items-end gap-2"
-              style={{ justifyContent: msg.role === 'user' ? 'flex-end' : 'flex-start', animation:'cwFadeUp 0.3s ease both' }}>
-              {msg.role === 'assistant' && <Avatar small />}
-              <div className="flex max-w-[80%] flex-col gap-1"
-                style={{ alignItems: msg.role === 'user' ? 'flex-end' : 'flex-start' }}>
-                {msg.content.map((block, j) =>
-                  block.type === 'image_url' ? (
-                    <img key={j} src={block.url} alt="attachment" className="max-h-40 max-w-[200px] rounded-xl border-2 border-white/40 object-cover" />
-                  ) : (
-                    <div key={j} className="px-3.5 py-2.5 text-[13px] leading-relaxed break-words"
-                      style={{
-                        borderRadius: msg.role === 'user' ? '18px 18px 6px 18px' : '18px 18px 18px 6px',
-                        whiteSpace:'pre-wrap',
-                        background: msg.role === 'user' ? 'linear-gradient(135deg,#2563eb,#3b82f6)' : 'hsl(var(--card))',
-                        color: msg.role === 'user' ? '#fff' : 'hsl(var(--card-foreground))',
-                        boxShadow: msg.role === 'assistant'
-                          ? '0 1px 3px rgba(2,6,23,0.06)'
-                          : '0 2px 10px rgba(37,99,235,0.28)',
-                        border: msg.role === 'assistant' ? '1px solid hsl(var(--border) / 0.7)' : 'none',
-                      }}>
-                      {msg.role === 'user' ? block.text : renderBotText(block.text)}
-                    </div>
-                  )
-                )}
-                <span className="px-1 text-[9.5px] text-muted-foreground/70">
-                  {formatTime(msg.time)}
-                  {msg.role === 'user' && <span className="ml-1 text-emerald-500">✓ Sent</span>}
-                </span>
-              </div>
-            </div>
-          ))}
-
-          {/* ── Quick action chips (shown after welcome, in bot mode) ── */}
-          {view === 'chat' && !inquiryId && liveStage === 'idle' && (
-            <div className="flex flex-wrap gap-1.5 pt-1" style={{ animation:'cwFadeUp 0.3s ease both' }}>
-              {ACTIONS.map(a => (
-                <button
-                  key={a.title}
-                  className="cw-chip inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1.5 text-[11.5px] font-semibold text-card-foreground transition-all cursor-pointer hover:shadow-sm focus-visible:outline-2 focus-visible:outline-ring"
-                  onClick={() => a.msg ? sendMessage(a.msg, null) : triggerAgentForm()}
-                >
-                  <span aria-hidden>{a.icon}</span>
-                  <span className="cw-chip-title">{a.title}</span>
-                </button>
-              ))}
-            </div>
-          )}
-
-          {/* ── Live support flow (checking / guest form / offline form) ── */}
-          {liveStage === 'checking' && (
-            <div className="flex items-center justify-center py-6" style={{ animation:'cwFadeUp 0.3s ease both' }}>
-              <div className="flex items-center gap-2 text-[12.5px] text-muted-foreground">
-                <Loader2 className="w-4 h-4 animate-spin" />
-                Checking for available agents…
-              </div>
-            </div>
-          )}
-
-          {liveStage === 'form' && (
-            <div className="flex items-start gap-2" style={{ animation:'cwFadeUp 0.35s ease both' }}>
-              <Avatar small />
-              <div className="max-w-[88%] flex-1 rounded-[18px_18px_18px_6px] border border-border/70 bg-card p-4 shadow-[0_1px_3px_rgba(2,6,23,0.06)]">
-                <form onSubmit={submitAgentForm} className="flex flex-col gap-2.5">
-                  <div className="mb-0.5 flex items-center gap-2">
-                    <div className="grid size-6.5 place-items-center rounded-lg bg-emerald-100">
-                      <User size={13} className="text-emerald-700" />
-                    </div>
-                    <div>
-                      <p className="m-0 text-xs font-bold text-card-foreground">Live Support</p>
-                      <p className="m-0 text-[10.5px] text-muted-foreground">An agent is online — just tell us who you are</p>
-                    </div>
+          {/* ── State 2/3: Live conversation ── */}
+          {view.name === 'live' && (
+            <>
+              {/* Checking for agents */}
+              {view.stage === 'checking' && (
+                <div className="flex items-center justify-center py-6" style={{ animation:'cwFadeUp 0.3s ease both' }}>
+                  <div className="flex items-center gap-2 text-[12.5px] text-muted-foreground">
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Checking for available agents…
                   </div>
-                  <Field label="Your name *">
-                    <input
-                      value={agentName}
-                      onChange={e => setAgentName(e.target.value)}
-                      placeholder="e.g. Adebayo Okafor"
-                      required
-                      autoComplete="name"
-                      className="w-full rounded-lg border border-input bg-muted/40 px-3 py-2 text-xs text-card-foreground outline-none transition-shadow focus-visible:ring-2 focus-visible:ring-ring/50"
-                    />
-                  </Field>
-                  <Field label="Email address *">
-                    <input
-                      value={agentEmail}
-                      onChange={e => setAgentEmail(e.target.value)}
-                      placeholder="you@example.com"
-                      type="email"
-                      required
-                      autoComplete="email"
-                      className="w-full rounded-lg border border-input bg-muted/40 px-3 py-2 text-xs text-card-foreground outline-none transition-shadow focus-visible:ring-2 focus-visible:ring-ring/50"
-                    />
-                  </Field>
-                  <Field label="What do you need help with?">
-                    <textarea
-                      value={agentNote}
-                      onChange={e => setAgentNote(e.target.value)}
-                      placeholder="Optional — type your question…"
-                      rows={2}
-                      className="w-full resize-none rounded-lg border border-input bg-muted/40 px-3 py-2 text-xs text-card-foreground outline-none transition-shadow focus-visible:ring-2 focus-visible:ring-ring/50"
-                    />
-                  </Field>
-                  <button
-                    type="submit"
-                    disabled={!agentName.trim() || !agentEmail.trim() || agentSubmitting}
-                    className="mt-1 rounded-[10px] border-none py-2.5 text-xs font-bold transition-all cursor-pointer disabled:cursor-default focus-visible:outline-2 focus-visible:outline-ring"
-                    style={{
-                      background: (!agentName.trim() || !agentEmail.trim() || agentSubmitting)
-                        ? 'hsl(var(--muted-foreground) / 0.2)' : 'linear-gradient(135deg,#059669,#10b981)',
-                      color: (!agentName.trim() || !agentEmail.trim() || agentSubmitting)
-                        ? 'hsl(var(--muted-foreground))' : '#fff',
-                    }}
-                  >
-                    {agentSubmitting ? 'Connecting…' : 'Start Chat'}
-                  </button>
-                </form>
-              </div>
-            </div>
-          )}
+                </div>
+              )}
 
-          {liveStage === 'offline' && (
-            <div className="flex items-start gap-2" style={{ animation:'cwFadeUp 0.35s ease both' }}>
-              <Avatar small />
-              <div className="max-w-[88%] flex-1 rounded-[18px_18px_18px_6px] border border-border/70 bg-card p-4 shadow-[0_1px_3px_rgba(2,6,23,0.06)]">
-                {agentSubmitted ? (
-                  <div className="py-2 text-center">
-                    <div className="mx-auto mb-2.5 grid size-10 place-items-center rounded-full bg-emerald-100">
-                      <Check size={18} className="text-emerald-700" />
-                    </div>
-                    <p className="m-0 text-[13px] font-bold text-emerald-800">Message received!</p>
-                    <p className="mt-1 text-xs text-muted-foreground">
-                      Our team will get back to you as soon as possible.
-                    </p>
-                  </div>
-                ) : (
-                  <form onSubmit={submitAgentForm} className="flex flex-col gap-2.5">
-                    <div className="mb-0.5 flex items-center gap-2">
+              {/* Offline form */}
+              {view.stage === 'offline-form' && (
+                <div className="flex items-start gap-2" style={{ animation:'cwFadeUp 0.35s ease both' }}>
+                  <Avatar small />
+                  <div className="max-w-[88%] flex-1 rounded-[18px_18px_18px_6px] border border-border/70 bg-card p-4 shadow-[0_1px_3px_rgba(2,6,23,0.06)]">
+                    <div className="mb-2 flex items-center gap-2">
                       <div className="grid size-6.5 place-items-center rounded-lg bg-amber-100">
                         <Clock2 className="w-4 h-4 text-amber-700" />
                       </div>
                       <div>
-                        <p className="m-0 text-xs font-bold text-card-foreground">We're currently offline</p>
-                        <p className="m-0 text-[10.5px] text-muted-foreground">Leave a message and we'll respond as soon as possible.</p>
+                        <p className="m-0 text-xs font-bold text-card-foreground">No support agents available</p>
+                        <p className="m-0 text-[10.5px] text-muted-foreground">
+                          No support agents are currently available. Please leave your details and we'll get back to you as soon as possible.
+                        </p>
                       </div>
                     </div>
-                    <Field label="Your name *">
-                      <input
-                        value={agentName}
-                        onChange={e => setAgentName(e.target.value)}
-                        placeholder="e.g. Adebayo Okafor"
-                        required
-                        autoComplete="name"
-                        className="w-full rounded-lg border border-input bg-muted/40 px-3 py-2 text-xs text-card-foreground outline-none transition-shadow focus-visible:ring-2 focus-visible:ring-ring/50"
-                      />
-                    </Field>
-                    <Field label="Email address *">
-                      <input
-                        value={agentEmail}
-                        onChange={e => setAgentEmail(e.target.value)}
-                        placeholder="you@example.com"
-                        type="email"
-                        required
-                        autoComplete="email"
-                        className="w-full rounded-lg border border-input bg-muted/40 px-3 py-2 text-xs text-card-foreground outline-none transition-shadow focus-visible:ring-2 focus-visible:ring-ring/50"
-                      />
-                    </Field>
-                    <Field label="Phone number (optional)">
-                      <input
-                        value={agentPhone}
-                        onChange={e => setAgentPhone(e.target.value)}
-                        placeholder="+234 …"
-                        type="tel"
-                        autoComplete="tel"
-                        className="w-full rounded-lg border border-input bg-muted/40 px-3 py-2 text-xs text-card-foreground outline-none transition-shadow focus-visible:ring-2 focus-visible:ring-ring/50"
-                      />
-                    </Field>
-                    <Field label="Message *">
-                      <textarea
-                        value={agentNote}
-                        onChange={e => setAgentNote(e.target.value)}
-                        placeholder="How can we help?"
-                        required
-                        rows={3}
-                        className="w-full resize-none rounded-lg border border-input bg-muted/40 px-3 py-2 text-xs text-card-foreground outline-none transition-shadow focus-visible:ring-2 focus-visible:ring-ring/50"
-                      />
-                    </Field>
-                    <button
-                      type="submit"
-                      disabled={!agentName.trim() || !agentEmail.trim() || !agentNote.trim() || agentSubmitting}
-                      className="mt-1 rounded-[10px] border-none py-2.5 text-xs font-bold transition-all cursor-pointer disabled:cursor-default focus-visible:outline-2 focus-visible:outline-ring"
-                      style={{
-                        background: (!agentName.trim() || !agentEmail.trim() || !agentNote.trim() || agentSubmitting)
-                          ? 'hsl(var(--muted-foreground) / 0.2)' : 'linear-gradient(135deg,#2563eb,#3b82f6)',
-                        color: (!agentName.trim() || !agentEmail.trim() || !agentNote.trim() || agentSubmitting)
-                          ? 'hsl(var(--muted-foreground))' : '#fff',
-                      }}
-                    >
-                      {agentSubmitting ? 'Sending…' : 'Send Message'}
-                    </button>
-                  </form>
-                )}
-              </div>
-            </div>
+                    <form onSubmit={submitAgentForm} className="flex flex-col gap-2.5">
+                      <Field label="Full Name *">
+                        <input
+                          value={agentName}
+                          onChange={e => setAgentName(e.target.value)}
+                          placeholder="e.g. Adebayo Okafor"
+                          required
+                          autoComplete="name"
+                          className="w-full rounded-lg border border-input bg-muted/40 px-3 py-2 text-xs text-card-foreground outline-none transition-shadow focus-visible:ring-2 focus-visible:ring-ring/50"
+                        />
+                      </Field>
+                      <Field label="Email Address *">
+                        <input
+                          value={agentEmail}
+                          onChange={e => setAgentEmail(e.target.value)}
+                          placeholder="you@example.com"
+                          type="email"
+                          required
+                          autoComplete="email"
+                          className="w-full rounded-lg border border-input bg-muted/40 px-3 py-2 text-xs text-card-foreground outline-none transition-shadow focus-visible:ring-2 focus-visible:ring-ring/50"
+                        />
+                      </Field>
+                      <Field label="Phone Number (optional)">
+                        <input
+                          value={agentPhone}
+                          onChange={e => setAgentPhone(e.target.value)}
+                          placeholder="+234 …"
+                          type="tel"
+                          autoComplete="tel"
+                          className="w-full rounded-lg border border-input bg-muted/40 px-3 py-2 text-xs text-card-foreground outline-none transition-shadow focus-visible:ring-2 focus-visible:ring-ring/50"
+                        />
+                      </Field>
+                      <Field label="Message *">
+                        <textarea
+                          value={agentNote}
+                          onChange={e => setAgentNote(e.target.value)}
+                          placeholder="How can we help?"
+                          required
+                          rows={3}
+                          className="w-full resize-none rounded-lg border border-input bg-muted/40 px-3 py-2 text-xs text-card-foreground outline-none transition-shadow focus-visible:ring-2 focus-visible:ring-ring/50"
+                        />
+                      </Field>
+                      <button
+                        type="submit"
+                        disabled={!agentName.trim() || !agentEmail.trim() || !agentNote.trim() || agentSubmitting}
+                        className="mt-1 rounded-[10px] border-none py-2.5 text-xs font-bold transition-all cursor-pointer disabled:cursor-default focus-visible:outline-2 focus-visible:outline-ring"
+                        style={{
+                          background: (!agentName.trim() || !agentEmail.trim() || !agentNote.trim() || agentSubmitting)
+                            ? 'hsl(var(--muted-foreground) / 0.2)' : 'linear-gradient(135deg,#2563eb,#3b82f6)',
+                          color: (!agentName.trim() || !agentEmail.trim() || !agentNote.trim() || agentSubmitting)
+                            ? 'hsl(var(--muted-foreground))' : '#fff',
+                        }}
+                      >
+                        {agentSubmitting ? 'Sending…' : 'Send Message'}
+                      </button>
+                    </form>
+                  </div>
+                </div>
+              )}
+
+              {/* Submitted (offline) — success with ticket no */}
+              {view.stage === 'submitted' && (
+                <div className="flex items-start gap-2" style={{ animation:'cwFadeUp 0.35s ease both' }}>
+                  <Avatar small />
+                  <div className="max-w-[88%] flex-1 rounded-[18px_18px_18px_6px] border border-border/70 bg-card p-4 shadow-[0_1px_3px_rgba(2,6,23,0.06)]">
+                    <div className="py-2 text-center">
+                      <div className="mx-auto mb-2.5 grid size-10 place-items-center rounded-full bg-emerald-100">
+                        <Check size={18} className="text-emerald-700" />
+                      </div>
+                      <p className="m-0 text-[13px] font-bold text-emerald-800">Message received!</p>
+                      {agentTicketNo && (
+                        <p className="mt-1 text-xs font-semibold text-card-foreground">
+                          Your Ticket ID: <span className="font-black text-primary">{agentTicketNo}</span>
+                        </p>
+                      )}
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        We'll review your request and get back to you as soon as possible.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Live thread (connected) */}
+              {(view.stage === 'active') && (
+                <>
+                  {/* Connected banner */}
+                  {agentJoined && (
+                    <div className="flex justify-center">
+                      <span className="rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[10px] font-semibold text-emerald-700"
+                        style={{ animation:'cwFadeUp 0.3s ease both' }}>
+                        🟢 You're connected to Livarex Support. An agent will reply shortly.
+                      </span>
+                    </div>
+                  )}
+                  {/* Agent typing indicator */}
+                  {agentTyping && !agentThreadLoading && (
+                    <div className="flex items-end gap-2" style={{ animation:'cwFadeUp 0.25s ease both' }}>
+                      <AgentAvatar />
+                      <div className="rounded-[18px_18px_18px_6px] border border-border/60 bg-card px-3.5 py-2.5 shadow-[0_1px_3px_rgba(2,6,23,0.06)]">
+                        <div className="flex items-center gap-2">
+                          <TypingDots />
+                          <span className="text-[10.5px] text-muted-foreground">Support is typing…</span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  {agentThreadLoading ? (
+                    <div className="flex items-end gap-2" style={{ animation:'cwFadeUp 0.25s ease both' }}>
+                      <Avatar small />
+                      <div className="rounded-[18px_18px_18px_6px] border border-border/60 bg-card shadow-[0_1px_3px_rgba(2,6,23,0.06)]">
+                        <TypingDots />
+                      </div>
+                    </div>
+                  ) : (
+                    agentThread.map((msg) => {
+                      const isVisitor = msg.sender === 'visitor'
+                      const read = msg.read_by_admin
+                      return (
+                        <div key={msg.id} className="flex items-end gap-2"
+                          style={{ justifyContent: isVisitor ? 'flex-end' : 'flex-start', animation:'cwFadeUp 0.3s ease both' }}>
+                          {!isVisitor && <AgentAvatar />}
+                          <div className="flex max-w-[80%] flex-col gap-1"
+                            style={{ alignItems: isVisitor ? 'flex-end' : 'flex-start' }}>
+                            {msg.attachment_url && (
+                              <img src={msg.attachment_url} alt={msg.attachment_name ?? 'attachment'}
+                                className="max-h-40 max-w-[200px] rounded-xl border border-border/70 object-cover" />
+                            )}
+                            <div className="px-3.5 py-2.5 text-[13px] leading-relaxed break-words"
+                              style={{
+                                borderRadius: isVisitor ? '18px 18px 6px 18px' : '18px 18px 18px 6px',
+                                whiteSpace:'pre-wrap',
+                                background: isVisitor ? 'linear-gradient(135deg,#059669,#10b981)' : 'hsl(var(--card))',
+                                color: isVisitor ? '#fff' : 'hsl(var(--card-foreground))',
+                                boxShadow: isVisitor ? '0 2px 10px rgba(5,150,105,0.3)' : '0 1px 3px rgba(2,6,23,0.06)',
+                                border: isVisitor ? 'none' : '1px solid hsl(var(--border) / 0.7)',
+                                opacity: msg.id.startsWith('opt-') ? 0.6 : 1,
+                              }}>
+                              {msg.body}
+                            </div>
+                            <span className="px-1 text-[9.5px] text-muted-foreground/70">
+                              {formatTime(msg.created_at)}
+                              {isVisitor && !msg.id.startsWith('opt-') && (
+                                <span className={`ml-1 ${read ? 'text-emerald-500' : 'text-muted-foreground/60'}`}>
+                                  {read ? '✓✓ Read' : '✓ Sent'}
+                                </span>
+                              )}
+                            </span>
+                          </div>
+                        </div>
+                      )
+                    })
+                  )}
+                </>
+              )}
+            </>
           )}
 
-          {/* ── Live agent thread (two-way chat with admin) ───────────────── */}
-          {inquiryId && (
+          {/* ── AI bot messages (after a quick action seeds the chat) ── */}
+          {view.name === 'live' && messages.length > 0 && !inquiryId && (
             <>
-              <div className="flex justify-center">
-                <span className="rounded-full border border-border/60 bg-muted/60 px-2.5 py-1 text-[10px] font-semibold text-muted-foreground"
-                  style={{ animation:'cwFadeUp 0.3s ease both' }}>
-                  Connected to a Livarex agent
-                </span>
-              </div>
-              {/* Admin typing indicator */}
-              {agentTyping && !agentThreadLoading && (
+              {messages.map((msg, i) => (
+                <div key={i} className="flex items-end gap-2"
+                  style={{ justifyContent: msg.role === 'user' ? 'flex-end' : 'flex-start', animation:'cwFadeUp 0.3s ease both' }}>
+                  {msg.role === 'assistant' && <Avatar small />}
+                  <div className="flex max-w-[80%] flex-col gap-1"
+                    style={{ alignItems: msg.role === 'user' ? 'flex-end' : 'flex-start' }}>
+                    {msg.content.map((block, j) =>
+                      block.type === 'image_url' ? (
+                        <img key={j} src={block.url} alt="attachment" className="max-h-40 max-w-[200px] rounded-xl border-2 border-white/40 object-cover" />
+                      ) : (
+                        <div key={j} className="px-3.5 py-2.5 text-[13px] leading-relaxed break-words"
+                          style={{
+                            borderRadius: msg.role === 'user' ? '18px 18px 6px 18px' : '18px 18px 18px 6px',
+                            whiteSpace:'pre-wrap',
+                            background: msg.role === 'user' ? 'linear-gradient(135deg,#2563eb,#3b82f6)' : 'hsl(var(--card))',
+                            color: msg.role === 'user' ? '#fff' : 'hsl(var(--card-foreground))',
+                            boxShadow: msg.role === 'assistant'
+                              ? '0 1px 3px rgba(2,6,23,0.06)'
+                              : '0 2px 10px rgba(37,99,235,0.28)',
+                            border: msg.role === 'assistant' ? '1px solid hsl(var(--border) / 0.7)' : 'none',
+                          }}>
+                          {msg.role === 'user' ? block.text : renderBotText(block.text)}
+                        </div>
+                      )
+                    )}
+                    <span className="px-1 text-[9.5px] text-muted-foreground/70">
+                      {formatTime(msg.time)}
+                      {msg.role === 'user' && <span className="ml-1 text-emerald-500">✓ Sent</span>}
+                    </span>
+                  </div>
+                </div>
+              ))}
+
+              {/* Typing indicator */}
+              {loading && (
                 <div className="flex items-end gap-2" style={{ animation:'cwFadeUp 0.25s ease both' }}>
-                  <AgentAvatar />
-                  <div className="rounded-[18px_18px_18px_6px] border border-border/60 bg-card px-3.5 py-2.5 shadow-[0_1px_3px_rgba(2,6,23,0.06)]">
-                    <div className="flex items-center gap-2">
+                  <Avatar small />
+                  <div className="rounded-[18px_18px_18px_6px] border border-border/60 bg-card shadow-[0_1px_3px_rgba(2,6,23,0.06)]">
+                    <div className="px-3.5 py-2.5 flex items-center gap-2">
                       <TypingDots />
                       <span className="text-[10.5px] text-muted-foreground">Support is typing…</span>
                     </div>
                   </div>
                 </div>
               )}
-              {agentThreadLoading ? (
-                <div className="flex items-end gap-2" style={{ animation:'cwFadeUp 0.25s ease both' }}>
-                  <Avatar small />
-                  <div className="rounded-[18px_18px_18px_6px] border border-border/60 bg-card shadow-[0_1px_3px_rgba(2,6,23,0.06)]">
-                    <TypingDots />
-                  </div>
-                </div>
-              ) : (
-                agentThread.map((msg) => {
-                  const isVisitor = msg.sender === 'visitor'
-                  return (
-                    <div key={msg.id} className="flex items-end gap-2"
-                      style={{ justifyContent: isVisitor ? 'flex-end' : 'flex-start', animation:'cwFadeUp 0.3s ease both' }}>
-                      {!isVisitor && <AgentAvatar />}
-                      <div className="flex max-w-[80%] flex-col gap-1"
-                        style={{ alignItems: isVisitor ? 'flex-end' : 'flex-start' }}>
-                        <div className="px-3.5 py-2.5 text-[13px] leading-relaxed break-words"
-                          style={{
-                            borderRadius: isVisitor ? '18px 18px 6px 18px' : '18px 18px 18px 6px',
-                            whiteSpace:'pre-wrap',
-                            background: isVisitor ? 'linear-gradient(135deg,#059669,#10b981)' : 'hsl(var(--card))',
-                            color: isVisitor ? '#fff' : 'hsl(var(--card-foreground))',
-                            boxShadow: isVisitor ? '0 2px 10px rgba(5,150,105,0.3)' : '0 1px 3px rgba(2,6,23,0.06)',
-                            border: isVisitor ? 'none' : '1px solid hsl(var(--border) / 0.7)',
-                            opacity: msg.id.startsWith('opt-') ? 0.6 : 1,
-                          }}>
-                          {msg.body}
-                        </div>
-                        <span className="px-1 text-[9.5px] text-muted-foreground/70">
-                          {formatTime(new Date(msg.created_at).getTime())}
-                          {isVisitor && <span className="ml-1 text-emerald-500">✓ Sent</span>}
-                        </span>
-                      </div>
-                    </div>
-                  )
-                })
-              )}
             </>
-          )}
-
-          {/* Typing indicator */}
-          {loading && (
-            <div className="flex items-end gap-2" style={{ animation:'cwFadeUp 0.25s ease both' }}>
-              <Avatar small />
-              <div className="rounded-[18px_18px_18px_6px] border border-border/60 bg-card shadow-[0_1px_3px_rgba(2,6,23,0.06)]">
-                <div className="px-3.5 py-2.5 flex items-center gap-2">
-                  <TypingDots />
-                  <span className="text-[10.5px] text-muted-foreground">Support is typing…</span>
-                </div>
-              </div>
-            </div>
           )}
 
           <div ref={bottomRef}/>
@@ -1119,26 +1142,51 @@ export default function ChatWidget() {
         {/* ── Composer (only once a conversation is active) ──────────────────── */}
         {hasActiveChat && (
         <div className="cw-input-bar flex shrink-0 items-center gap-2 border-t border-border/60 bg-card px-3 py-2.5">
-          {/* Attach (bot mode only) */}
-          {!inquiryId && (
-            <>
-              <button
-                onClick={() => fileRef.current?.click()}
-                title="Attach image"
-                aria-label="Attach image"
-                className="cw-attach grid size-9 shrink-0 cursor-pointer place-items-center rounded-full border-none text-muted-foreground transition-colors hover:bg-muted focus-visible:outline-2 focus-visible:outline-ring"
-                style={{ background:'hsl(var(--muted))' }}
-              >
-                <Paperclip size={15} />
-              </button>
-              <input ref={fileRef} type="file" accept="image/*" onChange={handleFile} style={{ display:'none' }}/>
-            </>
-          )}
+          {/* Attach (bot + live) */}
+          <button
+            onClick={() => fileRef.current?.click()}
+            title="Attach image"
+            aria-label="Attach image"
+            className="cw-attach grid size-9 shrink-0 cursor-pointer place-items-center rounded-full border-none text-muted-foreground transition-colors hover:bg-muted focus-visible:outline-2 focus-visible:outline-ring"
+            style={{ background:'hsl(var(--muted))' }}
+          >
+            <Paperclip size={15} />
+          </button>
+          <input ref={fileRef} type="file" accept="image/*" onChange={handleFile} style={{ display:'none' }}/>
+
+          {/* Emoji picker (optional, live + bot) */}
+          <div className="relative">
+            <button
+              onClick={() => setShowEmoji(s => !s)}
+              title="Emoji"
+              aria-label="Emoji"
+              className="cw-attach grid size-9 shrink-0 cursor-pointer place-items-center rounded-full border-none text-muted-foreground transition-colors hover:bg-muted focus-visible:outline-2 focus-visible:outline-ring"
+              style={{ background:'hsl(var(--muted))' }}
+            >
+              <Smile size={15} />
+            </button>
+            {showEmoji && (
+              <div className="absolute bottom-11 left-0 z-20 flex flex-wrap gap-1 rounded-xl border border-border bg-card p-2 shadow-lg" style={{ width:'max-content', maxWidth:'200px' }}>
+                {EMOJI.map(e => (
+                  <button key={e} onClick={() => {
+                    if (inquiryId) setAgentInput(v => v + e)
+                    else setInput(v => v + e)
+                    setShowEmoji(false)
+                    ;(inquiryId ? agentInputRef : inputRef).current?.focus()
+                  }}
+                    className="grid size-7 place-items-center rounded-lg text-lg hover:bg-muted transition-colors">
+                    {e}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
 
           {/* Text — agent mode when a live thread is active */}
           {inquiryId ? (
             <form onSubmit={sendAgentMessage} className="flex flex-1 items-center gap-2">
               <input
+                ref={agentInputRef}
                 className="cw-input flex-1 rounded-full border border-border px-4 py-2.5 text-[16px] text-card-foreground outline-none transition-all sm:text-[13px]"
                 value={agentInput}
                 onChange={e => { setAgentInput(e.target.value); broadcastTyping() }}

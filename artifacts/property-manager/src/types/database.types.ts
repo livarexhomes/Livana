@@ -287,6 +287,9 @@ export interface Database {
           email: string | null
           visitor_id: string | null
           read_by_admin: boolean
+          ticket_no: string | null
+          agent_id: string | null
+          agent_status: 'unassigned' | 'queued' | 'assigned'
           status: 'open' | 'replied' | 'closed'
           created_at: string
           updated_at: string
@@ -299,6 +302,9 @@ export interface Database {
           email?: string | null
           visitor_id?: string | null
           read_by_admin?: boolean
+          ticket_no?: string | null
+          agent_id?: string | null
+          agent_status?: 'unassigned' | 'queued' | 'assigned'
           status?: 'open' | 'replied' | 'closed'
           created_at?: string
           updated_at?: string
@@ -311,6 +317,9 @@ export interface Database {
           email?: string | null
           visitor_id?: string | null
           read_by_admin?: boolean
+          ticket_no?: string | null
+          agent_id?: string | null
+          agent_status?: 'unassigned' | 'queued' | 'assigned'
           status?: 'open' | 'replied' | 'closed'
           created_at?: string
           updated_at?: string
@@ -323,6 +332,9 @@ export interface Database {
           sender: 'visitor' | 'admin'
           body: string
           read_by_admin: boolean
+          read_by_visitor: boolean
+          attachment_url: string | null
+          attachment_name: string | null
           created_at: string
         }
         Insert: {
@@ -331,6 +343,9 @@ export interface Database {
           sender: 'visitor' | 'admin'
           body: string
           read_by_admin?: boolean
+          read_by_visitor?: boolean
+          attachment_url?: string | null
+          attachment_name?: string | null
           created_at?: string
         }
         Update: {
@@ -339,6 +354,38 @@ export interface Database {
           sender?: 'visitor' | 'admin'
           body?: string
           read_by_admin?: boolean
+          read_by_visitor?: boolean
+          attachment_url?: string | null
+          attachment_name?: string | null
+          created_at?: string
+        }
+      }
+      agents: {
+        Row: {
+          id: string
+          user_id: string
+          name: string
+          email: string
+          role: 'agent' | 'support' | 'admin'
+          active: boolean
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          name: string
+          email: string
+          role?: 'agent' | 'support' | 'admin'
+          active?: boolean
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          name?: string
+          email?: string
+          role?: 'agent' | 'support' | 'admin'
+          active?: boolean
           created_at?: string
         }
       }

@@ -256,8 +256,33 @@ export function renderPasswordResetEmail({ resetUrl } = {}) {
   })
 }
 
-/** Render a support / contact-message confirmation email body. */
-export function renderSupportConfirmationEmail({ name, subject, ticketId } = {}) {
+/**
+ * Render a support / contact-message confirmation email.
+ *
+ * When `ticketNo` is present (offline support request) the copy follows the
+ * support-request confirmation spec and surfaces the LVX-XXXX ticket id;
+ * otherwise it keeps the generic contact-message confirmation.
+ */
+export function renderSupportConfirmationEmail({ name, subject, ticketId, ticketNo } = {}) {
+  if (ticketNo) {
+    return renderEmail({
+      subject: "We've received your support request",
+      preheader: 'We have received your support request',
+      heading: `Thanks${name ? `, ${esc(name)}` : ''}!`,
+      lead: "Thank you for contacting Livarex Support. We've successfully received your message. Our support team is currently unavailable, but we'll review your request and get back to you as soon as possible.",
+      body: `
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:8px 0 0;background:#f8fafc;border:1px solid ${BRAND.border};border-radius:14px;">
+        <tr><td style="padding:16px 20px;font-size:13px;color:${BRAND.textMuted};line-height:1.7;">
+          <div style="margin-bottom:4px;"><strong style="color:#334155;">Your Ticket ID:</strong></div>
+          <div style="font-size:20px;font-weight:800;color:${BRAND.navy};letter-spacing:0.02em;">${esc(ticketNo)}</div>
+        </td></tr>
+      </table>`,
+      ctaText: 'Visit Livarex',
+      ctaUrl: BRAND.website,
+      footerNote: 'Support request confirmation',
+    })
+  }
+
   return renderEmail({
     subject: `We received your message${subject ? ` — ${esc(subject)}` : ''}`,
     preheader: 'We received your message',

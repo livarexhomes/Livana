@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Link, useLocation } from '@/lib/navigation'
 import { createClient } from '@/lib/supabase'
+import { useAdminPresence } from '@/lib/admin-presence'
 import {
   LayoutDashboard, Building2, UserPlus, FolderKanban, UserCog,
   Settings, LogOut, Menu, X,
@@ -24,6 +25,10 @@ const supportNav = [
 interface Props { userEmail?: string | null; userName?: string | null }
 
 export default function AdminSidebar({ userEmail, userName }: Props) {
+  // Mount admin presence once per admin page — the sidebar renders on every
+  // admin page (including Support), so this keeps support availability
+  // accurate no matter where the admin is.
+  useAdminPresence()
   const [location] = useLocation()
   const [open, setOpen] = useState(false)
   const [collapsed, setCollapsed] = useState(() => {
@@ -33,13 +38,19 @@ export default function AdminSidebar({ userEmail, userName }: Props) {
 
   useEffect(() => {
     const supabase = createClient()
-    supabase.from('enquiries').select('id', { count: 'exact', head: true }).eq('status', 'open')
-      .then(({ count }) => setOpenEnquiries(count ?? 0))
+    // Support badge = open enquiries + unread/queued chats (a shared count query).
+    const fetchBadge = () => {
+      Promise.all([
+        supabase.from('enquiries').select('id', { count: 'exact', head: true }).eq('status', 'open'),
+        supabase.from('chat_inquiries').select('id', { count: 'exact', head: true })
+          .eq('read_by_admin', false)
+          .in('agent_status', ['unassigned', 'queued']),
+      ]).then(([enq, ch]) => setOpenEnquiries((enq.count ?? 0) + (ch.count ?? 0)))
+    }
+    fetchBadge()
     const channel = supabase.channel('sidebar_enquiry_badge')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'enquiries' }, () => {
-        supabase.from('enquiries').select('id', { count: 'exact', head: true }).eq('status', 'open')
-          .then(({ count }) => setOpenEnquiries(count ?? 0))
-      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'enquiries' }, fetchBadge)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'chat_inquiries' }, fetchBadge)
       .subscribe()
     return () => { supabase.removeChannel(channel) }
   }, [])

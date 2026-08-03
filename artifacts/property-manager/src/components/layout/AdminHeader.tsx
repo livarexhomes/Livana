@@ -3,6 +3,7 @@ import { useLocation } from '@/lib/navigation'
 import { Search, Bell, X, Building2, Users, MessageSquare, ArrowRight, ChevronRight, ShieldCheck, Headphones } from 'lucide-react'
 import { createClient } from '@/lib/supabase'
 import { getNotificationSettings } from '@/lib/platform-settings'
+import { playSupportSound, getSoundMuted } from '@/lib/support-notifications'
 
 type SearchResult = {
   id: string
@@ -127,28 +128,17 @@ export default function AdminHeader({ title, subtitle, action, pendingCount = 0 
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'tenants' }, loadNotifs)
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'landlords' }, loadNotifs)
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'contact_messages' }, loadNotifs)
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'chat_inquiries' }, loadNotifs)
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'chat_inquiries' }, (payload) => {
+        // New chat inquiry → play the support sound so the admin notices
+        // without a page refresh (respects the mute toggle).
+        playSupportSound(getSoundMuted())
+        loadNotifs()
+      })
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'chat_inquiries' }, loadNotifs)
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'properties' }, loadNotifs)
       .subscribe()
 
-    // Presence: while this admin is on the dashboard, mark them online for the
-    // website chat widget (live support availability). The presence state is
-    // shared via the Realtime presence channel.
-    const presence = supabase.channel('livarex-admin-presence')
-    presence
-      .on('presence', { event: 'sync' }, () => { /* other admins' presence syncs */ })
-      .subscribe(async (status) => {
-        if (status === 'SUBSCRIBED') {
-          try {
-            await presence.track({ role: 'admin', online_at: new Date().toISOString() })
-          } catch (err) {
-            console.warn('[AdminHeader] presence track failed:', err)
-          }
-        }
-      })
-
-    return () => { supabase.removeChannel(channel); supabase.removeChannel(presence) }
+    return () => { supabase.removeChannel(channel) }
   }, [])
 
   function relAgo(ts: string) {

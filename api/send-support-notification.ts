@@ -90,6 +90,7 @@ export default async function handler(req: any, res: any) {
     subject = '',
     message = '',
     ticketId = '',
+    ticketNo = '',
     channel = '',
   } = body as Record<string, any>
 
@@ -189,6 +190,7 @@ export default async function handler(req: any, res: any) {
         name: userName,
         subject: subject || undefined,
         ticketId: ticketId || undefined,
+        ticketNo: ticketNo || undefined,
       })
       const userResp = await fetch('https://api.resend.com/emails', {
         method: 'POST',
@@ -199,7 +201,9 @@ export default async function handler(req: any, res: any) {
         body: JSON.stringify({
           from,
           to: userEmail,
-          subject: `We received your message${subject ? ` — ${subject}` : ''}`,
+          subject: ticketNo
+            ? "We've received your support request"
+            : `We received your message${subject ? ` — ${subject}` : ''}`,
           html,
         }),
       })
