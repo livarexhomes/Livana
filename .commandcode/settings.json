@@ -6,7 +6,8 @@
       "Shell(pnpm:*)",
       "Shell(which psql pg_ctl postgres 2>/dev/null; echo \"---\"; psql --version 2>/dev/null; echo \"---\"; ls /usr/lib/postgresql/ 2>/dev/null || true)",
       "Shell(grep:*)",
-      "Shell(npx tsc --noEmit -p tsconfig.json 2 >& 1)"
+      "Shell(npx tsc --noEmit -p tsconfig.json 2 >& 1)",
+      "Shell(CHAT_PROXY_URL=http://127.0.0.1:9999/api/chat node --test /tmp/commandcode-1000/-workspaces-Livana/d2c0ad32-da30-4dd2-9e2a-879d8a431622/scratchpad/chat-handler.test.mjs 2 >& 1)"
     ],
     "deny": [],
     "defaultMode": "default"
