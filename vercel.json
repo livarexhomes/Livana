@@ -1,10 +1,14 @@
 {
+  "version": 2,
+  "builds": [
+    { "src": "api/**/*.js", "use": "@vercel/node" },
+    { "src": "artifacts/property-manager/dist/public/**", "use": "@vercel/static" }
+  ],
+  "routes": [
+    { "src": "/api/(.*)", "dest": "/api/$1" },
+    { "src": "/(.*)", "dest": "/artifacts/property-manager/dist/public/$1" },
+    { "src": "/(.*)", "dest": "/artifacts/property-manager/dist/public/index.html" }
+  ],
   "buildCommand": "pnpm --filter @workspace/property-manager run build && pnpm --filter @workspace/property-manager run build:ssr && node scripts/prerender.mjs",
-  "outputDirectory": "artifacts/property-manager/dist/public",
-  "installCommand": "pnpm install",
-  "framework": null,
-  "rewrites": [
-    { "source": "/api/(.*)", "destination": "/api/$1" },
-    { "source": "/:path*",   "destination": "/index.html" }
-  ]
+  "installCommand": "pnpm install"
 }
