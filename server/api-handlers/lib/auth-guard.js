@@ -1,8 +1,4 @@
-/// <reference lib="dom" />
-
-declare const process: { env: Record<string, string | undefined> }
-
-function getEnv(key: string): string | undefined {
+function getEnv(key) {
   if (typeof process !== 'undefined' && process.env) {
     return process.env[key]
   }
@@ -19,12 +15,12 @@ function getEnv(key: string): string | undefined {
  * This prevents unauthenticated callers from reaching admin-only endpoints.
  * Returns the verified user on success, or null on failure.
  */
-export async function requireAdmin(req: any): Promise<{ id: string; email?: string } | null> {
+export async function requireAdmin(req) {
   const SUPABASE_URL = getEnv('SUPABASE_URL') || ''
   const SUPABASE_SERVICE_KEY = getEnv('SUPABASE_SERVICE_KEY') || getEnv('SUPABASE_SERVICE_ROLE_KEY') || ''
 
   // The caller's own access token — this is what identifies THEM, not us.
-  const authHeader = (req.headers?.authorization || '') as string
+  const authHeader = req.headers?.authorization || ''
   const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7).trim() : ''
   if (!token) return null
 

@@ -8,16 +8,16 @@ const require = createRequire(import.meta.url)
 
 const handlers = {
   chat: () => import('../server/api-handlers/chat.js'),
-  'landlord-register': () => import('../server/api-handlers/landlord-register.ts'),
-  'manage-support-agent': () => import('../server/api-handlers/manage-support-agent.ts'),
+  'landlord-register': () => import('../server/api-handlers/landlord-register.js'),
+  'manage-support-agent': () => import('../server/api-handlers/manage-support-agent.js'),
   'notify-signup': () => import('../server/api-handlers/notify-signup.js'),
-  'register-support-agent': () => import('../server/api-handlers/register-support-agent.ts'),
-  'send-confirmation': () => import('../server/api-handlers/send-confirmation.ts'),
-  'send-otp': () => import('../server/api-handlers/send-otp.ts'),
-  'send-password-reset': () => import('../server/api-handlers/send-password-reset.ts'),
-  'send-support-notification': () => import('../server/api-handlers/send-support-notification.ts'),
-  'verify-otp': () => import('../server/api-handlers/verify-otp.ts'),
-  'whatsapp/notify-inspection': () => import('../server/api-handlers/whatsapp/notify-inspection.ts'),
+  'register-support-agent': () => import('../server/api-handlers/register-support-agent.js'),
+  'send-confirmation': () => import('../server/api-handlers/send-confirmation.js'),
+  'send-otp': () => import('../server/api-handlers/send-otp.js'),
+  'send-password-reset': () => import('../server/api-handlers/send-password-reset.js'),
+  'send-support-notification': () => import('../server/api-handlers/send-support-notification.js'),
+  'verify-otp': () => import('../server/api-handlers/verify-otp.js'),
+  'whatsapp/notify-inspection': () => import('../server/api-handlers/whatsapp/notify-inspection.js'),
 }
 
 function getRouteName(req) {

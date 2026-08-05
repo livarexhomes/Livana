@@ -1,38 +1,25 @@
-/// <reference lib="dom" />
-
-declare const process: { env: Record<string, string | undefined> }
-
-function getEnv(key: string): string | undefined {
+function getEnv(key) {
   if (typeof process !== 'undefined' && process.env) {
     return process.env[key]
   }
   return undefined
 }
 
-interface Body {
-  action: 'create' | 'invite' | 'reset-password' | 'remove' | 'set-role'
-  email?: string
-  password?: string
-  name?: string
-  userId?: string
-  role?: string
-}
-
-function sendJson(res: any, status: number, body: unknown) {
+function sendJson(res, status, body) {
   res.statusCode = status
   res.setHeader('Content-Type', 'application/json')
   res.end(JSON.stringify(body))
 }
 
-function getErrorMessage(data: unknown): string {
+function getErrorMessage(data) {
   if (!data || typeof data !== 'object') return ''
-  const err = data as Record<string, unknown>
+  const err = data
   return (
     String(err.error || err.message || err.msg || err.details || err.hint || err.error_description || '')
   ).trim()
 }
 
-function parseJsonBody(req: any): Promise<Body | null> {
+function parseJsonBody(req) {
   return new Promise((resolve) => {
     if (typeof req.body === 'string') {
       try {
@@ -52,7 +39,7 @@ function parseJsonBody(req: any): Promise<Body | null> {
     }
 
     let raw = ''
-    req.on('data', (chunk: unknown) => {
+    req.on('data', (chunk) => {
       if (typeof chunk === 'string') raw += chunk
       else if (chunk instanceof Uint8Array) raw += new TextDecoder().decode(chunk)
       else raw += String(chunk)
@@ -92,7 +79,7 @@ function parseJsonBody(req: any): Promise<Body | null> {
  *  - `set-role`       { userId, role }              — set the agents row role
  *                     (agent/support/admin).
  */
-export default async function handler(req: any, res: any) {
+export default async function handler(req, res) {
   const SUPABASE_URL = getEnv('SUPABASE_URL') || ''
   const SUPABASE_SERVICE_KEY = getEnv('SUPABASE_SERVICE_KEY') || getEnv('SUPABASE_SERVICE_ROLE_KEY') || ''
 
@@ -175,7 +162,7 @@ export default async function handler(req: any, res: any) {
       if (!listResp.ok) return sendJson(res, 400, { error: 'Failed to look up Supabase users' })
       const page = await listResp.json().catch(() => null)
       const users = Array.isArray(page?.users) ? page.users : (Array.isArray(page) ? page : [])
-      const existing = users.find((u: any) => String(u?.email ?? '').toLowerCase() === inviteEmail) ?? null
+      const existing = users.find((u) => String(u?.email ?? '').toLowerCase() === inviteEmail) ?? null
       if (!existing) {
         return sendJson(res, 404, { error: 'No Livarex account found with that email. Use "Create account" instead.' })
       }

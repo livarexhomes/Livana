@@ -1,21 +1,17 @@
-/// <reference lib="dom" />
-
-declare const process: { env: Record<string, string | undefined> }
-
-function getEnv(key: string): string | undefined {
+function getEnv(key) {
   if (typeof process !== 'undefined' && process.env) {
     return process.env[key]
   }
   return undefined
 }
 
-function sendJson(res: any, status: number, body: unknown) {
+function sendJson(res, status, body) {
   res.statusCode = status
   res.setHeader('Content-Type', 'application/json')
   res.end(JSON.stringify(body))
 }
 
-function parseJsonBody(req: any): Promise<Record<string, unknown> | null> {
+function parseJsonBody(req) {
   return new Promise((resolve) => {
     if (typeof req.body === 'string') {
       try {
@@ -35,7 +31,7 @@ function parseJsonBody(req: any): Promise<Record<string, unknown> | null> {
     }
 
     let raw = ''
-    req.on('data', (chunk: unknown) => {
+    req.on('data', (chunk) => {
       if (typeof chunk === 'string') raw += chunk
       else if (chunk instanceof Uint8Array) raw += new TextDecoder().decode(chunk)
       else raw += String(chunk)
@@ -52,7 +48,7 @@ function parseJsonBody(req: any): Promise<Record<string, unknown> | null> {
   })
 }
 
-export default async function handler(req: any, res: any) {
+export default async function handler(req, res) {
   const SUPABASE_URL = getEnv('SUPABASE_URL') || ''
   const SUPABASE_SERVICE_KEY = getEnv('SUPABASE_SERVICE_KEY') || getEnv('SUPABASE_SERVICE_ROLE_KEY') || ''
   if (!SUPABASE_URL || !SUPABASE_SERVICE_KEY) {
@@ -86,7 +82,7 @@ export default async function handler(req: any, res: any) {
       return sendJson(res, listResp.status || 500, { error: errBody?.message || 'Failed to query verification codes' })
     }
 
-    const rows = await listResp.json().catch(() => []) as any[]
+    const rows = await listResp.json().catch(() => [])
     if (!Array.isArray(rows) || rows.length === 0) {
       return sendJson(res, 400, { error: 'Invalid or expired code' })
     }

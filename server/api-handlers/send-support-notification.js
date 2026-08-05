@@ -1,21 +1,17 @@
-/// <reference lib="dom" />
-
-declare const process: { env: Record<string, string | undefined> }
-
-function getEnv(key: string): string | undefined {
+function getEnv(key) {
   if (typeof process !== 'undefined' && process.env) {
     return process.env[key]
   }
   return undefined
 }
 
-function sendJson(res: any, status: number, body: unknown) {
+function sendJson(res, status, body) {
   res.statusCode = status
   res.setHeader('Content-Type', 'application/json')
   res.end(JSON.stringify(body))
 }
 
-function parseJsonBody(req: any): Promise<Record<string, unknown> | null> {
+function parseJsonBody(req) {
   return new Promise((resolve) => {
     if (typeof req.body === 'string') {
       try {
@@ -32,7 +28,7 @@ function parseJsonBody(req: any): Promise<Record<string, unknown> | null> {
       return
     }
     let raw = ''
-    req.on('data', (chunk: unknown) => {
+    req.on('data', (chunk) => {
       if (typeof chunk === 'string') raw += chunk
       else if (chunk instanceof Uint8Array) raw += new TextDecoder().decode(chunk)
       else raw += String(chunk)
@@ -66,7 +62,7 @@ function parseJsonBody(req: any): Promise<Record<string, unknown> | null> {
  *   channel?: string,
  * }
  */
-export default async function handler(req: any, res: any) {
+export default async function handler(req, res) {
   if (req.method !== 'POST') return sendJson(res, 405, { error: 'Method not allowed' })
 
   const body = await parseJsonBody(req)
@@ -76,7 +72,7 @@ export default async function handler(req: any, res: any) {
   const { resolveEmailConfig } = await import('./lib/email-template.js')
   const cfg = await resolveEmailConfig(process.env)
   const apiKey = cfg.apiKey || getEnv('RESEND_API_KEY') || ''
-  const from = (body as any).from || cfg.from || getEnv('RESEND_FROM') || 'Livarex Homes <noreply@livarex.com.ng>'
+  const from = body.from || cfg.from || getEnv('RESEND_FROM') || 'Livarex Homes <noreply@livarex.com.ng>'
 
   if (!apiKey) {
     return sendJson(res, 200, { success: true, skipped: true })
@@ -92,7 +88,7 @@ export default async function handler(req: any, res: any) {
     ticketId = '',
     ticketNo = '',
     channel = '',
-  } = body as Record<string, any>
+  } = body
 
   const { renderAdminNotificationEmail, renderSupportConfirmationEmail } = await import('./lib/email-template.js')
 
@@ -130,7 +126,7 @@ export default async function handler(req: any, res: any) {
     }
   }
 
-  const eventMeta: Record<string, { title: string; label: string; href: string }> = {
+  const eventMeta = {
     contact:          { title: 'New contact message',      label: 'Contact message',        href: 'https://livarex.com.ng/admin/support' },
     support:          { title: 'New support ticket',       label: 'Support ticket',         href: 'https://livarex.com.ng/admin/support' },
     chat:             { title: 'New chat inquiry',         label: 'Chat inquiry',           href: 'https://livarex.com.ng/admin/support' },
@@ -148,7 +144,7 @@ export default async function handler(req: any, res: any) {
     message && `Message:\n${message}`,
   ].filter(Boolean).join('\n')
 
-  const errors: string[] = []
+  const errors = []
 
   // 1) Admin notification
   if (adminEmail) {

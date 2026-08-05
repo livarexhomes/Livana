@@ -1,35 +1,25 @@
-/// <reference lib="dom" />
-
-declare const process: { env: Record<string, string | undefined> }
-
-function getEnv(key: string): string | undefined {
+function getEnv(key) {
   if (typeof process !== 'undefined' && process.env) {
     return process.env[key]
   }
   return undefined
 }
 
-interface Body {
-  userId?: string
-  email?: string
-  name?: string
-}
-
-function sendJson(res: any, status: number, body: unknown) {
+function sendJson(res, status, body) {
   res.statusCode = status
   res.setHeader('Content-Type', 'application/json')
   res.end(JSON.stringify(body))
 }
 
-function getErrorMessage(data: unknown): string {
+function getErrorMessage(data) {
   if (!data || typeof data !== 'object') return ''
-  const err = data as Record<string, unknown>
+  const err = data
   return (
     String(err.error || err.message || err.msg || err.details || err.hint || err.error_description || '')
   ).trim()
 }
 
-function parseJsonBody(req: any): Promise<Body | null> {
+function parseJsonBody(req) {
   return new Promise((resolve) => {
     if (typeof req.body === 'string') {
       try {
@@ -49,7 +39,7 @@ function parseJsonBody(req: any): Promise<Body | null> {
     }
 
     let raw = ''
-    req.on('data', (chunk: unknown) => {
+    req.on('data', (chunk) => {
       if (typeof chunk === 'string') raw += chunk
       else if (chunk instanceof Uint8Array) raw += new TextDecoder().decode(chunk)
       else raw += String(chunk)
@@ -88,7 +78,7 @@ function parseJsonBody(req: any): Promise<Body | null> {
  * /auth/v1/user against the caller's Bearer token). The `email` (add-teammate)
  * path grants admin, so it must not be callable by non-admins.
  */
-export default async function handler(req: any, res: any) {
+export default async function handler(req, res) {
   const SUPABASE_URL = getEnv('SUPABASE_URL') || ''
   const SUPABASE_SERVICE_KEY = getEnv('SUPABASE_SERVICE_KEY') || getEnv('SUPABASE_SERVICE_ROLE_KEY') || ''
 
@@ -119,7 +109,7 @@ export default async function handler(req: any, res: any) {
     const { userId, email, name } = body
 
     // ── Resolve the target Supabase user (by userId or email) ────────────────
-    let targetUser: Record<string, any> | null = null
+    let targetUser = null
 
     if (userId && typeof userId === 'string') {
       const resp = await fetch(`${SUPABASE_URL}/auth/v1/admin/users/${encodeURIComponent(userId)}`, {
@@ -145,7 +135,7 @@ export default async function handler(req: any, res: any) {
       const page = await resp.json().catch(() => null)
       const users = Array.isArray(page?.users) ? page.users : (Array.isArray(page) ? page : [])
       const wanted = String(email).trim().toLowerCase()
-      targetUser = users.find((u: any) => String(u?.email ?? '').toLowerCase() === wanted) ?? null
+      targetUser = users.find((u) => String(u?.email ?? '').toLowerCase() === wanted) ?? null
       if (!targetUser) {
         return sendJson(res, 404, {
           error: 'No Livarex account found with that email. Ask them to sign up first.',
@@ -155,7 +145,7 @@ export default async function handler(req: any, res: any) {
       return sendJson(res, 400, { error: 'Provide either userId or email' })
     }
 
-    const targetUserId: string = String(targetUser?.id ?? '')
+    const targetUserId = String(targetUser?.id ?? '')
     const isAnonymous = targetUser?.is_anonymous === true
       || (targetUser?.app_metadata && targetUser.app_metadata.is_anonymous === true)
     if (!targetUserId || isAnonymous) {

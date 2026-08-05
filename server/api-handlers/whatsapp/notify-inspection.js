@@ -1,21 +1,17 @@
-/// <reference lib="dom" />
-
-declare const process: { env: Record<string, string | undefined> }
-
-function getEnv(key: string): string | undefined {
+function getEnv(key) {
   if (typeof process !== 'undefined' && process.env) {
     return process.env[key]
   }
   return undefined
 }
 
-function sendJson(res: any, status: number, body: unknown) {
+function sendJson(res, status, body) {
   res.statusCode = status
   res.setHeader('Content-Type', 'application/json')
   res.end(JSON.stringify(body))
 }
 
-function parseJsonBody(req: any): Promise<Record<string, unknown> | null> {
+function parseJsonBody(req) {
   return new Promise((resolve) => {
     if (typeof req.body === 'string') {
       try {
@@ -32,7 +28,7 @@ function parseJsonBody(req: any): Promise<Record<string, unknown> | null> {
       return
     }
     let raw = ''
-    req.on('data', (chunk: unknown) => {
+    req.on('data', (chunk) => {
       if (typeof chunk === 'string') raw += chunk
       else if (chunk instanceof Uint8Array) raw += new TextDecoder().decode(chunk)
       else raw += String(chunk)
@@ -61,7 +57,7 @@ function parseJsonBody(req: any): Promise<Record<string, unknown> | null> {
  *   message?: string,
  * }
  */
-export default async function handler(req: any, res: any) {
+export default async function handler(req, res) {
   if (req.method !== 'POST') return sendJson(res, 405, { error: 'Method not allowed' })
 
   const body = await parseJsonBody(req)
@@ -74,7 +70,7 @@ export default async function handler(req: any, res: any) {
     propertyCity = '',
     propertyId = '',
     message = '',
-  } = body as Record<string, any>
+  } = body
 
   const text = [
     `🔔 New inspection request${propertyTitle ? `: ${propertyTitle}` : ''}`,

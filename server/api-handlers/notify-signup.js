@@ -5,17 +5,62 @@
  * Requires RESEND_API_KEY environment variable.
  */
 
-const { renderAlertSignupEmail, resolveEmailConfig } = require('./lib/email-template.js')
+import { renderAlertSignupEmail, resolveEmailConfig } from './lib/email-template.js'
+
+function sendJson(res, status, body) {
+  if (typeof res.status === 'function') {
+    res.status(status).json(body)
+    return
+  }
+  res.statusCode = status
+  res.setHeader('Content-Type', 'application/json')
+  res.end(JSON.stringify(body))
+}
+
+function parseJsonBody(req) {
+  return new Promise((resolve) => {
+    if (typeof req.body === 'string') {
+      try {
+        return resolve(JSON.parse(req.body))
+      } catch {
+        return resolve(null)
+      }
+    }
+    if (req.body && typeof req.body === 'object') {
+      return resolve(req.body)
+    }
+    if (typeof req.json === 'function') {
+      req.json().then(resolve).catch(() => resolve(null))
+      return
+    }
+    let raw = ''
+    req.on('data', (chunk) => {
+      if (typeof chunk === 'string') raw += chunk
+      else if (chunk instanceof Uint8Array) raw += new TextDecoder().decode(chunk)
+      else raw += String(chunk)
+    })
+    req.on('end', () => {
+      if (!raw) return resolve(null)
+      try {
+        resolve(JSON.parse(raw))
+      } catch {
+        resolve(null)
+      }
+    })
+    req.on('error', () => resolve(null))
+  })
+}
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' })
+    return sendJson(res, 405, { error: 'Method not allowed' })
   }
 
-  const { email, subject, details } = req.body ?? {}
+  const body = await parseJsonBody(req)
+  const { email, subject, details } = body ?? {}
 
   if (!email || typeof email !== 'string') {
-    return res.status(400).json({ error: 'Missing email' })
+    return sendJson(res, 400, { error: 'Missing email' })
   }
 
   const cfg = await resolveEmailConfig(process.env)
@@ -23,7 +68,7 @@ export default async function handler(req, res) {
   if (!apiKey) {
     // Silently succeed if Resend is not yet configured — the Supabase row was already saved
     console.warn('[notify-signup] RESEND_API_KEY not set — skipping email')
-    return res.status(200).json({ ok: true, skipped: true })
+    return sendJson(res, 200, { ok: true, skipped: true })
   }
 
   const alertLabel = subject || 'property alerts'
@@ -45,16 +90,16 @@ export default async function handler(req, res) {
       }),
     })
 
-    const data = await response.json()
+    const data = await response.json().catch(() => null)
     if (!response.ok) {
       console.error('[notify-signup] Resend error:', data)
       // Don't fail the user — the Supabase row is already saved
-      return res.status(200).json({ ok: true, emailError: data })
+      return sendJson(res, 200, { ok: true, emailError: data })
     }
 
-    return res.status(200).json({ ok: true, id: data.id })
+    return sendJson(res, 200, { ok: true, id: data?.id })
   } catch (err) {
     console.error('[notify-signup] fetch error:', err)
-    return res.status(200).json({ ok: true, emailError: err?.message })
+    return sendJson(res, 200, { ok: true, emailError: err?.message })
   }
 }
