@@ -2,7 +2,9 @@
 // Proxies to the configured chat bot or proxy. Adds debug logging and
 // guards to help diagnose upstream (WAF / HTML) responses.
 
-const BOT_CHAT_URL = process.env.CHAT_PROXY_URL || 'https://agentrouter.org/'
+function getBotChatUrl() {
+  return process.env.CHAT_PROXY_URL || process.env.BOT_CHAT_URL || process.env.CHAT_BASE_URL || ''
+}
 
 function parseJsonBody(body) {
   if (!body) return {}
@@ -19,7 +21,7 @@ function extractReplyText(payload) {
     return trimmed ? trimmed : null
   }
 
-  if (!payload || typeof payload !== 'object') return null
+  if (!payload || typeof payload !== 'object' || Array.isArray(payload)) return null
 
   const candidates = [
     payload.reply,
@@ -48,14 +50,13 @@ function extractReplyText(payload) {
         .join('\n')
       if (flattened.trim()) return flattened.trim()
     }
-    if (candidate && typeof candidate === 'object') {
-      if (Array.isArray(candidate?.choices) && candidate.choices[0]?.message?.content) {
-        const content = candidate.choices[0].message.content
-        if (typeof content === 'string') return content.trim()
-        if (Array.isArray(content)) {
-          const text = content.map((item) => (typeof item === 'string' ? item : item?.text || '')).join('\n')
-          if (text.trim()) return text.trim()
-        }
+    if (candidate && typeof candidate === 'object' && !Array.isArray(candidate)) {
+      const firstChoice = Array.isArray(candidate?.choices) ? candidate.choices[0] : undefined
+      const content = firstChoice?.message?.content
+      if (typeof content === 'string' && content.trim()) return content.trim()
+      if (Array.isArray(content)) {
+        const text = content.map((item) => (typeof item === 'string' ? item : item?.text || '')).join('\n')
+        if (text.trim()) return text.trim()
       }
       if (Array.isArray(candidate?.content)) {
         const text = candidate.content.map((item) => (typeof item === 'string' ? item : item?.text || '')).join('\n')
@@ -76,17 +77,16 @@ export default async function handler(req, res) {
 
   const requestBody = parseJsonBody(req.body)
 
+  const BOT_CHAT_URL = getBotChatUrl()
+
   // Log configured upstream for quick triage in deployment logs
   console.log('[chat] BOT_CHAT_URL=', BOT_CHAT_URL)
 
-  // If AgentRouter / Anthropic env vars are set, prefer calling AgentRouter directly
-  const AR_BASE = process.env.AGENTROUTER_BASE_URL || process.env.ANTHROPIC_BASE_URL || process.env.AI_INTEGRATIONS_ANTHROPIC_BASE_URL
-  const AR_KEY = process.env.AGENTROUTER_API_KEY || process.env.ANTHROPIC_API_KEY || process.env.AI_INTEGRATIONS_ANTHROPIC_API_KEY
-  if (AR_BASE && AR_KEY) console.log('[chat] AGENTROUTER_BASE_URL detected — will prefer direct AgentRouter call')
-
-  try {
-    // Avoid proxying to the same host (self-proxy / loop)
-    let upstreamUrl = BOT_CHAT_URL
+  // If a real upstream is configured and looks like a proper URL, use it.
+  // Otherwise, return a graceful fallback reply instead of failing the widget.
+  const hasConfiguredUpstream = typeof BOT_CHAT_URL === 'string' && BOT_CHAT_URL.trim() && !BOT_CHAT_URL.includes('agentrouter.org')
+  if (hasConfiguredUpstream) {
+    let upstreamError = null
     try {
       const parsed = new URL(BOT_CHAT_URL)
       const hostHeader = (req.headers.host || '').split(':')[0]
@@ -94,117 +94,58 @@ export default async function handler(req, res) {
         console.error('[chat] Refusing to proxy to same host (possible misconfiguration)', parsed.hostname)
         return res.status(500).json({ error: 'Proxy misconfiguration: BOT_CHAT_URL points to this host' })
       }
-      // Use the URL as-is (caller should supply the full path, e.g. https://bot-host/api/chat)
-      upstreamUrl = parsed.toString()
-    } catch (e) {
-      // If BOT_CHAT_URL is not a full URL, proceed with it verbatim and let fetch report errors
-      console.warn('[chat] BOT_CHAT_URL is not a fully qualified URL, using as-is')
-    }
 
-    // Add a 10s timeout to upstream requests
-    const controller = new AbortController()
-    const timeoutId = setTimeout(() => controller.abort(), 10000)
-
-    // Build headers; include Authorization when calling AgentRouter directly
-    const baseHeaders = {
-      'Content-Type': 'application/json',
-      'Accept': 'application/json',
-      'x-forwarded-host': req.headers.host || '',
-      'x-forwarded-for': req.headers['x-real-ip'] || req.socket?.remoteAddress || '',
-    }
-
-    let finalUpstreamUrl = upstreamUrl
-    const finalHeaders = { ...baseHeaders }
-
-    // If AgentRouter envs are set, call its messages endpoint directly with the API key
-    if (AR_BASE && AR_KEY) {
-      try {
-        finalUpstreamUrl = new URL('/v1/messages', AR_BASE).toString()
-        finalHeaders['Authorization'] = `Bearer ${AR_KEY}`
-        console.log('[chat] Using AgentRouter direct URL:', finalUpstreamUrl)
-      } catch (e) {
-        console.warn('[chat] Failed to construct AgentRouter URL, falling back to configured BOT_CHAT_URL')
-        finalUpstreamUrl = upstreamUrl
-      }
-    } else {
-      // If the configured BOT_CHAT_URL is a root URL, forward to the same incoming path.
-      try {
-        const parsed = new URL(upstreamUrl)
-        if (parsed.pathname === '/' || parsed.pathname === '') {
-          const incomingPath = (req.url || '/api/chat').split('?')[0]
-          parsed.pathname = incomingPath || '/api/chat'
-          finalUpstreamUrl = parsed.toString()
-          console.log('[chat] Resolved BOT_CHAT_URL root to:', finalUpstreamUrl)
-        }
-      } catch (e) {
-        // BOT_CHAT_URL may be relative; leave it as-is.
-      }
-    }
-
-    let upstream
-    try {
-      upstream = await fetch(finalUpstreamUrl, {
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), 10000)
+      const upstream = await fetch(parsed.toString(), {
         method: 'POST',
-        headers: finalHeaders,
+        headers: {
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
+          'x-forwarded-host': req.headers.host || '',
+          'x-forwarded-for': req.headers['x-real-ip'] || req.socket?.remoteAddress || '',
+        },
         body: JSON.stringify(requestBody),
         signal: controller.signal,
       })
-    } finally {
       clearTimeout(timeoutId)
-    }
 
-    const contentType = (upstream.headers.get('content-type') || '').toLowerCase()
-    const responseText = await upstream.text()
+      const contentType = (upstream.headers.get('content-type') || '').toLowerCase()
+      const responseText = await upstream.text()
 
-    if (contentType.includes('application/json')) {
-      try {
-        const data = responseText ? JSON.parse(responseText) : {}
-        const reply = extractReplyText(data)
-        if (reply) {
-          return res.status(upstream.status).json({ reply, raw: data })
+      if (contentType.includes('application/json')) {
+        try {
+          const data = responseText ? JSON.parse(responseText) : {}
+          const reply = extractReplyText(data)
+          if (reply) {
+            return res.status(upstream.status).json({ reply, raw: data })
+          }
+          upstreamError = new Error('Upstream JSON did not include a reply payload')
+        } catch (parseErr) {
+          upstreamError = parseErr
+          console.warn('[chat] Upstream returned invalid JSON', parseErr?.message || parseErr)
         }
-
-        const snippet = responseText ? responseText.slice(0, 800) : ''
-        console.error('[chat] Proxy warning: upstream JSON did not include a reply payload', {
-          status: upstream.status,
-          contentType,
-          snippet,
-        })
-        return res.status(upstream.status).json({ reply: 'The chat service returned an unexpected response.', raw: data })
-      } catch (parseErr) {
-        const snippet = responseText ? responseText.slice(0, 800) : ''
-        console.error('[chat] Proxy error: invalid JSON body from upstream', {
-          status: upstream.status,
-          contentType,
-          snippet,
-        })
-        return res.status(502).json({ error: 'Chat service returned invalid JSON', upstreamStatus: upstream.status, contentType, snippet })
+      } else {
+        const snippet = responseText ? responseText.slice(0, 300) : ''
+        upstreamError = new Error(`Upstream returned non-JSON (${contentType || 'unknown'}): ${snippet}`)
+        console.warn('[chat] Upstream returned non-JSON', { status: upstream.status, contentType, snippet })
       }
+    } catch (err) {
+      const isAbort = err && err.name === 'AbortError'
+      upstreamError = isAbort ? new Error('Upstream request timed out after 10s') : err
+      console.warn('[chat] Upstream request failed', upstreamError?.message || upstreamError)
     }
 
-    const snippet = responseText ? responseText.slice(0, 800) : ''
-    console.error('[chat] Proxy warning: upstream returned non-JSON response', {
-      status: upstream.status,
-      contentType,
-      snippet,
+    // The configured upstream is down or returned something unusable — surface
+    // a real error instead of masking it, so failures are visible in logs and
+    // the widget can show an offline state rather than a fake bot reply.
+    const status = upstreamError && upstreamError.status ? upstreamError.status : 502
+    return res.status(status).json({
+      error: 'The chat service is temporarily unavailable.',
+      details: upstreamError?.message ? String(upstreamError.message).slice(0, 400) : 'Unknown upstream error',
     })
-    return res.status(502).json({ error: 'Chat service returned non-JSON', upstreamStatus: upstream.status, contentType, snippet })
-  } catch (err) {
-    if (err && err.name === 'AbortError') {
-      console.error('[chat] Proxy error: upstream request timed out')
-      return res.status(504).json({ error: 'Chat service timed out.' })
-    }
-    console.error('[chat] Proxy error:', err?.message || err)
-    return res.status(502).json({ error: 'Could not reach chat service.', details: err?.message || String(err) })
   }
-}
 
-// Helper: determine a sensible path to call on AgentRouter if callers passed a root URL.
-function arPathOrRoot(req) {
-  // If the incoming request body looks like a messages call, use '/v1/messages' as a common AgentRouter endpoint fallback.
-  // Otherwise, call root.
-  try {
-    if (req && req.body && req.body.messages) return '/v1/messages'
-  } catch (e) {}
-  return '/'
+  const fallbackReply = 'Hi! I can help you find verified rentals, explain the platform, or guide you through listing a property. Tell me what you need and I’ll help from there.'
+  return res.status(200).json({ reply: fallbackReply, fallback: true })
 }
