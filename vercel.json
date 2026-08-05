@@ -3,9 +3,6 @@
   "outputDirectory": "artifacts/property-manager/dist/public",
   "installCommand": "pnpm install",
   "framework": null,
-  "functions": {
-    "api/**/*.js": { "runtime": "nodejs20.x", "maxDuration": 30 }
-  },
   "rewrites": [
     { "source": "/api/(.*)", "destination": "/api/$1" },
     { "source": "/:path*",   "destination": "/index.html" }
