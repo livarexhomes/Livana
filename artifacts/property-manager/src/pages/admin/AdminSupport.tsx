@@ -40,7 +40,7 @@ interface SupportMessage {
 interface Enquiry {
   id: string
   message: string
-  status: 'open' | 'replied' | 'closed'
+  status: 'new' | 'open' | 'replied' | 'closed'
   created_at: string
   updated_at: string
   tenant_id?: string
@@ -121,9 +121,10 @@ const STATUS_META = {
 }
 
 const ENQUIRY_STATUS_META = {
+  new:     { label: 'New',     color: 'text-sky-600', bg: 'bg-sky-50',    dot: 'bg-sky-500'    },
   open:    { label: 'Open',    color: 'text-amber-600', bg: 'bg-amber-50',  dot: 'bg-amber-400' },
   replied: { label: 'Replied', color: 'text-blue-600',  bg: 'bg-blue-50',   dot: 'bg-blue-500'  },
-  closed:  { label: 'Closed',  color: 'text-gray-500',  bg: 'bg-gray-100',  dot: 'bg-gray-400'  },
+  closed:  { label: 'Closed',  color: 'text-slate-500', bg: 'bg-slate-100', dot: 'bg-slate-400' },
 }
 
 const STATUS_OPTIONS = ['open', 'in_progress', 'resolved', 'closed'] as const
@@ -137,11 +138,11 @@ const SUPPORT_STATUS_META: Record<SupportStatus, { label: string; dot: string; b
 // ── Small helpers ─────────────────────────────────────────────────────────────
 
 const AVATAR_GRADS = [
-  'from-blue-500 to-indigo-600',
-  'from-emerald-500 to-teal-600',
-  'from-violet-500 to-purple-600',
-  'from-rose-500 to-pink-600',
-  'from-amber-500 to-orange-600',
+  'from-sky-500 to-blue-600',
+  'from-slate-600 to-slate-700',
+  'from-indigo-500 to-blue-600',
+  'from-blue-500 to-cyan-600',
+  'from-slate-700 to-slate-900',
 ]
 
 function avatarGrad(name: string) {
@@ -446,23 +447,23 @@ function EnquiryDetail({ enquiry, onBack, onStatusChange }: {
   }
 
   return (
-    <div className="flex flex-col h-full bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+    <div className="flex flex-col h-full bg-white overflow-hidden">
       {/* Header */}
-      <div className="flex items-center gap-3 px-4 py-3 border-b border-gray-100 shrink-0">
-        <button onClick={onBack} className="lg:hidden p-1.5 rounded-lg hover:bg-gray-100 text-gray-500 transition-colors">
+      <div className="flex items-center gap-3 px-5 py-3.5 border-b border-slate-100 shrink-0">
+        <button onClick={onBack} className="lg:hidden p-1.5 -ml-1.5 rounded-lg hover:bg-slate-100 text-slate-500 transition-colors">
           <ChevronLeft className="w-4 h-4" />
         </button>
-        <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-500 flex items-center justify-center shrink-0 shadow-sm">
-          <span className="text-sm font-bold text-white">{tenantInitial}</span>
+        <div className={`w-10 h-10 rounded-full bg-gradient-to-br ${avatarGrad(tenantName)} flex items-center justify-center shrink-0 text-[13px] font-semibold text-white`}>
+          <span>{tenantInitial}</span>
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
-            <p className="font-bold text-gray-900 text-sm truncate">{tenantName}</p>
-            <span className={`shrink-0 inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full ${s.bg} ${s.color}`}>
+            <p className="font-semibold text-slate-900 text-[15px] truncate">{tenantName}</p>
+            <span className={`shrink-0 inline-flex items-center gap-1.5 text-[11px] font-medium px-2 py-0.5 rounded-full ${s.bg} ${s.color}`}>
               <span className={`w-1.5 h-1.5 rounded-full ${s.dot}`} />{s.label}
             </span>
           </div>
-          <p className="text-xs text-gray-400 mt-0.5">
+          <p className="text-[12.5px] text-slate-400 mt-0.5">
             {enquiry.tenants?.phone && <span>{enquiry.tenants.phone} · </span>}
             {formatDistanceToNow(new Date(enquiry.created_at), { addSuffix: true })}
           </p>
@@ -470,52 +471,52 @@ function EnquiryDetail({ enquiry, onBack, onStatusChange }: {
         <div className="relative shrink-0">
           <select value={enquiry.status} onChange={e => changeStatus(e.target.value as Enquiry['status'])}
             disabled={updating}
-            className="appearance-none pl-3 pr-7 py-1.5 rounded-xl border border-gray-200 text-xs font-semibold bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer disabled:opacity-50">
+            className="appearance-none pl-3 pr-8 py-2 rounded-lg border border-slate-200 text-[12.5px] font-medium bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-slate-400 cursor-pointer disabled:opacity-50 hover:border-slate-300 transition-colors">
             <option value="open">Open</option>
             <option value="replied">Replied</option>
             <option value="closed">Closed</option>
           </select>
           {updating
-            ? <Loader2 className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 animate-spin text-gray-400 pointer-events-none" />
-            : <RefreshCw className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-gray-400 pointer-events-none" />}
+            ? <Loader2 className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 animate-spin text-slate-400 pointer-events-none" />
+            : <RefreshCw className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 pointer-events-none" />}
         </div>
       </div>
 
       {/* Body - Chat Thread */}
-      <div className="flex-1 overflow-y-auto px-5 py-4 space-y-3">
+      <div className="flex-1 overflow-y-auto px-6 py-5 space-y-3">
         {loading ? (
           <div className="flex items-center justify-center h-full">
-            <Loader2 className="w-6 h-6 animate-spin text-gray-300" />
+            <Loader2 className="w-6 h-6 animate-spin text-slate-200" />
           </div>
         ) : (
           <>
             {/* Property info */}
-            <div className="flex items-start gap-3 p-3 bg-blue-50 border border-blue-100 rounded-xl mb-3">
-              <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center shrink-0">
+            <div className="flex items-start gap-3 p-3.5 bg-slate-50 rounded-xl mb-3">
+              <div className="w-8 h-8 rounded-lg bg-slate-900 flex items-center justify-center shrink-0">
                 <Building2 className="w-4 h-4 text-white" />
               </div>
               <div className="min-w-0">
-                <p className="text-sm font-bold text-blue-900 truncate">{propertyTitle}</p>
-                {propertyCity && <p className="text-xs text-blue-600 mt-0.5">{propertyCity}</p>}
+                <p className="text-[13.5px] font-semibold text-slate-900 truncate">{propertyTitle}</p>
+                {propertyCity && <p className="text-[12px] text-slate-500 mt-0.5">{propertyCity}</p>}
               </div>
             </div>
 
             <div className="flex justify-center">
-              <span className="text-[11px] text-gray-400 bg-gray-50 border border-gray-100 px-3 py-1 rounded-full">
+              <span className="text-[11px] text-slate-400 bg-slate-50 px-3 py-1 rounded-full">
                 Enquiry received · {format(new Date(enquiry.created_at), 'dd MMM yyyy, h:mm a')}
               </span>
             </div>
 
             {/* Original enquiry message */}
-            <div className="flex items-end gap-2 justify-start">
-              <div className="w-7 h-7 rounded-full bg-gradient-to-br from-blue-500 to-indigo-500 flex items-center justify-center shrink-0 shadow-sm">
-                <span className="text-xs font-bold text-white">{tenantInitial}</span>
+            <div className="flex items-end gap-2.5 justify-start">
+              <div className={`w-8 h-8 rounded-full bg-gradient-to-br ${avatarGrad(tenantName)} flex items-center justify-center shrink-0 text-[11px] font-semibold text-white`}>
+                <span>{tenantInitial}</span>
               </div>
               <div className="max-w-[75%] flex flex-col gap-1 items-start">
-                <div className="px-4 py-2.5 rounded-2xl text-sm leading-relaxed bg-gray-100 text-gray-800 rounded-bl-sm">
+                <div className="px-4 py-2.5 rounded-2xl rounded-bl-md text-[13.5px] leading-relaxed bg-slate-100 text-slate-800">
                   {enquiry.message}
                 </div>
-                <span className="text-[10px] text-gray-400 px-1">
+                <span className="text-[10.5px] text-slate-400 px-1">
                   {tenantName} · {format(new Date(enquiry.created_at), 'h:mm a')}
                 </span>
               </div>
@@ -528,23 +529,23 @@ function EnquiryDetail({ enquiry, onBack, onStatusChange }: {
                 ? (reply.admins?.email?.split('@')[0] ?? 'Admin')
                 : (reply.landlords?.full_name ?? 'Landlord')
               return (
-                <div key={reply.id} className={`flex items-end gap-2 ${isAdmin ? 'justify-end' : 'justify-start'}`}>
+                <div key={reply.id} className={`flex items-end gap-2.5 ${isAdmin ? 'justify-end' : 'justify-start'}`}>
                   {!isAdmin && (
-                    <div className="w-7 h-7 rounded-full bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center shrink-0 shadow-sm">
-                      <span className="text-xs font-bold text-white">L</span>
+                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-slate-600 to-slate-700 flex items-center justify-center shrink-0 text-[11px] font-semibold text-white">
+                      <span>L</span>
                     </div>
                   )}
                   <div className={`max-w-[75%] flex flex-col gap-1 ${isAdmin ? 'items-end' : 'items-start'}`}>
-                    <div className={`px-4 py-2.5 rounded-2xl text-sm leading-relaxed ${isAdmin ? 'bg-gray-900 text-white rounded-br-sm' : 'bg-gray-100 text-gray-800 rounded-bl-sm'}`}>
+                    <div className={`px-4 py-2.5 rounded-2xl text-[13.5px] leading-relaxed ${isAdmin ? 'bg-slate-900 text-white rounded-br-md' : 'bg-slate-100 text-slate-800 rounded-bl-md'}`}>
                       {reply.message}
                     </div>
-                    <span className="text-[10px] text-gray-400 px-1">
+                    <span className="text-[10.5px] text-slate-400 px-1">
                       {isAdmin ? 'You' : senderName} · {format(new Date(reply.created_at), 'h:mm a')}
                     </span>
                   </div>
                   {isAdmin && (
-                    <div className="w-7 h-7 rounded-full bg-gray-900 flex items-center justify-center shrink-0 shadow-sm">
-                      <HeadphonesIcon className="w-3.5 h-3.5 text-white" />
+                    <div className="w-8 h-8 rounded-full bg-slate-900 flex items-center justify-center shrink-0">
+                      <HeadphonesIcon className="w-4 h-4 text-white" />
                     </div>
                   )}
                 </div>
@@ -553,7 +554,7 @@ function EnquiryDetail({ enquiry, onBack, onStatusChange }: {
 
             {isClosed && (
               <div className="flex justify-center">
-                <span className="text-[11px] text-green-700 bg-green-50 border border-green-100 px-3 py-1 rounded-full">
+                <span className="text-[11px] text-slate-500 bg-slate-50 px-3 py-1 rounded-full">
                   ✓ This enquiry has been closed
                 </span>
               </div>
@@ -565,22 +566,22 @@ function EnquiryDetail({ enquiry, onBack, onStatusChange }: {
 
       {/* Reply input */}
       {!isClosed ? (
-        <form onSubmit={sendReply} className="px-4 py-3 border-t border-gray-100 flex items-end gap-2 shrink-0">
+        <form onSubmit={sendReply} className="px-5 py-3.5 border-t border-slate-100 flex items-end gap-2 shrink-0">
           <textarea 
             rows={1} 
             value={input} 
             onChange={e => setInput(e.target.value)}
             onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendReply(e as any) } }}
-            placeholder="Type your reply... (Enter to send)"
-            className="flex-1 px-4 py-2.5 rounded-xl border border-gray-200 text-sm bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all resize-none" 
+            placeholder="Type your reply… (Enter to send)"
+            className="flex-1 px-4 py-2.5 rounded-xl border border-slate-200 text-[13.5px] bg-white focus:bg-white focus:outline-none focus:ring-2 focus:ring-slate-400 transition-all resize-none placeholder:text-slate-400" 
           />
           <button type="submit" disabled={!input.trim() || sending}
-            className="w-10 h-10 rounded-xl bg-gray-900 hover:bg-gray-800 disabled:opacity-40 text-white flex items-center justify-center transition-all shrink-0">
+            className="w-10 h-10 rounded-xl bg-slate-900 hover:bg-slate-800 disabled:opacity-40 text-white flex items-center justify-center transition-colors shrink-0">
             {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
           </button>
         </form>
       ) : (
-        <div className="px-5 py-3 border-t border-gray-100 text-center text-xs text-gray-400 shrink-0">
+        <div className="px-5 py-3.5 border-t border-slate-100 text-center text-[12px] text-slate-400 shrink-0">
           This enquiry is closed. Change status to reopen.
         </div>
       )}
@@ -745,38 +746,38 @@ function ChatRequestDetail({ inquiry, onBack, onMarkRead, onStatusChange, agents
   }
 
   return (
-    <div className="flex flex-col h-full bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+    <div className="flex flex-col h-full bg-white overflow-hidden">
       {/* Header */}
-      <div className="flex items-center gap-3 px-4 py-3 border-b border-gray-100 shrink-0">
-        <button onClick={onBack} className="lg:hidden p-1.5 rounded-lg hover:bg-gray-100 text-gray-500 transition-colors">
+      <div className="flex items-center gap-3 px-5 py-3.5 border-b border-slate-100 shrink-0">
+        <button onClick={onBack} className="lg:hidden p-1.5 -ml-1.5 rounded-lg hover:bg-slate-100 text-slate-500 transition-colors">
           <ChevronLeft className="w-4 h-4" />
         </button>
-        <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shrink-0 shadow-sm">
-          <span className="text-sm font-bold text-white">{inquiry.name[0]?.toUpperCase() ?? 'U'}</span>
+        <div className={`w-10 h-10 rounded-full bg-gradient-to-br ${avatarGrad(inquiry.name)} flex items-center justify-center shrink-0 text-[13px] font-semibold text-white`}>
+          <span>{inquiry.name[0]?.toUpperCase() ?? 'U'}</span>
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
-            <p className="font-bold text-gray-900 text-sm">{inquiry.name}</p>
-            <span className={`shrink-0 inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full ${s.bg} ${s.color}`}>
+            <p className="font-semibold text-slate-900 text-[15px] truncate">{inquiry.name}</p>
+            <span className={`shrink-0 inline-flex items-center gap-1.5 text-[11px] font-medium px-2 py-0.5 rounded-full ${s.bg} ${s.color}`}>
               <span className={`w-1.5 h-1.5 rounded-full ${s.dot}`} />{s.label}
             </span>
             {/* Assignment status badge */}
             {inquiry.agent_status === 'assigned' && assignedAgent ? (
-              <span className="shrink-0 inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-50 text-blue-700">
-                <User className="w-2.5 h-2.5" />{assignedAgent.name}
+              <span className="shrink-0 inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">
+                <User className="w-3 h-3" />{assignedAgent.name.split(' ')[0]}
               </span>
             ) : inquiry.agent_status === 'queued' ? (
-              <span className="shrink-0 inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-50 text-amber-700">
-                <Clock className="w-2.5 h-2.5" />Queued
+              <span className="shrink-0 inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-full bg-amber-50 text-amber-600">
+                <Clock className="w-3 h-3" />Queued
               </span>
             ) : (
-              <span className="shrink-0 inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">
+              <span className="shrink-0 inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-full bg-slate-100 text-slate-500">
                 Unassigned
               </span>
             )}
           </div>
-          <p className="text-xs text-gray-400 mt-0.5">
-            {inquiry.ticket_no && <span className="font-semibold text-gray-500">{inquiry.ticket_no} · </span>}
+          <p className="text-[12.5px] text-slate-400 mt-0.5">
+            {inquiry.ticket_no && <span className="font-medium text-slate-500">{inquiry.ticket_no} · </span>}
             {inquiry.email && <span>{inquiry.email} · </span>}
             {inquiry.phone && <span>{inquiry.phone} · </span>}
             {format(new Date(inquiry.created_at), 'dd MMM yyyy, h:mm a')}
@@ -785,28 +786,28 @@ function ChatRequestDetail({ inquiry, onBack, onMarkRead, onStatusChange, agents
         <div className="relative shrink-0">
           <select value={inquiry.status} onChange={e => changeStatus(e.target.value as ChatInquiry['status'])}
             disabled={updating}
-            className="appearance-none pl-3 pr-7 py-1.5 rounded-xl border border-gray-200 text-xs font-semibold bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer disabled:opacity-50">
+            className="appearance-none pl-3 pr-8 py-2 rounded-lg border border-slate-200 text-[12.5px] font-medium bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-slate-400 cursor-pointer disabled:opacity-50 hover:border-slate-300 transition-colors">
             <option value="open">Open</option>
             <option value="replied">Replied</option>
             <option value="closed">Closed</option>
           </select>
           {updating
-            ? <Loader2 className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 animate-spin text-gray-400 pointer-events-none" />
-            : <RefreshCw className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-gray-400 pointer-events-none" />}
+            ? <Loader2 className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 animate-spin text-slate-400 pointer-events-none" />
+            : <RefreshCw className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 pointer-events-none" />}
         </div>
       </div>
 
       {/* Assignment bar */}
-      <div className="flex items-center gap-2 px-4 py-2 border-b border-gray-100 bg-gray-50/60 shrink-0 flex-wrap">
-        <span className="text-[10px] uppercase tracking-widest text-gray-400 font-bold">Assigned</span>
-        <span className="text-xs font-semibold text-gray-700">
+      <div className="flex items-center gap-2 px-5 py-2 border-b border-slate-100 bg-slate-50/60 shrink-0 flex-wrap">
+        <span className="text-[11px] font-medium text-slate-400">Assigned</span>
+        <span className="text-[12.5px] font-medium text-slate-700">
           {assignedAgent ? assignedAgent.name : (inquiry.agent_status === 'queued' ? 'Queued — no agent claimed this yet' : 'Unassigned')}
         </span>
         <div className="ml-auto flex items-center gap-1.5">
           {inquiry.agent_status !== 'assigned' && (
             <button onClick={() => doClaim(liveState.onlineAgents[0]?.agent_id ?? agents[0]?.id ?? '')}
               disabled={assigning || agents.length === 0}
-              className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 disabled:opacity-40 text-white transition-colors">
+              className="inline-flex items-center gap-1.5 text-[11.5px] font-medium px-2.5 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 disabled:opacity-40 text-white transition-colors">
               {assigning ? <Loader2 className="w-3 h-3 animate-spin" /> : <User className="w-3 h-3" />}
               Assign to me
             </button>
@@ -815,7 +816,7 @@ function ChatRequestDetail({ inquiry, onBack, onMarkRead, onStatusChange, agents
             value={assignedAgent?.id ?? ''}
             onChange={e => e.target.value ? doClaim(e.target.value) : doUnassign()}
             disabled={assigning || agents.length === 0}
-            className="appearance-none pl-2.5 pr-6 py-1.5 rounded-lg border border-gray-200 text-[11px] font-semibold bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer disabled:opacity-40">
+            className="appearance-none pl-2.5 pr-6 py-1.5 rounded-lg border border-slate-200 text-[11.5px] font-medium bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-slate-400 cursor-pointer disabled:opacity-40 hover:border-slate-300 transition-colors">
             <option value="">Reassign…</option>
             {agents.filter(a => a.active).map(a => (
               <option key={a.id} value={a.id}>{a.name}</option>
@@ -825,7 +826,7 @@ function ChatRequestDetail({ inquiry, onBack, onMarkRead, onStatusChange, agents
           {inquiry.agent_status === 'assigned' && (
             <button onClick={doUnassign} disabled={assigning}
               title="Unassign"
-              className="inline-flex items-center gap-1 text-[11px] font-semibold px-2.5 py-1.5 rounded-lg border border-gray-200 bg-white text-gray-500 hover:text-red-600 hover:border-red-200 transition-colors">
+              className="inline-flex items-center gap-1.5 text-[11.5px] font-medium px-2.5 py-1.5 rounded-lg border border-slate-200 bg-white text-slate-500 hover:text-red-600 hover:border-red-200 transition-colors">
               Unassign
             </button>
           )}
@@ -833,17 +834,17 @@ function ChatRequestDetail({ inquiry, onBack, onMarkRead, onStatusChange, agents
       </div>
 
       {/* Body — chat thread */}
-      <div className="flex-1 overflow-y-auto px-5 py-4 space-y-3">
+      <div className="flex-1 overflow-y-auto px-6 py-5 space-y-3">
         {/* Original visitor message */}
-        <div className="flex items-end gap-2 justify-start">
-          <div className="w-7 h-7 rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shrink-0 shadow-sm">
-            <span className="text-xs font-bold text-white">{inquiry.name[0]?.toUpperCase() ?? 'U'}</span>
+        <div className="flex items-end gap-2.5 justify-start">
+          <div className={`w-8 h-8 rounded-full bg-gradient-to-br ${avatarGrad(inquiry.name)} flex items-center justify-center shrink-0 text-[11px] font-semibold text-white`}>
+            <span>{inquiry.name[0]?.toUpperCase() ?? 'U'}</span>
           </div>
           <div className="max-w-[75%] flex flex-col gap-1 items-start">
-            <div className="px-4 py-2.5 rounded-2xl text-sm leading-relaxed bg-gray-100 text-gray-800 rounded-bl-sm">
+            <div className="px-4 py-2.5 rounded-2xl rounded-bl-md text-[13.5px] leading-relaxed bg-slate-100 text-slate-800">
               {inquiry.note}
             </div>
-            <span className="text-[10px] text-gray-400 px-1">
+            <span className="text-[10.5px] text-slate-400 px-1">
               {inquiry.name} · {format(new Date(inquiry.created_at), 'h:mm a')}
             </span>
           </div>
@@ -852,38 +853,38 @@ function ChatRequestDetail({ inquiry, onBack, onMarkRead, onStatusChange, agents
         {/* Thread messages */}
         {loading ? (
           <div className="flex items-center justify-center py-6">
-            <Loader2 className="w-5 h-5 animate-spin text-gray-300" />
+            <Loader2 className="w-5 h-5 animate-spin text-slate-200" />
           </div>
         ) : (
           messages.map(msg => {
             const isAdmin = msg.sender === 'admin'
             return (
-              <div key={msg.id} className={`flex items-end gap-2 ${isAdmin ? 'justify-end' : 'justify-start'}`}>
+              <div key={msg.id} className={`flex items-end gap-2.5 ${isAdmin ? 'justify-end' : 'justify-start'}`}>
                 {!isAdmin && (
-                  <div className="w-7 h-7 rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shrink-0 shadow-sm">
-                    <span className="text-xs font-bold text-white">{inquiry.name[0]?.toUpperCase() ?? 'U'}</span>
+                  <div className={`w-8 h-8 rounded-full bg-gradient-to-br ${avatarGrad(inquiry.name)} flex items-center justify-center shrink-0 text-[11px] font-semibold text-white`}>
+                    <span>{inquiry.name[0]?.toUpperCase() ?? 'U'}</span>
                   </div>
                 )}
                 <div className={`max-w-[75%] flex flex-col gap-1 ${isAdmin ? 'items-end' : 'items-start'}`}>
                   {msg.attachment_url && (
                     <img src={msg.attachment_url} alt={msg.attachment_name ?? 'attachment'}
-                      className="max-h-40 max-w-[220px] rounded-xl border border-gray-200 object-cover" />
+                      className="max-h-40 max-w-[220px] rounded-xl border border-slate-200 object-cover" />
                   )}
-                  <div className={`px-4 py-2.5 rounded-2xl text-sm leading-relaxed whitespace-pre-wrap ${isAdmin ? 'bg-emerald-600 text-white rounded-br-sm' : 'bg-gray-100 text-gray-800 rounded-bl-sm'} ${msg.id.startsWith('opt-') ? 'opacity-60' : ''}`}>
+                  <div className={`px-4 py-2.5 rounded-2xl text-[13.5px] leading-relaxed whitespace-pre-wrap ${isAdmin ? 'bg-slate-900 text-white rounded-br-md' : 'bg-slate-100 text-slate-800 rounded-bl-md'} ${msg.id.startsWith('opt-') ? 'opacity-60' : ''}`}>
                     {msg.body}
                   </div>
-                  <span className="text-[10px] text-gray-400 px-1 flex items-center gap-1">
+                  <span className="text-[10.5px] text-slate-400 px-1 flex items-center gap-1">
                     {isAdmin ? 'You' : inquiry.name} · {format(new Date(msg.created_at), 'h:mm a')}
                     {isAdmin && !msg.id.startsWith('opt-') && (
-                      <span className={msg.read_by_visitor ? 'text-emerald-600' : 'text-gray-400'}>
+                      <span className={msg.read_by_visitor ? 'text-slate-500' : 'text-slate-400'}>
                         {msg.read_by_visitor ? '✓✓ Read' : '✓ Sent'}
                       </span>
                     )}
                   </span>
                 </div>
                 {isAdmin && (
-                  <div className="w-7 h-7 rounded-full bg-emerald-600 flex items-center justify-center shrink-0 shadow-sm">
-                    <HeadphonesIcon className="w-3.5 h-3.5 text-white" />
+                  <div className="w-8 h-8 rounded-full bg-slate-900 flex items-center justify-center shrink-0">
+                    <HeadphonesIcon className="w-4 h-4 text-white" />
                   </div>
                 )}
               </div>
@@ -897,24 +898,24 @@ function ChatRequestDetail({ inquiry, onBack, onMarkRead, onStatusChange, agents
       {inquiry.status !== 'closed' ? (
         <>
           {visitorTyping && (
-            <div className="px-5 pb-1 flex items-center gap-1.5 text-[11px] text-emerald-700">
-              <span className="inline-block size-1.5 rounded-full bg-emerald-500 animate-pulse" />
+            <div className="px-6 pb-1 flex items-center gap-1.5 text-[11px] text-slate-500">
+              <span className="inline-block size-1.5 rounded-full bg-slate-400 animate-pulse" />
               {inquiry.name} is typing…
             </div>
           )}
-          <form onSubmit={sendReply} className="px-4 py-3 border-t border-gray-100 flex items-end gap-2 shrink-0">
+          <form onSubmit={sendReply} className="px-5 py-3.5 border-t border-slate-100 flex items-end gap-2 shrink-0">
             <textarea rows={1} value={input} onChange={e => { setInput(e.target.value); broadcastTyping() }}
               onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendReply(e as any) } }}
               placeholder={`Reply to ${inquiry.name}… (Enter to send)`}
-              className="flex-1 px-4 py-2.5 rounded-xl border border-gray-200 text-sm bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all resize-none" />
+              className="flex-1 px-4 py-2.5 rounded-xl border border-slate-200 text-[13.5px] bg-white focus:outline-none focus:ring-2 focus:ring-slate-400 transition-all resize-none placeholder:text-slate-400" />
             <button type="submit" disabled={!input.trim() || sending}
-              className="w-10 h-10 rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-40 text-white flex items-center justify-center transition-all shrink-0">
+              className="w-10 h-10 rounded-xl bg-slate-900 hover:bg-slate-800 disabled:opacity-40 text-white flex items-center justify-center transition-colors shrink-0">
               {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
             </button>
           </form>
         </>
       ) : (
-        <div className="px-5 py-3 border-t border-gray-100 text-center text-xs text-gray-400 shrink-0">
+        <div className="px-5 py-3.5 border-t border-slate-100 text-center text-[12px] text-slate-400 shrink-0">
           This request is closed. Change status to reopen.
         </div>
       )}
@@ -1202,52 +1203,52 @@ function ContactDetail({ contact, onBack }: {
   onBack: () => void
 }) {
   return (
-    <div className="flex flex-col h-full bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+    <div className="flex flex-col h-full bg-white overflow-hidden">
       {/* Header */}
-      <div className="flex items-center gap-3 px-4 py-3 border-b border-gray-100 shrink-0">
-        <button onClick={onBack} className="lg:hidden p-1.5 rounded-lg hover:bg-gray-100 text-gray-500 transition-colors">
+      <div className="flex items-center gap-3 px-5 py-3.5 border-b border-slate-100 shrink-0">
+        <button onClick={onBack} className="lg:hidden p-1.5 -ml-1.5 rounded-lg hover:bg-slate-100 text-slate-500 transition-colors">
           <ChevronLeft className="w-4 h-4" />
         </button>
-        <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center shrink-0 shadow-sm">
-          <span className="text-sm font-bold text-white">{contact.name[0]?.toUpperCase() ?? 'C'}</span>
+        <div className={`w-10 h-10 rounded-full bg-gradient-to-br ${avatarGrad(contact.name)} flex items-center justify-center shrink-0 text-[13px] font-semibold text-white`}>
+          <span>{contact.name[0]?.toUpperCase() ?? 'C'}</span>
         </div>
         <div className="min-w-0 flex-1">
-          <p className="font-bold text-gray-900 text-sm truncate">{contact.name}</p>
-          <p className="text-xs text-gray-400 truncate">{contact.email}</p>
+          <p className="font-semibold text-slate-900 text-[15px] truncate">{contact.name}</p>
+          <p className="text-[12.5px] text-slate-400 truncate">{contact.email}</p>
         </div>
-        <span className="shrink-0 inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-violet-50 text-violet-700">
+        <span className="shrink-0 inline-flex items-center text-[11px] font-medium px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">
           Contact form
         </span>
       </div>
 
       {/* Body */}
-      <div className="flex-1 overflow-y-auto p-5 space-y-4">
+      <div className="flex-1 overflow-y-auto p-6 space-y-5">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <div className="rounded-xl bg-gray-50 border border-gray-100 px-4 py-3">
-            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Role</p>
-            <p className="text-sm font-semibold text-gray-800">{contact.role || '—'}</p>
+          <div className="rounded-xl bg-slate-50 px-4 py-3">
+            <p className="text-[11px] font-medium text-slate-400 mb-1">Role</p>
+            <p className="text-[13.5px] font-medium text-slate-800">{contact.role || '—'}</p>
           </div>
-          <div className="rounded-xl bg-gray-50 border border-gray-100 px-4 py-3">
-            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Received</p>
-            <p className="text-sm font-semibold text-gray-800">{format(contact.created_at, 'd MMM yyyy, h:mm a')}</p>
+          <div className="rounded-xl bg-slate-50 px-4 py-3">
+            <p className="text-[11px] font-medium text-slate-400 mb-1">Received</p>
+            <p className="text-[13.5px] font-medium text-slate-800">{format(contact.created_at, 'd MMM yyyy, h:mm a')}</p>
           </div>
-          <div className="sm:col-span-2 rounded-xl bg-gray-50 border border-gray-100 px-4 py-3">
-            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Subject</p>
-            <p className="text-sm font-semibold text-gray-800">{contact.subject || 'No subject'}</p>
+          <div className="sm:col-span-2 rounded-xl bg-slate-50 px-4 py-3">
+            <p className="text-[11px] font-medium text-slate-400 mb-1">Subject</p>
+            <p className="text-[13.5px] font-medium text-slate-800">{contact.subject || 'No subject'}</p>
           </div>
         </div>
 
         <div>
-          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">Message</p>
-          <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap bg-gray-50 border border-gray-100 rounded-xl p-4">{contact.message}</p>
+          <p className="text-[11px] font-medium text-slate-400 mb-2">Message</p>
+          <p className="text-[13.5px] text-slate-700 leading-relaxed whitespace-pre-wrap bg-slate-50 rounded-xl p-4">{contact.message}</p>
         </div>
       </div>
 
       {/* Footer — reply via email */}
-      <div className="px-5 py-3 border-t border-gray-100 shrink-0">
+      <div className="px-5 py-3.5 border-t border-slate-100 shrink-0">
         <a
           href={`mailto:${contact.email}?subject=${encodeURIComponent(`Re: ${contact.subject || 'Your message'}`)}`}
-          className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold transition-colors"
+          className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-[13.5px] font-medium transition-colors"
         >
           <Mail className="w-4 h-4" /> Reply via Email
         </a>
@@ -1266,7 +1267,7 @@ interface InboxItem {
   name: string
   subtitle: string
   body: string
-  status: 'open' | 'replied' | 'closed'
+  status: 'new' | 'open' | 'replied' | 'closed'
   unread: boolean
   created_at: string
   enquiry?: Enquiry
@@ -1415,6 +1416,7 @@ function InboxTab({ liveState, onOpenThreadChange, initialChatId, onInitialChatC
   }
   const counts = {
     all:     typeFiltered.length,
+    new:     typeFiltered.filter(i => i.status === 'new').length,
     open:    typeFiltered.filter(i => i.status === 'open').length,
     replied: typeFiltered.filter(i => i.status === 'replied').length,
     closed:  typeFiltered.filter(i => i.status === 'closed').length,
@@ -1433,78 +1435,71 @@ function InboxTab({ liveState, onOpenThreadChange, initialChatId, onInitialChatC
   }
 
   return (
-    <div className="flex flex-1 overflow-hidden gap-3">
+    <div className="flex flex-1 overflow-hidden lg:gap-0.5">
       {/* Inbox queue */}
-      <div className={`flex flex-col rounded-xl border border-slate-200 bg-white w-full lg:w-72 xl:w-80 shrink-0 overflow-hidden shadow-[0_1px_2px_rgba(15,23,42,0.04)] ${selected ? 'hidden lg:flex' : 'flex'}`}>
-        <div className="px-3.5 pt-2.5 pb-2 border-b border-slate-100">
-          {/* Header — single line: title + total */}
+      <div className={`flex flex-col bg-white w-full lg:w-[21rem] xl:w-[23rem] shrink-0 overflow-hidden border-r border-slate-200/70 ${selected ? 'hidden lg:flex' : 'flex'}`}>
+        <div className="px-4 pt-3.5 pb-2.5">
           <div className="flex items-center justify-between gap-2">
-            <h2 className="text-[14px] font-bold text-slate-950 leading-tight tracking-tight">Inbox <span className="text-slate-400 font-semibold">({items.length})</span></h2>
-            <span className="text-[10px] uppercase tracking-[0.14em] text-slate-400 font-bold">Enquiries &amp; Chats</span>
+            <h2 className="text-[15px] font-semibold text-slate-900 tracking-tight">Inbox</h2>
+            <span className="text-[11px] font-medium text-slate-400 tabular-nums">{items.length} conversations</span>
           </div>
 
           {/* Type filters */}
-          <div className="mt-2 flex items-center gap-1.5">
-            <span className="shrink-0 text-[9px] uppercase tracking-[0.14em] text-slate-400 font-bold w-8">Type</span>
-            <div className="flex items-center gap-1 flex-wrap min-w-0">
-              {(['all', 'enquiry', 'chat', 'contact'] as const).map(key => {
-                const active = filterType === key
-                return (
-                  <button key={key} onClick={() => setFilterType(key)}
-                    className={`inline-flex items-center gap-1 h-6 px-2 rounded-md text-[11px] font-semibold border transition-all ${
-                      active
-                        ? 'bg-blue-600 text-white border-blue-600 shadow-sm shadow-blue-600/20'
-                        : 'bg-white text-slate-500 border-slate-200 hover:border-slate-300 hover:bg-slate-50 hover:text-slate-700'
-                    }`}>
-                    {key === 'all' ? 'All' : key === 'enquiry' ? 'Enquiries' : key === 'chat' ? 'Chat' : 'Contact'}
-                    <span className={`min-w-[14px] inline-flex items-center justify-center h-[14px] px-0.5 rounded text-[9px] font-bold tabular-nums ${
-                      active ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-500'
-                    }`}>{typeCounts[key]}</span>
-                  </button>
-                )
-              })}
-            </div>
+          <div className="mt-3 flex items-center gap-1.5">
+            {(['all', 'enquiry', 'chat', 'contact'] as const).map(key => {
+              const active = filterType === key
+              return (
+                <button key={key} onClick={() => setFilterType(key)}
+                  className={`inline-flex items-center gap-1.5 h-7 px-2.5 rounded-lg text-[12px] font-medium transition-colors ${
+                    active
+                      ? 'bg-slate-900 text-white'
+                      : 'text-slate-500 hover:text-slate-800 hover:bg-slate-100'
+                  }`}>
+                  {key === 'all' ? 'All' : key === 'enquiry' ? 'Enquiries' : key === 'chat' ? 'Chat' : 'Contact'}
+                  <span className={`min-w-[16px] inline-flex items-center justify-center h-[16px] px-1 rounded-full text-[10px] font-semibold tabular-nums ${
+                    active ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-500'
+                  }`}>{typeCounts[key]}</span>
+                </button>
+              )
+            })}
           </div>
 
           {/* Status filters */}
           <div className="mt-1.5 flex items-center gap-1.5">
-            <span className="shrink-0 text-[9px] uppercase tracking-[0.14em] text-slate-400 font-bold w-8">Status</span>
-            <div className="flex items-center gap-1 flex-wrap min-w-0">
-              {(['all', 'open', 'replied', 'closed'] as const).map(key => {
-                const active = filterStatus === key
-                return (
-                  <button key={key} onClick={() => setFilterStatus(key)}
-                    className={`inline-flex items-center gap-1 h-6 px-2 rounded-md text-[11px] font-semibold border transition-all ${
-                      active
-                        ? 'bg-slate-900 text-white border-slate-900 shadow-sm'
-                        : 'bg-white text-slate-500 border-slate-200 hover:border-slate-300 hover:bg-slate-50 hover:text-slate-700'
-                    }`}>
-                    {key === 'all' ? 'All' : ENQUIRY_STATUS_META[key].label}
-                    <span className={`min-w-[14px] inline-flex items-center justify-center h-[14px] px-0.5 rounded text-[9px] font-bold tabular-nums ${
-                      active ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-500'
-                    }`}>{counts[key]}</span>
-                  </button>
-                )
-              })}
-            </div>
+            {(['all', 'new', 'open', 'replied', 'closed'] as const).map(key => {
+              const active = filterStatus === key
+              return (
+                <button key={key} onClick={() => setFilterStatus(key)}
+                  className={`inline-flex items-center gap-1 h-6 px-2 rounded-md text-[11px] font-medium transition-colors ${
+                    active
+                      ? 'bg-slate-100 text-slate-900'
+                      : 'text-slate-400 hover:text-slate-700 hover:bg-slate-50'
+                  }`}>
+                  {key === 'all' ? 'All' : ENQUIRY_STATUS_META[key].label}
+                  <span className={`min-w-[14px] inline-flex items-center justify-center h-[14px] px-0.5 rounded text-[10px] font-semibold tabular-nums ${
+                    active ? 'bg-white text-slate-600' : 'text-slate-400'
+                  }`}>{counts[key]}</span>
+                </button>
+              )
+            })}
           </div>
         </div>
 
         {/* Message list */}
-        <div className="flex-1 overflow-y-auto p-2 space-y-1">
+        <div className="flex-1 overflow-y-auto px-2 pb-2 space-y-0.5">
           {loading ? (
-            <div className="space-y-1">
-              {Array.from({ length: 4 }).map((_, i) => (
-                <div key={i} className="h-14 rounded-lg bg-slate-100 animate-pulse" />
+            <div className="space-y-1.5 px-1 pt-1">
+              {Array.from({ length: 5 }).map((_, i) => (
+                <div key={i} className="h-[60px] rounded-xl bg-slate-100/80 animate-pulse" />
               ))}
             </div>
           ) : filtered.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-full py-10 px-4 text-center">
-              <div className="w-8 h-8 rounded-lg bg-slate-50 border border-slate-100 flex items-center justify-center mb-2">
-                <Inbox className="w-3.5 h-3.5 text-slate-300" />
+            <div className="flex flex-col items-center justify-center h-full py-10 px-6 text-center">
+              <div className="w-10 h-10 rounded-xl bg-slate-50 flex items-center justify-center mb-3">
+                <Inbox className="w-4 h-4 text-slate-300" />
               </div>
-              <p className="text-xs font-semibold text-slate-500">No conversations in this view</p>
-              <p className="text-[11px] text-slate-400 mt-0.5">Try a different filter</p>
+              <p className="text-[13px] font-medium text-slate-600">No conversations here</p>
+              <p className="text-[12px] text-slate-400 mt-1">Try a different filter.</p>
             </div>
           ) : (
             <div className="space-y-0.5">
@@ -1513,52 +1508,47 @@ function InboxTab({ liveState, onOpenThreadChange, initialChatId, onInitialChatC
                 const isActive = `${item.type}:${item.id}` === selectedKey
                 const isChat = item.type === 'chat'
                 const isContact = item.type === 'contact'
-                const typeLabel = isChat ? 'Chat' : isContact ? 'Contact' : 'Enquiry'
-                const typeStyle = isChat ? 'text-emerald-700' : isContact ? 'text-violet-700' : 'text-blue-700'
                 const chatInq = item.chatInquiry
                 const assignedAgent = chatInq?.agent_id ? agents.find(a => a.id === chatInq.agent_id) : null
                 return (
                   <button key={`${item.type}:${item.id}`} onClick={() => setSelectedKey(`${item.type}:${item.id}`)}
-                    className={`w-full text-left rounded-lg px-2 py-2 transition-all flex items-start gap-2.5 ${isActive ? 'bg-blue-50/70 border border-blue-100 shadow-sm' : 'border border-transparent hover:bg-slate-50'}`}>
+                    className={`w-full text-left rounded-xl px-3 py-2.5 transition-colors flex items-start gap-3 ${isActive ? 'bg-slate-100' : 'hover:bg-slate-50'}`}>
                     {/* Avatar */}
-                    <div className={`w-8 h-8 rounded-full bg-gradient-to-br ${avatarGrad(item.name)} flex items-center justify-center shrink-0 text-[10px] font-bold text-white shadow-sm`}>
+                    <div className={`w-9 h-9 rounded-full bg-gradient-to-br ${avatarGrad(item.name)} flex items-center justify-center shrink-0 text-[11px] font-semibold text-white`}>
                       {initialsOf(item.name)}
                     </div>
                     <div className="min-w-0 flex-1">
                       {/* Name + time */}
                       <div className="flex items-center justify-between gap-2">
-                        <p className={`font-semibold text-[12.5px] truncate ${isActive ? 'text-blue-900' : 'text-slate-900'}`}>{item.name}</p>
-                        <span className={`shrink-0 text-[9.5px] tabular-nums ${isActive ? 'text-blue-800/50' : 'text-slate-400'}`}>
+                        <p className={`font-medium text-[13px] truncate ${isActive ? 'text-slate-900' : 'text-slate-800'}`}>{item.name}</p>
+                        <span className="shrink-0 text-[10.5px] tabular-nums text-slate-400">
                           {formatDistanceToNow(new Date(item.created_at), { addSuffix: true })}
                         </span>
                       </div>
                       {/* Preview + badges */}
-                      <div className="mt-0.5 flex items-center gap-1.5 min-w-0">
-                        <p className={`text-[10.5px] truncate min-w-0 flex-1 ${isActive ? 'text-blue-800/70' : 'text-slate-500'}`}>{item.subtitle}</p>
-                        <span className={`shrink-0 inline-flex items-center text-[9px] font-bold px-1 py-px rounded ${typeStyle} ${isActive ? 'bg-white/70' : 'bg-slate-50'}`}>
-                          {typeLabel}
-                        </span>
-                        <span className={`shrink-0 inline-flex items-center gap-1 text-[9px] font-bold px-1 py-px rounded ${isActive ? 'bg-white/70 text-blue-900' : `bg-slate-50 ${s.color}`}`}>
-                          <span className={`w-1 h-1 rounded-full ${s.dot}`} />{s.label}
+                      <div className="mt-1 flex items-center gap-1.5 min-w-0">
+                        <p className={`text-[12px] truncate min-w-0 flex-1 ${isActive ? 'text-slate-600' : 'text-slate-500'}`}>{item.subtitle}</p>
+                        <span className={`shrink-0 inline-flex items-center gap-1 text-[10.5px] font-medium ${s.color}`}>
+                          <span className={`w-1.5 h-1.5 rounded-full ${s.dot}`} />{s.label}
                         </span>
                         {isChat && chatInq?.agent_status === 'queued' && (
-                          <span className={`shrink-0 inline-flex items-center gap-0.5 text-[9px] font-bold px-1 py-px rounded ${isActive ? 'bg-white/70 text-amber-700' : 'bg-amber-50 text-amber-700'}`}>
-                            <Clock className="w-2 h-2" />Queued
+                          <span className="shrink-0 inline-flex items-center gap-1 text-[10.5px] font-medium text-amber-600">
+                            <Clock className="w-3 h-3" />Queued
                           </span>
                         )}
                         {isChat && assignedAgent && (
-                          <span className={`shrink-0 inline-flex items-center gap-0.5 text-[9px] font-bold px-1 py-px rounded ${isActive ? 'bg-white/70 text-blue-700' : 'bg-blue-50 text-blue-700'}`}>
-                            <User className="w-2 h-2" />{assignedAgent.name.split(' ')[0]}
+                          <span className="shrink-0 inline-flex items-center gap-1 text-[10.5px] font-medium text-slate-400">
+                            <User className="w-3 h-3" />{assignedAgent.name.split(' ')[0]}
                           </span>
                         )}
                       </div>
                       {/* Body preview (only when present) */}
                       {item.body && (
-                        <p className={`text-[10px] mt-0.5 line-clamp-1 ${isActive ? 'text-blue-800/50' : 'text-slate-400'}`}>{item.body}</p>
+                        <p className={`text-[11.5px] mt-0.5 line-clamp-1 ${isActive ? 'text-slate-500' : 'text-slate-400'}`}>{item.body}</p>
                       )}
                     </div>
                     {(isChat || isContact) && item.unread && (
-                      <span className={`mt-1.5 shrink-0 size-1.5 rounded-full ${isActive ? 'bg-blue-500' : 'bg-emerald-500'}`} title="Unread" aria-label="Unread" />
+                      <span className="mt-1 shrink-0 size-2 rounded-full bg-sky-500" title="Unread" aria-label="Unread" />
                     )}
                   </button>
                 )
@@ -1569,7 +1559,7 @@ function InboxTab({ liveState, onOpenThreadChange, initialChatId, onInitialChatC
       </div>
 
       {/* Detail */}
-      <div className={`flex-1 min-w-0 p-3 ${selected ? 'flex' : 'hidden lg:flex'} flex-col`}>
+      <div className={`flex-1 min-w-0 ${selected ? 'flex' : 'hidden lg:flex'} flex-col`}>
         {selected ? (
           selected.type === 'chat' && selected.chatInquiry ? (
             <ChatRequestDetail key={selected.id} inquiry={selected.chatInquiry}
@@ -1587,12 +1577,12 @@ function InboxTab({ liveState, onOpenThreadChange, initialChatId, onInitialChatC
               onStatusChange={handleEnquiryStatusChange} />
           ) : null
         ) : (
-          <div className="flex-1 flex flex-col items-center justify-center bg-white rounded-xl border border-slate-200 shadow-[0_1px_2px_rgba(15,23,42,0.04)] text-center px-6 h-full">
-            <div className="w-12 h-12 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-center mb-3">
-              <MessageSquare className="w-5 h-5 text-slate-300" />
+          <div className="flex-1 flex flex-col items-center justify-center px-6 text-center">
+            <div className="w-14 h-14 rounded-2xl bg-slate-50 flex items-center justify-center mb-4">
+              <MessageSquare className="w-6 h-6 text-slate-300" />
             </div>
-            <p className="font-semibold text-slate-700 mb-1">Select a conversation</p>
-            <p className="text-[13px] text-slate-400 max-w-xs">Choose an enquiry or chat from the list to view and reply.</p>
+            <p className="text-[15px] font-medium text-slate-700 mb-1">Select a conversation</p>
+            <p className="text-[13px] text-slate-400 max-w-xs leading-relaxed">Choose an enquiry or chat from the list to view and reply.</p>
           </div>
         )}
       </div>

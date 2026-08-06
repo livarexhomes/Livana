@@ -63,7 +63,7 @@ export default function AdminHeader({ title, subtitle, action, pendingCount = 0 
       supabase.from('landlords').select('id, full_name').eq('status', 'pending').order('created_at', { ascending: false }).limit(5),
       supabase.from('landlords').select('id, full_name, created_at').gte('created_at', cutoff).order('created_at', { ascending: false }).limit(5),
       supabase.from('tenants').select('id, full_name, created_at').gte('created_at', cutoff).order('created_at', { ascending: false }).limit(5),
-      supabase.from('enquiries').select('id, message, status, properties(title)').eq('status', 'open').order('created_at', { ascending: false }).limit(5),
+      supabase.from('enquiries').select('id, message, status, properties(title)').in('status', ['new', 'open']).order('created_at', { ascending: false }).limit(5),
       supabase.from('support_tickets').select('id, subject, created_at, tenants(full_name)').eq('status', 'open').order('created_at', { ascending: false }).limit(5),
       supabase.from('contact_messages').select('id, name, subject, created_at').order('created_at', { ascending: false }).limit(5),
       supabase.from('chat_inquiries').select('id, name, note, read_by_admin, created_at').eq('read_by_admin', false).order('created_at', { ascending: false }).limit(5),

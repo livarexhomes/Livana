@@ -255,7 +255,7 @@ export default function ChatWidget() {
         setAgentThreadLoading(false)
       })
 
-    const channel = supabase.channel(`visitor_chat:${inquiryId}`)
+    const channel = supabase.channel(`admin_chat_inquiry:${inquiryId}`)
       .on('postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'chat_messages', filter: `inquiry_id=eq.${inquiryId}` },
         (payload) => {
@@ -522,7 +522,7 @@ export default function ChatWidget() {
     if (now - typingSentAt.current < 1500) return
     typingSentAt.current = now
     const supabase = createClient()
-    supabase.channel(`visitor_chat:${inquiryId}`)
+    supabase.channel(`admin_chat_inquiry:${inquiryId}`)
       .send({ type: 'broadcast', event: 'typing', payload: { sender: 'visitor' } })
       .catch(() => { /* best-effort */ })
   }

@@ -47,7 +47,7 @@ export default function AdminSidebar({ userEmail, userName }: Props) {
     // Support badge = open enquiries + unread/queued chats (a shared count query).
     const fetchBadge = () => {
       Promise.all([
-        supabase.from('enquiries').select('id', { count: 'exact', head: true }).eq('status', 'open'),
+        supabase.from('enquiries').select('id', { count: 'exact', head: true }).in('status', ['new', 'open']),
         supabase.from('chat_inquiries').select('id', { count: 'exact', head: true })
           .eq('read_by_admin', false)
           .in('agent_status', ['unassigned', 'queued']),
