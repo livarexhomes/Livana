@@ -1488,26 +1488,24 @@ function InboxTab({ liveState, onOpenThreadChange, initialChatId, onInitialChatC
             {/* Divider between Type and Status */}
             <div className="h-px bg-slate-200/70 mx-0.5" />
 
-            {/* Status filters */}
-            <div className="flex items-center gap-1">
-              {(['all', 'new', 'open', 'replied', 'closed'] as const).map(key => {
-                const active = filterStatus === key
-                const meta = key === 'all' ? null : ENQUIRY_STATUS_META[key]
-                return (
-                  <button key={key} onClick={() => setFilterStatus(key)}
-                    className={`inline-flex items-center gap-1.5 h-7 px-2.5 rounded-lg text-[12px] font-medium transition-colors ${
-                      active
-                        ? 'bg-white text-slate-900 shadow-sm border border-slate-200/70'
-                        : 'text-slate-500 hover:text-slate-800 hover:bg-white/60'
-                    }`}>
-                    {meta && <span className={`w-1.5 h-1.5 rounded-full ${meta.dot}`} />}
-                    {key === 'all' ? 'All' : meta!.label}
-                    <span className={`min-w-[14px] inline-flex items-center justify-center h-[14px] px-1 rounded-full text-[10px] font-semibold tabular-nums ${
-                      active ? 'bg-slate-900 text-white' : 'text-slate-400'
-                    }`}>{counts[key]}</span>
-                  </button>
-                )
-              })}
+            {/* Status filter — dropdown select */}
+            <div className="flex items-center gap-1.5">
+              <span className="text-[11px] font-medium text-slate-400 shrink-0">Status</span>
+              <div className="relative flex-1 min-w-0">
+                <select
+                  value={filterStatus}
+                  onChange={e => setFilterStatus(e.target.value)}
+                  className="appearance-none w-full h-7 pl-2.5 pr-7 rounded-lg border border-slate-200 bg-white text-[12px] font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-slate-300 cursor-pointer hover:border-slate-300 transition-colors"
+                >
+                  <option value="all">All statuses</option>
+                  {(['new', 'open', 'replied', 'closed'] as const).map(key => (
+                    <option key={key} value={key}>
+                      {ENQUIRY_STATUS_META[key].label} ({counts[key]})
+                    </option>
+                  ))}
+                </select>
+                <ChevronDownIcon className="absolute right-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 pointer-events-none" />
+              </div>
             </div>
           </div>
         </div>
@@ -2143,21 +2141,20 @@ function PresenceIndicator({ userId }: { userId?: string }) {
 
   const isOnline = !!lastSeenAt && Date.now() - new Date(lastSeenAt).getTime() < 90 * 1000
 
+  // Only show the presence indicator when online — the availability control
+  // already communicates the offline state, so "Offline / Never seen" is
+  // redundant here.
+  if (!isOnline) return null
+
   return (
     <div className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3.5 py-2 shadow-[0_1px_2px_rgba(15,23,42,0.05)]">
-      <span className={`relative flex size-2 ${isOnline ? '' : ''}`}>
-        <span className={`size-2 rounded-full ${isOnline ? 'bg-emerald-500' : 'bg-slate-300'}`} />
-        {isOnline && <span className="absolute inset-0 rounded-full bg-emerald-500 animate-ping opacity-60" />}
+      <span className="relative flex size-2">
+        <span className="size-2 rounded-full bg-emerald-500" />
+        <span className="absolute inset-0 rounded-full bg-emerald-500 animate-ping opacity-60" />
       </span>
       <div className="leading-tight">
-        <p className="text-[13px] font-semibold text-slate-800">{isOnline ? 'Online' : 'Offline'}</p>
-        <p className="text-[11px] text-slate-400">
-          {isOnline
-            ? 'You’re available'
-            : lastSeenAt
-              ? `Last seen ${formatDistanceToNow(new Date(lastSeenAt), { addSuffix: true })}`
-              : 'Never seen'}
-        </p>
+        <p className="text-[13px] font-semibold text-slate-800">Online</p>
+        <p className="text-[11px] text-slate-400">You’re available</p>
       </div>
     </div>
   )
@@ -2249,7 +2246,7 @@ function AvailabilityControl() {
       </button>
 
       {open && (
-        <div className="absolute right-0 top-full mt-1.5 z-30 w-64 rounded-xl border border-slate-200 bg-white p-1.5 shadow-lg" role="menu">
+        <div className="absolute left-0 top-full mt-1.5 z-30 w-64 rounded-xl border border-slate-200 bg-white p-1.5 shadow-lg" role="menu">
           {([
             { mode: 'auto' as const, label: 'Auto', desc: 'Follow live presence + schedule' },
             { mode: 'online' as const, label: 'Online', desc: 'Show support as available' },
