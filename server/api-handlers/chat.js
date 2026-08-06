@@ -6,6 +6,13 @@ function getBotChatUrl() {
   return process.env.CHAT_PROXY_URL || process.env.BOT_CHAT_URL || process.env.CHAT_BASE_URL || ''
 }
 
+function normalizeBotChatUrl(rawUrl) {
+  const url = typeof rawUrl === 'string' ? rawUrl.trim() : ''
+  if (!url) return ''
+  if (/^[a-zA-Z][a-zA-Z0-9+.-]*:/.test(url)) return url
+  return `https://${url}`
+}
+
 function parseJsonBody(body) {
   if (!body) return {}
   if (typeof body === 'string') {
@@ -77,7 +84,7 @@ export default async function handler(req, res) {
 
   const requestBody = parseJsonBody(req.body)
 
-  const BOT_CHAT_URL = getBotChatUrl()
+  const BOT_CHAT_URL = normalizeBotChatUrl(getBotChatUrl())
 
   // Log configured upstream for quick triage in deployment logs
   console.log('[chat] BOT_CHAT_URL=', BOT_CHAT_URL)
