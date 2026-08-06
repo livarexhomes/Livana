@@ -8,8 +8,7 @@ import {
 import AdminSidebar from '../../components/layout/AdminSidebar'
 import AuthGuard from '../../components/auth/AuthGuard'
 import { createClient } from '../../lib/supabase'
-import { subscribeMySupportStatus, getMySupportStatus } from '../../lib/admin-presence'
-import { subscribeLiveSupportPresence, type LiveSupportState, type SupportStatus } from '../../lib/live-support'
+import { subscribeLiveSupportPresence, type LiveSupportState } from '../../lib/live-support'
 import { claimInquiry, unassignInquiry, type AgentAssignmentStatus } from '../../lib/support-assignment'
 import { subscribeToSupportAlerts, playSupportSound, getSoundMuted, setSoundMuted } from '../../lib/support-notifications'
 import { getNotificationSettings } from '../../lib/platform-settings'
@@ -84,6 +83,7 @@ interface Agent {
   role: 'agent' | 'support' | 'admin'
   active: boolean
   created_at: string
+  last_seen_at?: string | null
 }
 
 interface ContactMessage {
@@ -128,12 +128,6 @@ const ENQUIRY_STATUS_META = {
 }
 
 const STATUS_OPTIONS = ['open', 'in_progress', 'resolved', 'closed'] as const
-
-const SUPPORT_STATUS_META: Record<SupportStatus, { label: string; dot: string; bg: string; text: string }> = {
-  online:  { label: 'Online',  dot: 'bg-emerald-500', bg: 'bg-emerald-50',  text: 'text-emerald-700' },
-  away:    { label: 'Away',    dot: 'bg-amber-400',   bg: 'bg-amber-50',    text: 'text-amber-700' },
-  offline: { label: 'Offline', dot: 'bg-slate-400',   bg: 'bg-slate-100',   text: 'text-slate-600' },
-}
 
 // ── Small helpers ─────────────────────────────────────────────────────────────
 
@@ -1444,44 +1438,52 @@ function InboxTab({ liveState, onOpenThreadChange, initialChatId, onInitialChatC
             <span className="text-[11px] font-medium text-slate-400 tabular-nums">{items.length} conversations</span>
           </div>
 
-          {/* Type filters */}
-          <div className="mt-3 flex items-center gap-1.5">
-            {(['all', 'enquiry', 'chat', 'contact'] as const).map(key => {
-              const active = filterType === key
-              return (
-                <button key={key} onClick={() => setFilterType(key)}
-                  className={`inline-flex items-center gap-1.5 h-7 px-2.5 rounded-lg text-[12px] font-medium transition-colors ${
-                    active
-                      ? 'bg-slate-900 text-white'
-                      : 'text-slate-500 hover:text-slate-800 hover:bg-slate-100'
-                  }`}>
-                  {key === 'all' ? 'All' : key === 'enquiry' ? 'Enquiries' : key === 'chat' ? 'Chat' : 'Contact'}
-                  <span className={`min-w-[16px] inline-flex items-center justify-center h-[16px] px-1 rounded-full text-[10px] font-semibold tabular-nums ${
-                    active ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-500'
-                  }`}>{typeCounts[key]}</span>
-                </button>
-              )
-            })}
-          </div>
+          {/* Filter group — Type + Status, visually grouped in one container */}
+          <div className="mt-3 rounded-xl bg-slate-50/80 p-2 space-y-2">
+            {/* Type filters */}
+            <div className="flex items-center gap-1">
+              {(['all', 'enquiry', 'chat', 'contact'] as const).map(key => {
+                const active = filterType === key
+                return (
+                  <button key={key} onClick={() => setFilterType(key)}
+                    className={`inline-flex items-center gap-1.5 h-7 px-2.5 rounded-lg text-[12px] font-medium transition-colors ${
+                      active
+                        ? 'bg-white text-slate-900 shadow-sm border border-slate-200/70'
+                        : 'text-slate-500 hover:text-slate-800 hover:bg-white/60'
+                    }`}>
+                    {key === 'all' ? 'All' : key === 'enquiry' ? 'Enquiries' : key === 'chat' ? 'Chat' : 'Contact'}
+                    <span className={`min-w-[16px] inline-flex items-center justify-center h-[16px] px-1 rounded-full text-[10px] font-semibold tabular-nums ${
+                      active ? 'bg-slate-900 text-white' : 'bg-slate-200/70 text-slate-500'
+                    }`}>{typeCounts[key]}</span>
+                  </button>
+                )
+              })}
+            </div>
 
-          {/* Status filters */}
-          <div className="mt-1.5 flex items-center gap-1.5">
-            {(['all', 'new', 'open', 'replied', 'closed'] as const).map(key => {
-              const active = filterStatus === key
-              return (
-                <button key={key} onClick={() => setFilterStatus(key)}
-                  className={`inline-flex items-center gap-1 h-6 px-2 rounded-md text-[11px] font-medium transition-colors ${
-                    active
-                      ? 'bg-slate-100 text-slate-900'
-                      : 'text-slate-400 hover:text-slate-700 hover:bg-slate-50'
-                  }`}>
-                  {key === 'all' ? 'All' : ENQUIRY_STATUS_META[key].label}
-                  <span className={`min-w-[14px] inline-flex items-center justify-center h-[14px] px-0.5 rounded text-[10px] font-semibold tabular-nums ${
-                    active ? 'bg-white text-slate-600' : 'text-slate-400'
-                  }`}>{counts[key]}</span>
-                </button>
-              )
-            })}
+            {/* Divider between Type and Status */}
+            <div className="h-px bg-slate-200/70 mx-0.5" />
+
+            {/* Status filters */}
+            <div className="flex items-center gap-1">
+              {(['all', 'new', 'open', 'replied', 'closed'] as const).map(key => {
+                const active = filterStatus === key
+                const meta = key === 'all' ? null : ENQUIRY_STATUS_META[key]
+                return (
+                  <button key={key} onClick={() => setFilterStatus(key)}
+                    className={`inline-flex items-center gap-1.5 h-7 px-2.5 rounded-lg text-[12px] font-medium transition-colors ${
+                      active
+                        ? 'bg-white text-slate-900 shadow-sm border border-slate-200/70'
+                        : 'text-slate-500 hover:text-slate-800 hover:bg-white/60'
+                    }`}>
+                    {meta && <span className={`w-1.5 h-1.5 rounded-full ${meta.dot}`} />}
+                    {key === 'all' ? 'All' : meta!.label}
+                    <span className={`min-w-[14px] inline-flex items-center justify-center h-[14px] px-1 rounded-full text-[10px] font-semibold tabular-nums ${
+                      active ? 'bg-slate-900 text-white' : 'text-slate-400'
+                    }`}>{counts[key]}</span>
+                  </button>
+                )
+              })}
+            </div>
           </div>
         </div>
 
@@ -1508,11 +1510,16 @@ function InboxTab({ liveState, onOpenThreadChange, initialChatId, onInitialChatC
                 const isActive = `${item.type}:${item.id}` === selectedKey
                 const isChat = item.type === 'chat'
                 const isContact = item.type === 'contact'
+                const isUnread = (isChat || isContact) && item.unread
                 const chatInq = item.chatInquiry
                 const assignedAgent = chatInq?.agent_id ? agents.find(a => a.id === chatInq.agent_id) : null
                 return (
                   <button key={`${item.type}:${item.id}`} onClick={() => setSelectedKey(`${item.type}:${item.id}`)}
-                    className={`w-full text-left rounded-xl px-3 py-2.5 transition-colors flex items-start gap-3 ${isActive ? 'bg-slate-100' : 'hover:bg-slate-50'}`}>
+                    className={`relative w-full text-left rounded-xl px-3 py-2.5 transition-colors flex items-start gap-3 ${
+                      isActive ? 'bg-slate-100' : isUnread ? 'bg-sky-50/60 hover:bg-sky-50' : 'hover:bg-slate-50'
+                    }`}>
+                    {/* Unread left accent */}
+                    {isUnread && <span className="absolute left-0 top-2.5 bottom-2.5 w-[3px] rounded-r-full bg-sky-500" />}
                     {/* Avatar */}
                     <div className={`w-9 h-9 rounded-full bg-gradient-to-br ${avatarGrad(item.name)} flex items-center justify-center shrink-0 text-[11px] font-semibold text-white`}>
                       {initialsOf(item.name)}
@@ -1520,14 +1527,14 @@ function InboxTab({ liveState, onOpenThreadChange, initialChatId, onInitialChatC
                     <div className="min-w-0 flex-1">
                       {/* Name + time */}
                       <div className="flex items-center justify-between gap-2">
-                        <p className={`font-medium text-[13px] truncate ${isActive ? 'text-slate-900' : 'text-slate-800'}`}>{item.name}</p>
-                        <span className="shrink-0 text-[10.5px] tabular-nums text-slate-400">
+                        <p className={`truncate ${isUnread ? 'font-semibold text-[13.5px] text-slate-900' : 'font-medium text-[13px] text-slate-800'}`}>{item.name}</p>
+                        <span className={`shrink-0 text-[10.5px] tabular-nums ${isUnread ? 'font-medium text-slate-500' : 'text-slate-400'}`}>
                           {formatDistanceToNow(new Date(item.created_at), { addSuffix: true })}
                         </span>
                       </div>
                       {/* Preview + badges */}
                       <div className="mt-1 flex items-center gap-1.5 min-w-0">
-                        <p className={`text-[12px] truncate min-w-0 flex-1 ${isActive ? 'text-slate-600' : 'text-slate-500'}`}>{item.subtitle}</p>
+                        <p className={`text-[12px] truncate min-w-0 flex-1 ${isUnread ? 'text-slate-600' : 'text-slate-500'}`}>{item.subtitle}</p>
                         <span className={`shrink-0 inline-flex items-center gap-1 text-[10.5px] font-medium ${s.color}`}>
                           <span className={`w-1.5 h-1.5 rounded-full ${s.dot}`} />{s.label}
                         </span>
@@ -1544,12 +1551,9 @@ function InboxTab({ liveState, onOpenThreadChange, initialChatId, onInitialChatC
                       </div>
                       {/* Body preview (only when present) */}
                       {item.body && (
-                        <p className={`text-[11.5px] mt-0.5 line-clamp-1 ${isActive ? 'text-slate-500' : 'text-slate-400'}`}>{item.body}</p>
+                        <p className={`text-[11.5px] mt-0.5 line-clamp-1 ${isUnread ? 'text-slate-500' : 'text-slate-400'}`}>{item.body}</p>
                       )}
                     </div>
-                    {(isChat || isContact) && item.unread && (
-                      <span className="mt-1 shrink-0 size-2 rounded-full bg-sky-500" title="Unread" aria-label="Unread" />
-                    )}
                   </button>
                 )
               })}
@@ -1578,11 +1582,16 @@ function InboxTab({ liveState, onOpenThreadChange, initialChatId, onInitialChatC
           ) : null
         ) : (
           <div className="flex-1 flex flex-col items-center justify-center px-6 text-center">
-            <div className="w-14 h-14 rounded-2xl bg-slate-50 flex items-center justify-center mb-4">
-              <MessageSquare className="w-6 h-6 text-slate-300" />
+            <div className="relative mb-5">
+              <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-slate-100 to-slate-50 border border-slate-200/60 flex items-center justify-center">
+                <MessageSquare className="w-7 h-7 text-slate-300" />
+              </div>
+              <span className="absolute -right-1 -bottom-1 grid size-5 place-items-center rounded-full bg-white border border-slate-200 shadow-sm">
+                <span className="size-2 rounded-full bg-emerald-500" />
+              </span>
             </div>
-            <p className="text-[15px] font-medium text-slate-700 mb-1">Select a conversation</p>
-            <p className="text-[13px] text-slate-400 max-w-xs leading-relaxed">Choose an enquiry or chat from the list to view and reply.</p>
+            <p className="text-[15px] font-semibold text-slate-800">Select a conversation</p>
+            <p className="text-[13px] text-slate-400 max-w-[260px] leading-relaxed mt-1">Choose an enquiry or chat from the list to view and reply.</p>
           </div>
         )}
       </div>
@@ -1851,7 +1860,6 @@ export default function AdminSupportPage() {
   const [openCount, setOpenCount]     = useState(0)
   const [chatOpenCount, setChatOpenCount] = useState(0)
   const [contactCount, setContactCount]   = useState(0)
-  const [supportStatus, setSupportStatus] = useState<SupportStatus>(getMySupportStatus)
   const [liveState, setLiveState] = useState<LiveSupportState>({
     status: 'offline', online: false, onlineAgents: [], awayAgents: [], agentCount: 0,
   })
@@ -1861,10 +1869,6 @@ export default function AdminSupportPage() {
   // tab consumes it as its initial selection.
   const [pendingChatId, setPendingChatId] = useState<string | null>(null)
   const { toast } = useToast()
-
-  useEffect(() => {
-    return subscribeMySupportStatus(setSupportStatus)
-  }, [])
 
   useEffect(() => {
     return subscribeLiveSupportPresence(setLiveState)
@@ -1965,92 +1969,89 @@ export default function AdminSupportPage() {
         <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
           {/* Page header */}
           <header className="bg-white border-b border-slate-200 shrink-0">
-            <div className="px-4 md:px-6 py-3.5">
-              <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
+            <div className="px-4 md:px-6 py-4">
+              <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
                 <div className="min-w-0">
-                  <h1 className="text-lg font-bold text-slate-950 tracking-tight">Support &amp; Inbox</h1>
+                  <h1 className="text-[19px] font-bold text-slate-900 tracking-tight">Support &amp; Inbox</h1>
                   <p className="mt-0.5 text-[13px] text-slate-500">Manage customer enquiries and conversations.</p>
                 </div>
                 <div className="flex items-center gap-2.5 shrink-0 flex-wrap">
-                  {/* Support status indicator — auto-managed via admin presence */}
-                  <div className="relative group">
-                    <span className={`inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 shadow-[0_1px_2px_rgba(15,23,42,0.04)] cursor-default ${SUPPORT_STATUS_META[supportStatus].text}`}>
-                      <span className={`w-2 h-2 rounded-full ${SUPPORT_STATUS_META[supportStatus].dot} ${supportStatus === 'online' ? 'animate-pulse' : ''}`} />
-                      <span className="text-[9px] uppercase tracking-[0.14em] font-bold leading-none">
-                        You · {SUPPORT_STATUS_META[supportStatus].label}
-                        {onlineAgentCount > 1 ? ` · ${onlineAgentCount} agents online` : ''}
-                      </span>
-                    </span>
-                    {/* Legend: what each status means */}
-                    <div className="absolute right-0 top-full mt-1.5 z-20 hidden group-hover:block w-52 rounded-lg border border-slate-200 bg-white p-2.5 shadow-lg">
-                      <p className="text-[9px] uppercase tracking-[0.18em] text-slate-400 font-bold mb-1.5">Support status</p>
-                      {(['online', 'away', 'offline'] as const).map(key => (
-                        <div key={key} className="flex items-center gap-1.5 py-1">
-                          <span className={`w-1.5 h-1.5 rounded-full ${SUPPORT_STATUS_META[key].dot}`} />
-                          <span className="text-[11px] font-semibold text-slate-700">{SUPPORT_STATUS_META[key].label}</span>
-                          <span className="text-[10px] text-slate-400 ml-auto">
-                            {key === 'online' ? 'Logged in' : key === 'away' ? 'Idle 12 min' : 'Signed out'}
-                          </span>
-                        </div>
-                      ))}
-                      <p className="mt-1.5 pt-1.5 border-t border-slate-100 text-[10px] text-slate-400 leading-snug">
-                        Updates automatically from your dashboard activity.
-                      </p>
-                    </div>
-                  </div>
+                  {/* Dynamic presence indicator */}
+                  <PresenceIndicator userId={user?.id} />
                   <button
                     onClick={() => { const next = !muted; setMuted(next); setSoundMuted(next) }}
                     title={muted ? 'Unmute notifications' : 'Mute notifications'}
                     aria-label={muted ? 'Unmute notifications' : 'Mute notifications'}
-                    className="grid size-9 place-items-center rounded-lg border border-slate-200 bg-white text-slate-500 hover:text-slate-800 hover:bg-slate-50 transition-colors shadow-[0_1px_2px_rgba(15,23,42,0.04)]"
+                    className="grid size-10 place-items-center rounded-xl border border-slate-200 bg-white text-slate-500 hover:text-slate-800 hover:bg-slate-50 transition-colors shadow-[0_1px_2px_rgba(15,23,42,0.05)]"
                   >
                     {muted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
                   </button>
-                  <StatCard icon={<HeadphonesIcon className="w-3.5 h-3.5 text-blue-600" />} label="Open Enquiries" count={openCount} />
-                  <StatCard icon={<MessageSquare className="w-3.5 h-3.5 text-emerald-600" />} label="Unread Chats" count={chatOpenCount} />
-                  <StatCard icon={<Mail className="w-3.5 h-3.5 text-violet-600" />} label="Contact Messages" count={contactCount} />
                 </div>
+              </div>
+
+              {/* Unified stat strip */}
+              <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                <StatCard
+                  icon={<HeadphonesIcon className="w-3.5 h-3.5 text-blue-600" />}
+                  label="Open Enquiries"
+                  count={openCount}
+                  highlight={openCount > 0}
+                />
+                <StatCard
+                  icon={<MessageSquare className="w-3.5 h-3.5 text-emerald-600" />}
+                  label="Unread Chats"
+                  count={chatOpenCount}
+                  highlight={chatOpenCount > 0}
+                />
+                <StatCard
+                  icon={<Mail className="w-3.5 h-3.5 text-violet-600" />}
+                  label="Contact Messages"
+                  count={contactCount}
+                  highlight={contactCount > 0}
+                />
               </div>
             </div>
           </header>
 
           {/* Tabs */}
-          <div className="flex items-center gap-1 px-4 md:px-6 py-2 bg-white border-b border-slate-200 shrink-0">
-            <button onClick={() => setTab('support')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[13px] font-semibold transition-all ${
-                tab === 'support' ? 'bg-slate-900 text-white shadow-sm' : 'text-slate-500 hover:text-slate-900 hover:bg-slate-100'
-              }`}>
-              <HeadphonesIcon className="w-3.5 h-3.5" />
-              Support
-            </button>
-            <button onClick={() => setTab('inbox')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[13px] font-semibold transition-all relative ${
-                tab === 'inbox' ? 'bg-slate-900 text-white shadow-sm' : 'text-slate-500 hover:text-slate-900 hover:bg-slate-100'
-              }`}>
-              <Inbox className="w-3.5 h-3.5" />
-              Inbox
-              {inboxCount > 0 && (
-                <span className={`inline-flex items-center justify-center min-w-[17px] h-[17px] px-1 rounded-full text-[9px] font-bold ${
-                  tab === 'inbox' ? 'bg-white/20 text-white' : 'bg-blue-600 text-white'
+          <div className="px-4 md:px-6 py-2.5 bg-white border-b border-slate-200 shrink-0">
+            <div className="inline-flex items-center gap-1 rounded-xl bg-slate-100 p-1">
+              <button onClick={() => setTab('support')}
+                className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-[13px] font-medium transition-all ${
+                  tab === 'support' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-800'
                 }`}>
-                  {inboxCount > 99 ? '99+' : inboxCount}
-                </span>
-              )}
-            </button>
-            <button onClick={() => setTab('agents')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[13px] font-semibold transition-all ${
-                tab === 'agents' ? 'bg-slate-900 text-white shadow-sm' : 'text-slate-500 hover:text-slate-900 hover:bg-slate-100'
-              }`}>
-              <UserPlus className="w-3.5 h-3.5" />
-              Agents
-              {onlineAgentCount > 0 && (
-                <span className={`inline-flex items-center justify-center min-w-[17px] h-[17px] px-1 rounded-full text-[9px] font-bold ${
-                  tab === 'agents' ? 'bg-white/20 text-white' : 'bg-emerald-600 text-white'
+                <HeadphonesIcon className="w-3.5 h-3.5" />
+                Support
+              </button>
+              <button onClick={() => setTab('inbox')}
+                className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-[13px] font-medium transition-all relative ${
+                  tab === 'inbox' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-800'
                 }`}>
-                  {onlineAgentCount}
-                </span>
-              )}
-            </button>
+                <Inbox className="w-3.5 h-3.5" />
+                Inbox
+                {inboxCount > 0 && (
+                  <span className={`inline-flex items-center justify-center min-w-[17px] h-[17px] px-1 rounded-full text-[9px] font-bold ${
+                    tab === 'inbox' ? 'bg-slate-900 text-white' : 'bg-slate-200 text-slate-600'
+                  }`}>
+                    {inboxCount > 99 ? '99+' : inboxCount}
+                  </span>
+                )}
+              </button>
+              <button onClick={() => setTab('agents')}
+                className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-[13px] font-medium transition-all ${
+                  tab === 'agents' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-800'
+                }`}>
+                <UserPlus className="w-3.5 h-3.5" />
+                Agents
+                {onlineAgentCount > 0 && (
+                  <span className={`inline-flex items-center justify-center min-w-[17px] h-[17px] px-1 rounded-full text-[9px] font-bold ${
+                    tab === 'agents' ? 'bg-emerald-500 text-white' : 'bg-emerald-100 text-emerald-700'
+                  }`}>
+                    {onlineAgentCount}
+                  </span>
+                )}
+              </button>
+            </div>
           </div>
 
           {/* Tab content */}
@@ -2067,16 +2068,65 @@ export default function AdminSupportPage() {
   )
 }
 
-/** Compact stat card used in the page header. */
-function StatCard({ icon, label, count }: { icon: React.ReactNode; label: string; count: number }) {
+/** Compact stat card used in the page header. Highlights when there's action needed. */
+function StatCard({ icon, label, count, highlight = false }: { icon: React.ReactNode; label: string; count: number; highlight?: boolean }) {
   return (
-    <div className="flex items-center gap-2.5 rounded-lg border border-slate-200 bg-white px-3 py-2 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
-      <div className="w-7 h-7 rounded-md bg-slate-50 border border-slate-100 flex items-center justify-center shrink-0">
+    <div className={`flex items-center gap-3 rounded-2xl border px-4 py-3 transition-shadow ${highlight ? 'border-slate-200 bg-white shadow-sm' : 'border-slate-200/70 bg-white'}`}>
+      <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${highlight ? 'bg-slate-900' : 'bg-slate-50 border border-slate-100'}`}>
         {icon}
       </div>
       <div className="min-w-0">
-        <p className="text-[9px] uppercase tracking-[0.14em] text-slate-400 font-bold leading-none">{label}</p>
-        <p className="mt-1 text-base font-bold text-slate-900 leading-none tabular-nums">{count}</p>
+        <p className="text-[11px] font-medium text-slate-400 leading-none">{label}</p>
+        <p className={`mt-1.5 text-xl leading-none tabular-nums ${highlight ? 'font-bold text-slate-900' : 'font-semibold text-slate-800'}`}>{count}</p>
+      </div>
+    </div>
+  )
+}
+
+/**
+ * Dynamic support presence indicator. Shows a live green "Online" when the
+ * current agent's roster row has been seen within the last 90s (driven by the
+ * admin-presence heartbeat), otherwise a gray "Offline · last seen X ago"
+ * using relative time. Re-renders on a 30s tick and on roster realtime
+ * updates so the relative time stays fresh.
+ */
+function PresenceIndicator({ userId }: { userId?: string }) {
+  const [lastSeenAt, setLastSeenAt] = useState<string | null>(null)
+  const [, forceTick] = useState(0)
+
+  useEffect(() => {
+    if (!userId) return
+    const supabase = createClient()
+    const load = () => {
+      supabase.from('agents').select('last_seen_at').eq('user_id', userId).maybeSingle()
+        .then(({ data }) => setLastSeenAt((data?.last_seen_at as string | null) ?? null))
+    }
+    load()
+    const ch = supabase.channel('admin_my_last_seen')
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'agents', filter: `user_id=eq.${userId}` },
+        (payload) => setLastSeenAt((payload.new as { last_seen_at?: string | null }).last_seen_at ?? null))
+      .subscribe()
+    const tick = window.setInterval(() => forceTick(t => t + 1), 30 * 1000)
+    return () => { supabase.removeChannel(ch); window.clearInterval(tick) }
+  }, [userId])
+
+  const isOnline = !!lastSeenAt && Date.now() - new Date(lastSeenAt).getTime() < 90 * 1000
+
+  return (
+    <div className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3.5 py-2 shadow-[0_1px_2px_rgba(15,23,42,0.05)]">
+      <span className={`relative flex size-2 ${isOnline ? '' : ''}`}>
+        <span className={`size-2 rounded-full ${isOnline ? 'bg-emerald-500' : 'bg-slate-300'}`} />
+        {isOnline && <span className="absolute inset-0 rounded-full bg-emerald-500 animate-ping opacity-60" />}
+      </span>
+      <div className="leading-tight">
+        <p className="text-[13px] font-semibold text-slate-800">{isOnline ? 'Online' : 'Offline'}</p>
+        <p className="text-[11px] text-slate-400">
+          {isOnline
+            ? 'You’re available'
+            : lastSeenAt
+              ? `Last seen ${formatDistanceToNow(new Date(lastSeenAt), { addSuffix: true })}`
+              : 'Never seen'}
+        </p>
       </div>
     </div>
   )

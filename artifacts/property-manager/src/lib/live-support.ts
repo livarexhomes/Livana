@@ -22,6 +22,8 @@ export interface SupportAgentMeta {
   email?: string
   role: AgentRole
   status: 'online' | 'away'
+  /** When the agent's presence entry was last refreshed (for relative-time UI). */
+  online_at?: string
 }
 
 export interface SupportPresenceState {
@@ -55,6 +57,7 @@ function toAgentMeta(meta: Record<string, unknown>): SupportAgentMeta {
     email: typeof meta.email === 'string' ? meta.email : undefined,
     role: (AGENT_ROLES.includes(meta.role as AgentRole) ? meta.role : 'admin') as AgentRole,
     status: meta.status === 'away' ? 'away' : 'online',
+    online_at: typeof meta.online_at === 'string' ? meta.online_at : undefined,
   }
 }
 

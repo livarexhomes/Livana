@@ -17,6 +17,9 @@ import type { AgentRole, SupportStatus } from './live-support'
 
 const AWAY_AFTER_MS = 12 * 60 * 1000 // 12 minutes idle → away (tunable, 10–15 min range)
 const ACTIVITY_THROTTLE_MS = 1000
+// How often the durable last_seen_at heartbeat fires (and how often the
+// offline fallback in the UI treats a stale timestamp as "offline").
+export const LAST_SEEN_HEARTBEAT_MS = 60 * 1000
 
 /** The agent identity + status carried on this client's presence entry. */
 export type PresenceMeta = {
@@ -72,6 +75,7 @@ export function useAdminPresence(agent?: { id: string; name: string; email: stri
   const statusRef = useRef<SupportStatus>('offline')
   const awayTimer = useRef<number | null>(null)
   const lastActivity = useRef(0)
+  const heartbeatTimer = useRef<number | null>(null)
 
   useEffect(() => {
     const supabase = createClient()
@@ -90,6 +94,19 @@ export function useAdminPresence(agent?: { id: string; name: string; email: stri
           email: agent?.email,
         })
         .catch((err) => console.warn('[admin-presence] track failed:', err))
+    }
+
+    // Durable last-seen: update the agents roster row so "Offline · last seen
+    // X ago" survives the presence channel (which drops on disconnect).
+    const beatLastSeen = () => {
+      if (!agent?.id) return
+      supabase
+        .from('agents')
+        .update({ last_seen_at: new Date().toISOString() })
+        .eq('id', agent.id)
+        .then(({ error }) => {
+          if (error) console.warn('[admin-presence] last_seen heartbeat failed:', error?.message)
+        })
     }
 
     const goAway = () => {
@@ -112,14 +129,17 @@ export function useAdminPresence(agent?: { id: string; name: string; email: stri
     channel.subscribe((status) => {
       if (status === 'SUBSCRIBED') {
         track('online')
+        beatLastSeen()
         lastActivity.current = Date.now()
         awayTimer.current = window.setTimeout(goAway, AWAY_AFTER_MS)
+        heartbeatTimer.current = window.setInterval(beatLastSeen, LAST_SEEN_HEARTBEAT_MS)
         ACTIVITY_EVENTS.forEach((e) => window.addEventListener(e, onActivity, { passive: true }))
       }
     })
 
     return () => {
       if (awayTimer.current) window.clearTimeout(awayTimer.current)
+      if (heartbeatTimer.current) window.clearInterval(heartbeatTimer.current)
       ACTIVITY_EVENTS.forEach((e) => window.removeEventListener(e, onActivity))
       setMySupportStatus('offline')
       channel.untrack().catch(() => {})
