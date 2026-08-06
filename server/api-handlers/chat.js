@@ -13,6 +13,16 @@ function normalizeBotChatUrl(rawUrl) {
   return `https://${url}`
 }
 
+function resolveBotChatUrl(rawUrl) {
+  const normalized = normalizeBotChatUrl(rawUrl)
+  if (!normalized) return ''
+  const parsed = new URL(normalized)
+  if (!parsed.pathname || parsed.pathname === '/') {
+    parsed.pathname = '/api/chat'
+  }
+  return parsed.toString()
+}
+
 function parseJsonBody(body) {
   if (!body) return {}
   if (typeof body === 'string') {
@@ -84,7 +94,7 @@ export default async function handler(req, res) {
 
   const requestBody = parseJsonBody(req.body)
 
-  const BOT_CHAT_URL = normalizeBotChatUrl(getBotChatUrl())
+  const BOT_CHAT_URL = resolveBotChatUrl(getBotChatUrl())
 
   // Log configured upstream for quick triage in deployment logs
   console.log('[chat] BOT_CHAT_URL=', BOT_CHAT_URL)
