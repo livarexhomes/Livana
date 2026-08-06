@@ -2,8 +2,8 @@ import { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import {
   HeadphonesIcon, Send, Loader2, MessageSquare,
   Clock, CheckCircle2, XCircle, User,
-  ChevronLeft, RefreshCw, Inbox, Building2, Mail,
-  UserPlus, Volume2, VolumeX, ShieldCheck, KeyRound, Trash2,
+  ChevronLeft, ChevronDown as ChevronDownIcon, RefreshCw, Inbox, Building2, Mail,
+  UserPlus, Volume2, VolumeX, ShieldCheck, KeyRound, Trash2, Search, X,
 } from 'lucide-react'
 import AdminSidebar from '../../components/layout/AdminSidebar'
 import AuthGuard from '../../components/auth/AuthGuard'
@@ -11,7 +11,10 @@ import { createClient } from '../../lib/supabase'
 import { subscribeLiveSupportPresence, type LiveSupportState } from '../../lib/live-support'
 import { claimInquiry, unassignInquiry, type AgentAssignmentStatus } from '../../lib/support-assignment'
 import { subscribeToSupportAlerts, playSupportSound, getSoundMuted, setSoundMuted } from '../../lib/support-notifications'
-import { getNotificationSettings } from '../../lib/platform-settings'
+import {
+  getNotificationSettings, getSupportAvailability, invalidatePlatformSettings,
+  type SupportAvailability, DEFAULT_AVAILABILITY,
+} from '../../lib/platform-settings'
 import { useToast } from '../../hooks/use-toast'
 import { formatDistanceToNow, format } from 'date-fns'
 
@@ -1325,6 +1328,7 @@ function InboxTab({ liveState, onOpenThreadChange, initialChatId, onInitialChatC
   const [selectedKey, setSelectedKey] = useState<string | null>(null)
   const [filterType, setFilterType]   = useState<'all' | InboxItemType>('all')
   const [filterStatus, setFilterStatus] = useState<string>('all')
+  const [search, setSearch] = useState('')
 
   // Notify the parent of the currently-open thread so the page-level alert
   // handler can suppress toasts for messages in the thread being viewed.
@@ -1397,7 +1401,12 @@ function InboxTab({ liveState, onOpenThreadChange, initialChatId, onInitialChatC
 
   const typeFiltered = filterType === 'all' ? items : items.filter(i => i.type === filterType)
   const statusFiltered = filterStatus === 'all' ? items : items.filter(i => i.status === filterStatus)
-  const filtered = filterStatus === 'all' ? typeFiltered : typeFiltered.filter(i => i.status === filterStatus)
+  const filtered = (filterStatus === 'all' ? typeFiltered : typeFiltered.filter(i => i.status === filterStatus))
+    .filter(i => {
+      const q = search.trim().toLowerCase()
+      if (!q) return true
+      return i.name.toLowerCase().includes(q) || i.subtitle.toLowerCase().includes(q) || i.body.toLowerCase().includes(q)
+    })
   const selected = items.find(i => `${i.type}:${i.id}` === selectedKey) ?? null
 
   // Each chip counts the items that would be visible if it were selected
@@ -1436,6 +1445,22 @@ function InboxTab({ liveState, onOpenThreadChange, initialChatId, onInitialChatC
           <div className="flex items-center justify-between gap-2">
             <h2 className="text-[15px] font-semibold text-slate-900 tracking-tight">Inbox</h2>
             <span className="text-[11px] font-medium text-slate-400 tabular-nums">{items.length} conversations</span>
+          </div>
+
+          {/* Search */}
+          <div className="mt-2.5 relative">
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 pointer-events-none" />
+            <input
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              placeholder="Search conversations…"
+              className="w-full h-8 pl-8 pr-8 rounded-lg border border-slate-200 bg-slate-50/60 text-[12.5px] text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-300 focus:bg-white transition-colors"
+            />
+            {search && (
+              <button onClick={() => setSearch('')} className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
           </div>
 
           {/* Filter group — Type + Status, visually grouped in one container */}
@@ -1515,8 +1540,12 @@ function InboxTab({ liveState, onOpenThreadChange, initialChatId, onInitialChatC
                 const assignedAgent = chatInq?.agent_id ? agents.find(a => a.id === chatInq.agent_id) : null
                 return (
                   <button key={`${item.type}:${item.id}`} onClick={() => setSelectedKey(`${item.type}:${item.id}`)}
-                    className={`relative w-full text-left rounded-xl px-3 py-2.5 transition-colors flex items-start gap-3 ${
-                      isActive ? 'bg-slate-100' : isUnread ? 'bg-sky-50/60 hover:bg-sky-50' : 'hover:bg-slate-50'
+                    className={`relative w-full text-left rounded-xl px-3 py-2.5 transition-all flex items-start gap-3 ${
+                      isActive
+                        ? 'bg-slate-100 shadow-[inset_0_0_0_1px_rgba(15,23,42,0.04)]'
+                        : isUnread
+                          ? 'bg-white border border-slate-200/70 shadow-sm hover:border-slate-300'
+                          : 'hover:bg-slate-50'
                     }`}>
                     {/* Unread left accent */}
                     {isUnread && <span className="absolute left-0 top-2.5 bottom-2.5 w-[3px] rounded-r-full bg-sky-500" />}
@@ -1976,6 +2005,8 @@ export default function AdminSupportPage() {
                   <p className="mt-0.5 text-[13px] text-slate-500">Manage customer enquiries and conversations.</p>
                 </div>
                 <div className="flex items-center gap-2.5 shrink-0 flex-wrap">
+                  {/* Manual availability override (online / offline / back in) */}
+                  <AvailabilityControl />
                   {/* Dynamic presence indicator */}
                   <PresenceIndicator userId={user?.id} />
                   <button
@@ -2128,6 +2159,135 @@ function PresenceIndicator({ userId }: { userId?: string }) {
               : 'Never seen'}
         </p>
       </div>
+    </div>
+  )
+}
+
+/**
+ * Manual support-availability control. Lets an admin override the auto
+ * presence-driven status and tell visitors when support will be back:
+ *   Auto     → driven by realtime presence (+ optional weekly schedule)
+ *   Online   → force-available
+ *   Offline  → force-unavailable
+ *   Back in  → offline, but shows "Back at HH:MM" on the widget
+ * Persists to admin_settings (key: support_availability) so the public
+ * widget can read it. The control lives in the page header.
+ */
+function AvailabilityControl() {
+  const [availability, setAvailability] = useState<SupportAvailability>(DEFAULT_AVAILABILITY)
+  const [open, setOpen] = useState(false)
+  const [saving, setSaving] = useState(false)
+  const [loaded, setLoaded] = useState(false)
+  const ref = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    let mounted = true
+    getSupportAvailability({ refresh: true }).then(a => {
+      if (mounted) { setAvailability(a); setLoaded(true) }
+    })
+    return () => { mounted = false }
+  }, [])
+
+  // Close the dropdown on outside click.
+  useEffect(() => {
+    if (!open) return
+    const onDoc = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
+    }
+    document.addEventListener('mousedown', onDoc)
+    return () => document.removeEventListener('mousedown', onDoc)
+  }, [open])
+
+  const persist = async (next: SupportAvailability) => {
+    setSaving(true)
+    const supabase = createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    const { error } = await supabase.from('admin_settings').upsert({
+      key: 'support_availability',
+      value: next,
+      category: 'support',
+      updated_by: user?.id,
+      updated_at: new Date().toISOString(),
+    }, { onConflict: 'key' })
+    if (error) console.warn('[availability] save failed:', error.message)
+    setAvailability(next)
+    invalidatePlatformSettings()
+    setSaving(false)
+  }
+
+  const setMode = (mode: SupportAvailability['mode']) => {
+    setOpen(false)
+    void persist({ ...availability, mode })
+  }
+
+  const setBackAt = (backAt: string) => {
+    void persist({ ...availability, mode: 'back_in', backAt })
+  }
+
+  // Effective state shown on the closed control.
+  const shown = (() => {
+    if (availability.mode === 'online') return { dot: 'bg-emerald-500', label: 'Online' }
+    if (availability.mode === 'offline') return { dot: 'bg-slate-300', label: 'Offline' }
+    if (availability.mode === 'back_in') return { dot: 'bg-amber-400', label: availability.backAt ? `Back ${availability.backAt}` : 'Back in…' }
+    return { dot: 'bg-sky-500', label: 'Auto' }
+  })()
+
+  return (
+    <div className="relative" ref={ref}>
+      <button
+        onClick={() => setOpen(o => !o)}
+        disabled={!loaded}
+        className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3.5 py-2 shadow-[0_1px_2px_rgba(15,23,42,0.05)] hover:bg-slate-50 transition-colors"
+        title="Set support availability"
+        aria-haspopup="menu"
+        aria-expanded={open}
+      >
+        <span className={`size-2 rounded-full ${shown.dot}`} />
+        <span className="text-[12.5px] font-medium text-slate-700">Support · {shown.label}</span>
+        <ChevronDownIcon className={`w-3.5 h-3.5 text-slate-400 transition-transform ${open ? 'rotate-180' : ''}`} />
+        {saving && <Loader2 className="w-3 h-3 animate-spin text-slate-400" />}
+      </button>
+
+      {open && (
+        <div className="absolute right-0 top-full mt-1.5 z-30 w-64 rounded-xl border border-slate-200 bg-white p-1.5 shadow-lg" role="menu">
+          {([
+            { mode: 'auto' as const, label: 'Auto', desc: 'Follow live presence + schedule' },
+            { mode: 'online' as const, label: 'Online', desc: 'Show support as available' },
+            { mode: 'offline' as const, label: 'Offline', desc: 'Show support as unavailable' },
+            { mode: 'back_in' as const, label: 'Back in…', desc: 'Set when support returns' },
+          ]).map(opt => (
+            <button
+              key={opt.mode}
+              role="menuitem"
+              onClick={() => setMode(opt.mode)}
+              className={`w-full text-left flex items-start gap-2.5 px-2.5 py-2 rounded-lg transition-colors ${
+                availability.mode === opt.mode ? 'bg-slate-100' : 'hover:bg-slate-50'
+              }`}
+            >
+              <span className={`mt-1.5 size-2 rounded-full shrink-0 ${
+                opt.mode === 'online' ? 'bg-emerald-500' : opt.mode === 'offline' ? 'bg-slate-300' : opt.mode === 'back_in' ? 'bg-amber-400' : 'bg-sky-500'
+              }`} />
+              <span className="min-w-0">
+                <span className="block text-[12.5px] font-medium text-slate-800">{opt.label}</span>
+                <span className="block text-[11px] text-slate-400 mt-0.5">{opt.desc}</span>
+              </span>
+            </button>
+          ))}
+
+          {/* Back-in time input */}
+          {availability.mode === 'back_in' && (
+            <div className="mt-1 pt-1.5 border-t border-slate-100 px-2.5 pb-1.5">
+              <label className="block text-[11px] font-medium text-slate-500 mb-1">Back at</label>
+              <input
+                type="time"
+                value={availability.backAt ?? ''}
+                onChange={e => setBackAt(e.target.value)}
+                className="w-full rounded-lg border border-slate-200 px-2.5 py-1.5 text-[12.5px] text-slate-700 focus:outline-none focus:ring-2 focus:ring-slate-400"
+              />
+            </div>
+          )}
+        </div>
+      )}
     </div>
   )
 }

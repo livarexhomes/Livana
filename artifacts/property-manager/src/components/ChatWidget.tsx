@@ -2,7 +2,7 @@ import { useState, useRef, useEffect, useCallback, type ReactNode } from 'react'
 import { X, Send, MessageSquare, Paperclip, ChevronDown, Check, ArrowRight, Loader2, Clock2, Smile } from 'lucide-react'
 import { useLocation, redirect } from '../lib/navigation'
 import { createClient, isSupabaseConfigured } from '../lib/supabase'
-import { getPlatformSettings, getNotificationSettings, phoneToWaLink } from '../lib/platform-settings'
+import { getPlatformSettings, getNotificationSettings, phoneToWaLink, getSupportAvailability, isWithinSchedule, type SupportAvailability, DEFAULT_AVAILABILITY } from '../lib/platform-settings'
 import { subscribeLiveSupportPresence, type LiveSupportState } from '../lib/live-support'
 import { assignChatToAgent } from '../lib/support-assignment'
 
@@ -155,10 +155,14 @@ export default function ChatWidget() {
   // Admin phone (from Settings) used for the header WhatsApp link + fallbacks.
   const [waHref, setWaHref] = useState('https://wa.me/2347061370742?text=Hello%20Livarex!')
 
+  // Manual support-availability override (set by admins in the Support page).
+  const [availability, setAvailability] = useState<SupportAvailability>(DEFAULT_AVAILABILITY)
+
   useEffect(() => {
     getPlatformSettings().then(s => {
       setWaHref(phoneToWaLink(s.phone, 'Hello Livarex!'))
     }).catch(() => { /* keep default */ })
+    getSupportAvailability().then(setAvailability).catch(() => { /* keep default */ })
   }, [])
 
   // ── Agent form state ──────────────────────────────────────────────────────
@@ -620,12 +624,34 @@ export default function ChatWidget() {
   // Back to the welcome quick-actions (keeps any bot/live conversation state).
   const goWelcome = () => { setShowEmoji(false); setView({ name: 'welcome' }) }
 
-  // Presence-driven status line.
-  const presenceLine = liveState.online
+  // Presence-driven status line, honoring the manual availability override set
+  // by admins (Support page → Support · Auto/Online/Offline/Back in).
+  // Effective availability:
+  //   mode 'online'  → always online
+  //   mode 'offline' → always offline
+  //   mode 'back_in' → offline, but tells the visitor when support returns
+  //   mode 'auto'    → live presence; if nobody is present, fall back to the
+  //                    weekly schedule (open → "leave a message", closed →
+  //                    "offline")
+  const availabilityActive = (() => {
+    if (availability.mode === 'online') return 'online' as const
+    if (availability.mode === 'offline') return 'offline' as const
+    if (availability.mode === 'back_in') return 'offline' as const
+    return null
+  })()
+  const withinHours = isWithinSchedule(availability)
+  const effectiveOnline = availabilityActive === 'online' || (availabilityActive === null && liveState.online)
+  const effectiveAway = availabilityActive === null && !liveState.online && liveState.status === 'away'
+  const effectiveOffline = availabilityActive === 'offline' || (availabilityActive === null && !liveState.online && !withinHours)
+  const presenceLine = effectiveOnline
     ? { dot: 'bg-emerald-400', text: `Online · ${liveState.onlineAgents[0]?.name ?? 'agent'} will reply shortly` }
-    : liveState.status === 'away'
+    : effectiveAway
       ? { dot: 'bg-amber-400', text: 'Away · leave a message' }
-      : { dot: 'bg-slate-400', text: 'Offline · leave a message' }
+      : effectiveOffline && availability.mode === 'back_in' && availability.backAt
+        ? { dot: 'bg-slate-400', text: `Offline · back at ${availability.backAt}` }
+        : effectiveOffline
+          ? { dot: 'bg-slate-400', text: 'Offline · leave a message' }
+          : { dot: 'bg-slate-400', text: 'Away · leave a message' }
 
   // Escape closes the panel.
   useEffect(() => {
@@ -1003,9 +1029,15 @@ export default function ChatWidget() {
                         <Clock2 className="w-4 h-4 text-amber-700" />
                       </div>
                       <div>
-                        <p className="m-0 text-xs font-bold text-card-foreground">No support agents available</p>
+                        <p className="m-0 text-xs font-bold text-card-foreground">
+                          {availability.mode === 'back_in' && availability.backAt
+                            ? `Support is offline — back at ${availability.backAt}`
+                            : 'No support agents available'}
+                        </p>
                         <p className="m-0 text-[10.5px] text-muted-foreground">
-                          No support agents are currently available. Please leave your details and we'll get back to you as soon as possible.
+                          {availability.mode === 'back_in' && availability.backAt
+                            ? 'We\'ll be back shortly. Leave your details and we\'ll get back to you as soon as possible.'
+                            : 'No support agents are currently available. Please leave your details and we\'ll get back to you as soon as possible.'}
                         </p>
                       </div>
                     </div>

@@ -63,10 +63,38 @@ export const DEFAULT_LISTING: ListingSettings = {
   agencyFeePercent: 10,
 }
 
+/**
+ * Manual support-availability override + weekly schedule.
+ *
+ * `mode`:
+ *  - 'auto'    → availability is driven purely by realtime presence
+ *  - 'online'  → force-available (shown as online even with no presence)
+ *  - 'offline' → force-unavailable (shown as offline regardless of presence)
+ *  - 'back_in' → offline but with a "back at HH:MM" message visitors see
+ *
+ * `schedule` (optional weekly windows, e.g. Mon–Fri 09:00–17:00 WAT):
+ *  - day: 0 (Sun) … 6 (Sat)
+ *  - open/close: "HH:MM" 24h strings. `open === close` means a 24h window.
+ * A schedule is only consulted when mode is 'auto' and no agent is present.
+ */
+export interface SupportAvailability {
+  mode: 'auto' | 'online' | 'offline' | 'back_in'
+  /** Used when mode === 'back_in' — the local time support returns. */
+  backAt?: string
+  /** Weekly windows; empty array = always open within schedule mode. */
+  schedule: { day: number; open: string; close: string }[]
+}
+
+export const DEFAULT_AVAILABILITY: SupportAvailability = {
+  mode: 'auto',
+  schedule: [],
+}
+
 type Settings = {
   platform: PlatformSettings
   notifications: NotificationSettings
   listing: ListingSettings
+  availability: SupportAvailability
 }
 
 let cache: Settings | null = null
@@ -89,6 +117,29 @@ export async function getListingSettings(options?: { refresh?: boolean }): Promi
   return all.listing
 }
 
+export async function getSupportAvailability(options?: { refresh?: boolean }): Promise<SupportAvailability> {
+  const all = await getSettings(options)
+  return all.availability
+}
+
+/** True when the weekly schedule says support should be open right now. */
+export function isWithinSchedule(availability: SupportAvailability, now = new Date()): boolean {
+  const windows = availability.schedule ?? []
+  if (windows.length === 0) return true
+  const day = now.getDay()
+  const mins = now.getHours() * 60 + now.getMinutes()
+  const todays = windows.filter((w) => w.day === day)
+  if (todays.length === 0) return false
+  return todays.some((w) => {
+    if (w.open === w.close) return true // 24h window
+    const [oh, om] = w.open.split(':').map(Number)
+    const [ch, cm] = w.close.split(':').map(Number)
+    const openMins = oh * 60 + om
+    const closeMins = ch * 60 + cm
+    return mins >= openMins && mins < closeMins
+  })
+}
+
 async function getSettings(options?: { refresh?: boolean }): Promise<Settings> {
   if (cache && !options?.refresh) return cache
   if (inflight && !options?.refresh) return inflight
@@ -98,6 +149,7 @@ async function getSettings(options?: { refresh?: boolean }): Promise<Settings> {
       platform: DEFAULT_PLATFORM,
       notifications: DEFAULT_NOTIFICATIONS,
       listing: DEFAULT_LISTING,
+      availability: DEFAULT_AVAILABILITY,
     }
     try {
       const supabase = createClient()
@@ -115,6 +167,7 @@ async function getSettings(options?: { refresh?: boolean }): Promise<Settings> {
         platform: { ...DEFAULT_PLATFORM, ...((data ?? []).find((r: any) => r.key === 'platform')?.value ?? {}) },
         notifications: { ...DEFAULT_NOTIFICATIONS, ...((data ?? []).find((r: any) => r.key === 'notifications')?.value ?? {}) },
         listing: { ...DEFAULT_LISTING, ...((data ?? []).find((r: any) => r.key === 'listing_rules')?.value ?? {}) },
+        availability: { ...DEFAULT_AVAILABILITY, ...((data ?? []).find((r: any) => r.key === 'support_availability')?.value ?? {}) },
       }
       return cache
     } catch (err) {
