@@ -76,22 +76,42 @@ export function useAdminPresence(agent?: { id: string; name: string; email: stri
   const awayTimer = useRef<number | null>(null)
   const lastActivity = useRef(0)
   const heartbeatTimer = useRef<number | null>(null)
+  // Resolved roster identity (looked up from the current user when `agent`
+  // isn't passed) so presence entries always carry agent_id/name/email.
+  const identityRef = useRef(agent)
 
   useEffect(() => {
     const supabase = createClient()
     const channel = supabase.channel('livarex-admin-presence')
 
+    // If the caller didn't supply a roster identity, resolve it from the
+    // signed-in user's agents row so the widget can name the online agent.
+    const resolveIdentity = () => {
+      if (identityRef.current) return Promise.resolve(identityRef.current)
+      return supabase.auth.getUser().then(async ({ data: { user } }) => {
+        if (!user || user.is_anonymous) return undefined
+        const { data } = await supabase
+          .from('agents')
+          .select('id, name, email, role')
+          .eq('user_id', user.id)
+          .maybeSingle()
+        if (data) identityRef.current = data as { id: string; name: string; email: string; role: AgentRole }
+        return identityRef.current
+      }).catch(() => undefined)
+    }
+
     const track = (status: SupportStatus) => {
       statusRef.current = status
       setMySupportStatus(status)
+      const id = identityRef.current
       channel
         .track({
-          role: agent?.role ?? 'admin',
+          role: id?.role ?? agent?.role ?? 'admin',
           status,
           online_at: new Date().toISOString(),
-          agent_id: agent?.id,
-          name: agent?.name,
-          email: agent?.email,
+          agent_id: id?.id ?? agent?.id,
+          name: id?.name ?? agent?.name,
+          email: id?.email ?? agent?.email,
         })
         .catch((err) => console.warn('[admin-presence] track failed:', err))
     }
@@ -99,11 +119,11 @@ export function useAdminPresence(agent?: { id: string; name: string; email: stri
     // Durable last-seen: update the agents roster row so "Offline · last seen
     // X ago" survives the presence channel (which drops on disconnect).
     const beatLastSeen = () => {
-      if (!agent?.id) return
+      if (!identityRef.current?.id) return
       supabase
         .from('agents')
         .update({ last_seen_at: new Date().toISOString() })
-        .eq('id', agent.id)
+        .eq('id', identityRef.current.id)
         .then(({ error }) => {
           if (error) console.warn('[admin-presence] last_seen heartbeat failed:', error?.message)
         })
@@ -126,8 +146,9 @@ export function useAdminPresence(agent?: { id: string; name: string; email: stri
       if (statusRef.current === 'away') track('online')
     }
 
-    channel.subscribe((status) => {
+    channel.subscribe(async (status) => {
       if (status === 'SUBSCRIBED') {
+        await resolveIdentity()
         track('online')
         beatLastSeen()
         lastActivity.current = Date.now()

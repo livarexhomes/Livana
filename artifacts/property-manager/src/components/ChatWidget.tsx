@@ -50,10 +50,10 @@ const CHAT_API_URL = import.meta.env.VITE_CHAT_API_URL
 // ── Quick actions (welcome screen, State 1) ───────────────────────────────────
 
 const ACTIONS = [
-  { icon: '🏠', title: 'Find a Property', msg: 'Show me available verified rentals in Lagos and Ogun.' },
-  { icon: '📅', title: 'Book an Inspection', msg: 'I want to book a property inspection. How do I do that?' },
-  { icon: '🏢', title: 'List My Property', msg: 'I am a landlord and want to list my property on Livarex.' },
-  { icon: '👤', title: 'Talk to an Agent', msg: null, live: true },
+  { icon: '🏠', title: 'Find a Property', desc: 'Browse verified rentals', msg: 'Show me available verified rentals in Lagos and Ogun.' },
+  { icon: '📅', title: 'Book an Inspection', desc: 'Schedule a viewing', msg: 'I want to book a property inspection. How do I do that?' },
+  { icon: '🏢', title: 'List My Property', desc: 'Rent it out on Livarex', msg: 'I am a landlord and want to list my property on Livarex.' },
+  { icon: '👤', title: 'Talk to an Agent', desc: 'Chat with the support team', msg: null, live: true },
 ]
 
 const EMOJI = ['😀', '😂', '😊', '😍', '👍', '👏', '🙏', '🎉', '❤️', '🔥']
@@ -310,6 +310,26 @@ export default function ChatWidget() {
     setPendingImg(null)
   }
 
+  // Presence-driven status line, honoring the manual availability override set
+  // by admins (Support page → Support · Auto/Online/Offline/Back in).
+  // Effective availability:
+  //   mode 'online'  → always online
+  //   mode 'offline' → always offline
+  //   mode 'back_in' → offline, but tells the visitor when support returns
+  //   mode 'auto'    → live presence; if nobody is present, fall back to the
+  //                    weekly schedule (open → "leave a message", closed →
+  //                    "offline")
+  const availabilityActive = (() => {
+    if (availability.mode === 'online') return 'online' as const
+    if (availability.mode === 'offline') return 'offline' as const
+    if (availability.mode === 'back_in') return 'offline' as const
+    return null
+  })()
+  const withinHours = isWithinSchedule(availability)
+  const effectiveOnline = availabilityActive === 'online' || (availabilityActive === null && liveState.online)
+  const effectiveAway = availabilityActive === null && !liveState.online && liveState.status === 'away'
+  const effectiveOffline = availabilityActive === 'offline' || (availabilityActive === null && !liveState.online && !withinHours)
+
   // ── Welcome → live flow ──────────────────────────────────────────────────────
   const goLive = useCallback(() => {
     setLauncherDismissed(true)
@@ -329,8 +349,9 @@ export default function ChatWidget() {
         user = u
       }
 
-      // Online → instant connect, no form. Name comes from identity when known.
-      if (liveState.online) {
+      // Online (honoring the admin's Support · Auto/Online override) →
+      // instant connect, no form. Name comes from identity when known.
+      if (effectiveOnline) {
         const meta = (user?.user_metadata ?? {}) as Record<string, unknown>
         const name = typeof meta.full_name === 'string' && meta.full_name
           ? meta.full_name
@@ -341,12 +362,12 @@ export default function ChatWidget() {
         return
       }
 
-      // No agent online → offline message flow.
+      // No agent available → offline message flow.
       setView({ name: 'offline', stage: 'form' })
     }
     run()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [inquiryId, liveState.online])
+  }, [inquiryId, effectiveOnline])
 
   /** Create (or resume) a live chat thread and enter it immediately. */
   async function connectLiveThread({ name, email, firstMessage }: { name: string; email: string; firstMessage: string }) {
@@ -624,25 +645,6 @@ export default function ChatWidget() {
   // Back to the welcome quick-actions (keeps any bot/live conversation state).
   const goWelcome = () => { setShowEmoji(false); setView({ name: 'welcome' }) }
 
-  // Presence-driven status line, honoring the manual availability override set
-  // by admins (Support page → Support · Auto/Online/Offline/Back in).
-  // Effective availability:
-  //   mode 'online'  → always online
-  //   mode 'offline' → always offline
-  //   mode 'back_in' → offline, but tells the visitor when support returns
-  //   mode 'auto'    → live presence; if nobody is present, fall back to the
-  //                    weekly schedule (open → "leave a message", closed →
-  //                    "offline")
-  const availabilityActive = (() => {
-    if (availability.mode === 'online') return 'online' as const
-    if (availability.mode === 'offline') return 'offline' as const
-    if (availability.mode === 'back_in') return 'offline' as const
-    return null
-  })()
-  const withinHours = isWithinSchedule(availability)
-  const effectiveOnline = availabilityActive === 'online' || (availabilityActive === null && liveState.online)
-  const effectiveAway = availabilityActive === null && !liveState.online && liveState.status === 'away'
-  const effectiveOffline = availabilityActive === 'offline' || (availabilityActive === null && !liveState.online && !withinHours)
   const presenceLine = effectiveOnline
     ? { dot: 'bg-emerald-400', text: `Online · ${liveState.onlineAgents[0]?.name ?? 'agent'} will reply shortly` }
     : effectiveAway
@@ -900,16 +902,20 @@ export default function ChatWidget() {
                 How can we help you today?
               </p>
 
-              {/* Quick actions — the ONLY way to enter a conversation */}
-              <div className="mt-5 grid w-full grid-cols-2 gap-2">
+              {/* Menu list — the ONLY way to enter a conversation */}
+              <div className="mt-5 flex w-full flex-col divide-y divide-border/60 overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
                 {ACTIONS.map(a => (
                   <button
                     key={a.title}
                     onClick={() => a.live ? goLive() : sendMessage(a.msg ?? '', null)}
-                    className="group flex flex-col items-start gap-2 rounded-2xl border border-border bg-card p-3.5 text-left transition-all hover:shadow-md hover:-translate-y-0.5 active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-ring"
+                    className="group flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-muted/60 active:bg-muted focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring"
                   >
-                    <span className="text-xl" aria-hidden>{a.icon}</span>
-                    <span className="cw-chip-title text-[12.5px] font-bold text-card-foreground leading-tight group-hover:text-primary transition-colors">{a.title}</span>
+                    <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-muted text-lg transition-colors group-hover:bg-primary/10" aria-hidden>{a.icon}</span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate text-[13px] font-bold text-card-foreground transition-colors group-hover:text-primary">{a.title}</span>
+                      <span className="mt-0.5 block truncate text-[11px] text-muted-foreground">{a.desc}</span>
+                    </span>
+                    <ArrowRight size={14} className="shrink-0 text-muted-foreground/60 transition-all group-hover:translate-x-0.5 group-hover:text-primary" />
                   </button>
                 ))}
               </div>
