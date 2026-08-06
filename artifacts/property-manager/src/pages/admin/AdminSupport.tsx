@@ -1660,18 +1660,12 @@ function ConfirmAgentDelete({ agent, onConfirm, onCancel, loading }: {
   )
 }
 
-function AgentsTab({ agents, setAgents, liveState, me }: {
+function AgentsTab({ agents, setAgents, liveState, availability }: {
   agents: Agent[]
   setAgents: React.Dispatch<React.SetStateAction<Agent[]>>
   liveState: LiveSupportState
-  me: { userId: string } | null
+  availability: SupportAvailability
 }) {
-  const [newEmail, setNewEmail] = useState('')
-  const [newName, setNewName] = useState('')
-  const [newPassword, setNewPassword] = useState('')
-  const [mode, setMode] = useState<'create' | 'invite'>('create')
-  const [adding, setAdding] = useState(false)
-  const [addMsg, setAddMsg] = useState('')
   const [busyId, setBusyId] = useState<string | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<Agent | null>(null)
   const [deleting, setDeleting] = useState(false)
@@ -1689,43 +1683,6 @@ function AgentsTab({ agents, setAgents, liveState, me }: {
       },
       body: JSON.stringify(body),
     })
-  }
-
-  async function reloadAgents() {
-    const supabase = createClient()
-    const { data } = await supabase.from('agents').select('*').order('created_at', { ascending: false })
-    setAgents((data as Agent[]) ?? [])
-  }
-
-  async function addAgent() {
-    if (adding) return
-    if (!newEmail.trim() || (mode === 'create' && !newPassword.trim())) {
-      setAddMsg(mode === 'create' ? 'Email and password are required' : 'Email is required')
-      return
-    }
-    setAdding(true)
-    setAddMsg('')
-    try {
-      const res = await authedFetch('/api/manage-support-agent',
-        mode === 'create'
-          ? { action: 'create', email: newEmail.trim(), password: newPassword, name: newName.trim() || undefined }
-          : { action: 'invite', email: newEmail.trim(), name: newName.trim() || undefined },
-      )
-      const data = await res.json()
-      if (!res.ok) {
-        setAddMsg(data.error || 'Failed to add agent')
-        return
-      }
-      await reloadAgents()
-      setNewEmail('')
-      setNewName('')
-      setNewPassword('')
-      toast({ title: mode === 'create' ? 'Agent account created' : 'Agent invited', description: 'They can now log in to /admin and handle support chats.' })
-    } catch (err) {
-      setAddMsg(String(err))
-    } finally {
-      setAdding(false)
-    }
   }
 
   async function toggleActive(agent: Agent) {
@@ -1766,67 +1723,48 @@ function AgentsTab({ agents, setAgents, liveState, me }: {
     }
   }
 
+  // Effective availability: the manual override (Support · Auto) wins over
+  // realtime presence when it forces online/offline. In 'auto' mode the
+  // roster reflects live presence (online / away / offline).
+  const forceOnline = availability.mode === 'online'
+  const forceOffline = availability.mode === 'offline' || availability.mode === 'back_in'
   const onlineIds = new Set(liveState.onlineAgents.map(a => a.agent_id).filter(Boolean))
   const awayIds = new Set(liveState.awayAgents.map(a => a.agent_id).filter(Boolean))
+
+  const effectiveOnlineCount = forceOnline ? agents.filter(a => a.active).length : liveState.onlineAgents.length
 
   return (
     <div className="flex-1 overflow-y-auto p-4">
       <div className="max-w-3xl mx-auto space-y-4">
-        {/* Add agent */}
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-[0_1px_2px_rgba(15,23,42,0.04)] p-4">
-          <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-            <UserPlus className="w-4 h-4 text-blue-600" /> Add a support agent
-          </h3>
-          <p className="text-xs text-slate-500 mt-1">
-            Create a brand-new agent account, or invite an existing Livarex account as an agent.
-          </p>
-
-          {/* Mode toggle */}
-          <div className="mt-3 inline-flex items-center gap-1 p-1 rounded-xl bg-slate-100">
-            <button onClick={() => setMode('create')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${mode === 'create' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>
-              Create account
-            </button>
-            <button onClick={() => setMode('invite')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${mode === 'invite' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>
-              Invite existing user
-            </button>
-          </div>
-
-          <div className="mt-3 flex flex-col sm:flex-row gap-2">
-            <input value={newName} onChange={e => setNewName(e.target.value)} placeholder="Display name"
-              className="flex-1 px-3 py-2 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
-            <input value={newEmail} onChange={e => setNewEmail(e.target.value)} placeholder="Email"
-              type="email" className="flex-1 px-3 py-2 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
-            {mode === 'create' && (
-              <input value={newPassword} onChange={e => setNewPassword(e.target.value)} placeholder="Temporary password"
-                type="text" className="flex-1 px-3 py-2 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
-            )}
-            <button onClick={addAgent} disabled={adding || !newEmail.trim() || (mode === 'create' && !newPassword.trim())}
-              className="shrink-0 px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 disabled:opacity-40 text-white text-sm font-semibold transition-colors flex items-center justify-center gap-1.5">
-              {adding ? <Loader2 className="w-4 h-4 animate-spin" /> : <UserPlus className="w-4 h-4" />} {mode === 'create' ? 'Create' : 'Invite'}
-            </button>
-          </div>
-          {addMsg && <p className="mt-2 text-xs text-red-600">{addMsg}</p>}
-        </div>
-
         {/* Roster */}
         <div className="bg-white rounded-2xl border border-slate-200 shadow-[0_1px_2px_rgba(15,23,42,0.04)] overflow-hidden">
           <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-between">
             <h3 className="text-sm font-bold text-slate-900">Agents</h3>
-            <span className="text-[10px] uppercase tracking-widest text-slate-400 font-bold">{agents.length} total · {liveState.onlineAgents.length} online</span>
+            <span className="text-[10px] uppercase tracking-widest text-slate-400 font-bold">{agents.length} total · {effectiveOnlineCount} online</span>
           </div>
           {agents.length === 0 ? (
             <div className="px-4 py-10 text-center">
               <ShieldCheck className="w-8 h-8 text-slate-200 mx-auto mb-2" />
-              <p className="text-sm text-slate-500">No agents yet. Create one above, or the admin will auto-register on login.</p>
+              <p className="text-sm text-slate-500">No agents yet. Add one from Settings → Agents.</p>
             </div>
           ) : (
             <div className="divide-y divide-slate-50">
               {agents.map(agent => {
-                const isOnline = onlineIds.has(agent.id)
-                const isAway = awayIds.has(agent.id)
                 const isBusy = busyId === agent.id
+                // Effective status: manual override → online/offline; else live presence.
+                let status: 'online' | 'away' | 'offline'
+                if (!agent.active) status = 'offline'
+                else if (forceOnline) status = 'online'
+                else if (forceOffline) status = 'offline'
+                else if (onlineIds.has(agent.id)) status = 'online'
+                else if (awayIds.has(agent.id)) status = 'away'
+                else status = 'offline'
+                const statusStyles = status === 'online'
+                  ? 'bg-emerald-50 text-emerald-700'
+                  : status === 'away'
+                    ? 'bg-amber-50 text-amber-700'
+                    : 'bg-slate-100 text-slate-500'
+                const statusDot = status === 'online' ? 'bg-emerald-500' : status === 'away' ? 'bg-amber-400' : 'bg-slate-400'
                 return (
                   <div key={agent.id} className="flex items-center gap-3 px-4 py-3 flex-wrap">
                     <div className="w-9 h-9 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shrink-0 shadow-sm">
@@ -1835,11 +1773,9 @@ function AgentsTab({ agents, setAgents, liveState, me }: {
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2">
                         <p className="font-semibold text-slate-900 text-sm truncate">{agent.name}</p>
-                        <span className={`shrink-0 inline-flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
-                          isOnline ? 'bg-emerald-50 text-emerald-700' : isAway ? 'bg-amber-50 text-amber-700' : 'bg-slate-100 text-slate-500'
-                        }`}>
-                          <span className={`w-1.5 h-1.5 rounded-full ${isOnline ? 'bg-emerald-500' : isAway ? 'bg-amber-400' : 'bg-slate-400'}`} />
-                          {isOnline ? 'Online' : isAway ? 'Away' : 'Offline'}
+                        <span className={`shrink-0 inline-flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded-full ${statusStyles}`}>
+                          <span className={`w-1.5 h-1.5 rounded-full ${statusDot}`} />
+                          {status === 'online' ? 'Online' : status === 'away' ? 'Away' : 'Offline'}
                         </span>
                         <span className={`shrink-0 text-[10px] font-bold px-1.5 py-0.5 rounded-full uppercase ${agent.active ? 'bg-blue-50 text-blue-700' : 'bg-slate-100 text-slate-500'}`}>
                           {agent.role}
@@ -1892,6 +1828,7 @@ export default function AdminSupportPage() {
   })
   const [agents, setAgents] = useState<Agent[]>([])
   const [muted, setMuted] = useState(getSoundMuted)
+  const [availability, setAvailability] = useState<SupportAvailability>(DEFAULT_AVAILABILITY)
   // Set when the admin clicks "Open thread" from the Queued section; the Inbox
   // tab consumes it as its initial selection.
   const [pendingChatId, setPendingChatId] = useState<string | null>(null)
@@ -1963,7 +1900,7 @@ export default function AdminSupportPage() {
 
     // Badge counts
     const fetchCounts = () => {
-      supabase.from('enquiries').select('id', { count: 'exact', head: true }).eq('status', 'open')
+      supabase.from('enquiries').select('id', { count: 'exact', head: true }).in('status', ['new', 'open'])
         .then(({ count }) => setOpenCount(count ?? 0))
       supabase.from('chat_inquiries').select('id', { count: 'exact', head: true }).eq('read_by_admin', false)
         .then(({ count }) => setChatOpenCount(count ?? 0))
@@ -1996,15 +1933,15 @@ export default function AdminSupportPage() {
         <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
           {/* Page header */}
           <header className="bg-white border-b border-slate-200 shrink-0">
-            <div className="px-4 md:px-6 py-4">
-              <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+            <div className="px-4 md:px-6 pt-3 pb-3">
+              <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
                 <div className="min-w-0">
                   <h1 className="text-[19px] font-bold text-slate-900 tracking-tight">Support &amp; Inbox</h1>
                   <p className="mt-0.5 text-[13px] text-slate-500">Manage customer enquiries and conversations.</p>
                 </div>
                 <div className="flex items-center gap-2.5 shrink-0 flex-wrap">
                   {/* Manual availability override (online / offline / back in) */}
-                  <AvailabilityControl />
+                  <AvailabilityControl availability={availability} onChange={setAvailability} />
                   {/* Dynamic presence indicator */}
                   <PresenceIndicator userId={user?.id} />
                   <button
@@ -2019,21 +1956,21 @@ export default function AdminSupportPage() {
               </div>
 
               {/* Unified stat strip */}
-              <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+              <div className="mt-2.5 grid grid-cols-3 gap-2">
                 <StatCard
-                  icon={<HeadphonesIcon className="w-3.5 h-3.5 text-blue-600" />}
+                  icon={<HeadphonesIcon className="w-4 h-4 text-blue-600" />}
                   label="Open Enquiries"
                   count={openCount}
                   highlight={openCount > 0}
                 />
                 <StatCard
-                  icon={<MessageSquare className="w-3.5 h-3.5 text-emerald-600" />}
+                  icon={<MessageSquare className="w-4 h-4 text-emerald-600" />}
                   label="Unread Chats"
                   count={chatOpenCount}
                   highlight={chatOpenCount > 0}
                 />
                 <StatCard
-                  icon={<Mail className="w-3.5 h-3.5 text-violet-600" />}
+                  icon={<Mail className="w-4 h-4 text-violet-600" />}
                   label="Contact Messages"
                   count={contactCount}
                   highlight={contactCount > 0}
@@ -2043,7 +1980,7 @@ export default function AdminSupportPage() {
           </header>
 
           {/* Tabs */}
-          <div className="px-4 md:px-6 py-2.5 bg-white border-b border-slate-200 shrink-0">
+          <div className="px-4 md:px-6 py-2 bg-white border-b border-slate-200 shrink-0">
             <div className="inline-flex items-center gap-1 rounded-xl bg-slate-100 p-1">
               <button onClick={() => setTab('support')}
                 className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-[13px] font-medium transition-all ${
@@ -2088,7 +2025,7 @@ export default function AdminSupportPage() {
             {tab === 'support' ? <SupportTab onOpenQueued={(id) => { setPendingChatId(id); setTab('inbox') }} /> : tab === 'inbox' ? (
               <InboxTab liveState={liveState} onOpenThreadChange={handleOpenThreadChange} initialChatId={pendingChatId} onInitialChatConsumed={() => setPendingChatId(null)} />
             ) : (
-              <AgentsTab agents={agents} setAgents={setAgents} liveState={liveState} me={user ? { userId: user.id ?? '' } : null} />
+              <AgentsTab agents={agents} setAgents={setAgents} liveState={liveState} availability={availability} />
             )}
           </div>
         </div>
@@ -2100,13 +2037,13 @@ export default function AdminSupportPage() {
 /** Compact stat card used in the page header. Highlights when there's action needed. */
 function StatCard({ icon, label, count, highlight = false }: { icon: React.ReactNode; label: string; count: number; highlight?: boolean }) {
   return (
-    <div className={`flex items-center gap-3 rounded-2xl border px-4 py-3 transition-shadow ${highlight ? 'border-slate-200 bg-white shadow-sm' : 'border-slate-200/70 bg-white'}`}>
-      <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${highlight ? 'bg-slate-900' : 'bg-slate-50 border border-slate-100'}`}>
+    <div className={`flex items-center gap-2.5 rounded-xl border px-3 py-2 transition-shadow ${highlight ? 'border-slate-200 bg-white shadow-sm' : 'border-slate-200/70 bg-white'}`}>
+      <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${highlight ? 'bg-slate-900' : 'bg-slate-50 border border-slate-100'}`}>
         {icon}
       </div>
       <div className="min-w-0">
-        <p className="text-[11px] font-medium text-slate-400 leading-none">{label}</p>
-        <p className={`mt-1.5 text-xl leading-none tabular-nums ${highlight ? 'font-bold text-slate-900' : 'font-semibold text-slate-800'}`}>{count}</p>
+        <p className="text-[10.5px] font-medium text-slate-400 leading-none truncate">{label}</p>
+        <p className={`mt-1 text-lg leading-none tabular-nums ${highlight ? 'font-bold text-slate-900' : 'font-semibold text-slate-800'}`}>{count}</p>
       </div>
     </div>
   )
@@ -2170,8 +2107,10 @@ function PresenceIndicator({ userId }: { userId?: string }) {
  * Persists to admin_settings (key: support_availability) so the public
  * widget can read it. The control lives in the page header.
  */
-function AvailabilityControl() {
-  const [availability, setAvailability] = useState<SupportAvailability>(DEFAULT_AVAILABILITY)
+function AvailabilityControl({ availability, onChange }: {
+  availability: SupportAvailability
+  onChange: (next: SupportAvailability) => void
+}) {
   const [open, setOpen] = useState(false)
   const [saving, setSaving] = useState(false)
   const [loaded, setLoaded] = useState(false)
@@ -2180,7 +2119,7 @@ function AvailabilityControl() {
   useEffect(() => {
     let mounted = true
     getSupportAvailability({ refresh: true }).then(a => {
-      if (mounted) { setAvailability(a); setLoaded(true) }
+      if (mounted) { onChange(a); setLoaded(true) }
     })
     return () => { mounted = false }
   }, [])
@@ -2207,7 +2146,7 @@ function AvailabilityControl() {
       updated_at: new Date().toISOString(),
     }, { onConflict: 'key' })
     if (error) console.warn('[availability] save failed:', error.message)
-    setAvailability(next)
+    onChange(next)
     invalidatePlatformSettings()
     setSaving(false)
   }

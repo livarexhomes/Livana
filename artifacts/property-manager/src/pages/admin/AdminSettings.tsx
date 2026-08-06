@@ -4,7 +4,7 @@ import {
   CheckCircle, Mail, Phone, MapPin, User, Wifi,
   Lock, Timer, BellRing, Zap, Image,
   FileText, DollarSign, Hash, Users, BarChart3,
-  ArrowUpRight, AlertCircle,
+  ArrowUpRight, AlertCircle, ShieldCheck, UserPlus,
   Eye, EyeOff, Send, TestTube, Trash2, Plus,
   Key, Smartphone, Webhook, Loader2, Check, X, FileDown,
 } from 'lucide-react'
@@ -20,6 +20,7 @@ const SECTIONS = [
   { id: 'notifications', label: 'Notifications',   icon: Bell       },
   { id: 'email',         label: 'Email (Resend)',  icon: Mail       },
   { id: 'security',      label: 'Security',         icon: Shield     },
+  { id: 'agents',        label: 'Agents',           icon: Users      },
   { id: 'listing',       label: 'Listing Rules',    icon: Globe      },
 ]
 
@@ -221,6 +222,215 @@ function StatusBadge({ status, text }: { status: 'success' | 'error' | 'warning'
       {status === 'warning' && <AlertCircle className="w-3 h-3" />}
       {text}
     </span>
+  )
+}
+
+// ── Agents (support roster) ───────────────────────────────────────────────────
+
+interface AgentSettingsRow {
+  id: string
+  user_id: string
+  name: string
+  email: string
+  role: 'agent' | 'support' | 'admin'
+  active: boolean
+  created_at: string
+}
+
+/**
+ * Add / invite support agents. This is the "Add a support agent" section that
+ * used to live on the Support page — it now lives in Settings → Agents.
+ */
+function AgentSettingsSection() {
+  const [agents, setAgents] = useState<AgentSettingsRow[]>([])
+  const [loading, setLoading] = useState(true)
+  const [newEmail, setNewEmail] = useState('')
+  const [newName, setNewName] = useState('')
+  const [newPassword, setNewPassword] = useState('')
+  const [mode, setMode] = useState<'create' | 'invite'>('create')
+  const [adding, setAdding] = useState(false)
+  const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null)
+
+  useEffect(() => {
+    let mounted = true
+    const supabase = createClient()
+    supabase.from('agents').select('*').order('created_at', { ascending: false })
+      .then(({ data }) => {
+        if (!mounted) return
+        setAgents((data as AgentSettingsRow[]) ?? [])
+        setLoading(false)
+      })
+    return () => { mounted = false }
+  }, [])
+
+  async function reloadAgents() {
+    const supabase = createClient()
+    const { data } = await supabase.from('agents').select('*').order('created_at', { ascending: false })
+    setAgents((data as AgentSettingsRow[]) ?? [])
+  }
+
+  /** Attach the caller's session token so the API can verify they're an admin. */
+  async function authedFetch(url: string, body: unknown) {
+    const supabase = createClient()
+    const { data: { session } } = await supabase.auth.getSession()
+    return fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
+      },
+      body: JSON.stringify(body),
+    })
+  }
+
+  async function addAgent() {
+    if (adding) return
+    if (!newEmail.trim() || (mode === 'create' && !newPassword.trim())) {
+      setMsg({ ok: false, text: mode === 'create' ? 'Email and password are required' : 'Email is required' })
+      return
+    }
+    setAdding(true)
+    setMsg(null)
+    try {
+      const res = await authedFetch('/api/manage-support-agent',
+        mode === 'create'
+          ? { action: 'create', email: newEmail.trim(), password: newPassword, name: newName.trim() || undefined }
+          : { action: 'invite', email: newEmail.trim(), name: newName.trim() || undefined },
+      )
+      const data = await res.json()
+      if (!res.ok) {
+        setMsg({ ok: false, text: data.error || 'Failed to add agent' })
+        return
+      }
+      await reloadAgents()
+      setNewEmail('')
+      setNewName('')
+      setNewPassword('')
+      setMsg({ ok: true, text: mode === 'create' ? 'Agent account created. They can now log in to /admin.' : 'Invitation sent to their email.' })
+    } catch (err) {
+      setMsg({ ok: false, text: String(err) })
+    } finally {
+      setAdding(false)
+    }
+  }
+
+  async function toggleActive(agent: AgentSettingsRow) {
+    const supabase = createClient()
+    await supabase.from('agents').update({ active: !agent.active }).eq('id', agent.id)
+    setAgents(prev => prev.map(a => a.id === agent.id ? { ...a, active: !agent.active } : a))
+  }
+
+  async function removeAgent(agent: AgentSettingsRow) {
+    const res = await authedFetch('/api/manage-support-agent', { action: 'remove', userId: agent.user_id })
+    const data = await res.json()
+    if (!res.ok) {
+      setMsg({ ok: false, text: data.error || 'Could not remove agent' })
+      return
+    }
+    setAgents(prev => prev.filter(a => a.id !== agent.id))
+    setMsg({ ok: true, text: 'Agent removed.' })
+  }
+
+  return (
+    <div>
+      <SectionTitle
+        title="Support Agents"
+        sub="Create brand-new agent accounts, or invite existing Livarex accounts as agents."
+      />
+
+      {/* Add / invite form */}
+      <div className="bg-white border border-gray-200 rounded-xl p-5">
+        <div className="flex items-center gap-2.5 mb-1">
+          <div className="w-7 h-7 rounded-lg bg-gray-100 flex items-center justify-center">
+            <UserPlus className="w-3.5 h-3.5 text-gray-400" strokeWidth={1.8} />
+          </div>
+          <div>
+            <p className="text-sm font-semibold text-gray-900">Add a support agent</p>
+            <p className="text-xs text-gray-400">Create a new account or invite an existing user</p>
+          </div>
+        </div>
+
+        <div className="mt-4 inline-flex items-center gap-1 p-1 rounded-xl bg-gray-100">
+          <button onClick={() => setMode('create')}
+            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${mode === 'create' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
+            Create account
+          </button>
+          <button onClick={() => setMode('invite')}
+            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${mode === 'invite' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
+            Invite existing user
+          </button>
+        </div>
+
+        <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <FieldInput label="Display name" value={newName} onChange={setNewName} icon={User} placeholder="e.g. Adaeze Obi" />
+          <FieldInput label="Email" value={newEmail} onChange={setNewEmail} icon={Mail} placeholder="agent@livarex.com.ng" type="email" />
+          {mode === 'create' && (
+            <div className="sm:col-span-2">
+              <FieldInput label="Temporary password" value={newPassword} onChange={setNewPassword} icon={Key} placeholder="They can change this after first login" type="password" />
+            </div>
+          )}
+        </div>
+
+        {msg && (
+          <p className={`mt-3 text-xs font-medium ${msg.ok ? 'text-green-600' : 'text-red-600'}`}>{msg.text}</p>
+        )}
+
+        <div className="mt-4 flex items-center gap-3">
+          <button onClick={addAgent} disabled={adding || !newEmail.trim() || (mode === 'create' && !newPassword.trim())}
+            className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 disabled:opacity-40 text-white text-sm font-semibold transition-colors">
+            {adding ? <Loader2 className="w-4 h-4 animate-spin" /> : <UserPlus className="w-4 h-4" />} {mode === 'create' ? 'Create account' : 'Send invite'}
+          </button>
+          <p className="text-xs text-gray-400">Agents can log in at /admin and handle support chats.</p>
+        </div>
+      </div>
+
+      {/* Roster */}
+      <div className="mt-4 bg-white border border-gray-200 rounded-xl overflow-hidden">
+        <div className="px-5 py-3.5 border-b border-gray-100 flex items-center justify-between">
+          <p className="text-sm font-semibold text-gray-900">Agent roster</p>
+          <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400">{agents.length} total</span>
+        </div>
+        {loading ? (
+          <div className="px-5 py-8 text-center text-xs text-gray-400">Loading agents…</div>
+        ) : agents.length === 0 ? (
+          <div className="px-5 py-10 text-center">
+            <ShieldCheck className="w-8 h-8 text-gray-200 mx-auto mb-2" />
+            <p className="text-sm text-gray-500">No agents yet. Create one above, or the admin auto-registers on login.</p>
+          </div>
+        ) : (
+          <div className="divide-y divide-gray-50">
+            {agents.map(agent => (
+              <div key={agent.id} className="flex items-center gap-3 px-5 py-3 flex-wrap">
+                <div className="w-9 h-9 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shrink-0">
+                  <span className="text-xs font-bold text-white">{agent.name.split(' ').slice(0, 2).map(w => w[0]).join('').toUpperCase() || '?'}</span>
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2">
+                    <p className="font-semibold text-gray-900 text-sm truncate">{agent.name}</p>
+                    <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full uppercase ${agent.active ? 'bg-blue-50 text-blue-700' : 'bg-gray-100 text-gray-500'}`}>
+                      {agent.role}
+                    </span>
+                  </div>
+                  <p className="text-xs text-gray-400 mt-0.5 truncate">{agent.email}</p>
+                </div>
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <button onClick={() => toggleActive(agent)}
+                    className={`inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-1.5 rounded-lg transition-colors ${
+                      agent.active ? 'bg-gray-100 text-gray-600 hover:bg-gray-200' : 'bg-green-50 text-green-700 hover:bg-green-100'
+                    }`}>
+                    {agent.active ? 'Deactivate' : 'Activate'}
+                  </button>
+                  <button onClick={() => removeAgent(agent)} title="Remove agent"
+                    className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-1.5 rounded-lg border border-gray-200 bg-white text-gray-500 hover:text-red-600 hover:border-red-200 transition-colors">
+                    <Trash2 className="w-3 h-3" /> Remove
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
   )
 }
 
@@ -1003,6 +1213,9 @@ export default function AdminSettings() {
                   </div>
                 </div>
               )}
+
+              {/* ─── AGENTS ─── */}
+              {active === 'agents' && <AgentSettingsSection />}
 
               {/* ─── LISTING RULES ─── */}
               {active === 'listing' && (
