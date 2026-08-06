@@ -1,7 +1,14 @@
 {
-  "$schema": "https://openapi.vercel.sh/vercel.json",
-  "buildCommand": "pnpm --filter @workspace/property-manager run build && pnpm --filter @workspace/property-manager run build:ssr && node scripts/prerender.mjs && node scripts/build-vercel-output.mjs",
+  "buildCommand": "pnpm --filter @workspace/property-manager run build && pnpm --filter @workspace/property-manager run build:ssr && node scripts/prerender.mjs",
+  "outputDirectory": "artifacts/property-manager/dist/public",
   "installCommand": "pnpm install",
   "framework": null,
-  "outputDirectory": ".vercel/output"
+  "functions": {
+    "api/**/*.js": {
+      "maxDuration": 30
+    }
+  },
+  "rewrites": [
+    { "source": "/((?!api/.*).*)", "destination": "/index.html" }
+  ]
 }

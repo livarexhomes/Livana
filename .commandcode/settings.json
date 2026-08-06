@@ -10,7 +10,14 @@
       "Shell(CHAT_PROXY_URL=http://127.0.0.1:9999/api/chat node --test /tmp/commandcode-1000/-workspaces-Livana/d2c0ad32-da30-4dd2-9e2a-879d8a431622/scratchpad/chat-handler.test.mjs 2 >& 1)",
       "Shell(curl -sS -m 25 -o /dev/null -w function URL /api/chat -> %{http_code}\\n https://www.livarex.com.ng/api/chat)",
       "Shell(curl -sSL -m 25 -o /dev/null -w function URL /api/chat (follow) -> %{http_code}\\n https://www.livarex.com.ng/api/chat)",
-      "Shell(curl -sS -i -m 25 -X POST https://www.livarex.com.ng/api/chat -H Content-Type: application/json -d {\"message\":\"hello\"} 2 >& 1)"
+      "Shell(curl -sS -i -m 25 -X POST https://www.livarex.com.ng/api/chat -H Content-Type: application/json -d {\"message\":\"hello\"} 2 >& 1)",
+      "Shell(for:*)",
+      "Shell(do:*)",
+      "Shell(python3 -c  import json,sys d = json.load(sys.stdin) for s in d[:3]: print(s.get('state'), s.get('created_at'), '|', s.get('description') or '')  done)",
+      "Shell(curl -sS -o /dev/null -w \"%{http_code}\\n\" -m 20 \"https://livana-api-server-fkgdg4mm5-livarexhomes-projects.vercel.app\" 2>&1; echo \"---try /api/chat---\"; curl -sS -m 20 \"https://livana-api-server-fkgdg4mm5-livarexhomes-projects.vercel.app/api/chat\" 2>&1 | head -20)",
+      "Shell(curl -sS -H Authorization: token  -H Accept: application/vnd.github.v3+json https://api.github.com/repos/livarexhomes/Livana/commits/5972c0e/check-runs 2 >& 1)",
+      "Shell(python3 -c  import json,sys d = json.load(sys.stdin) for cr in d.get('check_runs', []): print(cr.get('name'), cr.get('conclusion'), '|', (cr.get('output') or {}).get('title',''))  2 >& 1)",
+      "Shell(python3 -c  import json,sys d = json.load(sys.stdin) for dep in d: if dep['sha'].startswith(''): print('id', dep['id'], dep['environment'], dep['created_at'])  done)"
     ],
     "deny": [],
     "defaultMode": "default"
