@@ -12,6 +12,7 @@
 // stays consistent even though presence is mounted in the AdminSidebar.
 
 import { useEffect, useRef } from 'react'
+import { formatDistanceToNow } from 'date-fns'
 import { createClient } from './supabase'
 import type { AgentRole, SupportStatus } from './live-support'
 
@@ -71,6 +72,39 @@ const ACTIVITY_EVENTS = ['mousemove', 'keydown', 'click', 'touchstart'] as const
  * it's included in the presence track so the visitor widget can name the
  * online agent and the inbox can show who is available.
  */
+export type PresenceIndicatorState = {
+  isOnline: boolean
+  label: 'Online' | 'Offline'
+  subLabel: string
+}
+
+export function getPresenceIndicatorState(lastSeenAt: string | null | undefined, now = Date.now()): PresenceIndicatorState {
+  if (!lastSeenAt) {
+    return {
+      isOnline: false,
+      label: 'Offline',
+      subLabel: 'Never seen online',
+    }
+  }
+
+  const lastSeenMs = new Date(lastSeenAt).getTime()
+  const isOnline = Number.isFinite(lastSeenMs) && now - lastSeenMs < 90 * 1000
+
+  if (isOnline) {
+    return {
+      isOnline: true,
+      label: 'Online',
+      subLabel: 'You’re available',
+    }
+  }
+
+  return {
+    isOnline: false,
+    label: 'Offline',
+    subLabel: `Last seen ${formatDistanceToNow(lastSeenMs, { addSuffix: true })}`,
+  }
+}
+
 export function useAdminPresence(agent?: { id: string; name: string; email: string; role: AgentRole }) {
   const statusRef = useRef<SupportStatus>('offline')
   const awayTimer = useRef<number | null>(null)

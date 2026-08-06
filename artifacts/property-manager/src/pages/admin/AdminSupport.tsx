@@ -10,6 +10,7 @@ import AuthGuard from '../../components/auth/AuthGuard'
 import { createClient } from '../../lib/supabase'
 import { subscribeLiveSupportPresence, type LiveSupportState } from '../../lib/live-support'
 import { claimInquiry, unassignInquiry, type AgentAssignmentStatus } from '../../lib/support-assignment'
+import { getPresenceIndicatorState } from '../../lib/admin-presence'
 import { subscribeToSupportAlerts, playSupportSound, getSoundMuted, setSoundMuted } from '../../lib/support-notifications'
 import {
   getNotificationSettings, getSupportAvailability, invalidatePlatformSettings,
@@ -2076,22 +2077,17 @@ function PresenceIndicator({ userId }: { userId?: string }) {
     return () => { supabase.removeChannel(ch); window.clearInterval(tick) }
   }, [userId])
 
-  const isOnline = !!lastSeenAt && Date.now() - new Date(lastSeenAt).getTime() < 90 * 1000
-
-  // Only show the presence indicator when online — the availability control
-  // already communicates the offline state, so "Offline / Never seen" is
-  // redundant here.
-  if (!isOnline) return null
+  const presence = getPresenceIndicatorState(lastSeenAt)
 
   return (
-    <div className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3.5 py-2 shadow-[0_1px_2px_rgba(15,23,42,0.05)]">
+    <div className={`inline-flex items-center gap-2 rounded-xl border px-3.5 py-2 shadow-[0_1px_2px_rgba(15,23,42,0.05)] ${presence.isOnline ? 'border-slate-200 bg-white' : 'border-slate-200/80 bg-slate-50'}`}>
       <span className="relative flex size-2">
-        <span className="size-2 rounded-full bg-emerald-500" />
-        <span className="absolute inset-0 rounded-full bg-emerald-500 animate-ping opacity-60" />
+        <span className={`size-2 rounded-full ${presence.isOnline ? 'bg-emerald-500' : 'bg-slate-400'}`} />
+        {presence.isOnline && <span className="absolute inset-0 rounded-full bg-emerald-500 animate-ping opacity-60" />}
       </span>
       <div className="leading-tight">
-        <p className="text-[13px] font-semibold text-slate-800">Online</p>
-        <p className="text-[11px] text-slate-400">You’re available</p>
+        <p className="text-[13px] font-semibold text-slate-800">{presence.label}</p>
+        <p className="text-[11px] text-slate-400">{presence.subLabel}</p>
       </div>
     </div>
   )
