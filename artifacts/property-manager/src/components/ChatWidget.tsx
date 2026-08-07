@@ -947,7 +947,7 @@ export default function ChatWidget() {
 
                 <button
                   onClick={startChat}
-                  className="cw-action mt-5 inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-yellow-400 to-amber-500 px-4 py-3 text-sm font-bold text-slate-950 shadow-lg shadow-amber-400/20 transition-transform focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-300"
+                  className="cw-action mt-5 inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-blue-600 to-blue-500 px-4 py-3 text-sm font-bold text-white shadow-lg shadow-blue-600/25 transition-transform focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-400"
                 >
                   <span>Start a new conversation</span>
                   <ArrowRight size={16} />
@@ -973,17 +973,6 @@ export default function ChatWidget() {
                       <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.744l7.73-8.835L1.254 2.25H8.08l4.259 5.63L18.244 2.25zm-1.161 17.52h1.833L7.084 4.126H5.117L17.083 19.77z" />
                     </svg>
                   </a>
-                </div>
-              </div>
-
-              <div className="mt-4 grid gap-2">
-                <div className="rounded-3xl bg-gradient-to-r from-yellow-50 via-white to-slate-100 p-4 shadow-[0_16px_40px_rgba(245,158,11,0.12)]">
-                  <p className="text-[11px] uppercase tracking-[0.18em] text-amber-700">Property assistant</p>
-                  <p className="mt-2 text-sm font-semibold text-slate-900">Let Livarex guide your search and connect you with support in seconds.</p>
-                </div>
-                <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] text-slate-500">
-                  <span className="inline-flex items-center gap-2 rounded-full bg-emerald-100 px-3 py-1.5 text-emerald-700">• {presenceLine.text}</span>
-                  <button onClick={browseHelp} className="rounded-full border border-slate-200 bg-white px-3.5 py-2 text-[12px] font-semibold text-slate-700 transition hover:border-sky-300 hover:bg-slate-100">Browse support</button>
                 </div>
               </div>
             </div>
@@ -1186,16 +1175,16 @@ export default function ChatWidget() {
           {/* ── State 2: Chat (bot conversation) ── */}
           {(view.name === 'chat' || view.name === 'menu') && (
             <>
-              {/* Menu / Help / Exit pills */}
-              <div className="flex flex-wrap gap-2 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-[13px] text-slate-700 shadow-sm">
+              {/* Menu / Help / Exit pills — brand blue accents */}
+              <div className="flex flex-wrap gap-2 rounded-2xl border border-blue-100 bg-blue-50/60 px-4 py-3 text-[13px] text-slate-700 shadow-sm">
                 <button onClick={startMenu}
-                  className="rounded-full border border-slate-200 bg-white px-3 py-2 text-[12px] font-semibold text-slate-700 transition hover:border-sky-300 hover:bg-slate-100"
+                  className="rounded-full border border-blue-200 bg-white px-3 py-2 text-[12px] font-semibold text-blue-700 transition hover:border-blue-400 hover:bg-blue-50"
                 >Menu</button>
                 <button onClick={browseHelp}
-                  className="rounded-full border border-slate-200 bg-white px-3 py-2 text-[12px] font-semibold text-slate-700 transition hover:border-sky-300 hover:bg-slate-100"
+                  className="rounded-full border border-blue-200 bg-white px-3 py-2 text-[12px] font-semibold text-blue-700 transition hover:border-blue-400 hover:bg-blue-50"
                 >Help</button>
                 <button onClick={goLanding}
-                  className="rounded-full border border-slate-200 bg-white px-3 py-2 text-[12px] font-semibold text-slate-700 transition hover:border-sky-300 hover:bg-slate-100"
+                  className="rounded-full border border-blue-200 bg-white px-3 py-2 text-[12px] font-semibold text-blue-700 transition hover:border-blue-400 hover:bg-blue-50"
                 >Exit</button>
               </div>
 
@@ -1213,12 +1202,14 @@ export default function ChatWidget() {
                           style={{
                             borderRadius: msg.role === 'user' ? '18px 18px 6px 18px' : '18px 18px 18px 6px',
                             whiteSpace:'pre-wrap',
-                            background: msg.role === 'user' ? 'linear-gradient(135deg,#2563eb,#3b82f6)' : 'hsl(var(--card))',
-                            color: msg.role === 'user' ? '#fff' : 'hsl(var(--card-foreground))',
+                            background: msg.role === 'user'
+                              ? 'linear-gradient(135deg,#2563eb,#3b82f6)'
+                              : 'linear-gradient(135deg,#eff6ff,#dbeafe)',
+                            color: msg.role === 'user' ? '#fff' : '#1e3a5f',
                             boxShadow: msg.role === 'assistant'
-                              ? '0 1px 3px rgba(2,6,23,0.06)'
+                              ? '0 2px 8px rgba(37,99,235,0.10)'
                               : '0 2px 10px rgba(37,99,235,0.28)',
-                            border: msg.role === 'assistant' ? '1px solid hsl(var(--border) / 0.7)' : 'none',
+                            border: msg.role === 'assistant' ? '1px solid rgba(37,99,235,0.12)' : 'none',
                           }}>
                           {msg.role === 'user' ? block.text : renderBotText(block.text)}
                         </div>
@@ -1226,7 +1217,7 @@ export default function ChatWidget() {
                     )}
                     <span className="px-1 text-[9.5px] text-muted-foreground/70">
                       {formatTime(msg.time)}
-                      {msg.role === 'user' && <span className="ml-1 text-emerald-500">✓ Sent</span>}
+                      {msg.role === 'user' && <span className="ml-1 text-blue-600">✓ Sent</span>}
                     </span>
                   </div>
                 </div>
@@ -1237,9 +1228,9 @@ export default function ChatWidget() {
                 <div className="flex items-end gap-2" style={{ animation:'cwFadeUp 0.3s ease both' }}>
                   <Avatar small />
                   <div className="flex max-w-[80%] flex-col gap-1">
-                    <div className="rounded-[18px_18px_18px_6px] border border-border/70 bg-card shadow-[0_1px_3px_rgba(2,6,23,0.06)]">
+                    <div className="rounded-[18px_18px_18px_6px] border border-blue-100/80 bg-gradient-to-br from-white to-blue-50/70 shadow-[0_2px_10px_rgba(37,99,235,0.10)]">
                       <div className="px-4 pt-3 pb-2">
-                        <p className="text-[13px] font-bold text-slate-900">Choose an option below 👇</p>
+                        <p className="text-[13px] font-bold text-[#1e3a5f]">Choose an option below 👇</p>
                       </div>
                       <div className="px-3 pb-2">
                         {MENU_OPTIONS.map(opt => {
@@ -1248,9 +1239,9 @@ export default function ChatWidget() {
                             <button
                               key={opt.title}
                               onClick={() => opt.live ? goLive() : sendMessage(opt.msg ?? '', null)}
-                              className="cw-action group flex w-full items-center gap-3 rounded-2xl px-2.5 py-2.5 text-left transition-colors hover:bg-slate-100 focus-visible:outline-2 focus-visible:outline-ring"
+                              className="cw-action group flex w-full items-center gap-3 rounded-2xl px-2.5 py-2.5 text-left transition-colors hover:bg-blue-50 focus-visible:outline-2 focus-visible:outline-ring"
                             >
-                              <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-blue-500/15 to-indigo-500/15 text-primary">
+                              <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-blue-500/15 to-indigo-500/15 text-blue-600">
                                 <Icon size={16} />
                               </span>
                               <span className="min-w-0">
@@ -1269,7 +1260,7 @@ export default function ChatWidget() {
                         <button
                           key={chip.label}
                           onClick={() => sendMessage(chip.msg, null)}
-                          className="cw-chip rounded-full border border-slate-200 bg-white px-3.5 py-2 text-[12px] font-semibold text-slate-700"
+                          className="cw-chip rounded-full border border-blue-200 bg-white px-3.5 py-2 text-[12px] font-semibold text-blue-700"
                         >
                           <span className="cw-chip-title">{chip.label}</span>
                         </button>
@@ -1283,10 +1274,10 @@ export default function ChatWidget() {
               {loading && (
                 <div className="flex items-end gap-2" style={{ animation:'cwFadeUp 0.25s ease both' }}>
                   <Avatar small />
-                  <div className="rounded-[18px_18px_18px_6px] border border-border/60 bg-card shadow-[0_1px_3px_rgba(2,6,23,0.06)]">
+                  <div className="rounded-[18px_18px_18px_6px] border border-blue-100/80 bg-gradient-to-br from-white to-blue-50/70 shadow-[0_2px_8px_rgba(37,99,235,0.10)]">
                     <div className="px-3.5 py-2.5 flex items-center gap-2">
                       <TypingDots />
-                      <span className="text-[10.5px] text-muted-foreground">Support is typing…</span>
+                      <span className="text-[10.5px] text-[#1e3a5f]">Support is typing…</span>
                     </div>
                   </div>
                 </div>
