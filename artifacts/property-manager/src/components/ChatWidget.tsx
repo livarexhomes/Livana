@@ -647,22 +647,25 @@ export default function ChatWidget() {
 
   /**
    * Enter the chat screen from the landing CTA. The bot greets the visitor
-   * with the standard "what are we doing today" message; further messages go
-   * through the AI chat API as usual.
+   * with the standard "what are we doing today" message; if `openingPrompt`
+   * is given (quick-start buttons), it's sent as the visitor's first message
+   * so the bot goes straight into the relevant flow.
    */
-  function startChat() {
+  function startChat(openingPrompt?: string) {
     setView({ name: 'chat' })
     setShowEmoji(false)
-    setMessages([
-      {
-        role: 'assistant',
-        content: [{
-          type: 'text',
-          text: 'So, what are we doing today? 😀\n\nPlease type in your request using the phrases from the list below, or tap Menu for quick options.',
-        }],
-        time: Date.now(),
-      },
-    ])
+    const greeting: Message = {
+      role: 'assistant',
+      content: [{
+        type: 'text',
+        text: 'So, what are we doing today? 😀\n\nPlease type in your request using the phrases from the list below, or tap Menu for quick options.',
+      }],
+      time: Date.now(),
+    }
+    const firstMessage = openingPrompt && openingPrompt.trim()
+      ? [{ role: 'user' as const, content: [{ type: 'text' as const, text: openingPrompt.trim() }], time: Date.now() }]
+      : []
+    setMessages([greeting, ...firstMessage])
   }
 
   // The composer only ever appears inside an active conversation — never on
@@ -888,7 +891,6 @@ export default function ChatWidget() {
               <span className={`inline-block size-1.5 rounded-full ${presenceLine.dot} shadow-[0_0_6px_rgba(52,211,153,0.9)]`} aria-hidden />
               {presenceLine.text}
             </div>
-            <p className="mt-1 text-[11px] text-white/80">Ask about rentals, book viewings, or get instant support.</p>
           </div>
 
           {/* WhatsApp */}
@@ -945,13 +947,32 @@ export default function ChatWidget() {
                   </div>
                 </div>
 
-                <button
-                  onClick={startChat}
-                  className="cw-action mt-5 inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-blue-600 to-blue-500 px-4 py-3 text-sm font-bold text-white shadow-lg shadow-blue-600/25 transition-transform focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-400"
-                >
-                  <span>Start a new conversation</span>
-                  <ArrowRight size={16} />
-                </button>
+                {/* Trust strip — copy reused from the livarex.com.ng homepage */}
+                <div className="mt-5 flex items-center justify-center gap-1.5 text-[10.5px] font-medium text-slate-500">
+                  <span>Verified landlords</span>
+                  <span className="text-slate-300">·</span>
+                  <span>₦0 agent fees</span>
+                  <span className="text-slate-300">·</span>
+                  <span>&lt;2h response</span>
+                </div>
+
+                {/* Quick-start buttons — each drops the visitor straight into a flow */}
+                <div className="mt-4 grid grid-cols-2 gap-2.5">
+                  <button
+                    onClick={() => startChat('Find a property')}
+                    className="cw-action inline-flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-blue-600 to-blue-500 px-4 py-3 text-sm font-bold text-white shadow-lg shadow-blue-600/25 transition-transform focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-400"
+                  >
+                    <Home size={15} />
+                    <span>Find a rental</span>
+                  </button>
+                  <button
+                    onClick={() => startChat('List my property')}
+                    className="cw-action inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm font-bold text-slate-800 shadow-sm transition-transform hover:border-blue-400 hover:text-blue-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-400"
+                  >
+                    <Building2 size={15} />
+                    <span>List a property</span>
+                  </button>
+                </div>
 
                 {/* Social icons — match the site footer links */}
                 <div className="mt-5 flex items-center justify-center gap-3">

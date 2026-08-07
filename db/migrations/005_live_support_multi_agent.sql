@@ -33,9 +33,10 @@ CREATE TABLE IF NOT EXISTS public.agents (
 
 CREATE INDEX IF NOT EXISTS agents_active_idx ON public.agents (active);
 
--- RLS: any authenticated non-anonymous user can read/update the roster
--- (the chat widget, assignment UI, and roster page all need it). Writes to the
--- roster are only possible via the service-role endpoint.
+-- RLS: any authenticated non-anonymous user can read the roster (the chat
+-- widget, assignment UI, and roster page all need it). Writes to the roster
+-- are only possible via the service-role endpoint or by admins; an agent may
+-- only update their own row (presence heartbeat writes last_seen_at).
 ALTER TABLE public.agents ENABLE ROW LEVEL SECURITY;
 
 DROP POLICY IF EXISTS "auth_select_agents" ON public.agents;
@@ -46,7 +47,8 @@ CREATE POLICY "auth_select_agents"
 DROP POLICY IF EXISTS "auth_update_agents" ON public.agents;
 CREATE POLICY "auth_update_agents"
   ON public.agents FOR UPDATE TO authenticated
-  USING (public.is_not_anonymous()) WITH CHECK (public.is_not_anonymous());
+  USING (public.is_admin() OR user_id = auth.uid())
+  WITH CHECK (public.is_admin() OR user_id = auth.uid());
 
 -- Realtime for the roster (no-op if already a member)
 DO $$

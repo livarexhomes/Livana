@@ -11,6 +11,16 @@ function sendJson(res, status, body) {
   res.end(JSON.stringify(body))
 }
 
+// Basic email sanity check — prevents the endpoint from being used to relay
+// to arbitrary addresses.
+function isValidEmail(email) {
+  return typeof email === 'string' && /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)
+}
+
+// Caps on user-supplied fields so a single request can't send absurd payloads.
+const MAX_MESSAGE_LENGTH = 5000
+const MAX_SUBJECT_LENGTH = 200
+
 function parseJsonBody(req) {
   return new Promise((resolve) => {
     if (typeof req.body === 'string') {
@@ -69,10 +79,12 @@ export default async function handler(req, res) {
   if (!body) return sendJson(res, 400, { error: 'Invalid request body' })
 
   // Resolve the effective Resend key + sender (stored settings win, env falls back).
+  // The `from` address is NEVER taken from the request body — an attacker must
+  // not be able to spoof emails from the Livarex domain.
   const { resolveEmailConfig } = await import('./lib/email-template.js')
   const cfg = await resolveEmailConfig(process.env)
   const apiKey = cfg.apiKey || getEnv('RESEND_API_KEY') || ''
-  const from = body.from || cfg.from || getEnv('RESEND_FROM') || 'Livarex Homes <noreply@livarex.com.ng>'
+  const from = cfg.from || getEnv('RESEND_FROM') || 'Livarex Homes <noreply@livarex.com.ng>'
 
   if (!apiKey) {
     return sendJson(res, 200, { success: true, skipped: true })
@@ -90,11 +102,21 @@ export default async function handler(req, res) {
     channel = '',
   } = body
 
+  // Validate recipient addresses (when provided) so this can't be abused as an
+  // open relay. adminEmail/userEmail are optional (adminEmail skips the admin
+  // notification; userEmail skips the user confirmation).
+  if (adminEmail && !isValidEmail(adminEmail)) {
+    return sendJson(res, 400, { error: 'A valid adminEmail is required' })
+  }
+  if (userEmail && !isValidEmail(userEmail)) {
+    return sendJson(res, 400, { error: 'A valid userEmail is required' })
+  }
+
   const { renderAdminNotificationEmail, renderSupportConfirmationEmail } = await import('./lib/email-template.js')
 
   // Test email — send a simple branded test directly to adminEmail.
   if (event === 'test') {
-    if (!adminEmail) return sendJson(res, 400, { error: 'adminEmail is required for test' })
+    if (!adminEmail || !isValidEmail(adminEmail)) return sendJson(res, 400, { error: 'A valid adminEmail is required for test' })
     const { renderEmail } = await import('./lib/email-template.js')
     const html = renderEmail({
       subject: 'Test email from Livarex',
@@ -135,13 +157,18 @@ export default async function handler(req, res) {
   }
   const meta = eventMeta[event] ?? eventMeta.contact
 
+  const safeSubject = String(subject).slice(0, MAX_SUBJECT_LENGTH)
+  const safeMessage = String(message).slice(0, MAX_MESSAGE_LENGTH)
+  const safeUserName = String(userName).slice(0, 200)
+  const safeChannel = String(channel).slice(0, 100)
+
   const details = [
-    channel && `Channel: ${channel}`,
-    userName && `Name: ${userName}`,
+    safeChannel && `Channel: ${safeChannel}`,
+    safeUserName && `Name: ${safeUserName}`,
     userEmail && `Email: ${userEmail}`,
-    subject && `Subject: ${subject}`,
+    safeSubject && `Subject: ${safeSubject}`,
     ticketId && `Ticket: ${ticketId}`,
-    message && `Message:\n${message}`,
+    safeMessage && `Message:\n${safeMessage}`,
   ].filter(Boolean).join('\n')
 
   const errors = []
@@ -183,8 +210,8 @@ export default async function handler(req, res) {
   if (userEmail) {
     try {
       const html = renderSupportConfirmationEmail({
-        name: userName,
-        subject: subject || undefined,
+        name: safeUserName || undefined,
+        subject: safeSubject || undefined,
         ticketId: ticketId || undefined,
         ticketNo: ticketNo || undefined,
       })
@@ -199,7 +226,7 @@ export default async function handler(req, res) {
           to: userEmail,
           subject: ticketNo
             ? "We've received your support request"
-            : `We received your message${subject ? ` — ${subject}` : ''}`,
+            : `We received your message${safeSubject ? ` — ${safeSubject}` : ''}`,
           html,
         }),
       })

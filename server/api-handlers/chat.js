@@ -9,7 +9,10 @@ function getBotChatUrl() {
 function normalizeBotChatUrl(rawUrl) {
   const url = typeof rawUrl === 'string' ? rawUrl.trim() : ''
   if (!url) return ''
-  if (/^[a-zA-Z][a-zA-Z0-9+.-]*:/.test(url)) return url
+  if (/^https:\/\/[a-z0-9.-]+/i.test(url)) return url
+  // Bare hostnames are treated as https. Any other scheme (http, file, etc.)
+  // is rejected to avoid mixed-content and SSRF-style surprises.
+  if (/^[a-zA-Z][a-zA-Z0-9+.-]*:/.test(url)) return ''
   return `https://${url}`
 }
 
@@ -91,6 +94,16 @@ export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS')
   if (req.method === 'OPTIONS') return res.status(200).end()
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
+
+  // Cap the body size so the open proxy can't be used to push huge payloads
+  // at the upstream bot (or at this function's memory).
+  const rawBody = req.body
+  const bodySize = typeof rawBody === 'string'
+    ? Buffer.byteLength(rawBody)
+    : (req.headers['content-length'] ? Number(req.headers['content-length']) : 0)
+  if (Number.isFinite(bodySize) && bodySize > 100_000) {
+    return res.status(413).json({ error: 'Request body too large' })
+  }
 
   const requestBody = parseJsonBody(req.body)
 

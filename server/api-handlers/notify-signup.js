@@ -59,8 +59,8 @@ export default async function handler(req, res) {
   const body = await parseJsonBody(req)
   const { email, subject, details } = body ?? {}
 
-  if (!email || typeof email !== 'string') {
-    return sendJson(res, 400, { error: 'Missing email' })
+  if (!email || typeof email !== 'string' || !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email.trim())) {
+    return sendJson(res, 400, { error: 'A valid email is required' })
   }
 
   const cfg = await resolveEmailConfig(process.env)
@@ -71,8 +71,8 @@ export default async function handler(req, res) {
     return sendJson(res, 200, { ok: true, skipped: true })
   }
 
-  const alertLabel = subject || 'property alerts'
-  const detailsText = details || 'Verified properties in your chosen area.'
+  const alertLabel = String(subject || 'property alerts').slice(0, 200)
+  const detailsText = String(details || 'Verified properties in your chosen area.').slice(0, 2000)
 
   try {
     const html = renderAlertSignupEmail({ alertLabel, detailsText })

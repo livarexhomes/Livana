@@ -308,7 +308,8 @@ export function renderAdminNotificationEmail({ title, subtitle, details, actionL
     preheader: subtitle || title,
     heading: title,
     lead: subtitle || '',
-    body: `<div style="background:#f8fafc;border:1px solid ${BRAND.border};border-radius:14px;padding:16px 20px;font-size:14px;color:#334155;line-height:1.7;white-space:pre-wrap;">${details || ''}</div>`,
+    // details carries user-supplied content (name, message, etc.) — escape it.
+    body: `<div style="background:#f8fafc;border:1px solid ${BRAND.border};border-radius:14px;padding:16px 20px;font-size:14px;color:#334155;line-height:1.7;white-space:pre-wrap;">${esc(details || '')}</div>`,
     ctaText: actionLabel || 'Open Dashboard',
     ctaUrl: actionUrl || 'https://livarex.com.ng/admin',
     footerNote: eventName ? `${eventName} notification` : 'Admin notification',

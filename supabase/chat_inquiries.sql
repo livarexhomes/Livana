@@ -48,16 +48,16 @@ CREATE POLICY "anon_insert_chat_inquiries"
   ON chat_inquiries FOR INSERT TO anon, authenticated
   WITH CHECK (visitor_id IS NULL OR visitor_id = auth.uid());
 
--- Admins (non-anonymous authenticated users) can read and update all
+-- Admins (real admins, see is_admin()) can read and update all
 DROP POLICY IF EXISTS "auth_select_chat_inquiries" ON chat_inquiries;
 CREATE POLICY "auth_select_chat_inquiries"
   ON chat_inquiries FOR SELECT TO authenticated
-  USING (public.is_not_anonymous());
+  USING (public.is_admin());
 
 DROP POLICY IF EXISTS "auth_update_chat_inquiries" ON chat_inquiries;
 CREATE POLICY "auth_update_chat_inquiries"
   ON chat_inquiries FOR UPDATE TO authenticated
-  USING (public.is_not_anonymous()) WITH CHECK (public.is_not_anonymous());
+  USING (public.is_admin()) WITH CHECK (public.is_admin());
 
 -- Visitors (anonymous sign-in) can read and update only their own inquiry
 DROP POLICY IF EXISTS "visitor_select_own_chat_inquiries" ON chat_inquiries;
@@ -123,21 +123,21 @@ CREATE POLICY "visitor_insert_own_chat_messages"
     )
   );
 
--- Admins (non-anonymous authenticated users) can read/insert/update all
+-- Admins (real admins) can read/insert/update all
 DROP POLICY IF EXISTS "admin_select_chat_messages" ON chat_messages;
 CREATE POLICY "admin_select_chat_messages"
   ON chat_messages FOR SELECT TO authenticated
-  USING (public.is_not_anonymous());
+  USING (public.is_admin());
 
 DROP POLICY IF EXISTS "admin_insert_chat_messages" ON chat_messages;
 CREATE POLICY "admin_insert_chat_messages"
   ON chat_messages FOR INSERT TO authenticated
-  WITH CHECK (sender = 'admin' AND public.is_not_anonymous());
+  WITH CHECK (sender = 'admin' AND public.is_admin());
 
 DROP POLICY IF EXISTS "admin_update_chat_messages" ON chat_messages;
 CREATE POLICY "admin_update_chat_messages"
   ON chat_messages FOR UPDATE TO authenticated
-  USING (public.is_not_anonymous()) WITH CHECK (public.is_not_anonymous());
+  USING (public.is_admin()) WITH CHECK (public.is_admin());
 
 -- Allow realtime on this table (no-op if already a member)
 DO $$

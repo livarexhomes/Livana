@@ -5,7 +5,9 @@ import { getSession, saveSession } from "./sessions.js"
 import { upsertLead, scheduleFollowUp } from "./leads.js"
 import { getConversationHistory } from "./memory.js"
 
-const VERIFY_TOKEN     = process.env.WHATSAPP_VERIFY_TOKEN || "livarex_verify_token"
+// Fail closed: if WHATSAPP_VERIFY_TOKEN isn't configured, webhook
+// verification always fails — no hardcoded fallback token.
+const VERIFY_TOKEN     = process.env.WHATSAPP_VERIFY_TOKEN || ""
 const AGENT_KEYWORDS   = ["agent", "human", "speak to", "call me", "call back", "real person"]
 const GREETING_KEYWORDS = ["hi", "hello", "hey", "good morning", "good afternoon", "good evening", "start", "helo", "howdy", "sup"]
 

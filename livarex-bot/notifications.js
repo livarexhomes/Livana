@@ -25,19 +25,29 @@
 // Supabase sends: { type, table, schema, record, old_record }
 
 import { sendText } from "./whatsapp.js"
+import { timingSafeEqual } from "node:crypto"
 
 const ADMIN_PHONE    = process.env.ADMIN_PHONE_NUMBER
 const WEBHOOK_SECRET = process.env.WEBHOOK_SECRET
 
+// Fail closed: if WEBHOOK_SECRET isn't configured, no webhook is trusted.
+// Uses a timing-safe comparison to avoid leaking the secret via timing.
 function verifySecret(req) {
-  if (!WEBHOOK_SECRET) return true
-  return req.headers["x-webhook-secret"] === WEBHOOK_SECRET
+  const expected = WEBHOOK_SECRET || ""
+  const received = String(req.headers["x-webhook-secret"] || "")
+  if (!expected || !received) return false
+  const a = Buffer.from(received)
+  const b = Buffer.from(expected)
+  return a.length === b.length && timingSafeEqual(a, b)
 }
 
 // ── 1. Inspection / Enquiry status update → notify tenant ─────────────────
 export async function handleInspectionEvent(req, res) {
+  if (!verifySecret(req)) {
+    console.warn("⚠️ Inspection webhook: invalid secret")
+    return res.sendStatus(401)
+  }
   res.sendStatus(200)
-  if (!verifySecret(req)) { console.warn("⚠️ Inspection webhook: invalid secret"); return }
 
   try {
     const { type, record, old_record } = req.body || {}
@@ -76,8 +86,11 @@ export async function handleInspectionEvent(req, res) {
 // WhatsApp book_inspection tool). Unlike the website's enquiries table, the
 // phone is stored right on the row — no tenant lookup needed.
 export async function handleBotInspectionEvent(req, res) {
+  if (!verifySecret(req)) {
+    console.warn("⚠️ Bot inspection webhook: invalid secret")
+    return res.sendStatus(401)
+  }
   res.sendStatus(200)
-  if (!verifySecret(req)) { console.warn("⚠️ Bot inspection webhook: invalid secret"); return }
 
   try {
     const { type, record, old_record } = req.body || {}
@@ -112,8 +125,11 @@ export async function handleBotInspectionEvent(req, res) {
 
 // ── 3. New tenant signup → admin alert ────────────────────────────────────
 export async function handleNewSignupEvent(req, res) {
+  if (!verifySecret(req)) {
+    console.warn("⚠️ Signup webhook: invalid secret")
+    return res.sendStatus(401)
+  }
   res.sendStatus(200)
-  if (!verifySecret(req)) { console.warn("⚠️ Signup webhook: invalid secret"); return }
 
   try {
     const { type, record } = req.body || {}
@@ -138,8 +154,11 @@ export async function handleNewSignupEvent(req, res) {
 
 // ── 3. Landlord KYC submission → admin alert ──────────────────────────────
 export async function handleKYCEvent(req, res) {
+  if (!verifySecret(req)) {
+    console.warn("⚠️ KYC webhook: invalid secret")
+    return res.sendStatus(401)
+  }
   res.sendStatus(200)
-  if (!verifySecret(req)) { console.warn("⚠️ KYC webhook: invalid secret"); return }
 
   try {
     const { type, record, old_record } = req.body || {}

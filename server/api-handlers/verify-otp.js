@@ -5,6 +5,9 @@ function getEnv(key) {
   return undefined
 }
 
+// Max failed verification attempts before a code is burned for the email.
+const MAX_ATTEMPTS = 5
+
 function sendJson(res, status, body) {
   res.statusCode = status
   res.setHeader('Content-Type', 'application/json')
@@ -63,13 +66,32 @@ export default async function handler(req, res) {
   const body = await parseJsonBody(req)
   if (!body || typeof body.email !== 'string' || typeof body.otp !== 'string') return sendJson(res, 400, { error: 'Invalid request body' })
 
-  const email = String(body.email).trim()
+  const email = String(body.email).trim().toLowerCase()
   const otp = String(body.otp).trim()
   if (!email || !otp) return sendJson(res, 400, { error: 'Email and OTP are required' })
 
   try {
-    const now = new Date().toISOString()
-    const q = `${SUPABASE_URL}/rest/v1/verification_codes?email=eq.${encodeURIComponent(email)}&code=eq.${encodeURIComponent(otp)}&expires_at=gt.${encodeURIComponent(now)}&select=id,expires_at`
+    // Reject any code for this email that has already been verified — a used
+    // code must not be replayable.
+    const verifiedResp = await fetch(
+      `${SUPABASE_URL}/rest/v1/verification_codes?email=eq.${encodeURIComponent(email)}&verified_at=not.is.null&select=id`,
+      {
+        headers: {
+          Authorization: `Bearer ${SUPABASE_SERVICE_KEY}`,
+          apikey: SUPABASE_SERVICE_KEY,
+        },
+      },
+    )
+    if (verifiedResp.ok) {
+      const verified = await verifiedResp.json().catch(() => [])
+      if (Array.isArray(verified) && verified.length > 0) {
+        return sendJson(res, 400, { error: 'Invalid or expired code' })
+      }
+    }
+
+    // Look up the code for this email (regardless of expiry — we need the row
+    // to enforce attempt limits even when the code is wrong/expired).
+    const q = `${SUPABASE_URL}/rest/v1/verification_codes?email=eq.${encodeURIComponent(email)}&order=created_at.desc&limit=1&select=id,code,expires_at,attempts`
     const listResp = await fetch(q, {
       headers: {
         Authorization: `Bearer ${SUPABASE_SERVICE_KEY}`,
@@ -87,9 +109,52 @@ export default async function handler(req, res) {
       return sendJson(res, 400, { error: 'Invalid or expired code' })
     }
 
-    const id = rows[0].id
+    const row = rows[0]
+    const id = row.id
+    const attempts = Number(row.attempts ?? 0)
+
+    // Attempt limit: burn the code after MAX_ATTEMPTS wrong guesses.
+    if (attempts >= MAX_ATTEMPTS) {
+      await fetch(`${SUPABASE_URL}/rest/v1/verification_codes?id=eq.${encodeURIComponent(id)}`, {
+        method: 'DELETE',
+        headers: {
+          Authorization: `Bearer ${SUPABASE_SERVICE_KEY}`,
+          apikey: SUPABASE_SERVICE_KEY,
+        },
+      }).catch(() => null)
+      return sendJson(res, 400, { error: 'Invalid or expired code' })
+    }
+
+    const expired = row.expires_at ? new Date(row.expires_at).getTime() <= Date.now() : true
+    const match = String(row.code) === otp
+
+    if (!match || expired) {
+      // Record the failed attempt, then burn the code on the final failure.
+      const nextAttempts = attempts + 1
+      await fetch(`${SUPABASE_URL}/rest/v1/verification_codes?id=eq.${encodeURIComponent(id)}`, {
+        method: 'PATCH',
+        headers: {
+          Authorization: `Bearer ${SUPABASE_SERVICE_KEY}`,
+          apikey: SUPABASE_SERVICE_KEY,
+          'Content-Type': 'application/json',
+          Prefer: 'return=minimal',
+        },
+        body: JSON.stringify({ attempts: nextAttempts }),
+      }).catch(() => null)
+      if (nextAttempts >= MAX_ATTEMPTS) {
+        await fetch(`${SUPABASE_URL}/rest/v1/verification_codes?id=eq.${encodeURIComponent(id)}`, {
+          method: 'DELETE',
+          headers: {
+            Authorization: `Bearer ${SUPABASE_SERVICE_KEY}`,
+            apikey: SUPABASE_SERVICE_KEY,
+          },
+        }).catch(() => null)
+      }
+      return sendJson(res, 400, { error: 'Invalid or expired code' })
+    }
+
     if (id) {
-      // delete used code
+      // Mark the code verified (one-time use) — delete used code.
       await fetch(`${SUPABASE_URL}/rest/v1/verification_codes?id=eq.${encodeURIComponent(id)}`, {
         method: 'DELETE',
         headers: {

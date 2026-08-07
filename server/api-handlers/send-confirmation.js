@@ -51,10 +51,12 @@ export default async function handler(req, res) {
   const body = await parseJsonBody(req)
   if (!body || typeof body.email !== 'string') return sendJson(res, 400, { error: 'Invalid request body' })
 
-  const email = String(body.email).trim()
-  if (!email) return sendJson(res, 400, { error: 'Email is required' })
+  const email = String(body.email).trim().toLowerCase()
+  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) {
+    return sendJson(res, 400, { error: 'A valid email is required' })
+  }
 
-  const fullName = typeof body.fullName === 'string' ? body.fullName.trim() : ''
+  const fullName = typeof body.fullName === 'string' ? body.fullName.trim().slice(0, 200) : ''
 
   // Resolve the effective Resend key + sender (stored settings win, env falls back).
   const { resolveEmailConfig } = await import('./lib/email-template.js')

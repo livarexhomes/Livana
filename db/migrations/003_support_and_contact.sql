@@ -126,11 +126,23 @@ CREATE TABLE IF NOT EXISTS public.admins (
 -- ── RLS ───────────────────────────────────────────────────────────────────────
 -- Anonymous visitors can submit enquiries + contact messages. Authenticated
 -- users (tenants/landlords/admins) can read and update their own threads;
--- non-anonymous users (admins) can read/update everything.
+-- real admins (see is_admin()) can read/update everything.
 
 CREATE OR REPLACE FUNCTION public.is_not_anonymous()
 RETURNS boolean LANGUAGE sql STABLE AS $$
   SELECT (auth.jwt() ->> 'is_anonymous') IS DISTINCT FROM 'true';
+$$;
+
+-- Real-admin check (mirrors the server-side requireAdmin()): non-anonymous
+-- authenticated user whose JWT app_metadata carries role = 'admin'.
+CREATE OR REPLACE FUNCTION public.is_admin()
+RETURNS boolean LANGUAGE sql STABLE AS $$
+  SELECT
+    public.is_not_anonymous()
+    AND (
+      (auth.jwt() -> 'app_metadata' ->> 'role') = 'admin'
+      OR (auth.jwt() -> 'app_metadata' -> 'roles') @> '["admin"]'
+    );
 $$;
 
 -- enquiries
@@ -144,12 +156,12 @@ CREATE POLICY "anon_insert_enquiries"
 DROP POLICY IF EXISTS "auth_select_enquiries" ON public.enquiries;
 CREATE POLICY "auth_select_enquiries"
   ON public.enquiries FOR SELECT TO authenticated
-  USING (public.is_not_anonymous() OR tenant_id IN (SELECT id FROM public.tenants WHERE user_id = auth.uid()));
+  USING (public.is_admin() OR tenant_id IN (SELECT id FROM public.tenants WHERE user_id = auth.uid()));
 
 DROP POLICY IF EXISTS "auth_update_enquiries" ON public.enquiries;
 CREATE POLICY "auth_update_enquiries"
   ON public.enquiries FOR UPDATE TO authenticated
-  USING (public.is_not_anonymous());
+  USING (public.is_admin()) WITH CHECK (public.is_admin());
 
 -- enquiry_replies
 ALTER TABLE public.enquiry_replies ENABLE ROW LEVEL SECURITY;
@@ -157,12 +169,12 @@ ALTER TABLE public.enquiry_replies ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "auth_select_enquiry_replies" ON public.enquiry_replies;
 CREATE POLICY "auth_select_enquiry_replies"
   ON public.enquiry_replies FOR SELECT TO authenticated
-  USING (public.is_not_anonymous());
+  USING (public.is_admin());
 
 DROP POLICY IF EXISTS "auth_insert_enquiry_replies" ON public.enquiry_replies;
 CREATE POLICY "auth_insert_enquiry_replies"
   ON public.enquiry_replies FOR INSERT TO authenticated
-  WITH CHECK (public.is_not_anonymous());
+  WITH CHECK (public.is_admin());
 
 -- support_tickets
 ALTER TABLE public.support_tickets ENABLE ROW LEVEL SECURITY;
@@ -176,7 +188,7 @@ DROP POLICY IF EXISTS "auth_select_support_tickets" ON public.support_tickets;
 CREATE POLICY "auth_select_support_tickets"
   ON public.support_tickets FOR SELECT TO authenticated
   USING (
-    public.is_not_anonymous()
+    public.is_admin()
     OR tenant_id IN (SELECT id FROM public.tenants WHERE user_id = auth.uid())
     OR landlord_id IN (SELECT id FROM public.landlords WHERE user_id = auth.uid())
   );
@@ -184,7 +196,7 @@ CREATE POLICY "auth_select_support_tickets"
 DROP POLICY IF EXISTS "auth_update_support_tickets" ON public.support_tickets;
 CREATE POLICY "auth_update_support_tickets"
   ON public.support_tickets FOR UPDATE TO authenticated
-  USING (public.is_not_anonymous());
+  USING (public.is_admin()) WITH CHECK (public.is_admin());
 
 -- support_messages
 ALTER TABLE public.support_messages ENABLE ROW LEVEL SECURITY;
@@ -198,7 +210,7 @@ DROP POLICY IF EXISTS "auth_select_support_messages" ON public.support_messages;
 CREATE POLICY "auth_select_support_messages"
   ON public.support_messages FOR SELECT TO authenticated
   USING (
-    public.is_not_anonymous()
+    public.is_admin()
     OR EXISTS (
       SELECT 1 FROM public.support_tickets st
       WHERE st.id = support_messages.ticket_id
@@ -206,6 +218,11 @@ CREATE POLICY "auth_select_support_messages"
           OR st.landlord_id IN (SELECT id FROM public.landlords WHERE user_id = auth.uid()))
     )
   );
+
+DROP POLICY IF EXISTS "auth_insert_support_messages" ON public.support_messages;
+CREATE POLICY "auth_insert_support_messages"
+  ON public.support_messages FOR INSERT TO authenticated
+  WITH CHECK (public.is_admin());
 
 -- contact_messages
 ALTER TABLE public.contact_messages ENABLE ROW LEVEL SECURITY;
@@ -218,7 +235,7 @@ CREATE POLICY "anon_insert_contact_messages"
 DROP POLICY IF EXISTS "auth_select_contact_messages" ON public.contact_messages;
 CREATE POLICY "auth_select_contact_messages"
   ON public.contact_messages FOR SELECT TO authenticated
-  USING (public.is_not_anonymous());
+  USING (public.is_admin());
 
 -- admins
 ALTER TABLE public.admins ENABLE ROW LEVEL SECURITY;
@@ -226,17 +243,17 @@ ALTER TABLE public.admins ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "auth_select_admins" ON public.admins;
 CREATE POLICY "auth_select_admins"
   ON public.admins FOR SELECT TO authenticated
-  USING (public.is_not_anonymous());
+  USING (public.is_admin());
 
 DROP POLICY IF EXISTS "auth_insert_admins" ON public.admins;
 CREATE POLICY "auth_insert_admins"
   ON public.admins FOR INSERT TO authenticated
-  WITH CHECK (public.is_not_anonymous());
+  WITH CHECK (public.is_admin());
 
 DROP POLICY IF EXISTS "auth_update_admins" ON public.admins;
 CREATE POLICY "auth_update_admins"
   ON public.admins FOR UPDATE TO authenticated
-  USING (public.is_not_anonymous());
+  USING (public.is_admin()) WITH CHECK (public.is_admin());
 
 -- ── Realtime ───────────────────────────────────────────────────────────────────
 DO $$

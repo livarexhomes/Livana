@@ -50,17 +50,17 @@ CREATE POLICY "anon_select_projects"
 DROP POLICY IF EXISTS "auth_insert_projects" ON projects;
 CREATE POLICY "auth_insert_projects"
   ON projects FOR INSERT TO authenticated
-  WITH CHECK (true);
+  WITH CHECK (public.is_admin());
 
 DROP POLICY IF EXISTS "auth_update_projects" ON projects;
 CREATE POLICY "auth_update_projects"
   ON projects FOR UPDATE TO authenticated
-  USING (true) WITH CHECK (true);
+  USING (public.is_admin()) WITH CHECK (public.is_admin());
 
 DROP POLICY IF EXISTS "auth_delete_projects" ON projects;
 CREATE POLICY "auth_delete_projects"
   ON projects FOR DELETE TO authenticated
-  USING (true);
+  USING (public.is_admin());
 
 -- Allow realtime (no-op if already a member)
 DO $$
@@ -82,15 +82,15 @@ ON CONFLICT (id) DO NOTHING;
 DROP POLICY IF EXISTS "auth_upload_project_images" ON storage.objects;
 CREATE POLICY "auth_upload_project_images"
   ON storage.objects FOR INSERT TO authenticated
-  WITH CHECK (bucket_id = 'project-images');
+  WITH CHECK (bucket_id = 'project-images' AND public.is_admin());
 
 DROP POLICY IF EXISTS "auth_update_project_images" ON storage.objects;
 CREATE POLICY "auth_update_project_images"
   ON storage.objects FOR UPDATE TO authenticated
-  USING (bucket_id = 'project-images') WITH CHECK (bucket_id = 'project-images');
+  USING (bucket_id = 'project-images' AND public.is_admin()) WITH CHECK (bucket_id = 'project-images' AND public.is_admin());
 
 DROP POLICY IF EXISTS "auth_delete_project_images" ON storage.objects;
 CREATE POLICY "auth_delete_project_images"
   ON storage.objects FOR DELETE TO authenticated
-  USING (bucket_id = 'project-images');
+  USING (bucket_id = 'project-images' AND public.is_admin());
 

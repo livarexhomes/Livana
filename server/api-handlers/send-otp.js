@@ -5,6 +5,14 @@ function getEnv(key) {
   return undefined
 }
 
+// Import at module scope for crypto-secure RNG.
+import { randomInt } from 'node:crypto'
+
+// Basic email sanity check — blocks junk that would burn Resend sends.
+function isValidEmail(email) {
+  return typeof email === 'string' && /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)
+}
+
 function sendJson(res, status, body) {
   res.statusCode = status
   res.setHeader('Content-Type', 'application/json')
@@ -54,8 +62,8 @@ export default async function handler(req, res) {
   const body = await parseJsonBody(req)
   if (!body || typeof body.email !== 'string') return sendJson(res, 400, { error: 'Invalid request body' })
 
-  const email = String(body.email).trim()
-  if (!email) return sendJson(res, 400, { error: 'Email is required' })
+  const email = String(body.email).trim().toLowerCase()
+  if (!email || !isValidEmail(email)) return sendJson(res, 400, { error: 'A valid email is required' })
 
   const SUPABASE_URL = getEnv('SUPABASE_URL') || ''
   const SUPABASE_SERVICE_KEY = getEnv('SUPABASE_SERVICE_KEY') || getEnv('SUPABASE_SERVICE_ROLE_KEY') || ''
@@ -77,8 +85,32 @@ export default async function handler(req, res) {
     })
   }
 
-  // Generate 6-digit numeric OTP
-  const code = String(Math.floor(100000 + Math.random() * 900000))
+  // Rate limit: max 3 OTP sends per email per 10 minutes. Counts existing,
+  // not-yet-expired codes for that email in verification_codes.
+  try {
+    const tenMinAgo = new Date(Date.now() - 10 * 60 * 1000).toISOString()
+    const countResp = await fetch(
+      `${SUPABASE_URL}/rest/v1/verification_codes?email=eq.${encodeURIComponent(email)}&created_at=gt.${encodeURIComponent(tenMinAgo)}&select=id`,
+      {
+        headers: {
+          Authorization: `Bearer ${SUPABASE_SERVICE_KEY}`,
+          apikey: SUPABASE_SERVICE_KEY,
+        },
+      },
+    )
+    if (countResp.ok) {
+      const existing = await countResp.json().catch(() => [])
+      if (Array.isArray(existing) && existing.length >= 3) {
+        return sendJson(res, 429, { error: 'Too many codes requested. Please wait a few minutes and try again.' })
+      }
+    }
+  } catch (err) {
+    // Rate-limit check is best-effort — never block sending on a DB hiccup.
+    console.warn('[send-otp] rate-limit check failed:', err?.message || err)
+  }
+
+  // Generate a cryptographically-secure 6-digit numeric OTP.
+  const code = String(randomInt(100000, 1000000))
   const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString() // 10 minutes
 
   // Try to persist the code in Supabase `verification_codes` table (best-effort)

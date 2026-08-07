@@ -112,9 +112,10 @@ export default async function handler(req, res) {
     const userData = await userResponse.json().catch(() => null)
     const userId = userData?.id
     if (!userResponse.ok || typeof userId !== 'string') {
-      const errorMessage = getErrorMessage(userData) || 'Failed to create user'
-      return sendJson(res, userResponse.status || 400, {
-        error: errorMessage,
+      // Return a generic message — never surface upstream error text, which
+      // can reveal whether an account already exists (user enumeration).
+      return sendJson(res, 400, {
+        error: 'Registration failed. Please check your details and try again.',
       })
     }
 
