@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback, type ReactNode } from 'react'
-import { X, Send, MessageSquare, Paperclip, ChevronDown, Check, ArrowRight, Loader2, Clock2, Smile } from 'lucide-react'
+import { X, Send, MessageSquare, Paperclip, ChevronDown, Check, ArrowRight, Loader2, Clock2, Smile, Home, CalendarCheck, Building2, Headset } from 'lucide-react'
 import { useLocation, redirect } from '../lib/navigation'
 import { createClient, isSupabaseConfigured } from '../lib/supabase'
 import { getPlatformSettings, getNotificationSettings, phoneToWaLink, getSupportAvailability, isWithinSchedule, type SupportAvailability, DEFAULT_AVAILABILITY } from '../lib/platform-settings'
@@ -30,14 +30,15 @@ interface AgentMessage {
   created_at: string
 }
 
-// Strict 3-state flow:
-//   welcome  → State 1: quick actions only (no composer, no chat area)
-//   bot      → AI conversation (active chat with composer)
-//   live     → State 2: two-way live agent thread (checking → active)
-//   offline  → State 3: offline support form (form → submitted)
+// Three-state flow:
+//   landing → greeting card (header + CTA + social icons), no composer
+//   chat    → bot conversation with initial greeting, Menu/Help/Exit pills
+//             above the composer; Menu expands the option bubble
+//   (live/offline stay as-is for live-agent and offline message flows)
 type WidgetView =
-  | { name: 'welcome' }
-  | { name: 'bot' }
+  | { name: 'landing' }
+  | { name: 'chat' }
+  | { name: 'menu' }
   | { name: 'live'; stage: 'checking' | 'active' }
   | { name: 'offline'; stage: 'form' | 'submitted' }
 
@@ -47,19 +48,19 @@ const CHAT_API_URL = import.meta.env.VITE_CHAT_API_URL
   ? `${import.meta.env.VITE_CHAT_API_URL}/api/chat`
   : '/api/chat'
 
-// ── Quick actions (welcome screen, State 1) ───────────────────────────────────
+// ── Menu options (chat screen) ─────────────────────────────────────────────────
 
-const ACTIONS = [
-  { icon: '🏠', title: 'Find a Property', desc: 'Browse verified rentals nearby', msg: 'Show me the best verified rentals in Lagos and Ogun.' },
-  { icon: '📅', title: 'Book an Inspection', desc: 'Schedule a viewing fast', msg: 'I want to book a property inspection soon.' },
-  { icon: '🏢', title: 'List My Property', desc: 'Rent it out on Livarex', msg: 'I want to list my property on Livarex.' },
-  { icon: '👥', title: 'Chat with Support', desc: 'Talk to a live agent', msg: null, live: true },
+const MENU_OPTIONS = [
+  { icon: Home, title: 'Find a property', desc: 'Browse verified rentals nearby', msg: 'Show me the best verified rentals in Lagos and Ogun.' },
+  { icon: CalendarCheck, title: 'Book an inspection', desc: 'Schedule a viewing fast', msg: 'I want to book a property inspection soon.' },
+  { icon: Building2, title: 'List my property', desc: 'Rent it out on Livarex', msg: 'I want to list my property on Livarex.' },
+  { icon: Headset, title: 'Chat with support', desc: 'Talk to a live agent', msg: null, live: true },
 ]
 
-const QUICK_CHIPS = [
-  { label: 'Top rentals', emoji: '🏡', msg: 'Show me the best rentals available right now.' },
-  { label: 'Inspect now', emoji: '📅', msg: 'Book an inspection for a property in Lagos.' },
-  { label: 'Budget plan', emoji: '💰', msg: 'I want a 2-bedroom home under ₦400,000.' },
+const MENU_CHIPS = [
+  { label: 'Top rentals', msg: 'Show me the best rentals available right now.' },
+  { label: 'Inspect now', msg: 'Book an inspection for a property in Lagos.' },
+  { label: 'Budget plan', msg: 'I want a 2-bedroom home under ₦400,000.' },
 ]
 
 const EMOJI = ['😀', '😂', '😊', '😍', '👍', '👏', '🙏', '🎉', '❤️', '🔥']
@@ -147,7 +148,7 @@ export default function ChatWidget() {
   const [location] = useLocation()
 
   const [open, setOpen]             = useState(false)
-  const [view, setView]             = useState<WidgetView>({ name: 'welcome' })
+  const [view, setView]             = useState<WidgetView>({ name: 'landing' })
   const [launcherDismissed, setLauncherDismissed] = useState(false)
 
   // ── AI bot state ──────────────────────────────────────────────────────────
@@ -217,7 +218,7 @@ export default function ChatWidget() {
       setAgentUnread(false)
       setTimeout(() => {
         if (view.name === 'live' && inquiryId) agentInputRef.current?.focus()
-        else if (view.name === 'bot') inputRef.current?.focus()
+        else if (view.name === 'chat' || view.name === 'menu') inputRef.current?.focus()
       }, 250)
     }
   }, [open, view, inquiryId])
@@ -561,7 +562,7 @@ export default function ChatWidget() {
   // ── Send (AI bot) ─────────────────────────────────────────────────────────
   async function sendMessage(text: string, img: typeof pendingImg) {
     if (!text.trim() && !img) return
-    setView({ name: 'bot' })
+    setView({ name: 'chat' })
     setShowEmoji(false)
 
     const userContent: ContentBlock[] = []
@@ -644,12 +645,38 @@ export default function ChatWidget() {
 
   const canSend = (input.trim().length > 0 || !!pendingImg) && !loading
 
-  // The composer only ever appears inside an active conversation — never on
-  // the welcome screen or the offline form/submitted states.
-  const showComposer = view.name === 'bot' || (view.name === 'live' && view.stage === 'active')
+  /**
+   * Enter the chat screen from the landing CTA. The bot greets the visitor
+   * with the standard "what are we doing today" message; further messages go
+   * through the AI chat API as usual.
+   */
+  function startChat() {
+    setView({ name: 'chat' })
+    setShowEmoji(false)
+    setMessages([
+      {
+        role: 'assistant',
+        content: [{
+          type: 'text',
+          text: 'So, what are we doing today? 😀\n\nPlease type in your request using the phrases from the list below, or tap Menu for quick options.',
+        }],
+        time: Date.now(),
+      },
+    ])
+  }
 
-  // Back to the welcome quick-actions (keeps any bot/live conversation state).
-  const goWelcome = () => { setShowEmoji(false); setView({ name: 'welcome' }) }
+  // The composer only ever appears inside an active conversation — never on
+  // the landing screen or the offline form/submitted states.
+  const showComposer = view.name === 'chat' || view.name === 'menu' || (view.name === 'live' && view.stage === 'active')
+
+  // Back to the landing screen (keeps any bot/live conversation state).
+  const goLanding = () => { setShowEmoji(false); setView({ name: 'landing' }) }
+
+  /** Toggle the menu bubble (opens it from chat, closes back to chat). */
+  function startMenu() {
+    setShowEmoji(false)
+    setView(v => (v.name === 'menu' ? { name: 'chat' } : { name: 'menu' }))
+  }
 
   const presenceLine = effectiveOnline
     ? { dot: 'bg-emerald-400', text: `Online · ${liveState.onlineAgents[0]?.name ?? 'agent'} will reply shortly` }
@@ -877,11 +904,11 @@ export default function ChatWidget() {
             </svg>
           </a>
 
-          {/* Back to quick actions */}
-          {view.name !== 'welcome' && (
-            <button onClick={goWelcome}
-              aria-label="Back to quick actions"
-              title="Back to quick actions"
+          {/* Back to landing */}
+          {view.name !== 'landing' && (
+            <button onClick={goLanding}
+              aria-label="Back to landing"
+              title="Back to landing"
               className="grid size-8 shrink-0 place-items-center rounded-lg text-white/70 transition-colors hover:bg-white/15 focus-visible:outline-2 focus-visible:outline-white/70"
               style={{ background:'rgba(255,255,255,0.1)' }}
             >
@@ -903,8 +930,8 @@ export default function ChatWidget() {
         <div className="cw-scroll flex-1 overflow-y-auto px-3.5 py-4 flex flex-col gap-2.5"
           style={{ background:'hsl(var(--muted) / 0.45)' }}>
 
-          {/* ── State 1: Welcome (quick actions only) ── */}
-          {view.name === 'welcome' && (
+          {/* ── State 1: Landing (greeting + CTA + social icons) ── */}
+          {view.name === 'landing' && (
             <div className="flex flex-col px-4 pt-6 pb-3" style={{ animation:'cwFadeUp 0.4s ease both' }}>
               <div className="rounded-[28px] border border-border bg-white shadow-[0_20px_60px_rgba(15,23,42,0.08)] p-5">
                 <div className="flex items-start gap-3">
@@ -919,40 +946,33 @@ export default function ChatWidget() {
                 </div>
 
                 <button
-                  onClick={() => setView({ name: 'bot' })}
+                  onClick={startChat}
                   className="cw-action mt-5 inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-yellow-400 to-amber-500 px-4 py-3 text-sm font-bold text-slate-950 shadow-lg shadow-amber-400/20 transition-transform focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-300"
                 >
                   <span>Start a new conversation</span>
                   <ArrowRight size={16} />
                 </button>
 
-                <div className="mt-5 grid gap-3">
-                  {ACTIONS.map(a => (
-                    <button
-                      key={a.title}
-                      onClick={() => a.live ? goLive() : sendMessage(a.msg ?? '', null)}
-                      className="cw-action group flex items-center gap-3 rounded-[22px] border border-slate-200 bg-slate-50 px-4 py-3 text-left shadow-sm"
-                    >
-                      <span className="grid size-10 place-items-center rounded-2xl bg-white text-lg shadow-sm">{a.icon}</span>
-                      <div className="min-w-0">
-                        <p className="text-sm font-semibold text-slate-900">{a.title}</p>
-                        <p className="mt-1 text-[11.5px] text-slate-500">{a.desc}</p>
-                      </div>
-                    </button>
-                  ))}
-                </div>
-
-                <div className="mt-4 flex flex-wrap gap-2">
-                  {QUICK_CHIPS.map((chip) => (
-                    <button
-                      key={chip.label}
-                      onClick={() => sendMessage(chip.msg, null)}
-                      className="cw-chip rounded-full border border-slate-200 bg-white px-3.5 py-2 text-[12px] font-semibold text-slate-700"
-                    >
-                      <span className="mr-1">{chip.emoji}</span>
-                      <span className="cw-chip-title">{chip.label}</span>
-                    </button>
-                  ))}
+                {/* Social icons — match the site footer links */}
+                <div className="mt-5 flex items-center justify-center gap-3">
+                  <a href="https://instagram.com/livarex.ng" target="_blank" rel="noopener noreferrer" aria-label="Livarex on Instagram"
+                    className="grid size-10 place-items-center rounded-full border border-slate-200 bg-white text-slate-500 transition-colors hover:border-pink-400 hover:text-pink-500">
+                    <svg className="w-[18px] h-[18px]" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z" />
+                    </svg>
+                  </a>
+                  <a href="https://linkedin.com/company/livarex" target="_blank" rel="noopener noreferrer" aria-label="Livarex on LinkedIn"
+                    className="grid size-10 place-items-center rounded-full border border-slate-200 bg-white text-slate-500 transition-colors hover:border-blue-400 hover:text-blue-500">
+                    <svg className="w-[18px] h-[18px]" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z" />
+                    </svg>
+                  </a>
+                  <a href="https://twitter.com/livarex_ng" target="_blank" rel="noopener noreferrer" aria-label="Livarex on X"
+                    className="grid size-10 place-items-center rounded-full border border-slate-200 bg-white text-slate-500 transition-colors hover:border-slate-400 hover:text-slate-900">
+                    <svg className="w-[18px] h-[18px]" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.744l7.73-8.835L1.254 2.25H8.08l4.259 5.63L18.244 2.25zm-1.161 17.52h1.833L7.084 4.126H5.117L17.083 19.77z" />
+                    </svg>
+                  </a>
                 </div>
               </div>
 
@@ -1163,17 +1183,18 @@ export default function ChatWidget() {
             </>
           )}
 
-          {/* ── AI bot messages (after a quick action seeds the chat) ── */}
-          {view.name === 'bot' && messages.length > 0 && (
+          {/* ── State 2: Chat (bot conversation) ── */}
+          {(view.name === 'chat' || view.name === 'menu') && (
             <>
+              {/* Menu / Help / Exit pills */}
               <div className="flex flex-wrap gap-2 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-[13px] text-slate-700 shadow-sm">
-                <button onClick={browseHelp}
+                <button onClick={startMenu}
                   className="rounded-full border border-slate-200 bg-white px-3 py-2 text-[12px] font-semibold text-slate-700 transition hover:border-sky-300 hover:bg-slate-100"
                 >Menu</button>
-                <button onClick={() => setView({ name: 'welcome' })}
+                <button onClick={browseHelp}
                   className="rounded-full border border-slate-200 bg-white px-3 py-2 text-[12px] font-semibold text-slate-700 transition hover:border-sky-300 hover:bg-slate-100"
                 >Help</button>
-                <button onClick={() => setOpen(false)}
+                <button onClick={goLanding}
                   className="rounded-full border border-slate-200 bg-white px-3 py-2 text-[12px] font-semibold text-slate-700 transition hover:border-sky-300 hover:bg-slate-100"
                 >Exit</button>
               </div>
@@ -1210,6 +1231,53 @@ export default function ChatWidget() {
                   </div>
                 </div>
               ))}
+
+              {/* ── Menu bubble (bot-styled option list + quick-reply chips) ── */}
+              {view.name === 'menu' && (
+                <div className="flex items-end gap-2" style={{ animation:'cwFadeUp 0.3s ease both' }}>
+                  <Avatar small />
+                  <div className="flex max-w-[80%] flex-col gap-1">
+                    <div className="rounded-[18px_18px_18px_6px] border border-border/70 bg-card shadow-[0_1px_3px_rgba(2,6,23,0.06)]">
+                      <div className="px-4 pt-3 pb-2">
+                        <p className="text-[13px] font-bold text-slate-900">Choose an option below 👇</p>
+                      </div>
+                      <div className="px-3 pb-2">
+                        {MENU_OPTIONS.map(opt => {
+                          const Icon = opt.icon
+                          return (
+                            <button
+                              key={opt.title}
+                              onClick={() => opt.live ? goLive() : sendMessage(opt.msg ?? '', null)}
+                              className="cw-action group flex w-full items-center gap-3 rounded-2xl px-2.5 py-2.5 text-left transition-colors hover:bg-slate-100 focus-visible:outline-2 focus-visible:outline-ring"
+                            >
+                              <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-blue-500/15 to-indigo-500/15 text-primary">
+                                <Icon size={16} />
+                              </span>
+                              <span className="min-w-0">
+                                <span className="block text-[13px] font-semibold text-slate-900">{opt.title}</span>
+                                <span className="block text-[11px] text-slate-500">{opt.desc}</span>
+                              </span>
+                            </button>
+                          )
+                        })}
+                      </div>
+                    </div>
+
+                    {/* Quick-reply chips */}
+                    <div className="mt-1 flex flex-wrap gap-2">
+                      {MENU_CHIPS.map((chip) => (
+                        <button
+                          key={chip.label}
+                          onClick={() => sendMessage(chip.msg, null)}
+                          className="cw-chip rounded-full border border-slate-200 bg-white px-3.5 py-2 text-[12px] font-semibold text-slate-700"
+                        >
+                          <span className="cw-chip-title">{chip.label}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {/* Typing indicator */}
               {loading && (
