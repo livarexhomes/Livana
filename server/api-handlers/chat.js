@@ -98,6 +98,9 @@ export default async function handler(req, res) {
 
   // Log configured upstream for quick triage in deployment logs
   console.log('[chat] BOT_CHAT_URL=', BOT_CHAT_URL)
+  if (!BOT_CHAT_URL) {
+    console.warn('[chat] no bot upstream configured; using fallback reply')
+  }
 
   // If a real upstream is configured and looks like a proper URL, use it.
   // Otherwise, return a graceful fallback reply instead of failing the widget.

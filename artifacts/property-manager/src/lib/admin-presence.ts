@@ -180,7 +180,10 @@ export function useAdminPresence(agent?: { id: string; name: string; email: stri
       if (statusRef.current === 'away') track('online')
     }
 
+    // Log the subscribe lifecycle so we can diagnose why the presence channel
+    // isn't completing in deployments.
     channel.subscribe(async (status) => {
+      console.log('[admin-presence] channel subscribe status:', status)
       if (status === 'SUBSCRIBED') {
         await resolveIdentity()
         track('online')
@@ -189,7 +192,14 @@ export function useAdminPresence(agent?: { id: string; name: string; email: stri
         awayTimer.current = window.setTimeout(goAway, AWAY_AFTER_MS)
         heartbeatTimer.current = window.setInterval(beatLastSeen, LAST_SEEN_HEARTBEAT_MS)
         ACTIVITY_EVENTS.forEach((e) => window.addEventListener(e, onActivity, { passive: true }))
+      } else if (status !== 'SUBSCRIBED') {
+        console.warn('[admin-presence] presence channel failed to subscribe:', status)
       }
+    })
+
+    // @ts-ignore - Supabase realtime channel may expose an error event handler.
+    channel.on('error', (error: unknown) => {
+      console.warn('[admin-presence] realtime channel error:', error)
     })
 
     return () => {

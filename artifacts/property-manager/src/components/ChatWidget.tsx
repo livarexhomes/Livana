@@ -50,10 +50,16 @@ const CHAT_API_URL = import.meta.env.VITE_CHAT_API_URL
 // ── Quick actions (welcome screen, State 1) ───────────────────────────────────
 
 const ACTIONS = [
-  { icon: '🏠', title: 'Find a Property', desc: 'Browse verified rentals', msg: 'Show me available verified rentals in Lagos and Ogun.' },
-  { icon: '📅', title: 'Book an Inspection', desc: 'Schedule a viewing', msg: 'I want to book a property inspection. How do I do that?' },
-  { icon: '🏢', title: 'List My Property', desc: 'Rent it out on Livarex', msg: 'I am a landlord and want to list my property on Livarex.' },
-  { icon: '👤', title: 'Talk to an Agent', desc: 'Chat with the support team', msg: null, live: true },
+  { icon: '🏠', title: 'Find a Property', desc: 'Browse verified rentals nearby', msg: 'Show me the best verified rentals in Lagos and Ogun.' },
+  { icon: '📅', title: 'Book an Inspection', desc: 'Schedule a viewing fast', msg: 'I want to book a property inspection soon.' },
+  { icon: '🏢', title: 'List My Property', desc: 'Rent it out on Livarex', msg: 'I want to list my property on Livarex.' },
+  { icon: '👥', title: 'Chat with Support', desc: 'Talk to a live agent', msg: null, live: true },
+]
+
+const QUICK_CHIPS = [
+  { label: 'Top rentals', emoji: '🏡', msg: 'Show me the best rentals available right now.' },
+  { label: 'Inspect now', emoji: '📅', msg: 'Book an inspection for a property in Lagos.' },
+  { label: 'Budget plan', emoji: '💰', msg: 'I want a 2-bedroom home under ₦400,000.' },
 ]
 
 const EMOJI = ['😀', '😂', '😊', '😍', '👍', '👏', '🙏', '🎉', '❤️', '🔥']
@@ -768,8 +774,17 @@ export default function ChatWidget() {
         .cw-scroll::-webkit-scrollbar-thumb { background:hsl(var(--border)); border-radius:5px; }
 
         /* ── Action chip hover ── */
-        .cw-chip:hover { border-color:hsl(var(--primary) / 0.5) !important; background:hsl(var(--primary) / 0.06) !important; }
+        .cw-chip {
+          border-color:hsl(var(--border) / 0.8);
+          background:hsl(var(--background));
+          transition:transform 0.18s ease, border-color 0.18s ease, background 0.18s ease;
+        }
+        .cw-chip:hover { border-color:hsl(var(--primary) / 0.7) !important; background:hsl(var(--primary) / 0.08) !important; transform:translateY(-1px); }
         .cw-chip:hover .cw-chip-title { color:hsl(var(--primary)) !important; }
+        .cw-action {
+          transition:transform 0.18s ease, box-shadow 0.18s ease;
+        }
+        .cw-action:hover { transform:translateY(-1px); box-shadow:0 18px 40px rgba(59,130,246,0.12); }
 
         /* ── Input focus ── */
         .cw-input:focus { box-shadow:0 0 0 2px hsl(var(--ring) / 0.25); border-color:hsl(var(--ring) / 0.5) !important; }
@@ -842,10 +857,11 @@ export default function ChatWidget() {
           {/* Name + status */}
           <div className="min-w-0 flex-1 text-white">
             <div className="truncate text-[14px] font-bold tracking-[-0.01em]">Livarex Support</div>
-            <div className="mt-0.5 flex items-center gap-1.5 text-[11px] text-white/75">
+            <div className="mt-0.5 flex flex-wrap items-center gap-1.5 text-[11px] text-white/75">
               <span className={`inline-block size-1.5 rounded-full ${presenceLine.dot} shadow-[0_0_6px_rgba(52,211,153,0.9)]`} aria-hidden />
               {presenceLine.text}
             </div>
+            <p className="mt-1 text-[11px] text-white/80">Ask about rentals, book viewings, or get instant support.</p>
           </div>
 
           {/* WhatsApp */}
@@ -889,47 +905,66 @@ export default function ChatWidget() {
 
           {/* ── State 1: Welcome (quick actions only) ── */}
           {view.name === 'welcome' && (
-            <div className="flex flex-col items-center text-center px-2 pt-6 pb-2" style={{ animation:'cwFadeUp 0.4s ease both' }}>
-              <div className="relative mb-4">
-                <div className="size-16 rounded-2xl flex items-center justify-center text-3xl"
-                  style={{ background:'linear-gradient(135deg,#3b82f6,#6366f1)', boxShadow:'0 12px 32px rgba(59,130,246,0.35)' }}>
-                  <MessageSquare size={28} color="#fff" />
+            <div className="flex flex-col px-4 pt-6 pb-3" style={{ animation:'cwFadeUp 0.4s ease both' }}>
+              <div className="rounded-[28px] border border-border bg-white shadow-[0_20px_60px_rgba(15,23,42,0.08)] p-5">
+                <div className="flex items-start gap-3">
+                  <div className="size-16 rounded-3xl grid place-items-center text-2xl text-white"
+                    style={{ background:'linear-gradient(135deg,#3b82f6,#6366f1)' }}>
+                    L
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-[18px] font-bold text-slate-900">Hi there! 👋</p>
+                    <p className="mt-2 text-[13px] leading-relaxed text-slate-600">I’m Livarex, your property assistant. Start a conversation now and I’ll help you find rentals, book inspections, or chat with support.</p>
+                  </div>
                 </div>
-                <span className="absolute -bottom-1 -right-1 size-4 rounded-full border-[3px] border-white bg-emerald-400" aria-hidden />
+
+                <button
+                  onClick={() => setView({ name: 'bot' })}
+                  className="cw-action mt-5 inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-yellow-400 to-amber-500 px-4 py-3 text-sm font-bold text-slate-950 shadow-lg shadow-amber-400/20 transition-transform focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-300"
+                >
+                  <span>Start a new conversation</span>
+                  <ArrowRight size={16} />
+                </button>
+
+                <div className="mt-5 grid gap-3">
+                  {ACTIONS.map(a => (
+                    <button
+                      key={a.title}
+                      onClick={() => a.live ? goLive() : sendMessage(a.msg ?? '', null)}
+                      className="cw-action group flex items-center gap-3 rounded-[22px] border border-slate-200 bg-slate-50 px-4 py-3 text-left shadow-sm"
+                    >
+                      <span className="grid size-10 place-items-center rounded-2xl bg-white text-lg shadow-sm">{a.icon}</span>
+                      <div className="min-w-0">
+                        <p className="text-sm font-semibold text-slate-900">{a.title}</p>
+                        <p className="mt-1 text-[11.5px] text-slate-500">{a.desc}</p>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+
+                <div className="mt-4 flex flex-wrap gap-2">
+                  {QUICK_CHIPS.map((chip) => (
+                    <button
+                      key={chip.label}
+                      onClick={() => sendMessage(chip.msg, null)}
+                      className="cw-chip rounded-full border border-slate-200 bg-white px-3.5 py-2 text-[12px] font-semibold text-slate-700"
+                    >
+                      <span className="mr-1">{chip.emoji}</span>
+                      <span className="cw-chip-title">{chip.label}</span>
+                    </button>
+                  ))}
+                </div>
               </div>
-              <h2 className="text-[17px] font-bold text-card-foreground tracking-tight">Hi there! 👋</h2>
-              <p className="mt-1.5 text-[13px] text-muted-foreground leading-relaxed max-w-[260px]">
-                How can we help you today?
-              </p>
 
-              {/* Menu list — the ONLY way to enter a conversation */}
-              <div className="mt-5 flex w-full flex-col divide-y divide-border/60 overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
-                {ACTIONS.map(a => (
-                  <button
-                    key={a.title}
-                    onClick={() => a.live ? goLive() : sendMessage(a.msg ?? '', null)}
-                    className="group flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-muted/60 active:bg-muted focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring"
-                  >
-                    <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-muted text-lg transition-colors group-hover:bg-primary/10" aria-hidden>{a.icon}</span>
-                    <span className="min-w-0 flex-1">
-                      <span className="block truncate text-[13px] font-bold text-card-foreground transition-colors group-hover:text-primary">{a.title}</span>
-                      <span className="mt-0.5 block truncate text-[11px] text-muted-foreground">{a.desc}</span>
-                    </span>
-                    <ArrowRight size={14} className="shrink-0 text-muted-foreground/60 transition-all group-hover:translate-x-0.5 group-hover:text-primary" />
-                  </button>
-                ))}
-              </div>
-
-              <button
-                onClick={browseHelp}
-                className="mt-4 inline-flex items-center gap-1 text-[12px] font-semibold text-muted-foreground hover:text-primary transition-colors"
-              >
-                Browse Help Center <ArrowRight size={12} />
-              </button>
-
-              <div className="mt-3 flex items-center gap-1.5 text-[11px] text-muted-foreground">
-                <span className={`inline-block size-1.5 rounded-full ${presenceLine.dot}`} aria-hidden />
-                {liveState.online ? 'We\'re online — start a live chat' : 'Live chat may be unavailable — we\'ll still get back to you'}
+              <div className="mt-4 grid gap-2">
+                <div className="rounded-3xl bg-gradient-to-r from-yellow-50 via-white to-slate-100 p-4 shadow-[0_16px_40px_rgba(245,158,11,0.12)]">
+                  <p className="text-[11px] uppercase tracking-[0.18em] text-amber-700">Property assistant</p>
+                  <p className="mt-2 text-sm font-semibold text-slate-900">Let Livarex guide your search and connect you with support in seconds.</p>
+                </div>
+                <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] text-slate-500">
+                  <span className="inline-flex items-center gap-2 rounded-full bg-emerald-100 px-3 py-1.5 text-emerald-700">• {presenceLine.text}</span>
+                  <button onClick={browseHelp} className="rounded-full border border-slate-200 bg-white px-3.5 py-2 text-[12px] font-semibold text-slate-700 transition hover:border-sky-300 hover:bg-slate-100">Browse support</button>
+                </div>
               </div>
             </div>
           )}
@@ -937,7 +972,6 @@ export default function ChatWidget() {
           {/* ── State 2: Live conversation ── */}
           {view.name === 'live' && (
             <>
-              {/* Checking for agents */}
               {view.stage === 'checking' && (
                 <div className="flex items-center justify-center py-6" style={{ animation:'cwFadeUp 0.3s ease both' }}>
                   <div className="flex items-center gap-2 text-[12.5px] text-muted-foreground">
@@ -947,77 +981,74 @@ export default function ChatWidget() {
                 </div>
               )}
 
-              {/* Live thread (connected) */}
               {view.stage === 'active' && (
-                <> 
-              {/* Connected banner */}
-              {agentJoined && (
-                <div className="flex justify-center">
-                  <span className="rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[10px] font-semibold text-emerald-700"
-                    style={{ animation:'cwFadeUp 0.3s ease both' }}>
-                    🟢 You're connected to Livarex Support. An agent will reply shortly.
-                  </span>
-                </div>
-              )}
-              {/* Agent typing indicator */}
-              {agentTyping && !agentThreadLoading && (
-                <div className="flex items-end gap-2" style={{ animation:'cwFadeUp 0.25s ease both' }}>
-                  <AgentAvatar />
-                  <div className="rounded-[18px_18px_18px_6px] border border-border/60 bg-card px-3.5 py-2.5 shadow-[0_1px_3px_rgba(2,6,23,0.06)]">
-                    <div className="flex items-center gap-2">
-                      <TypingDots />
-                      <span className="text-[10.5px] text-muted-foreground">Support is typing…</span>
+                <>
+                  {agentJoined && (
+                    <div className="rounded-3xl border border-emerald-200/80 bg-emerald-50 px-4 py-3 text-center shadow-sm"
+                      style={{ animation:'cwFadeUp 0.3s ease both' }}>
+                      <p className="text-[11px] uppercase tracking-[0.16em] text-emerald-700">Connected</p>
+                      <p className="mt-1 text-sm font-semibold text-slate-900">You’re chatting with {liveState.onlineAgents[0]?.name ?? 'Livarex Support'}.</p>
+                      <p className="mt-1 text-[12px] text-slate-600">They’ll reply in a few seconds.</p>
                     </div>
-                  </div>
-                </div>
-              )}
-              {agentThreadLoading ? (
-                <div className="flex items-end gap-2" style={{ animation:'cwFadeUp 0.25s ease both' }}>
-                  <Avatar small />
-                  <div className="rounded-[18px_18px_18px_6px] border border-border/60 bg-card shadow-[0_1px_3px_rgba(2,6,23,0.06)]">
-                    <TypingDots />
-                  </div>
-                </div>
-              ) : (
-                agentThread.map((msg) => {
-                  const isVisitor = msg.sender === 'visitor'
-                  const read = msg.read_by_admin
-                  return (
-                    <div key={msg.id} className="flex items-end gap-2"
-                      style={{ justifyContent: isVisitor ? 'flex-end' : 'flex-start', animation:'cwFadeUp 0.3s ease both' }}>
-                      {!isVisitor && <AgentAvatar />}
-                      <div className="flex max-w-[80%] flex-col gap-1"
-                        style={{ alignItems: isVisitor ? 'flex-end' : 'flex-start' }}>
-                        {msg.attachment_url && (
-                          <img src={msg.attachment_url} alt={msg.attachment_name ?? 'attachment'}
-                            className="max-h-40 max-w-[200px] rounded-xl border border-border/70 object-cover" />
-                        )}
-                        <div className="px-3.5 py-2.5 text-[13px] leading-relaxed break-words"
-                          style={{
-                            borderRadius: isVisitor ? '18px 18px 6px 18px' : '18px 18px 18px 6px',
-                            whiteSpace:'pre-wrap',
-                            background: isVisitor ? 'linear-gradient(135deg,#059669,#10b981)' : 'hsl(var(--card))',
-                            color: isVisitor ? '#fff' : 'hsl(var(--card-foreground))',
-                            boxShadow: isVisitor ? '0 2px 10px rgba(5,150,105,0.3)' : '0 1px 3px rgba(2,6,23,0.06)',
-                            border: isVisitor ? 'none' : '1px solid hsl(var(--border) / 0.7)',
-                            opacity: msg.id.startsWith('opt-') ? 0.6 : 1,
-                          }}>
-                          {msg.body}
+                  )}
+                  {agentTyping && !agentThreadLoading && (
+                    <div className="flex items-end gap-2" style={{ animation:'cwFadeUp 0.25s ease both' }}>
+                      <AgentAvatar />
+                      <div className="rounded-[18px_18px_18px_6px] border border-border/60 bg-card px-3.5 py-2.5 shadow-[0_1px_3px_rgba(2,6,23,0.06)]">
+                        <div className="flex items-center gap-2">
+                          <TypingDots />
+                          <span className="text-[10.5px] text-muted-foreground">Support is typing…</span>
                         </div>
-                        <span className="px-1 text-[9.5px] text-muted-foreground/70">
-                          {formatTime(msg.created_at)}
-                          {isVisitor && !msg.id.startsWith('opt-') && (
-                            <span className={`ml-1 ${read ? 'text-emerald-500' : 'text-muted-foreground/60'}`}>
-                              {read ? '✓✓ Read' : '✓ Sent'}
-                            </span>
-                          )}
-                        </span>
                       </div>
                     </div>
-                  )
-                })
-              )}
-                </> 
+                  )}
+                  {agentThreadLoading ? (
+                    <div className="flex items-end gap-2" style={{ animation:'cwFadeUp 0.25s ease both' }}>
+                      <Avatar small />
+                      <div className="rounded-[18px_18px_18px_6px] border border-border/60 bg-card shadow-[0_1px_3px_rgba(2,6,23,0.06)]">
+                        <TypingDots />
+                      </div>
+                    </div>
+                  ) : (
+                    agentThread.map((msg) => {
+                      const isVisitor = msg.sender === 'visitor'
+                      const read = msg.read_by_admin
+                      return (
+                        <div key={msg.id} className="flex items-end gap-2"
+                          style={{ justifyContent: isVisitor ? 'flex-end' : 'flex-start', animation:'cwFadeUp 0.3s ease both' }}>
+                          {!isVisitor && <AgentAvatar />}
+                          <div className="flex max-w-[80%] flex-col gap-1"
+                            style={{ alignItems: isVisitor ? 'flex-end' : 'flex-start' }}>
+                            {msg.attachment_url && (
+                              <img src={msg.attachment_url} alt={msg.attachment_name ?? 'attachment'}
+                                className="max-h-40 max-w-[200px] rounded-xl border border-border/70 object-cover" />
+                            )}
+                            <div className="px-3.5 py-2.5 text-[13px] leading-relaxed break-words"
+                              style={{
+                                borderRadius: isVisitor ? '18px 18px 6px 18px' : '18px 18px 18px 6px',
+                                whiteSpace:'pre-wrap',
+                                background: isVisitor ? 'linear-gradient(135deg,#059669,#10b981)' : '#fff8e1',
+                                color: isVisitor ? '#fff' : '#92400e',
+                                boxShadow: isVisitor ? '0 2px 10px rgba(5,150,105,0.3)' : '0 6px 24px rgba(245,159,11,0.16)',
+                                border: isVisitor ? 'none' : '1px solid rgba(245,158,11,0.2)',
+                                opacity: msg.id.startsWith('opt-') ? 0.6 : 1,
+                              }}>
+                              {msg.body}
+                            </div>
+                            <span className="px-1 text-[9.5px] text-muted-foreground/70">
+                              {formatTime(msg.created_at)}
+                              {isVisitor && !msg.id.startsWith('opt-') && (
+                                <span className={`ml-1 ${read ? 'text-emerald-500' : 'text-muted-foreground/60'}`}>
+                                  {read ? '✓✓ Read' : '✓ Sent'}
+                                </span>
+                              )}
+                            </span>
+                          </div>
+                        </div>
+                      )
+                    })
+                  )}
+                </>
               )}
             </>
           )}
@@ -1135,6 +1166,18 @@ export default function ChatWidget() {
           {/* ── AI bot messages (after a quick action seeds the chat) ── */}
           {view.name === 'bot' && messages.length > 0 && (
             <>
+              <div className="flex flex-wrap gap-2 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-[13px] text-slate-700 shadow-sm">
+                <button onClick={browseHelp}
+                  className="rounded-full border border-slate-200 bg-white px-3 py-2 text-[12px] font-semibold text-slate-700 transition hover:border-sky-300 hover:bg-slate-100"
+                >Menu</button>
+                <button onClick={() => setView({ name: 'welcome' })}
+                  className="rounded-full border border-slate-200 bg-white px-3 py-2 text-[12px] font-semibold text-slate-700 transition hover:border-sky-300 hover:bg-slate-100"
+                >Help</button>
+                <button onClick={() => setOpen(false)}
+                  className="rounded-full border border-slate-200 bg-white px-3 py-2 text-[12px] font-semibold text-slate-700 transition hover:border-sky-300 hover:bg-slate-100"
+                >Exit</button>
+              </div>
+
               {messages.map((msg, i) => (
                 <div key={i} className="flex items-end gap-2"
                   style={{ justifyContent: msg.role === 'user' ? 'flex-end' : 'flex-start', animation:'cwFadeUp 0.3s ease both' }}>
