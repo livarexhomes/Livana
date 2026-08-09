@@ -51,7 +51,7 @@ export default function AdminKYC() {
   const [filtered, setFiltered]   = useState<any[]>([])
   const [loading, setLoading]     = useState(true)
   const [search, setSearch]       = useState('')
-  const [statusFilter, setStatusFilter] = useState('pending')
+  const [statusFilter, setStatusFilter] = useState('all')
   const [selected, setSelected]     = useState<any | null>(null)
   const [processing, setProcessing] = useState<string | null>(null)
   const [kycDocs, setKycDocs]       = useState<{ doc_type: string; url: string; file_name: string }[]>([])
@@ -68,9 +68,11 @@ export default function AdminKYC() {
       .from('landlords')
       .select('*')
       .order('created_at', { ascending: false })
-      .then(({ data }) => {
-        setLandlords(data ?? [])
-        setFiltered((data ?? []).filter((l: any) => l.status === 'pending'))
+      .then(({ data, error }) => {
+        if (error) console.error('[AdminKYC] landlords query error:', error)
+        const rows = data ?? []
+        setLandlords(rows)
+        setFiltered(rows)   // default = all (filter controls below narrow it down)
         setLoading(false)
       })
   }, [])

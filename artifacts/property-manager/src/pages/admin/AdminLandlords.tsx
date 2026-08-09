@@ -208,7 +208,7 @@ function LandlordRow({ l, processing, menuOpen, onMenuToggle, onStatus, onDelete
           className={`grid h-8 w-8 place-items-center rounded-lg border transition-colors ${
             menuOpen
               ? 'border-slate-300 bg-slate-100 text-slate-700'
-              : 'border-transparent bg-transparent text-slate-400 opacity-0 group-hover:opacity-100 hover:border-slate-200 hover:bg-slate-100 hover:text-slate-700'
+              : 'border-slate-200 bg-white text-slate-400 hover:border-slate-300 hover:bg-slate-100 hover:text-slate-700'
           } disabled:opacity-30`}>
           {busy
             ? <RefreshCw className="h-3.5 w-3.5 animate-spin" />
