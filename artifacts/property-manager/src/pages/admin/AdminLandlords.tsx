@@ -1,9 +1,10 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import {
   Users, Search, MapPin, Phone,
   CheckCircle, Clock, XCircle, Ban, ShieldCheck,
   ArrowUpRight, UserCheck, ChevronDown,
-  Trash2, ShieldOff, TrendingUp,
+  Trash2, ShieldOff, MoreVertical, Building2,
+  X, RefreshCw,
 } from 'lucide-react'
 import { Link } from '@/lib/navigation'
 import AdminSidebar from '../../components/layout/AdminSidebar'
@@ -11,23 +12,30 @@ import AdminHeader from '../../components/layout/AdminHeader'
 import AuthGuard from '../../components/auth/AuthGuard'
 import { createClient, isSupabaseConfigured } from '../../lib/supabase'
 
+// ── Status metadata ────────────────────────────────────────────────────────────
+
 const STATUS_META: Record<string, {
-  label: string; pill: string; dot: string
+  label: string
+  pill: string
+  dot: string
+  border: string
 }> = {
-  approved:      { label: 'Approved',      pill: 'bg-emerald-50 text-emerald-700 ring-emerald-200/60', dot: 'bg-emerald-400' },
-  pending:       { label: 'KYC Pending',   pill: 'bg-amber-50 text-amber-700 ring-amber-200/60',       dot: 'bg-amber-400'   },
-  rejected:      { label: 'Rejected',      pill: 'bg-red-50 text-red-600 ring-red-200/60',             dot: 'bg-red-400'     },
-  suspended:     { label: 'Suspended',     pill: 'bg-orange-50 text-orange-700 ring-orange-200/60',    dot: 'bg-orange-400'  },
-  not_submitted: { label: 'Not Submitted', pill: 'bg-slate-100 text-slate-500 ring-slate-200/60',      dot: 'bg-slate-300'   },
+  approved:      { label: 'Approved',      pill: 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200/80', dot: 'bg-emerald-400', border: 'border-l-emerald-400' },
+  pending:       { label: 'KYC Pending',   pill: 'bg-amber-50 text-amber-700 ring-1 ring-amber-200/80',       dot: 'bg-amber-400',   border: 'border-l-amber-400'   },
+  rejected:      { label: 'Rejected',      pill: 'bg-red-50 text-red-600 ring-1 ring-red-200/80',             dot: 'bg-red-400',     border: 'border-l-red-400'     },
+  suspended:     { label: 'Suspended',     pill: 'bg-orange-50 text-orange-700 ring-1 ring-orange-200/80',    dot: 'bg-orange-400',  border: 'border-l-orange-400'  },
+  not_submitted: { label: 'Not Submitted', pill: 'bg-slate-100 text-slate-500 ring-1 ring-slate-200/60',      dot: 'bg-slate-300',   border: 'border-l-slate-200'   },
 }
 
+// ── Avatar helpers ────────────────────────────────────────────────────────────
+
 const AVATAR_PALETTE = [
-  { bg: 'bg-sky-100',    text: 'text-sky-700',    border: 'ring-sky-200'    },
-  { bg: 'bg-slate-100',  text: 'text-slate-700',  border: 'ring-slate-200'  },
-  { bg: 'bg-indigo-100', text: 'text-indigo-700', border: 'ring-indigo-200' },
-  { bg: 'bg-teal-100',   text: 'text-teal-700',   border: 'ring-teal-200'   },
-  { bg: 'bg-blue-100',   text: 'text-blue-700',   border: 'ring-blue-200'   },
-  { bg: 'bg-violet-100', text: 'text-violet-700', border: 'ring-violet-200' },
+  { bg: 'bg-sky-100',    text: 'text-sky-700'    },
+  { bg: 'bg-indigo-100', text: 'text-indigo-700' },
+  { bg: 'bg-teal-100',   text: 'text-teal-700'   },
+  { bg: 'bg-blue-100',   text: 'text-blue-700'   },
+  { bg: 'bg-violet-100', text: 'text-violet-700' },
+  { bg: 'bg-slate-100',  text: 'text-slate-700'  },
 ]
 function avatarColor(name: string) {
   let h = 0; for (const c of name) h = (h * 31 + c.charCodeAt(0)) & 0xffff
@@ -40,7 +48,11 @@ function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
 }
 
+// ── Types ─────────────────────────────────────────────────────────────────────
+
 type DeleteConfirm = { userId: string; landlordId: string; name: string }
+
+// ── Delete confirmation modal ─────────────────────────────────────────────────
 
 function ConfirmDeleteModal({ target, onConfirm, onCancel, loading }: {
   target: DeleteConfirm; onConfirm: () => void; onCancel: () => void; loading: boolean
@@ -48,20 +60,21 @@ function ConfirmDeleteModal({ target, onConfirm, onCancel, loading }: {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm px-4">
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 border border-slate-200">
-        <div className="w-12 h-12 rounded-2xl bg-red-50 flex items-center justify-center mb-4">
+        <div className="w-11 h-11 rounded-xl bg-red-50 flex items-center justify-center mb-4">
           <Trash2 className="w-5 h-5 text-red-600" />
         </div>
-        <h3 className="text-base font-extrabold text-gray-900 mb-1">Delete landlord</h3>
-        <p className="text-sm text-gray-500 mb-6 leading-relaxed">
-          This will permanently delete <strong>{target.name}</strong> and all their data. This cannot be undone.
+        <h3 className="text-[15px] font-extrabold text-slate-900 mb-1">Delete landlord</h3>
+        <p className="text-[13px] text-slate-500 mb-6 leading-relaxed">
+          This will permanently delete <strong className="text-slate-700">{target.name}</strong> and all their listings. This cannot be undone.
         </p>
-        <div className="flex gap-3">
+        <div className="flex gap-2.5">
           <button onClick={onCancel} disabled={loading}
-            className="flex-1 px-4 py-2.5 rounded-2xl border border-gray-200 text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50">
+            className="flex-1 px-4 py-2.5 rounded-xl border border-slate-200 text-[13px] font-semibold text-slate-700 hover:bg-slate-50 transition-colors disabled:opacity-50">
             Cancel
           </button>
           <button onClick={onConfirm} disabled={loading}
-            className="flex-1 px-4 py-2.5 rounded-2xl bg-red-600 hover:bg-red-700 text-white text-sm font-semibold transition-colors disabled:opacity-50">
+            className="flex-1 px-4 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white text-[13px] font-semibold transition-colors disabled:opacity-50 flex items-center justify-center gap-1.5">
+            {loading && <RefreshCw className="w-3.5 h-3.5 animate-spin" />}
             {loading ? 'Deleting…' : 'Delete permanently'}
           </button>
         </div>
@@ -70,99 +83,146 @@ function ConfirmDeleteModal({ target, onConfirm, onCancel, loading }: {
   )
 }
 
-function LandlordCard({
-  l, processing, onStatus, onDelete,
-}: {
-  l: any; processing: string | null
+// ── Per-row action menu ───────────────────────────────────────────────────────
+
+function ActionMenu({ l, processing, onStatus, onDelete, onClose }: {
+  l: any
+  processing: string | null
+  onStatus: (id: string, status: string) => void
+  onDelete: (userId: string, landlordId: string) => void
+  onClose: () => void
+}) {
+  const ref = useRef<HTMLDivElement>(null)
+  const busy = processing === l.id
+
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) onClose()
+    }
+    document.addEventListener('mousedown', handleClick)
+    return () => document.removeEventListener('mousedown', handleClick)
+  }, [onClose])
+
+  return (
+    <div ref={ref}
+      className="absolute right-0 top-full mt-1 z-30 w-44 rounded-xl border border-slate-200 bg-white shadow-[0_8px_32px_rgba(15,23,42,0.12)] overflow-hidden py-1">
+      {l.status === 'pending' && (
+        <Link href="/admin/kyc">
+          <button type="button"
+            className="w-full flex items-center gap-2.5 px-3.5 py-2 text-[12.5px] font-medium text-slate-700 hover:bg-slate-50 transition-colors">
+            <ShieldCheck className="w-3.5 h-3.5 text-slate-400" />
+            Review KYC
+          </button>
+        </Link>
+      )}
+      {(l.status === 'pending' || l.status === 'not_submitted') && (
+        <button type="button" disabled={busy} onClick={() => { onStatus(l.id, 'approved'); onClose() }}
+          className="w-full flex items-center gap-2.5 px-3.5 py-2 text-[12.5px] font-medium text-emerald-700 hover:bg-emerald-50 transition-colors disabled:opacity-40">
+          <CheckCircle className="w-3.5 h-3.5" />
+          Approve
+        </button>
+      )}
+      {l.status === 'suspended' && (
+        <button type="button" disabled={busy} onClick={() => { onStatus(l.id, 'approved'); onClose() }}
+          className="w-full flex items-center gap-2.5 px-3.5 py-2 text-[12.5px] font-medium text-emerald-700 hover:bg-emerald-50 transition-colors disabled:opacity-40">
+          <CheckCircle className="w-3.5 h-3.5" />
+          Reinstate
+        </button>
+      )}
+      {(l.status === 'approved' || l.status === 'pending') && (
+        <button type="button" disabled={busy} onClick={() => { onStatus(l.id, 'suspended'); onClose() }}
+          className="w-full flex items-center gap-2.5 px-3.5 py-2 text-[12.5px] font-medium text-orange-700 hover:bg-orange-50 transition-colors disabled:opacity-40">
+          <ShieldOff className="w-3.5 h-3.5" />
+          Suspend
+        </button>
+      )}
+      <div className="h-px bg-slate-100 mx-2 my-1" />
+      <button type="button" disabled={busy} onClick={() => { onDelete(l.user_id, l.id); onClose() }}
+        className="w-full flex items-center gap-2.5 px-3.5 py-2 text-[12.5px] font-medium text-red-600 hover:bg-red-50 transition-colors disabled:opacity-40">
+        <Trash2 className="w-3.5 h-3.5" />
+        Delete landlord
+      </button>
+    </div>
+  )
+}
+
+// ── Landlord row ──────────────────────────────────────────────────────────────
+
+function LandlordRow({ l, processing, menuOpen, onMenuToggle, onStatus, onDelete }: {
+  l: any
+  processing: string | null
+  menuOpen: boolean
+  onMenuToggle: () => void
   onStatus: (id: string, status: string) => void
   onDelete: (userId: string, landlordId: string) => void
 }) {
   const meta    = STATUS_META[l.status] ?? STATUS_META.not_submitted
   const palette = avatarColor(l.full_name)
-  const initials = getInitials(l.full_name)
   const busy    = processing === l.id
 
   return (
-    <article className="group rounded-2xl border border-slate-200/70 bg-white p-4 shadow-[0_1px_2px_rgba(15,23,42,0.04)] transition-all duration-200 hover:border-slate-200 hover:shadow-[0_4px_16px_rgba(15,23,42,0.07)]">
+    <div className={`group flex items-center gap-3 px-4 py-3 border-b border-slate-100 border-l-[3px] ${meta.border} hover:bg-slate-50/70 transition-colors`}>
 
-      <div className="flex items-center gap-3">
-        {/* Avatar + identity */}
-        <div className={`relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full ring-1 ${palette.bg} ${palette.text} ${palette.border}`}>
-          <span className="text-[13px] font-semibold">{initials}</span>
-          <span className={`absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full border-2 border-white ${meta.dot}`} />
-        </div>
-
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2 min-w-0">
-            <span className="truncate text-[13.5px] font-semibold text-slate-900">{l.full_name}</span>
-            <span className={`shrink-0 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10.5px] font-medium ring-1 ${meta.pill}`}>
-              {meta.label}
-            </span>
-          </div>
-          <div className="mt-1 flex items-center gap-x-3 gap-y-0.5 flex-wrap min-w-0">
-            <span className="inline-flex items-center gap-1 text-[11.5px] text-slate-500">
-              <MapPin className="h-3 w-3" />{l.city ?? '—'}
-            </span>
-            <span className="inline-flex items-center gap-1 text-[11.5px] text-slate-500">
-              <Phone className="h-3 w-3" />{l.whatsapp ?? '—'}
-            </span>
-          </div>
-        </div>
-
-        {/* Property count + joined */}
-        <div className="hidden shrink-0 flex-col items-end gap-1 sm:flex">
-          <span className="rounded-full bg-slate-50 px-2.5 py-0.5 text-[11px] font-semibold text-slate-600">
-            {l.property_count} {l.property_count === 1 ? 'property' : 'properties'}
-          </span>
-          <span className="text-[10.5px] text-slate-400">Joined {formatDate(l.created_at)}</span>
-        </div>
+      {/* Avatar */}
+      <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[12px] font-semibold ${palette.bg} ${palette.text}`}>
+        {getInitials(l.full_name)}
       </div>
 
-      {/* Actions */}
-      <div className="mt-3 flex items-center gap-1.5 border-t border-slate-100 pt-3">
-        {l.status === 'pending' && (
-          <>
-            <Link href="/admin/kyc">
-              <button type="button"
-                className="h-8 rounded-lg border border-slate-200 bg-white px-3 text-[11.5px] font-medium text-slate-600 hover:bg-slate-50 hover:text-slate-800 transition-colors">
-                Review KYC
-              </button>
-            </Link>
-            <button type="button" disabled={busy} onClick={() => onStatus(l.id, 'approved')}
-              className="h-8 rounded-lg bg-emerald-500 px-3 text-[11.5px] font-semibold text-white hover:bg-emerald-600 transition-colors disabled:opacity-40">
-              Approve
-            </button>
-            <button type="button" disabled={busy} onClick={() => onStatus(l.id, 'suspended')}
-              className="h-8 rounded-lg border border-slate-200 bg-white px-3 text-[11.5px] font-medium text-slate-600 hover:bg-slate-50 hover:text-slate-800 transition-colors disabled:opacity-40">
-              Suspend
-            </button>
-          </>
-        )}
-        {l.status === 'approved' && (
-          <button type="button" disabled={busy} onClick={() => onStatus(l.id, 'suspended')}
-            className="h-8 rounded-lg border border-amber-200 bg-amber-50 px-3 text-[11.5px] font-medium text-amber-700 hover:bg-amber-100 transition-colors disabled:opacity-40 flex items-center gap-1.5">
-            <ShieldOff className="w-3.5 h-3.5" /> Suspend
-          </button>
-        )}
-        {l.status === 'suspended' && (
-          <button type="button" disabled={busy} onClick={() => onStatus(l.id, 'approved')}
-            className="h-8 rounded-lg border border-emerald-200 bg-emerald-50 px-3 text-[11.5px] font-medium text-emerald-700 hover:bg-emerald-100 transition-colors disabled:opacity-40 flex items-center gap-1.5">
-            <ShieldCheck className="w-3.5 h-3.5" /> Reinstate
-          </button>
-        )}
+      {/* Name */}
+      <div className="min-w-0 w-40 shrink-0">
+        <p className="truncate text-[13px] font-semibold text-slate-900">{l.full_name}</p>
+        <p className="text-[11px] text-slate-400 tabular-nums">Joined {formatDate(l.created_at)}</p>
+      </div>
 
-        <div className="flex-1" />
+      {/* Location */}
+      <div className="hidden md:flex min-w-0 w-28 shrink-0 items-center gap-1 text-[12px] text-slate-500">
+        <MapPin className="h-3 w-3 shrink-0 text-slate-300" />
+        <span className="truncate">{l.city ?? '—'}</span>
+      </div>
 
-        <button type="button" disabled={busy} onClick={() => onDelete(l.user_id, l.id)}
-          className="h-8 rounded-lg border border-slate-200 bg-white px-3 text-[11.5px] font-medium text-slate-500 hover:text-red-600 hover:border-red-200 transition-colors disabled:opacity-40 flex items-center gap-1.5">
-          <Trash2 className="w-3.5 h-3.5" /> Delete
+      {/* Contact */}
+      <div className="hidden lg:flex min-w-0 w-36 shrink-0 items-center gap-1 text-[12px] text-slate-500">
+        <Phone className="h-3 w-3 shrink-0 text-slate-300" />
+        <span className="truncate">{l.whatsapp ?? '—'}</span>
+      </div>
+
+      {/* Properties */}
+      <div className="hidden sm:flex shrink-0 w-24 items-center gap-1 text-[12px] text-slate-500">
+        <Building2 className="h-3 w-3 shrink-0 text-slate-300" />
+        <span className="tabular-nums">{l.property_count}</span>
+        <span>{l.property_count === 1 ? 'listing' : 'listings'}</span>
+      </div>
+
+      {/* Spacer */}
+      <div className="flex-1" />
+
+      {/* Status pill */}
+      <span className={`shrink-0 inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-medium ${meta.pill}`}>
+        <span className={`h-1.5 w-1.5 rounded-full shrink-0 ${meta.dot}`} />
+        {meta.label}
+      </span>
+
+      {/* ⋮ action menu */}
+      <div className="relative shrink-0">
+        <button type="button" disabled={busy} onClick={onMenuToggle}
+          className={`grid h-8 w-8 place-items-center rounded-lg border transition-colors ${
+            menuOpen
+              ? 'border-slate-300 bg-slate-100 text-slate-700'
+              : 'border-transparent bg-transparent text-slate-400 opacity-0 group-hover:opacity-100 hover:border-slate-200 hover:bg-slate-100 hover:text-slate-700'
+          } disabled:opacity-30`}>
+          {busy
+            ? <RefreshCw className="h-3.5 w-3.5 animate-spin" />
+            : <MoreVertical className="h-3.5 w-3.5" />}
         </button>
-
-        {busy && <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-slate-300 border-t-slate-900" />}
+        {menuOpen && (
+          <ActionMenu l={l} processing={processing} onStatus={onStatus} onDelete={onDelete} onClose={onMenuToggle} />
+        )}
       </div>
-    </article>
+    </div>
   )
 }
+
+// ── Page ──────────────────────────────────────────────────────────────────────
 
 export default function AdminLandlords() {
   const [user, setUser]           = useState<{ email?: string } | null>(null)
@@ -176,6 +236,7 @@ export default function AdminLandlords() {
   const [deleteTarget, setDeleteTarget] = useState<DeleteConfirm | null>(null)
   const [deleteLoading, setDeleteLoading] = useState(false)
   const [toast, setToast]               = useState<string | null>(null)
+  const [menuOpen, setMenuOpen]         = useState<string | null>(null)
 
   useEffect(() => {
     if (!isSupabaseConfigured()) return
@@ -241,31 +302,14 @@ export default function AdminLandlords() {
     if (!deleteTarget) return
     setDeleteLoading(true)
     const supabase = createClient()
-
-    const deleteProperties = await supabase.from('properties').delete().eq('landlord_id', deleteTarget.landlordId)
-    if (deleteProperties.error) {
-      showToast(`Failed to delete listings: ${deleteProperties.error.message}`)
-      setDeleteLoading(false)
-      return
-    }
-
-    const deleteSettings = await supabase.from('landlord_settings').delete().eq('landlord_id', deleteTarget.landlordId)
-    if (deleteSettings.error) {
-      showToast(`Failed to delete landlord settings: ${deleteSettings.error.message}`)
-      setDeleteLoading(false)
-      return
-    }
-
-    const deleteLandlord = await supabase.from('landlords').delete().eq('id', deleteTarget.landlordId)
-    if (deleteLandlord.error) {
-      showToast(`Failed to delete landlord: ${deleteLandlord.error.message}`)
-    } else {
-      setClients(cs => cs.filter(c => c.id !== deleteTarget.landlordId))
-      showToast(`${deleteTarget.name} has been deleted.`)
-    }
-
-    setDeleteLoading(false)
-    setDeleteTarget(null)
+    const del1 = await supabase.from('properties').delete().eq('landlord_id', deleteTarget.landlordId)
+    if (del1.error) { showToast(`Failed to delete listings: ${del1.error.message}`); setDeleteLoading(false); return }
+    const del2 = await supabase.from('landlord_settings').delete().eq('landlord_id', deleteTarget.landlordId)
+    if (del2.error) { showToast(`Failed to delete settings: ${del2.error.message}`); setDeleteLoading(false); return }
+    const del3 = await supabase.from('landlords').delete().eq('id', deleteTarget.landlordId)
+    if (del3.error) { showToast(`Failed to delete: ${del3.error.message}`) }
+    else { setClients(cs => cs.filter(c => c.id !== deleteTarget.landlordId)); showToast(`${deleteTarget.name} deleted.`) }
+    setDeleteLoading(false); setDeleteTarget(null)
   }
 
   const displayName = user?.email ? user.email.split('@')[0] : 'Admin'
@@ -273,7 +317,7 @@ export default function AdminLandlords() {
   const approved  = clients.filter(c => c.status === 'approved').length
   const suspended = clients.filter(c => c.status === 'suspended').length
   const notSub    = clients.filter(c => c.status === 'not_submitted').length
-  const topPending = clients.filter(c => c.status === 'pending').slice(0, 4)
+  const topPending = clients.filter(c => c.status === 'pending').slice(0, 5)
 
   const STATUS_TABS = [
     { key: 'all',           label: 'All',           count: clients.length },
@@ -288,17 +332,50 @@ export default function AdminLandlords() {
       <div className="flex h-screen overflow-hidden bg-slate-50">
         <AdminSidebar userEmail={user?.email} userName={displayName} />
 
-        <div className="flex-1 flex flex-col min-w-0">
-          <AdminHeader
-            title="Landlords"
-            subtitle={`${clients.length.toLocaleString()} total${pending > 0 ? ` · ${pending} awaiting KYC` : ''}`}
-            pendingCount={pending}
-            action={
+        <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+
+          {/* ── Compact header ───────────────────────────────────────────── */}
+          <header className="bg-white border-b border-slate-200 shrink-0">
+            <div className="px-5 md:px-6 py-3 flex items-center gap-3 flex-wrap">
+              {/* Title */}
+              <div className="min-w-0">
+                <h1 className="text-[17px] font-bold text-slate-900 tracking-tight">Clients</h1>
+              </div>
+
+              {/* Stat pills */}
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <span className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1 text-[12px] font-medium text-slate-600">
+                  <Users className="w-3.5 h-3.5 text-slate-400" />
+                  <span className="font-bold tabular-nums">{clients.length}</span>
+                  <span className="text-slate-400 text-[11px]">total</span>
+                </span>
+                <span className={`inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-[12px] font-medium ${approved > 0 ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-slate-200 bg-slate-50 text-slate-500'}`}>
+                  <CheckCircle className="w-3.5 h-3.5" />
+                  <span className="font-bold tabular-nums">{approved}</span>
+                  <span className="text-[11px] opacity-70">approved</span>
+                </span>
+                <span className={`inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-[12px] font-medium ${pending > 0 ? 'border-amber-200 bg-amber-50 text-amber-700' : 'border-slate-200 bg-slate-50 text-slate-500'}`}>
+                  <Clock className="w-3.5 h-3.5" />
+                  <span className="font-bold tabular-nums">{pending}</span>
+                  <span className="text-[11px] opacity-70">KYC pending</span>
+                </span>
+                {suspended > 0 && (
+                  <span className="inline-flex items-center gap-1.5 rounded-lg border border-orange-200 bg-orange-50 px-2.5 py-1 text-[12px] font-medium text-orange-700">
+                    <Ban className="w-3.5 h-3.5" />
+                    <span className="font-bold tabular-nums">{suspended}</span>
+                    <span className="text-[11px] opacity-70">suspended</span>
+                  </span>
+                )}
+              </div>
+
+              <div className="flex-1" />
+
+              {/* KYC Review CTA */}
               <Link href="/admin/kyc">
                 <button type="button"
-                  className="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-slate-700 active:scale-95 transition-all">
-                  <ShieldCheck className="h-4 w-4" />
-                  <span className="hidden sm:inline">KYC Review</span>
+                  className="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-3.5 py-2 text-[13px] font-semibold text-white hover:bg-slate-700 active:scale-95 transition-all">
+                  <ShieldCheck className="h-3.5 w-3.5" />
+                  KYC Review
                   {pending > 0 && (
                     <span className="flex h-5 min-w-[20px] items-center justify-center rounded-full bg-amber-400 px-1.5 text-[10px] font-bold text-amber-900">
                       {pending}
@@ -306,181 +383,202 @@ export default function AdminLandlords() {
                   )}
                 </button>
               </Link>
-            }
-          />
+            </div>
+          </header>
 
-          <main className="flex-1 overflow-y-auto p-4 md:p-5 pb-24 md:pb-6">
-            <div className="mx-auto max-w-7xl">
+          {/* ── Content ─────────────────────────────────────────────────── */}
+          <div className="flex flex-1 overflow-hidden">
 
-              {/* Stat cards */}
-              <div className="mb-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
-                {[
-                  { label: 'Total',         value: clients.length, icon: Users,       color: 'text-slate-900',   bg: 'bg-slate-100' },
-                  { label: 'Approved',      value: approved,       icon: UserCheck,   color: 'text-emerald-700', bg: 'bg-emerald-100', sub: 'verified' },
-                  { label: 'KYC Pending',   value: pending,        icon: Clock,       color: 'text-amber-700',   bg: 'bg-amber-100',   sub: 'awaiting review' },
-                  { label: 'Suspended',     value: suspended,      icon: TrendingUp,  color: 'text-orange-600',  bg: 'bg-orange-100' },
-                ].map(s => {
-                  const Icon = s.icon
-                  return (
-                    <div key={s.label} className="flex items-center gap-2.5 rounded-xl border border-slate-200/70 bg-white px-3 py-2.5 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
-                      <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${s.bg}`}>
-                        <Icon className={`h-4 w-4 ${s.color}`} />
-                      </div>
-                      <div className="min-w-0">
-                        <p className={`text-lg leading-tight font-bold ${s.color}`}>{s.value}</p>
-                        <p className="text-[10.5px] text-slate-400 font-medium truncate">{s.label}</p>
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
+            {/* Left — client list */}
+            <div className="flex flex-1 flex-col min-w-0 overflow-hidden">
 
-              <div className="grid gap-4 xl:grid-cols-[1fr_288px]">
-
-                {/* Left column */}
-                <div className="space-y-2.5">
-
-                  {/* Filter / search bar */}
-                  <div className="flex flex-col gap-2.5 rounded-2xl border border-slate-200/70 bg-white px-3 py-2.5 shadow-[0_1px_2px_rgba(15,23,42,0.04)] lg:flex-row lg:items-center lg:justify-between">
-                    <div className="flex flex-wrap items-center gap-1">
-                      {STATUS_TABS.map(tab => (
-                        <button key={tab.key} type="button" onClick={() => setStatusFilter(tab.key)}
-                          className={`inline-flex h-7 items-center gap-1.5 rounded-lg px-2.5 text-xs font-medium transition-all ${
-                            statusFilter === tab.key ? 'bg-slate-900 text-white shadow-sm' : 'text-slate-500 hover:bg-slate-100 hover:text-slate-700'
-                          }`}>
-                          {tab.label}
-                          <span className={`inline-flex h-4 min-w-[16px] items-center justify-center rounded-full px-1 text-[10px] font-semibold tabular-nums ${
-                            statusFilter === tab.key ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-500'
-                          }`}>{tab.count}</span>
-                        </button>
-                      ))}
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                      <label className="flex h-8 items-center gap-2 rounded-lg border border-slate-200 bg-slate-50/60 px-2.5 text-sm focus-within:border-slate-300 focus-within:bg-white focus-within:ring-2 focus-within:ring-slate-200/60 transition-all">
-                        <Search className="h-3.5 w-3.5 shrink-0 text-slate-400" />
-                        <input value={search} onChange={e => setSearch(e.target.value)}
-                          placeholder="Search name, city, phone…"
-                          className="w-40 bg-transparent text-[12.5px] text-slate-800 placeholder:text-slate-400 focus:outline-none" />
-                      </label>
-                      <div className="relative">
-                        <select value={sort} onChange={e => setSort(e.target.value)}
-                          className="h-8 appearance-none rounded-lg border border-slate-200 bg-white pl-2.5 pr-7 text-[12px] font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-slate-300 cursor-pointer hover:border-slate-300 transition-colors">
-                          <option value="newest">Newest</option>
-                          <option value="oldest">Oldest</option>
-                          <option value="name">Name A–Z</option>
-                        </select>
-                        <ChevronDown className="pointer-events-none absolute right-2 top-1/2 h-3 w-3 -translate-y-1/2 text-slate-400" />
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Results */}
-                  {loading ? (
-                    <div className="flex h-64 items-center justify-center">
-                      <div className="h-8 w-8 animate-spin rounded-full border-[3px] border-slate-200 border-t-slate-900" />
-                    </div>
-                  ) : clients.length === 0 ? (
-                    <div className="flex h-48 flex-col items-center justify-center rounded-2xl border border-dashed border-slate-200 bg-white text-center">
-                      <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-50">
-                        <Users className="h-6 w-6 text-slate-300" />
-                      </div>
-                      <p className="text-[13px] font-semibold text-slate-600">No landlords registered yet</p>
-                      <p className="mt-1 text-xs text-slate-400">Landlords will appear here when they register.</p>
-                    </div>
-                  ) : filtered.length === 0 ? (
-                    <div className="flex h-48 flex-col items-center justify-center rounded-2xl border border-dashed border-slate-200 bg-white text-center">
-                      <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-50">
-                        <Users className="h-6 w-6 text-slate-300" />
-                      </div>
-                      <p className="text-[13px] font-semibold text-slate-600">No landlords match this filter</p>
-                    </div>
-                  ) : (
-                    <div className="space-y-1.5">
-                      {filtered.map(l => (
-                        <LandlordCard key={l.id} l={l} processing={processing} onStatus={updateStatus} onDelete={handleDelete} />
-                      ))}
-                    </div>
-                  )}
+              {/* Filter / search bar */}
+              <div className="px-5 md:px-6 py-2.5 bg-white border-b border-slate-200 shrink-0 flex flex-wrap items-center gap-2 justify-between">
+                {/* Status tabs */}
+                <div className="flex items-center gap-0.5 flex-wrap">
+                  {STATUS_TABS.map(tab => (
+                    <button key={tab.key} type="button" onClick={() => setStatusFilter(tab.key)}
+                      className={`inline-flex h-7 items-center gap-1.5 rounded-lg px-2.5 text-[12px] font-medium transition-all ${
+                        statusFilter === tab.key
+                          ? 'bg-slate-900 text-white shadow-sm'
+                          : 'text-slate-500 hover:bg-slate-100 hover:text-slate-700'
+                      }`}>
+                      {tab.label}
+                      <span className={`inline-flex h-4 min-w-[16px] items-center justify-center rounded-full px-1 text-[10px] font-semibold tabular-nums ${
+                        statusFilter === tab.key ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-500'
+                      }`}>{tab.count}</span>
+                    </button>
+                  ))}
                 </div>
 
-                {/* Right sidebar */}
-                <aside className="space-y-2.5">
-
-                  {/* Pending queue */}
-                  <div className="rounded-2xl border border-slate-200/70 bg-white p-3.5 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
-                    <div className="mb-2.5 flex items-center justify-between">
-                      <p className="text-[11px] font-semibold uppercase tracking-widest text-slate-400">Pending Queue</p>
-                      {pending > 0 && (
-                        <span className="rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-semibold text-amber-700 ring-1 ring-amber-200">
-                          {pending}
-                        </span>
-                      )}
-                    </div>
-                    {topPending.length === 0 ? (
-                      <div className="flex flex-col items-center py-5 text-center">
-                        <UserCheck className="mb-1.5 h-7 w-7 text-emerald-200" />
-                        <p className="text-xs text-slate-400">All clear — no pending KYC</p>
-                      </div>
-                    ) : (
-                      <div className="space-y-1.5">
-                        {topPending.map(item => {
-                          const pal = avatarColor(item.full_name)
-                          return (
-                            <div key={item.id} className="flex items-center gap-2 rounded-xl border border-slate-100 bg-slate-50/60 p-2 hover:bg-slate-100/70 transition-colors">
-                              <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[11px] font-semibold ring-1 ${pal.bg} ${pal.text} ${pal.border}`}>
-                                {getInitials(item.full_name)}
-                              </div>
-                              <div className="min-w-0">
-                                <p className="truncate text-xs font-semibold text-slate-800">{item.full_name}</p>
-                                <p className="truncate text-[10.5px] text-slate-400">{item.city ?? 'No city'}</p>
-                              </div>
-                              <Link href="/admin/kyc" className="ml-auto shrink-0">
-                                <span className="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-white text-slate-400 ring-1 ring-slate-200 hover:text-slate-700 transition-colors">
-                                  <ArrowUpRight className="h-3.5 w-3.5" />
-                                </span>
-                              </Link>
-                            </div>
-                          )
-                        })}
-                        {pending > 4 && (
-                          <Link href="/admin/kyc">
-                            <button type="button" className="mt-1 w-full rounded-xl border border-slate-200 bg-white py-2 text-xs font-medium text-slate-500 hover:border-slate-300 hover:text-slate-700 transition-colors">
-                              View all {pending} pending →
-                            </button>
-                          </Link>
-                        )}
-                      </div>
+                {/* Search + sort */}
+                <div className="flex items-center gap-2">
+                  <label className="flex h-8 items-center gap-2 rounded-lg border border-slate-200 bg-slate-50/60 px-2.5 focus-within:border-slate-300 focus-within:bg-white focus-within:ring-2 focus-within:ring-slate-200/60 transition-all">
+                    <Search className="h-3.5 w-3.5 shrink-0 text-slate-400" />
+                    <input value={search} onChange={e => setSearch(e.target.value)}
+                      placeholder="Name, city, phone…"
+                      className="w-36 bg-transparent text-[12.5px] text-slate-800 placeholder:text-slate-400 focus:outline-none" />
+                    {search && (
+                      <button onClick={() => setSearch('')} className="text-slate-400 hover:text-slate-600">
+                        <X className="w-3 h-3" />
+                      </button>
                     )}
+                  </label>
+                  <div className="relative">
+                    <select value={sort} onChange={e => setSort(e.target.value)}
+                      className="h-8 appearance-none rounded-lg border border-slate-200 bg-white pl-2.5 pr-7 text-[12px] font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-slate-300 cursor-pointer hover:border-slate-300 transition-colors">
+                      <option value="newest">Newest</option>
+                      <option value="oldest">Oldest</option>
+                      <option value="name">Name A–Z</option>
+                    </select>
+                    <ChevronDown className="pointer-events-none absolute right-2 top-1/2 h-3 w-3 -translate-y-1/2 text-slate-400" />
                   </div>
+                </div>
+              </div>
 
-                  {/* Overview breakdown */}
-                  <div className="rounded-2xl border border-slate-200/70 bg-white p-3.5 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
-                    <p className="mb-2.5 text-[11px] font-semibold uppercase tracking-widest text-slate-400">Overview</p>
-                    <div className="space-y-2">
-                      {[
-                        { label: 'Approved',      value: approved,  color: 'bg-emerald-400' },
-                        { label: 'KYC Pending',   value: pending,   color: 'bg-amber-400'   },
-                        { label: 'Suspended',     value: suspended, color: 'bg-orange-400'  },
-                        { label: 'Not submitted', value: notSub,    color: 'bg-slate-300'   },
-                      ].map(row => (
-                        <div key={row.label} className="flex items-center gap-2">
-                          <span className={`h-2 w-2 shrink-0 rounded-full ${row.color}`} />
-                          <span className="flex-1 text-xs text-slate-600">{row.label}</span>
-                          <span className="text-xs font-semibold text-slate-800 tabular-nums">{row.value}</span>
-                          <div className="h-1 w-16 rounded-full bg-slate-100 overflow-hidden">
-                            <div className={`h-full rounded-full ${row.color} transition-all duration-500`}
-                              style={{ width: clients.length ? `${(row.value / clients.length) * 100}%` : '0%' }} />
-                          </div>
-                        </div>
-                      ))}
+              {/* Column headers */}
+              {!loading && clients.length > 0 && (
+                <div className="flex items-center gap-3 px-4 py-2 bg-slate-50 border-b border-slate-100 shrink-0">
+                  <div className="w-9 shrink-0" /> {/* avatar spacer */}
+                  <div className="w-40 shrink-0 text-[10.5px] font-semibold uppercase tracking-wider text-slate-400">Client</div>
+                  <div className="hidden md:block w-28 shrink-0 text-[10.5px] font-semibold uppercase tracking-wider text-slate-400">Location</div>
+                  <div className="hidden lg:block w-36 shrink-0 text-[10.5px] font-semibold uppercase tracking-wider text-slate-400">Contact</div>
+                  <div className="hidden sm:block w-24 shrink-0 text-[10.5px] font-semibold uppercase tracking-wider text-slate-400">Listings</div>
+                  <div className="flex-1" />
+                  <div className="text-[10.5px] font-semibold uppercase tracking-wider text-slate-400 pr-8">Status</div>
+                </div>
+              )}
+
+              {/* Rows */}
+              <div className="flex-1 overflow-y-auto bg-white">
+                {loading ? (
+                  <div className="flex h-48 items-center justify-center">
+                    <div className="h-8 w-8 animate-spin rounded-full border-[3px] border-slate-200 border-t-slate-900" />
+                  </div>
+                ) : clients.length === 0 ? (
+                  <div className="flex h-64 flex-col items-center justify-center text-center px-6">
+                    <div className="mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-50 border border-slate-200">
+                      <Users className="h-6 w-6 text-slate-300" />
                     </div>
+                    <p className="text-[14px] font-semibold text-slate-700">No landlords yet</p>
+                    <p className="mt-1 text-[12.5px] text-slate-400">They'll appear here once they register.</p>
                   </div>
-
-                </aside>
+                ) : filtered.length === 0 ? (
+                  <div className="flex h-48 flex-col items-center justify-center text-center px-6">
+                    <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-50 border border-slate-200">
+                      <Search className="h-5 w-5 text-slate-300" />
+                    </div>
+                    <p className="text-[13px] font-semibold text-slate-600">No results</p>
+                    <p className="mt-1 text-[12px] text-slate-400">Try adjusting the filter or search term.</p>
+                  </div>
+                ) : (
+                  filtered.map(l => (
+                    <LandlordRow
+                      key={l.id}
+                      l={l}
+                      processing={processing}
+                      menuOpen={menuOpen === l.id}
+                      onMenuToggle={() => setMenuOpen(menuOpen === l.id ? null : l.id)}
+                      onStatus={updateStatus}
+                      onDelete={handleDelete}
+                    />
+                  ))
+                )}
               </div>
             </div>
-          </main>
+
+            {/* Right sidebar */}
+            <aside className="hidden xl:flex flex-col w-72 shrink-0 border-l border-slate-200 bg-white overflow-y-auto">
+
+              {/* Pending queue */}
+              <div className="p-4 border-b border-slate-100">
+                <div className="flex items-center justify-between mb-3">
+                  <p className="text-[11px] font-bold uppercase tracking-widest text-slate-400">KYC Queue</p>
+                  {pending > 0 && (
+                    <span className="rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-semibold text-amber-700 ring-1 ring-amber-200">
+                      {pending} waiting
+                    </span>
+                  )}
+                </div>
+                {topPending.length === 0 ? (
+                  <div className="flex flex-col items-center py-6 text-center">
+                    <UserCheck className="mb-2 h-8 w-8 text-emerald-200" />
+                    <p className="text-[12.5px] font-medium text-slate-500">Queue is clear</p>
+                    <p className="text-[11px] text-slate-400 mt-0.5">No pending KYC reviews</p>
+                  </div>
+                ) : (
+                  <div className="space-y-1.5">
+                    {topPending.map(item => {
+                      const pal = avatarColor(item.full_name)
+                      return (
+                        <div key={item.id} className="flex items-center gap-2.5 rounded-xl border border-slate-100 bg-slate-50/60 p-2.5 hover:bg-slate-100/70 transition-colors">
+                          <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[11px] font-semibold ${pal.bg} ${pal.text}`}>
+                            {getInitials(item.full_name)}
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <p className="truncate text-[12.5px] font-semibold text-slate-800">{item.full_name}</p>
+                            <p className="truncate text-[11px] text-slate-400">{item.city ?? 'No city listed'}</p>
+                          </div>
+                          <Link href="/admin/kyc" className="shrink-0">
+                            <span className="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-white text-slate-400 ring-1 ring-slate-200 hover:text-slate-700 hover:ring-slate-300 transition-colors">
+                              <ArrowUpRight className="h-3.5 w-3.5" />
+                            </span>
+                          </Link>
+                        </div>
+                      )
+                    })}
+                    {pending > 5 && (
+                      <Link href="/admin/kyc">
+                        <button type="button" className="mt-1 w-full rounded-xl border border-amber-200 bg-amber-50 py-2 text-[12px] font-medium text-amber-700 hover:bg-amber-100 transition-colors">
+                          View all {pending} pending →
+                        </button>
+                      </Link>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* Distribution breakdown */}
+              <div className="p-4 border-b border-slate-100">
+                <p className="mb-3 text-[11px] font-bold uppercase tracking-widest text-slate-400">Breakdown</p>
+                <div className="space-y-2.5">
+                  {[
+                    { label: 'Approved',      value: approved,  color: 'bg-emerald-400', text: 'text-emerald-700' },
+                    { label: 'KYC Pending',   value: pending,   color: 'bg-amber-400',   text: 'text-amber-700'   },
+                    { label: 'Suspended',     value: suspended, color: 'bg-orange-400',  text: 'text-orange-700'  },
+                    { label: 'Not submitted', value: notSub,    color: 'bg-slate-300',   text: 'text-slate-500'   },
+                  ].map(row => (
+                    <div key={row.label}>
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-[12px] text-slate-600">{row.label}</span>
+                        <span className={`text-[12px] font-semibold tabular-nums ${row.text}`}>{row.value}</span>
+                      </div>
+                      <div className="h-1.5 rounded-full bg-slate-100 overflow-hidden">
+                        <div className={`h-full rounded-full ${row.color} transition-all duration-700`}
+                          style={{ width: clients.length ? `${(row.value / clients.length) * 100}%` : '0%' }} />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Quick link */}
+              <div className="p-4">
+                <Link href="/admin/kyc">
+                  <button type="button"
+                    className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-slate-900 py-2.5 text-[13px] font-semibold text-white hover:bg-slate-700 transition-colors">
+                    <ShieldCheck className="h-4 w-4" />
+                    Open KYC Review
+                    {pending > 0 && (
+                      <span className="flex h-5 min-w-[20px] items-center justify-center rounded-full bg-amber-400 px-1.5 text-[10px] font-bold text-amber-900">
+                        {pending}
+                      </span>
+                    )}
+                  </button>
+                </Link>
+              </div>
+            </aside>
+          </div>
         </div>
       </div>
 
@@ -494,7 +592,7 @@ export default function AdminLandlords() {
       )}
 
       {toast && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-gray-900 text-white text-sm font-medium px-5 py-3 rounded-2xl shadow-2xl whitespace-nowrap">
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-slate-900 text-white text-[13px] font-medium px-5 py-3 rounded-2xl shadow-2xl whitespace-nowrap">
           {toast}
         </div>
       )}
