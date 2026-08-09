@@ -8,6 +8,7 @@ const require = createRequire(import.meta.url)
 
 const handlers = {
   chat: () => import('../server/api-handlers/chat.js'),
+  'create-chat-ticket': () => import('../server/api-handlers/create-chat-ticket.js'),
   'landlord-register': () => import('../server/api-handlers/landlord-register.js'),
   'manage-support-agent': () => import('../server/api-handlers/manage-support-agent.js'),
   'notify-signup': () => import('../server/api-handlers/notify-signup.js'),
