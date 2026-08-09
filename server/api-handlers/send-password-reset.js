@@ -105,6 +105,9 @@ export default async function handler(req, res) {
 
   // 2) Send the branded reset email via Resend when we have a link.
   if (resetUrl) {
+    // If Resend fails (e.g. account in testing mode / unverified sender),
+    // fall back to Supabase's own recovery email so the user can always reset.
+    let sent = false
     try {
       const { renderPasswordResetEmail, resolveEmailConfig } = await import('./lib/email-template.js')
       // allowDisabled: a user must ALWAYS be able to reset their password, even
@@ -118,31 +121,50 @@ export default async function handler(req, res) {
         // loudly so the misconfiguration is visible instead of pretending the
         // email was sent.
         console.error('[send-password-reset] RESEND_API_KEY is not configured (env or Admin → Settings → Email)')
-        return sendJson(res, 500, { error: 'Email service is not configured. Please contact support.' })
-      }
-
-      const html = renderPasswordResetEmail({ resetUrl })
-      const resendResp = await fetch('https://api.resend.com/emails', {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${apiKey}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          from,
-          to: email,
-          subject: 'Reset your Livarex password',
-          html,
-        }),
-      })
-      if (!resendResp.ok) {
-        const payload = await resendResp.json().catch(() => null)
-        console.error('[send-password-reset] Resend error:', payload?.message || resendResp.status)
-        return sendJson(res, resendResp.status || 502, { error: 'Failed to send the reset email. Please try again.' })
+      } else {
+        const html = renderPasswordResetEmail({ resetUrl })
+        const resendResp = await fetch('https://api.resend.com/emails', {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${apiKey}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            from,
+            to: email,
+            subject: 'Reset your Livarex password',
+            html,
+          }),
+        })
+        if (resendResp.ok) {
+          sent = true
+        } else {
+          const payload = await resendResp.json().catch(() => null)
+          console.error('[send-password-reset] Resend error:', payload?.message || resendResp.status)
+        }
       }
     } catch (err) {
       console.error('[send-password-reset] Resend error:', err)
-      return sendJson(res, 500, { error: 'Failed to send the reset email. Please try again.' })
+    }
+
+    // Resend didn't deliver → try Supabase's own recovery email as a fallback.
+    if (!sent) {
+      try {
+        const recoverResp = await fetch(`${SUPABASE_URL}/auth/v1/recover`, {
+          method: 'POST',
+          headers: {
+            apikey: getEnv('SUPABASE_ANON_KEY') || getEnv('VITE_SUPABASE_ANON_KEY') || '',
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ email }),
+        })
+        if (!recoverResp.ok) {
+          const payload = await recoverResp.json().catch(() => null)
+          console.error('[send-password-reset] Supabase recover fallback failed:', payload?.msg || payload?.error_description || recoverResp.status)
+        }
+      } catch (err) {
+        console.error('[send-password-reset] Supabase recover fallback error:', err)
+      }
     }
   }
 
