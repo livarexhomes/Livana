@@ -54,17 +54,56 @@ export default function RegisterPage() {
     const supabase = createClient()
 
     try {
-      const { data, error: signUpError } = await supabase.auth.signUp({
+      const signupPayload = {
         email: email.trim(),
         password,
         options: { data: { full_name: fullName.trim(), phone: phone.trim() || null } },
-      })
+      }
+
+      let signupResult = await supabase.auth.signUp(signupPayload)
+
+      // Supabase can return a transient 500/AuthRetryableFetchError even
+      // though Auth is still processing the request. Retry once before
+      // showing a server-configuration error. If the first request created
+      // the account and only lost its response, the retry's
+      // "already registered" result is handled normally below.
+      const retryableSignupError = signupResult.error
+        && (signupResult.error.status === 500 || signupResult.error.name === 'AuthRetryableFetchError')
+      if (retryableSignupError) {
+        await new Promise(resolve => window.setTimeout(resolve, 900))
+        signupResult = await supabase.auth.signUp(signupPayload)
+      }
+
+      let { data, error: signUpError } = signupResult
+
+      // If the first request timed out after Auth created the user, the
+      // retry can legitimately return "already registered". Recover the
+      // session with the password the visitor just submitted and continue
+      // through the same tenant-profile path as a normal signup.
+      const retryCreatedTheAccount = retryableSignupError
+        && signUpError
+        && (
+          signUpError.code === 'user_already_exists'
+          || /already registered|already exists|user already exists/i.test(signUpError.message ?? '')
+        )
+      if (retryCreatedTheAccount) {
+        const recovered = await supabase.auth.signInWithPassword({
+          email: signupPayload.email,
+          password: signupPayload.password,
+        })
+        if (!recovered.error && recovered.data.user) {
+          data = { user: recovered.data.user, session: recovered.data.session }
+          signUpError = null
+        }
+      }
 
       if (signUpError || !data.user) {
         console.warn('[registration] Supabase signup failed', {
           code: signUpError?.code,
           name: signUpError?.name,
           status: signUpError?.status,
+          retried: retryableSignupError,
+          recovered: Boolean(retryCreatedTheAccount && !signUpError),
           message: signUpError?.message,
         })
         setError(getSignupErrorMessage(signUpError))
