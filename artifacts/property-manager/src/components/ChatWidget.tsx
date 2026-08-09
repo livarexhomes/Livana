@@ -735,17 +735,18 @@ export default function ChatWidget() {
   // Composer visibility
   const showComposer = view === 'bot' || (view === 'live' && liveStatus !== 'guest-form')
 
-  // Hide widget inside dashboards
-  const path = (location || '').split('?')[0]
-  if (path.startsWith('/admin') || path.startsWith('/landlord') || path.startsWith('/user') || path.startsWith('/dashboard')) return null
-
-  // Escape closes panel
+  // Escape closes panel — must be declared BEFORE the early return below
+  // so the hook is always called the same number of times regardless of path.
   useEffect(() => {
     if (!open) return
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setOpen(false) }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
   }, [open])
+
+  // Hide widget inside dashboards (early return AFTER all hooks)
+  const path = (location || '').split('?')[0]
+  if (path.startsWith('/admin') || path.startsWith('/landlord') || path.startsWith('/user') || path.startsWith('/dashboard')) return null
 
   // ── Render ────────────────────────────────────────────────────────────────
 
