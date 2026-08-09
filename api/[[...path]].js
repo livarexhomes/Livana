@@ -16,6 +16,7 @@ const handlers = {
   'send-otp': () => import('../server/api-handlers/send-otp.js'),
   'send-password-reset': () => import('../server/api-handlers/send-password-reset.js'),
   'send-support-notification': () => import('../server/api-handlers/send-support-notification.js'),
+  'support-presence': () => import('../server/api-handlers/support-presence.js'),
   'verify-otp': () => import('../server/api-handlers/verify-otp.js'),
   'whatsapp/notify-inspection': () => import('../server/api-handlers/whatsapp/notify-inspection.js'),
 }

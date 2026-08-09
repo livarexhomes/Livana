@@ -60,7 +60,10 @@ export default function AdminKYC() {
 
   useEffect(() => {
     const supabase = createClient()
-    supabase.auth.getUser().then(({ data: { user } }) => setUser({ email: user?.email }))
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      setUser({ email: user?.email })
+      if (user?.id) window.__livarexUserId = user.id
+    })
     supabase
       .from('landlords')
       .select('*')

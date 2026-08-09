@@ -206,7 +206,7 @@ export default function AdminProperties() {
     const supabase = createClient()
     supabase.auth.getUser().then(async ({ data: { user } }) => {
       setUser({ email: user?.email })
-      if (user?.id) setAuthUid(user.id)
+      if (user?.id) { setAuthUid(user.id); window.__livarexUserId = user.id }
       if (user?.email) {
         const { data: adminRow } = await supabase
           .from('admins')

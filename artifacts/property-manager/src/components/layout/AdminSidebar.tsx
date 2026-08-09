@@ -1,8 +1,17 @@
 import { useState, useEffect } from 'react'
 import { Link, useLocation } from '@/lib/navigation'
 import { createClient } from '@/lib/supabase'
-import { useAdminPresence, subscribeMySupportStatus, getMySupportStatus } from '@/lib/admin-presence'
-import { type SupportStatus } from '@/lib/live-support'
+import { useAdminPresence } from '@/lib/admin-presence'
+import { subscribeSupportPresence, type SupportStatus } from '@/lib/live-support'
+
+// Set by the admin layout so the sidebar can identify the signed-in admin's
+// roster row (presence is keyed by user_id).
+declare global {
+  interface Window {
+    __livarexUserId?: string
+  }
+}
+
 import {
   LayoutDashboard, Building2, UserPlus, FolderKanban, UserCog,
   Settings, LogOut, Menu, X,
@@ -27,8 +36,8 @@ interface Props { userEmail?: string | null; userName?: string | null }
 
 export default function AdminSidebar({ userEmail, userName }: Props) {
   // Mount admin presence once per admin page — the sidebar renders on every
-  // admin page (including Support), so this keeps support availability
-  // accurate no matter where the admin is.
+  // admin page (including Support), so this keeps the heartbeat + support
+  // availability accurate no matter where the admin is.
   useAdminPresence()
   const [location] = useLocation()
   const [open, setOpen] = useState(false)
@@ -36,10 +45,15 @@ export default function AdminSidebar({ userEmail, userName }: Props) {
     try { return localStorage.getItem('admin-sidebar-collapsed') === 'true' } catch { return false }
   })
   const [openEnquiries, setOpenEnquiries] = useState(0)
-  const [supportStatus, setSupportStatus] = useState<SupportStatus>(getMySupportStatus)
+  const [supportStatus, setSupportStatus] = useState<SupportStatus>('offline')
 
   useEffect(() => {
-    return subscribeMySupportStatus(setSupportStatus)
+    // The bottom-left admin status reads the SAME single source as the Support
+    // page and the customer chatbot: the agents roster (presence + availability).
+    return subscribeSupportPresence((state) => {
+      const my = state.agents.find(a => a.user_id === window.__livarexUserId)
+      if (my) setSupportStatus(my.presence)
+    })
   }, [])
 
   useEffect(() => {

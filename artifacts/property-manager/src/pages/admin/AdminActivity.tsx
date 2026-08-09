@@ -61,7 +61,10 @@ export default function AdminActivity() {
 
   useEffect(() => {
     const supabase = createClient()
-    supabase.auth.getUser().then(({ data: { user } }) => setUser({ email: user?.email }))
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      setUser({ email: user?.email })
+      if (user?.id) window.__livarexUserId = user.id
+    })
 
     Promise.all([
       supabase.from('landlords').select('*').order('created_at', { ascending: false }).limit(50),

@@ -3,7 +3,7 @@ import { X, Send, MessageSquare, Paperclip, ChevronDown, Check, ArrowRight, Load
 import { useLocation, redirect } from '../lib/navigation'
 import { createClient, isSupabaseConfigured } from '../lib/supabase'
 import { getPlatformSettings, getNotificationSettings, phoneToWaLink, getSupportAvailability, type SupportAvailability, DEFAULT_AVAILABILITY } from '../lib/platform-settings'
-import { subscribeLiveSupportPresence, type LiveSupportState } from '../lib/live-support'
+import { subscribeSupportPresence, type LiveSupportState } from '../lib/live-support'
 import { assignChatToAgent } from '../lib/support-assignment'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -182,12 +182,14 @@ export default function ChatWidget() {
   const [agentTicketNo, setAgentTicketNo]       = useState<string | null>(null)
 
   // ── Live support availability ─────────────────────────────────────────────
+  // Single source of truth: the roster. `availableCount` = agents with
+  // presence 'online' AND availability on — never derived from UI state.
   const [liveState, setLiveState] = useState<LiveSupportState>({
-    status: 'offline', online: false, onlineAgents: [], awayAgents: [], agentCount: 0,
+    status: 'offline', online: false, onlineAgents: [], awayAgents: [], offlineAgents: [], agents: [], availableCount: 0, agentCount: 0,
   })
 
   useEffect(() => {
-    const unsub = subscribeLiveSupportPresence(setLiveState)
+    const unsub = subscribeSupportPresence(setLiveState)
     return unsub
   }, [])
 
@@ -319,14 +321,10 @@ export default function ChatWidget() {
   }
 
   // Presence-driven status line, honoring the manual availability override set
-  // by admins (Support page → Support · Auto/Online/Offline/Back in).
-  // Effective availability:
-  //   mode 'online'  → always online
-  //   mode 'offline' → always offline
-  //   mode 'back_in' → offline, but tells the visitor when support returns
-  //   mode 'auto'    → live presence; if nobody is present, fall back to the
-  //                    weekly schedule (open → "leave a message", closed →
-  //                    "offline")
+  // by admins (Support page → Support · Auto/Online/Offline/Back in). The
+  // visitor-facing status separates PRESENCE (are agents connected?) from
+  // AVAILABILITY (are they accepting conversations?) — both come from the same
+  // roster feed, never from frontend UI state.
   const availabilityActive = (() => {
     if (availability.mode === 'online') return 'online' as const
     if (availability.mode === 'offline') return 'offline' as const
@@ -334,30 +332,7 @@ export default function ChatWidget() {
     return null
   })()
 
-  /** One-shot availability probe: prefer the live presence channel, fall back
-   *  to the `agents` roster's `last_seen_at` heartbeat so the widget still
-   *  reflects a logged-in admin even when a presence channel can't complete. */
-  async function getEffectiveAvailability(): Promise<'online' | 'away' | 'offline'> {
-    if (availabilityActive === 'online') return 'online'
-    if (availabilityActive === 'offline' || availabilityActive === 'back_in') return 'offline'
-    if (liveState.online) return 'online'
-    if (liveState.status === 'away') return 'away'
-    if (!isSupabaseConfigured()) return 'offline'
-    try {
-      const supabase = createClient()
-      const { data } = await supabase
-        .from('agents')
-        .select('last_seen_at')
-        .not('last_seen_at', 'is', null)
-        .order('last_seen_at', { ascending: false })
-        .limit(1)
-      const last = data?.[0]?.last_seen_at as string | undefined
-      if (last && Date.now() - new Date(last).getTime() < 90 * 1000) return 'online'
-    } catch {
-      /* presence already covers this — ignore roster errors */
-    }
-    return 'offline'
-  }
+  const agentAvailable = liveState.availableCount > 0
 
   /** Open WhatsApp with a prefilled message (used by the menu option and the
    *  no-agent fallback so support can be reached outside the chatbot). */
@@ -389,11 +364,12 @@ export default function ChatWidget() {
         user = u
       }
 
-      // Re-check availability in real time (presence channel + last_seen roster).
-      const avail = await getEffectiveAvailability()
+      // Live-agent chat is only offered when an agent is actually present AND
+      // available (roster-driven, in real time). Everything else — the manual
+      // Support override and the bot — never fabricates availability.
+      const canLive = availabilityActive !== 'offline' && agentAvailable
 
-      // Agent available → instant connect, no form. Name comes from identity when known.
-      if (avail === 'online') {
+      if (canLive) {
         const meta = (user?.user_metadata ?? {}) as Record<string, unknown>
         const name = typeof meta.full_name === 'string' && meta.full_name
           ? meta.full_name
@@ -404,13 +380,13 @@ export default function ChatWidget() {
         return
       }
 
-      // No agent available → WhatsApp fallback first so the visitor isn't left
+      // No available agent → WhatsApp fallback first so the visitor isn't left
       // stuck, with the offline message form as the secondary option.
       setView({ name: 'offline', stage: 'noagent' })
     }
     run()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [inquiryId, liveState.online, liveState.status])
+  }, [inquiryId, availabilityActive, agentAvailable])
 
   /** Create (or resume) a live chat thread and enter it immediately. */
   async function connectLiveThread({ name, email, firstMessage }: { name: string; email: string; firstMessage: string }) {
@@ -419,8 +395,9 @@ export default function ChatWidget() {
     const { data: { user } } = await supabase.auth.getUser().catch(() => ({ data: { user: null } }))
     const note = firstMessage.trim() || `Hi, I'm ${name}. I'd like some help.`
 
-    // Auto-assign the least-loaded online agent, else queue.
-    const assignment = assignChatToAgent(liveState.onlineAgents)
+    // Auto-assign the least-loaded available agent (presence 'online' AND
+    // availability on), else queue. Only roster agents can be assigned.
+    const assignment = assignChatToAgent(liveState.agents.filter(a => a.presence === 'online' && a.available))
 
     const { data: inserted, error } = await supabase.from('chat_inquiries').insert({
       name,
@@ -728,9 +705,15 @@ export default function ChatWidget() {
       }
       return { dot: 'bg-slate-400', text: 'Offline · leave a message' }
     }
-    // Auto mode: driven purely by live presence.
+    // Auto mode: driven purely by live presence + availability from the roster.
     if (liveState.online) {
-      return { dot: 'bg-emerald-400', text: `Online · ${liveState.onlineAgents[0]?.name ?? 'agent'} will reply shortly` }
+      if (agentAvailable) {
+        return {
+          dot: 'bg-emerald-400',
+          text: `Online · ${liveState.availableCount} agent${liveState.availableCount === 1 ? ' is' : 's are'} available`,
+        }
+      }
+      return { dot: 'bg-emerald-400', text: 'Online · agents are busy right now' }
     }
     if (liveState.status === 'away') {
       return { dot: 'bg-amber-400', text: 'Away · agents will be back shortly' }
@@ -996,6 +979,20 @@ export default function ChatWidget() {
                   <span>&lt;2h response</span>
                 </div>
 
+                {/* Live availability — realtime count of agents who are present
+                    AND available to take a conversation (roster-driven). */}
+                {liveState.agents.length > 0 && (
+                  <div className="mt-3 flex items-center justify-center gap-1.5 text-[11px] font-semibold text-emerald-700">
+                    <span className="relative flex size-2">
+                      <span className={`size-2 rounded-full ${agentAvailable ? 'bg-emerald-500' : 'bg-slate-300'}`} />
+                      {agentAvailable && <span className="absolute inset-0 rounded-full bg-emerald-500 animate-ping opacity-60" />}
+                    </span>
+                    {agentAvailable
+                      ? `${liveState.availableCount} agent${liveState.availableCount === 1 ? ' is' : 's are'} available now`
+                      : 'No agents available right now'}
+                  </div>
+                )}
+
                 {/* Single entry point — one clear action into the chat. Uses the
                     bot's default opening message so the visitor lands on the
                     standard greeting. */}
@@ -1055,7 +1052,7 @@ export default function ChatWidget() {
                     <div className="rounded-3xl border border-emerald-200/80 bg-emerald-50 px-4 py-3 text-center shadow-sm"
                       style={{ animation:'cwFadeUp 0.3s ease both' }}>
                       <p className="text-[11px] uppercase tracking-[0.16em] text-emerald-700">Connected</p>
-                      <p className="mt-1 text-sm font-semibold text-slate-900">You’re chatting with {liveState.onlineAgents[0]?.name ?? 'Livarex Support'}.</p>
+                      <p className="mt-1 text-sm font-semibold text-slate-900">You’re chatting with {liveState.agents.find(a => a.presence === 'online' && a.available)?.name ?? 'Livarex Support'}.</p>
                       <p className="mt-1 text-[12px] text-slate-600">They’ll reply in a few seconds.</p>
                     </div>
                   )}

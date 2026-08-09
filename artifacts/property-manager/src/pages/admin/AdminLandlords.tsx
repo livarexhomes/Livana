@@ -180,7 +180,10 @@ export default function AdminLandlords() {
   useEffect(() => {
     if (!isSupabaseConfigured()) return
     const supabase = createClient()
-    supabase.auth.getUser().then(({ data: { user } }) => setUser({ email: user?.email }))
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      setUser({ email: user?.email })
+      if (user?.id) window.__livarexUserId = user.id
+    })
     supabase
       .from('landlords').select('*').order('created_at', { ascending: false })
       .then(async ({ data, error }) => {

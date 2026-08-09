@@ -55,6 +55,7 @@ export default function AdminDashboard() {
     supabase.auth.getUser().then(async ({ data: { user } }) => {
       if (!user) return
       setUser({ email: user.email })
+      window.__livarexUserId = user.id
 
       const [
         { count: propCount },

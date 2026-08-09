@@ -4,19 +4,29 @@ import {
   firstAvailableAgent,
   shouldQueue,
 } from './support-assignment'
-import type { SupportAgentMeta } from './live-support'
+import type { SupportAgent } from './live-support'
 
-const online = (agent_id: string, load = 0): SupportAgentMeta & { load?: number } => ({
-  agent_id,
+const online = (id: string, load = 0): SupportAgent & { load?: number } => ({
+  id,
+  user_id: id,
+  name: 'Agent',
+  email: 'agent@livarex.com',
   role: 'agent',
-  status: 'online',
+  active: true,
+  presence: 'online',
+  available: true,
   load,
 })
 
-const away = (agent_id: string): SupportAgentMeta => ({
-  agent_id,
+const away = (id: string): SupportAgent => ({
+  id,
+  user_id: id,
+  name: 'Agent',
+  email: 'agent@livarex.com',
   role: 'agent',
-  status: 'away',
+  active: true,
+  presence: 'away',
+  available: true,
 })
 
 describe('firstAvailableAgent', () => {
@@ -25,8 +35,8 @@ describe('firstAvailableAgent', () => {
     expect(firstAvailableAgent([away('a1')])).toBeNull()
   })
 
-  it('ignores entries without an agent_id', () => {
-    const noId: SupportAgentMeta = { role: 'admin', status: 'online' }
+  it('ignores entries without an agent id', () => {
+    const noId: SupportAgent = { ...away('x'), id: '', presence: 'online' }
     expect(firstAvailableAgent([noId])).toBeNull()
   })
 

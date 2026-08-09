@@ -78,6 +78,22 @@ export default async function handler(req, res) {
   const body = await parseJsonBody(req)
   if (!body) return sendJson(res, 400, { error: 'Invalid request body' })
 
+  // Reconcile presence server-side whenever support activity flows through the
+  // API (fire-and-forget; never blocks the notification path).
+  const SUPABASE_URL = getEnv('SUPABASE_URL') || ''
+  const SUPABASE_SERVICE_KEY = getEnv('SUPABASE_SERVICE_KEY') || getEnv('SUPABASE_SERVICE_ROLE_KEY') || ''
+  if (SUPABASE_URL && SUPABASE_SERVICE_KEY) {
+    fetch(`${SUPABASE_URL}/rest/v1/rpc/sweep_presence`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${SUPABASE_SERVICE_KEY}`,
+        apikey: SUPABASE_SERVICE_KEY,
+        'Content-Type': 'application/json',
+      },
+      body: '{}',
+    }).catch(() => { /* non-fatal */ })
+  }
+
   // Resolve the effective Resend key + sender (stored settings win, env falls back).
   // The `from` address is NEVER taken from the request body — an attacker must
   // not be able to spoof emails from the Livarex domain.

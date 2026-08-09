@@ -1,64 +1,72 @@
-// Live-support availability: the website widget checks whether a support
-// agent (currently the admin) is online via the shared Realtime presence
-// channel that the Admin Dashboard joins while an admin is logged in.
+// Live-support presence + availability — single source of truth.
 //
-// Presence entries are keyed by connection and carry per-agent metadata:
-//   { role: 'admin', status: 'online' | 'away', online_at, agent_id, name, email }
-// This makes the state naturally multi-agent — any member with role
-// admin/agent/support counts toward availability, and the aggregate status is
-// "online" when at least one member is online, "away" when members exist but
-// all are away, and "offline" when no members are present.
+// Presence ("is this agent actually connected?") and availability ("is this
+// agent accepting new conversations?") both live on the `agents` roster, which
+// is the one source every surface reads:
+//
+//   - `agents.presence`      'online' | 'away' | 'offline' — derived server-side
+//                            from the `last_seen_at` heartbeat by
+//                            `public.compute_presence()` / `public.sweep_presence()`.
+//                            Clients only ever write heartbeats; they never
+//                            declare their own status.
+//   - `agents.available`     bool — the agent's explicit availability toggle.
+//   - `agents.last_seen_at`  heartbeat timestamp written by the admin-presence
+//                            module on a throttle while the admin page is open.
+//
+// The customer-facing chatbot counts agents where presence = 'online' AND
+// availability = true (via the `available_agents` view) and NEVER derives
+// availability from frontend UI state or a manually-displayed status.
+//
+// `subscribeSupportPresence` is the one realtime feed: it watches the roster
+// and re-emits whenever any agent's presence/availability changes.
 
-import { createClient } from './supabase'
+import { createClient, isSupabaseConfigured } from './supabase'
 
 export type SupportStatus = 'online' | 'away' | 'offline'
 export type AgentRole = 'admin' | 'agent' | 'support'
 
-/** Per-agent metadata carried on a presence entry. */
-export interface SupportAgentMeta {
-  agent_id?: string
-  user_id?: string
-  name?: string
-  email?: string
+/** Roster row as surfaced by the unified presence system. */
+export interface SupportAgent {
+  id: string
+  user_id: string
+  name: string
+  email: string
   role: AgentRole
-  status: 'online' | 'away'
-  /** When the agent's presence entry was last refreshed (for relative-time UI). */
-  online_at?: string
+  active: boolean
+  presence: SupportStatus
+  available: boolean
+  availability_note?: string | null
+  last_seen_at?: string | null
+  created_at?: string
 }
 
-export interface SupportPresenceState {
-  status: SupportStatus
-  /** Convenience boolean: true when at least one agent is online. */
-  online: boolean
-  /** Number of online agents (admin counts as 1). */
-  agentCount: number
-}
-
-/** Richer aggregate with the per-agent breakdown (used by the widget + inbox). */
+/** Aggregate over the roster: per-agent breakdown + availability counts. */
 export interface LiveSupportState {
   status: SupportStatus
   online: boolean
-  onlineAgents: SupportAgentMeta[]
-  awayAgents: SupportAgentMeta[]
+  onlineAgents: SupportAgent[]
+  awayAgents: SupportAgent[]
+  offlineAgents: SupportAgent[]
+  agents: SupportAgent[]
+  /** Agents where presence = 'online' AND availability = true. */
+  availableCount: number
   agentCount: number
 }
 
-const AGENT_ROLES: readonly AgentRole[] = ['admin', 'agent', 'support']
-
-function isAgentEntry(meta: Record<string, unknown>): boolean {
-  return AGENT_ROLES.includes(meta.role as AgentRole)
+const EMPTY_STATE: LiveSupportState = {
+  status: 'offline',
+  online: false,
+  onlineAgents: [],
+  awayAgents: [],
+  offlineAgents: [],
+  agents: [],
+  availableCount: 0,
+  agentCount: 0,
 }
 
-function toAgentMeta(meta: Record<string, unknown>): SupportAgentMeta {
-  return {
-    agent_id: typeof meta.agent_id === 'string' ? meta.agent_id : undefined,
-    user_id: typeof meta.user_id === 'string' ? meta.user_id : undefined,
-    name: typeof meta.name === 'string' ? meta.name : undefined,
-    email: typeof meta.email === 'string' ? meta.email : undefined,
-    role: (AGENT_ROLES.includes(meta.role as AgentRole) ? meta.role : 'admin') as AgentRole,
-    status: meta.status === 'away' ? 'away' : 'online',
-    online_at: typeof meta.online_at === 'string' ? meta.online_at : undefined,
-  }
+export function isAgentEntry(meta: Record<string, unknown>): boolean {
+  return typeof meta?.role === 'string'
+    && ['admin', 'agent', 'support'].includes(meta.role)
 }
 
 export function isSupportOnline(presence: Record<string, unknown> | undefined): boolean {
@@ -70,96 +78,133 @@ export function isSupportOnline(presence: Record<string, unknown> | undefined): 
   })
 }
 
-/** Aggregate raw presence state into a 3-state summary. */
-export function presenceToState(presence: Record<string, unknown> | undefined): SupportPresenceState {
-  const members = Object.values(presence ?? {}) as Record<string, unknown>[]
-  const agents = members.filter(isAgentEntry)
-  if (agents.length === 0) {
-    return { status: 'offline', online: false, agentCount: 0 }
-  }
-  const anyOnline = agents.some((m) => m.status !== 'away')
+function normalizeRow(row: Record<string, unknown>): SupportAgent {
   return {
-    status: anyOnline ? 'online' : 'away',
-    online: anyOnline,
-    agentCount: agents.length,
+    id: String(row.id ?? ''),
+    user_id: String(row.user_id ?? ''),
+    name: String(row.name ?? ''),
+    email: String(row.email ?? ''),
+    role: (['admin', 'agent', 'support'].includes(row.role as string) ? row.role : 'agent') as AgentRole,
+    active: row.active !== false,
+    presence: (['online', 'away', 'offline'].includes(row.presence as string) ? row.presence : 'offline') as SupportStatus,
+    available: row.available !== false,
+    availability_note: typeof row.availability_note === 'string' ? row.availability_note : undefined,
+    last_seen_at: typeof row.last_seen_at === 'string' ? row.last_seen_at : null,
+    created_at: typeof row.created_at === 'string' ? row.created_at : undefined,
   }
 }
 
-/** Aggregate raw presence into the richer state with per-agent breakdown. */
-export function presenceToLiveState(presence: Record<string, unknown> | undefined): LiveSupportState {
-  const members = Object.values(presence ?? {}) as Record<string, unknown>[]
-  const agentMetas = members.filter(isAgentEntry).map(toAgentMeta)
-  const onlineAgents = agentMetas.filter((m) => m.status === 'online')
-  const awayAgents = agentMetas.filter((m) => m.status === 'away')
-  if (agentMetas.length === 0) {
-    return { status: 'offline', online: false, onlineAgents: [], awayAgents: [], agentCount: 0 }
-  }
+function aggregate(rows: SupportAgent[]): LiveSupportState {
+  const active = rows.filter((a) => a.active)
+  const onlineAgents = active.filter((a) => a.presence === 'online')
+  const awayAgents = active.filter((a) => a.presence === 'away')
+  const offlineAgents = active.filter((a) => a.presence === 'offline')
+  const availableCount = onlineAgents.filter((a) => a.available).length
   return {
-    status: onlineAgents.length > 0 ? 'online' : 'away',
+    status: onlineAgents.length > 0 ? 'online' : awayAgents.length > 0 ? 'away' : 'offline',
     online: onlineAgents.length > 0,
     onlineAgents,
     awayAgents,
-    agentCount: agentMetas.length,
+    offlineAgents,
+    agents: active,
+    availableCount,
+    agentCount: active.length,
   }
 }
 
 /**
- * Subscribe to the admin-presence channel and call `onChange` with the full
- * 3-state summary whenever the online status changes. Returns an unsubscribe
- * function.
+ * Fetch the current roster + availability aggregate. Falls back to the
+ * server-side `/api/support-presence` aggregate when this client can't read
+ * the roster directly (e.g. anonymous widget on a locked-down project), and
+ * degrades to an empty state on total failure.
  */
-export function subscribeSupportPresence(onChange: (state: SupportPresenceState) => void): () => void {
-  let unsubscribed = false
-  const supabase = createClient()
-  const channel = supabase.channel('livarex-admin-presence')
-
-  const emit = () => {
-    if (unsubscribed) return
-    onChange(presenceToState(channel.presenceState() as Record<string, unknown> | undefined))
+export async function fetchSupportPresence(): Promise<LiveSupportState> {
+  if (!isSupabaseConfigured()) return { ...EMPTY_STATE }
+  try {
+    const supabase = createClient()
+    const { data, error } = await supabase
+      .from('agents')
+      .select('id, user_id, name, email, role, active, presence, available, availability_note, last_seen_at, created_at')
+      .order('created_at', { ascending: true })
+    if (!error && Array.isArray(data)) return aggregate((data as Record<string, unknown>[]).map(normalizeRow))
+  } catch {
+    /* fall through to the API aggregate */
   }
-
-  channel
-    .on('presence', { event: 'sync' }, emit)
-    .subscribe((status, err) => {
-      console.log('[live-support] subscribeSupportPresence status:', status)
-      if (status === 'SUBSCRIBED') emit()
-      else {
-        console.warn('[live-support] support presence subscribe failed:', status, err)
+  try {
+    const res = await fetch('/api/support-presence', { method: 'POST' })
+    if (res.ok) {
+      const json = (await res.json()) as { onlineCount?: number; agents?: Record<string, unknown>[] }
+      if (Array.isArray(json.agents)) {
+        return aggregate(json.agents.map(normalizeRow))
       }
-    })
-
-  return () => {
-    unsubscribed = true
-    supabase.removeChannel(channel)
+      // Anonymous viewer: only the count is exposed.
+      return { ...EMPTY_STATE, availableCount: json.onlineCount ?? 0 }
+    }
+  } catch {
+    /* ignore */
   }
+  return { ...EMPTY_STATE }
 }
 
 /**
- * Subscribe to the presence channel with the richer per-agent state. Returns
- * an unsubscribe function.
+ * Subscribe to the live roster (the single presence source). Re-emits whenever
+ * any agent's presence or availability changes, and refetches the aggregate
+ * every 30s to self-heal missed realtime events. Returns an unsubscribe fn.
  */
-export function subscribeLiveSupportPresence(onChange: (state: LiveSupportState) => void): () => void {
+export function subscribeSupportPresence(
+  onChange: (state: LiveSupportState) => void,
+  onError?: (err: unknown) => void,
+): () => void {
   let unsubscribed = false
-  const supabase = createClient()
-  const channel = supabase.channel('livarex-admin-presence')
+  let interval: ReturnType<typeof setInterval> | null = null
+  let disposed = false
 
-  const emit = () => {
+  const emit = (rows: SupportAgent[]) => {
     if (unsubscribed) return
-    onChange(presenceToLiveState(channel.presenceState() as Record<string, unknown> | undefined))
+    onChange(aggregate(rows))
   }
 
-  channel
-    .on('presence', { event: 'sync' }, emit)
-    .subscribe((status, err) => {
-      console.log('[live-support] subscribeLiveSupportPresence status:', status)
-      if (status === 'SUBSCRIBED') emit()
-      else {
-        console.warn('[live-support] live support presence subscribe failed:', status, err)
+  // Initial + periodic snapshot (self-healing; the widget also uses this).
+  const refresh = () => {
+    fetchSupportPresence().then((state) => {
+      if (!unsubscribed) onChange(state)
+    }).catch((err) => onError?.(err))
+  }
+  refresh()
+  interval = setInterval(refresh, 30_000)
+
+  // Live feed: roster changes drive the aggregate in realtime.
+  if (isSupabaseConfigured()) {
+    try {
+      const supabase = createClient()
+      const channel = supabase
+        .channel('livarex-support-roster')
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'agents' },
+          () => refresh(),
+        )
+        .subscribe((status, err) => {
+          console.log('[live-support] roster subscribe status:', status)
+          if (status !== 'SUBSCRIBED' && status !== 'CHANNEL_ERROR') {
+            console.warn('[live-support] roster subscribe failed:', status, err)
+          }
+        })
+      disposed = false
+      return () => {
+        unsubscribed = true
+        disposed = true
+        if (interval) clearInterval(interval)
+        supabase.removeChannel(channel)
       }
-    })
+    } catch (err) {
+      onError?.(err)
+    }
+  }
 
   return () => {
     unsubscribed = true
-    supabase.removeChannel(channel)
+    disposed = true
+    if (interval) clearInterval(interval)
   }
 }

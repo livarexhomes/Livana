@@ -8,9 +8,8 @@ import {
 import AdminSidebar from '../../components/layout/AdminSidebar'
 import AuthGuard from '../../components/auth/AuthGuard'
 import { createClient } from '../../lib/supabase'
-import { subscribeLiveSupportPresence, type LiveSupportState } from '../../lib/live-support'
+import { subscribeSupportPresence, type LiveSupportState, type SupportAgent, type SupportStatus } from '../../lib/live-support'
 import { claimInquiry, unassignInquiry, type AgentAssignmentStatus } from '../../lib/support-assignment'
-import { getPresenceIndicatorState } from '../../lib/admin-presence'
 import { subscribeToSupportAlerts, playSupportSound, getSoundMuted, setSoundMuted } from '../../lib/support-notifications'
 import {
   getNotificationSettings, getSupportAvailability, invalidatePlatformSettings,
@@ -594,7 +593,7 @@ function ChatRequestDetail({ inquiry, onBack, onMarkRead, onStatusChange, agents
   onBack: () => void
   onMarkRead: (id: string) => void
   onStatusChange: (id: string, status: ChatInquiry['status']) => void
-  agents: Agent[]
+  agents: SupportAgent[]
   liveState: LiveSupportState
 }) {
   const [messages, setMessages]   = useState<ChatMessage[]>([])
@@ -604,7 +603,7 @@ function ChatRequestDetail({ inquiry, onBack, onMarkRead, onStatusChange, agents
   const [updating, setUpdating]   = useState(false)
   const [visitorTyping, setVisitorTyping] = useState(false)
   const [assigning, setAssigning] = useState(false)
-  const [assignedTo, setAssignedTo] = useState<Agent | null>(null)
+  const [assignedTo, setAssignedTo] = useState<SupportAgent | null>(null)
   const bottomRef = useRef<HTMLDivElement>(null)
   const visitorTypingTimer = useRef<number | null>(null)
   const typingSentAt = useRef(0)
@@ -803,7 +802,7 @@ function ChatRequestDetail({ inquiry, onBack, onMarkRead, onStatusChange, agents
         </span>
         <div className="ml-auto flex items-center gap-1.5">
           {inquiry.agent_status !== 'assigned' && (
-            <button onClick={() => doClaim(liveState.onlineAgents[0]?.agent_id ?? agents[0]?.id ?? '')}
+            <button onClick={() => doClaim(liveState.onlineAgents[0]?.id ?? agents[0]?.id ?? '')}
               disabled={assigning || agents.length === 0}
               className="inline-flex items-center gap-1.5 text-[11.5px] font-medium px-2.5 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 disabled:opacity-40 text-white transition-colors">
               {assigning ? <Loader2 className="w-3 h-3 animate-spin" /> : <User className="w-3 h-3" />}
@@ -817,7 +816,7 @@ function ChatRequestDetail({ inquiry, onBack, onMarkRead, onStatusChange, agents
             className="appearance-none pl-2.5 pr-6 py-1.5 rounded-lg border border-slate-200 text-[11.5px] font-medium bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-slate-400 cursor-pointer disabled:opacity-40 hover:border-slate-300 transition-colors">
             <option value="">Reassign…</option>
             {agents.filter(a => a.active).map(a => (
-              <option key={a.id} value={a.id}>{a.name}</option>
+              <option key={a.id} value={a.id}>{a.name}{a.available ? '' : ' (unavailable)'}</option>
             ))}
             {inquiry.agent_status === 'assigned' && <option value="__unassign__" disabled>— Unassign —</option>}
           </select>
@@ -1324,7 +1323,7 @@ function InboxTab({ liveState, onOpenThreadChange, initialChatId, onInitialChatC
   const [enquiries, setEnquiries]   = useState<Enquiry[]>([])
   const [chats, setChats]           = useState<ChatInquiry[]>([])
   const [contacts, setContacts]     = useState<ContactMessage[]>([])
-  const [agents, setAgents]         = useState<Agent[]>([])
+  const [agents, setAgents]         = useState<SupportAgent[]>([])
   const [loading, setLoading]       = useState(true)
   const [selectedKey, setSelectedKey] = useState<string | null>(null)
   const [filterType, setFilterType]   = useState<'all' | InboxItemType>('all')
@@ -1360,8 +1359,8 @@ function InboxTab({ liveState, onOpenThreadChange, initialChatId, onInitialChatC
     supabase.from('contact_messages').select('*')
       .order('created_at', { ascending: false })
       .then(({ data }) => { setContacts((data as ContactMessage[]) ?? []); setLoading(false) })
-    supabase.from('agents').select('*').order('created_at', { ascending: false })
-      .then(({ data }) => setAgents((data as Agent[]) ?? []))
+    supabase.from('agents').select('id, user_id, name, email, role, active, presence, available, availability_note, last_seen_at, created_at').order('created_at', { ascending: false })
+      .then(({ data }) => setAgents((data as SupportAgent[]) ?? []))
 
     const enqChannel = supabase.channel('admin_enquiries_list')
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'enquiries' },
@@ -1388,7 +1387,21 @@ function InboxTab({ liveState, onOpenThreadChange, initialChatId, onInitialChatC
         (payload) => setContacts(prev => [payload.new as ContactMessage, ...prev]))
       .subscribe()
 
-    return () => { supabase.removeChannel(enqChannel); supabase.removeChannel(chatChannel); supabase.removeChannel(contactChannel) }
+    // The roster feed is the single source of truth for presence + availability.
+    const agentsChannel = supabase.channel('livarex-admin-roster')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'agents' },
+        () => {
+          supabase.from('agents').select('id, user_id, name, email, role, active, presence, available, availability_note, last_seen_at, created_at').order('created_at', { ascending: false })
+            .then(({ data }) => setAgents((data as SupportAgent[]) ?? []))
+        })
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(enqChannel)
+      supabase.removeChannel(chatChannel)
+      supabase.removeChannel(contactChannel)
+      supabase.removeChannel(agentsChannel)
+    }
   }, [])
 
   const items = useMemo(() => {
@@ -1630,7 +1643,7 @@ function InboxTab({ liveState, onOpenThreadChange, initialChatId, onInitialChatC
 // ── AgentsTab ─────────────────────────────────────────────────────────────────
 
 function ConfirmAgentDelete({ agent, onConfirm, onCancel, loading }: {
-  agent: Agent
+  agent: SupportAgent
   onConfirm: () => void
   onCancel: () => void
   loading: boolean
@@ -1661,16 +1674,43 @@ function ConfirmAgentDelete({ agent, onConfirm, onCancel, loading }: {
   )
 }
 
-function AgentsTab({ agents, setAgents, liveState, availability }: {
-  agents: Agent[]
-  setAgents: React.Dispatch<React.SetStateAction<Agent[]>>
+function AgentsTab({ agents, setAgents, liveState }: {
+  agents: SupportAgent[]
+  setAgents: React.Dispatch<React.SetStateAction<SupportAgent[]>>
   liveState: LiveSupportState
-  availability: SupportAvailability
 }) {
   const [busyId, setBusyId] = useState<string | null>(null)
-  const [deleteTarget, setDeleteTarget] = useState<Agent | null>(null)
+  const [deleteTarget, setDeleteTarget] = useState<SupportAgent | null>(null)
   const [deleting, setDeleting] = useState(false)
+  const [activeCounts, setActiveCounts] = useState<Record<string, number>>({})
   const { toast } = useToast()
+
+  // Current active conversations per agent (assigned + open/replied). Refreshed
+  // on roster/tab changes and every 30s.
+  useEffect(() => {
+    const supabase = createClient()
+    let disposed = false
+    const loadCounts = () => {
+      supabase.from('chat_inquiries')
+        .select('agent_id')
+        .in('agent_status', ['assigned'])
+        .in('status', ['open', 'replied'])
+        .then(({ data }) => {
+          if (disposed) return
+          const counts: Record<string, number> = {}
+          for (const row of (data ?? []) as { agent_id: string | null }[]) {
+            if (row.agent_id) counts[row.agent_id] = (counts[row.agent_id] ?? 0) + 1
+          }
+          setActiveCounts(counts)
+        })
+    }
+    loadCounts()
+    const ch = supabase.channel('agent_active_counts')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'chat_inquiries' }, loadCounts)
+      .subscribe()
+    const iv = setInterval(loadCounts, 30_000)
+    return () => { disposed = true; clearInterval(iv); supabase.removeChannel(ch) }
+  }, [])
 
   /** Attach the caller's session token so the API can verify they're an admin. */
   async function authedFetch(url: string, body: unknown) {
@@ -1686,13 +1726,19 @@ function AgentsTab({ agents, setAgents, liveState, availability }: {
     })
   }
 
-  async function toggleActive(agent: Agent) {
+  async function toggleActive(agent: SupportAgent) {
     const supabase = createClient()
     await supabase.from('agents').update({ active: !agent.active }).eq('id', agent.id)
     setAgents(prev => prev.map(a => a.id === agent.id ? { ...a, active: !agent.active } : a))
   }
 
-  async function resetPassword(agent: Agent) {
+  async function toggleAvailable(agent: SupportAgent) {
+    const supabase = createClient()
+    await supabase.from('agents').update({ available: !agent.available }).eq('id', agent.id)
+    setAgents(prev => prev.map(a => a.id === agent.id ? { ...a, available: !agent.available } : a))
+  }
+
+  async function resetPassword(agent: SupportAgent) {
     setBusyId(agent.id)
     try {
       const res = await authedFetch('/api/manage-support-agent', { action: 'reset-password', userId: agent.user_id })
@@ -1706,7 +1752,7 @@ function AgentsTab({ agents, setAgents, liveState, availability }: {
     }
   }
 
-  async function removeAgent(agent: Agent) {
+  async function removeAgent(agent: SupportAgent) {
     setDeleting(true)
     try {
       const res = await authedFetch('/api/manage-support-agent', { action: 'remove', userId: agent.user_id })
@@ -1724,15 +1770,10 @@ function AgentsTab({ agents, setAgents, liveState, availability }: {
     }
   }
 
-  // Effective availability: the manual override (Support · Auto) wins over
-  // realtime presence when it forces online/offline. In 'auto' mode the
-  // roster reflects live presence (online / away / offline).
-  const forceOnline = availability.mode === 'online'
-  const forceOffline = availability.mode === 'offline' || availability.mode === 'back_in'
-  const onlineIds = new Set(liveState.onlineAgents.map(a => a.agent_id).filter(Boolean))
-  const awayIds = new Set(liveState.awayAgents.map(a => a.agent_id).filter(Boolean))
-
-  const effectiveOnlineCount = forceOnline ? agents.filter(a => a.active).length : liveState.onlineAgents.length
+  // Presence is stored server-side on the roster; the manual Support override
+  // does NOT change anyone's presence here (it only affects the visitor-facing
+  // availability messaging).
+  const availableCount = liveState.availableCount
 
   return (
     <div className="flex-1 overflow-y-auto p-4">
@@ -1741,7 +1782,9 @@ function AgentsTab({ agents, setAgents, liveState, availability }: {
         <div className="bg-white rounded-2xl border border-slate-200 shadow-[0_1px_2px_rgba(15,23,42,0.04)] overflow-hidden">
           <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-between">
             <h3 className="text-sm font-bold text-slate-900">Agents</h3>
-            <span className="text-[10px] uppercase tracking-widest text-slate-400 font-bold">{agents.length} total · {effectiveOnlineCount} online</span>
+            <span className="text-[10px] uppercase tracking-widest text-slate-400 font-bold">
+              {agents.length} total · {availableCount} available
+            </span>
           </div>
           {agents.length === 0 ? (
             <div className="px-4 py-10 text-center">
@@ -1752,14 +1795,8 @@ function AgentsTab({ agents, setAgents, liveState, availability }: {
             <div className="divide-y divide-slate-50">
               {agents.map(agent => {
                 const isBusy = busyId === agent.id
-                // Effective status: manual override → online/offline; else live presence.
-                let status: 'online' | 'away' | 'offline'
-                if (!agent.active) status = 'offline'
-                else if (forceOnline) status = 'online'
-                else if (forceOffline) status = 'offline'
-                else if (onlineIds.has(agent.id)) status = 'online'
-                else if (awayIds.has(agent.id)) status = 'away'
-                else status = 'offline'
+                const status: 'online' | 'away' | 'offline' = agent.presence
+                const isAvailable = agent.available && agent.presence === 'online'
                 const statusStyles = status === 'online'
                   ? 'bg-emerald-50 text-emerald-700'
                   : status === 'away'
@@ -1781,10 +1818,35 @@ function AgentsTab({ agents, setAgents, liveState, availability }: {
                         <span className={`shrink-0 text-[10px] font-bold px-1.5 py-0.5 rounded-full uppercase ${agent.active ? 'bg-blue-50 text-blue-700' : 'bg-slate-100 text-slate-500'}`}>
                           {agent.role}
                         </span>
+                        <span className={`shrink-0 inline-flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded-full ${isAvailable ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-500'}`}>
+                          <span className={`w-1.5 h-1.5 rounded-full ${isAvailable ? 'bg-emerald-500' : 'bg-slate-400'}`} />
+                          {agent.available ? 'Available' : 'Unavailable'}
+                        </span>
                       </div>
-                      <p className="text-xs text-slate-400 mt-0.5 truncate">{agent.email}</p>
+                      <p className="text-xs text-slate-400 mt-0.5 truncate">
+                        {agent.email}
+                        {agent.last_seen_at && (
+                          <span className="ml-1.5">
+                            · last seen {formatDistanceToNow(new Date(agent.last_seen_at), { addSuffix: true })}
+                          </span>
+                        )}
+                        {agent.availability_note && (
+                          <span className="ml-1.5 text-amber-600">· {agent.availability_note}</span>
+                        )}
+                      </p>
                     </div>
                     <div className="flex items-center gap-1.5 shrink-0">
+                      <span className={`inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-1 rounded-lg ${activeCounts[agent.id] ? 'bg-blue-50 text-blue-700' : 'bg-slate-50 text-slate-400'}`}>
+                        <MessageSquare className="w-3 h-3" />
+                        {activeCounts[agent.id] ?? 0} active
+                      </span>
+                      <button onClick={() => toggleAvailable(agent)} disabled={isBusy}
+                        title={agent.available ? 'Stop accepting new conversations' : 'Accept new conversations'}
+                        className={`inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-1.5 rounded-lg transition-colors ${
+                          agent.available ? 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                        }`}>
+                        {agent.available ? 'Available' : 'Unavailable'}
+                      </button>
                       <button onClick={() => resetPassword(agent)} disabled={isBusy} title="Send password reset"
                         className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-1.5 rounded-lg border border-gray-200 bg-white text-slate-600 hover:text-blue-700 hover:border-blue-200 disabled:opacity-40 transition-colors">
                         {isBusy ? <Loader2 className="w-3 h-3 animate-spin" /> : <KeyRound className="w-3 h-3" />} Reset
@@ -1825,9 +1887,9 @@ export default function AdminSupportPage() {
   const [chatOpenCount, setChatOpenCount] = useState(0)
   const [contactCount, setContactCount]   = useState(0)
   const [liveState, setLiveState] = useState<LiveSupportState>({
-    status: 'offline', online: false, onlineAgents: [], awayAgents: [], agentCount: 0,
+    status: 'offline', online: false, onlineAgents: [], awayAgents: [], offlineAgents: [], agents: [], availableCount: 0, agentCount: 0,
   })
-  const [agents, setAgents] = useState<Agent[]>([])
+  const [agents, setAgents] = useState<SupportAgent[]>([])
   const [muted, setMuted] = useState(getSoundMuted)
   const [availability, setAvailability] = useState<SupportAvailability>(DEFAULT_AVAILABILITY)
   // Set when the admin clicks "Open thread" from the Queued section; the Inbox
@@ -1836,7 +1898,21 @@ export default function AdminSupportPage() {
   const { toast } = useToast()
 
   useEffect(() => {
-    return subscribeLiveSupportPresence(setLiveState)
+    return subscribeSupportPresence(setLiveState)
+  }, [])
+
+  // Keep the standalone roster list in sync with the same single source.
+  useEffect(() => {
+    const supabase = createClient()
+    const load = () => {
+      supabase.from('agents').select('id, user_id, name, email, role, active, presence, available, availability_note, last_seen_at, created_at').order('created_at', { ascending: false })
+        .then(({ data }) => setAgents((data as SupportAgent[]) ?? []))
+    }
+    load()
+    const ch = supabase.channel('admin_support_roster')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'agents' }, load)
+      .subscribe()
+    return () => { supabase.removeChannel(ch) }
   }, [])
 
   // Register the current admin in the agents roster on login (idempotent).
@@ -1845,6 +1921,7 @@ export default function AdminSupportPage() {
     supabase.auth.getUser().then(async ({ data: { user } }) => {
       if (!user || user.is_anonymous) return
       setUser({ email: user.email, id: user.id })
+      window.__livarexUserId = user.id
       try {
         const { data: { session } } = await supabase.auth.getSession()
         await fetch('/api/register-support-agent', {
@@ -1858,8 +1935,8 @@ export default function AdminSupportPage() {
       } catch {
         /* non-fatal */
       }
-      const { data } = await supabase.from('agents').select('*').order('created_at', { ascending: false })
-      setAgents((data as Agent[]) ?? [])
+      const { data } = await supabase.from('agents').select('id, user_id, name, email, role, active, presence, available, availability_note, last_seen_at, created_at').order('created_at', { ascending: false })
+      setAgents((data as SupportAgent[]) ?? [])
     })
   }, [])
 
@@ -1897,7 +1974,10 @@ export default function AdminSupportPage() {
 
   useEffect(() => {
     const supabase = createClient()
-    supabase.auth.getUser().then(({ data: { user } }) => setUser({ email: user?.email, id: user?.id }))
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      setUser({ email: user?.email, id: user?.id })
+      if (user?.id) window.__livarexUserId = user.id
+    })
 
     // Badge counts
     const fetchCounts = () => {
@@ -1924,7 +2004,7 @@ export default function AdminSupportPage() {
 
   const displayName = user?.email ? user.email.split('@')[0] : 'Admin'
   const inboxCount = openCount + chatOpenCount + contactCount
-  const onlineAgentCount = liveState.onlineAgents.length
+  const availableAgentCount = liveState.availableCount
 
   return (
     <AuthGuard require="admin">
@@ -1944,7 +2024,7 @@ export default function AdminSupportPage() {
                   {/* Manual availability override (online / offline / back in) */}
                   <AvailabilityControl availability={availability} onChange={setAvailability} />
                   {/* Dynamic presence indicator */}
-                  <PresenceIndicator userId={user?.id} />
+                  <PresenceIndicator userId={user?.id} state={liveState} />
                   <button
                     onClick={() => { const next = !muted; setMuted(next); setSoundMuted(next) }}
                     title={muted ? 'Unmute notifications' : 'Mute notifications'}
@@ -2010,11 +2090,11 @@ export default function AdminSupportPage() {
                 }`}>
                 <UserPlus className="w-3.5 h-3.5" />
                 Agents
-                {onlineAgentCount > 0 && (
+                {availableAgentCount > 0 && (
                   <span className={`inline-flex items-center justify-center min-w-[17px] h-[17px] px-1 rounded-full text-[9px] font-bold ${
                     tab === 'agents' ? 'bg-emerald-500 text-white' : 'bg-emerald-100 text-emerald-700'
                   }`}>
-                    {onlineAgentCount}
+                    {availableAgentCount}
                   </span>
                 )}
               </button>
@@ -2026,7 +2106,7 @@ export default function AdminSupportPage() {
             {tab === 'support' ? <SupportTab onOpenQueued={(id) => { setPendingChatId(id); setTab('inbox') }} /> : tab === 'inbox' ? (
               <InboxTab liveState={liveState} onOpenThreadChange={handleOpenThreadChange} initialChatId={pendingChatId} onInitialChatConsumed={() => setPendingChatId(null)} />
             ) : (
-              <AgentsTab agents={agents} setAgents={setAgents} liveState={liveState} availability={availability} />
+              <AgentsTab agents={agents} setAgents={setAgents} liveState={liveState} />
             )}
           </div>
         </div>
@@ -2051,43 +2131,30 @@ function StatCard({ icon, label, count, highlight = false }: { icon: React.React
 }
 
 /**
- * Dynamic support presence indicator. Shows a live green "Online" when the
- * current agent's roster row has been seen within the last 90s (driven by the
- * admin-presence heartbeat), otherwise a gray "Offline · last seen X ago"
- * using relative time. Re-renders on a 30s tick and on roster realtime
- * updates so the relative time stays fresh.
+ * Unified presence + availability indicator for the admin header. Reads the
+ * same single source (the roster) as the agent list, the Agents tab, and the
+ * customer chatbot — there is no independent online-status logic here.
  */
-function PresenceIndicator({ userId }: { userId?: string }) {
-  const [lastSeenAt, setLastSeenAt] = useState<string | null>(null)
-  const [, forceTick] = useState(0)
+function PresenceIndicator({ userId, state }: { userId?: string; state: LiveSupportState }) {
+  const me = state.agents.find(a => a.user_id === userId)
+  const myPresence: SupportStatus = me?.presence ?? 'offline'
+  const myAvailable = Boolean(me?.available && myPresence === 'online')
 
-  useEffect(() => {
-    if (!userId) return
-    const supabase = createClient()
-    const load = () => {
-      supabase.from('agents').select('last_seen_at').eq('user_id', userId).maybeSingle()
-        .then(({ data }) => setLastSeenAt((data?.last_seen_at as string | null) ?? null))
-    }
-    load()
-    const ch = supabase.channel('admin_my_last_seen')
-      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'agents', filter: `user_id=eq.${userId}` },
-        (payload) => setLastSeenAt((payload.new as { last_seen_at?: string | null }).last_seen_at ?? null))
-      .subscribe()
-    const tick = window.setInterval(() => forceTick(t => t + 1), 30 * 1000)
-    return () => { supabase.removeChannel(ch); window.clearInterval(tick) }
-  }, [userId])
-
-  const presence = getPresenceIndicatorState(lastSeenAt)
+  const statusStyles = myPresence === 'online'
+    ? { dot: 'bg-emerald-500', label: 'Online', sub: myAvailable ? 'You’re available to chat' : 'Connected — not accepting chats' }
+    : myPresence === 'away'
+      ? { dot: 'bg-amber-400', label: 'Away', sub: 'Heartbeat idle — you’ll look offline soon' }
+      : { dot: 'bg-slate-400', label: 'Offline', sub: 'Heartbeat not detected' }
 
   return (
-    <div className={`inline-flex items-center gap-2 rounded-xl border px-3.5 py-2 shadow-[0_1px_2px_rgba(15,23,42,0.05)] ${presence.isOnline ? 'border-slate-200 bg-white' : 'border-slate-200/80 bg-slate-50'}`}>
+    <div className={`inline-flex items-center gap-2 rounded-xl border px-3.5 py-2 shadow-[0_1px_2px_rgba(15,23,42,0.05)] ${myPresence === 'online' ? 'border-slate-200 bg-white' : 'border-slate-200/80 bg-slate-50'}`}>
       <span className="relative flex size-2">
-        <span className={`size-2 rounded-full ${presence.isOnline ? 'bg-emerald-500' : 'bg-slate-400'}`} />
-        {presence.isOnline && <span className="absolute inset-0 rounded-full bg-emerald-500 animate-ping opacity-60" />}
+        <span className={`size-2 rounded-full ${statusStyles.dot}`} />
+        {myPresence === 'online' && <span className="absolute inset-0 rounded-full bg-emerald-500 animate-ping opacity-60" />}
       </span>
       <div className="leading-tight">
-        <p className="text-[13px] font-semibold text-slate-800">{presence.label}</p>
-        <p className="text-[11px] text-slate-400">{presence.subLabel}</p>
+        <p className="text-[13px] font-semibold text-slate-800">{statusStyles.label}</p>
+        <p className="text-[11px] text-slate-400">{statusStyles.sub}</p>
       </div>
     </div>
   )

@@ -112,7 +112,10 @@ export default function AdminProjects() {
 
   useEffect(() => {
     const supabase = createClient()
-    supabase.auth.getUser().then(({ data: { user } }) => setUser({ email: user?.email }))
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      setUser({ email: user?.email })
+      if (user?.id) window.__livarexUserId = user.id
+    })
     supabase.from('projects').select('*').order('created_at', { ascending: false })
       .then(({ data }) => {
         const rows = (data as Project[] | null) ?? []

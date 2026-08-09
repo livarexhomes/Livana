@@ -50,10 +50,10 @@
 - Prefers multiple filter groups on a page to be visually distinct via tiny uppercase labels (e.g., "Type"/"Status") in fixed-width columns with uniform compact pill sizing and per-group active colors (e.g., blue primary for one group, slate-900 for the other), rather than large headings or visually identical groups. Confidence: 0.7
 - Prefers secondary filter groups with several status options and counts (e.g., All/New/Open/Replied/Closed in the support inbox) to be collapsed into a single compact dropdown select with counts inside the options (e.g., "New (2)") instead of a row of pills displayed all at once — explicitly asked to "make this a dropdown to select instead of displaying them at once"; the primary Type grouping may stay as pills. Confidence: 0.8
 - Wants dropdown menus anchored so they stay visually attached to their trigger button and never appear detached or drifting off to one side — reported the availability dropdown as "moving to the left too much" when the menu was right-anchored to a small button near a screen edge; the fix anchored the menu to the button's left edge (`left-0` under the trigger) so it opens predictably aligned with the control. Confidence: 0.7
-- Prefers to hand the AI builder structured, professional written specs for UI work — numbered sections, explicit do/don't lists, exact on-screen copy and email templates, and a Goal section — rather than terse verbal directions. Confidence: 0.7
+- Prefers to hand the AI builder structured, professional written specs for UI work — numbered sections, explicit do/don't lists, exact on-screen copy and email templates, and a Goal section — rather than terse verbal directions. The same structured, normative spec style extends to backend/system-architecture work (e.g., the support presence rebuild): explicit requirements with hard constraints ("must", "NEVER", "Do not use mock data…") that the assistant is expected to implement exactly. Confidence: 0.7
 - Wants public-facing floating UI (e.g., the chat widget) to appear ONLY on public marketing pages and to be completely hidden inside all authenticated dashboards (`/admin/*`, `/landlord/*`, `/user/*`, `/dashboard/*`) — dashboard users already have dedicated support/messaging features, and the floating widget overlaps important interface elements (e.g., the message composer/send button). Visibility should be route-detected inside the globally-mounted widget itself so no other component needs changes. Confidence: 0.8
 - Prefers a live-agent-first support UX in the chat widget (explicitly modeled on Intercom/Zendesk/Crisp/Tidio): when an agent is online, connect the visitor instantly with a greeting and no form at all (identity from the anonymous session or left blank); only fall back to a leave-a-message/offline form (name, email, optional phone, message) when no agent is online. Users should never have to fill out a form first. Confidence: 0.9
-- Expects chat experiences to feel like a modern messaging app on both the visitor and admin sides: typing indicators, read receipts, online/offline status, timestamps, and instant delivery via realtime (Supabase Realtime/WebSockets) with no page refreshes. Wants support availability fully automatic with no manual Online/Offline switch — detected from real activity (admin logged into the dashboard → Online, 10–15 min inactive → Away, logout/disconnect → Offline, auto-return to Online on activity) rather than a static toggle. Confidence: 0.8
+- Expects chat experiences to feel like a modern messaging app on both the visitor and admin sides: typing indicators, read receipts, online/offline status, timestamps, and instant delivery via realtime (Supabase Realtime/WebSockets) with no page refreshes. Wants support availability fully automatic with no manual Online/Offline switch — detected from real activity (admin logged into the dashboard → Online, 10–15 min inactive → Away, logout/disconnect → Offline, auto-return to Online on activity) rather than a static toggle. Confidence: 0.9
 - Wants a manual availability override on top of the automatic presence system: the admin "offline button" should be adjustable to a time frame for when support will be online again (e.g., a "Back at HH:MM" / back-in control), so the chat widget tells visitors exactly when support returns (status line + offline-form copy, e.g. "Support is offline — back at 14:30") rather than only showing a bare offline state. The override must persist to a settings store (admin_settings) that the visitor widget reads, with an "Auto" mode that falls back to live presence (+ optional weekly schedule) as the default. Confidence: 0.75
 - Wants the manual availability override (Support · Auto) to be a single shared source of truth that drives every related status display — when the admin forces Online, agent-roster status badges and online counts should all read online; when forced Offline/Back-in, everyone shows offline; only in Auto mode does the roster reflect live realtime presence (online/away/offline). Explicitly asked to "work on the agents active status either online or offline making it connect to the Support · Auto"; implemented by lifting the availability state up to the page and passing it to both the control and the agents tab, with effective-status computation that respects the override. Confidence: 0.7
 - Prefers future-proofed architecture even when only one role exists today — e.g., building the support system multi-agent-ready (multiple support agents, automatic chat assignment, agent availability detection, conversation transfer, queue management when all agents are busy) rather than hardcoding single-admin assumptions. Confidence: 0.9
@@ -113,6 +113,37 @@ g model. Confidence: 0.4
 - Prefers primary CTAs and key interactive elements to carry the brand color (blue gradient #2563eb → #3b82f6, white text, matching shadow/focus ring) rather than off-brand accents like amber/yellow — asked to "change the Start a new conversation button color to the brand color," resolved by matching the widget header and send-button blue for consistency. Confidence: 0.7
 
 - When restyling the chat bot, wants every chat surface unified into the brand blue language — assistant message bubbles, the Menu/Help/Exit pills, the menu bubble, quick-reply chips, and the typing indicator all restyled in the brand blue palette (light-blue gradient bubbles with navy text, blue-bordered pills/chips, blue hover states) to match the already-blue user bubbles, replacing neutral slate/gray styling; picked the "Match brand blue" visual direction when offered design options. Confidence: 0.7
+
+rm conventions rather than replacing the whole serving model was the right call. Confidence: 0.6
+g model. Confidence: 0.4
+
+e right call. Confidence: 0.6
+g model. Confidence: 0.4
+
+less functions with no extra config. Keeping what works and adding capability via platform conventions rather than replacing the whole serving model was the right call. Confidence: 0.6
+g model. Confidence: 0.4
+
+pills/chips, blue hover states) to match the already-blue user bubbles, replacing neutral slate/gray styling; picked the "Match brand blue" visual direction when offered design options. Confidence: 0.7
+
+rm conventions rather than replacing the whole serving model was the right call. Confidence: 0.6
+g model. Confidence: 0.4
+
+e right call. Confidence: 0.6
+g model. Confidence: 0.4
+
+less functions with no extra config. Keeping what works and adding capability via platform conventions rather than replacing the whole serving model was the right call. Confidence: 0.6
+g model. Confidence: 0.4
+
+rm conventions rather than replacing the whole serving model was the right call. Confidence: 0.6
+g model. Confidence: 0.4
+
+e right call. Confidence: 0.6
+g model. Confidence: 0.4
+
+less functions with no extra config. Keeping what works and adding capability via platform conventions rather than replacing the whole serving model was the right call. Confidence: 0.6
+g model. Confidence: 0.4
+
+pills/chips, blue hover states) to match the already-blue user bubbles, replacing neutral slate/gray styling; picked the "Match brand blue" visual direction when offered design options. Confidence: 0.7
 
 rm conventions rather than replacing the whole serving model was the right call. Confidence: 0.6
 g model. Confidence: 0.4

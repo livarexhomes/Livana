@@ -493,6 +493,7 @@ export default function AdminSettings() {
     const supabase = createClient()
     supabase.auth.getUser().then(({ data: { user } }) => {
       setUser({ email: user?.email, id: user?.id })
+      if (user?.id) window.__livarexUserId = user.id
     })
 
     async function loadSettings() {

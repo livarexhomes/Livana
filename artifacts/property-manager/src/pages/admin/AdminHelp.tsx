@@ -67,7 +67,10 @@ export default function AdminHelp() {
 
   useEffect(() => {
     const supabase = createClient()
-    supabase.auth.getUser().then(({ data: { user } }) => setUser({ email: user?.email, id: user?.id }))
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      setUser({ email: user?.email, id: user?.id })
+      if (user?.id) window.__livarexUserId = user.id
+    })
     let active = true
     Promise.all([getPlatformSettings(), getNotificationSettings()]).then(([platform, notif]) => {
       if (!active) return

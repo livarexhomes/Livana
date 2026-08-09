@@ -6,7 +6,7 @@
 // from the inbox ("Assign to me" / reassign).
 
 import { createClient } from './supabase'
-import type { SupportAgentMeta } from './live-support'
+import type { SupportAgent } from './live-support'
 
 export type AgentAssignmentStatus = 'unassigned' | 'queued' | 'assigned'
 
@@ -25,10 +25,21 @@ export interface AssignmentResult {
 }
 
 /** Agents that can take a conversation right now: online, not away. */
-export function firstAvailableAgent(onlineAgents: SupportAgentMeta[] | AssignableAgent[]): AssignableAgent | null {
-  const candidates = (onlineAgents ?? []).filter(
-    (a) => a.status === 'online' && typeof a.agent_id === 'string' && a.agent_id.length > 0,
-  ) as AssignableAgent[]
+export function firstAvailableAgent(onlineAgents: SupportAgent[] | AssignableAgent[]): AssignableAgent | null {
+  const candidates = (onlineAgents ?? [])
+    .map((a) => a as unknown as Record<string, unknown>)
+    .filter((a) => {
+      const status = a.status ?? a.presence
+      const agentId = a.agent_id ?? a.id
+      return status === 'online' && typeof agentId === 'string' && agentId.length > 0
+    })
+    .map((a) => ({
+      agent_id: String(a.agent_id ?? a.id ?? ''),
+      name: typeof a.name === 'string' ? a.name : undefined,
+      role: typeof a.role === 'string' ? a.role : undefined,
+      status: (a.status ?? a.presence) as 'online' | 'away',
+      load: typeof a.load === 'number' ? a.load : undefined,
+    }))
   if (candidates.length === 0) return null
   // Least-loaded assignment: fewest currently-assigned conversations wins.
   candidates.sort((a, b) => (a.load ?? 0) - (b.load ?? 0))
@@ -42,7 +53,7 @@ export function firstAvailableAgent(onlineAgents: SupportAgentMeta[] | Assignabl
  *  - `null` + 'queued' when nobody is available right now.
  */
 export function assignChatToAgent(
-  onlineAgents: SupportAgentMeta[] | AssignableAgent[],
+  onlineAgents: SupportAgent[] | AssignableAgent[],
 ): AssignmentResult {
   const pick = firstAvailableAgent(onlineAgents)
   if (!pick) return { agentId: null, agentStatus: 'queued' }
@@ -50,7 +61,7 @@ export function assignChatToAgent(
 }
 
 /** True when a new inquiry should be held in the queue (no agent available). */
-export function shouldQueue(onlineAgents: SupportAgentMeta[] | AssignableAgent[]): boolean {
+export function shouldQueue(onlineAgents: SupportAgent[] | AssignableAgent[]): boolean {
   return firstAvailableAgent(onlineAgents) === null
 }
 

@@ -221,7 +221,10 @@ export default function AdminUsers() {
   useEffect(() => {
     if (!isSupabaseConfigured()) return
     const supabase = createClient()
-    supabase.auth.getUser().then(({ data: { user } }) => setUser({ email: user?.email }))
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      setUser({ email: user?.email })
+      if (user?.id) window.__livarexUserId = user.id
+    })
     ;(async () => {
       const [{ data: tenantData, error: tenantError }, { data: landlordData }] = await Promise.all([
         supabase.from('tenants').select('*').order('created_at', { ascending: false }),
