@@ -1,6 +1,6 @@
 
 import { useState } from 'react'
-import { Link } from '@/lib/navigation'
+import { Link, useLocation } from '@/lib/navigation'
 import { Eye, EyeOff, CheckCircle2, Mail } from 'lucide-react'
 
 /**
@@ -10,8 +10,17 @@ import { Eye, EyeOff, CheckCircle2, Mail } from 'lucide-react'
  *   2. User enters the code → POST /api/verify-reset (validates code, updates password)
  */
 export default function ResetPasswordPage() {
+  const [location] = useLocation()
   const [step, setStep] = useState<'email' | 'code' | 'done'>('email')
-  const [email, setEmail] = useState('')
+  // Prefill the email if the login page forwarded it (?email=...).
+  const initialEmail = (() => {
+    try {
+      return new URLSearchParams((location || '').split('?')[1] ?? '').get('email') ?? ''
+    } catch {
+      return ''
+    }
+  })()
+  const [email, setEmail] = useState(initialEmail)
   const [otp, setOtp] = useState('')
 
   const [password, setPassword] = useState('')

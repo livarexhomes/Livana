@@ -143,15 +143,12 @@ export default function LoginPage() {
                   <Mail className="w-7 h-7 text-blue-600" />
                 </div>
                 <h2 className="text-xl font-bold text-gray-900 mb-2">Check your email</h2>
-                <p className="text-sm text-gray-500 mb-1">We sent a reset link to</p>
+                <p className="text-sm text-gray-500 mb-1">We sent a verification code to</p>
                 <p className="font-semibold text-gray-900 mb-5">{forgotEmail}</p>
-                <p className="text-xs text-gray-400 mb-6">Click the link in the email to set a new password. The link expires in 1 hour.</p>
-                <button
-                  onClick={() => { setForgotMode(false); setForgotSent(false); setForgotEmail('') }}
-                  className="text-sm text-blue-600 hover:text-blue-700 font-semibold"
-                >
-                  Back to sign in
-                </button>
+                <p className="text-xs text-gray-400 mb-6">Enter the code on the next screen to set a new password. The code expires in 10 minutes.</p>
+                <Link href={`/reset-password${forgotEmail ? `?email=${encodeURIComponent(forgotEmail)}` : ''}`} className="inline-block px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-2xl text-sm transition-all">
+                  Enter the code
+                </Link>
               </div>
             ) : (
               <form onSubmit={handleForgotPassword} className="space-y-4">
@@ -180,7 +177,7 @@ export default function LoginPage() {
                   disabled={forgotLoading}
                   className="w-full py-3.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white font-bold rounded-2xl transition-all shadow-lg shadow-blue-600/25 text-sm"
                 >
-                  {forgotLoading ? 'Sending…' : 'Send reset link'}
+                  {forgotLoading ? 'Sending…' : 'Send reset code'}
                 </button>
 
                 <p className="text-center text-sm text-gray-500">
