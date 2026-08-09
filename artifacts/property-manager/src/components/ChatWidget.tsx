@@ -1,14 +1,15 @@
 import { useState, useRef, useEffect, useCallback, type ReactNode } from 'react'
-import { X, Send, MessageSquare, Paperclip, ChevronDown, Check, ArrowRight, Loader2, Clock2, Smile, Home, CalendarCheck, Building2, Headset, MessageCircle } from 'lucide-react'
+import {
+  X, Send, MessageSquare, Paperclip, ChevronDown, ChevronLeft, ChevronRight,
+  Check, Loader2, Clock2, Smile, Home, CalendarCheck, Building2, Headset,
+  MessageCircle, AlertCircle,
+} from 'lucide-react'
 import { useLocation, redirect } from '../lib/navigation'
 import { createClient, isSupabaseConfigured } from '../lib/supabase'
 import { getPlatformSettings, getNotificationSettings, phoneToWaLink } from '../lib/platform-settings'
 import { fetchSupportPresence, subscribeSupportPresence, type LiveSupportState, type SupportAgent } from '../lib/live-support'
 import { assignChatToAgent } from '../lib/support-assignment'
-import {
-  getSupportHours, isSupportOpen,
-  type SupportHours,
-} from '../lib/support-hours'
+import { getSupportHours, isSupportOpen, type SupportHours } from '../lib/support-hours'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -34,17 +35,17 @@ interface AgentMessage {
   created_at: string
 }
 
-// Three-state flow:
-//   landing → greeting card (header + CTA + social icons), no composer
-//   chat    → bot conversation with initial greeting, Menu/Help/Exit pills
-//             above the composer; Menu expands the option bubble
-//   (live/offline stay as-is for live-agent and offline message flows)
-type WidgetView =
-  | { name: 'landing' }
-  | { name: 'chat' }
-  | { name: 'menu' }
-  | { name: 'live'; stage: 'checking' | 'active' }
-  | { name: 'offline'; stage: 'form' | 'submitted' | 'noagent' | 'closed' }
+// Flat view — no nested stage objects
+type WidgetView = 'home' | 'bot' | 'live'
+
+// Live-chat sub-states — drives the status banner and input behaviour
+type LiveStatus =
+  | 'connecting'  // ticket being created; spinner shown, input disabled
+  | 'active'      // agent assigned and in conversation
+  | 'queued'      // ticket queued — no agent assigned right now (within hours)
+  | 'offline'     // ticket queued — outside hours, no agent
+  | 'guest-form'  // unauthenticated visitor needs contact info before ticket is created
+  | 'error'       // ticket creation failed
 
 // ── Config ────────────────────────────────────────────────────────────────────
 
@@ -52,20 +53,20 @@ const CHAT_API_URL = import.meta.env.VITE_CHAT_API_URL
   ? `${import.meta.env.VITE_CHAT_API_URL}/api/chat`
   : '/api/chat'
 
-// ── Menu options (chat screen) ─────────────────────────────────────────────────
+// ── Menu options ──────────────────────────────────────────────────────────────
 
 const MENU_OPTIONS = [
-  { icon: Home, title: 'Find a property', desc: 'Browse verified rentals nearby', msg: 'Show me the best verified rentals in Lagos and Ogun.' },
-  { icon: CalendarCheck, title: 'Book an inspection', desc: 'Schedule a viewing fast', msg: 'I want to book a property inspection soon.' },
-  { icon: Building2, title: 'List my property', desc: 'Rent it out on Livarex', msg: 'I want to list my property on Livarex.' },
-  { icon: Headset, title: 'Chat with support', desc: 'Talk to a live agent', msg: null, live: true, whatsapp: false },
-  { icon: MessageCircle, title: 'WhatsApp us', desc: 'Chat on WhatsApp instead', msg: null, live: true, whatsapp: true },
+  { icon: Home,          title: 'Find a property',  desc: 'Browse verified rentals nearby',  msg: 'Show me the best verified rentals in Lagos and Ogun.', live: false, whatsapp: false },
+  { icon: CalendarCheck, title: 'Book an inspection',desc: 'Schedule a viewing fast',          msg: 'I want to book a property inspection soon.',           live: false, whatsapp: false },
+  { icon: Building2,     title: 'List my property',  desc: 'Rent it out on Livarex',           msg: 'I want to list my property on Livarex.',              live: false, whatsapp: false },
+  { icon: Headset,       title: 'Chat with support', desc: 'Talk to a live agent',             msg: null, live: true,  whatsapp: false },
+  { icon: MessageCircle, title: 'WhatsApp us',       desc: 'Chat on WhatsApp instead',         msg: null, live: false, whatsapp: true  },
 ]
 
 const MENU_CHIPS = [
-  { label: 'Top rentals', msg: 'Show me the best rentals available right now.' },
-  { label: 'Inspect now', msg: 'Book an inspection for a property in Lagos.' },
-  { label: 'Budget plan', msg: 'I want a 2-bedroom home under ₦400,000.' },
+  { label: 'Top rentals',  msg: 'Show me the best rentals available right now.' },
+  { label: 'Inspect now',  msg: 'Book an inspection for a property in Lagos.'   },
+  { label: 'Budget plan',  msg: 'I want a 2-bedroom home under ₦400,000.'      },
 ]
 
 const EMOJI = ['😀', '😂', '😊', '😍', '👍', '👏', '🙏', '🎉', '❤️', '🔥']
@@ -95,56 +96,36 @@ function formatTime(ts?: number | string) {
   return new Date(ts).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
 }
 
-/**
- * Renders WhatsApp-flavored markdown used by the bot's system prompt
- * (*bold*, • bullets, lines starting with a number + period or emoji) as
- * structured JSX instead of raw text with asterisks.
- */
 function renderBotText(text: string): ReactNode {
   const lines = text.split('\n')
   return lines.map((line, i) => {
-    // Bullet list item
     const bullet = line.match(/^[\s]*[•▪‣]\s+(.*)/)
-    if (bullet) {
-      return (
-        <div key={i} className="flex gap-2 mt-1 first:mt-0">
-          <span className="text-primary mt-[7px] shrink-0 size-[5px] rounded-full bg-current" aria-hidden />
-          <span>{formatInline(bullet[1])}</span>
-        </div>
-      )
-    }
-    // Numbered list item (e.g. "1. First step")
-    const numbered = line.match(/^[\s]*(\d+)[.)]\s+(.*)/)
-    if (numbered) {
-      return (
-        <div key={i} className="flex gap-2 mt-1 first:mt-0">
-          <span className="text-primary text-xs font-bold shrink-0 leading-[1.7]">{numbered[1]}.</span>
-          <span>{formatInline(numbered[2])}</span>
-        </div>
-      )
-    }
-    // Heading line: uppercase bold label used for sections like "ABOUT LIVAREX"
-    if (/^[A-Z0-9][A-Z0-9 /&()_-]{3,}$/.test(line.trim()) && line.trim().length <= 40) {
-      return (
-        <div key={i} className="mt-2 first:mt-0 text-[11px] font-bold uppercase tracking-[0.08em] text-muted-foreground">
-          {formatInline(line.trim())}
-        </div>
-      )
-    }
-    return (
-      <div key={i} className={i > 0 ? 'mt-1.5 first:mt-0' : ''}>{formatInline(line)}</div>
+    if (bullet) return (
+      <div key={i} className="flex gap-2 mt-1 first:mt-0">
+        <span className="text-primary mt-[7px] shrink-0 size-[5px] rounded-full bg-current" aria-hidden />
+        <span>{formatInline(bullet[1])}</span>
+      </div>
     )
+    const numbered = line.match(/^[\s]*(\d+)[.)]\s+(.*)/)
+    if (numbered) return (
+      <div key={i} className="flex gap-2 mt-1 first:mt-0">
+        <span className="text-primary text-xs font-bold shrink-0 leading-[1.7]">{numbered[1]}.</span>
+        <span>{formatInline(numbered[2])}</span>
+      </div>
+    )
+    if (/^[A-Z0-9][A-Z0-9 /&()_-]{3,}$/.test(line.trim()) && line.trim().length <= 40) return (
+      <div key={i} className="mt-2 first:mt-0 text-[11px] font-bold uppercase tracking-[0.08em] text-muted-foreground">{formatInline(line.trim())}</div>
+    )
+    return <div key={i} className={i > 0 ? 'mt-1.5 first:mt-0' : ''}>{formatInline(line)}</div>
   })
 }
 
 function formatInline(text: string): ReactNode[] {
-  // Split on *bold* segments
-  return text.split(/(\*[^*]+\*)/g).map((part, i) => {
-    if (part.startsWith('*') && part.endsWith('*') && part.length > 2) {
-      return <strong key={i} className="font-semibold">{part.slice(1, -1)}</strong>
-    }
-    return <span key={i}>{part}</span>
-  })
+  return text.split(/(\*[^*]+\*)/g).map((part, i) =>
+    part.startsWith('*') && part.endsWith('*') && part.length > 2
+      ? <strong key={i} className="font-semibold">{part.slice(1, -1)}</strong>
+      : <span key={i}>{part}</span>
+  )
 }
 
 // ── Component ─────────────────────────────────────────────────────────────────
@@ -152,41 +133,38 @@ function formatInline(text: string): ReactNode[] {
 export default function ChatWidget() {
   const [location] = useLocation()
 
-  const [open, setOpen]             = useState(false)
-  const [view, setView]             = useState<WidgetView>({ name: 'landing' })
+  const [open, setOpen]                         = useState(false)
+  const [view, setView]                         = useState<WidgetView>('home')
   const [launcherDismissed, setLauncherDismissed] = useState(false)
 
-  // ── AI bot state ──────────────────────────────────────────────────────────
-  const [messages, setMessages]     = useState<Message[]>([])
-  const [input, setInput]           = useState('')
-  const [loading, setLoading]       = useState(false)
-  const [unread, setUnread]         = useState(false)
-  const [pendingImg, setPendingImg] = useState<{ url: string; data: string; mediaType: string } | null>(null)
-  const [showEmoji, setShowEmoji]   = useState(false)
+  // ── AI bot state ─────────────────────────────────────────────────────────
+  const [messages, setMessages]                 = useState<Message[]>([])
+  const [input, setInput]                       = useState('')
+  const [loading, setLoading]                   = useState(false)
+  const [unread, setUnread]                     = useState(false)
+  const [pendingImg, setPendingImg]             = useState<{ url: string; data: string; mediaType: string } | null>(null)
+  const [showEmoji, setShowEmoji]               = useState(false)
+  const [showMenu, setShowMenu]                 = useState(false)
 
-  // Admin phone (from Settings) used for the header WhatsApp link + fallbacks.
   const [waHref, setWaHref] = useState('https://wa.me/2347061370742?text=Hello%20Livarex!')
 
-  // Global business hours — the SINGLE source for the customer-facing
-  // "Support Online / Away" status. Never tied to the agent heartbeat.
-  const [supportHours, setSupportHours] = useState<SupportHours | null>(null)
-  const [, setHoursTick] = useState(0)
+  // ── Support hours + presence ──────────────────────────────────────────────
+  const [supportHours, setSupportHours]         = useState<SupportHours | null>(null)
+  const [, setHoursTick]                        = useState(0)
 
   useEffect(() => {
-    getPlatformSettings().then(s => {
-      setWaHref(phoneToWaLink(s.phone, 'Hello Livarex!'))
-    }).catch(() => { /* keep default */ })
-    getSupportHours().then(setSupportHours).catch(() => { /* keep default */ })
-  }, [])
-
-  // Re-evaluate the schedule every 60s so the global status flips exactly at
-  // 08:00 and 18:00 Africa/Lagos — not on heartbeat/realtime/browser events.
-  useEffect(() => {
-    const t = setInterval(() => setHoursTick(v => v + 1), 60_000)
+    getSupportHours().then(h => { if (h) setSupportHours(h) }).catch(() => {})
+    const t = setInterval(() => setHoursTick(n => n + 1), 60_000)
     return () => clearInterval(t)
   }, [])
 
-  // ── Agent form state ──────────────────────────────────────────────────────
+  useEffect(() => {
+    getPlatformSettings().then(s => {
+      if (s.phone) setWaHref(phoneToWaLink(s.phone, 'Hello Livarex!'))
+    }).catch(() => {})
+  }, [])
+
+  // ── Live-agent form fields ────────────────────────────────────────────────
   const [agentName, setAgentName]               = useState('')
   const [agentEmail, setAgentEmail]             = useState('')
   const [agentNote, setAgentNote]               = useState('')
@@ -194,30 +172,22 @@ export default function ChatWidget() {
   const [agentSubmitting, setAgentSubmitting]   = useState(false)
   const [agentTicketNo, setAgentTicketNo]       = useState<string | null>(null)
 
-  // ── Live support availability ─────────────────────────────────────────────
-  // Single source of truth: the roster. `availableCount` = agents with
-  // presence 'online' AND availability on — never derived from UI state.
-  const [liveState, setLiveState] = useState<LiveSupportState>({
-    status: 'offline', online: false, onlineAgents: [], awayAgents: [], offlineAgents: [], agents: [], availableCount: 0, agentCount: 0,
+  // ── Presence ──────────────────────────────────────────────────────────────
+  const [liveState, setLiveState]               = useState<LiveSupportState>({
+    status: 'offline', online: false, onlineAgents: [], awayAgents: [],
+    offlineAgents: [], agents: [], availableCount: 0, agentCount: 0,
   })
-  const [presenceReady, setPresenceReady] = useState(false)
+  const [presenceReady, setPresenceReady]       = useState(false)
 
   useEffect(() => {
-    const unsub = subscribeSupportPresence((state) => {
+    const unsub = subscribeSupportPresence(state => {
       setLiveState(state)
       setPresenceReady(true)
-    }, (err) => {
-      // If the deployed agents table is missing the presence column, log a
-      // clear signal instead of silently showing "no agents available".
-      const status = (err ?? {}) as { schemaMissingPresence?: boolean }
-      if (typeof status === 'object' && status.schemaMissingPresence) {
-        console.warn('[chat-widget] presence unavailable: agents.presence column missing — run migration 008_presence_and_availability.sql')
-      }
     })
     return unsub
   }, [])
 
-  // ── Live agent-thread state (two-way chat with admin) ─────────────────────
+  // ── Live agent thread state ───────────────────────────────────────────────
   const [inquiryId, setInquiryId]               = useState<string | null>(null)
   const [agentThread, setAgentThread]           = useState<AgentMessage[]>([])
   const [agentThreadLoading, setAgentThreadLoading] = useState(false)
@@ -228,41 +198,42 @@ export default function ChatWidget() {
   const [agentJoined, setAgentJoined]           = useState(false)
   const [chatQueued, setChatQueued]             = useState(false)
 
-  const bottomRef = useRef<HTMLDivElement>(null)
-  const inputRef  = useRef<HTMLInputElement>(null)
-  const agentInputRef = useRef<HTMLInputElement>(null)
-  const fileRef   = useRef<HTMLInputElement>(null)
-  const agentTypingTimer = useRef<number | null>(null)
-  const typingSentAt = useRef(0)
+  // Live sub-state & assigned agent
+  const [liveStatus, setLiveStatus]             = useState<LiveStatus>('connecting')
+  const [assignedAgent, setAssignedAgent]       = useState<string | null>(null)
 
+  const bottomRef        = useRef<HTMLDivElement>(null)
+  const inputRef         = useRef<HTMLInputElement>(null)
+  const agentInputRef    = useRef<HTMLInputElement>(null)
+  const fileRef          = useRef<HTMLInputElement>(null)
+  const agentTypingTimer = useRef<number | null>(null)
+  const typingSentAt     = useRef(0)
+
+  // Auto-scroll to bottom when messages change
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages, loading, open, agentThread, agentThreadLoading])
 
-  // Focus the correct composer when the panel opens.
+  // Focus the right input when panel opens
   useEffect(() => {
     if (open) {
       setUnread(false)
       setAgentUnread(false)
       setTimeout(() => {
-        if (view.name === 'live' && inquiryId) agentInputRef.current?.focus()
-        else if (view.name === 'chat' || view.name === 'menu') inputRef.current?.focus()
+        if (view === 'live' && inquiryId) agentInputRef.current?.focus()
+        else if (view === 'bot') inputRef.current?.focus()
       }, 250)
     }
   }, [open, view, inquiryId])
 
-  // ── Restore an authenticated visitor's active agent thread ─────────────────
+  // ── Restore an authenticated visitor's active thread on mount ─────────────
   useEffect(() => {
     if (!isSupabaseConfigured()) return
     const supabase = createClient()
     supabase.auth.getSession().then(async ({ data: { session } }) => {
-      // Anonymous auth is intentionally optional. Some Supabase projects
-      // disable the provider, so guests use the one-shot flow without making
-      // a rejected signInAnonymously request or attempting a protected query.
       if (!session) return
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
-      // Reconnect the visitor to their most recent open thread (if any)
       const { data: inquiries } = await supabase
         .from('chat_inquiries')
         .select('id, ticket_no')
@@ -274,12 +245,13 @@ export default function ChatWidget() {
         setInquiryId(inquiries[0].id)
         setAgentTicketNo(inquiries[0].ticket_no)
         setAgentJoined(true)
-        setView({ name: 'live', stage: 'active' })
+        setView('live')
+        setLiveStatus('active') // restore: assume active (agent may or may not be online; messages will load)
       }
     })
   }, [])
 
-  // ── Load + subscribe to the agent thread ────────────────────────────────────
+  // ── Load + subscribe to the agent thread ──────────────────────────────────
   useEffect(() => {
     if (!inquiryId) return
     const supabase = createClient()
@@ -300,18 +272,13 @@ export default function ChatWidget() {
           const msg = payload.new as AgentMessage
           setAgentThread(prev => prev.find(m => m.id === msg.id) ? prev : [...prev, msg])
           if (msg.sender === 'admin' && !open) setAgentUnread(true)
-          // Visitor-side read receipt: opening the thread marks admin messages read.
           if (msg.sender === 'admin' && open) {
-            supabase.from('chat_messages')
-              .update({ read_by_visitor: true })
-              .eq('id', msg.id)
-              .then(() => {})
+            supabase.from('chat_messages').update({ read_by_visitor: true }).eq('id', msg.id).then(() => {})
           }
         })
       .on('postgres_changes',
         { event: 'UPDATE', schema: 'public', table: 'chat_messages', filter: `inquiry_id=eq.${inquiryId}` },
         (payload) => {
-          // Merge read-receipt updates (admin marked messages as read).
           const msg = payload.new as AgentMessage
           setAgentThread(prev => prev.map(m => m.id === msg.id ? msg : m))
         })
@@ -329,7 +296,7 @@ export default function ChatWidget() {
     }
   }, [inquiryId, open])
 
-  // ── Image attach (bot + live) ────────────────────────────────────────────────
+  // ── Image attach ──────────────────────────────────────────────────────────
   async function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file) return
@@ -344,37 +311,30 @@ export default function ChatWidget() {
     setPendingImg(null)
   }
 
-  // ── Global support status: business hours (Africa/Lagos) ─────────────────────
-  // The customer-facing "Support Online / Away" follows ONLY the schedule.
-  // It must NOT flicker on heartbeat/realtime changes. Individual agent
-  // presence is checked separately (below) only when deciding whether to
-  // connect the customer to a human.
-  const supportOpen = supportHours ? isSupportOpen(supportHours) : true // default open until hours load
-
-  // Individual agent presence (separate concept).
+  // ── Business hours + individual presence ──────────────────────────────────
+  const supportOpen    = supportHours ? isSupportOpen(supportHours) : true
   const agentAvailable = liveState.availableCount > 0
 
-  /** Open WhatsApp with a prefilled message (used by the menu option and the
-   *  no-agent fallback so support can be reached outside the chatbot). */
   const openWhatsApp = useCallback((note?: string) => {
     getPlatformSettings().then(s => {
       const msg = note?.trim() || 'Hi, I\'d like to chat with Livarex support.'
       window.open(phoneToWaLink(s.phone, msg), '_blank', 'noopener,noreferrer')
-    }).catch(() => {
-      window.open('https://wa.me/2347061370742', '_blank')
-    })
+    }).catch(() => window.open('https://wa.me/2347061370742', '_blank'))
   }, [])
 
-  // ── Welcome → live flow ──────────────────────────────────────────────────────
+  // ── goLive: show live view instantly, create ticket async ─────────────────
   const goLive = useCallback(() => {
     setLauncherDismissed(true)
-    setView({ name: 'live', stage: 'checking' })
+    setView('live')
+    setShowMenu(false)
 
-    // Already have a live thread — jump straight in.
+    // Already have an active thread — just restore the right status.
     if (inquiryId) {
-      setView({ name: 'live', stage: 'active' })
+      setLiveStatus(chatQueued ? (supportOpen ? 'queued' : 'offline') : 'active')
       return
     }
+
+    setLiveStatus('connecting')
 
     const run = async () => {
       let user: { id?: string; email?: string; user_metadata?: Record<string, unknown> } | null = null
@@ -384,8 +344,7 @@ export default function ChatWidget() {
         user = u
       }
 
-      // Always refresh presence so we have the latest agent state.
-      // An agent may have come online since the subscription last fired.
+      // Refresh presence so we have the latest agent state.
       let currentState = liveState
       if (!presenceReady || liveState.availableCount === 0) {
         currentState = await fetchSupportPresence()
@@ -393,33 +352,36 @@ export default function ChatWidget() {
         setPresenceReady(true)
       }
 
-      // Only show the offline/closed screen when we're genuinely outside
-      // business hours AND no agent is actually connected. If any agent is
-      // online (even outside hours) we still connect — a ticket is created
-      // immediately and queued if no agent is free.
-      if (!supportOpen && currentState.availableCount === 0) {
-        setView({ name: 'offline', stage: 'closed' })
-        return
-      }
-
       const meta = (user?.user_metadata ?? {}) as Record<string, unknown>
       const name = typeof meta.full_name === 'string' && meta.full_name
         ? meta.full_name
-        : (user?.email?.split('@')[0] ?? 'Guest')
-      setAgentName(name)
-      setAgentEmail(user?.email ?? '')
-      connectLiveThread({
-        name,
-        email: user?.email ?? '',
+        : (user?.email?.split('@')[0] ?? '')
+      const email = user?.email ?? ''
+
+      // Guest with no info and support offline → show inline contact form.
+      if (!name && !agentName && !supportOpen && currentState.availableCount === 0) {
+        setLiveStatus('guest-form')
+        return
+      }
+
+      const effectiveName  = name  || agentName  || 'Guest'
+      const effectiveEmail = email || agentEmail || ''
+      setAgentName(effectiveName)
+      setAgentEmail(effectiveEmail)
+
+      await connectLiveThread({
+        name: effectiveName,
+        email: effectiveEmail,
         firstMessage: '',
         agents: currentState.agents,
       })
     }
     run()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [inquiryId, supportOpen, liveState, presenceReady])
+  }, [inquiryId, supportOpen, liveState, presenceReady, chatQueued, agentName, agentEmail])
 
-  /** Create (or resume) a live chat thread and enter it immediately. */
+  // ── connectLiveThread: creates the ticket and sets liveStatus ─────────────
+  // IMPORTANT: No WhatsApp redirect on failure — errors are shown inline.
   async function connectLiveThread({
     name,
     email,
@@ -431,53 +393,69 @@ export default function ChatWidget() {
     firstMessage: string
     agents?: SupportAgent[]
   }) {
-    if (!name || !isSupabaseConfigured()) return
+    if (!isSupabaseConfigured()) { setLiveStatus('error'); return }
     const supabase = createClient()
     const { data: { user } } = await supabase.auth.getUser().catch(() => ({ data: { user: null } }))
     const note = firstMessage.trim() || `Hi, I'm ${name}. I'd like some help.`
 
-    // Auto-assign the least-loaded available agent (presence 'online' AND
-    // availability on), else queue. Only roster agents can be assigned.
-    const assignment = assignChatToAgent((agents ?? liveState.agents).filter(a => a.presence === 'online' && a.available))
-    // Track whether this ticket is queued (no agent assigned) so the UI
-    // can show the right confirmation message to the visitor.
+    const availableAgents = (agents ?? liveState.agents).filter(a => a.presence === 'online' && a.available)
+    const assignment = assignChatToAgent(availableAgents)
     setChatQueued(assignment.agentId === null)
 
-    const { data: inserted, error } = await supabase.from('chat_inquiries').insert({
-      name,
-      email: email || null,
-      note,
-      phone: null,
-      visitor_id: user?.id ?? null,
-      agent_id: assignment.agentId,
-      agent_status: assignment.agentStatus,
-    }).select('id, read_by_admin, ticket_no').single()
+    // Capture the assigned agent's name for the header + status banner.
+    if (assignment.agentId) {
+      const found = (agents ?? liveState.agents).find(a => a.id === assignment.agentId)
+      if (found?.name) setAssignedAgent(found.name)
+    }
+
+    const { data: inserted, error } = await supabase
+      .from('chat_inquiries')
+      .insert({
+        name,
+        email: email || null,
+        note,
+        phone: null,
+        visitor_id: user?.id ?? null,
+        agent_id: assignment.agentId,
+        agent_status: assignment.agentStatus,
+      })
+      .select('id, read_by_admin, ticket_no')
+      .single()
+
     if (error || !inserted) {
       console.error('Live thread error:', error)
-      // fall back to WhatsApp
-      getPlatformSettings().then(s => {
-        window.open(phoneToWaLink(s.phone, `Hi, I'm ${name}. ${note}`), '_blank')
-      })
+      // Show error inline — no WhatsApp redirect.
+      setLiveStatus('error')
       return
     }
 
     setInquiryId(inserted.id)
-    setAgentTicketNo(inserted.ticket_no)
+    setAgentTicketNo(inserted.ticket_no ?? null)
     setAgentJoined(true)
-    setView({ name: 'live', stage: 'active' })
+
+    // Seed the thread with the visitor's opening note.
     setAgentThread([{
-      id: `initial-${inserted.id}`,
+      id: `init-${Date.now()}`,
       inquiry_id: inserted.id,
       sender: 'visitor',
       body: note,
-      read_by_admin: false,
+      read_by_admin: inserted.read_by_admin,
       read_by_visitor: true,
       attachment_url: null,
       attachment_name: null,
       created_at: new Date().toISOString(),
     }])
 
-    // Notify the admin (email + notification bell picks it up via realtime).
+    // Resolve live status
+    if (assignment.agentId) {
+      setLiveStatus('active')
+    } else if (supportOpen) {
+      setLiveStatus('queued')
+    } else {
+      setLiveStatus('offline')
+    }
+
+    // Non-blocking admin notification
     getNotificationSettings().then(notif => {
       fetch('/api/send-support-notification', {
         method: 'POST',
@@ -487,32 +465,23 @@ export default function ChatWidget() {
           adminEmail: notif.adminEmail,
           userName: name,
           userEmail: email,
-          subject: 'Live support conversation',
+          subject: 'New support chat',
           message: note,
           ticketId: inserted.id,
           ticketNo: inserted.ticket_no ?? '',
           channel: assignment.agentId ? 'Live chat' : 'Live chat (queued)',
         }),
-      }).catch(() => { /* non-fatal */ })
-    }).catch(() => { /* non-fatal */ })
+      }).catch(() => {})
+    }).catch(() => {})
   }
 
-  function browseHelp() {
-    setLauncherDismissed(true)
-    setOpen(false)
-    redirect('/contact')
-  }
-
-  // ── Offline form submit ──────────────────────────────────────────────────────
-  async function submitAgentForm(e: React.FormEvent) {
+  // ── Guest contact form submit (offline / no session) ──────────────────────
+  async function submitGuestForm(e: React.FormEvent) {
     e.preventDefault()
     const name = agentName.trim()
     const note = agentNote.trim()
     if (!name || !note || agentSubmitting) return
     setAgentSubmitting(true)
-
-    // Offline path: full form (name, email, phone, message) — save as an
-    // inquiry so it lands in the Support Inbox, notify the admin, and confirm.
     try {
       const supabase = createClient()
       const { data: { user } } = await supabase.auth.getUser()
@@ -525,43 +494,44 @@ export default function ChatWidget() {
         agent_status: 'queued',
       }).select('id, read_by_admin, ticket_no').single()
       if (error) throw error
+      setInquiryId(inserted?.id ?? null)
       setAgentTicketNo(inserted?.ticket_no ?? null)
-      setView({ name: 'offline', stage: 'submitted' })
+      setAgentJoined(true)
       if (inserted?.id) {
-        // Notify the admin (email + notification bell picks it up via realtime).
+        setAgentThread([{
+          id: `init-${Date.now()}`,
+          inquiry_id: inserted.id,
+          sender: 'visitor',
+          body: note,
+          read_by_admin: inserted.read_by_admin,
+          read_by_visitor: true,
+          attachment_url: null, attachment_name: null,
+          created_at: new Date().toISOString(),
+        }])
         getNotificationSettings().then(notif => {
           fetch('/api/send-support-notification', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-              event: 'chat',
-              adminEmail: notif.adminEmail,
-              userName: name,
-              userEmail: agentEmail.trim(),
-              subject: 'Offline support message',
-              message: note,
-              ticketId: inserted.id,
-              ticketNo: inserted.ticket_no ?? '',
+              event: 'chat', adminEmail: notif.adminEmail, userName: name,
+              userEmail: agentEmail.trim(), subject: 'Offline support message',
+              message: note, ticketId: inserted.id, ticketNo: inserted.ticket_no ?? '',
               channel: 'Offline form',
             }),
-          }).catch(() => { /* non-fatal */ })
-        }).catch(() => { /* non-fatal */ })
+          }).catch(() => {})
+        }).catch(() => {})
       }
+      setLiveStatus('offline')
     } catch (err) {
-      console.error('Agent form error:', err)
-      // fall back to WhatsApp on failure
-      getPlatformSettings().then(s => {
-        window.open(phoneToWaLink(s.phone, `Hi, I'm ${name}. ${note}`), '_blank')
-      }).catch(() => {
-        window.open('https://wa.me/2347061370742', '_blank')
-      })
-      setView({ name: 'offline', stage: 'submitted' })
+      console.error('Guest form error:', err)
+      setLiveStatus('error')
     } finally {
       setAgentSubmitting(false)
+      setAgentNote('')
     }
   }
 
-  // ── Live agent-thread send ─────────────────────────────────────────────────
+  // ── Live agent-thread send ────────────────────────────────────────────────
   async function sendAgentMessage(e: React.FormEvent) {
     e.preventDefault()
     const body = agentInput.trim()
@@ -569,7 +539,7 @@ export default function ChatWidget() {
     setAgentSending(true)
     setAgentInput('')
     setShowEmoji(false)
-    const optId = `opt-${Date.now()}`
+    const optId  = `opt-${Date.now()}`
     const optBody = body || '📷 Image'
     setAgentThread(prev => [...prev, {
       id: optId, inquiry_id: inquiryId, sender: 'visitor', body: optBody,
@@ -590,7 +560,6 @@ export default function ChatWidget() {
         }).select().single()
       if (error) throw error
       if (inserted) setAgentThread(prev => prev.map(m => m.id === optId ? inserted as AgentMessage : m))
-      // Flag the inquiry as unread for the admin
       await supabase.from('chat_inquiries').update({ read_by_admin: false }).eq('id', inquiryId)
     } catch (err) {
       console.error('Agent message send error:', err)
@@ -604,7 +573,6 @@ export default function ChatWidget() {
 
   const agentCanSend = (agentInput.trim().length > 0 || !!pendingImg) && !agentSending
 
-  /** Broadcast "typing" to the admin (throttled to ~1.5s). */
   function broadcastTyping() {
     if (!inquiryId || !isSupabaseConfigured()) return
     const now = Date.now()
@@ -613,14 +581,15 @@ export default function ChatWidget() {
     const supabase = createClient()
     supabase.channel(`admin_chat_inquiry:${inquiryId}`)
       .send({ type: 'broadcast', event: 'typing', payload: { sender: 'visitor' } })
-      .catch(() => { /* best-effort */ })
+      .catch(() => {})
   }
 
-  // ── Send (AI bot) ─────────────────────────────────────────────────────────
+  // ── AI bot send ───────────────────────────────────────────────────────────
   async function sendMessage(text: string, img: typeof pendingImg) {
     if (!text.trim() && !img) return
-    setView({ name: 'chat' })
+    setView('bot')
     setShowEmoji(false)
+    setShowMenu(false)
 
     const userContent: ContentBlock[] = []
     if (img) userContent.push({ type: 'image_url', url: img.url, mediaType: img.mediaType, data: img.data })
@@ -642,33 +611,21 @@ export default function ChatWidget() {
     }))
 
     try {
-      const res  = await fetch(CHAT_API_URL, {
+      const res = await fetch(CHAT_API_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ messages: apiMessages }),
       })
-
       const rawText = await res.text()
       let reply = 'Something went wrong.'
-
       if (rawText) {
         try {
           const data = JSON.parse(rawText)
           reply = data.reply || data.message || data.text || data.error || reply
-        } catch {
-          reply = rawText.replace(/<[^>]+>/g, '').trim() || reply
-        }
+        } catch { reply = rawText.replace(/<[^>]+>/g, '').trim() || reply }
       }
-
-      setMessages(m => [...m, {
-        role: 'assistant',
-        content: [{ type: 'text', text: reply }],
-        time: Date.now(),
-      }])
+      setMessages(m => [...m, { role: 'assistant', content: [{ type: 'text', text: reply }], time: Date.now() }])
       if (!open) setUnread(true)
-      // If bot is escalating to human, offer live support. `goLive` reuses an
-      // existing live thread when one exists; otherwise it connects or shows
-      // the offline form based on agent availability.
       if (ESCALATION_KEYWORDS.some(kw => reply.toLowerCase().includes(kw))) {
         setTimeout(() => goLive(), 700)
       }
@@ -682,7 +639,7 @@ export default function ChatWidget() {
       }).catch(() => {
         setMessages(m => [...m, {
           role: 'assistant',
-          content: [{ type: 'text', text: 'Connection issue. Reach us on WhatsApp: +234 800 548 2621.' }],
+          content: [{ type: 'text', text: 'Connection issue. Reach us on WhatsApp: +234 706 137 0742.' }],
           time: Date.now(),
         }])
       })
@@ -691,70 +648,60 @@ export default function ChatWidget() {
     }
   }
 
-  function handleSend() {
-    sendMessage(input, pendingImg)
-    setInput('')
-  }
-
-  function handleKey(e: React.KeyboardEvent) {
-    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend() }
-  }
+  function handleSend()                 { sendMessage(input, pendingImg); setInput('') }
+  function handleKey(e: React.KeyboardEvent) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend() } }
 
   const canSend = (input.trim().length > 0 || !!pendingImg) && !loading
 
-  /**
-   * Enter the chat screen from the landing CTA. The bot greets the visitor
-   * with the standard "what are we doing today" message; if `openingPrompt`
-   * is given (quick-start buttons), it's sent as the visitor's first message
-   * so the bot goes straight into the relevant flow.
-   */
   function startChat(openingPrompt?: string) {
-    setView({ name: 'chat' })
+    setView('bot')
     setShowEmoji(false)
+    setShowMenu(false)
     const greeting: Message = {
       role: 'assistant',
-      content: [{
-        type: 'text',
-        text: 'So, what are we doing today? 😀\n\nPlease type in your request using the phrases from the list below, or tap Menu for quick options.',
-      }],
+      content: [{ type: 'text', text: 'So, what are we doing today? 😀\n\nPlease type in your request or tap Menu for quick options.' }],
       time: Date.now(),
     }
-    const firstMessage = openingPrompt && openingPrompt.trim()
+    const firstMessage = openingPrompt?.trim()
       ? [{ role: 'user' as const, content: [{ type: 'text' as const, text: openingPrompt.trim() }], time: Date.now() }]
       : []
     setMessages([greeting, ...firstMessage])
   }
 
-  // The composer only ever appears inside an active conversation — never on
-  // the landing screen or the offline form/submitted states.
-  const showComposer = view.name === 'chat' || view.name === 'menu' || (view.name === 'live' && view.stage === 'active')
-
-  // Back to the landing screen (keeps any bot/live conversation state).
-  const goLanding = () => { setShowEmoji(false); setView({ name: 'landing' }) }
-
-  /** Toggle the menu bubble (opens it from chat, closes back to chat). */
-  function startMenu() {
-    setShowEmoji(false)
-    setView(v => (v.name === 'menu' ? { name: 'chat' } : { name: 'menu' }))
+  function browseHelp() {
+    setLauncherDismissed(true)
+    setOpen(false)
+    redirect('/contact')
   }
 
+  const goHome = () => { setShowEmoji(false); setShowMenu(false); setView('home') }
+
+  // Presence line for the header
   const presenceLine = (() => {
-    // Presence-driven first: if any agent is actually online and available,
-    // always show Online — regardless of the Lagos business-hours schedule.
-    // Business hours are only the fallback when no real agent is connected.
     if (liveState.availableCount > 0) {
-      return {
-        dot: 'bg-emerald-400',
-        text: `Online · ${liveState.availableCount} agent${liveState.availableCount === 1 ? ' is' : 's are'} available`,
-      }
+      return { dot: 'bg-emerald-400', text: `Online · ${liveState.availableCount} agent${liveState.availableCount === 1 ? ' available' : 's available'}` }
     }
-    if (supportOpen) {
-      return { dot: 'bg-emerald-400', text: 'Online · experiencing a short delay' }
-    }
-    return { dot: 'bg-slate-400', text: 'Away · Support hours 8:00 AM – 6:00 PM' }
+    if (supportOpen) return { dot: 'bg-emerald-400', text: 'Online · reply within minutes' }
+    return { dot: 'bg-slate-400/80', text: 'Away · 8:00 AM – 6:00 PM WAT' }
   })()
 
-  // Escape closes the panel.
+  // Live header sub-title
+  const liveHeaderSub = (() => {
+    if (liveStatus === 'active')   return `Chatting with ${assignedAgent ?? 'Livarex Support'}`
+    if (liveStatus === 'queued')   return agentTicketNo ? `Ticket #${agentTicketNo} · queued` : 'Queued — agent joining soon'
+    if (liveStatus === 'offline')  return agentTicketNo ? `Ticket #${agentTicketNo} · offline message` : 'We\'ll reply when back online'
+    if (liveStatus === 'connecting') return 'Connecting…'
+    return 'Livarex Support'
+  })()
+
+  // Composer visibility
+  const showComposer = view === 'bot' || (view === 'live' && liveStatus !== 'guest-form')
+
+  // Hide widget inside dashboards
+  const path = (location || '').split('?')[0]
+  if (path.startsWith('/admin') || path.startsWith('/landlord') || path.startsWith('/user') || path.startsWith('/dashboard')) return null
+
+  // Escape closes panel
   useEffect(() => {
     if (!open) return
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setOpen(false) }
@@ -762,60 +709,34 @@ export default function ChatWidget() {
     return () => window.removeEventListener('keydown', onKey)
   }, [open])
 
-  // The floating chat widget is for website visitors only. Hide it inside all
-  // authenticated dashboards so it never overlaps admin/landlord/user UI.
-  const path = (location || '').split('?')[0]
-  const isDashboardRoute =
-    path.startsWith('/admin') ||
-    path.startsWith('/landlord') ||
-    path.startsWith('/user') ||
-    path.startsWith('/dashboard')
+  // ── Render ────────────────────────────────────────────────────────────────
 
-  if (isDashboardRoute) return null
-
-  // ── Render ────────────────────────────────────────────────────────────────────
   return (
     <>
-      {/* ── Global styles ─────────────────────────────────────────────────────── */}
+      {/* ── Global styles ──────────────────────────────────────────────────── */}
       <style>{`
-        @keyframes cwBounce {
-          0%,60%,100% { transform:translateY(0); }
-          30%          { transform:translateY(-5px); }
-        }
-        @keyframes cwPulse {
-          0%  { transform:scale(1);   opacity:0.6; }
-          70% { transform:scale(1.7); opacity:0;   }
-          100%{ transform:scale(1.7); opacity:0;   }
-        }
-        @keyframes cwFadeUp {
-          from { opacity:0; transform:translateY(8px); }
-          to   { opacity:1; transform:translateY(0);   }
-        }
-        @keyframes cwPop {
-          from { opacity:0; transform:scale(0.92) translateY(10px); }
-          to   { opacity:1; transform:scale(1) translateY(0); }
-        }
+        @keyframes cwBounce  { 0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-5px)} }
+        @keyframes cwPulse   { 0%{transform:scale(1);opacity:0.6}70%,100%{transform:scale(1.7);opacity:0} }
+        @keyframes cwFadeUp  { from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)} }
+        @keyframes cwPop     { from{opacity:0;transform:scale(0.92) translateY(10px)}to{opacity:1;transform:scale(1) translateY(0)} }
+        @keyframes cwSpin    { to{transform:rotate(360deg)} }
 
-        /* ── Panel ── */
         .cw-panel {
           position:fixed; bottom:calc(84px + env(safe-area-inset-bottom)); right:18px; z-index:9999;
-          width:400px; height:580px; max-height:calc(100dvh - 110px);
-          display:flex; flex-direction:column;
-          border-radius:20px; overflow:hidden;
-          background:hsl(var(--background));
-          border:1px solid hsl(var(--border) / 0.8);
-          box-shadow:0 24px 70px rgba(2,6,23,0.22),0 4px 18px rgba(2,6,23,0.08);
+          width:390px; height:600px; max-height:calc(100dvh - 110px);
+          display:flex; flex-direction:column; border-radius:22px; overflow:hidden;
+          background:#fff; border:1px solid rgba(226,232,240,0.7);
+          box-shadow:0 32px 80px rgba(2,6,23,0.2), 0 4px 20px rgba(2,6,23,0.06);
           transform-origin:bottom right;
           transition:transform 0.28s cubic-bezier(0.34,1.56,0.64,1),opacity 0.2s ease;
         }
         .cw-panel.open   { transform:scale(1) translateY(0);     opacity:1; pointer-events:auto;  }
         .cw-panel.closed { transform:scale(0.9) translateY(24px); opacity:0; pointer-events:none; }
 
-        /* ── Launcher card (closed state) ── */
         .cw-launcher {
           position:fixed; bottom:calc(84px + env(safe-area-inset-bottom)); right:18px; z-index:9998;
           width:300px; max-width:calc(100vw - 36px);
-          background:hsl(var(--card)); border:1px solid hsl(var(--border));
+          background:#fff; border:1px solid hsl(var(--border));
           border-radius:16px; box-shadow:0 16px 48px rgba(2,6,23,0.16);
           padding:14px 16px; cursor:pointer;
           animation:cwPop 0.3s cubic-bezier(0.34,1.56,0.64,1) both;
@@ -823,98 +744,70 @@ export default function ChatWidget() {
         }
         .cw-launcher:hover { transform:translateY(-2px); box-shadow:0 20px 54px rgba(2,6,23,0.2); }
 
-        /* ── Mobile bottom sheet ── */
-        @media(max-width:640px){
-          .cw-panel {
-            left:0;right:0;bottom:0;width:100%;height:94dvh;max-height:none;
-            border-radius:20px 20px 0 0; border-bottom:none;
-            transform-origin:bottom center;
-          }
+        @media(max-width:640px) {
+          .cw-panel { left:0;right:0;bottom:0;width:100%;height:94dvh;max-height:none;border-radius:20px 20px 0 0;border-bottom:none;transform-origin:bottom center; }
           .cw-panel.open   { transform:translateY(0);    opacity:1; pointer-events:auto; }
           .cw-panel.closed { transform:translateY(100%); opacity:0; pointer-events:none; }
           .cw-handle { display:block !important; }
-          /* Keep the input bar above the iOS home indicator / Android nav bar */
-          .cw-input-bar { padding-bottom:calc(10px + env(safe-area-inset-bottom))!important; }
+          .cw-composer { padding-bottom:calc(10px + env(safe-area-inset-bottom))!important; }
         }
+        @media(max-width:640px) and (max-height:480px) { .cw-panel { height:100dvh; border-radius:0; } }
+        @media(pointer:coarse) { .cw-attach,.cw-send { width:44px; height:44px; } }
 
-        /* ── Short viewports (landscape phones / small screens) ── */
-        @media(max-width:640px) and (max-height:480px){
-          .cw-panel { height:100dvh; border-radius:0; }
-        }
-
-        /* ── Minimum 44px touch targets on touch devices ── */
-        @media (pointer:coarse){
-          .cw-attach, .cw-send { width:44px; height:44px; }
-        }
-
-        /* ── Toggle button ── */
         .cw-toggle {
           position:fixed; bottom:calc(18px + env(safe-area-inset-bottom)); right:calc(18px + env(safe-area-inset-right)); z-index:9999;
-          width:54px; height:54px; border-radius:50%;
-          background:linear-gradient(135deg,hsl(var(--primary)),hsl(var(--primary) / 0.85));
-          border:none; cursor:pointer;
-          display:flex; align-items:center; justify-content:center;
-          box-shadow:0 8px 24px hsl(var(--primary) / 0.4);
+          width:56px; height:56px; border-radius:50%;
+          background:linear-gradient(135deg,hsl(var(--primary)),hsl(var(--primary) / 0.8));
+          border:none; cursor:pointer; display:flex; align-items:center; justify-content:center;
+          box-shadow:0 8px 28px hsl(var(--primary) / 0.45);
           transition:transform 0.2s ease, background 0.2s;
         }
         .cw-toggle.open { transform:rotate(90deg) scale(0.94); }
-        .cw-toggle:not(.open):hover { transform:scale(1.07); }
+        .cw-toggle:not(.open):hover { transform:scale(1.08); }
         .cw-toggle:focus-visible { outline:2px solid hsl(var(--ring)); outline-offset:3px; }
 
-        /* ── Messages scroll ── */
-        .cw-scroll { scrollbar-width:thin; scrollbar-color:hsl(var(--border)) transparent; }
-        .cw-scroll::-webkit-scrollbar { width:5px; }
-        .cw-scroll::-webkit-scrollbar-thumb { background:hsl(var(--border)); border-radius:5px; }
+        .cw-scroll { scrollbar-width:thin; scrollbar-color:rgba(226,232,240,0.8) transparent; }
+        .cw-scroll::-webkit-scrollbar { width:4px; }
+        .cw-scroll::-webkit-scrollbar-thumb { background:rgba(226,232,240,0.8); border-radius:4px; }
 
-        /* ── Action chip hover ── */
-        .cw-chip {
-          border-color:hsl(var(--border) / 0.8);
-          background:hsl(var(--background));
-          transition:transform 0.18s ease, border-color 0.18s ease, background 0.18s ease;
-        }
-        .cw-chip:hover { border-color:hsl(var(--primary) / 0.7) !important; background:hsl(var(--primary) / 0.08) !important; transform:translateY(-1px); }
-        .cw-chip:hover .cw-chip-title { color:hsl(var(--primary)) !important; }
-        .cw-action {
-          transition:transform 0.18s ease, box-shadow 0.18s ease;
-        }
-        .cw-action:hover { transform:translateY(-1px); box-shadow:0 18px 40px rgba(59,130,246,0.12); }
+        .cw-card { transition:box-shadow 0.18s ease,transform 0.18s ease; }
+        .cw-card:hover { box-shadow:0 12px 32px rgba(2,6,23,0.12); transform:translateY(-1px); }
 
-        /* ── Input focus ── */
-        .cw-input:focus { box-shadow:0 0 0 2px hsl(var(--ring) / 0.25); border-color:hsl(var(--ring) / 0.5) !important; }
+        .cw-chip { transition:background 0.15s ease, color 0.15s ease; }
+        .cw-chip:hover { background:rgba(37,99,235,0.08) !important; color:#2563eb !important; }
 
-        /* ── Reduced motion ── */
-        @media (prefers-reduced-motion: reduce) {
-          .cw-panel, .cw-toggle, .cw-launcher { transition-duration:0.001s; }
-          .cw-panel.open, .cw-panel.closed { transform:none; }
+        .cw-input:focus { outline:none; box-shadow:0 0 0 2px rgba(37,99,235,0.2); border-color:rgba(37,99,235,0.4) !important; }
+
+        @media(prefers-reduced-motion:reduce) {
+          .cw-panel,.cw-toggle,.cw-launcher { transition-duration:0.001s; }
           [class*='cw-'] { animation:none !important; }
+        }
+
+        /* Home view gradient */
+        .cw-hero {
+          background:linear-gradient(160deg, #0f172a 0%, #1e3a5f 60%, #1d4ed8 100%);
         }
       `}</style>
 
-      {/* ── Launcher welcome card (closed, not yet interacted) ─────────────── */}
+      {/* ── Launcher teaser (before first open) ──────────────────────────────── */}
       {!open && !launcherDismissed && (
-        <div
-          className="cw-launcher"
-          role="button"
-          tabIndex={0}
-          aria-label="Open chat — hi there, need help finding a property?"
+        <div className="cw-launcher" role="button" tabIndex={0}
+          aria-label="Open chat"
           onClick={() => { setLauncherDismissed(true); setOpen(true) }}
           onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setLauncherDismissed(true); setOpen(true) } }}
         >
           <div className="flex items-start gap-2.5">
-            <Avatar small />
+            <AvatarBubble small />
             <div className="min-w-0 flex-1">
-              <p className="text-[13px] font-bold text-card-foreground leading-snug">Hi there! 👋</p>
-              <p className="mt-0.5 text-[12px] text-muted-foreground leading-snug">Need help finding a property?</p>
-              <div className="mt-1.5 flex items-center gap-1 text-[11px] font-semibold text-primary">
-                Chat with us <ArrowRight size={12} />
+              <p className="text-[13px] font-bold text-slate-900 leading-snug">Hi there! 👋</p>
+              <p className="mt-0.5 text-[12px] text-slate-500 leading-snug">Need help finding a property?</p>
+              <div className="mt-1.5 flex items-center gap-1 text-[11px] font-semibold text-blue-600">
+                Chat with us <ChevronRight size={11} />
               </div>
             </div>
-            <button
-              onClick={(e) => { e.stopPropagation(); setLauncherDismissed(true) }}
-              aria-label="Dismiss"
-              className="shrink-0 grid size-5 place-items-center rounded-md text-muted-foreground hover:bg-muted transition-colors"
-            >
-              <X size={12} />
+            <button onClick={(e) => { e.stopPropagation(); setLauncherDismissed(true) }} aria-label="Dismiss"
+              className="shrink-0 grid size-5 place-items-center rounded-md text-slate-400 hover:bg-slate-100 transition-colors">
+              <X size={11} />
             </button>
           </div>
         </div>
@@ -922,509 +815,242 @@ export default function ChatWidget() {
 
       {/* ── Chat panel ────────────────────────────────────────────────────────── */}
       <div className={`cw-panel ${open ? 'open' : 'closed'}`}
-        role="dialog" aria-label="Livarex support chat"
-        aria-hidden={!open}>
+        role="dialog" aria-label="Livarex support chat" aria-hidden={!open}>
 
-        {/* Drag handle (mobile only) */}
-        <div className="cw-handle" style={{
-          display:'none', width:'100%', padding:'10px 0 4px',
-          justifyContent:'center', background:'hsl(var(--background))', flexShrink:0,
-        }}>
-          <div style={{ width:36, height:4, borderRadius:2, background:'hsl(var(--border))' }} />
+        {/* Mobile drag handle */}
+        <div className="cw-handle" style={{ display:'none', width:'100%', padding:'10px 0 4px', justifyContent:'center', background:'#fff', flexShrink:0 }}>
+          <div style={{ width:36, height:4, borderRadius:2, background:'#e2e8f0' }} />
         </div>
 
         {/* ── Header ──────────────────────────────────────────────────────────── */}
-        <div className="relative shrink-0 flex items-center gap-3 px-4 py-3 overflow-hidden"
-          style={{
-            background:'linear-gradient(160deg,hsl(var(--sidebar-primary) / 0.96) 0%, hsl(var(--primary) / 0.88) 100%)',
-          }}>
-          <div className="absolute inset-0 opacity-[0.05]" style={{ backgroundImage:'radial-gradient(circle at 1px 1px, white 1px, transparent 0)', backgroundSize:'22px 22px' }} aria-hidden />
+        <div className="cw-hero shrink-0 px-4 py-3.5 flex items-center gap-3">
 
-          {/* Name + status */}
-          <div className="min-w-0 flex-1 text-white">
-            <div className="truncate text-[14px] font-bold tracking-[-0.01em]">Livarex Support</div>
-            <div className="mt-0.5 flex flex-wrap items-center gap-1.5 text-[11px] text-white/75">
-              <span className={`inline-block size-1.5 rounded-full ${presenceLine.dot}`} aria-hidden />
-              {presenceLine.text}
+          {/* Back button (non-home views) or brand avatar (home) */}
+          {view !== 'home' ? (
+            <button onClick={goHome} aria-label="Back to home"
+              className="grid size-8 shrink-0 place-items-center rounded-xl text-white/80 hover:bg-white/10 transition-colors focus-visible:outline-2 focus-visible:outline-white/70">
+              <ChevronLeft size={18} />
+            </button>
+          ) : (
+            <AvatarBubble small />
+          )}
+
+          {/* Title / sub-title */}
+          <div className="min-w-0 flex-1">
+            <div className="text-[14px] font-bold text-white leading-tight truncate">
+              {view === 'home' && 'Livarex Support'}
+              {view === 'bot'  && 'AI Assistant'}
+              {view === 'live' && (liveStatus === 'active' && assignedAgent ? assignedAgent : 'Livarex Support')}
+            </div>
+            <div className="mt-0.5 flex items-center gap-1.5 text-[11px] text-white/65 truncate">
+              {view === 'home' && (
+                <><span className={`inline-block size-1.5 rounded-full ${presenceLine.dot}`} />{presenceLine.text}</>
+              )}
+              {view === 'bot' && (
+                <span>Powered by Claude · ask anything</span>
+              )}
+              {view === 'live' && (
+                <><span className={`inline-block size-1.5 rounded-full ${
+                  liveStatus === 'active' ? 'bg-emerald-400' :
+                  liveStatus === 'queued' ? 'bg-amber-400' :
+                  liveStatus === 'connecting' ? 'bg-blue-400' : 'bg-slate-400/70'
+                }`} />{liveHeaderSub}</>
+              )}
             </div>
           </div>
 
-          {/* WhatsApp */}
-          <a href={waHref}
-            target="_blank" rel="noopener noreferrer"
-            title="Continue on WhatsApp"
-            aria-label="Continue on WhatsApp"
-            className="grid size-8 shrink-0 place-items-center rounded-lg text-white/70 transition-colors hover:bg-white/15 focus-visible:outline-2 focus-visible:outline-white/70"
-            style={{ background:'rgba(255,255,255,0.1)' }}
+          {/* WhatsApp shortcut */}
+          <a href={waHref} target="_blank" rel="noopener noreferrer"
+            title="WhatsApp" aria-label="Continue on WhatsApp"
+            className="grid size-8 shrink-0 place-items-center rounded-xl text-white/70 hover:bg-white/10 transition-colors"
           >
             <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
               <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
             </svg>
           </a>
 
-          {/* Back to landing */}
-          {view.name !== 'landing' && (
-            <button onClick={goLanding}
-              aria-label="Back to landing"
-              title="Back to landing"
-              className="grid size-8 shrink-0 place-items-center rounded-lg text-white/70 transition-colors hover:bg-white/15 focus-visible:outline-2 focus-visible:outline-white/70"
-              style={{ background:'rgba(255,255,255,0.1)' }}
-            >
-              <ArrowRight size={16} style={{ transform:'rotate(180deg)' }} />
-            </button>
-          )}
-
           {/* Minimise */}
-          <button onClick={() => setOpen(false)}
-            aria-label="Minimise chat"
-            className="grid size-8 shrink-0 place-items-center rounded-lg text-white/70 transition-colors hover:bg-white/15 focus-visible:outline-2 focus-visible:outline-white/70"
-            style={{ background:'rgba(255,255,255,0.1)' }}
-          >
+          <button onClick={() => setOpen(false)} aria-label="Minimise chat"
+            className="grid size-8 shrink-0 place-items-center rounded-xl text-white/70 hover:bg-white/10 transition-colors">
             <ChevronDown size={16} />
           </button>
         </div>
 
         {/* ── Body ────────────────────────────────────────────────────────────── */}
-        <div className="cw-scroll flex-1 overflow-y-auto px-3.5 py-4 flex flex-col gap-2.5"
-          style={{ background:'hsl(var(--muted) / 0.45)' }}>
 
-          {/* ── State 1: Landing (greeting + CTA + social icons) ── */}
-          {view.name === 'landing' && (
-            <div className="flex flex-col px-4 pt-6 pb-3" style={{ animation:'cwFadeUp 0.4s ease both' }}>
-              <div className="rounded-[28px] border border-border bg-white shadow-[0_20px_60px_rgba(15,23,42,0.08)] p-5">
-                <div className="flex items-start gap-3">
-                  <div className="size-16 rounded-3xl grid place-items-center text-2xl text-white"
-                    style={{ background:'linear-gradient(135deg,#3b82f6,#6366f1)' }}>
-                    L
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-[18px] font-bold text-slate-900">Hi there! 👋</p>
-                    <p className="mt-2 text-[13px] leading-relaxed text-slate-600">I’m Livarex, your property assistant. Start a conversation now and I’ll help you find rentals, book inspections, or chat with support.</p>
-                  </div>
-                </div>
+        {/* ══ HOME VIEW ══════════════════════════════════════════════════════ */}
+        {view === 'home' && (
+          <div className="cw-scroll flex-1 overflow-y-auto" style={{ animation:'cwFadeUp 0.35s ease both' }}>
 
-                {/* Trust strip — copy reused from the livarex.com.ng homepage */}
-                <div className="mt-5 flex items-center justify-center gap-1.5 text-[10.5px] font-medium text-slate-500">
-                  <span>Verified landlords</span>
-                  <span className="text-slate-300">·</span>
-                  <span>₦0 agent fees</span>
-                  <span className="text-slate-300">·</span>
-                  <span>&lt;2h response</span>
-                </div>
-
-                {/* Global support status — schedule-driven (Africa/Lagos). */}
-                {supportHours && (
-                  <div className="mt-3 flex items-center justify-center gap-1.5 text-[11px] font-semibold">
-                    <span className="relative flex size-2">
-                      <span className={`size-2 rounded-full ${liveState.availableCount > 0 || supportOpen ? 'bg-emerald-500' : 'bg-slate-300'}`} />
-                      {(liveState.availableCount > 0 || supportOpen) && <span className="absolute inset-0 rounded-full bg-emerald-500 animate-ping opacity-60" />}
-                    </span>
-                    {liveState.availableCount > 0
-                      ? `${liveState.availableCount} agent${liveState.availableCount === 1 ? ' is' : 's are'} available now`
-                      : supportOpen
-                        ? 'Support is online · experiencing a short delay'
-                        : 'Away · Support hours 8:00 AM – 6:00 PM'}
-                  </div>
-                )}
-
-                {/* Single entry point — one clear action into the chat. Uses the
-                    bot's default opening message so the visitor lands on the
-                    standard greeting. */}
-                <button
-                  onClick={() => startChat()}
-                  className="cw-action mt-4 inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-blue-600 to-blue-500 px-4 py-3 text-sm font-bold text-white shadow-lg shadow-blue-600/25 transition-transform focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-400"
-                >
-                  <span>Start a new conversation →</span>
-                </button>
-
-                {/* Social icons — match the site footer links */}
-                <div className="mt-5 flex items-center justify-center gap-3">
-                  <a href="https://instagram.com/livarex.ng" target="_blank" rel="noopener noreferrer" aria-label="Livarex on Instagram"
-                    className="grid size-10 place-items-center rounded-full border border-slate-200 bg-white text-slate-500 transition-colors hover:border-pink-400 hover:text-pink-500">
-                    <svg className="w-[18px] h-[18px]" fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z" />
-                    </svg>
-                  </a>
-                  <a href="https://linkedin.com/company/livarex" target="_blank" rel="noopener noreferrer" aria-label="Livarex on LinkedIn"
-                    className="grid size-10 place-items-center rounded-full border border-slate-200 bg-white text-slate-500 transition-colors hover:border-blue-400 hover:text-blue-500">
-                    <svg className="w-[18px] h-[18px]" fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z" />
-                    </svg>
-                  </a>
-                  <a href="https://twitter.com/livarex_ng" target="_blank" rel="noopener noreferrer" aria-label="Livarex on X"
-                    className="grid size-10 place-items-center rounded-full border border-slate-200 bg-white text-slate-500 transition-colors hover:border-slate-400 hover:text-slate-900">
-                    <svg className="w-[18px] h-[18px]" fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.744l7.73-8.835L1.254 2.25H8.08l4.259 5.63L18.244 2.25zm-1.161 17.52h1.833L7.084 4.126H5.117L17.083 19.77z" />
-                    </svg>
-                  </a>
-                  <a href={waHref} target="_blank" rel="noopener noreferrer" aria-label="Livarex on WhatsApp"
-                    className="grid size-10 place-items-center rounded-full border border-slate-200 bg-white text-slate-500 transition-colors hover:border-emerald-400 hover:text-emerald-500">
-                    <svg className="w-[18px] h-[18px]" fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
-                    </svg>
-                  </a>
-                </div>
+            {/* Hero section */}
+            <div className="cw-hero px-5 pt-6 pb-14">
+              <p className="text-[22px] font-extrabold text-white leading-tight tracking-[-0.02em]">
+                Hi there! 👋
+              </p>
+              <p className="mt-1.5 text-[13px] text-white/65 leading-relaxed">
+                Ask our AI anything, or connect with a real support agent.
+              </p>
+              <div className="mt-3 flex items-center gap-2 text-[12px] text-white/60">
+                <span className="relative flex size-2 shrink-0">
+                  <span className={`size-2 rounded-full ${liveState.availableCount > 0 || supportOpen ? 'bg-emerald-400' : 'bg-slate-500'}`} />
+                  {(liveState.availableCount > 0 || supportOpen) && (
+                    <span className="absolute inset-0 rounded-full bg-emerald-400 animate-ping opacity-60" />
+                  )}
+                </span>
+                {liveState.availableCount > 0
+                  ? `${liveState.availableCount} agent${liveState.availableCount === 1 ? '' : 's'} available right now`
+                  : supportOpen
+                    ? 'Support online · reply within minutes'
+                    : 'Support hours 8 AM – 6 PM WAT'}
               </div>
             </div>
-          )}
 
-          {/* ── State 2: Live conversation ── */}
-          {view.name === 'live' && (
-            <>
-              {view.stage === 'checking' && (
-                <div className="flex items-center justify-center py-6" style={{ animation:'cwFadeUp 0.3s ease both' }}>
-                  <div className="flex items-center gap-2 text-[12.5px] text-muted-foreground">
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    Checking for available agents…
+            {/* Action cards — overlap the hero gradient */}
+            <div className="px-4 -mt-9 space-y-3">
+
+              {/* AI Chat card */}
+              <button onClick={() => startChat()}
+                className="cw-card w-full text-left bg-white rounded-2xl shadow-[0_8px_30px_rgba(2,6,23,0.1)] p-4 flex items-center gap-3.5 cursor-pointer">
+                <div className="w-11 h-11 rounded-xl shrink-0 flex items-center justify-center"
+                  style={{ background:'linear-gradient(135deg,#dbeafe,#eff6ff)' }}>
+                  <MessageSquare className="w-5 h-5 text-blue-600" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="text-[14px] font-bold text-slate-900">Chat with Livarex AI</div>
+                  <div className="text-[12px] text-slate-500 mt-0.5">Get instant answers 24/7</div>
+                </div>
+                <ChevronRight className="w-4 h-4 text-slate-300 shrink-0" />
+              </button>
+
+              {/* Live agent card */}
+              <button onClick={goLive}
+                className="cw-card w-full text-left bg-white rounded-2xl shadow-[0_8px_30px_rgba(2,6,23,0.1)] p-4 flex items-center gap-3.5 cursor-pointer">
+                <div className="w-11 h-11 rounded-xl shrink-0 flex items-center justify-center"
+                  style={{ background:'linear-gradient(135deg,#d1fae5,#ecfdf5)' }}>
+                  <Headset className="w-5 h-5 text-emerald-600" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="text-[14px] font-bold text-slate-900">Talk to a real agent</div>
+                  <div className="flex items-center gap-1.5 text-[12px] text-slate-500 mt-0.5">
+                    <span className={`size-1.5 rounded-full shrink-0 ${agentAvailable ? 'bg-emerald-500' : 'bg-slate-300'}`} />
+                    {agentAvailable ? 'Ready to help now' : supportOpen ? 'Experiencing a short delay' : 'Leave a message'}
                   </div>
                 </div>
-              )}
+                <ChevronRight className="w-4 h-4 text-slate-300 shrink-0" />
+              </button>
+            </div>
 
-              {view.stage === 'active' && (
-                <>
-                  {agentJoined && (
-                    chatQueued ? (
-                      <div className="rounded-3xl border border-amber-200/80 bg-amber-50 px-4 py-3 text-center shadow-sm"
-                        style={{ animation:'cwFadeUp 0.3s ease both' }}>
-                        <p className="text-[11px] uppercase tracking-[0.16em] text-amber-700">Ticket Created</p>
-                        {agentTicketNo && (
-                          <p className="mt-1 text-[12px] font-semibold text-slate-700">
-                            Ticket <span className="font-black text-amber-700">#{agentTicketNo}</span>
-                          </p>
-                        )}
-                        <p className="mt-1 text-sm font-semibold text-slate-900">No agent is available right now.</p>
-                        <p className="mt-1 text-[12px] text-slate-600">Your request is queued — an agent will respond shortly. Feel free to leave a message below.</p>
-                      </div>
-                    ) : (
-                      <div className="rounded-3xl border border-emerald-200/80 bg-emerald-50 px-4 py-3 text-center shadow-sm"
-                        style={{ animation:'cwFadeUp 0.3s ease both' }}>
-                        <p className="text-[11px] uppercase tracking-[0.16em] text-emerald-700">Connected</p>
-                        <p className="mt-1 text-sm font-semibold text-slate-900">You're chatting with {liveState.agents.find(a => a.presence === 'online' && a.available)?.name ?? 'Livarex Support'}.</p>
-                        <p className="mt-1 text-[12px] text-slate-600">They'll reply in a few seconds.</p>
-                      </div>
-                    )
-                  )}
-                  {agentTyping && !agentThreadLoading && (
-                    <div className="flex items-end gap-2" style={{ animation:'cwFadeUp 0.25s ease both' }}>
-                      <AgentAvatar />
-                      <div className="rounded-[18px_18px_18px_6px] border border-border/60 bg-card px-3.5 py-2.5 shadow-[0_1px_3px_rgba(2,6,23,0.06)]">
-                        <div className="flex items-center gap-2">
-                          <TypingDots />
-                          <span className="text-[10.5px] text-muted-foreground">Support is typing…</span>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                  {agentThreadLoading ? (
-                    <div className="flex items-end gap-2" style={{ animation:'cwFadeUp 0.25s ease both' }}>
-                      <Avatar small />
-                      <div className="rounded-[18px_18px_18px_6px] border border-border/60 bg-card shadow-[0_1px_3px_rgba(2,6,23,0.06)]">
-                        <TypingDots />
-                      </div>
-                    </div>
-                  ) : (
-                    agentThread.map((msg) => {
-                      const isVisitor = msg.sender === 'visitor'
-                      const read = msg.read_by_admin
-                      return (
-                        <div key={msg.id} className="flex items-end gap-2"
-                          style={{ justifyContent: isVisitor ? 'flex-end' : 'flex-start', animation:'cwFadeUp 0.3s ease both' }}>
-                          {!isVisitor && <AgentAvatar />}
-                          <div className="flex max-w-[80%] flex-col gap-1"
-                            style={{ alignItems: isVisitor ? 'flex-end' : 'flex-start' }}>
-                            {msg.attachment_url && (
-                              <img src={msg.attachment_url} alt={msg.attachment_name ?? 'attachment'}
-                                className="max-h-40 max-w-[200px] rounded-xl border border-border/70 object-cover" />
-                            )}
-                            <div className="px-3.5 py-2.5 text-[13px] leading-relaxed break-words"
-                              style={{
-                                borderRadius: isVisitor ? '18px 18px 6px 18px' : '18px 18px 18px 6px',
-                                whiteSpace:'pre-wrap',
-                                background: isVisitor ? 'linear-gradient(135deg,#059669,#10b981)' : '#fff8e1',
-                                color: isVisitor ? '#fff' : '#92400e',
-                                boxShadow: isVisitor ? '0 2px 10px rgba(5,150,105,0.3)' : '0 6px 24px rgba(245,159,11,0.16)',
-                                border: isVisitor ? 'none' : '1px solid rgba(245,158,11,0.2)',
-                                opacity: msg.id.startsWith('opt-') ? 0.6 : 1,
-                              }}>
-                              {msg.body}
-                            </div>
-                            <span className="px-1 text-[9.5px] text-muted-foreground/70">
-                              {formatTime(msg.created_at)}
-                              {isVisitor && !msg.id.startsWith('opt-') && (
-                                <span className={`ml-1 ${read ? 'text-emerald-500' : 'text-muted-foreground/60'}`}>
-                                  {read ? '✓✓ Read' : '✓ Sent'}
-                                </span>
-                              )}
-                            </span>
-                          </div>
-                        </div>
-                      )
-                    })
-                  )}
-                </>
-              )}
-            </>
-          )}
-
-          {/* ── State 3: Offline support ── */}
-          {view.name === 'offline' && (
-            <>
-              {/* Outside business hours — Support is Away. Leave a message. */}
-              {view.stage === 'closed' && (
-                <div className="flex items-start gap-2" style={{ animation:'cwFadeUp 0.35s ease both' }}>
-                  <Avatar small />
-                  <div className="max-w-[88%] flex-1 rounded-[18px_18px_18px_6px] border border-border/70 bg-card p-4 shadow-[0_1px_3px_rgba(2,6,23,0.06)]">
-                    <div className="mb-2 flex items-center gap-2">
-                      <div className="grid size-6.5 place-items-center rounded-lg bg-slate-100">
-                        <Clock2 className="w-4 h-4 text-slate-500" />
-                      </div>
-                      <div>
-                        <p className="m-0 text-xs font-bold text-card-foreground">Support is currently offline</p>
-                        <p className="m-0 text-[10.5px] text-muted-foreground">
-                          Support hours are 8:00 AM – 6:00 PM (Africa/Lagos).
-                        </p>
-                      </div>
-                    </div>
-                    <button
-                      onClick={() => setView({ name: 'offline', stage: 'form' })}
-                      className="mt-1 w-full rounded-[10px] border-none py-2.5 text-xs font-bold text-white transition-all cursor-pointer focus-visible:outline-2 focus-visible:outline-ring"
-                      style={{ background:'linear-gradient(135deg,#2563eb,#3b82f6)', boxShadow:'0 4px 12px rgba(37,99,235,0.3)' }}
-                    >
-                      Leave a Message
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              {/* Within business hours but no agent is currently connected. */}
-              {view.stage === 'noagent' && (
-                <div className="flex items-start gap-2" style={{ animation:'cwFadeUp 0.35s ease both' }}>
-                  <Avatar small />
-                  <div className="max-w-[88%] flex-1 rounded-[18px_18px_18px_6px] border border-border/70 bg-card p-4 shadow-[0_1px_3px_rgba(2,6,23,0.06)]">
-                    <div className="mb-2 flex items-center gap-2">
-                      <div className="grid size-6.5 place-items-center rounded-lg bg-amber-100">
-                        <Clock2 className="w-4 h-4 text-amber-700" />
-                      </div>
-                      <div>
-                        <p className="m-0 text-xs font-bold text-card-foreground">No support agent is currently available</p>
-                        <p className="m-0 text-[10.5px] text-muted-foreground">
-                          We're experiencing a delay. Leave a message and we'll get back to you shortly.
-                        </p>
-                      </div>
-                    </div>
-                    <button
-                      onClick={() => setView({ name: 'offline', stage: 'form' })}
-                      className="mt-1 w-full rounded-[10px] border-none py-2.5 text-xs font-bold text-white transition-all cursor-pointer focus-visible:outline-2 focus-visible:outline-ring"
-                      style={{ background:'linear-gradient(135deg,#2563eb,#3b82f6)', boxShadow:'0 4px 12px rgba(37,99,235,0.3)' }}
-                    >
-                      Leave a Message
-                    </button>
-                    <button
-                      onClick={() => openWhatsApp()}
-                      className="mt-2 w-full rounded-[10px] border border-border py-2.5 text-xs font-semibold text-card-foreground transition-colors cursor-pointer hover:bg-muted focus-visible:outline-2 focus-visible:outline-ring"
-                    >
-                      Continue on WhatsApp
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              {/* Offline form */}
-              {view.stage === 'form' && (
-                <div className="flex items-start gap-2" style={{ animation:'cwFadeUp 0.35s ease both' }}>
-                  <Avatar small />
-                  <div className="max-w-[88%] flex-1 rounded-[18px_18px_18px_6px] border border-border/70 bg-card p-4 shadow-[0_1px_3px_rgba(2,6,23,0.06)]">
-                    <div className="mb-2 flex items-center gap-2">
-                      <div className="grid size-6.5 place-items-center rounded-lg bg-amber-100">
-                        <Clock2 className="w-4 h-4 text-amber-700" />
-                      </div>
-                      <div>
-                        <p className="m-0 text-xs font-bold text-card-foreground">
-                          {supportOpen ? 'No support agent is currently available' : 'Support is currently offline'}
-                        </p>
-                        <p className="m-0 text-[10.5px] text-muted-foreground">
-                          {supportOpen
-                            ? 'Leave your details and we\'ll get back to you as soon as possible.'
-                            : 'Support hours are 8:00 AM – 6:00 PM (Africa/Lagos). Leave your details and we\'ll get back to you.'}
-                        </p>
-                      </div>
-                    </div>
-                    <form onSubmit={submitAgentForm} className="flex flex-col gap-2.5">
-                      <Field label="Full Name *">
-                        <input
-                          value={agentName}
-                          onChange={e => setAgentName(e.target.value)}
-                          placeholder="e.g. Adebayo Okafor"
-                          required
-                          autoComplete="name"
-                          className="w-full rounded-lg border border-input bg-muted/40 px-3 py-2 text-xs text-card-foreground outline-none transition-shadow focus-visible:ring-2 focus-visible:ring-ring/50"
-                        />
-                      </Field>
-                      <Field label="Email Address *">
-                        <input
-                          value={agentEmail}
-                          onChange={e => setAgentEmail(e.target.value)}
-                          placeholder="you@example.com"
-                          type="email"
-                          required
-                          autoComplete="email"
-                          className="w-full rounded-lg border border-input bg-muted/40 px-3 py-2 text-xs text-card-foreground outline-none transition-shadow focus-visible:ring-2 focus-visible:ring-ring/50"
-                        />
-                      </Field>
-                      <Field label="Phone Number (optional)">
-                        <input
-                          value={agentPhone}
-                          onChange={e => setAgentPhone(e.target.value)}
-                          placeholder="+234 …"
-                          type="tel"
-                          autoComplete="tel"
-                          className="w-full rounded-lg border border-input bg-muted/40 px-3 py-2 text-xs text-card-foreground outline-none transition-shadow focus-visible:ring-2 focus-visible:ring-ring/50"
-                        />
-                      </Field>
-                      <Field label="Message *">
-                        <textarea
-                          value={agentNote}
-                          onChange={e => setAgentNote(e.target.value)}
-                          placeholder="How can we help?"
-                          required
-                          rows={3}
-                          className="w-full resize-none rounded-lg border border-input bg-muted/40 px-3 py-2 text-xs text-card-foreground outline-none transition-shadow focus-visible:ring-2 focus-visible:ring-ring/50"
-                        />
-                      </Field>
-                      <button
-                        type="submit"
-                        disabled={!agentName.trim() || !agentEmail.trim() || !agentNote.trim() || agentSubmitting}
-                        className="mt-1 rounded-[10px] border-none py-2.5 text-xs font-bold transition-all cursor-pointer disabled:cursor-default focus-visible:outline-2 focus-visible:outline-ring"
-                        style={{
-                          background: (!agentName.trim() || !agentEmail.trim() || !agentNote.trim() || agentSubmitting)
-                            ? 'hsl(var(--muted-foreground) / 0.2)' : 'linear-gradient(135deg,#2563eb,#3b82f6)',
-                          color: (!agentName.trim() || !agentEmail.trim() || !agentNote.trim() || agentSubmitting)
-                            ? 'hsl(var(--muted-foreground))' : '#fff',
-                        }}
-                      >
-                        {agentSubmitting ? 'Sending…' : 'Send Message'}
-                      </button>
-                    </form>
-                  </div>
-                </div>
-              )}
-
-              {/* Submitted (offline) — success with ticket no */}
-              {view.stage === 'submitted' && (
-                <div className="flex items-start gap-2" style={{ animation:'cwFadeUp 0.35s ease both' }}>
-                  <Avatar small />
-                  <div className="max-w-[88%] flex-1 rounded-[18px_18px_18px_6px] border border-border/70 bg-card p-4 shadow-[0_1px_3px_rgba(2,6,23,0.06)]">
-                    <div className="py-2 text-center">
-                      <div className="mx-auto mb-2.5 grid size-10 place-items-center rounded-full bg-emerald-100">
-                        <Check size={18} className="text-emerald-700" />
-                      </div>
-                      <p className="m-0 text-[13px] font-bold text-emerald-800">Message received!</p>
-                      {agentTicketNo && (
-                        <p className="mt-1 text-xs font-semibold text-card-foreground">
-                          Your Ticket ID: <span className="font-black text-primary">{agentTicketNo}</span>
-                        </p>
-                      )}
-                      <p className="mt-1 text-xs text-muted-foreground">
-                        We'll review your request and get back to you as soon as possible.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </>
-          )}
-
-          {/* ── State 2: Chat (bot conversation) ── */}
-          {(view.name === 'chat' || view.name === 'menu') && (
-            <>
-              {/* Menu / Help / Exit pills — brand blue accents */}
-              <div className="flex flex-wrap gap-2 rounded-2xl border border-blue-100 bg-blue-50/60 px-4 py-3 text-[13px] text-slate-700 shadow-sm">
-                <button onClick={startMenu}
-                  className="rounded-full border border-blue-200 bg-white px-3 py-2 text-[12px] font-semibold text-blue-700 transition hover:border-blue-400 hover:bg-blue-50"
-                >Menu</button>
-                <button onClick={browseHelp}
-                  className="rounded-full border border-blue-200 bg-white px-3 py-2 text-[12px] font-semibold text-blue-700 transition hover:border-blue-400 hover:bg-blue-50"
-                >Help</button>
-                <button onClick={goLanding}
-                  className="rounded-full border border-blue-200 bg-white px-3 py-2 text-[12px] font-semibold text-blue-700 transition hover:border-blue-400 hover:bg-blue-50"
-                >Exit</button>
+            {/* Quick actions */}
+            <div className="px-5 mt-7">
+              <p className="text-[10.5px] font-bold text-slate-400 uppercase tracking-widest mb-3">Quick actions</p>
+              <div className="flex flex-wrap gap-2">
+                {MENU_OPTIONS.filter(o => o.msg).map(o => (
+                  <button key={o.title}
+                    onClick={() => startChat(o.msg!)}
+                    className="cw-chip px-3 py-1.5 text-[12px] font-semibold text-slate-600 bg-slate-100 rounded-full border border-slate-200/80">
+                    {o.title}
+                  </button>
+                ))}
+                <button
+                  onClick={() => openWhatsApp()}
+                  className="cw-chip px-3 py-1.5 text-[12px] font-semibold text-emerald-700 bg-emerald-50 rounded-full border border-emerald-200/80">
+                  WhatsApp us
+                </button>
               </div>
+            </div>
 
-              {messages.map((msg, i) => (
-                <div key={i} className="flex items-end gap-2"
-                  style={{ justifyContent: msg.role === 'user' ? 'flex-end' : 'flex-start', animation:'cwFadeUp 0.3s ease both' }}>
-                  {msg.role === 'assistant' && <Avatar small />}
-                  <div className="flex max-w-[80%] flex-col gap-1"
-                    style={{ alignItems: msg.role === 'user' ? 'flex-end' : 'flex-start' }}>
-                    {msg.content.map((block, j) =>
-                      block.type === 'image_url' ? (
-                        <img key={j} src={block.url} alt="attachment" className="max-h-40 max-w-[200px] rounded-xl border-2 border-white/40 object-cover" />
-                      ) : (
-                        <div key={j} className="px-3.5 py-2.5 text-[13px] leading-relaxed break-words"
-                          style={{
-                            borderRadius: msg.role === 'user' ? '18px 18px 6px 18px' : '18px 18px 18px 6px',
-                            whiteSpace:'pre-wrap',
-                            background: msg.role === 'user'
-                              ? 'linear-gradient(135deg,#2563eb,#3b82f6)'
-                              : 'linear-gradient(135deg,#eff6ff,#dbeafe)',
-                            color: msg.role === 'user' ? '#fff' : '#1e3a5f',
-                            boxShadow: msg.role === 'assistant'
-                              ? '0 2px 8px rgba(37,99,235,0.10)'
-                              : '0 2px 10px rgba(37,99,235,0.28)',
-                            border: msg.role === 'assistant' ? '1px solid rgba(37,99,235,0.12)' : 'none',
-                          }}>
-                          {msg.role === 'user' ? block.text : renderBotText(block.text)}
-                        </div>
+            {/* Trust strip */}
+            <div className="px-5 mt-6 flex items-center justify-center gap-2 text-[11px] text-slate-400 font-medium">
+              <span>Verified listings</span><span>·</span><span>₦0 agent fees</span><span>·</span><span>&lt;2h response</span>
+            </div>
+
+            {/* Social links */}
+            <div className="px-5 mt-4 pb-6 flex items-center gap-2.5">
+              <span className="text-[11px] text-slate-400 font-semibold">Follow us:</span>
+              <a href="https://instagram.com/livarex.ng" target="_blank" rel="noopener noreferrer" aria-label="Instagram"
+                className="grid size-8 place-items-center rounded-full border border-slate-200 bg-white text-slate-400 hover:text-pink-500 hover:border-pink-300 transition-colors">
+                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
+                </svg>
+              </a>
+              <a href="https://linkedin.com/company/livarex" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn"
+                className="grid size-8 place-items-center rounded-full border border-slate-200 bg-white text-slate-400 hover:text-blue-600 hover:border-blue-300 transition-colors">
+                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
+                </svg>
+              </a>
+              <a href="https://twitter.com/livarex_ng" target="_blank" rel="noopener noreferrer" aria-label="X / Twitter"
+                className="grid size-8 place-items-center rounded-full border border-slate-200 bg-white text-slate-400 hover:text-slate-900 hover:border-slate-400 transition-colors">
+                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.744l7.73-8.835L1.254 2.25H8.08l4.259 5.63L18.244 2.25zm-1.161 17.52h1.833L7.084 4.126H5.117L17.083 19.77z"/>
+                </svg>
+              </a>
+              <a href={waHref} target="_blank" rel="noopener noreferrer" aria-label="WhatsApp"
+                className="grid size-8 place-items-center rounded-full border border-slate-200 bg-white text-slate-400 hover:text-emerald-600 hover:border-emerald-300 transition-colors">
+                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+                </svg>
+              </a>
+            </div>
+          </div>
+        )}
+
+        {/* ══ BOT VIEW ════════════════════════════════════════════════════════ */}
+        {view === 'bot' && (
+          <div className="flex flex-col flex-1 min-h-0">
+            {/* Quick-action pill bar */}
+            <div className="shrink-0 flex items-center gap-2 px-4 py-2.5 border-b border-slate-100 bg-white">
+              <button onClick={() => setShowMenu(m => !m)}
+                className={`px-3 py-1.5 text-[12px] font-bold rounded-full transition-colors ${showMenu ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-700 hover:bg-blue-50 hover:text-blue-700'}`}>
+                Menu
+              </button>
+              <button onClick={browseHelp}
+                className="px-3 py-1.5 text-[12px] font-bold bg-slate-100 text-slate-700 hover:bg-blue-50 hover:text-blue-700 rounded-full transition-colors">
+                Help
+              </button>
+              <button onClick={goLive}
+                className="ml-auto flex items-center gap-1.5 px-3 py-1.5 text-[12px] font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 rounded-full transition-colors">
+                <span className={`size-1.5 rounded-full ${agentAvailable ? 'bg-emerald-500' : 'bg-slate-400'}`} />
+                Talk to agent
+              </button>
+            </div>
+
+            {/* Messages */}
+            <div className="cw-scroll flex-1 overflow-y-auto px-4 py-4 flex flex-col gap-2.5"
+              style={{ background:'#f8fafc' }}>
+
+              {/* Menu overlay */}
+              {showMenu && (
+                <div className="flex items-end gap-2" style={{ animation:'cwFadeUp 0.25s ease both' }}>
+                  <AvatarBubble small />
+                  <div className="max-w-[82%] rounded-[18px_18px_18px_5px] bg-white border border-slate-200/80 shadow-sm overflow-hidden">
+                    <p className="px-4 pt-3 pb-2 text-[13px] font-bold text-slate-800">Choose an option 👇</p>
+                    {MENU_OPTIONS.map(opt => {
+                      const Icon = opt.icon
+                      return (
+                        <button key={opt.title}
+                          onClick={() => {
+                            setShowMenu(false)
+                            if (opt.whatsapp) openWhatsApp()
+                            else if (opt.live) goLive()
+                            else sendMessage(opt.msg ?? '', null)
+                          }}
+                          className="flex w-full items-center gap-3 px-4 py-2.5 text-left hover:bg-slate-50 transition-colors">
+                          <span className="grid size-8 shrink-0 place-items-center rounded-xl bg-blue-50 text-blue-600">
+                            <Icon size={15} />
+                          </span>
+                          <span>
+                            <span className="block text-[13px] font-semibold text-slate-900">{opt.title}</span>
+                            <span className="block text-[11px] text-slate-500">{opt.desc}</span>
+                          </span>
+                        </button>
                       )
-                    )}
-                    <span className="px-1 text-[9.5px] text-muted-foreground/70">
-                      {formatTime(msg.time)}
-                      {msg.role === 'user' && <span className="ml-1 text-blue-600">✓ Sent</span>}
-                    </span>
-                  </div>
-                </div>
-              ))}
-
-              {/* ── Menu bubble (bot-styled option list + quick-reply chips) ── */}
-              {view.name === 'menu' && (
-                <div className="flex items-end gap-2" style={{ animation:'cwFadeUp 0.3s ease both' }}>
-                  <Avatar small />
-                  <div className="flex max-w-[80%] flex-col gap-1">
-                    <div className="rounded-[18px_18px_18px_6px] border border-blue-100/80 bg-gradient-to-br from-white to-blue-50/70 shadow-[0_2px_10px_rgba(37,99,235,0.10)]">
-                      <div className="px-4 pt-3 pb-2">
-                        <p className="text-[13px] font-bold text-[#1e3a5f]">Choose an option below 👇</p>
-                      </div>
-                      <div className="px-3 pb-2">
-                        {MENU_OPTIONS.map(opt => {
-                          const Icon = opt.icon
-                          return (
-                            <button
-                              key={opt.title}
-                              onClick={() => opt.whatsapp ? openWhatsApp() : opt.live ? goLive() : sendMessage(opt.msg ?? '', null)}
-                              className="cw-action group flex w-full items-center gap-3 rounded-2xl px-2.5 py-2.5 text-left transition-colors hover:bg-blue-50 focus-visible:outline-2 focus-visible:outline-ring"
-                            >
-                              <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-blue-500/15 to-indigo-500/15 text-blue-600">
-                                <Icon size={16} />
-                              </span>
-                              <span className="min-w-0">
-                                <span className="block text-[13px] font-semibold text-slate-900">{opt.title}</span>
-                                <span className="block text-[11px] text-slate-500">{opt.desc}</span>
-                              </span>
-                            </button>
-                          )
-                        })}
-                      </div>
-                    </div>
-
-                    {/* Quick-reply chips */}
-                    <div className="mt-1 flex flex-wrap gap-2">
-                      {MENU_CHIPS.map((chip) => (
-                        <button
-                          key={chip.label}
-                          onClick={() => sendMessage(chip.msg, null)}
-                          className="cw-chip rounded-full border border-blue-200 bg-white px-3.5 py-2 text-[12px] font-semibold text-blue-700"
-                        >
-                          <span className="cw-chip-title">{chip.label}</span>
+                    })}
+                    <div className="px-4 py-2 flex flex-wrap gap-1.5 border-t border-slate-100">
+                      {MENU_CHIPS.map(chip => (
+                        <button key={chip.label} onClick={() => { setShowMenu(false); sendMessage(chip.msg, null) }}
+                          className="px-2.5 py-1 text-[11px] font-semibold text-blue-700 bg-blue-50 rounded-full hover:bg-blue-100 transition-colors">
+                          {chip.label}
                         </button>
                       ))}
                     </div>
@@ -1432,143 +1058,318 @@ export default function ChatWidget() {
                 </div>
               )}
 
-              {/* Typing indicator */}
+              {messages.map((msg, i) => (
+                <div key={i} className={`flex items-end gap-2 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                  style={{ animation:'cwFadeUp 0.28s ease both' }}>
+                  {msg.role === 'assistant' && <AvatarBubble small />}
+                  <div className={`flex max-w-[80%] flex-col gap-1 ${msg.role === 'user' ? 'items-end' : 'items-start'}`}>
+                    {msg.content.map((block, j) =>
+                      block.type === 'image_url' ? (
+                        <img key={j} src={block.url} alt="attachment" className="max-h-40 max-w-[200px] rounded-xl object-cover" />
+                      ) : (
+                        <div key={j} className="px-3.5 py-2.5 text-[13px] leading-relaxed break-words"
+                          style={{
+                            borderRadius: msg.role === 'user' ? '18px 18px 4px 18px' : '18px 18px 18px 4px',
+                            whiteSpace: 'pre-wrap',
+                            background: msg.role === 'user'
+                              ? 'linear-gradient(135deg,#1d4ed8,#3b82f6)'
+                              : '#ffffff',
+                            color: msg.role === 'user' ? '#fff' : '#1e293b',
+                            boxShadow: msg.role === 'user'
+                              ? '0 2px 10px rgba(29,78,216,0.28)'
+                              : '0 1px 4px rgba(2,6,23,0.07)',
+                            border: msg.role === 'assistant' ? '1px solid rgba(226,232,240,0.9)' : 'none',
+                          }}>
+                          {msg.role === 'user' ? block.text : renderBotText(block.text)}
+                        </div>
+                      )
+                    )}
+                    <span className="px-1 text-[10px] text-slate-400">
+                      {formatTime(msg.time)}
+                      {msg.role === 'user' && <span className="ml-1 text-blue-500">✓ Sent</span>}
+                    </span>
+                  </div>
+                </div>
+              ))}
+
               {loading && (
                 <div className="flex items-end gap-2" style={{ animation:'cwFadeUp 0.25s ease both' }}>
-                  <Avatar small />
-                  <div className="rounded-[18px_18px_18px_6px] border border-blue-100/80 bg-gradient-to-br from-white to-blue-50/70 shadow-[0_2px_8px_rgba(37,99,235,0.10)]">
-                    <div className="px-3.5 py-2.5 flex items-center gap-2">
+                  <AvatarBubble small />
+                  <div className="rounded-[18px_18px_18px_4px] bg-white border border-slate-200 px-3.5 py-2.5 shadow-sm">
+                    <div className="flex items-center gap-1.5">
                       <TypingDots />
-                      <span className="text-[10.5px] text-[#1e3a5f]">Support is typing…</span>
+                      <span className="text-[10.5px] text-slate-400">typing…</span>
                     </div>
                   </div>
                 </div>
               )}
-            </>
-          )}
-
-          <div ref={bottomRef}/>
-        </div>
-
-        {/* ── Pending attachment preview ──────────────────────────────────────── */}
-        {showComposer && pendingImg && (
-          <div className="flex shrink-0 items-center gap-2 border-t border-border/60 bg-muted/40 px-3.5 py-2">
-            <div className="relative">
-              <img src={pendingImg.url} alt="preview" className="size-12 rounded-lg border border-border object-cover" />
-              <button onClick={removePendingImg} aria-label="Remove image"
-                className="absolute -top-1.5 -right-1.5 grid size-4 place-items-center rounded-full border-2 border-card bg-destructive cursor-pointer"
-              >
-                <X size={8} className="text-white" />
-              </button>
+              <div ref={bottomRef} />
             </div>
-            <span className="text-[11px] text-muted-foreground">Image ready · press send</span>
           </div>
         )}
 
-        {/* ── Composer (only inside an active conversation) ──────────────────── */}
-        {showComposer && (
-        <div className="cw-input-bar flex shrink-0 items-center gap-2 border-t border-border/60 bg-card px-3 py-2.5">
-          {/* Attach (bot + live) */}
-          <button
-            onClick={() => fileRef.current?.click()}
-            title="Attach image"
-            aria-label="Attach image"
-            className="cw-attach grid size-9 shrink-0 cursor-pointer place-items-center rounded-full border-none text-muted-foreground transition-colors hover:bg-muted focus-visible:outline-2 focus-visible:outline-ring"
-            style={{ background:'hsl(var(--muted))' }}
-          >
-            <Paperclip size={15} />
-          </button>
-          <input ref={fileRef} type="file" accept="image/*" onChange={handleFile} style={{ display:'none' }}/>
+        {/* ══ LIVE VIEW ═══════════════════════════════════════════════════════ */}
+        {view === 'live' && (
+          <div className="flex flex-col flex-1 min-h-0">
 
-          {/* Emoji picker (optional, live + bot) */}
-          <div className="relative">
-            <button
-              onClick={() => setShowEmoji(s => !s)}
-              title="Emoji"
-              aria-label="Emoji"
-              className="cw-attach grid size-9 shrink-0 cursor-pointer place-items-center rounded-full border-none text-muted-foreground transition-colors hover:bg-muted focus-visible:outline-2 focus-visible:outline-ring"
-              style={{ background:'hsl(var(--muted))' }}
-            >
-              <Smile size={15} />
-            </button>
+            {/* ── Status banner ── */}
+            {liveStatus === 'connecting' && (
+              <div className="shrink-0 flex items-center justify-center gap-2 py-2.5 text-[12px] text-slate-500 bg-slate-50 border-b border-slate-100">
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                Connecting you to an agent…
+              </div>
+            )}
+            {liveStatus === 'active' && (
+              <div className="shrink-0 flex items-center justify-center gap-2 py-2.5 text-[12px] font-semibold text-emerald-700 bg-emerald-50 border-b border-emerald-100">
+                <span className="size-2 rounded-full bg-emerald-500" />
+                Connected with {assignedAgent ?? 'Livarex Support'}
+                <span className="text-emerald-600/60 font-normal">· reply within seconds</span>
+              </div>
+            )}
+            {liveStatus === 'queued' && (
+              <div className="shrink-0 py-2.5 px-4 text-center bg-amber-50 border-b border-amber-100">
+                <div className="text-[12px] font-bold text-amber-800">
+                  ⏳ {agentTicketNo ? `Ticket #${agentTicketNo}` : 'Queued'} · An agent will respond shortly
+                </div>
+                <div className="text-[11px] text-amber-600 mt-0.5">You can type a message below while you wait</div>
+              </div>
+            )}
+            {liveStatus === 'offline' && (
+              <div className="shrink-0 py-2.5 px-4 text-center bg-slate-50 border-b border-slate-100">
+                <div className="flex items-center justify-center gap-1.5 text-[12px] font-semibold text-slate-700">
+                  <Clock2 className="w-3.5 h-3.5 shrink-0" />
+                  {agentTicketNo ? `Ticket #${agentTicketNo} created` : 'Support is offline'}
+                </div>
+                <div className="text-[11px] text-slate-500 mt-0.5">We'll reply when back online · 8 AM – 6 PM WAT</div>
+              </div>
+            )}
+            {liveStatus === 'error' && (
+              <div className="shrink-0 flex items-center justify-center gap-2 py-2.5 px-4 text-center bg-red-50 border-b border-red-100">
+                <AlertCircle className="w-3.5 h-3.5 text-red-500 shrink-0" />
+                <span className="text-[12px] text-red-700 font-semibold">Connection failed.</span>
+                <button onClick={goLive} className="text-[12px] text-red-600 underline font-semibold">Try again</button>
+              </div>
+            )}
+
+            {/* ── Guest contact form (offline + unauthenticated) ── */}
+            {liveStatus === 'guest-form' && (
+              <div className="cw-scroll flex-1 overflow-y-auto px-5 py-5" style={{ background:'#f8fafc' }}>
+                <p className="text-[14px] font-bold text-slate-900 mb-1">Leave us a message</p>
+                <p className="text-[12.5px] text-slate-500 mb-5 leading-relaxed">
+                  Support is offline right now (8 AM–6 PM WAT). Enter your details and we'll get back to you.
+                </p>
+                <form onSubmit={submitGuestForm} className="space-y-3">
+                  <Field label="Your name *">
+                    <input value={agentName} onChange={e => setAgentName(e.target.value)} required
+                      autoComplete="name" placeholder="e.g. Adebayo Okafor"
+                      className="cw-input w-full rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-[13px] text-slate-900 outline-none transition" />
+                  </Field>
+                  <Field label="Email address">
+                    <input value={agentEmail} onChange={e => setAgentEmail(e.target.value)} type="email"
+                      autoComplete="email" placeholder="you@example.com"
+                      className="cw-input w-full rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-[13px] text-slate-900 outline-none transition" />
+                  </Field>
+                  <Field label="Phone (optional)">
+                    <input value={agentPhone} onChange={e => setAgentPhone(e.target.value)} type="tel"
+                      autoComplete="tel" placeholder="+234 …"
+                      className="cw-input w-full rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-[13px] text-slate-900 outline-none transition" />
+                  </Field>
+                  <Field label="Message *">
+                    <textarea value={agentNote} onChange={e => setAgentNote(e.target.value)} required rows={3}
+                      placeholder="How can we help?"
+                      className="cw-input w-full resize-none rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-[13px] text-slate-900 outline-none transition" />
+                  </Field>
+                  <button type="submit"
+                    disabled={!agentName.trim() || !agentNote.trim() || agentSubmitting}
+                    className="w-full py-3 text-[13px] font-bold text-white rounded-xl transition-all disabled:opacity-50"
+                    style={{ background:'linear-gradient(135deg,#1d4ed8,#3b82f6)', boxShadow:'0 4px 14px rgba(29,78,216,0.3)' }}>
+                    {agentSubmitting ? 'Sending…' : 'Send Message'}
+                  </button>
+                </form>
+              </div>
+            )}
+
+            {/* ── Thread messages ── */}
+            {liveStatus !== 'guest-form' && (
+              <div className="cw-scroll flex-1 overflow-y-auto px-4 py-4 flex flex-col gap-3"
+                style={{ background:'#f8fafc' }}>
+
+                {/* Empty state while connecting */}
+                {liveStatus === 'connecting' && agentThread.length === 0 && (
+                  <div className="flex flex-col items-center justify-center flex-1 gap-3 py-10">
+                    <div className="w-12 h-12 rounded-2xl flex items-center justify-center"
+                      style={{ background:'linear-gradient(135deg,#dbeafe,#eff6ff)' }}>
+                      <Loader2 className="w-5 h-5 text-blue-500 animate-spin" />
+                    </div>
+                    <div className="text-center">
+                      <p className="text-[13px] font-semibold text-slate-700">Finding you an agent…</p>
+                      <p className="text-[12px] text-slate-400 mt-0.5">This usually takes just a second</p>
+                    </div>
+                  </div>
+                )}
+
+                {agentThreadLoading ? (
+                  <div className="flex items-center justify-center py-8">
+                    <Loader2 className="w-5 h-5 animate-spin text-slate-300" />
+                  </div>
+                ) : (
+                  agentThread.map(msg => {
+                    const isVisitor = msg.sender === 'visitor'
+                    return (
+                      <div key={msg.id}
+                        className={`flex items-end gap-2 ${isVisitor ? 'justify-end' : 'justify-start'}`}
+                        style={{ animation:'cwFadeUp 0.28s ease both' }}>
+                        {!isVisitor && <AgentAvatarBubble name={assignedAgent} />}
+                        <div className={`flex max-w-[78%] flex-col gap-1 ${isVisitor ? 'items-end' : 'items-start'}`}>
+                          {msg.attachment_url && (
+                            <img src={msg.attachment_url} alt={msg.attachment_name ?? 'attachment'}
+                              className="max-h-40 max-w-[200px] rounded-xl object-cover border border-slate-200" />
+                          )}
+                          <div className="px-3.5 py-2.5 text-[13px] leading-relaxed break-words"
+                            style={{
+                              borderRadius: isVisitor ? '18px 18px 4px 18px' : '18px 18px 18px 4px',
+                              whiteSpace: 'pre-wrap',
+                              background: isVisitor ? 'linear-gradient(135deg,#1d4ed8,#3b82f6)' : '#ffffff',
+                              color: isVisitor ? '#fff' : '#1e293b',
+                              boxShadow: isVisitor
+                                ? '0 2px 10px rgba(29,78,216,0.25)'
+                                : '0 1px 4px rgba(2,6,23,0.07)',
+                              border: isVisitor ? 'none' : '1px solid rgba(226,232,240,0.9)',
+                              opacity: msg.id.startsWith('opt-') ? 0.65 : 1,
+                            }}>
+                            {msg.body}
+                          </div>
+                          <span className="px-1 text-[10px] text-slate-400">
+                            {formatTime(msg.created_at)}
+                            {isVisitor && !msg.id.startsWith('opt-') && (
+                              <span className={`ml-1 ${msg.read_by_admin ? 'text-emerald-500' : 'text-slate-400'}`}>
+                                {msg.read_by_admin ? '✓✓ Read' : '✓ Sent'}
+                              </span>
+                            )}
+                          </span>
+                        </div>
+                      </div>
+                    )
+                  })
+                )}
+
+                {/* Agent typing indicator */}
+                {agentTyping && !agentThreadLoading && (
+                  <div className="flex items-end gap-2" style={{ animation:'cwFadeUp 0.25s ease both' }}>
+                    <AgentAvatarBubble name={assignedAgent} />
+                    <div className="rounded-[18px_18px_18px_4px] bg-white border border-slate-200 px-3.5 py-2.5 shadow-sm">
+                      <div className="flex items-center gap-1.5">
+                        <TypingDots />
+                        <span className="text-[10.5px] text-slate-400">typing…</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                <div ref={bottomRef} />
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ── Pending image preview ────────────────────────────────────────── */}
+        {showComposer && pendingImg && (
+          <div className="shrink-0 flex items-center gap-2 border-t border-slate-100 bg-slate-50 px-3.5 py-2">
+            <div className="relative">
+              <img src={pendingImg.url} alt="preview" className="size-12 rounded-lg object-cover border border-slate-200" />
+              <button onClick={removePendingImg} aria-label="Remove image"
+                className="absolute -top-1.5 -right-1.5 grid size-4 place-items-center rounded-full bg-red-500 border-2 border-white cursor-pointer">
+                <X size={8} className="text-white" />
+              </button>
+            </div>
+            <span className="text-[11px] text-slate-500">Image attached · press send</span>
+          </div>
+        )}
+
+        {/* ── Composer ─────────────────────────────────────────────────────── */}
+        {showComposer && (
+          <div className="cw-composer shrink-0 border-t border-slate-100 bg-white px-3 py-2.5">
+            {/* Emoji picker */}
             {showEmoji && (
-              <div className="absolute bottom-11 left-0 z-20 flex flex-wrap gap-1 rounded-xl border border-border bg-card p-2 shadow-lg" style={{ width:'max-content', maxWidth:'200px' }}>
+              <div className="mb-2 flex flex-wrap gap-1 rounded-xl border border-slate-200 bg-white p-2 shadow-md">
                 {EMOJI.map(e => (
                   <button key={e} onClick={() => {
-                    if (view.name === 'live' && inquiryId) setAgentInput(v => v + e)
+                    if (view === 'live' && inquiryId) setAgentInput(v => v + e)
                     else setInput(v => v + e)
                     setShowEmoji(false)
-                    ;(view.name === 'live' && inquiryId ? agentInputRef : inputRef).current?.focus()
+                    ;(view === 'live' && inquiryId ? agentInputRef : inputRef).current?.focus()
                   }}
-                    className="grid size-7 place-items-center rounded-lg text-lg hover:bg-muted transition-colors">
+                    className="grid size-7 place-items-center rounded-lg text-lg hover:bg-slate-100 transition-colors">
                     {e}
                   </button>
                 ))}
               </div>
             )}
+
+            <div className="flex items-center gap-2">
+              {/* Attach */}
+              <button onClick={() => fileRef.current?.click()} title="Attach image" aria-label="Attach image"
+                className="cw-attach grid size-9 shrink-0 cursor-pointer place-items-center rounded-full text-slate-400 hover:bg-slate-100 transition-colors">
+                <Paperclip size={16} />
+              </button>
+              <input ref={fileRef} type="file" accept="image/*" onChange={handleFile} style={{ display:'none' }} />
+
+              {/* Emoji */}
+              <button onClick={() => setShowEmoji(s => !s)} title="Emoji" aria-label="Emoji"
+                className="cw-attach grid size-9 shrink-0 cursor-pointer place-items-center rounded-full text-slate-400 hover:bg-slate-100 transition-colors">
+                <Smile size={16} />
+              </button>
+
+              {/* Input — live chat or bot */}
+              {(view === 'live' && liveStatus !== 'guest-form') ? (
+                <form onSubmit={sendAgentMessage} className="flex flex-1 items-center gap-2">
+                  <input
+                    ref={agentInputRef}
+                    className="cw-input flex-1 rounded-full border border-slate-200 bg-slate-50 px-4 py-2.5 text-[13px] text-slate-900 outline-none transition"
+                    value={agentInput}
+                    onChange={e => { setAgentInput(e.target.value); broadcastTyping() }}
+                    placeholder={
+                      liveStatus === 'connecting' ? 'Connecting…' :
+                      liveStatus === 'active' ? `Message ${assignedAgent ?? 'support'}…` :
+                      'Leave a message…'
+                    }
+                    disabled={agentSending || liveStatus === 'connecting'}
+                  />
+                  <button type="submit" disabled={!agentCanSend} aria-label="Send"
+                    className="cw-send grid size-9 shrink-0 place-items-center rounded-full border-none cursor-pointer disabled:cursor-default transition-all"
+                    style={{
+                      background: agentCanSend ? 'linear-gradient(135deg,#059669,#10b981)' : '#e2e8f0',
+                      boxShadow: agentCanSend ? '0 4px 14px rgba(5,150,105,0.35)' : 'none',
+                    }}>
+                    <Send size={14} color={agentCanSend ? '#fff' : '#94a3b8'} className="translate-x-px" />
+                  </button>
+                </form>
+              ) : (
+                <>
+                  <input
+                    ref={inputRef}
+                    className="cw-input flex-1 rounded-full border border-slate-200 bg-slate-50 px-4 py-2.5 text-[13px] text-slate-900 outline-none transition"
+                    value={input}
+                    onChange={e => setInput(e.target.value)}
+                    onKeyDown={handleKey}
+                    placeholder="Type your message…"
+                    disabled={loading}
+                  />
+                  <button onClick={handleSend} disabled={!canSend} aria-label="Send"
+                    className="cw-send grid size-9 shrink-0 place-items-center rounded-full border-none cursor-pointer disabled:cursor-default transition-all"
+                    style={{
+                      background: canSend ? 'linear-gradient(135deg,#1d4ed8,#3b82f6)' : '#e2e8f0',
+                      boxShadow: canSend ? '0 4px 14px rgba(29,78,216,0.35)' : 'none',
+                    }}>
+                    <Send size={14} color={canSend ? '#fff' : '#94a3b8'} className="translate-x-px" />
+                  </button>
+                </>
+              )}
+            </div>
           </div>
-
-          {/* Text — agent mode when a live thread is active */}
-          {inquiryId ? (
-            <form onSubmit={sendAgentMessage} className="flex flex-1 items-center gap-2">
-              <input
-                ref={agentInputRef}
-                className="cw-input flex-1 rounded-full border border-border px-4 py-2.5 text-[16px] text-card-foreground outline-none transition-all sm:text-[13px]"
-                value={agentInput}
-                onChange={e => { setAgentInput(e.target.value); broadcastTyping() }}
-                placeholder="Type your message…"
-                disabled={agentSending}
-                style={{ background:'hsl(var(--muted))' }}
-              />
-              <button
-                type="submit"
-                disabled={!agentCanSend}
-                aria-label="Send message to agent"
-                className="cw-send grid size-9 shrink-0 place-items-center rounded-full border-none transition-all cursor-pointer disabled:cursor-default"
-                style={{
-                  background: agentCanSend ? 'linear-gradient(135deg,#059669,#10b981)' : 'hsl(var(--muted-foreground) / 0.25)',
-                  boxShadow: agentCanSend ? '0 4px 12px rgba(5,150,105,0.35)' : 'none',
-                  transform: agentCanSend ? 'scale(1)' : 'scale(0.92)',
-                }}
-              >
-                <Send size={14} color={agentCanSend ? '#fff' : 'hsl(var(--muted-foreground))'} className="translate-x-px" />
-              </button>
-            </form>
-          ) : (
-            <>
-              {/* Text */}
-              <input
-                ref={inputRef}
-                className="cw-input flex-1 rounded-full border border-border px-4 py-2.5 text-[16px] text-card-foreground outline-none transition-all sm:text-[13px]"
-                value={input}
-                onChange={e => setInput(e.target.value)}
-                onKeyDown={handleKey}
-                placeholder="Type your message…"
-                disabled={loading}
-                style={{ background:'hsl(var(--muted))' }}
-              />
-
-              {/* Send */}
-              <button
-                onClick={handleSend}
-                disabled={!canSend}
-                aria-label="Send message"
-                className="cw-send grid size-9 shrink-0 place-items-center rounded-full border-none transition-all cursor-pointer disabled:cursor-default"
-                style={{
-                  background: canSend ? 'linear-gradient(135deg,#2563eb,#3b82f6)' : 'hsl(var(--muted-foreground) / 0.25)',
-                  boxShadow: canSend ? '0 4px 12px rgba(37,99,235,0.35)' : 'none',
-                  transform: canSend ? 'scale(1)' : 'scale(0.92)',
-                }}
-              >
-                <Send size={14} color={canSend ? '#fff' : 'hsl(var(--muted-foreground))'} className="translate-x-px" />
-              </button>
-            </>
-          )}
-        </div>
         )}
       </div>
 
-      {/* ── Toggle button ─────────────────────────────────────────────────────── */}
+      {/* ── Toggle button ────────────────────────────────────────────────────── */}
       <button
         className={`cw-toggle${open ? ' open' : ''}`}
         onClick={() => { setLauncherDismissed(true); setOpen(o => !o) }}
@@ -1576,8 +1377,8 @@ export default function ChatWidget() {
         aria-expanded={open}
       >
         {open
-          ? <X size={19} color="#fff"/>
-          : <MessageSquare size={19} color="#fff"/>
+          ? <X size={20} color="#fff" />
+          : <MessageSquare size={20} color="#fff" />
         }
         {!open && (unread || agentUnread) && (
           <>
@@ -1592,16 +1393,13 @@ export default function ChatWidget() {
   )
 }
 
-// ── Small shared bits ──────────────────────────────────────────────────────────
+// ── Shared sub-components ──────────────────────────────────────────────────────
 
-function Avatar({ small = false }: { small?: boolean }) {
-  const size = small ? 28 : 40
+function AvatarBubble({ small = false }: { small?: boolean }) {
+  const s = small ? 30 : 42
   return (
     <div className="relative shrink-0 grid place-items-center rounded-full text-white"
-      style={{
-        width:size, height:size, fontSize: small ? 10 : 15, fontWeight:900,
-        background:'linear-gradient(135deg,#3b82f6,#6366f1)',
-      }}>
+      style={{ width:s, height:s, fontSize: small ? 11 : 16, fontWeight:900, background:'linear-gradient(135deg,#1d4ed8,#6366f1)' }}>
       L
       {small && (
         <span className="absolute -bottom-0.5 -right-0.5 size-2.5 rounded-full border-2 border-white bg-emerald-400" aria-hidden />
@@ -1610,14 +1408,12 @@ function Avatar({ small = false }: { small?: boolean }) {
   )
 }
 
-function AgentAvatar() {
+function AgentAvatarBubble({ name }: { name?: string | null }) {
+  const initial = name ? name[0].toUpperCase() : 'A'
   return (
-    <div className="relative shrink-0 grid size-7 place-items-center rounded-full text-white"
-      style={{
-        fontSize: 10, fontWeight: 900,
-        background:'linear-gradient(135deg,#059669,#10b981)',
-      }}>
-      A
+    <div className="relative shrink-0 grid size-[30px] place-items-center rounded-full text-white"
+      style={{ fontSize:11, fontWeight:900, background:'linear-gradient(135deg,#059669,#10b981)' }}>
+      {initial}
       <span className="absolute -bottom-0.5 -right-0.5 size-2.5 rounded-full border-2 border-white bg-emerald-400" aria-hidden />
     </div>
   )
@@ -1627,7 +1423,7 @@ function TypingDots() {
   return (
     <div className="flex items-center gap-1">
       {[0, 1, 2].map(i => (
-        <span key={i} className="inline-block size-[7px] rounded-full bg-muted-foreground/50"
+        <span key={i} className="inline-block size-[6px] rounded-full bg-slate-400/50"
           style={{ animation:'cwBounce 1.3s infinite ease-in-out', animationDelay:`${i * 0.18}s` }} />
       ))}
     </div>
@@ -1636,8 +1432,8 @@ function TypingDots() {
 
 function Field({ label, children }: { label: string; children: ReactNode }) {
   return (
-    <div className="flex flex-col gap-1">
-      <label className="text-[11px] font-semibold text-muted-foreground">{label}</label>
+    <div className="flex flex-col gap-1.5">
+      <label className="text-[11.5px] font-bold text-slate-500">{label}</label>
       {children}
     </div>
   )
