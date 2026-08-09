@@ -29,9 +29,13 @@ const BRAND = {
  * The serverless functions prefer env vars, but the values an admin saves in
  * Admin → Settings win when present.
  *
+ * Security-critical emails (e.g. password reset) pass `{ allowDisabled: true }`
+ * so the "Enable Email Notifications" toggle never blocks them — a user must
+ * always be able to recover their account.
+ *
  * @param {object} env - process.env (passed in so this module stays env-agnostic)
  */
-export async function resolveEmailConfig(env) {
+export async function resolveEmailConfig(env, { allowDisabled = false } = {}) {
   const config = { apiKey: '', fromEmail: '', fromName: '', adminEmail: '', from: '', enabled: true }
 
   // Stored settings (best-effort — failures fall through to env/defaults).
@@ -66,8 +70,9 @@ export async function resolveEmailConfig(env) {
   config.from = `${config.fromName} <${config.fromEmail}>`
 
   // The "Enable Email Notifications" toggle from Admin Settings is respected:
-  // when it's explicitly off, no email is sent even if a key exists.
-  if (!config.enabled) config.apiKey = ''
+  // when it's explicitly off, no email is sent even if a key exists — UNLESS
+  // this is a security-critical email (allowDisabled), which must always go out.
+  if (!config.enabled && !allowDisabled) config.apiKey = ''
 
   return config
 }

@@ -107,32 +107,42 @@ export default async function handler(req, res) {
   if (resetUrl) {
     try {
       const { renderPasswordResetEmail, resolveEmailConfig } = await import('./lib/email-template.js')
-      const cfg = await resolveEmailConfig(process.env)
+      // allowDisabled: a user must ALWAYS be able to reset their password, even
+      // if the "Enable Email Notifications" marketing toggle is off.
+      const cfg = await resolveEmailConfig(process.env, { allowDisabled: true })
       const apiKey = cfg.apiKey || getEnv('RESEND_API_KEY') || ''
       const from = cfg.from || getEnv('RESEND_FROM') || 'Livarex Homes <noreply@livarex.com.ng>'
 
-      if (apiKey) {
-        const html = renderPasswordResetEmail({ resetUrl })
-        const resendResp = await fetch('https://api.resend.com/emails', {
-          method: 'POST',
-          headers: {
-            Authorization: `Bearer ${apiKey}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            from,
-            to: email,
-            subject: 'Reset your Livarex password',
-            html,
-          }),
-        })
-        if (!resendResp.ok) {
-          const payload = await resendResp.json().catch(() => null)
-          console.warn('[send-password-reset] Resend error:', payload?.message || resendResp.status)
-        }
+      if (!apiKey) {
+        // Do NOT silently skip. Password reset is security-critical — fail
+        // loudly so the misconfiguration is visible instead of pretending the
+        // email was sent.
+        console.error('[send-password-reset] RESEND_API_KEY is not configured (env or Admin → Settings → Email)')
+        return sendJson(res, 500, { error: 'Email service is not configured. Please contact support.' })
+      }
+
+      const html = renderPasswordResetEmail({ resetUrl })
+      const resendResp = await fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          from,
+          to: email,
+          subject: 'Reset your Livarex password',
+          html,
+        }),
+      })
+      if (!resendResp.ok) {
+        const payload = await resendResp.json().catch(() => null)
+        console.error('[send-password-reset] Resend error:', payload?.message || resendResp.status)
+        return sendJson(res, resendResp.status || 502, { error: 'Failed to send the reset email. Please try again.' })
       }
     } catch (err) {
-      console.warn('[send-password-reset] Resend error:', err)
+      console.error('[send-password-reset] Resend error:', err)
+      return sendJson(res, 500, { error: 'Failed to send the reset email. Please try again.' })
     }
   }
 
