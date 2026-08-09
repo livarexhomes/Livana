@@ -251,47 +251,64 @@ export default function ChatWidget() {
     })
   }, [])
 
-  // ── Load + subscribe to the agent thread ──────────────────────────────────
+  // ── Load + poll the agent thread (server endpoint bypasses RLS) ───────────
+  const lastMsgTimestamp = useRef<string | null>(null)
+
   useEffect(() => {
     if (!inquiryId) return
-    const supabase = createClient()
     setAgentThreadLoading(true)
-    supabase.from('chat_messages').select('*')
-      .eq('inquiry_id', inquiryId)
-      .order('created_at', { ascending: true })
-      .then(({ data, error }) => {
-        if (error) console.error('Agent thread load error:', error)
-        setAgentThread((data as AgentMessage[]) ?? [])
-        setAgentThreadLoading(false)
-      })
 
-    const channel = supabase.channel(`admin_chat_inquiry:${inquiryId}`)
-      .on('postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'chat_messages', filter: `inquiry_id=eq.${inquiryId}` },
-        (payload) => {
-          const msg = payload.new as AgentMessage
-          setAgentThread(prev => prev.find(m => m.id === msg.id) ? prev : [...prev, msg])
-          if (msg.sender === 'admin' && !open) setAgentUnread(true)
-          if (msg.sender === 'admin' && open) {
-            supabase.from('chat_messages').update({ read_by_visitor: true }).eq('id', msg.id).then(() => {})
-          }
-        })
-      .on('postgres_changes',
-        { event: 'UPDATE', schema: 'public', table: 'chat_messages', filter: `inquiry_id=eq.${inquiryId}` },
-        (payload) => {
-          const msg = payload.new as AgentMessage
-          setAgentThread(prev => prev.map(m => m.id === msg.id ? msg : m))
-        })
-      .on('broadcast', { event: 'typing' }, ({ payload }) => {
-        if (payload?.sender === 'admin') {
-          setAgentTyping(true)
-          if (agentTypingTimer.current) window.clearTimeout(agentTypingTimer.current)
-          agentTypingTimer.current = window.setTimeout(() => setAgentTyping(false), 2500)
-        }
+    // Initial load via server endpoint
+    fetch(`/api/get-chat-messages?inquiry_id=${inquiryId}`)
+      .then(r => r.json())
+      .then(({ messages }) => {
+        const msgs = (messages ?? []) as AgentMessage[]
+        setAgentThread(msgs)
+        if (msgs.length > 0) lastMsgTimestamp.current = msgs[msgs.length - 1].created_at
       })
-      .subscribe()
+      .catch(err => console.error('Agent thread load error:', err))
+      .finally(() => setAgentThreadLoading(false))
+
+    // Poll every 3 s for new messages (picks up admin replies even without RLS SELECT)
+    const poll = setInterval(async () => {
+      try {
+        const qs = lastMsgTimestamp.current
+          ? `inquiry_id=${inquiryId}&after=${encodeURIComponent(lastMsgTimestamp.current)}`
+          : `inquiry_id=${inquiryId}`
+        const r = await fetch(`/api/get-chat-messages?${qs}`)
+        const { messages } = await r.json()
+        if (!messages?.length) return
+        setAgentThread(prev => {
+          const ids = new Set(prev.map((m: AgentMessage) => m.id))
+          const fresh = (messages as AgentMessage[]).filter(m => !ids.has(m.id))
+          if (!fresh.length) return prev
+          // track unread admin messages
+          fresh.forEach(m => {
+            if (m.sender === 'admin' && !open) setAgentUnread(true)
+          })
+          lastMsgTimestamp.current = messages[messages.length - 1].created_at
+          return [...prev, ...fresh]
+        })
+      } catch { /* non-fatal */ }
+    }, 3000)
+
+    // Keep realtime broadcast for typing indicators only (no postgres_changes — needs RLS SELECT)
+    const supabase = isSupabaseConfigured() ? createClient() : null
+    const channel = supabase
+      ? supabase.channel(`admin_chat_inquiry:${inquiryId}`)
+          .on('broadcast', { event: 'typing' }, ({ payload }) => {
+            if (payload?.sender === 'admin') {
+              setAgentTyping(true)
+              if (agentTypingTimer.current) window.clearTimeout(agentTypingTimer.current)
+              agentTypingTimer.current = window.setTimeout(() => setAgentTyping(false), 2500)
+            }
+          })
+          .subscribe()
+      : null
+
     return () => {
-      supabase.removeChannel(channel)
+      clearInterval(poll)
+      if (channel && supabase) supabase.removeChannel(channel)
       if (agentTypingTimer.current) window.clearTimeout(agentTypingTimer.current)
     }
   }, [inquiryId, open])
@@ -546,7 +563,7 @@ export default function ChatWidget() {
     }
   }
 
-  // ── Live agent-thread send ────────────────────────────────────────────────
+  // ── Live agent-thread send (server endpoint bypasses RLS) ────────────────
   async function sendAgentMessage(e: React.FormEvent) {
     e.preventDefault()
     const body = agentInput.trim()
@@ -554,8 +571,9 @@ export default function ChatWidget() {
     setAgentSending(true)
     setAgentInput('')
     setShowEmoji(false)
-    const optId  = `opt-${Date.now()}`
+    const optId   = `opt-${Date.now()}`
     const optBody = body || '📷 Image'
+    // Optimistic update
     setAgentThread(prev => [...prev, {
       id: optId, inquiry_id: inquiryId, sender: 'visitor', body: optBody,
       read_by_admin: false, read_by_visitor: true,
@@ -563,21 +581,26 @@ export default function ChatWidget() {
       attachment_name: pendingImg ? 'attachment' : null,
       created_at: new Date().toISOString(),
     }])
-    const supabase = createClient()
     try {
-      const { data: inserted, error } = await supabase.from('chat_messages')
-        .insert({
+      const resp = await fetch('/api/send-chat-message', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
           inquiry_id: inquiryId,
-          sender: 'visitor',
           body: optBody,
           attachment_url: pendingImg ? pendingImg.url : null,
           attachment_name: pendingImg ? 'attachment' : null,
-        }).select().single()
-      if (error) throw error
-      if (inserted) setAgentThread(prev => prev.map(m => m.id === optId ? inserted as AgentMessage : m))
-      await supabase.from('chat_inquiries').update({ read_by_admin: false }).eq('id', inquiryId)
+        }),
+      })
+      const inserted = await resp.json().catch(() => null) as AgentMessage | null
+      if (!resp.ok || !inserted?.id) throw new Error(inserted?.id ?? `HTTP ${resp.status}`)
+      // Replace optimistic row with real DB row (gets the real id + created_at)
+      setAgentThread(prev => prev.map(m => m.id === optId ? inserted : m))
+      // Advance the poll cursor so we don't re-fetch this message
+      lastMsgTimestamp.current = inserted.created_at
     } catch (err) {
       console.error('Agent message send error:', err)
+      // Remove optimistic row and restore input so user can retry
       setAgentThread(prev => prev.filter(m => m.id !== optId))
       setAgentInput(body)
     } finally {
