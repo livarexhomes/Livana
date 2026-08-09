@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { getRedirectForLandlord } from './AuthCallbackPage'
+import { getRedirectForLandlord } from '../lib/auth-callback-utils'
 
 describe('AuthCallback landlord redirect logic', () => {
   it('returns null (skip) when requested role is tenant even if landlord exists', () => {

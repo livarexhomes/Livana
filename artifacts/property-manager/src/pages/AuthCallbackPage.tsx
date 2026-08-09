@@ -3,20 +3,10 @@ import { useEffect, useState } from 'react'
 import { useLocation } from '@/lib/navigation'
 import { createClient, isSupabaseConfigured } from '../lib/supabase'
 import { isAdminUser } from '../lib/auth'
+import { getRedirectForLandlord } from '../lib/auth-callback-utils'
 import type { User } from '@supabase/supabase-js'
 
-// Exported for unit testing
-export function getRedirectForLandlord(existingLandlord: { status: string } | null, requestedRole: string | null) {
-  if (!existingLandlord) return null
-  if ((requestedRole ?? '').toLowerCase() === 'tenant') return null
-
-  const status = existingLandlord.status
-  if (status === 'not_submitted') return '/landlord/onboarding'
-  if (status === 'pending')       return '/landlord/pending'
-  if (status === 'rejected')      return '/landlord/rejected'
-  if (status === 'suspended')     return '/landlord/suspended'
-  return '/landlord'
-}
+export { getRedirectForLandlord }
 
 function isSafePath(next: string | null): next is string {
   if (!next) return false

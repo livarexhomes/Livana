@@ -19,7 +19,8 @@ describe('computePresence (mirrors public.compute_presence)', () => {
 
   it('marks a stale heartbeat as away within 15 minutes', () => {
     const now = new Date('2026-08-06T12:00:00.000Z').getTime()
-    expect(computePresence('2026-08-06T11:45:00.000Z', now)).toBe('away')
+    // 10 minutes stale: > 90 s (online threshold) but < 15 min (away threshold)
+    expect(computePresence('2026-08-06T11:50:00.000Z', now)).toBe('away')
   })
 
   it('marks an old heartbeat as offline', () => {
