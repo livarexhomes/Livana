@@ -358,8 +358,9 @@ export default function ChatWidget() {
         : (user?.email?.split('@')[0] ?? '')
       const email = user?.email ?? ''
 
-      // Guest with no info and support offline → show inline contact form.
-      if (!name && !agentName && !supportOpen && currentState.availableCount === 0) {
+      // Anonymous visitor with no saved name: collect contact info first,
+      // then create the ticket (works whether agents are online or offline).
+      if (!name && !agentName) {
         setLiveStatus('guest-form')
         return
       }
@@ -745,13 +746,29 @@ export default function ChatWidget() {
         .cw-launcher:hover { transform:translateY(-2px); box-shadow:0 20px 54px rgba(2,6,23,0.2); }
 
         @media(max-width:640px) {
-          .cw-panel { left:0;right:0;bottom:0;width:100%;height:94dvh;max-height:none;border-radius:20px 20px 0 0;border-bottom:none;transform-origin:bottom center; }
+          .cw-panel {
+            left:0; right:0; bottom:0; width:100vw;
+            height:92vh; height:92svh; height:92dvh; /* progressive: dvh best on modern Android/iOS */
+            max-height:none; border-radius:20px 20px 0 0; border-bottom:none;
+            transform-origin:bottom center;
+            overscroll-behavior:contain;
+            -webkit-overflow-scrolling:touch;
+          }
           .cw-panel.open   { transform:translateY(0);    opacity:1; pointer-events:auto; }
           .cw-panel.closed { transform:translateY(100%); opacity:0; pointer-events:none; }
-          .cw-handle { display:block !important; }
-          .cw-composer { padding-bottom:calc(10px + env(safe-area-inset-bottom))!important; }
+          .cw-handle { display:flex !important; }
+          .cw-composer { padding-bottom:calc(10px + env(safe-area-inset-bottom,0px))!important; }
+          .cw-launcher { right:12px; bottom:calc(80px + env(safe-area-inset-bottom,0px)); }
+          .cw-toggle   { right:calc(14px + env(safe-area-inset-right,0px)); bottom:calc(14px + env(safe-area-inset-bottom,0px)); }
         }
-        @media(max-width:640px) and (max-height:480px) { .cw-panel { height:100dvh; border-radius:0; } }
+        /* Very small Android phones (320–380px) */
+        @media(max-width:380px) {
+          .cw-panel { border-radius:14px 14px 0 0; }
+          .cw-hero-title { font-size:18px !important; }
+          .cw-action-card { padding:12px !important; gap:10px !important; }
+          .cw-action-icon { width:38px !important; height:38px !important; }
+        }
+        @media(max-width:640px) and (max-height:480px) { .cw-panel { height:100vh; height:100dvh; border-radius:0; } }
         @media(pointer:coarse) { .cw-attach,.cw-send { width:44px; height:44px; } }
 
         .cw-toggle {
@@ -861,11 +878,12 @@ export default function ChatWidget() {
 
           {/* WhatsApp shortcut */}
           <a href={waHref} target="_blank" rel="noopener noreferrer"
-            title="WhatsApp" aria-label="Continue on WhatsApp"
+            title="Chat on WhatsApp" aria-label="Continue on WhatsApp"
             className="grid size-8 shrink-0 place-items-center rounded-xl text-white/70 hover:bg-white/10 transition-colors"
           >
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
-              <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+            {/* WhatsApp message-bubble icon */}
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+              <path d="M12 2C6.477 2 2 6.477 2 12c0 1.89.525 3.66 1.438 5.168L2 22l4.832-1.438A9.955 9.955 0 0012 22c5.523 0 10-4.477 10-10S17.523 2 12 2zm0 18a7.95 7.95 0 01-4.073-1.115l-.29-.174-3.007.894.894-3.006-.174-.29A7.95 7.95 0 014 12c0-4.411 3.589-8 8-8s8 3.589 8 8-3.589 8-8 8zm4.406-5.884c-.242-.121-1.43-.706-1.652-.787-.222-.08-.383-.12-.545.121-.16.242-.623.787-.764.948-.14.16-.282.18-.524.06-.242-.12-1.022-.377-1.947-1.2-.72-.642-1.206-1.433-1.347-1.675-.14-.242-.015-.373.106-.494.109-.108.242-.282.362-.423.12-.14.16-.242.242-.403.08-.16.04-.302-.02-.423-.06-.12-.545-1.313-.747-1.797-.196-.472-.396-.408-.545-.415-.14-.007-.302-.009-.463-.009-.16 0-.423.06-.644.302-.222.242-.847.827-.847 2.017s.867 2.34 1.987 3.173c.12.09 1.66 1.061 4.02 1.488.562.096 1.001.154 1.342.197.563.072 1.075.062 1.48-.038.452-.11 1.392-.569 1.588-1.118.196-.549.196-1.02.137-1.118-.06-.1-.222-.16-.464-.282z"/>
             </svg>
           </a>
 
@@ -884,7 +902,7 @@ export default function ChatWidget() {
 
             {/* Hero section */}
             <div className="cw-hero px-5 pt-6 pb-14">
-              <p className="text-[22px] font-extrabold text-white leading-tight tracking-[-0.02em]">
+              <p className="cw-hero-title text-[22px] font-extrabold text-white leading-tight tracking-[-0.02em]">
                 Hi there! 👋
               </p>
               <p className="mt-1.5 text-[13px] text-white/65 leading-relaxed">
@@ -910,8 +928,8 @@ export default function ChatWidget() {
 
               {/* AI Chat card */}
               <button onClick={() => startChat()}
-                className="cw-card w-full text-left bg-white rounded-2xl shadow-[0_8px_30px_rgba(2,6,23,0.1)] p-4 flex items-center gap-3.5 cursor-pointer">
-                <div className="w-11 h-11 rounded-xl shrink-0 flex items-center justify-center"
+                className="cw-card cw-action-card w-full text-left bg-white rounded-2xl shadow-[0_8px_30px_rgba(2,6,23,0.1)] p-4 flex items-center gap-3.5 cursor-pointer">
+                <div className="cw-action-icon w-11 h-11 rounded-xl shrink-0 flex items-center justify-center"
                   style={{ background:'linear-gradient(135deg,#dbeafe,#eff6ff)' }}>
                   <MessageSquare className="w-5 h-5 text-blue-600" />
                 </div>
@@ -924,8 +942,8 @@ export default function ChatWidget() {
 
               {/* Live agent card */}
               <button onClick={goLive}
-                className="cw-card w-full text-left bg-white rounded-2xl shadow-[0_8px_30px_rgba(2,6,23,0.1)] p-4 flex items-center gap-3.5 cursor-pointer">
-                <div className="w-11 h-11 rounded-xl shrink-0 flex items-center justify-center"
+                className="cw-card cw-action-card w-full text-left bg-white rounded-2xl shadow-[0_8px_30px_rgba(2,6,23,0.1)] p-4 flex items-center gap-3.5 cursor-pointer">
+                <div className="cw-action-icon w-11 h-11 rounded-xl shrink-0 flex items-center justify-center"
                   style={{ background:'linear-gradient(135deg,#d1fae5,#ecfdf5)' }}>
                   <Headset className="w-5 h-5 text-emerald-600" />
                 </div>
@@ -1154,9 +1172,9 @@ export default function ChatWidget() {
             {/* ── Guest contact form (offline + unauthenticated) ── */}
             {liveStatus === 'guest-form' && (
               <div className="cw-scroll flex-1 overflow-y-auto px-5 py-5" style={{ background:'#f8fafc' }}>
-                <p className="text-[14px] font-bold text-slate-900 mb-1">Leave us a message</p>
+                <p className="text-[14px] font-bold text-slate-900 mb-1">Start a conversation</p>
                 <p className="text-[12.5px] text-slate-500 mb-5 leading-relaxed">
-                  Support is offline right now (8 AM–6 PM WAT). Enter your details and we'll get back to you.
+                  Enter your details and we'll connect you right away — or reply as soon as an agent is free.
                 </p>
                 <form onSubmit={submitGuestForm} className="space-y-3">
                   <Field label="Your name *">
