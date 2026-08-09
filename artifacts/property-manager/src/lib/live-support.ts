@@ -178,10 +178,15 @@ export async function fetchSupportPresence(
       .select('id, user_id, name, email, role, active, presence, available, availability_note, last_seen_at, created_at')
       .order('created_at', { ascending: true })
     if (!error && Array.isArray(data)) {
-      onStatus?.({ ok: true })
-      return aggregate((data as Record<string, unknown>[]).map(normalizeRow))
-    }
-    if (error) {
+      const state = aggregate((data as Record<string, unknown>[]).map(normalizeRow))
+      // RLS silently returns [] for anonymous visitors even when agents exist,
+      // so an empty roster isn't proof there are zero agents. Fall through to
+      // the service-key API aggregate (authoritative) when nothing came back.
+      if (state.agents.length > 0) {
+        onStatus?.({ ok: true })
+        return state
+      }
+    } else if (error) {
       const schema = detectMissingColumns(String(error?.message ?? ''))
       onStatus?.({ ok: false, error: error.message, ...schema })
       // Migration 008 not applied → presence/available columns don't exist.
@@ -193,8 +198,11 @@ export async function fetchSupportPresence(
           .select('id, user_id, name, email, role, active, last_seen_at, created_at')
           .order('created_at', { ascending: true })
         if (!legacyErr && Array.isArray(legacy)) {
-          onStatus?.({ ok: true, ...schema })
-          return aggregate(normalizeLegacyRows(legacy as Record<string, unknown>[]))
+          const legacyState = aggregate(normalizeLegacyRows(legacy as Record<string, unknown>[]))
+          if (legacyState.agents.length > 0) {
+            onStatus?.({ ok: true, ...schema })
+            return legacyState
+          }
         }
       }
     }
