@@ -3,7 +3,7 @@ import { X, Send, MessageSquare, Paperclip, ChevronDown, Check, ArrowRight, Load
 import { useLocation, redirect } from '../lib/navigation'
 import { createClient, isSupabaseConfigured } from '../lib/supabase'
 import { getPlatformSettings, getNotificationSettings, phoneToWaLink, getSupportAvailability, type SupportAvailability, DEFAULT_AVAILABILITY } from '../lib/platform-settings'
-import { subscribeSupportPresence, type LiveSupportState } from '../lib/live-support'
+import { subscribeSupportPresence, type LiveSupportState, type PresenceFeedStatus } from '../lib/live-support'
 import { assignChatToAgent } from '../lib/support-assignment'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -189,7 +189,14 @@ export default function ChatWidget() {
   })
 
   useEffect(() => {
-    const unsub = subscribeSupportPresence(setLiveState)
+    const unsub = subscribeSupportPresence(setLiveState, (err) => {
+      // If the deployed agents table is missing the presence column, log a
+      // clear signal instead of silently showing "no agents available".
+      const status = (err ?? {}) as PresenceFeedStatus
+      if (typeof status === 'object' && status.schemaMissingPresence) {
+        console.warn('[chat-widget] presence unavailable: agents.presence column missing — run migration 008_presence_and_availability.sql')
+      }
+    })
     return unsub
   }, [])
 

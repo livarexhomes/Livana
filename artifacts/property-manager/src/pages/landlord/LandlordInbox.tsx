@@ -290,6 +290,16 @@ function NewTicketModal({
   const [priority, setPriority] = useState<'low' | 'normal' | 'high' | 'urgent'>('normal')
   const [message, setMessage] = useState('')
   const [submitting, setSubmitting] = useState(false)
+  const [propertyId, setPropertyId] = useState<string | null>(null)
+
+  // Auto-attach the landlord's most recent property so the admin gets the
+  // property context without having to identify the listing manually.
+  useEffect(() => {
+    const supabase = createClient()
+    supabase.from('properties').select('id').eq('landlord_id', landlordId)
+      .order('created_at', { ascending: false }).limit(1).maybeSingle()
+      .then(({ data }) => { if (data?.id) setPropertyId(data.id as string) })
+  }, [landlordId])
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -306,6 +316,7 @@ function NewTicketModal({
         subject: subject.trim(),
         priority,
         status: 'open',
+        property_id: propertyId,
       })
       .select()
       .single()

@@ -54,6 +54,16 @@ function NewTicketForm({ tenantId, onCreated }: { tenantId: string; onCreated: (
   const [body, setBody]         = useState('')
   const [loading, setLoading]   = useState(false)
   const [error, setError]       = useState('')
+  const [propertyId, setPropertyId] = useState<string | null>(null)
+
+  // If the customer has a property enquiry, auto-attach that property context
+  // so the admin never has to identify the listing manually.
+  useEffect(() => {
+    const supabase = createClient()
+    supabase.from('enquiries').select('property_id').eq('tenant_id', tenantId)
+      .order('created_at', { ascending: false }).limit(1).maybeSingle()
+      .then(({ data }) => { if (data?.property_id) setPropertyId(data.property_id as string) })
+  }, [tenantId])
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -64,7 +74,7 @@ function NewTicketForm({ tenantId, onCreated }: { tenantId: string; onCreated: (
     // Create ticket
     const { data: ticket, error: tErr } = await supabase
       .from('support_tickets')
-      .insert({ tenant_id: tenantId, subject: subject.trim(), priority })
+      .insert({ tenant_id: tenantId, subject: subject.trim(), priority, property_id: propertyId })
       .select()
       .single()
     if (tErr || !ticket) { setError(tErr?.message ?? 'Failed to create ticket'); setLoading(false); return }

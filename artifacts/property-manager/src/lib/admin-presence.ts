@@ -39,6 +39,9 @@ export interface PresenceDiagnostics {
   registeredAt?: string
   realtime?: string
   timeoutLabel?: string
+  /** True when the deployed agents table is missing the presence column. */
+  schemaMissingPresence?: boolean
+  schemaMissingAvailable?: boolean
 }
 
 const listeners = new Set<(d: PresenceDiagnostics) => void>()
@@ -112,10 +115,42 @@ export function useAdminPresence(): void {
 
       try {
         const nowIso = new Date().toISOString()
-        await supabase
+        // Write the heartbeat. If the deployed agents table predates migration
+        // 008 (no `presence` column), the UPDATE fails — surface that exactly
+        // instead of silently swallowing it.
+        const { error } = await supabase
           .from('agents')
           .update({ last_seen_at: nowIso, presence: 'online' })
           .eq('id', agentRowId)
+        if (error) {
+          const msg = String(error?.message ?? error)
+          const missingPresence = /presence/.test(msg) && /column|does not exist/.test(msg)
+          const missingAvailable = /available/.test(msg) && /column|does not exist/.test(msg)
+          if (missingPresence) {
+            // Column missing → the migration hasn't run. Keep last_seen_at
+            // working (heartbeat still proves the agent is present) and flag it.
+            const { error: lsErr } = await supabase
+              .from('agents')
+              .update({ last_seen_at: nowIso })
+              .eq('id', agentRowId)
+            if (lsErr) {
+              publishDiagnostics({ heartbeatStatus: 'error', heartbeatError: `last_seen update failed: ${lsErr.message}` })
+              return
+            }
+            publishDiagnostics({
+              schemaMissingPresence: true,
+              schemaMissingAvailable: missingAvailable || undefined,
+              lastHeartbeatAt: nowIso,
+              lastSeenAt: nowIso,
+              heartbeatStatus: 'error',
+              heartbeatError: 'agents table missing `presence` column — run migration 008_presence_and_availability.sql',
+              heartbeatCount: currentDiagnostics.heartbeatCount + 1,
+            })
+            return
+          }
+          publishDiagnostics({ heartbeatStatus: 'error', heartbeatError: `update failed: ${msg}` })
+          return
+        }
         publishDiagnostics({
           presence: 'online',
           lastHeartbeatAt: nowIso,

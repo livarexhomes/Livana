@@ -40,6 +40,19 @@ export interface SupportAgent {
   created_at?: string
 }
 
+/**
+ * How a client read the roster. When the deployed agents table predates
+ * migration 008 (no `presence`/`available` columns), `schemaMissingPresence`
+ * is set and the UI should show "run the migration" instead of a fabricated
+ * offline state.
+ */
+export interface PresenceFeedStatus {
+  ok: boolean
+  error?: string
+  schemaMissingPresence?: boolean
+  schemaMissingAvailable?: boolean
+}
+
 /** Aggregate over the roster: per-agent breakdown + availability counts. */
 export interface LiveSupportState {
   status: SupportStatus
@@ -112,36 +125,62 @@ function aggregate(rows: SupportAgent[]): LiveSupportState {
   }
 }
 
+function detectMissingColumns(msg: string): { schemaMissingPresence?: boolean; schemaMissingAvailable?: boolean } {
+  const out: { schemaMissingPresence?: boolean; schemaMissingAvailable?: boolean } = {}
+  if (/presence/.test(msg) && /column|does not exist/.test(msg)) out.schemaMissingPresence = true
+  if (/available/.test(msg) && /column|does not exist/.test(msg)) out.schemaMissingAvailable = true
+  return out
+}
+
 /**
  * Fetch the current roster + availability aggregate. Falls back to the
  * server-side `/api/support-presence` aggregate when this client can't read
  * the roster directly (e.g. anonymous widget on a locked-down project), and
  * degrades to an empty state on total failure.
+ *
+ * `onStatus` (optional) receives read failures — including when the deployed
+ * `agents` table is missing the `presence`/`available` columns (migration 008
+ * not applied), which is the single most common cause of "everything offline".
  */
-export async function fetchSupportPresence(): Promise<LiveSupportState> {
-  if (!isSupabaseConfigured()) return { ...EMPTY_STATE }
+export async function fetchSupportPresence(
+  onStatus?: (status: PresenceFeedStatus) => void,
+): Promise<LiveSupportState> {
+  if (!isSupabaseConfigured()) {
+    onStatus?.({ ok: false, error: 'Supabase not configured' })
+    return { ...EMPTY_STATE }
+  }
   try {
     const supabase = createClient()
     const { data, error } = await supabase
       .from('agents')
       .select('id, user_id, name, email, role, active, presence, available, availability_note, last_seen_at, created_at')
       .order('created_at', { ascending: true })
-    if (!error && Array.isArray(data)) return aggregate((data as Record<string, unknown>[]).map(normalizeRow))
+    if (!error && Array.isArray(data)) {
+      onStatus?.({ ok: true })
+      return aggregate((data as Record<string, unknown>[]).map(normalizeRow))
+    }
+    if (error) {
+      const schema = detectMissingColumns(String(error?.message ?? ''))
+      onStatus?.({ ok: false, error: error.message, ...schema })
+    }
   } catch {
     /* fall through to the API aggregate */
   }
   try {
     const res = await fetch('/api/support-presence', { method: 'POST' })
     if (res.ok) {
-      const json = (await res.json()) as { onlineCount?: number; agents?: Record<string, unknown>[] }
+      const json = (await res.json()) as { onlineCount?: number; agents?: Record<string, unknown>[]; error?: string }
       if (Array.isArray(json.agents)) {
+        onStatus?.({ ok: true })
         return aggregate(json.agents.map(normalizeRow))
       }
       // Anonymous viewer: only the count is exposed.
+      onStatus?.({ ok: true })
       return { ...EMPTY_STATE, availableCount: json.onlineCount ?? 0 }
     }
-  } catch {
-    /* ignore */
+    onStatus?.({ ok: false, error: `presence API ${res.status}` })
+  } catch (err) {
+    onStatus?.({ ok: false, error: String(err) })
   }
   return { ...EMPTY_STATE }
 }
@@ -187,7 +226,10 @@ export function subscribeSupportPresence(
 
   // Initial + periodic snapshot (self-healing; the widget also uses this).
   const refresh = () => {
-    fetchSupportPresence().then((state) => {
+    fetchSupportPresence((status) => {
+      // Surface read failures (incl. missing presence column) to callers.
+      if (!status.ok) onError?.(status)
+    }).then((state) => {
       if (!unsubscribed) onChange(state)
     }).catch((err) => onError?.(err))
   }

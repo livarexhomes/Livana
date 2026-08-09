@@ -4,11 +4,12 @@ import {
   Clock, CheckCircle2, XCircle, User,
   ChevronLeft, ChevronDown as ChevronDownIcon, RefreshCw, Inbox, Building2, Mail,
   UserPlus, Volume2, VolumeX, ShieldCheck, KeyRound, Trash2, Search, X,
+  Paperclip, CheckCheck, History, Home, Phone, Calendar, Activity,
 } from 'lucide-react'
 import AdminSidebar from '../../components/layout/AdminSidebar'
 import AuthGuard from '../../components/auth/AuthGuard'
 import { createClient, isSupabaseConfigured } from '../../lib/supabase'
-import { subscribeSupportPresence, type LiveSupportState, type SupportAgent, type SupportStatus } from '../../lib/live-support'
+import { subscribeSupportPresence, type LiveSupportState, type SupportAgent, type SupportStatus, type PresenceFeedStatus } from '../../lib/live-support'
 import { subscribePresenceDiagnostics, type PresenceDiagnostics } from '../../lib/admin-presence'
 import { claimInquiry, unassignInquiry, type AgentAssignmentStatus } from '../../lib/support-assignment'
 import { subscribeToSupportAlerts, playSupportSound, getSoundMuted, setSoundMuted } from '../../lib/support-notifications'
@@ -28,8 +29,16 @@ interface SupportTicket {
   updated_at: string
   tenant_id?: string | null
   landlord_id?: string | null
-  tenants?: { full_name: string | null; phone: string | null } | null
-  landlords?: { full_name: string | null; whatsapp: string | null } | null
+  property_id?: string | null
+  assigned_to?: string | null
+  assigned_at?: string | null
+  ticket_no?: string | null
+  created_by?: string | null
+  last_updated_by?: string | null
+  tenants?: { full_name: string | null; phone: string | null; email?: string | null } | null
+  landlords?: { full_name: string | null; whatsapp: string | null; email?: string | null } | null
+  properties?: { id: string; title: string; city: string; price: number; type?: string | null; status?: string | null } | null
+  assignedAgent?: SupportAgent | null
 }
 
 interface SupportMessage {
@@ -37,6 +46,21 @@ interface SupportMessage {
   ticket_id: string
   sender_role: 'tenant' | 'landlord' | 'admin'
   body: string
+  read_by_admin?: boolean
+  read_by_visitor?: boolean
+  attachment_url?: string | null
+  attachment_name?: string | null
+  created_at: string
+}
+
+interface TicketEvent {
+  id: string
+  ticket_id: string
+  actor_type: 'agent' | 'customer' | 'system'
+  actor_id?: string | null
+  event_type: string
+  label: string
+  metadata?: Record<string, unknown>
   created_at: string
 }
 
@@ -155,19 +179,40 @@ function initialsOf(name: string) {
 
 // ── AdminChatThread ───────────────────────────────────────────────────────────
 
+const PRIORITY_OPTIONS = ['low', 'normal', 'high', 'urgent'] as const
+
+/** Broadcast a typing indicator to the ticket's customer channel. */
+function broadcastTicketTyping(ticketId: string) {
+  const supabase = createClient()
+  supabase.channel(`support_typing:${ticketId}`)
+    .send({ type: 'broadcast', event: 'typing', payload: { sender: 'admin' } })
+    .catch(() => { /* best-effort */ })
+}
+
 function AdminChatThread({
-  ticket, onBack, onStatusChange,
+  ticket, onBack, onStatusChange, agents, liveState,
 }: {
   ticket: SupportTicket
   onBack: () => void
   onStatusChange: (id: string, status: SupportTicket['status']) => void
+  agents: SupportAgent[]
+  liveState: LiveSupportState
 }) {
-  const [messages, setMessages]   = useState<SupportMessage[]>([])
-  const [loading, setLoading]     = useState(true)
-  const [input, setInput]         = useState('')
-  const [sending, setSending]     = useState(false)
+  const [messages, setMessages]     = useState<SupportMessage[]>([])
+  const [events, setEvents]         = useState<TicketEvent[]>([])
+  const [loading, setLoading]       = useState(true)
+  const [input, setInput]           = useState('')
+  const [sending, setSending]       = useState(false)
   const [updatingStatus, setUpdatingStatus] = useState(false)
+  const [assigning, setAssigning]   = useState(false)
+  const [customerTyping, setCustomerTyping] = useState(false)
+  const [attachments, setAttachments] = useState<File[]>([])
+  const [customer, setCustomer]     = useState<{ name: string; email?: string | null; phone?: string | null; propertyId?: string | null; tickets: SupportTicket[]; enquiries: { id: string; message: string; status: string; created_at: string; properties?: { title: string | null } | null }[] } | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
   const bottomRef = useRef<HTMLDivElement>(null)
+  const typingTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const typingSentAt = useRef(0)
+  const scrollRef = useRef<HTMLDivElement>(null)
 
   const s = STATUS_META[ticket.status]
   const p = PRIORITY_META[ticket.priority]
@@ -176,64 +221,201 @@ function AdminChatThread({
     ? (ticket.landlords?.full_name ?? 'Landlord')
     : (ticket.tenants?.full_name ?? 'Tenant')
   const senderInitial = senderName[0]?.toUpperCase() ?? (isLandlordTicket ? 'L' : 'T')
-
-  useEffect(() => { 
-    console.log('Messages updated, count:', messages.length)
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' }) 
-  }, [messages])
+  const isClosed = ticket.status === 'closed' || ticket.status === 'resolved'
+  const assignedAgent = ticket.assignedAgent ?? agents.find(a => a.id === ticket.assigned_to) ?? null
+  const availableAgents = liveState.agents.filter(a => a.presence === 'online' && a.available && a.active)
 
   useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [messages, events])
+
+  // ── Load messages + events, subscribe to realtime ──────────────────────────
+  useEffect(() => {
     const supabase = createClient()
-    console.log('Loading messages for ticket:', ticket.id)
+    let active = true
+
     supabase.from('support_messages').select('*').eq('ticket_id', ticket.id)
       .order('created_at', { ascending: true })
-      .then(({ data, error }) => { 
-        if (error) console.error('Error loading messages:', error)
-        console.log('Initial messages loaded:', data?.length || 0, data)
-        setMessages((data as SupportMessage[]) ?? []); 
-        setLoading(false) 
-      })
+      .then(({ data }) => { if (active) { setMessages((data as SupportMessage[]) ?? []); setLoading(false) } })
+
+    supabase.from('support_ticket_events').select('*').eq('ticket_id', ticket.id)
+      .order('created_at', { ascending: true })
+      .then(({ data }) => { if (active) setEvents((data as TicketEvent[]) ?? []) })
+
+    // Mark admin messages as read by the visitor when we open the thread.
+    supabase.from('support_messages')
+      .update({ read_by_admin: true })
+      .eq('ticket_id', ticket.id)
+      .eq('sender_role', 'admin')
 
     const channel = supabase.channel(`admin_chat:${ticket.id}`)
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'support_messages', filter: `ticket_id=eq.${ticket.id}` },
         (payload) => {
-          console.log('New message received:', payload.new)
-          setMessages(prev => prev.find(m => m.id === payload.new.id) ? prev : [...prev, payload.new as SupportMessage])
+          const msg = payload.new as SupportMessage
+          setMessages(prev => prev.find(m => m.id === msg.id) ? prev : [...prev, msg])
+          if (msg.sender_role !== 'admin') {
+            // Mark visitor messages as read by admin immediately.
+            supabase.from('support_messages').update({ read_by_admin: true }).eq('id', msg.id)
+          }
         })
-      .subscribe((status) => {
-        console.log('Realtime subscription status:', status)
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'support_ticket_events', filter: `ticket_id=eq.${ticket.id}` },
+        (payload) => setEvents(prev => prev.find(e => e.id === (payload.new as TicketEvent).id) ? prev : [...prev, payload.new as TicketEvent]))
+      .on('broadcast', { event: 'typing' }, ({ payload }) => {
+        if (payload?.sender === 'customer') {
+          setCustomerTyping(true)
+          if (typingTimer.current) clearTimeout(typingTimer.current)
+          typingTimer.current = setTimeout(() => setCustomerTyping(false), 2500)
+        }
       })
-    return () => { supabase.removeChannel(channel) }
+      .subscribe()
+
+    return () => { active = false; supabase.removeChannel(channel); if (typingTimer.current) clearTimeout(typingTimer.current) }
   }, [ticket.id])
+
+  // ── Customer context: name/email/phone + previous tickets + enquiries + property ──
+  useEffect(() => {
+    const supabase = createClient()
+    let active = true
+    const load = async () => {
+      let name = senderName
+      let email: string | null = null
+      let phone: string | null = null
+      let customerId: string | null = null
+      let propertyId: string | null = ticket.property_id ?? null
+      let property: SupportTicket['properties'] = ticket.properties ?? null
+
+      if (isLandlordTicket) {
+        const { data: l } = await supabase.from('landlords').select('id, full_name, whatsapp, email').eq('id', ticket.landlord_id).maybeSingle()
+        if (l) { name = l.full_name ?? name; phone = l.whatsapp ?? null; email = l.email ?? null; customerId = l.id }
+      } else if (ticket.tenant_id) {
+        const { data: t } = await supabase.from('tenants').select('id, full_name, phone, email').eq('id', ticket.tenant_id).maybeSingle()
+        if (t) { name = t.full_name ?? name; phone = t.phone ?? null; email = t.email ?? null; customerId = t.id }
+      }
+
+      // Property context: use the ticket's linked property, else resolve from
+      // the customer's most recent enquiry.
+      if (!property && customerId) {
+        const { data: enq } = await supabase
+          .from('enquiries').select('property_id, properties(id, title, city, price, type, status)')
+          .eq('tenant_id', customerId).order('created_at', { ascending: false }).limit(1).single()
+        if (enq?.property_id && enq.properties) {
+          propertyId = enq.property_id
+          property = (Array.isArray(enq.properties) ? enq.properties[0] : enq.properties) as SupportTicket['properties']
+        }
+      }
+      if (!property && propertyId) {
+        const { data: prop } = await supabase.from('properties').select('id, title, city, price, type, status').eq('id', propertyId).maybeSingle()
+        if (prop) property = prop as SupportTicket['properties']
+      }
+
+      // Previous tickets + enquiries.
+      const [ticketsRes, enquiriesRes] = await Promise.all([
+        supabase.from('support_tickets').select('id, subject, status, priority, ticket_no, created_at')
+          .or(`tenant_id.eq.${customerId ?? '__none__'},landlord_id.eq.${customerId ?? '__none__'}`)
+          .neq('id', ticket.id).order('created_at', { ascending: false }).limit(5),
+        supabase.from('enquiries').select('id, message, status, created_at, properties(title)')
+          .eq('tenant_id', customerId ?? '__none__').order('created_at', { ascending: false }).limit(5),
+      ])
+
+      const enquiryRows = (enquiriesRes.data ?? []).map((e: Record<string, unknown>) => ({
+        id: String(e.id ?? ''),
+        message: String(e.message ?? ''),
+        status: String(e.status ?? ''),
+        created_at: String(e.created_at ?? ''),
+        properties: Array.isArray(e.properties) ? (e.properties[0] as { title: string | null } | undefined) ?? null : null,
+      }))
+
+      if (!active) return
+      setCustomer({
+        name, email, phone, propertyId: property?.id ?? null,
+        tickets: (ticketsRes.data as SupportTicket[]) ?? [],
+        enquiries: enquiryRows,
+      })
+    }
+    load()
+    return () => { active = false }
+  }, [ticket.id, ticket.tenant_id, ticket.landlord_id, ticket.property_id, senderName])
+
+  // ── Actions ─────────────────────────────────────────────────────────────────
+  async function updateStatus(newStatus: SupportTicket['status']) {
+    setUpdatingStatus(true)
+    const supabase = createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    await supabase.from('support_tickets').update({ status: newStatus, last_updated_by: user?.id }).eq('id', ticket.id)
+    onStatusChange(ticket.id, newStatus)
+    setUpdatingStatus(false)
+  }
+
+  async function updatePriority(newPriority: SupportTicket['priority']) {
+    const supabase = createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    await supabase.from('support_tickets').update({ priority: newPriority, last_updated_by: user?.id }).eq('id', ticket.id)
+  }
+
+  async function assignTo(agentId: string | null) {
+    if (assigning) return
+    setAssigning(true)
+    const supabase = createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    await supabase.from('support_tickets').update({
+      assigned_to: agentId,
+      assigned_at: agentId ? new Date().toISOString() : null,
+      last_updated_by: user?.id,
+    }).eq('id', ticket.id)
+    setAssigning(false)
+  }
 
   async function sendReply(e: React.FormEvent) {
     e.preventDefault()
     const body = input.trim()
-    if (!body || sending) return
+    if ((!body && attachments.length === 0) || sending) return
     setSending(true); setInput('')
-    const optId = `opt-${Date.now()}`
-    setMessages(prev => [...prev, { id: optId, ticket_id: ticket.id, sender_role: 'admin', body, created_at: new Date().toISOString() }])
+
+    // Upload attachments first.
     const supabase = createClient()
+    const urls: string[] = []
+    const names: string[] = []
+    for (const f of attachments) {
+      const ext = f.name.split('.').pop() ?? 'bin'
+      const path = `support/${ticket.id}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`
+      const { error: upErr } = await supabase.storage.from('support-attachments').upload(path, f)
+      if (!upErr) {
+        const { data: urlData } = supabase.storage.from('support-attachments').getPublicUrl(path)
+        urls.push(urlData.publicUrl)
+        names.push(f.name)
+      }
+    }
+    setAttachments([])
+
+    const optId = `opt-${Date.now()}`
+    const optMsg: SupportMessage = {
+      id: optId, ticket_id: ticket.id, sender_role: 'admin', body: body || '',
+      read_by_admin: true, read_by_visitor: false,
+      attachment_url: urls[0] ?? null, attachment_name: names[0] ?? null,
+      created_at: new Date().toISOString(),
+    }
+    setMessages(prev => [...prev, optMsg])
+
     const { data: inserted } = await supabase.from('support_messages')
-      .insert({ ticket_id: ticket.id, sender_role: 'admin', body }).select().single()
+      .insert({ ticket_id: ticket.id, sender_role: 'admin', body: body || '', attachment_url: urls[0] ?? null, attachment_name: names[0] ?? null })
+      .select().single()
     if (inserted) setMessages(prev => prev.map(m => m.id === optId ? inserted as SupportMessage : m))
     if (ticket.status === 'open') await updateStatus('in_progress')
     setSending(false)
   }
 
-  async function updateStatus(newStatus: SupportTicket['status']) {
-    setUpdatingStatus(true)
-    const supabase = createClient()
-    await supabase.from('support_tickets').update({ status: newStatus }).eq('id', ticket.id)
-    onStatusChange(ticket.id, newStatus)
-    setUpdatingStatus(false)
+  function handleComposerChange(v: string) {
+    setInput(v)
+    const now = Date.now()
+    if (now - typingSentAt.current < 1500) return
+    typingSentAt.current = now
+    broadcastTicketTyping(ticket.id)
   }
-
-  const isClosed = ticket.status === 'closed' || ticket.status === 'resolved'
 
   return (
     <div className="flex flex-col h-full bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-      <div className="flex items-center gap-3 px-4 py-3 border-b border-gray-100 shrink-0">
+      {/* ── Header ────────────────────────────────────────────────────────── */}
+      <div className="flex items-center gap-3 px-4 py-3 border-b border-gray-100 shrink-0 flex-wrap">
         <button onClick={onBack} className="lg:hidden p-1.5 rounded-lg hover:bg-gray-100 text-gray-500 transition-colors">
           <ChevronLeft className="w-4 h-4" />
         </button>
@@ -243,6 +425,9 @@ function AdminChatThread({
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
             <p className="font-bold text-gray-900 text-sm truncate">{ticket.subject}</p>
+            {ticket.ticket_no && (
+              <span className="shrink-0 text-[10px] font-bold px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">{ticket.ticket_no}</span>
+            )}
             <span className={`shrink-0 inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full ${s.bg} ${s.color}`}>
               <span className={`w-1.5 h-1.5 rounded-full ${s.dot}`} />{s.label}
             </span>
@@ -250,88 +435,269 @@ function AdminChatThread({
           </div>
           <p className="text-xs text-gray-400 mt-0.5">
             From <span className="font-semibold text-gray-600">{senderName}</span>
-            {isLandlordTicket
-              ? (ticket.landlords?.whatsapp && <span> · {ticket.landlords.whatsapp}</span>)
-              : (ticket.tenants?.phone && <span> · {ticket.tenants.phone}</span>)}
-            <span> · {formatDistanceToNow(new Date(ticket.created_at), { addSuffix: true })}</span>
+            {assignedAgent && <span> · Assigned to <span className="font-semibold text-gray-600">{assignedAgent.name}</span></span>}
+            <span> · Created {formatDistanceToNow(new Date(ticket.created_at), { addSuffix: true })}</span>
+            <span> · Updated {formatDistanceToNow(new Date(ticket.updated_at), { addSuffix: true })}</span>
           </p>
         </div>
-        <div className="relative shrink-0">
-          <select value={ticket.status} onChange={e => updateStatus(e.target.value as SupportTicket['status'])}
-            disabled={updatingStatus}
-            className="appearance-none pl-3 pr-7 py-1.5 rounded-xl border border-gray-200 text-xs font-semibold bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-900 cursor-pointer disabled:opacity-50">
-            {STATUS_OPTIONS.map(st => <option key={st} value={st}>{STATUS_META[st].label}</option>)}
-          </select>
-          {updatingStatus
-            ? <Loader2 className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 animate-spin text-gray-400 pointer-events-none" />
-            : <RefreshCw className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-gray-400 pointer-events-none" />}
+
+        {/* Actions */}
+        <div className="flex items-center gap-1.5 shrink-0 flex-wrap">
+          {/* Status */}
+          <div className="relative">
+            <select value={ticket.status} onChange={e => updateStatus(e.target.value as SupportTicket['status'])}
+              disabled={updatingStatus}
+              className="appearance-none pl-3 pr-7 py-1.5 rounded-xl border border-gray-200 text-xs font-semibold bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-900 cursor-pointer disabled:opacity-50">
+              {STATUS_OPTIONS.map(st => <option key={st} value={st}>{STATUS_META[st].label}</option>)}
+            </select>
+            {updatingStatus
+              ? <Loader2 className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 animate-spin text-gray-400 pointer-events-none" />
+              : <RefreshCw className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-gray-400 pointer-events-none" />}
+          </div>
+
+          {/* Priority */}
+          <div className="relative">
+            <select value={ticket.priority} onChange={e => updatePriority(e.target.value as SupportTicket['priority'])}
+              className="appearance-none pl-3 pr-7 py-1.5 rounded-xl border border-gray-200 text-xs font-semibold bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-900 cursor-pointer">
+              {PRIORITY_OPTIONS.map(pr => <option key={pr} value={pr}>{PRIORITY_META[pr].label}</option>)}
+            </select>
+          </div>
+
+          {/* Assign */}
+          <div className="relative">
+            <select value={assignedAgent?.id ?? ''}
+              onChange={e => assignTo(e.target.value || null)}
+              disabled={assigning}
+              className="appearance-none pl-3 pr-7 py-1.5 rounded-xl border border-gray-200 text-xs font-semibold bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-900 cursor-pointer disabled:opacity-50">
+              <option value="">Assign…</option>
+              {availableAgents.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
+            </select>
+          </div>
+
+          {/* Resolve / Close */}
+          {ticket.status === 'open' || ticket.status === 'in_progress' ? (
+            <>
+              <button onClick={() => updateStatus('resolved')} disabled={updatingStatus}
+                className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-1.5 rounded-lg bg-emerald-50 text-emerald-700 hover:bg-emerald-100 disabled:opacity-40 transition-colors">
+                <CheckCircle2 className="w-3 h-3" /> Resolve
+              </button>
+              <button onClick={() => updateStatus('closed')} disabled={updatingStatus}
+                className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-1.5 rounded-lg bg-gray-100 text-gray-600 hover:bg-gray-200 disabled:opacity-40 transition-colors">
+                <XCircle className="w-3 h-3" /> Close
+              </button>
+            </>
+          ) : (
+            <button onClick={() => updateStatus('open')} disabled={updatingStatus}
+              className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-1.5 rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 disabled:opacity-40 transition-colors">
+              <RefreshCw className="w-3 h-3" /> Reopen
+            </button>
+          )}
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto px-4 py-3 space-y-2">
-        {loading ? (
-          <div className="flex items-center justify-center h-full"><Loader2 className="w-6 h-6 animate-spin text-gray-300" /></div>
-        ) : (
-          <>
-            <div className="flex justify-center">
-              <span className="text-[10px] text-gray-400 bg-gray-50 border border-gray-100 px-2.5 py-1 rounded-full">
-                Ticket opened · {format(new Date(ticket.created_at), 'dd MMM yyyy, h:mm a')}
-              </span>
-            </div>
-            {messages.map(msg => {
-              const isAdmin = msg.sender_role === 'admin'
-              const isFromLandlord = msg.sender_role === 'landlord'
-              return (
-                <div key={msg.id} className={`flex items-end gap-2 ${isAdmin ? 'justify-end' : 'justify-start'}`}>
-                  {!isAdmin && (
-                    <div className={`w-7 h-7 rounded-full bg-gradient-to-br flex items-center justify-center shrink-0 shadow-sm ${isFromLandlord ? 'from-violet-500 to-purple-600' : 'from-blue-500 to-cyan-500'}`}>
+      {/* ── Body: conversation + right context panel ───────────────────────── */}
+      <div className="flex flex-1 min-h-0">
+        {/* Conversation column */}
+        <div className="flex-1 flex flex-col min-w-0">
+          <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-3 space-y-2">
+            {loading ? (
+              <div className="flex items-center justify-center h-full"><Loader2 className="w-6 h-6 animate-spin text-gray-300" /></div>
+            ) : (
+              <>
+                <div className="flex justify-center">
+                  <span className="text-[10px] text-gray-400 bg-gray-50 border border-gray-100 px-2.5 py-1 rounded-full">
+                    Ticket opened · {format(new Date(ticket.created_at), 'dd MMM yyyy, h:mm a')}
+                  </span>
+                </div>
+
+                {/* Activity timeline (events) */}
+                {events.length > 0 && (
+                  <div className="mx-auto max-w-md space-y-1.5 py-1">
+                    {events.map(ev => (
+                      <div key={ev.id} className="flex items-start gap-2 text-[11px]">
+                        <span className="mt-0.5 shrink-0 size-1.5 rounded-full bg-slate-300" />
+                        <span className="text-slate-500">
+                          <span className="font-semibold text-slate-600">{ev.label}</span>
+                          <span className="text-slate-400"> · {formatDistanceToNow(new Date(ev.created_at), { addSuffix: true })}</span>
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {messages.map(msg => {
+                  const isAdmin = msg.sender_role === 'admin'
+                  const isFromLandlord = msg.sender_role === 'landlord'
+                  return (
+                    <div key={msg.id} className={`flex items-end gap-2 ${isAdmin ? 'justify-end' : 'justify-start'}`}>
+                      {!isAdmin && (
+                        <div className={`w-7 h-7 rounded-full bg-gradient-to-br flex items-center justify-center shrink-0 shadow-sm ${isFromLandlord ? 'from-violet-500 to-purple-600' : 'from-blue-500 to-cyan-500'}`}>
+                          <span className="text-xs font-bold text-white">{senderInitial}</span>
+                        </div>
+                      )}
+                      <div className={`max-w-[75%] flex flex-col gap-1 ${isAdmin ? 'items-end' : 'items-start'}`}>
+                        {msg.attachment_url && (
+                          <img src={msg.attachment_url} alt={msg.attachment_name ?? 'attachment'}
+                            className="max-h-40 max-w-[220px] rounded-xl border border-gray-200 object-cover" />
+                        )}
+                        <div className={`px-4 py-2.5 rounded-2xl text-sm leading-relaxed ${isAdmin ? 'bg-gray-900 text-white rounded-br-sm' : 'bg-gray-100 text-gray-800 rounded-bl-sm'} ${msg.id.startsWith('opt-') ? 'opacity-60' : ''}`}>
+                          {msg.body}
+                        </div>
+                        <span className="text-[10px] text-gray-400 px-1 flex items-center gap-1">
+                          {isAdmin ? 'You' : senderName} · {format(new Date(msg.created_at), 'h:mm a')}
+                          {isAdmin && (
+                            <span className={msg.read_by_visitor ? 'text-slate-500' : 'text-slate-400'}>
+                              {msg.read_by_visitor ? <><CheckCheck className="w-3 h-3 inline" /> Read</> : <><CheckCheck className="w-3 h-3 inline opacity-60" /> Sent</>}
+                            </span>
+                          )}
+                        </span>
+                      </div>
+                      {isAdmin && (
+                        <div className="w-7 h-7 rounded-full bg-gray-900 flex items-center justify-center shrink-0 shadow-sm">
+                          <HeadphonesIcon className="w-3.5 h-3.5 text-white" />
+                        </div>
+                      )}
+                    </div>
+                  )
+                })}
+
+                {customerTyping && (
+                  <div className="flex items-end gap-2">
+                    <div className={`w-7 h-7 rounded-full bg-gradient-to-br flex items-center justify-center shrink-0 ${isLandlordTicket ? 'from-violet-500 to-purple-600' : 'from-blue-500 to-cyan-500'}`}>
                       <span className="text-xs font-bold text-white">{senderInitial}</span>
                     </div>
-                  )}
-                  <div className={`max-w-[75%] flex flex-col gap-1 ${isAdmin ? 'items-end' : 'items-start'}`}>
-                    <div className={`px-4 py-2.5 rounded-2xl text-sm leading-relaxed ${isAdmin ? 'bg-gray-900 text-white rounded-br-sm' : 'bg-gray-100 text-gray-800 rounded-bl-sm'} ${msg.id.startsWith('opt-') ? 'opacity-60' : ''}`}>
-                      {msg.body}
-                    </div>
-                    <span className="text-[10px] text-gray-400 px-1">
-                      {isAdmin ? 'You' : senderName} · {format(new Date(msg.created_at), 'h:mm a')}
+                    <div className="px-3.5 py-2 rounded-2xl bg-gray-100 text-xs text-gray-500">{senderName} is typing…</div>
+                  </div>
+                )}
+
+                {isClosed && (
+                  <div className="flex justify-center">
+                    <span className="text-[11px] text-green-700 bg-green-50 border border-green-100 px-3 py-1 rounded-full">
+                      {ticket.status === 'resolved' ? '✓ Ticket resolved' : 'Ticket closed'}
                     </span>
                   </div>
-                  {isAdmin && (
-                    <div className="w-7 h-7 rounded-full bg-gray-900 flex items-center justify-center shrink-0 shadow-sm">
-                      <HeadphonesIcon className="w-3.5 h-3.5 text-white" />
-                    </div>
-                  )}
-                </div>
-              )
-            })}
-            {isClosed && (
-              <div className="flex justify-center">
-                <span className="text-[11px] text-green-700 bg-green-50 border border-green-100 px-3 py-1 rounded-full">
-                  {ticket.status === 'resolved' ? '✓ Ticket resolved' : 'Ticket closed'}
-                </span>
+                )}
+                <div ref={bottomRef} />
+              </>
+            )}
+          </div>
+
+          {/* Composer */}
+          {!isClosed ? (
+            <form onSubmit={sendReply} className="px-4 py-3 border-t border-gray-100 flex items-end gap-2 shrink-0">
+              <input ref={fileInputRef} type="file" multiple accept="image/*" className="hidden"
+                onChange={e => setAttachments(prev => [...prev, ...Array.from(e.target.files ?? [])])} />
+              <button type="button" onClick={() => fileInputRef.current?.click()} title="Attach image"
+                className="w-10 h-10 rounded-xl border border-gray-200 text-gray-400 hover:text-gray-600 hover:border-gray-300 flex items-center justify-center transition-colors shrink-0">
+                <Paperclip className="w-4 h-4" />
+              </button>
+              {attachments.length > 0 && (
+                <span className="text-[10px] text-gray-500 bg-gray-100 rounded-lg px-2 py-1">{attachments.length} attached</span>
+              )}
+              <textarea rows={1} value={input} onChange={e => handleComposerChange(e.target.value)}
+                onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendReply(e as any) } }}
+                placeholder={`Reply to ${isLandlordTicket ? 'landlord' : 'tenant'}… (Enter to send)`}
+                className="flex-1 px-4 py-2.5 rounded-xl border border-gray-200 text-sm bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-gray-900 transition-all resize-none" />
+              <button type="submit" disabled={(!input.trim() && attachments.length === 0) || sending}
+                className="w-10 h-10 rounded-xl bg-gray-900 hover:bg-gray-800 disabled:opacity-40 text-white flex items-center justify-center transition-all shrink-0">
+                {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+              </button>
+            </form>
+          ) : (
+            <div className="px-5 py-3 border-t border-gray-100 text-center text-xs text-gray-400 shrink-0">
+              Ticket is {ticket.status}. Change status to reopen.
+            </div>
+          )}
+        </div>
+
+        {/* Right context panel */}
+        <div className="w-64 shrink-0 border-l border-gray-100 hidden xl:flex flex-col overflow-y-auto bg-gray-50/50">
+          {/* Customer */}
+          <div className="px-4 py-3 border-b border-gray-100">
+            <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-2">Customer</p>
+            <p className="text-sm font-semibold text-gray-900">{customer?.name ?? senderName}</p>
+            {customer?.email && <p className="text-[11px] text-slate-500 mt-0.5 truncate">{customer.email}</p>}
+            {customer?.phone && <p className="text-[11px] text-slate-500 truncate">{customer.phone}</p>}
+            {!customer?.email && !customer?.phone && <p className="text-[11px] text-slate-400">No contact details</p>}
+          </div>
+
+          {/* Property context (auto-attached) */}
+          {(ticket.properties || customer?.propertyId) && (
+            <div className="px-4 py-3 border-b border-gray-100">
+              <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-2 flex items-center gap-1">
+                <Home className="w-3 h-3" /> Property
+              </p>
+              <p className="text-sm font-semibold text-gray-900">{ticket.properties?.title}</p>
+              <p className="text-[11px] text-slate-500 mt-0.5">{ticket.properties?.city}</p>
+              <p className="text-[11px] text-slate-500">Price: ₦{Number(ticket.properties?.price ?? 0).toLocaleString()}</p>
+              {ticket.properties?.id && (
+                <a href={`/listings/${ticket.properties.id}`} target="_blank" rel="noopener noreferrer"
+                  className="inline-block mt-1.5 text-[11px] font-semibold text-blue-600 hover:underline">
+                  View listing →
+                </a>
+              )}
+            </div>
+          )}
+
+          {/* Previous tickets */}
+          <div className="px-4 py-3 border-b border-gray-100">
+            <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-2">Previous tickets</p>
+            {(customer?.tickets?.length ?? 0) === 0 ? (
+              <p className="text-[11px] text-slate-400">No previous tickets</p>
+            ) : (
+              <div className="space-y-1.5">
+                {customer?.tickets.map(t => (
+                  <div key={t.id} className="text-[11px]">
+                    <span className={`inline-block w-1.5 h-1.5 rounded-full mr-1 ${STATUS_META[t.status].dot}`} />
+                    <span className="text-slate-600 font-medium">{t.subject}</span>
+                    <span className="text-slate-400"> · {formatDistanceToNow(new Date(t.created_at), { addSuffix: true })}</span>
+                  </div>
+                ))}
               </div>
             )}
-            <div ref={bottomRef} />
-          </>
-        )}
-      </div>
+          </div>
 
-      {!isClosed ? (
-        <form onSubmit={sendReply} className="px-4 py-3 border-t border-gray-100 flex items-end gap-2 shrink-0">
-          <textarea rows={1} value={input} onChange={e => setInput(e.target.value)}
-            onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendReply(e as any) } }}
-            placeholder={`Reply to ${isLandlordTicket ? 'landlord' : 'tenant'}… (Enter to send)`}
-            className="flex-1 px-4 py-2.5 rounded-xl border border-gray-200 text-sm bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-gray-900 transition-all resize-none" />
-          <button type="submit" disabled={!input.trim() || sending}
-            className="w-10 h-10 rounded-xl bg-gray-900 hover:bg-gray-800 disabled:opacity-40 text-white flex items-center justify-center transition-all shrink-0">
-            {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-          </button>
-        </form>
-      ) : (
-        <div className="px-5 py-3 border-t border-gray-100 text-center text-xs text-gray-400 shrink-0">
-          Ticket is {ticket.status}. Change status to reopen.
+          {/* Enquiries */}
+          <div className="px-4 py-3 border-b border-gray-100">
+            <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-2">Enquiries</p>
+            {(customer?.enquiries?.length ?? 0) === 0 ? (
+              <p className="text-[11px] text-slate-400">No enquiries</p>
+            ) : (
+              <div className="space-y-1.5">
+                {customer?.enquiries.map(enq => (
+                  <div key={enq.id} className="text-[11px]">
+                    <span className="text-slate-600 font-medium">{enq.properties?.title ?? 'Property enquiry'}</span>
+                    <span className="text-slate-400"> · {formatDistanceToNow(new Date(enq.created_at), { addSuffix: true })}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Activity */}
+          <div className="px-4 py-3">
+            <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-2 flex items-center gap-1">
+              <Activity className="w-3 h-3" /> Activity
+            </p>
+            <div className="space-y-1.5">
+              <div className="text-[11px] text-slate-500 flex items-center gap-1.5">
+                <Calendar className="w-3 h-3 text-slate-400" />
+                Created {format(new Date(ticket.created_at), 'dd MMM yyyy')}
+              </div>
+              <div className="text-[11px] text-slate-500 flex items-center gap-1.5">
+                <RefreshCw className="w-3 h-3 text-slate-400" />
+                Updated {formatDistanceToNow(new Date(ticket.updated_at), { addSuffix: true })}
+              </div>
+              {assignedAgent && (
+                <div className="text-[11px] text-slate-500 flex items-center gap-1.5">
+                  <User className="w-3 h-3 text-slate-400" />
+                  Assigned to {assignedAgent.name}
+                </div>
+              )}
+            </div>
+          </div>
         </div>
-      )}
+      </div>
     </div>
   )
 }
@@ -929,27 +1295,75 @@ function SupportTab({ onOpenQueued }: { onOpenQueued: (id: string) => void }) {
   const [loading, setLoading]       = useState(true)
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [filterStatus, setFilterStatus] = useState<string>('all')
+  const [agents, setAgents]         = useState<SupportAgent[]>([])
+  const [liveState, setLiveState]   = useState<LiveSupportState>({
+    status: 'offline', online: false, onlineAgents: [], awayAgents: [], offlineAgents: [], agents: [], availableCount: 0, agentCount: 0,
+  })
+  const lastAutoAssigned = useRef('')
 
+  // Presence/availability — the SAME canonical source as the rest of the admin
+  // UI and the customer chatbot. Used for auto-assign (FIFO) + assign options.
+  useEffect(() => {
+    return subscribeSupportPresence(setLiveState)
+  }, [])
   useEffect(() => {
     const supabase = createClient()
-    console.log('Loading tickets...')
-    supabase.from('support_tickets').select('*, tenants(full_name, phone), landlords(full_name, whatsapp)')
-      .order('updated_at', { ascending: false })
-      .then(({ data, error }) => { 
-        if (error) console.error('Error loading tickets:', error)
-        console.log('Tickets loaded:', data?.length || 0, data)
-        setTickets((data as SupportTicket[]) ?? []); 
-        setLoading(false) 
-      })
+    const load = () => {
+      supabase.from('agents').select('id, user_id, name, email, role, active, presence, available, availability_note, last_seen_at, created_at')
+        .order('created_at', { ascending: true })
+        .then(({ data }) => setAgents((data as SupportAgent[]) ?? []))
+    }
+    load()
+    const ch = supabase.channel('support_tab_roster')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'agents' }, load)
+      .subscribe()
+    return () => { supabase.removeChannel(ch) }
+  }, [])
+
+  // Load tickets with full context + live counters.
+  useEffect(() => {
+    const supabase = createClient()
+    const loadTickets = () => {
+      supabase.from('support_tickets')
+        .select('*, tenants(full_name, phone, email), landlords(full_name, whatsapp, email), properties(id, title, city, price, type, status)')
+        .order('updated_at', { ascending: false })
+        .then(({ data, error }) => {
+          if (error) console.error('Error loading tickets:', error)
+          const rows = (data as SupportTicket[]) ?? []
+          // Attach the assigned agent from the roster.
+          setAgents(prevAgents => {
+            const enriched = rows.map(t => ({ ...t, assignedAgent: prevAgents.find(a => a.id === t.assigned_to) ?? null }))
+            setTickets(enriched)
+            return prevAgents
+          })
+          setLoading(false)
+        })
+    }
+    loadTickets()
 
     const channel = supabase.channel('admin_tickets_list')
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'support_tickets' },
-        (payload) => setTickets(prev => [payload.new as SupportTicket, ...prev]))
-      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'support_tickets' },
-        (payload) => setTickets(prev => prev.map(t => t.id === payload.new.id ? { ...t, ...payload.new } as SupportTicket : t)))
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'support_tickets' }, loadTickets)
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'support_tickets' }, loadTickets)
       .subscribe()
     return () => { supabase.removeChannel(channel) }
   }, [])
+
+  // When the roster's available agents change, auto-assign the next waiting
+  // chat (FIFO) to the first available agent. Re-arms whenever the queue or
+  // the available set changes so it picks up new waiters and new agents.
+  useEffect(() => {
+    const available = liveState.agents.filter(a => a.presence === 'online' && a.available && a.active)
+    if (available.length === 0 || queued.length === 0) return
+    const supabase = createClient()
+    const next = [...queued].sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())[0]
+    if (!next || lastAutoAssigned.current === next.id) return
+    const agent = available[0]
+    lastAutoAssigned.current = next.id
+    void claimInquiry(next.id, agent.id).then(ok => {
+      if (ok) setQueued(prev => prev.filter(q => q.id !== next.id))
+    })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [liveState.agents, queued])
 
   // Queued offline/live requests — no agent has claimed them yet.
   useEffect(() => {
@@ -1179,7 +1593,7 @@ function SupportTab({ onOpenQueued }: { onOpenQueued: (id: string) => void }) {
       {/* Chat thread */}
       <div className={`flex-1 min-w-0 ${selected ? 'flex' : 'hidden lg:flex'} flex-col`}>
         {selected ? (
-          <AdminChatThread key={selected.id} ticket={selected} onBack={() => setSelectedId(null)} onStatusChange={handleStatusChange} />
+          <AdminChatThread key={selected.id} ticket={selected} onBack={() => setSelectedId(null)} onStatusChange={handleStatusChange} agents={agents} liveState={liveState} />
         ) : (
           <div className="flex-1 flex flex-col items-center justify-center bg-white rounded-xl border border-slate-200 shadow-[0_1px_2px_rgba(15,23,42,0.04)] text-center p-8 h-full">
             <div className="w-11 h-11 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center mb-3">
@@ -2143,6 +2557,7 @@ function PresenceDebugPanel({ liveState }: { liveState: LiveSupportState }) {
   const [d, setD] = useState<PresenceDiagnostics>({ heartbeatCount: 0 })
   const [channelState, setChannelState] = useState('connecting')
   const [open, setOpen] = useState(false)
+  const [feedStatus, setFeedStatus] = useState<PresenceFeedStatus | null>(null)
 
   useEffect(() => {
     const unsub = subscribePresenceDiagnostics(setD)
@@ -2163,11 +2578,25 @@ function PresenceDebugPanel({ liveState }: { liveState: LiveSupportState }) {
     }
   }, [])
 
+  // Surface roster read failures (e.g. missing presence column = migration 008
+  // not applied) so the panel says exactly what's wrong instead of "offline".
+  useEffect(() => {
+    return subscribeSupportPresence(
+      () => {},
+      (err) => {
+        const status = (err ?? {}) as PresenceFeedStatus
+        if (typeof status === 'object' && 'ok' in status) setFeedStatus(status)
+      },
+    )
+  }, [])
+
   const me = liveState.agents.find(a => a.user_id === window.__livarexUserId)
   const onlineNow = (() => {
     if (!d.lastSeenAt) return false
     return Date.now() - new Date(d.lastSeenAt).getTime() < 90 * 1000
   })()
+
+  const schemaMissing = d.schemaMissingPresence || feedStatus?.schemaMissingPresence
 
   const rows: [string, string][] = [
     ['User ID', d.userId ?? window.__livarexUserId ?? '—'],
@@ -2197,6 +2626,20 @@ function PresenceDebugPanel({ liveState }: { liveState: LiveSupportState }) {
       {open && (
         <div className="mt-1.5 w-80 rounded-xl border border-slate-300 bg-white/95 p-3 shadow-xl backdrop-blur">
           <p className="mb-2 text-[10px] font-bold uppercase tracking-widest text-slate-400">Presence Debug</p>
+
+          {/* Schema-missing warning */}
+          {schemaMissing && (
+            <div className="mb-2 rounded-lg border border-amber-300 bg-amber-50 px-2.5 py-2 text-[11px] text-amber-800">
+              <p className="font-bold">Migration 008 not applied</p>
+              <p className="mt-0.5">The <code>agents</code> table is missing the <code>presence</code> column. Run <code>db/migrations/008_presence_and_availability.sql</code> in the Supabase SQL editor, then reload.</p>
+            </div>
+          )}
+          {!schemaMissing && feedStatus && !feedStatus.ok && (
+            <div className="mb-2 rounded-lg border border-red-200 bg-red-50 px-2.5 py-2 text-[11px] text-red-700">
+              Roster read failed: {feedStatus.error}
+            </div>
+          )}
+
           <div className="space-y-1">
             {rows.map(([k, v]) => (
               <div key={k} className="flex items-start justify-between gap-2 text-[11px]">
@@ -2221,11 +2664,18 @@ function PresenceIndicator({ userId, state }: { userId?: string; state: LiveSupp
   const myPresence: SupportStatus = me?.presence ?? 'offline'
   const myAvailable = Boolean(me?.available && myPresence === 'online')
 
-  const statusStyles = myPresence === 'online'
-    ? { dot: 'bg-emerald-500', label: 'Online', sub: myAvailable ? 'You’re available to chat' : 'Connected — not accepting chats' }
-    : myPresence === 'away'
-      ? { dot: 'bg-amber-400', label: 'Away', sub: 'Heartbeat idle — you’ll look offline soon' }
-      : { dot: 'bg-slate-400', label: 'Offline', sub: 'Heartbeat not detected' }
+  // When the roster has no agents with a real presence value, the deployed
+  // schema likely predates migration 008 — surface that instead of a
+  // fabricated "Offline".
+  const looksUnmigrated = state.agents.length > 0 && state.agents.every(a => a.presence === 'offline')
+
+  const statusStyles = looksUnmigrated
+    ? { dot: 'bg-amber-400', label: 'Check DB', sub: 'agents.presence missing? Run migration 008' }
+    : myPresence === 'online'
+      ? { dot: 'bg-emerald-500', label: 'Online', sub: myAvailable ? 'You’re available to chat' : 'Connected — not accepting chats' }
+      : myPresence === 'away'
+        ? { dot: 'bg-amber-400', label: 'Away', sub: 'Heartbeat idle — you’ll look offline soon' }
+        : { dot: 'bg-slate-400', label: 'Offline', sub: 'Heartbeat not detected' }
 
   return (
     <div className={`inline-flex items-center gap-2 rounded-xl border px-3.5 py-2 shadow-[0_1px_2px_rgba(15,23,42,0.05)] ${myPresence === 'online' ? 'border-slate-200 bg-white' : 'border-slate-200/80 bg-slate-50'}`}>
