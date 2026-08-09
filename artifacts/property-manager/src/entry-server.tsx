@@ -10,6 +10,7 @@ import AboutPage from './pages/AboutPage'
 import ContactPage from './pages/ContactPage'
 import TermsPage from './pages/TermsPage'
 import PrivacyPage from './pages/PrivacyPage'
+import CookiePolicyPage from './pages/CookiePolicyPage'
 import LocationLandingPage from './pages/LocationLandingPage'
 import HowWeVerifyPage from './pages/HowWeVerifyPage'
 
@@ -49,6 +50,7 @@ export function render(url: string): { html: string; helmet: unknown } {
               <Route path="/contact" component={ContactPage} />
               <Route path="/terms" component={TermsPage} />
               <Route path="/privacy-policy" component={PrivacyPage} />
+              <Route path="/cookie-policy" component={CookiePolicyPage} />
               <Route component={NotFound} />
             </Switch>
           </Router>

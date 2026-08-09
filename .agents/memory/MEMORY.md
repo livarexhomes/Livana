@@ -1,1 +1,3 @@
 - [Wouter route params](wouter-routing.md) — parametric params need a `/` separator; inline params like `/path-:slug` don't match in regexparam
+- [Livarex SSR boundary](livarex-ssr.md) — static route HTML and the lazy client tree are intentionally mounted separately; browser-only widgets stay out of SSR
+- [Supabase email signup](supabase-signup.md) — a successful signup may return a user without a session when email confirmation is enabled; do not immediately password-login

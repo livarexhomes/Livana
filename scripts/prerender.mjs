@@ -20,6 +20,7 @@ const ROUTES = [
   '/contact',
   '/terms',
   '/privacy-policy',
+  '/cookie-policy',
   '/how-we-verify',
   '/properties-in/lekki',
   '/properties-in/ikeja',

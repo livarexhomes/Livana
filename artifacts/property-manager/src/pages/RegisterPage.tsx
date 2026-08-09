@@ -16,6 +16,36 @@ export default function RegisterPage() {
   const [error, setError] = useState('')
   const [emailSent, setEmailSent] = useState(false)
 
+  function getSignupErrorMessage(authError: {
+    message?: string
+    code?: string
+    status?: number
+    name?: string
+  } | null) {
+    const rawMessage = authError?.message?.trim() ?? ''
+    const haystack = `${authError?.code ?? ''} ${authError?.name ?? ''} ${rawMessage}`.toLowerCase()
+
+    if (haystack.includes('already') || haystack.includes('registered') || haystack.includes('exists') || haystack.includes('user_already_exists')) {
+      return 'An account with this email already exists. Sign in instead or use “Forgot password?” to recover it.'
+    }
+    if (haystack.includes('password') && (haystack.includes('weak') || haystack.includes('short') || haystack.includes('length'))) {
+      return 'Choose a stronger password with at least 8 characters.'
+    }
+    if (haystack.includes('rate') || haystack.includes('too many') || haystack.includes('email_send')) {
+      return 'Too many signup attempts were made recently. Please wait a few minutes and try again.'
+    }
+    if (haystack.includes('signup') && (haystack.includes('disabled') || haystack.includes('not allowed'))) {
+      return 'New account registration is temporarily unavailable. Please try again later.'
+    }
+    if (haystack.includes('database error') || haystack.includes('trigger') || (authError?.status ?? 0) >= 500) {
+      return 'We could not finish creating your account because of a server configuration issue. Please try again shortly.'
+    }
+    if (haystack.includes('invalid') && haystack.includes('email')) {
+      return 'Enter a valid email address.'
+    }
+    return rawMessage || 'Sign up failed. Please check your details and try again.'
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!isSupabaseConfigured()) { setError('Platform is not configured yet.'); return }
@@ -23,52 +53,73 @@ export default function RegisterPage() {
     setError('')
     const supabase = createClient()
 
-    const { data, error: signUpError } = await supabase.auth.signUp({
-      email,
-      password,
-      options: { data: { full_name: fullName, phone: phone || null } },
-    })
-    if (signUpError || !data.user) {
-      console.error('Sign up error:', signUpError)
-      setError(signUpError?.message ?? 'Sign up failed')
-      setLoading(false)
-      return
-    }
-
-    // Auto-confirm the user via admin API so they don't need to verify email
     try {
-      await fetch('/api/send-confirmation', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, fullName }),
+      const { data, error: signUpError } = await supabase.auth.signUp({
+        email: email.trim(),
+        password,
+        options: { data: { full_name: fullName.trim(), phone: phone.trim() || null } },
       })
-    } catch (_) {
-      // Non-fatal — continue to sign in regardless
-    }
 
-    // Sign in immediately after registration
-    const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({ email, password })
-    if (signInError || !signInData.session) {
-      // Account created but sign-in failed — send them to login
-      navigate('/login')
-      return
-    }
+      if (signUpError || !data.user) {
+        console.warn('[registration] Supabase signup failed', {
+          code: signUpError?.code,
+          name: signUpError?.name,
+          status: signUpError?.status,
+          message: signUpError?.message,
+        })
+        setError(getSignupErrorMessage(signUpError))
+        return
+      }
 
-    const { error: profileError } = await supabase.from('tenants').upsert({
-      user_id:  data.user.id,
-      full_name: fullName,
-      phone:    phone || null,
-      email:    email || null,
-      provider: 'email',
-    }, { onConflict: 'user_id', ignoreDuplicates: false })
+      // This is a welcome email. Supabase remains responsible for its own
+      // email-confirmation link when confirmation is enabled.
+      try {
+        await fetch('/api/send-confirmation', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: email.trim(), fullName: fullName.trim() }),
+        })
+      } catch (_) {
+        // Non-fatal — account creation does not depend on the welcome email.
+      }
 
-    if (profileError && !profileError.message.includes('duplicate')) {
-      setError(profileError.message)
+      // With email confirmation enabled Supabase returns a user but no
+      // session. Do not immediately sign in: that always fails with
+      // "Email not confirmed" and hides the successful signup.
+      if (!data.session) {
+        setEmailSent(true)
+        return
+      }
+
+      const { error: profileError } = await supabase.from('tenants').upsert({
+        user_id:  data.user.id,
+        full_name: fullName.trim(),
+        phone:    phone.trim() || null,
+        email:    email.trim() || null,
+        provider: 'email',
+      }, { onConflict: 'user_id', ignoreDuplicates: false })
+
+      if (profileError && !profileError.message.includes('duplicate')) {
+        console.error('[registration] tenant profile upsert failed', {
+          code: profileError.code,
+          message: profileError.message,
+          details: profileError.details,
+          hint: profileError.hint,
+        })
+        setError('Your account was created, but we could not save your profile yet. Please sign in and try again.')
+        return
+      }
+
+      navigate('/user')
+    } catch (unknownError) {
+      const unexpectedError = unknownError instanceof Error
+        ? { name: unknownError.name, message: unknownError.message }
+        : { message: String(unknownError) }
+      console.error('[registration] unexpected error', unexpectedError)
+      setError('We could not reach the account service. Please check your connection and try again.')
+    } finally {
       setLoading(false)
-      return
     }
-
-    navigate('/user')
   }
 
   async function handleGoogle() {
