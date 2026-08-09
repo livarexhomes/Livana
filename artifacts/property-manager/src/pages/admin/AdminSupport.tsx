@@ -8,15 +8,17 @@ import {
 } from 'lucide-react'
 import AdminSidebar from '../../components/layout/AdminSidebar'
 import AuthGuard from '../../components/auth/AuthGuard'
-import { createClient, isSupabaseConfigured } from '../../lib/supabase'
-import { subscribeSupportPresence, type LiveSupportState, type SupportAgent, type SupportStatus, type PresenceFeedStatus } from '../../lib/live-support'
-import { subscribePresenceDiagnostics, type PresenceDiagnostics } from '../../lib/admin-presence'
+import { createClient } from '../../lib/supabase'
+import { subscribeSupportPresence, type LiveSupportState, type SupportAgent, type SupportStatus } from '../../lib/live-support'
 import { claimInquiry, unassignInquiry, type AgentAssignmentStatus } from '../../lib/support-assignment'
 import { subscribeToSupportAlerts, playSupportSound, getSoundMuted, setSoundMuted } from '../../lib/support-notifications'
 import {
-  getNotificationSettings, getSupportAvailability, invalidatePlatformSettings,
-  type SupportAvailability, DEFAULT_AVAILABILITY,
+  getNotificationSettings,
 } from '../../lib/platform-settings'
+import {
+  getSupportHours, isSupportOpen,
+  type SupportHours,
+} from '../../lib/support-hours'
 import { useToast } from '../../hooks/use-toast'
 import { formatDistanceToNow, format } from 'date-fns'
 
@@ -2306,7 +2308,18 @@ export default function AdminSupportPage() {
   })
   const [agents, setAgents] = useState<SupportAgent[]>([])
   const [muted, setMuted] = useState(getSoundMuted)
-  const [availability, setAvailability] = useState<SupportAvailability>(DEFAULT_AVAILABILITY)
+  // Global support status = business hours (Africa/Lagos). Re-evaluated every
+  // 60s so it flips exactly at 08:00/18:00 — never on heartbeat/realtime.
+  const [supportHours, setSupportHours] = useState<SupportHours | null>(null)
+  const [, setHoursTick] = useState(0)
+
+  useEffect(() => {
+    getSupportHours().then(setSupportHours).catch(() => {})
+    const t = setInterval(() => setHoursTick(v => v + 1), 60_000)
+    return () => clearInterval(t)
+  }, [])
+
+  const supportOpen = supportHours ? isSupportOpen(supportHours) : true
   // Set when the admin clicks "Open thread" from the Queued section; the Inbox
   // tab consumes it as its initial selection.
   const [pendingChatId, setPendingChatId] = useState<string | null>(null)
@@ -2436,10 +2449,18 @@ export default function AdminSupportPage() {
                   <p className="mt-0.5 text-[13px] text-slate-500">Manage customer enquiries and conversations.</p>
                 </div>
                 <div className="flex items-center gap-2.5 shrink-0 flex-wrap">
-                  {/* Manual availability override (online / offline / back in) */}
-                  <AvailabilityControl availability={availability} onChange={setAvailability} />
-                  {/* Dynamic presence indicator */}
-                  <PresenceIndicator userId={user?.id} state={liveState} />
+                  {/* ONE global support status — business hours (Africa/Lagos).
+                      The agent heartbeat NEVER changes this. */}
+                  <div className={`inline-flex items-center gap-2 rounded-xl border px-3.5 py-2 shadow-[0_1px_2px_rgba(15,23,42,0.05)] ${supportOpen ? 'border-slate-200 bg-white' : 'border-slate-200/80 bg-slate-50'}`}>
+                    <span className="relative flex size-2">
+                      <span className={`size-2 rounded-full ${supportOpen ? 'bg-emerald-500' : 'bg-slate-400'}`} />
+                      {supportOpen && <span className="absolute inset-0 rounded-full bg-emerald-500 animate-ping opacity-60" />}
+                    </span>
+                    <div className="leading-tight">
+                      <p className="text-[13px] font-semibold text-slate-800">{supportOpen ? 'Support Online' : 'Support Away'}</p>
+                      <p className="text-[11px] text-slate-400">Support hours: 8:00 AM – 6:00 PM</p>
+                    </div>
+                  </div>
                   <button
                     onClick={() => { const next = !muted; setMuted(next); setSoundMuted(next) }}
                     title={muted ? 'Unmute notifications' : 'Mute notifications'}
@@ -2526,8 +2547,6 @@ export default function AdminSupportPage() {
           </div>
         </div>
       </div>
-      {/* TEMPORARY presence diagnostics — remove after the presence system is verified. */}
-      <PresenceDebugPanel liveState={liveState} />
     </AuthGuard>
   )
 }
@@ -2547,277 +2566,3 @@ function StatCard({ icon, label, count, highlight = false }: { icon: React.React
   )
 }
 
-/**
- * TEMPORARY presence debug panel. Shows the full heartbeat → roster →
- * aggregate chain for the signed-in agent so the presence system can be
- * verified against real data. Remove once the presence system is confirmed
- * working (see STEP 3 of the presence audit).
- */
-function PresenceDebugPanel({ liveState }: { liveState: LiveSupportState }) {
-  const [d, setD] = useState<PresenceDiagnostics>({ heartbeatCount: 0 })
-  const [channelState, setChannelState] = useState('connecting')
-  const [open, setOpen] = useState(false)
-  const [feedStatus, setFeedStatus] = useState<PresenceFeedStatus | null>(null)
-
-  useEffect(() => {
-    const unsub = subscribePresenceDiagnostics(setD)
-    return unsub
-  }, [])
-
-  useEffect(() => {
-    if (!isSupabaseConfigured()) {
-      setChannelState('not-configured')
-      return
-    }
-    const supabase = createClient()
-    const ch = supabase.channel('__presence_debug__')
-    setChannelState('connecting')
-    ch.subscribe((status) => setChannelState(status))
-    return () => {
-      supabase.removeChannel(ch)
-    }
-  }, [])
-
-  // Surface roster read failures (e.g. missing presence column = migration 008
-  // not applied) so the panel says exactly what's wrong instead of "offline".
-  useEffect(() => {
-    return subscribeSupportPresence(
-      () => {},
-      (err) => {
-        const status = (err ?? {}) as PresenceFeedStatus
-        if (typeof status === 'object' && 'ok' in status) setFeedStatus(status)
-      },
-    )
-  }, [])
-
-  const me = liveState.agents.find(a => a.user_id === window.__livarexUserId)
-  const onlineNow = (() => {
-    if (!d.lastSeenAt) return false
-    return Date.now() - new Date(d.lastSeenAt).getTime() < 90 * 1000
-  })()
-
-  const schemaMissing = d.schemaMissingPresence || feedStatus?.schemaMissingPresence
-
-  const rows: [string, string][] = [
-    ['User ID', d.userId ?? window.__livarexUserId ?? '—'],
-    ['Agent ID', d.agentId ?? me?.id ?? '—'],
-    ['Presence (roster)', me?.presence ?? '—'],
-    ['Presence (trigger)', d.presence ?? '—'],
-    ['Available', String(me?.available ?? d.available ?? '—')],
-    ['Last heartbeat', d.lastHeartbeatAt ? new Date(d.lastHeartbeatAt).toLocaleTimeString() : '—'],
-    ['Last seen', d.lastSeenAt ? new Date(d.lastSeenAt).toLocaleTimeString() : '—'],
-    ['Heartbeat status', d.heartbeatStatus ?? '—'],
-    ['Heartbeat count', String(d.heartbeatCount)],
-    ['Heartbeat error', d.heartbeatError ?? '—'],
-    ['Realtime channel', channelState],
-    ['Online calc (≤90s)', onlineNow ? 'ONLINE' : 'OFFLINE'],
-    ['Timeout', '90s online / 15m away (server compute_presence)'],
-  ]
-
-  return (
-    <div className="fixed bottom-3 left-3 z-50">
-      <button
-        onClick={() => setOpen(o => !o)}
-        className="rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-[10px] font-bold text-slate-500 shadow hover:bg-slate-50"
-        title="Presence debug (temporary)"
-      >
-        Presence Debug
-      </button>
-      {open && (
-        <div className="mt-1.5 w-80 rounded-xl border border-slate-300 bg-white/95 p-3 shadow-xl backdrop-blur">
-          <p className="mb-2 text-[10px] font-bold uppercase tracking-widest text-slate-400">Presence Debug</p>
-
-          {/* Schema-missing warning */}
-          {schemaMissing && (
-            <div className="mb-2 rounded-lg border border-amber-300 bg-amber-50 px-2.5 py-2 text-[11px] text-amber-800">
-              <p className="font-bold">Migration 008 not applied</p>
-              <p className="mt-0.5">The <code>agents</code> table is missing the <code>presence</code> column. Run <code>db/migrations/008_presence_and_availability.sql</code> in the Supabase SQL editor, then reload.</p>
-            </div>
-          )}
-          {!schemaMissing && feedStatus && !feedStatus.ok && (
-            <div className="mb-2 rounded-lg border border-red-200 bg-red-50 px-2.5 py-2 text-[11px] text-red-700">
-              Roster read failed: {feedStatus.error}
-            </div>
-          )}
-
-          <div className="space-y-1">
-            {rows.map(([k, v]) => (
-              <div key={k} className="flex items-start justify-between gap-2 text-[11px]">
-                <span className="shrink-0 text-slate-400">{k}</span>
-                <span className="font-mono text-right text-slate-700">{v}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-    </div>
-  )
-}
-
-/**
- * Unified presence + availability indicator for the admin header. Reads the
- * same single source (the roster) as the agent list, the Agents tab, and the
- * customer chatbot — there is no independent online-status logic here.
- */
-function PresenceIndicator({ userId, state }: { userId?: string; state: LiveSupportState }) {
-  const me = state.agents.find(a => a.user_id === userId)
-  const myPresence: SupportStatus = me?.presence ?? 'offline'
-  const myAvailable = Boolean(me?.available && myPresence === 'online')
-
-  // When the roster has no agents with a real presence value, the deployed
-  // schema likely predates migration 008 — surface that instead of a
-  // fabricated "Offline".
-  const looksUnmigrated = state.agents.length > 0 && state.agents.every(a => a.presence === 'offline')
-
-  const statusStyles = looksUnmigrated
-    ? { dot: 'bg-amber-400', label: 'Check DB', sub: 'agents.presence missing? Run migration 008' }
-    : myPresence === 'online'
-      ? { dot: 'bg-emerald-500', label: 'Online', sub: myAvailable ? 'You’re available to chat' : 'Connected — not accepting chats' }
-      : myPresence === 'away'
-        ? { dot: 'bg-amber-400', label: 'Away', sub: 'Heartbeat idle — you’ll look offline soon' }
-        : { dot: 'bg-slate-400', label: 'Offline', sub: 'Heartbeat not detected' }
-
-  return (
-    <div className={`inline-flex items-center gap-2 rounded-xl border px-3.5 py-2 shadow-[0_1px_2px_rgba(15,23,42,0.05)] ${myPresence === 'online' ? 'border-slate-200 bg-white' : 'border-slate-200/80 bg-slate-50'}`}>
-      <span className="relative flex size-2">
-        <span className={`size-2 rounded-full ${statusStyles.dot}`} />
-        {myPresence === 'online' && <span className="absolute inset-0 rounded-full bg-emerald-500 animate-ping opacity-60" />}
-      </span>
-      <div className="leading-tight">
-        <p className="text-[13px] font-semibold text-slate-800">{statusStyles.label}</p>
-        <p className="text-[11px] text-slate-400">{statusStyles.sub}</p>
-      </div>
-    </div>
-  )
-}
-
-/**
- * Manual support-availability control. Lets an admin override the auto
- * presence-driven status and tell visitors when support will be back:
- *   Auto     → driven by realtime presence (+ optional weekly schedule)
- *   Online   → force-available
- *   Offline  → force-unavailable
- *   Back in  → offline, but shows "Back at HH:MM" on the widget
- * Persists to admin_settings (key: support_availability) so the public
- * widget can read it. The control lives in the page header.
- */
-function AvailabilityControl({ availability, onChange }: {
-  availability: SupportAvailability
-  onChange: (next: SupportAvailability) => void
-}) {
-  const [open, setOpen] = useState(false)
-  const [saving, setSaving] = useState(false)
-  const [loaded, setLoaded] = useState(false)
-  const ref = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    let mounted = true
-    getSupportAvailability({ refresh: true }).then(a => {
-      if (mounted) { onChange(a); setLoaded(true) }
-    })
-    return () => { mounted = false }
-  }, [])
-
-  // Close the dropdown on outside click.
-  useEffect(() => {
-    if (!open) return
-    const onDoc = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
-    }
-    document.addEventListener('mousedown', onDoc)
-    return () => document.removeEventListener('mousedown', onDoc)
-  }, [open])
-
-  const persist = async (next: SupportAvailability) => {
-    setSaving(true)
-    const supabase = createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    const { error } = await supabase.from('admin_settings').upsert({
-      key: 'support_availability',
-      value: next,
-      category: 'support',
-      updated_by: user?.id,
-      updated_at: new Date().toISOString(),
-    }, { onConflict: 'key' })
-    if (error) console.warn('[availability] save failed:', error.message)
-    onChange(next)
-    invalidatePlatformSettings()
-    setSaving(false)
-  }
-
-  const setMode = (mode: SupportAvailability['mode']) => {
-    setOpen(false)
-    void persist({ ...availability, mode })
-  }
-
-  const setBackAt = (backAt: string) => {
-    void persist({ ...availability, mode: 'back_in', backAt })
-  }
-
-  // Effective state shown on the closed control.
-  const shown = (() => {
-    if (availability.mode === 'online') return { dot: 'bg-emerald-500', label: 'Online' }
-    if (availability.mode === 'offline') return { dot: 'bg-slate-300', label: 'Offline' }
-    if (availability.mode === 'back_in') return { dot: 'bg-amber-400', label: availability.backAt ? `Back ${availability.backAt}` : 'Back in…' }
-    return { dot: 'bg-sky-500', label: 'Auto' }
-  })()
-
-  return (
-    <div className="relative" ref={ref}>
-      <button
-        onClick={() => setOpen(o => !o)}
-        disabled={!loaded}
-        className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3.5 py-2 shadow-[0_1px_2px_rgba(15,23,42,0.05)] hover:bg-slate-50 transition-colors"
-        title="Set support availability"
-        aria-haspopup="menu"
-        aria-expanded={open}
-      >
-        <span className={`size-2 rounded-full ${shown.dot}`} />
-        <span className="text-[12.5px] font-medium text-slate-700">Support · {shown.label}</span>
-        <ChevronDownIcon className={`w-3.5 h-3.5 text-slate-400 transition-transform ${open ? 'rotate-180' : ''}`} />
-        {saving && <Loader2 className="w-3 h-3 animate-spin text-slate-400" />}
-      </button>
-
-      {open && (
-        <div className="absolute left-0 top-full mt-1.5 z-30 w-64 rounded-xl border border-slate-200 bg-white p-1.5 shadow-lg" role="menu">
-          {([
-            { mode: 'auto' as const, label: 'Auto', desc: 'Follow live presence + schedule' },
-            { mode: 'online' as const, label: 'Online', desc: 'Show support as available' },
-            { mode: 'offline' as const, label: 'Offline', desc: 'Show support as unavailable' },
-            { mode: 'back_in' as const, label: 'Back in…', desc: 'Set when support returns' },
-          ]).map(opt => (
-            <button
-              key={opt.mode}
-              role="menuitem"
-              onClick={() => setMode(opt.mode)}
-              className={`w-full text-left flex items-start gap-2.5 px-2.5 py-2 rounded-lg transition-colors ${
-                availability.mode === opt.mode ? 'bg-slate-100' : 'hover:bg-slate-50'
-              }`}
-            >
-              <span className={`mt-1.5 size-2 rounded-full shrink-0 ${
-                opt.mode === 'online' ? 'bg-emerald-500' : opt.mode === 'offline' ? 'bg-slate-300' : opt.mode === 'back_in' ? 'bg-amber-400' : 'bg-sky-500'
-              }`} />
-              <span className="min-w-0">
-                <span className="block text-[12.5px] font-medium text-slate-800">{opt.label}</span>
-                <span className="block text-[11px] text-slate-400 mt-0.5">{opt.desc}</span>
-              </span>
-            </button>
-          ))}
-
-          {/* Back-in time input */}
-          {availability.mode === 'back_in' && (
-            <div className="mt-1 pt-1.5 border-t border-slate-100 px-2.5 pb-1.5">
-              <label className="block text-[11px] font-medium text-slate-500 mb-1">Back at</label>
-              <input
-                type="time"
-                value={availability.backAt ?? ''}
-                onChange={e => setBackAt(e.target.value)}
-                className="w-full rounded-lg border border-slate-200 px-2.5 py-1.5 text-[12.5px] text-slate-700 focus:outline-none focus:ring-2 focus:ring-slate-400"
-              />
-            </div>
-          )}
-        </div>
-      )}
-    </div>
-  )
-}

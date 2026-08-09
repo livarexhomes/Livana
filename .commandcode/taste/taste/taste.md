@@ -50,7 +50,7 @@
 - Prefers multiple filter groups on a page to be visually distinct via tiny uppercase labels (e.g., "Type"/"Status") in fixed-width columns with uniform compact pill sizing and per-group active colors (e.g., blue primary for one group, slate-900 for the other), rather than large headings or visually identical groups. Confidence: 0.7
 - Prefers secondary filter groups with several status options and counts (e.g., All/New/Open/Replied/Closed in the support inbox) to be collapsed into a single compact dropdown select with counts inside the options (e.g., "New (2)") instead of a row of pills displayed all at once — explicitly asked to "make this a dropdown to select instead of displaying them at once"; the primary Type grouping may stay as pills. Confidence: 0.8
 - Wants dropdown menus anchored so they stay visually attached to their trigger button and never appear detached or drifting off to one side — reported the availability dropdown as "moving to the left too much" when the menu was right-anchored to a small button near a screen edge; the fix anchored the menu to the button's left edge (`left-0` under the trigger) so it opens predictably aligned with the control. Confidence: 0.7
-- Prefers to hand the AI builder structured, professional written specs for UI work — numbered sections, explicit do/don't lists, exact on-screen copy and email templates, and a Goal section — rather than terse verbal directions. The same structured, normative spec style extends to backend/system-architecture work (e.g., the support presence rebuild): explicit requirements with hard constraints ("must", "NEVER", "Do not use mock data…") that the assistant is expected to implement exactly. Confidence: 0.7
+- Prefers to hand the AI builder structured, professional written specs for UI work — numbered sections, explicit do/don't lists, exact on-screen copy and email templates, and a Goal section — rather than terse verbal directions. The same structured, normative spec style extends to backend/system-architecture work (e.g., the support presence rebuild): explicit requirements with hard constraints ("must", "NEVER", "Do not use mock data…", "NO FLICKERING", "FINAL REQUIREMENT") that the assistant is expected to implement exactly, including verbatim customer-facing copy and an explicit decision tree for the chat logic. Confidence: 0.8
 - Wants public-facing floating UI (e.g., the chat widget) to appear ONLY on public marketing pages and to be completely hidden inside all authenticated dashboards (`/admin/*`, `/landlord/*`, `/user/*`, `/dashboard/*`) — dashboard users already have dedicated support/messaging features, and the floating widget overlaps important interface elements (e.g., the message composer/send button). Visibility should be route-detected inside the globally-mounted widget itself so no other component needs changes. Confidence: 0.8
 - Prefers a live-agent-first support UX in the chat widget (explicitly modeled on Intercom/Zendesk/Crisp/Tidio): when an agent is online, connect the visitor instantly with a greeting and no form at all (identity from the anonymous session or left blank); only fall back to a leave-a-message/offline form (name, email, optional phone, message) when no agent is online. Users should never have to fill out a form first. Confidence: 0.9
 - Expects chat experiences to feel like a modern messaging app on both the visitor and admin sides: typing indicators, read receipts, online/offline status, timestamps, and instant delivery via realtime (Supabase Realtime/WebSockets) with no page refreshes. Wants support availability fully automatic with no manual Online/Offline switch — detected from real activity (admin logged into the dashboard → Online, 10–15 min inactive → Away, logout/disconnect → Offline, auto-return to Online on activity) rather than a static toggle. Confidence: 0.9
@@ -119,7 +119,7 @@ g model. Confidence: 0.4
 - Wants one canonical source of truth for status/presence state — a single presence model (agent_presence: agent_id, presence_status, last_seen, last_heartbeat, updated_at) plus separately-tracked availability, with available = presence online AND availability available, computed once and used by every surface (admin header, agents tab, sidebar, customer chat) — explicitly rejects parallel flags (supportOnline, adminOnline, agentOnline, heartbeatOnline, chatOnline) that can drift out of sync. Confidence: 0.9
 - Wants a single presence/timeout rule defined in one place and used everywhere (e.g., ONLINE_TIMEOUT = 60s; current_time − last_heartbeat ≤ timeout → online, else offline) comparing proper UTC timestamps — no different timeout values scattered across parts of the application. Confidence: 0.8
 - Wants fixes verified with real data and real end-to-end sessions before being declared done: no mock agents, hardcoded counts, fake heartbeat responses, setTimeout simulations, localStorage-only or frontend-only presence, or static "online" values; acceptance is a two-browser test (agent opens dashboard → becomes online; customer sees the real available count; availability toggle propagates immediately; disconnect → offline after the timeout). Explicitly: "Do NOT declare success too early" — a UI change is not proof the system works, and anything that cannot be verified must be stated as unverifiable rather than claimed fixed. Confidence: 0.85
-- Wants temporary debugging diagnostics added before a fix is declared complete — a visible panel/log exposing the full chain for the current user (user ID, agent ID, presence record ID, status, availability, last heartbeat/seen, heartbeat request status and response, realtime connection/channel, timeout calculation) so the failing step is observable — to be removed after verification. Confidence: 0.7
+- Wants temporary debugging diagnostics added before a fix is declared complete — a visible panel/log exposing the full chain for the current user (user ID, agent ID, presence record ID, status, availability, last heartbeat/seen, heartbeat request status and response, realtime connection/channel, timeout calculation) so the failing step is observable — to be removed after verification. Once the system is confirmed working, the user explicitly closes the loop with a terse "remove debug panel", and expects the removal to be complete: the panel, its render, and every import/diagnostics store/status type that only it used, verified by grep + typecheck + build. Genuine defensive behavior must survive — demoted to console-only logging (e.g., the heartbeat's graceful fallback for a missing `agents.presence` column writes `last_seen_at`-only and logs a `console.warn` with the migration remedy) rather than being deleted along with the UI scaffolding. Confidence: 0.8
 
 - When asked to upgrade/extend an existing interface (e.g., the Support ticket/inbox), keeps the current layout and visual design intact — the request is functional enrichment, not redesign: explicitly "without replacing its current design", "The existing three-column layout should remain", "Maintain the existing Livarex visual design and three-column layout. Do not redesign unrelated parts of the admin dashboard." New capabilities (full conversation workspace, actions, context panel) must be built inside the existing chrome and scoped to the target feature only. Confidence: 0.8
 
@@ -142,6 +142,40 @@ pills/chips, blue hover states) to match the already-blue user bubbles, replacin
 
 rm conventions rather than replacing the whole serving model was the right call. Confidence: 0.6
 g model. Confidence: 0.4
+
+e right call. Confidence: 0.6
+g model. Confidence: 0.4
+
+less functions with no extra config. Keeping what works and adding capability via platform conventions rather than replacing the whole serving model was the right call. Confidence: 0.6
+g model. Confidence: 0.4
+
+rm conventions rather than replacing the whole serving model was the right call. Confidence: 0.6
+g model. Confidence: 0.4
+
+e right call. Confidence: 0.6
+g model. Confidence: 0.4
+
+less functions with no extra config. Keeping what works and adding capability via platform conventions rather than replacing the whole serving model was the right call. Confidence: 0.6
+g model. Confidence: 0.4
+
+pills/chips, blue hover states) to match the already-blue user bubbles, replacing neutral slate/gray styling; picked the "Match brand blue" visual direction when offered design options. Confidence: 0.7
+
+rm conventions rather than replacing the whole serving model was the right call. Confidence: 0.6
+g model. Confidence: 0.4
+
+e right call. Confidence: 0.6
+g model. Confidence: 0.4
+
+less functions with no extra config. Keeping what works and adding capability via platform conventions rather than replacing the whole serving model was the right call. Confidence: 0.6
+g model. Confidence: 0.4
+
+right call. Confidence: 0.6
+g model. Confidence: 0.4
+
+Confidence: 0.6
+g model. Confidence: 0.4
+
+nce: 0.4
 
 e right call. Confidence: 0.6
 g model. Confidence: 0.4

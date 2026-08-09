@@ -6,7 +6,7 @@ import {
   FileText, DollarSign, Hash, Users, BarChart3,
   ArrowUpRight, AlertCircle, ShieldCheck, UserPlus,
   Eye, EyeOff, Send, TestTube, Trash2, Plus,
-  Key, Smartphone, Webhook, Loader2, Check, X, FileDown,
+  Key, Smartphone, Webhook, Loader2, Check, X, FileDown, Clock,
 } from 'lucide-react'
 import AdminSidebar from '../../components/layout/AdminSidebar'
 import AuthGuard from '../../components/auth/AuthGuard'
@@ -14,6 +14,10 @@ import { createClient } from '../../lib/supabase'
 import { invalidateFeeConfig } from '../../lib/fees'
 import { notifyListingRulesChange } from '../../lib/settings-store'
 import { invalidatePlatformSettings } from '../../lib/platform-settings'
+import {
+  getSupportHours, invalidateSupportHours, DEFAULT_SUPPORT_HOURS, WEEKDAY_LABELS,
+  type SupportHours, type DayHours,
+} from '../../lib/support-hours'
 
 const SECTIONS = [
   { id: 'platform',      label: 'Platform',       icon: Building2  },
@@ -21,6 +25,7 @@ const SECTIONS = [
   { id: 'email',         label: 'Email (Resend)',  icon: Mail       },
   { id: 'security',      label: 'Security',         icon: Shield     },
   { id: 'agents',        label: 'Agents',           icon: Users      },
+  { id: 'support_hours', label: 'Support Hours',    icon: Clock      },
   { id: 'listing',       label: 'Listing Rules',    icon: Globe      },
 ]
 
@@ -481,6 +486,8 @@ export default function AdminSettings() {
     agencyFeePercent: 10,
   })
 
+  const [supportHours, setSupportHours] = useState<SupportHours>(DEFAULT_SUPPORT_HOURS)
+
   const [emailConfig, setEmailConfig] = useState<EmailConfig>({
     fromEmail: 'noreply@livarex.com.ng',
     fromName: 'Livarex Homes',
@@ -520,6 +527,9 @@ export default function AdminSettings() {
             break
           case 'listing_rules':
             setListing(prev => ({ ...prev, ...row.value }))
+            break
+          case 'support_hours':
+            setSupportHours(prev => ({ ...DEFAULT_SUPPORT_HOURS, ...row.value, days: row.value?.days ?? prev.days }))
             break
           case 'email_config':
             setEmailConfig(prev => ({ ...prev, ...row.value }))
@@ -587,6 +597,10 @@ export default function AdminSettings() {
         break
       case 'listing':
         success = await saveSettings('listing_rules', listing)
+        break
+      case 'support_hours':
+        success = await saveSettings('support_hours', supportHours)
+        if (success) invalidateSupportHours()
         break
       case 'email':
         success = await saveSettings('email_config', emailConfig)
@@ -1217,6 +1231,82 @@ export default function AdminSettings() {
 
               {/* ─── AGENTS ─── */}
               {active === 'agents' && <AgentSettingsSection />}
+
+              {/* ─── SUPPORT HOURS ─── */}
+              {active === 'support_hours' && (
+                <div>
+                  <SectionTitle
+                    title="Support Hours"
+                    sub="When Livarex Support is open for customers. Timezone: Africa/Lagos (Nigeria). The customer-facing Online/Away status follows ONLY this schedule — never the agent heartbeat."
+                  />
+
+                  <div className="mt-4 bg-white border border-gray-200 rounded-xl p-5">
+                    <div className="flex items-center gap-2.5 mb-4">
+                      <div className="w-7 h-7 rounded-lg bg-blue-50 flex items-center justify-center">
+                        <Clock className="w-3.5 h-3.5 text-blue-600" strokeWidth={1.8} />
+                      </div>
+                      <div>
+                        <p className="text-sm font-semibold text-gray-900">Weekly Schedule</p>
+                        <p className="text-xs text-gray-400">08:00 – 18:00 Africa/Lagos by default</p>
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      {WEEKDAY_LABELS.map((label, i) => {
+                        const day = supportHours.days[i]
+                        return (
+                          <div key={label} className="flex items-center gap-3 py-1.5">
+                            <label className="w-28 shrink-0 text-sm font-medium text-gray-700">{label}</label>
+                            <label className="flex items-center gap-2 cursor-pointer">
+                              <input
+                                type="checkbox"
+                                checked={day?.enabled}
+                                onChange={e => {
+                                  const days = [...supportHours.days] as SupportHours['days']
+                                  days[i] = { ...days[i], enabled: e.target.checked }
+                                  setSupportHours(h => ({ ...h, days }))
+                                }}
+                                className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                              />
+                              <span className="text-xs text-gray-500">Open</span>
+                            </label>
+                            <input
+                              type="time"
+                              value={day?.open ?? '08:00'}
+                              disabled={!day?.enabled}
+                              onChange={e => {
+                                const days = [...supportHours.days] as SupportHours['days']
+                                days[i] = { ...days[i], open: e.target.value || '08:00' }
+                                setSupportHours(h => ({ ...h, days }))
+                              }}
+                              className="border border-gray-200 rounded-lg px-2 py-1.5 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500/40 bg-white disabled:opacity-40"
+                            />
+                            <span className="text-xs text-gray-400">to</span>
+                            <input
+                              type="time"
+                              value={day?.close ?? '18:00'}
+                              disabled={!day?.enabled}
+                              onChange={e => {
+                                const days = [...supportHours.days] as SupportHours['days']
+                                days[i] = { ...days[i], close: e.target.value || '18:00' }
+                                setSupportHours(h => ({ ...h, days }))
+                              }}
+                              className="border border-gray-200 rounded-lg px-2 py-1.5 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500/40 bg-white disabled:opacity-40"
+                            />
+                          </div>
+                        )
+                      })}
+                    </div>
+
+                    <div className="mt-3 flex items-center gap-2 px-4 py-3 rounded-lg bg-blue-50 border border-blue-100">
+                      <CheckCircle className="w-4 h-4 text-blue-600 shrink-0" strokeWidth={2} />
+                      <p className="text-sm text-blue-700">
+                        Global Support status = open/away based on this schedule only. Individual agent presence is tracked separately and never changes the global status.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {/* ─── LISTING RULES ─── */}
               {active === 'listing' && (

@@ -2,9 +2,13 @@ import { useState, useRef, useEffect, useCallback, type ReactNode } from 'react'
 import { X, Send, MessageSquare, Paperclip, ChevronDown, Check, ArrowRight, Loader2, Clock2, Smile, Home, CalendarCheck, Building2, Headset, MessageCircle } from 'lucide-react'
 import { useLocation, redirect } from '../lib/navigation'
 import { createClient, isSupabaseConfigured } from '../lib/supabase'
-import { getPlatformSettings, getNotificationSettings, phoneToWaLink, getSupportAvailability, type SupportAvailability, DEFAULT_AVAILABILITY } from '../lib/platform-settings'
-import { subscribeSupportPresence, type LiveSupportState, type PresenceFeedStatus } from '../lib/live-support'
+import { getPlatformSettings, getNotificationSettings, phoneToWaLink } from '../lib/platform-settings'
+import { subscribeSupportPresence, type LiveSupportState } from '../lib/live-support'
 import { assignChatToAgent } from '../lib/support-assignment'
+import {
+  getSupportHours, isSupportOpen,
+  type SupportHours,
+} from '../lib/support-hours'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -40,7 +44,7 @@ type WidgetView =
   | { name: 'chat' }
   | { name: 'menu' }
   | { name: 'live'; stage: 'checking' | 'active' }
-  | { name: 'offline'; stage: 'form' | 'submitted' | 'noagent' }
+  | { name: 'offline'; stage: 'form' | 'submitted' | 'noagent' | 'closed' }
 
 // ── Config ────────────────────────────────────────────────────────────────────
 
@@ -163,14 +167,23 @@ export default function ChatWidget() {
   // Admin phone (from Settings) used for the header WhatsApp link + fallbacks.
   const [waHref, setWaHref] = useState('https://wa.me/2347061370742?text=Hello%20Livarex!')
 
-  // Manual support-availability override (set by admins in the Support page).
-  const [availability, setAvailability] = useState<SupportAvailability>(DEFAULT_AVAILABILITY)
+  // Global business hours — the SINGLE source for the customer-facing
+  // "Support Online / Away" status. Never tied to the agent heartbeat.
+  const [supportHours, setSupportHours] = useState<SupportHours | null>(null)
+  const [, setHoursTick] = useState(0)
 
   useEffect(() => {
     getPlatformSettings().then(s => {
       setWaHref(phoneToWaLink(s.phone, 'Hello Livarex!'))
     }).catch(() => { /* keep default */ })
-    getSupportAvailability().then(setAvailability).catch(() => { /* keep default */ })
+    getSupportHours().then(setSupportHours).catch(() => { /* keep default */ })
+  }, [])
+
+  // Re-evaluate the schedule every 60s so the global status flips exactly at
+  // 08:00 and 18:00 Africa/Lagos — not on heartbeat/realtime/browser events.
+  useEffect(() => {
+    const t = setInterval(() => setHoursTick(v => v + 1), 60_000)
+    return () => clearInterval(t)
   }, [])
 
   // ── Agent form state ──────────────────────────────────────────────────────
@@ -192,7 +205,7 @@ export default function ChatWidget() {
     const unsub = subscribeSupportPresence(setLiveState, (err) => {
       // If the deployed agents table is missing the presence column, log a
       // clear signal instead of silently showing "no agents available".
-      const status = (err ?? {}) as PresenceFeedStatus
+      const status = (err ?? {}) as { schemaMissingPresence?: boolean }
       if (typeof status === 'object' && status.schemaMissingPresence) {
         console.warn('[chat-widget] presence unavailable: agents.presence column missing — run migration 008_presence_and_availability.sql')
       }
@@ -327,18 +340,14 @@ export default function ChatWidget() {
     setPendingImg(null)
   }
 
-  // Presence-driven status line, honoring the manual availability override set
-  // by admins (Support page → Support · Auto/Online/Offline/Back in). The
-  // visitor-facing status separates PRESENCE (are agents connected?) from
-  // AVAILABILITY (are they accepting conversations?) — both come from the same
-  // roster feed, never from frontend UI state.
-  const availabilityActive = (() => {
-    if (availability.mode === 'online') return 'online' as const
-    if (availability.mode === 'offline') return 'offline' as const
-    if (availability.mode === 'back_in') return 'offline' as const
-    return null
-  })()
+  // ── Global support status: business hours (Africa/Lagos) ─────────────────────
+  // The customer-facing "Support Online / Away" follows ONLY the schedule.
+  // It must NOT flicker on heartbeat/realtime changes. Individual agent
+  // presence is checked separately (below) only when deciding whether to
+  // connect the customer to a human.
+  const supportOpen = supportHours ? isSupportOpen(supportHours) : true // default open until hours load
 
+  // Individual agent presence (separate concept).
   const agentAvailable = liveState.availableCount > 0
 
   /** Open WhatsApp with a prefilled message (used by the menu option and the
@@ -371,29 +380,32 @@ export default function ChatWidget() {
         user = u
       }
 
-      // Live-agent chat is only offered when an agent is actually present AND
-      // available (roster-driven, in real time). Everything else — the manual
-      // Support override and the bot — never fabricates availability.
-      const canLive = availabilityActive !== 'offline' && agentAvailable
-
-      if (canLive) {
-        const meta = (user?.user_metadata ?? {}) as Record<string, unknown>
-        const name = typeof meta.full_name === 'string' && meta.full_name
-          ? meta.full_name
-          : (user?.email?.split('@')[0] ?? 'Guest')
-        setAgentName(name)
-        setAgentEmail(user?.email ?? '')
-        connectLiveThread({ name, email: user?.email ?? '', firstMessage: '' })
+      // DECISION TREE:
+      //   1. Outside business hours → always the away/leave-a-message experience.
+      //   2. Inside business hours → live support offered, but ONLY if an
+      //      individual agent is actually online AND available. If no agent is
+      //      present, we never pretend — the customer gets a clear "no agent
+      //      available right now" + leave-a-message.
+      if (!supportOpen) {
+        setView({ name: 'offline', stage: 'closed' })
+        return
+      }
+      if (!agentAvailable) {
+        setView({ name: 'offline', stage: 'noagent' })
         return
       }
 
-      // No available agent → WhatsApp fallback first so the visitor isn't left
-      // stuck, with the offline message form as the secondary option.
-      setView({ name: 'offline', stage: 'noagent' })
+      const meta = (user?.user_metadata ?? {}) as Record<string, unknown>
+      const name = typeof meta.full_name === 'string' && meta.full_name
+        ? meta.full_name
+        : (user?.email?.split('@')[0] ?? 'Guest')
+      setAgentName(name)
+      setAgentEmail(user?.email ?? '')
+      connectLiveThread({ name, email: user?.email ?? '', firstMessage: '' })
     }
     run()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [inquiryId, availabilityActive, agentAvailable])
+  }, [inquiryId, supportOpen, agentAvailable])
 
   /** Create (or resume) a live chat thread and enter it immediately. */
   async function connectLiveThread({ name, email, firstMessage }: { name: string; email: string; firstMessage: string }) {
@@ -702,30 +714,16 @@ export default function ChatWidget() {
   }
 
   const presenceLine = (() => {
-    // Hard overrides: Online → always online, Offline/Back in → offline.
-    if (availabilityActive === 'online') {
-      return { dot: 'bg-emerald-400', text: 'Online · we\'re here to help' }
-    }
-    if (availabilityActive === 'offline' || availabilityActive === 'back_in') {
-      if (availability.mode === 'back_in' && availability.backAt) {
-        return { dot: 'bg-slate-400', text: `Offline · back at ${availability.backAt}` }
+    // GLOBAL status = business hours (Africa/Lagos). NEVER the heartbeat.
+    if (supportOpen) {
+      return {
+        dot: 'bg-emerald-400',
+        text: agentAvailable
+          ? `Online · ${liveState.availableCount} agent${liveState.availableCount === 1 ? ' is' : 's are'} available`
+          : 'Online · experiencing a short delay',
       }
-      return { dot: 'bg-slate-400', text: 'Offline · leave a message' }
     }
-    // Auto mode: driven purely by live presence + availability from the roster.
-    if (liveState.online) {
-      if (agentAvailable) {
-        return {
-          dot: 'bg-emerald-400',
-          text: `Online · ${liveState.availableCount} agent${liveState.availableCount === 1 ? ' is' : 's are'} available`,
-        }
-      }
-      return { dot: 'bg-emerald-400', text: 'Online · agents are busy right now' }
-    }
-    if (liveState.status === 'away') {
-      return { dot: 'bg-amber-400', text: 'Away · agents will be back shortly' }
-    }
-    return { dot: 'bg-slate-400', text: 'Offline · leave a message' }
+    return { dot: 'bg-slate-400', text: 'Away · Support hours 8:00 AM – 6:00 PM' }
   })()
 
   // Escape closes the panel.
@@ -986,17 +984,18 @@ export default function ChatWidget() {
                   <span>&lt;2h response</span>
                 </div>
 
-                {/* Live availability — realtime count of agents who are present
-                    AND available to take a conversation (roster-driven). */}
-                {liveState.agents.length > 0 && (
-                  <div className="mt-3 flex items-center justify-center gap-1.5 text-[11px] font-semibold text-emerald-700">
+                {/* Global support status — schedule-driven (Africa/Lagos). */}
+                {supportHours && (
+                  <div className="mt-3 flex items-center justify-center gap-1.5 text-[11px] font-semibold">
                     <span className="relative flex size-2">
-                      <span className={`size-2 rounded-full ${agentAvailable ? 'bg-emerald-500' : 'bg-slate-300'}`} />
-                      {agentAvailable && <span className="absolute inset-0 rounded-full bg-emerald-500 animate-ping opacity-60" />}
+                      <span className={`size-2 rounded-full ${supportOpen ? 'bg-emerald-500' : 'bg-slate-300'}`} />
+                      {supportOpen && <span className="absolute inset-0 rounded-full bg-emerald-500 animate-ping opacity-60" />}
                     </span>
-                    {agentAvailable
-                      ? `${liveState.availableCount} agent${liveState.availableCount === 1 ? ' is' : 's are'} available now`
-                      : 'No agents available right now'}
+                    {supportOpen
+                      ? (agentAvailable
+                          ? `${liveState.availableCount} agent${liveState.availableCount === 1 ? ' is' : 's are'} available now`
+                          : 'Support is online · experiencing a short delay')
+                      : 'Away · Support hours 8:00 AM – 6:00 PM'}
                   </div>
                 )}
 
@@ -1128,7 +1127,34 @@ export default function ChatWidget() {
           {/* ── State 3: Offline support ── */}
           {view.name === 'offline' && (
             <>
-              {/* No agent available — WhatsApp fallback (primary) + leave-a-message */}
+              {/* Outside business hours — Support is Away. Leave a message. */}
+              {view.stage === 'closed' && (
+                <div className="flex items-start gap-2" style={{ animation:'cwFadeUp 0.35s ease both' }}>
+                  <Avatar small />
+                  <div className="max-w-[88%] flex-1 rounded-[18px_18px_18px_6px] border border-border/70 bg-card p-4 shadow-[0_1px_3px_rgba(2,6,23,0.06)]">
+                    <div className="mb-2 flex items-center gap-2">
+                      <div className="grid size-6.5 place-items-center rounded-lg bg-slate-100">
+                        <Clock2 className="w-4 h-4 text-slate-500" />
+                      </div>
+                      <div>
+                        <p className="m-0 text-xs font-bold text-card-foreground">Support is currently offline</p>
+                        <p className="m-0 text-[10.5px] text-muted-foreground">
+                          Support hours are 8:00 AM – 6:00 PM (Africa/Lagos).
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => setView({ name: 'offline', stage: 'form' })}
+                      className="mt-1 w-full rounded-[10px] border-none py-2.5 text-xs font-bold text-white transition-all cursor-pointer focus-visible:outline-2 focus-visible:outline-ring"
+                      style={{ background:'linear-gradient(135deg,#2563eb,#3b82f6)', boxShadow:'0 4px 12px rgba(37,99,235,0.3)' }}
+                    >
+                      Leave a Message
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Within business hours but no agent is currently connected. */}
               {view.stage === 'noagent' && (
                 <div className="flex items-start gap-2" style={{ animation:'cwFadeUp 0.35s ease both' }}>
                   <Avatar small />
@@ -1138,27 +1164,24 @@ export default function ChatWidget() {
                         <Clock2 className="w-4 h-4 text-amber-700" />
                       </div>
                       <div>
-                        <p className="m-0 text-xs font-bold text-card-foreground">No agents available right now</p>
+                        <p className="m-0 text-xs font-bold text-card-foreground">No support agent is currently available</p>
                         <p className="m-0 text-[10.5px] text-muted-foreground">
-                          Our live chat is offline at the moment. Message us on WhatsApp and we'll get back to you shortly.
+                          We're experiencing a delay. Leave a message and we'll get back to you shortly.
                         </p>
                       </div>
                     </div>
                     <button
-                      onClick={() => openWhatsApp()}
-                      className="mt-1 w-full inline-flex items-center justify-center gap-2 rounded-[10px] border-none py-2.5 text-xs font-bold text-white transition-all cursor-pointer focus-visible:outline-2 focus-visible:outline-ring"
-                      style={{ background:'linear-gradient(135deg,#059669,#10b981)', boxShadow:'0 4px 12px rgba(5,150,105,0.3)' }}
+                      onClick={() => setView({ name: 'offline', stage: 'form' })}
+                      className="mt-1 w-full rounded-[10px] border-none py-2.5 text-xs font-bold text-white transition-all cursor-pointer focus-visible:outline-2 focus-visible:outline-ring"
+                      style={{ background:'linear-gradient(135deg,#2563eb,#3b82f6)', boxShadow:'0 4px 12px rgba(37,99,235,0.3)' }}
                     >
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
-                        <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
-                      </svg>
-                      Continue on WhatsApp
+                      Leave a Message
                     </button>
                     <button
-                      onClick={() => setView({ name: 'offline', stage: 'form' })}
+                      onClick={() => openWhatsApp()}
                       className="mt-2 w-full rounded-[10px] border border-border py-2.5 text-xs font-semibold text-card-foreground transition-colors cursor-pointer hover:bg-muted focus-visible:outline-2 focus-visible:outline-ring"
                     >
-                      Or leave a message
+                      Continue on WhatsApp
                     </button>
                   </div>
                 </div>
@@ -1175,14 +1198,12 @@ export default function ChatWidget() {
                       </div>
                       <div>
                         <p className="m-0 text-xs font-bold text-card-foreground">
-                          {availability.mode === 'back_in' && availability.backAt
-                            ? `Support is offline — back at ${availability.backAt}`
-                            : 'No support agents available'}
+                          {supportOpen ? 'No support agent is currently available' : 'Support is currently offline'}
                         </p>
                         <p className="m-0 text-[10.5px] text-muted-foreground">
-                          {availability.mode === 'back_in' && availability.backAt
-                            ? 'We\'ll be back shortly. Leave your details and we\'ll get back to you as soon as possible.'
-                            : 'No support agents are currently available. Please leave your details and we\'ll get back to you as soon as possible.'}
+                          {supportOpen
+                            ? 'Leave your details and we\'ll get back to you as soon as possible.'
+                            : 'Support hours are 8:00 AM – 6:00 PM (Africa/Lagos). Leave your details and we\'ll get back to you.'}
                         </p>
                       </div>
                     </div>
