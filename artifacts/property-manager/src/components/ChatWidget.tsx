@@ -226,6 +226,7 @@ export default function ChatWidget() {
   const [agentUnread, setAgentUnread]           = useState(false)
   const [agentTyping, setAgentTyping]           = useState(false)
   const [agentJoined, setAgentJoined]           = useState(false)
+  const [chatQueued, setChatQueued]             = useState(false)
 
   const bottomRef = useRef<HTMLDivElement>(null)
   const inputRef  = useRef<HTMLInputElement>(null)
@@ -383,29 +384,21 @@ export default function ChatWidget() {
         user = u
       }
 
-      // DECISION TREE:
-      //   1. Outside business hours → always the away/leave-a-message experience.
-      //   2. Inside business hours → live support offered, but ONLY if an
-      //      individual agent is actually online AND available. If no agent is
-      //      present, we never pretend — the customer gets a clear "no agent
-      //      available right now" + leave-a-message.
-      if (!supportOpen) {
-        setView({ name: 'offline', stage: 'closed' })
-        return
-      }
-
-      // The subscription starts with an empty state while the first roster
-      // request is in flight. Refresh once here as well so a visitor who
-      // clicks immediately after opening the widget does not get a false
-      // "no agent available" result.
+      // Always refresh presence so we have the latest agent state.
+      // An agent may have come online since the subscription last fired.
       let currentState = liveState
-      if (!presenceReady) {
+      if (!presenceReady || liveState.availableCount === 0) {
         currentState = await fetchSupportPresence()
         setLiveState(currentState)
         setPresenceReady(true)
       }
-      if (currentState.availableCount === 0) {
-        setView({ name: 'offline', stage: 'noagent' })
+
+      // Only show the offline/closed screen when we're genuinely outside
+      // business hours AND no agent is actually connected. If any agent is
+      // online (even outside hours) we still connect — a ticket is created
+      // immediately and queued if no agent is free.
+      if (!supportOpen && currentState.availableCount === 0) {
+        setView({ name: 'offline', stage: 'closed' })
         return
       }
 
@@ -424,7 +417,7 @@ export default function ChatWidget() {
     }
     run()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [inquiryId, supportOpen, agentAvailable, liveState, presenceReady])
+  }, [inquiryId, supportOpen, liveState, presenceReady])
 
   /** Create (or resume) a live chat thread and enter it immediately. */
   async function connectLiveThread({
@@ -446,6 +439,9 @@ export default function ChatWidget() {
     // Auto-assign the least-loaded available agent (presence 'online' AND
     // availability on), else queue. Only roster agents can be assigned.
     const assignment = assignChatToAgent((agents ?? liveState.agents).filter(a => a.presence === 'online' && a.available))
+    // Track whether this ticket is queued (no agent assigned) so the UI
+    // can show the right confirmation message to the visitor.
+    setChatQueued(assignment.agentId === null)
 
     const { data: inserted, error } = await supabase.from('chat_inquiries').insert({
       name,
@@ -743,14 +739,17 @@ export default function ChatWidget() {
   }
 
   const presenceLine = (() => {
-    // GLOBAL status = business hours (Africa/Lagos). NEVER the heartbeat.
-    if (supportOpen) {
+    // Presence-driven first: if any agent is actually online and available,
+    // always show Online — regardless of the Lagos business-hours schedule.
+    // Business hours are only the fallback when no real agent is connected.
+    if (liveState.availableCount > 0) {
       return {
         dot: 'bg-emerald-400',
-        text: agentAvailable
-          ? `Online · ${liveState.availableCount} agent${liveState.availableCount === 1 ? ' is' : 's are'} available`
-          : 'Online · experiencing a short delay',
+        text: `Online · ${liveState.availableCount} agent${liveState.availableCount === 1 ? ' is' : 's are'} available`,
       }
+    }
+    if (supportOpen) {
+      return { dot: 'bg-emerald-400', text: 'Online · experiencing a short delay' }
     }
     return { dot: 'bg-slate-400', text: 'Away · Support hours 8:00 AM – 6:00 PM' }
   })()
@@ -1017,14 +1016,14 @@ export default function ChatWidget() {
                 {supportHours && (
                   <div className="mt-3 flex items-center justify-center gap-1.5 text-[11px] font-semibold">
                     <span className="relative flex size-2">
-                      <span className={`size-2 rounded-full ${supportOpen ? 'bg-emerald-500' : 'bg-slate-300'}`} />
-                      {supportOpen && <span className="absolute inset-0 rounded-full bg-emerald-500 animate-ping opacity-60" />}
+                      <span className={`size-2 rounded-full ${liveState.availableCount > 0 || supportOpen ? 'bg-emerald-500' : 'bg-slate-300'}`} />
+                      {(liveState.availableCount > 0 || supportOpen) && <span className="absolute inset-0 rounded-full bg-emerald-500 animate-ping opacity-60" />}
                     </span>
-                    {supportOpen
-                      ? (agentAvailable
-                          ? `${liveState.availableCount} agent${liveState.availableCount === 1 ? ' is' : 's are'} available now`
-                          : 'Support is online · experiencing a short delay')
-                      : 'Away · Support hours 8:00 AM – 6:00 PM'}
+                    {liveState.availableCount > 0
+                      ? `${liveState.availableCount} agent${liveState.availableCount === 1 ? ' is' : 's are'} available now`
+                      : supportOpen
+                        ? 'Support is online · experiencing a short delay'
+                        : 'Away · Support hours 8:00 AM – 6:00 PM'}
                   </div>
                 )}
 
@@ -1084,12 +1083,26 @@ export default function ChatWidget() {
               {view.stage === 'active' && (
                 <>
                   {agentJoined && (
-                    <div className="rounded-3xl border border-emerald-200/80 bg-emerald-50 px-4 py-3 text-center shadow-sm"
-                      style={{ animation:'cwFadeUp 0.3s ease both' }}>
-                      <p className="text-[11px] uppercase tracking-[0.16em] text-emerald-700">Connected</p>
-                      <p className="mt-1 text-sm font-semibold text-slate-900">You’re chatting with {liveState.agents.find(a => a.presence === 'online' && a.available)?.name ?? 'Livarex Support'}.</p>
-                      <p className="mt-1 text-[12px] text-slate-600">They’ll reply in a few seconds.</p>
-                    </div>
+                    chatQueued ? (
+                      <div className="rounded-3xl border border-amber-200/80 bg-amber-50 px-4 py-3 text-center shadow-sm"
+                        style={{ animation:'cwFadeUp 0.3s ease both' }}>
+                        <p className="text-[11px] uppercase tracking-[0.16em] text-amber-700">Ticket Created</p>
+                        {agentTicketNo && (
+                          <p className="mt-1 text-[12px] font-semibold text-slate-700">
+                            Ticket <span className="font-black text-amber-700">#{agentTicketNo}</span>
+                          </p>
+                        )}
+                        <p className="mt-1 text-sm font-semibold text-slate-900">No agent is available right now.</p>
+                        <p className="mt-1 text-[12px] text-slate-600">Your request is queued — an agent will respond shortly. Feel free to leave a message below.</p>
+                      </div>
+                    ) : (
+                      <div className="rounded-3xl border border-emerald-200/80 bg-emerald-50 px-4 py-3 text-center shadow-sm"
+                        style={{ animation:'cwFadeUp 0.3s ease both' }}>
+                        <p className="text-[11px] uppercase tracking-[0.16em] text-emerald-700">Connected</p>
+                        <p className="mt-1 text-sm font-semibold text-slate-900">You're chatting with {liveState.agents.find(a => a.presence === 'online' && a.available)?.name ?? 'Livarex Support'}.</p>
+                        <p className="mt-1 text-[12px] text-slate-600">They'll reply in a few seconds.</p>
+                      </div>
+                    )
                   )}
                   {agentTyping && !agentThreadLoading && (
                     <div className="flex items-end gap-2" style={{ animation:'cwFadeUp 0.25s ease both' }}>

@@ -110,7 +110,7 @@ export function useAdminPresence(): void {
         // the schema issue instead of silently failing.
         const { error } = await supabase
           .from('agents')
-          .update({ last_seen_at: nowIso, presence: 'online' })
+          .update({ last_seen_at: nowIso, presence: 'online', available: true })
           .eq('id', agentRowId)
         if (error) {
           const msg = String(error?.message ?? error)

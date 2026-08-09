@@ -15,39 +15,6 @@ export default function LoginPage() {
   const [googleLoading, setGoogleLoading] = useState(false)
   const [error, setError] = useState('')
 
-  // Forgot password state
-  const [forgotMode, setForgotMode] = useState(false)
-  const [forgotEmail, setForgotEmail] = useState('')
-  const [forgotLoading, setForgotLoading] = useState(false)
-  const [forgotSent, setForgotSent] = useState(false)
-  const [forgotError, setForgotError] = useState('')
-
-  async function handleForgotPassword(e: React.FormEvent) {
-    e.preventDefault()
-    if (!isSupabaseConfigured()) { setForgotError('Platform is not configured yet.'); return }
-    setForgotLoading(true)
-    setForgotError('')
-    try {
-      const res = await fetch('/api/send-password-reset', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: forgotEmail }),
-      })
-      if (!res.ok) {
-        const body = await res.json().catch(() => ({}))
-        setForgotError(body.error ?? 'Something went wrong. Please try again.')
-        setForgotLoading(false)
-        return
-      }
-    } catch {
-      setForgotError('Could not reach the email service. Please try again.')
-      setForgotLoading(false)
-      return
-    }
-    setForgotSent(true)
-    setForgotLoading(false)
-  }
-
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!isSupabaseConfigured()) { setError('Platform is not configured yet.'); return }
@@ -135,62 +102,9 @@ export default function LoginPage() {
             <div className="flex-1 h-px bg-gray-100" />
           </div>
 
-          {/* Forgot password view */}
-          {forgotMode ? (
-            forgotSent ? (
-              <div className="text-center py-4">
-                <div className="w-14 h-14 rounded-2xl bg-blue-50 flex items-center justify-center mx-auto mb-5">
-                  <Mail className="w-7 h-7 text-blue-600" />
-                </div>
-                <h2 className="text-xl font-bold text-gray-900 mb-2">Check your email</h2>
-                <p className="text-sm text-gray-500 mb-1">We sent a verification code to</p>
-                <p className="font-semibold text-gray-900 mb-5">{forgotEmail}</p>
-                <p className="text-xs text-gray-400 mb-6">Enter the code on the next screen to set a new password. The code expires in 10 minutes.</p>
-                <Link href={`/reset-password${forgotEmail ? `?email=${encodeURIComponent(forgotEmail)}` : ''}`} className="inline-block px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-2xl text-sm transition-all">
-                  Enter the code
-                </Link>
-              </div>
-            ) : (
-              <form onSubmit={handleForgotPassword} className="space-y-4">
-                <div>
-                  <label className="block text-xs font-semibold text-gray-500 uppercase tracking-widest mb-1.5">Your email address</label>
-                  <input
-                    type="email"
-                    required
-                    autoFocus
-                    autoComplete="email"
-                    placeholder="you@example.com"
-                    value={forgotEmail}
-                    onChange={e => setForgotEmail(e.target.value)}
-                    className="w-full px-4 py-3.5 rounded-2xl border border-gray-200 bg-gray-50 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:bg-white transition-all"
-                  />
-                </div>
-
-                {forgotError && (
-                  <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-2xl px-4 py-3">
-                    {forgotError}
-                  </div>
-                )}
-
-                <button
-                  type="submit"
-                  disabled={forgotLoading}
-                  className="w-full py-3.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white font-bold rounded-2xl transition-all shadow-lg shadow-blue-600/25 text-sm"
-                >
-                  {forgotLoading ? 'Sending…' : 'Send reset code'}
-                </button>
-
-                <p className="text-center text-sm text-gray-500">
-                  <button type="button" onClick={() => { setForgotMode(false); setForgotError('') }} className="text-blue-600 hover:text-blue-700 font-semibold">
-                    Back to sign in
-                  </button>
-                </p>
-              </form>
-            )
-          ) : (
-            <>
-              {/* Sign in form */}
-              <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Sign in form */}
+          <>
+            <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 uppercase tracking-widest mb-1.5">Email address</label>
                   <input
@@ -207,13 +121,12 @@ export default function LoginPage() {
                 <div>
                   <div className="flex items-center justify-between mb-1.5">
                     <label className="block text-xs font-semibold text-gray-500 uppercase tracking-widest">Password</label>
-                    <button
-                      type="button"
-                      onClick={() => { setForgotMode(true); setForgotEmail(email); setForgotError('') }}
+                    <Link
+                      href={`/reset-password${email ? `?email=${encodeURIComponent(email)}` : ''}`}
                       className="text-xs text-blue-600 hover:text-blue-700 font-semibold"
                     >
                       Forgot password?
-                    </button>
+                    </Link>
                   </div>
                   <div className="relative">
                     <input
@@ -256,7 +169,6 @@ export default function LoginPage() {
                 <Link href="/register" className="text-blue-600 hover:text-blue-700 font-semibold">Create one free</Link>
               </p>
             </>
-          )}
         </div>
       </div>
 
