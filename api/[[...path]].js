@@ -12,6 +12,7 @@ const handlers = {
   'get-chat-messages': () => import('../server/api-handlers/get-chat-messages.js'),
   'send-chat-message': () => import('../server/api-handlers/send-chat-message.js'),
   'clear-chat-messages': () => import('../server/api-handlers/clear-chat-messages.js'),
+  'clear-all-chats': () => import('../server/api-handlers/clear-all-chats.js'),
   'landlord-register': () => import('../server/api-handlers/landlord-register.js'),
   'manage-support-agent': () => import('../server/api-handlers/manage-support-agent.js'),
   'notify-signup': () => import('../server/api-handlers/notify-signup.js'),
