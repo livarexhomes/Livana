@@ -107,6 +107,42 @@ function normalizeRow(row: Record<string, unknown>): SupportAgent {
   }
 }
 
+/**
+ * Derive presence from last_seen_at freshness (same thresholds as the
+ * server-side `public.compute_presence`). Used ONLY as a fallback when the
+ * deployed `agents` table is missing the `presence`/`available` columns
+ * (migration 008 not applied) — so the widget can still show live agents
+ * instead of a fabricated "short delay".
+ */
+function presenceFromLastSeen(lastSeenAt: string | null | undefined, now = Date.now()): SupportStatus {
+  if (!lastSeenAt) return 'offline'
+  const ms = new Date(lastSeenAt).getTime()
+  if (!Number.isFinite(ms)) return 'offline'
+  if (now - ms < 90 * 1000) return 'online'
+  if (now - ms < 15 * 60 * 1000) return 'away'
+  return 'offline'
+}
+
+/**
+ * The pre-migration `agents` table has no `presence`/`available` columns. When
+ * a direct select for those columns fails, fall back to reading `last_seen_at`
+ * (which exists since migration 006) and derive availability from freshness.
+ */
+function normalizeLegacyRows(rows: Record<string, unknown>[]): SupportAgent[] {
+  const now = Date.now()
+  return rows.map((row) => {
+    const lastSeenAt = typeof row.last_seen_at === 'string' ? row.last_seen_at : null
+    const presence = presenceFromLastSeen(lastSeenAt, now)
+    return {
+      ...normalizeRow(row),
+      presence,
+      // A fresh heartbeat counts as "available" on the legacy schema (the
+      // explicit availability toggle doesn't exist yet).
+      available: presence === 'online',
+    }
+  })
+}
+
 function aggregate(rows: SupportAgent[]): LiveSupportState {
   const active = rows.filter((a) => a.active)
   const onlineAgents = active.filter((a) => a.presence === 'online')
@@ -162,6 +198,19 @@ export async function fetchSupportPresence(
     if (error) {
       const schema = detectMissingColumns(String(error?.message ?? ''))
       onStatus?.({ ok: false, error: error.message, ...schema })
+      // Migration 008 not applied → presence/available columns don't exist.
+      // Fall back to last_seen_at (exists since migration 006) so the widget
+      // still reflects live agents instead of a hard "0 available".
+      if (schema.schemaMissingPresence || schema.schemaMissingAvailable) {
+        const { data: legacy, error: legacyErr } = await supabase
+          .from('agents')
+          .select('id, user_id, name, email, role, active, last_seen_at, created_at')
+          .order('created_at', { ascending: true })
+        if (!legacyErr && Array.isArray(legacy)) {
+          onStatus?.({ ok: true, ...schema })
+          return aggregate(normalizeLegacyRows(legacy as Record<string, unknown>[]))
+        }
+      }
     }
   } catch {
     /* fall through to the API aggregate */
@@ -218,11 +267,6 @@ export function subscribeSupportPresence(
   let unsubscribed = false
   let interval: ReturnType<typeof setInterval> | null = null
   let disposed = false
-
-  const emit = (rows: SupportAgent[]) => {
-    if (unsubscribed) return
-    onChange(aggregate(rows))
-  }
 
   // Initial + periodic snapshot (self-healing; the widget also uses this).
   const refresh = () => {
