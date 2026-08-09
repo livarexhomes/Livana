@@ -147,9 +147,30 @@ export async function fetchSupportPresence(): Promise<LiveSupportState> {
 }
 
 /**
+ * Trigger the server-side presence sweep (`sweep_presence`), which flips
+ * stale heartbeats to away/offline. Runs through the API endpoint so it works
+ * for anonymous visitors too. Returns the swept aggregate when available.
+ */
+async function runPresenceSweep(): Promise<LiveSupportState | null> {
+  try {
+    const res = await fetch('/api/support-presence', { method: 'POST' })
+    if (res.ok) {
+      const json = (await res.json()) as { onlineCount?: number; agents?: Record<string, unknown>[] }
+      if (Array.isArray(json.agents)) return aggregate(json.agents.map(normalizeRow))
+      return { ...EMPTY_STATE, availableCount: json.onlineCount ?? 0 }
+    }
+  } catch {
+    /* the periodic direct roster fetch below still self-heals */
+  }
+  return null
+}
+
+/**
  * Subscribe to the live roster (the single presence source). Re-emits whenever
- * any agent's presence or availability changes, and refetches the aggregate
- * every 30s to self-heal missed realtime events. Returns an unsubscribe fn.
+ * any agent's presence or availability changes, runs a server-side presence
+ * sweep periodically so stale heartbeats flip to offline, and refetches the
+ * aggregate every 30s to self-heal missed realtime events. Returns an
+ * unsubscribe fn.
  */
 export function subscribeSupportPresence(
   onChange: (state: LiveSupportState) => void,
@@ -173,6 +194,16 @@ export function subscribeSupportPresence(
   refresh()
   interval = setInterval(refresh, 30_000)
 
+  // Server-side presence sweep: flips stale heartbeats to away/offline so the
+  // roster's stored `presence` never disagrees with last_seen_at.
+  const sweep = () => {
+    runPresenceSweep().then((state) => {
+      if (!unsubscribed && state) onChange(state)
+    }).catch((err) => onError?.(err))
+  }
+  sweep()
+  const sweepInterval = setInterval(sweep, 15_000)
+
   // Live feed: roster changes drive the aggregate in realtime.
   if (isSupabaseConfigured()) {
     try {
@@ -195,6 +226,7 @@ export function subscribeSupportPresence(
         unsubscribed = true
         disposed = true
         if (interval) clearInterval(interval)
+        if (sweepInterval) clearInterval(sweepInterval)
         supabase.removeChannel(channel)
       }
     } catch (err) {
@@ -206,5 +238,6 @@ export function subscribeSupportPresence(
     unsubscribed = true
     disposed = true
     if (interval) clearInterval(interval)
+    if (sweepInterval) clearInterval(sweepInterval)
   }
 }

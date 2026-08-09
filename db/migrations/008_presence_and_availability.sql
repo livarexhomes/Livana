@@ -74,7 +74,25 @@ $$;
 -- Expose the sweep to the client (used by the presence heartbeat endpoint and
 -- the admin UI). RLS runs as the caller, so guard with is_not_anonymous().
 REVOKE ALL ON FUNCTION public.sweep_presence() FROM PUBLIC;
-GRANT EXECUTE ON FUNCTION public.sweep_presence() TO authenticated;
+GRANT EXECUTE ON FUNCTION public.sweep_presence() TO authenticated, anon;
+
+-- ── 2b. heartbeat trigger: presence is derived from last_seen_at on every
+-- write, so a fresh heartbeat can never leave a stale 'offline' behind and a
+-- stopped heartbeat naturally decays to 'away' → 'offline'. ───────────────────
+CREATE OR REPLACE FUNCTION public.sync_agent_presence()
+RETURNS TRIGGER LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+BEGIN
+  IF TG_OP = 'UPDATE' AND NEW.last_seen_at IS DISTINCT FROM OLD.last_seen_at THEN
+    NEW.presence := public.compute_presence(NEW.last_seen_at);
+  END IF;
+  RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS trg_agents_sync_presence ON public.agents;
+CREATE TRIGGER trg_agents_sync_presence
+  BEFORE UPDATE OF last_seen_at ON public.agents
+  FOR EACH ROW EXECUTE FUNCTION public.sync_agent_presence();
 
 -- ── 3. available_agents view (customer-facing count) ─────────────────────────
 -- A row is only "available" when the agent is online by the live threshold.

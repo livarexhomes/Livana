@@ -7,8 +7,9 @@ import {
 } from 'lucide-react'
 import AdminSidebar from '../../components/layout/AdminSidebar'
 import AuthGuard from '../../components/auth/AuthGuard'
-import { createClient } from '../../lib/supabase'
+import { createClient, isSupabaseConfigured } from '../../lib/supabase'
 import { subscribeSupportPresence, type LiveSupportState, type SupportAgent, type SupportStatus } from '../../lib/live-support'
+import { subscribePresenceDiagnostics, type PresenceDiagnostics } from '../../lib/admin-presence'
 import { claimInquiry, unassignInquiry, type AgentAssignmentStatus } from '../../lib/support-assignment'
 import { subscribeToSupportAlerts, playSupportSound, getSoundMuted, setSoundMuted } from '../../lib/support-notifications'
 import {
@@ -2111,6 +2112,8 @@ export default function AdminSupportPage() {
           </div>
         </div>
       </div>
+      {/* TEMPORARY presence diagnostics — remove after the presence system is verified. */}
+      <PresenceDebugPanel liveState={liveState} />
     </AuthGuard>
   )
 }
@@ -2126,6 +2129,84 @@ function StatCard({ icon, label, count, highlight = false }: { icon: React.React
         <p className="text-[10.5px] font-medium text-slate-400 leading-none truncate">{label}</p>
         <p className={`mt-1 text-lg leading-none tabular-nums ${highlight ? 'font-bold text-slate-900' : 'font-semibold text-slate-800'}`}>{count}</p>
       </div>
+    </div>
+  )
+}
+
+/**
+ * TEMPORARY presence debug panel. Shows the full heartbeat → roster →
+ * aggregate chain for the signed-in agent so the presence system can be
+ * verified against real data. Remove once the presence system is confirmed
+ * working (see STEP 3 of the presence audit).
+ */
+function PresenceDebugPanel({ liveState }: { liveState: LiveSupportState }) {
+  const [d, setD] = useState<PresenceDiagnostics>({ heartbeatCount: 0 })
+  const [channelState, setChannelState] = useState('connecting')
+  const [open, setOpen] = useState(false)
+
+  useEffect(() => {
+    const unsub = subscribePresenceDiagnostics(setD)
+    return unsub
+  }, [])
+
+  useEffect(() => {
+    if (!isSupabaseConfigured()) {
+      setChannelState('not-configured')
+      return
+    }
+    const supabase = createClient()
+    const ch = supabase.channel('__presence_debug__')
+    setChannelState('connecting')
+    ch.subscribe((status) => setChannelState(status))
+    return () => {
+      supabase.removeChannel(ch)
+    }
+  }, [])
+
+  const me = liveState.agents.find(a => a.user_id === window.__livarexUserId)
+  const onlineNow = (() => {
+    if (!d.lastSeenAt) return false
+    return Date.now() - new Date(d.lastSeenAt).getTime() < 90 * 1000
+  })()
+
+  const rows: [string, string][] = [
+    ['User ID', d.userId ?? window.__livarexUserId ?? '—'],
+    ['Agent ID', d.agentId ?? me?.id ?? '—'],
+    ['Presence (roster)', me?.presence ?? '—'],
+    ['Presence (trigger)', d.presence ?? '—'],
+    ['Available', String(me?.available ?? d.available ?? '—')],
+    ['Last heartbeat', d.lastHeartbeatAt ? new Date(d.lastHeartbeatAt).toLocaleTimeString() : '—'],
+    ['Last seen', d.lastSeenAt ? new Date(d.lastSeenAt).toLocaleTimeString() : '—'],
+    ['Heartbeat status', d.heartbeatStatus ?? '—'],
+    ['Heartbeat count', String(d.heartbeatCount)],
+    ['Heartbeat error', d.heartbeatError ?? '—'],
+    ['Realtime channel', channelState],
+    ['Online calc (≤90s)', onlineNow ? 'ONLINE' : 'OFFLINE'],
+    ['Timeout', '90s online / 15m away (server compute_presence)'],
+  ]
+
+  return (
+    <div className="fixed bottom-3 left-3 z-50">
+      <button
+        onClick={() => setOpen(o => !o)}
+        className="rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-[10px] font-bold text-slate-500 shadow hover:bg-slate-50"
+        title="Presence debug (temporary)"
+      >
+        Presence Debug
+      </button>
+      {open && (
+        <div className="mt-1.5 w-80 rounded-xl border border-slate-300 bg-white/95 p-3 shadow-xl backdrop-blur">
+          <p className="mb-2 text-[10px] font-bold uppercase tracking-widest text-slate-400">Presence Debug</p>
+          <div className="space-y-1">
+            {rows.map(([k, v]) => (
+              <div key={k} className="flex items-start justify-between gap-2 text-[11px]">
+                <span className="shrink-0 text-slate-400">{k}</span>
+                <span className="font-mono text-right text-slate-700">{v}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   )
 }
