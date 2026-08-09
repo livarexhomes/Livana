@@ -47,11 +47,20 @@ export default function AuthCallbackPage() {
 
       const meta = user.user_metadata ?? {}
 
-      // Landlord flow handled by helper to allow testing.
-      const { data: existingLandlord } = await supabase
-        .from('landlords').select('status').eq('user_id', user.id).single() as { data: { status: string } | null }
+      // Check both tables in parallel.
+      // A user who has a row in `tenants` registered as a tenant — even if
+      // the DB trigger incorrectly created a matching row in `landlords`.
+      // Always treat them as a tenant in that case, regardless of requestedRole.
+      const [landlordResult, tenantResult] = await Promise.all([
+        supabase.from('landlords').select('status').eq('user_id', user.id).maybeSingle(),
+        supabase.from('tenants').select('id').eq('user_id', user.id).maybeSingle(),
+      ])
+      const existingLandlord = landlordResult.data as { status: string } | null
+      const existingTenant   = tenantResult.data
 
-      const landlordRedirect = getRedirectForLandlord(existingLandlord, requestedRole)
+      const landlordRedirect = existingTenant
+        ? null   // has a tenants row → skip landlord flow entirely
+        : getRedirectForLandlord(existingLandlord, requestedRole)
       if (landlordRedirect) { navigate(landlordRedirect); return }
 
       // ── Tenant flow ────────────────────────────────────────────────
