@@ -18,6 +18,7 @@ const handlers = {
   'send-support-notification': () => import('../server/api-handlers/send-support-notification.js'),
   'support-presence': () => import('../server/api-handlers/support-presence.js'),
   'verify-otp': () => import('../server/api-handlers/verify-otp.js'),
+  'verify-reset': () => import('../server/api-handlers/verify-reset.js'),
   'whatsapp/notify-inspection': () => import('../server/api-handlers/whatsapp/notify-inspection.js'),
 }
 
