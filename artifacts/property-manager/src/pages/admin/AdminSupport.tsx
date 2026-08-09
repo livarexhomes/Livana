@@ -973,9 +973,25 @@ function ChatRequestDetail({ inquiry, onBack, onMarkRead, onStatusChange, agents
   const [visitorTyping, setVisitorTyping] = useState(false)
   const [assigning, setAssigning] = useState(false)
   const [assignedTo, setAssignedTo] = useState<SupportAgent | null>(null)
+  const [showClearConfirm, setShowClearConfirm] = useState(false)
+  const [clearing, setClearing]   = useState(false)
   const bottomRef = useRef<HTMLDivElement>(null)
   const visitorTypingTimer = useRef<number | null>(null)
   const typingSentAt = useRef(0)
+
+  async function clearChat() {
+    setClearing(true)
+    try {
+      const r = await fetch('/api/clear-chat-messages', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ inquiry_id: inquiry.id }),
+      })
+      if (r.ok) setMessages([])
+    } catch { /* non-fatal */ }
+    setClearing(false)
+    setShowClearConfirm(false)
+  }
 
   const s = ENQUIRY_STATUS_META[inquiry.status]
   const assignedAgent = assignedTo ?? agents.find(a => a.id === inquiry.agent_id) ?? null
@@ -1149,19 +1165,57 @@ function ChatRequestDetail({ inquiry, onBack, onMarkRead, onStatusChange, agents
             {format(new Date(inquiry.created_at), 'dd MMM yyyy, h:mm a')}
           </p>
         </div>
-        <div className="relative shrink-0">
-          <select value={inquiry.status} onChange={e => changeStatus(e.target.value as ChatInquiry['status'])}
-            disabled={updating}
-            className="appearance-none pl-3 pr-8 py-2 rounded-lg border border-slate-200 text-[12.5px] font-medium bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-slate-400 cursor-pointer disabled:opacity-50 hover:border-slate-300 transition-colors">
-            <option value="open">Open</option>
-            <option value="replied">Replied</option>
-            <option value="closed">Closed</option>
-          </select>
-          {updating
-            ? <Loader2 className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 animate-spin text-slate-400 pointer-events-none" />
-            : <RefreshCw className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 pointer-events-none" />}
+        <div className="flex items-center gap-2 shrink-0">
+          <div className="relative">
+            <select value={inquiry.status} onChange={e => changeStatus(e.target.value as ChatInquiry['status'])}
+              disabled={updating}
+              className="appearance-none pl-3 pr-8 py-2 rounded-lg border border-slate-200 text-[12.5px] font-medium bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-slate-400 cursor-pointer disabled:opacity-50 hover:border-slate-300 transition-colors">
+              <option value="open">Open</option>
+              <option value="replied">Replied</option>
+              <option value="closed">Closed</option>
+            </select>
+            {updating
+              ? <Loader2 className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 animate-spin text-slate-400 pointer-events-none" />
+              : <RefreshCw className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 pointer-events-none" />}
+          </div>
+          {/* Admin-only: clear all chat messages */}
+          <button
+            onClick={() => setShowClearConfirm(true)}
+            title="Clear chat history"
+            className="grid size-9 place-items-center rounded-lg border border-slate-200 bg-white text-slate-400 hover:text-red-500 hover:border-red-200 transition-colors"
+          >
+            <Trash2 className="w-4 h-4" />
+          </button>
         </div>
       </div>
+
+      {/* ── Clear-chat confirmation dialog ───────────────────────────── */}
+      {showClearConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 rounded-xl bg-red-50 flex items-center justify-center shrink-0">
+                <Trash2 className="w-5 h-5 text-red-500" />
+              </div>
+              <div>
+                <p className="text-[15px] font-semibold text-slate-900">Clear chat history?</p>
+                <p className="text-[12.5px] text-slate-500 mt-0.5">This permanently deletes all messages in this thread. It cannot be undone.</p>
+              </div>
+            </div>
+            <div className="flex gap-2 justify-end">
+              <button onClick={() => setShowClearConfirm(false)} disabled={clearing}
+                className="px-4 py-2 rounded-lg border border-slate-200 text-[13px] font-medium text-slate-700 hover:bg-slate-50 transition-colors disabled:opacity-50">
+                Cancel
+              </button>
+              <button onClick={clearChat} disabled={clearing}
+                className="px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700 disabled:opacity-50 text-[13px] font-medium text-white transition-colors flex items-center gap-1.5">
+                {clearing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
+                Clear messages
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Assignment bar */}
       <div className="flex items-center gap-2 px-5 py-2 border-b border-slate-100 bg-slate-50/60 shrink-0 flex-wrap">
@@ -1823,7 +1877,9 @@ function InboxTab({ liveState, onOpenThreadChange, initialChatId, onInitialChatC
 
   const items = useMemo(() => {
     const combined: InboxItem[] = [
-      ...chats.map(toChatItem),
+      // Queued (unassigned offline-form submissions) appear in the Support Queue tab.
+      // Only show chats that have been claimed / assigned / or already had interaction.
+      ...chats.filter(c => c.agent_status !== 'queued').map(toChatItem),
       ...enquiries.map(toEnquiryItem),
       ...contacts.map(toContactItem),
     ]
@@ -2478,44 +2534,41 @@ export default function AdminSupportPage() {
             </div>
           </header>
 
-          {/* Tabs */}
-          <div className="px-4 md:px-6 py-2 bg-white border-b border-slate-200 shrink-0">
-            <div className="inline-flex items-center gap-1 rounded-xl bg-slate-100 p-1">
-              <button onClick={() => setTab('support')}
-                className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-[13px] font-medium transition-all ${
-                  tab === 'support' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-800'
-                }`}>
-                <HeadphonesIcon className="w-3.5 h-3.5" />
-                Support
-              </button>
-              <button onClick={() => setTab('inbox')}
-                className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-[13px] font-medium transition-all relative ${
-                  tab === 'inbox' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-800'
-                }`}>
-                <Inbox className="w-3.5 h-3.5" />
-                Inbox
-                {inboxCount > 0 && (
-                  <span className={`inline-flex items-center justify-center min-w-[17px] h-[17px] px-1 rounded-full text-[9px] font-bold ${
-                    tab === 'inbox' ? 'bg-slate-900 text-white' : 'bg-slate-200 text-slate-600'
-                  }`}>
-                    {inboxCount > 99 ? '99+' : inboxCount}
-                  </span>
-                )}
-              </button>
-              <button onClick={() => setTab('agents')}
-                className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-[13px] font-medium transition-all ${
-                  tab === 'agents' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-800'
-                }`}>
-                <UserPlus className="w-3.5 h-3.5" />
-                Agents
-                {availableAgentCount > 0 && (
-                  <span className={`inline-flex items-center justify-center min-w-[17px] h-[17px] px-1 rounded-full text-[9px] font-bold ${
-                    tab === 'agents' ? 'bg-emerald-500 text-white' : 'bg-emerald-100 text-emerald-700'
-                  }`}>
-                    {availableAgentCount}
-                  </span>
-                )}
-              </button>
+          {/* Tabs — compact dropdown + active-section indicator */}
+          <div className="px-4 md:px-6 py-2 bg-white border-b border-slate-200 shrink-0 flex items-center gap-3">
+            <div className="relative">
+              <select
+                value={tab}
+                onChange={e => setTab(e.target.value as typeof tab)}
+                className="appearance-none pl-3 pr-8 py-2 rounded-xl border border-slate-200 bg-white text-[13px] font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-300 cursor-pointer hover:border-slate-300 transition-colors shadow-[0_1px_2px_rgba(15,23,42,0.04)]"
+              >
+                <option value="support">🎧  Support Queue</option>
+                <option value="inbox">📥  Inbox{inboxCount > 0 ? ` (${inboxCount})` : ''}</option>
+                <option value="agents">👥  Agents{availableAgentCount > 0 ? ` · ${availableAgentCount} online` : ''}</option>
+              </select>
+              <ChevronDownIcon className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 pointer-events-none" />
+            </div>
+            {/* Active section label + badge */}
+            <div className="flex items-center gap-2 text-[12.5px] text-slate-500">
+              {tab === 'support' && <><HeadphonesIcon className="w-3.5 h-3.5" /> Support tickets &amp; queue</>}
+              {tab === 'inbox' && (
+                <>
+                  <Inbox className="w-3.5 h-3.5" />
+                  Live chats, enquiries &amp; contact messages
+                  {inboxCount > 0 && (
+                    <span className="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full text-[9px] font-bold bg-sky-500 text-white">{inboxCount > 99 ? '99+' : inboxCount}</span>
+                  )}
+                </>
+              )}
+              {tab === 'agents' && (
+                <>
+                  <UserPlus className="w-3.5 h-3.5" />
+                  Agent roster
+                  {availableAgentCount > 0 && (
+                    <span className="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full text-[9px] font-bold bg-emerald-500 text-white">{availableAgentCount}</span>
+                  )}
+                </>
+              )}
             </div>
           </div>
 

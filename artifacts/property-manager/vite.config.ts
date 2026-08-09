@@ -11,6 +11,7 @@ const apiHandlerFiles: Record<string, string> = {
   "create-chat-ticket": "create-chat-ticket.js",
   "get-chat-messages": "get-chat-messages.js",
   "send-chat-message": "send-chat-message.js",
+  "clear-chat-messages": "clear-chat-messages.js",
   "landlord-register": "landlord-register.js",
   "manage-support-agent": "manage-support-agent.js",
   "notify-signup": "notify-signup.js",
