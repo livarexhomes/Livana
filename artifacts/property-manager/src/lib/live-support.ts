@@ -77,20 +77,6 @@ const EMPTY_STATE: LiveSupportState = {
   agentCount: 0,
 }
 
-export function isAgentEntry(meta: Record<string, unknown>): boolean {
-  return typeof meta?.role === 'string'
-    && ['admin', 'agent', 'support'].includes(meta.role)
-}
-
-export function isSupportOnline(presence: Record<string, unknown> | undefined): boolean {
-  if (!presence) return false
-  // Presence map: connectionId -> tracked metadata
-  return Object.values(presence).some((meta) => {
-    const m = (meta ?? {}) as Record<string, unknown>
-    return isAgentEntry(m)
-  })
-}
-
 function normalizeRow(row: Record<string, unknown>): SupportAgent {
   return {
     id: String(row.id ?? ''),
