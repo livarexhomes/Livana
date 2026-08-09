@@ -409,23 +409,32 @@ export default function ChatWidget() {
       if (found?.name) setAssignedAgent(found.name)
     }
 
-    const { data: inserted, error } = await supabase
-      .from('chat_inquiries')
-      .insert({
-        name,
-        email: email || null,
-        note,
-        phone: null,
-        visitor_id: user?.id ?? null,
-        agent_id: assignment.agentId,
-        agent_status: assignment.agentStatus,
+    // Use the server-side endpoint so the service-role key bypasses RLS.
+    type TicketRow = { id: string; ticket_no: string | null; read_by_admin: boolean }
+    let inserted: TicketRow
+    try {
+      const resp = await fetch('/api/create-chat-ticket', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name,
+          email: email || null,
+          note,
+          phone: null,
+          visitor_id: user?.id ?? null,
+          agent_id: assignment.agentId,
+          agent_status: assignment.agentStatus,
+        }),
       })
-      .select('id, read_by_admin, ticket_no')
-      .single()
-
-    if (error || !inserted) {
-      console.error('Live thread error:', error)
-      // Show error inline — no WhatsApp redirect.
+      const json = await resp.json().catch(() => null) as TicketRow | null
+      if (!resp.ok || !json?.id) {
+        console.error('Live thread error:', resp.status, json)
+        setLiveStatus('error')
+        return
+      }
+      inserted = json
+    } catch (err) {
+      console.error('Live thread fetch error:', err)
       setLiveStatus('error')
       return
     }
@@ -485,18 +494,23 @@ export default function ChatWidget() {
     setAgentSubmitting(true)
     try {
       const supabase = createClient()
-      const { data: { user } } = await supabase.auth.getUser()
-      const { data: inserted, error } = await supabase.from('chat_inquiries').insert({
-        name,
-        email: agentEmail.trim() || null,
-        note,
-        phone: agentPhone.trim() || null,
-        visitor_id: user?.id ?? null,
-        agent_status: 'queued',
-      }).select('id, read_by_admin, ticket_no').single()
-      if (error) throw error
-      setInquiryId(inserted?.id ?? null)
-      setAgentTicketNo(inserted?.ticket_no ?? null)
+      const { data: { user } } = await supabase.auth.getUser().catch(() => ({ data: { user: null } }))
+      const resp = await fetch('/api/create-chat-ticket', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name,
+          email: agentEmail.trim() || null,
+          note,
+          phone: agentPhone.trim() || null,
+          visitor_id: user?.id ?? null,
+          agent_status: 'queued',
+        }),
+      })
+      const inserted = await resp.json().catch(() => null)
+      if (!resp.ok || !inserted?.id) throw new Error(inserted?.error || `HTTP ${resp.status}`)
+      setInquiryId(inserted.id ?? null)
+      setAgentTicketNo(inserted.ticket_no ?? null)
       setAgentJoined(true)
       if (inserted?.id) {
         setAgentThread([{

@@ -8,6 +8,7 @@ import runtimeErrorOverlay from "@replit/vite-plugin-runtime-error-modal";
 
 const apiHandlerFiles: Record<string, string> = {
   chat: "chat.js",
+  "create-chat-ticket": "create-chat-ticket.js",
   "landlord-register": "landlord-register.js",
   "manage-support-agent": "manage-support-agent.js",
   "notify-signup": "notify-signup.js",
