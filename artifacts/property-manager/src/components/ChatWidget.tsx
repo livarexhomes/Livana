@@ -1,8 +1,8 @@
 import { useState, useRef, useEffect, useCallback, type ReactNode } from 'react'
-import { X, Send, MessageSquare, Paperclip, ChevronDown, Check, ArrowRight, Loader2, Clock2, Smile, Home, CalendarCheck, Building2, Headset } from 'lucide-react'
+import { X, Send, MessageSquare, Paperclip, ChevronDown, Check, ArrowRight, Loader2, Clock2, Smile, Home, CalendarCheck, Building2, Headset, MessageCircle } from 'lucide-react'
 import { useLocation, redirect } from '../lib/navigation'
 import { createClient, isSupabaseConfigured } from '../lib/supabase'
-import { getPlatformSettings, getNotificationSettings, phoneToWaLink, getSupportAvailability, isWithinSchedule, type SupportAvailability, DEFAULT_AVAILABILITY } from '../lib/platform-settings'
+import { getPlatformSettings, getNotificationSettings, phoneToWaLink, getSupportAvailability, type SupportAvailability, DEFAULT_AVAILABILITY } from '../lib/platform-settings'
 import { subscribeLiveSupportPresence, type LiveSupportState } from '../lib/live-support'
 import { assignChatToAgent } from '../lib/support-assignment'
 
@@ -40,7 +40,7 @@ type WidgetView =
   | { name: 'chat' }
   | { name: 'menu' }
   | { name: 'live'; stage: 'checking' | 'active' }
-  | { name: 'offline'; stage: 'form' | 'submitted' }
+  | { name: 'offline'; stage: 'form' | 'submitted' | 'noagent' }
 
 // ── Config ────────────────────────────────────────────────────────────────────
 
@@ -54,7 +54,8 @@ const MENU_OPTIONS = [
   { icon: Home, title: 'Find a property', desc: 'Browse verified rentals nearby', msg: 'Show me the best verified rentals in Lagos and Ogun.' },
   { icon: CalendarCheck, title: 'Book an inspection', desc: 'Schedule a viewing fast', msg: 'I want to book a property inspection soon.' },
   { icon: Building2, title: 'List my property', desc: 'Rent it out on Livarex', msg: 'I want to list my property on Livarex.' },
-  { icon: Headset, title: 'Chat with support', desc: 'Talk to a live agent', msg: null, live: true },
+  { icon: Headset, title: 'Chat with support', desc: 'Talk to a live agent', msg: null, live: true, whatsapp: false },
+  { icon: MessageCircle, title: 'WhatsApp us', desc: 'Chat on WhatsApp instead', msg: null, live: true, whatsapp: true },
 ]
 
 const MENU_CHIPS = [
@@ -332,10 +333,42 @@ export default function ChatWidget() {
     if (availability.mode === 'back_in') return 'offline' as const
     return null
   })()
-  const withinHours = isWithinSchedule(availability)
-  const effectiveOnline = availabilityActive === 'online' || (availabilityActive === null && liveState.online)
-  const effectiveAway = availabilityActive === null && !liveState.online && liveState.status === 'away'
-  const effectiveOffline = availabilityActive === 'offline' || (availabilityActive === null && !liveState.online && !withinHours)
+
+  /** One-shot availability probe: prefer the live presence channel, fall back
+   *  to the `agents` roster's `last_seen_at` heartbeat so the widget still
+   *  reflects a logged-in admin even when a presence channel can't complete. */
+  async function getEffectiveAvailability(): Promise<'online' | 'away' | 'offline'> {
+    if (availabilityActive === 'online') return 'online'
+    if (availabilityActive === 'offline' || availabilityActive === 'back_in') return 'offline'
+    if (liveState.online) return 'online'
+    if (liveState.status === 'away') return 'away'
+    if (!isSupabaseConfigured()) return 'offline'
+    try {
+      const supabase = createClient()
+      const { data } = await supabase
+        .from('agents')
+        .select('last_seen_at')
+        .not('last_seen_at', 'is', null)
+        .order('last_seen_at', { ascending: false })
+        .limit(1)
+      const last = data?.[0]?.last_seen_at as string | undefined
+      if (last && Date.now() - new Date(last).getTime() < 90 * 1000) return 'online'
+    } catch {
+      /* presence already covers this — ignore roster errors */
+    }
+    return 'offline'
+  }
+
+  /** Open WhatsApp with a prefilled message (used by the menu option and the
+   *  no-agent fallback so support can be reached outside the chatbot). */
+  const openWhatsApp = useCallback((note?: string) => {
+    getPlatformSettings().then(s => {
+      const msg = note?.trim() || 'Hi, I\'d like to chat with Livarex support.'
+      window.open(phoneToWaLink(s.phone, msg), '_blank', 'noopener,noreferrer')
+    }).catch(() => {
+      window.open('https://wa.me/2347061370742', '_blank')
+    })
+  }, [])
 
   // ── Welcome → live flow ──────────────────────────────────────────────────────
   const goLive = useCallback(() => {
@@ -356,9 +389,11 @@ export default function ChatWidget() {
         user = u
       }
 
-      // Online (honoring the admin's Support · Auto/Online override) →
-      // instant connect, no form. Name comes from identity when known.
-      if (effectiveOnline) {
+      // Re-check availability in real time (presence channel + last_seen roster).
+      const avail = await getEffectiveAvailability()
+
+      // Agent available → instant connect, no form. Name comes from identity when known.
+      if (avail === 'online') {
         const meta = (user?.user_metadata ?? {}) as Record<string, unknown>
         const name = typeof meta.full_name === 'string' && meta.full_name
           ? meta.full_name
@@ -369,12 +404,13 @@ export default function ChatWidget() {
         return
       }
 
-      // No agent available → offline message flow.
-      setView({ name: 'offline', stage: 'form' })
+      // No agent available → WhatsApp fallback first so the visitor isn't left
+      // stuck, with the offline message form as the secondary option.
+      setView({ name: 'offline', stage: 'noagent' })
     }
     run()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [inquiryId, effectiveOnline])
+  }, [inquiryId, liveState.online, liveState.status])
 
   /** Create (or resume) a live chat thread and enter it immediately. */
   async function connectLiveThread({ name, email, firstMessage }: { name: string; email: string; firstMessage: string }) {
@@ -681,15 +717,26 @@ export default function ChatWidget() {
     setView(v => (v.name === 'menu' ? { name: 'chat' } : { name: 'menu' }))
   }
 
-  const presenceLine = effectiveOnline
-    ? { dot: 'bg-emerald-400', text: `Online · ${liveState.onlineAgents[0]?.name ?? 'agent'} will reply shortly` }
-    : effectiveAway
-      ? { dot: 'bg-amber-400', text: 'Away · leave a message' }
-      : effectiveOffline && availability.mode === 'back_in' && availability.backAt
-        ? { dot: 'bg-slate-400', text: `Offline · back at ${availability.backAt}` }
-        : effectiveOffline
-          ? { dot: 'bg-slate-400', text: 'Offline · leave a message' }
-          : { dot: 'bg-slate-400', text: 'Away · leave a message' }
+  const presenceLine = (() => {
+    // Hard overrides: Online → always online, Offline/Back in → offline.
+    if (availabilityActive === 'online') {
+      return { dot: 'bg-emerald-400', text: 'Online · we\'re here to help' }
+    }
+    if (availabilityActive === 'offline' || availabilityActive === 'back_in') {
+      if (availability.mode === 'back_in' && availability.backAt) {
+        return { dot: 'bg-slate-400', text: `Offline · back at ${availability.backAt}` }
+      }
+      return { dot: 'bg-slate-400', text: 'Offline · leave a message' }
+    }
+    // Auto mode: driven purely by live presence.
+    if (liveState.online) {
+      return { dot: 'bg-emerald-400', text: `Online · ${liveState.onlineAgents[0]?.name ?? 'agent'} will reply shortly` }
+    }
+    if (liveState.status === 'away') {
+      return { dot: 'bg-amber-400', text: 'Away · agents will be back shortly' }
+    }
+    return { dot: 'bg-slate-400', text: 'Offline · leave a message' }
+  })()
 
   // Escape closes the panel.
   useEffect(() => {
@@ -877,18 +924,11 @@ export default function ChatWidget() {
           }}>
           <div className="absolute inset-0 opacity-[0.05]" style={{ backgroundImage:'radial-gradient(circle at 1px 1px, white 1px, transparent 0)', backgroundSize:'22px 22px' }} aria-hidden />
 
-          {/* Avatar */}
-          <div className="relative shrink-0 flex items-center justify-center size-10 rounded-full text-[15px] font-black text-white"
-            style={{ background:'linear-gradient(135deg,#3b82f6,#6366f1)', boxShadow:'0 0 0 3px rgba(255,255,255,0.18)' }}>
-            L
-            <span className="absolute -bottom-0.5 -right-0.5 size-3 rounded-full border-2 border-white bg-emerald-400" aria-hidden />
-          </div>
-
           {/* Name + status */}
           <div className="min-w-0 flex-1 text-white">
             <div className="truncate text-[14px] font-bold tracking-[-0.01em]">Livarex Support</div>
             <div className="mt-0.5 flex flex-wrap items-center gap-1.5 text-[11px] text-white/75">
-              <span className={`inline-block size-1.5 rounded-full ${presenceLine.dot} shadow-[0_0_6px_rgba(52,211,153,0.9)]`} aria-hidden />
+              <span className={`inline-block size-1.5 rounded-full ${presenceLine.dot}`} aria-hidden />
               {presenceLine.text}
             </div>
           </div>
@@ -956,23 +996,15 @@ export default function ChatWidget() {
                   <span>&lt;2h response</span>
                 </div>
 
-                {/* Quick-start buttons — each drops the visitor straight into a flow */}
-                <div className="mt-4 grid grid-cols-2 gap-2.5">
-                  <button
-                    onClick={() => startChat('Find a property')}
-                    className="cw-action inline-flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-blue-600 to-blue-500 px-4 py-3 text-sm font-bold text-white shadow-lg shadow-blue-600/25 transition-transform focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-400"
-                  >
-                    <Home size={15} />
-                    <span>Find a rental</span>
-                  </button>
-                  <button
-                    onClick={() => startChat('List my property')}
-                    className="cw-action inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm font-bold text-slate-800 shadow-sm transition-transform hover:border-blue-400 hover:text-blue-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-400"
-                  >
-                    <Building2 size={15} />
-                    <span>List a property</span>
-                  </button>
-                </div>
+                {/* Single entry point — one clear action into the chat. Uses the
+                    bot's default opening message so the visitor lands on the
+                    standard greeting. */}
+                <button
+                  onClick={() => startChat()}
+                  className="cw-action mt-4 inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-blue-600 to-blue-500 px-4 py-3 text-sm font-bold text-white shadow-lg shadow-blue-600/25 transition-transform focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-400"
+                >
+                  <span>Start a new conversation →</span>
+                </button>
 
                 {/* Social icons — match the site footer links */}
                 <div className="mt-5 flex items-center justify-center gap-3">
@@ -992,6 +1024,12 @@ export default function ChatWidget() {
                     className="grid size-10 place-items-center rounded-full border border-slate-200 bg-white text-slate-500 transition-colors hover:border-slate-400 hover:text-slate-900">
                     <svg className="w-[18px] h-[18px]" fill="currentColor" viewBox="0 0 24 24">
                       <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.744l7.73-8.835L1.254 2.25H8.08l4.259 5.63L18.244 2.25zm-1.161 17.52h1.833L7.084 4.126H5.117L17.083 19.77z" />
+                    </svg>
+                  </a>
+                  <a href={waHref} target="_blank" rel="noopener noreferrer" aria-label="Livarex on WhatsApp"
+                    className="grid size-10 place-items-center rounded-full border border-slate-200 bg-white text-slate-500 transition-colors hover:border-emerald-400 hover:text-emerald-500">
+                    <svg className="w-[18px] h-[18px]" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
                     </svg>
                   </a>
                 </div>
@@ -1086,6 +1124,42 @@ export default function ChatWidget() {
           {/* ── State 3: Offline support ── */}
           {view.name === 'offline' && (
             <>
+              {/* No agent available — WhatsApp fallback (primary) + leave-a-message */}
+              {view.stage === 'noagent' && (
+                <div className="flex items-start gap-2" style={{ animation:'cwFadeUp 0.35s ease both' }}>
+                  <Avatar small />
+                  <div className="max-w-[88%] flex-1 rounded-[18px_18px_18px_6px] border border-border/70 bg-card p-4 shadow-[0_1px_3px_rgba(2,6,23,0.06)]">
+                    <div className="mb-2 flex items-center gap-2">
+                      <div className="grid size-6.5 place-items-center rounded-lg bg-amber-100">
+                        <Clock2 className="w-4 h-4 text-amber-700" />
+                      </div>
+                      <div>
+                        <p className="m-0 text-xs font-bold text-card-foreground">No agents available right now</p>
+                        <p className="m-0 text-[10.5px] text-muted-foreground">
+                          Our live chat is offline at the moment. Message us on WhatsApp and we'll get back to you shortly.
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => openWhatsApp()}
+                      className="mt-1 w-full inline-flex items-center justify-center gap-2 rounded-[10px] border-none py-2.5 text-xs font-bold text-white transition-all cursor-pointer focus-visible:outline-2 focus-visible:outline-ring"
+                      style={{ background:'linear-gradient(135deg,#059669,#10b981)', boxShadow:'0 4px 12px rgba(5,150,105,0.3)' }}
+                    >
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+                        <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+                      </svg>
+                      Continue on WhatsApp
+                    </button>
+                    <button
+                      onClick={() => setView({ name: 'offline', stage: 'form' })}
+                      className="mt-2 w-full rounded-[10px] border border-border py-2.5 text-xs font-semibold text-card-foreground transition-colors cursor-pointer hover:bg-muted focus-visible:outline-2 focus-visible:outline-ring"
+                    >
+                      Or leave a message
+                    </button>
+                  </div>
+                </div>
+              )}
+
               {/* Offline form */}
               {view.stage === 'form' && (
                 <div className="flex items-start gap-2" style={{ animation:'cwFadeUp 0.35s ease both' }}>
@@ -1259,7 +1333,7 @@ export default function ChatWidget() {
                           return (
                             <button
                               key={opt.title}
-                              onClick={() => opt.live ? goLive() : sendMessage(opt.msg ?? '', null)}
+                              onClick={() => opt.whatsapp ? openWhatsApp() : opt.live ? goLive() : sendMessage(opt.msg ?? '', null)}
                               className="cw-action group flex w-full items-center gap-3 rounded-2xl px-2.5 py-2.5 text-left transition-colors hover:bg-blue-50 focus-visible:outline-2 focus-visible:outline-ring"
                             >
                               <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-blue-500/15 to-indigo-500/15 text-blue-600">

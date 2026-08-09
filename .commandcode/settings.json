@@ -20,7 +20,8 @@
       "Shell(python3 -c  import json,sys d = json.load(sys.stdin) for dep in d: if dep['sha'].startswith(''): print('id', dep['id'], dep['environment'], dep['created_at'])  done)",
       "Shell(cd /workspaces/Livana && echo \"--- post-merge.sh ---\"; cat scripts/post-merge.sh 2>/dev/null; echo \"--- references to .replit / replit / nixpacks / artifact.toml ---\"; grep -rn \"replit\\|nixpacks\\|post-merge\\|postMerge\" --include=\"*.json\" --include=\"*.toml\" --include=\"*.md\" --include=\"*.sh\" --include=\"*.mjs\" --include=\"*.js\" --include=\"*.ts\" --include=\"*.yml\" --include=\"*.yaml\" . 2>/dev/null | grep -v node_modules | grep -v \"\\.git/\" | grep -vi \"\\.replit\" | head -20)",
       "Shell(cd /workspaces/Livana && echo \"--- README.md (root) ---\"; cat README.md 2>/dev/null | head -40; echo \"--- gitignore replit refs ---\"; grep -n -i \"replit\" .gitignore; echo \"--- .github workflows ---\"; ls .github/workflows/ 2>/dev/null; grep -rn -i \"replit\" .github/ 2>/dev/null | head)",
-      "Shell(cd /workspaces/Livana && sed -n '40,60p' .gitignore; echo \"--- is livarex-bot deployed on Replit? check nixpacks usage ---\"; git log --oneline -5 -- livarex-bot/nixpacks.toml .replit replit.md 2>/dev/null; echo \"--- root package.json scripts ---\"; cat package.json | python3 -c \"import json,sys; print(json.load(sys.stdin).get('scripts',{}))\")"
+      "Shell(cd /workspaces/Livana && sed -n '40,60p' .gitignore; echo \"--- is livarex-bot deployed on Replit? check nixpacks usage ---\"; git log --oneline -5 -- livarex-bot/nixpacks.toml .replit replit.md 2>/dev/null; echo \"--- root package.json scripts ---\"; cat package.json | python3 -c \"import json,sys; print(json.load(sys.stdin).get('scripts',{}))\")",
+      "Shell(ls:*)"
     ],
     "deny": [],
     "defaultMode": "default"

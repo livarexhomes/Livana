@@ -120,15 +120,12 @@ export function subscribeSupportPresence(onChange: (state: SupportPresenceState)
 
   channel
     .on('presence', { event: 'sync' }, emit)
-    .subscribe((status) => {
+    .subscribe((status, err) => {
       console.log('[live-support] subscribeSupportPresence status:', status)
       if (status === 'SUBSCRIBED') emit()
-      else if (status !== 'SUBSCRIBED') {
-        console.warn('[live-support] support presence subscribe failed:', status)
+      else {
+        console.warn('[live-support] support presence subscribe failed:', status, err)
       }
-    })
-    .on('error', (error) => {
-      console.warn('[live-support] support presence realtime error:', error)
     })
 
   return () => {
@@ -153,15 +150,12 @@ export function subscribeLiveSupportPresence(onChange: (state: LiveSupportState)
 
   channel
     .on('presence', { event: 'sync' }, emit)
-    .subscribe((status) => {
+    .subscribe((status, err) => {
       console.log('[live-support] subscribeLiveSupportPresence status:', status)
       if (status === 'SUBSCRIBED') emit()
-      else if (status !== 'SUBSCRIBED') {
-        console.warn('[live-support] live support presence subscribe failed:', status)
+      else {
+        console.warn('[live-support] live support presence subscribe failed:', status, err)
       }
-    })
-    .on('error', (error) => {
-      console.warn('[live-support] live support presence realtime error:', error)
     })
 
   return () => {
