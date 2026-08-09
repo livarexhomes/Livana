@@ -80,7 +80,7 @@ function parseJsonBody(req) {
  *                     (agent/support/admin).
  */
 export default async function handler(req, res) {
-  const SUPABASE_URL = getEnv('SUPABASE_URL') || ''
+  const SUPABASE_URL = getEnv('SUPABASE_URL') || getEnv('VITE_SUPABASE_URL') || ''
   const SUPABASE_SERVICE_KEY = getEnv('SUPABASE_SERVICE_KEY') || getEnv('SUPABASE_SERVICE_ROLE_KEY') || ''
 
   if (!SUPABASE_URL || !SUPABASE_SERVICE_KEY) {

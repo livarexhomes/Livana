@@ -2343,31 +2343,6 @@ export default function AdminSupportPage() {
     return () => { supabase.removeChannel(ch) }
   }, [])
 
-  // Register the current admin in the agents roster on login (idempotent).
-  useEffect(() => {
-    const supabase = createClient()
-    supabase.auth.getUser().then(async ({ data: { user } }) => {
-      if (!user || user.is_anonymous) return
-      setUser({ email: user.email, id: user.id })
-      window.__livarexUserId = user.id
-      try {
-        const { data: { session } } = await supabase.auth.getSession()
-        await fetch('/api/register-support-agent', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
-          },
-          body: JSON.stringify({ userId: user.id, email: user.email }),
-        })
-      } catch {
-        /* non-fatal */
-      }
-      const { data } = await supabase.from('agents').select('id, user_id, name, email, role, active, presence, available, availability_note, last_seen_at, created_at').order('created_at', { ascending: false })
-      setAgents((data as SupportAgent[]) ?? [])
-    })
-  }, [])
-
   // Sound + toast alerts for new chats / messages (only when not looking at the
   // open thread — a page-level check keeps it simple; the bell + badges always update).
   const openInquiryIdRef = useRef<string | null>(null)
@@ -2433,6 +2408,7 @@ export default function AdminSupportPage() {
   const displayName = user?.email ? user.email.split('@')[0] : 'Admin'
   const inboxCount = openCount + chatOpenCount + contactCount
   const availableAgentCount = liveState.availableCount
+  const effectiveSupportOnline = supportOpen && availableAgentCount > 0
 
   return (
     <AuthGuard require="admin">
@@ -2451,14 +2427,20 @@ export default function AdminSupportPage() {
                 <div className="flex items-center gap-2.5 shrink-0 flex-wrap">
                   {/* ONE global support status — business hours (Africa/Lagos).
                       The agent heartbeat NEVER changes this. */}
-                  <div className={`inline-flex items-center gap-2 rounded-xl border px-3.5 py-2 shadow-[0_1px_2px_rgba(15,23,42,0.05)] ${supportOpen ? 'border-slate-200 bg-white' : 'border-slate-200/80 bg-slate-50'}`}>
+                   <div className={`inline-flex items-center gap-2 rounded-xl border px-3.5 py-2 shadow-[0_1px_2px_rgba(15,23,42,0.05)] ${effectiveSupportOnline ? 'border-slate-200 bg-white' : 'border-slate-200/80 bg-slate-50'}`}>
                     <span className="relative flex size-2">
-                      <span className={`size-2 rounded-full ${supportOpen ? 'bg-emerald-500' : 'bg-slate-400'}`} />
-                      {supportOpen && <span className="absolute inset-0 rounded-full bg-emerald-500 animate-ping opacity-60" />}
+                       <span className={`size-2 rounded-full ${effectiveSupportOnline ? 'bg-emerald-500' : supportOpen ? 'bg-amber-400' : 'bg-slate-400'}`} />
+                       {effectiveSupportOnline && <span className="absolute inset-0 rounded-full bg-emerald-500 animate-ping opacity-60" />}
                     </span>
                     <div className="leading-tight">
-                      <p className="text-[13px] font-semibold text-slate-800">{supportOpen ? 'Support Online' : 'Support Away'}</p>
-                      <p className="text-[11px] text-slate-400">Support hours: 8:00 AM – 6:00 PM</p>
+                       <p className="text-[13px] font-semibold text-slate-800">
+                         {effectiveSupportOnline ? 'Support Online' : supportOpen ? 'No agent online' : 'Support Away'}
+                       </p>
+                       <p className="text-[11px] text-slate-400">
+                         {supportOpen
+                           ? `${availableAgentCount} available · 8:00 AM – 6:00 PM`
+                           : 'Support hours: 8:00 AM – 6:00 PM'}
+                       </p>
                     </div>
                   </div>
                   <button

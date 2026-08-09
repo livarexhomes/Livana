@@ -24,6 +24,12 @@ import { createClient } from './supabase'
 /** How often the heartbeat fires. Must be < the server online timeout (90s). */
 export const LAST_SEEN_HEARTBEAT_MS = 45 * 1000
 
+declare global {
+  interface Window {
+    __livarexUserId?: string
+  }
+}
+
 /**
  * Mount once per admin page (AdminSidebar does this for all admin pages).
  * Resolves the current user's agents row ONCE, then writes a heartbeat
@@ -43,9 +49,11 @@ export function useAdminPresence(): void {
       if (disposed) return
       const { data: { user } } = await supabase.auth.getUser().catch(() => ({ data: { user: null } }))
       if (!user || user.is_anonymous) return
+      window.__livarexUserId = user.id
 
       // Resolve this user's agents row once (cache it so the heartbeat is a
-      // single UPDATE and can't race the roster-registration effect).
+      // single UPDATE. If the admin has not been registered yet, register them
+      // here instead of waiting for the Support page to be opened.
       if (!agentRowId) {
         try {
           const { data: roster } = await supabase
@@ -56,9 +64,40 @@ export function useAdminPresence(): void {
           if (roster?.id) {
             agentRowId = roster.id
           } else {
-            return
+            const { data: { session } } = await supabase.auth.getSession()
+            const response = await fetch('/api/register-support-agent', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
+              },
+              body: JSON.stringify({
+                userId: user.id,
+                email: user.email,
+                name: user.user_metadata?.full_name,
+              }),
+            })
+            const result = await response.json().catch(() => null) as {
+              agent?: { id?: string }
+              error?: string
+            } | null
+            if (!response.ok) {
+              console.warn('[admin-presence] agent registration failed:', result?.error ?? response.status)
+              return
+            }
+            agentRowId = result?.agent?.id ?? null
+            if (!agentRowId) {
+              const { data: registered } = await supabase
+                .from('agents')
+                .select('id')
+                .eq('user_id', user.id)
+                .maybeSingle()
+              agentRowId = registered?.id ?? null
+            }
+            if (!agentRowId) return
           }
         } catch {
+          console.warn('[admin-presence] could not resolve or register the admin agent row')
           return
         }
       }

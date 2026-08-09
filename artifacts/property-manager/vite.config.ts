@@ -3,7 +3,66 @@ import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 import path from "path";
 import http from "http";
+import { pathToFileURL } from "url";
 import runtimeErrorOverlay from "@replit/vite-plugin-runtime-error-modal";
+
+const apiHandlerFiles: Record<string, string> = {
+  chat: "chat.js",
+  "landlord-register": "landlord-register.js",
+  "manage-support-agent": "manage-support-agent.js",
+  "notify-signup": "notify-signup.js",
+  "register-support-agent": "register-support-agent.js",
+  "send-confirmation": "send-confirmation.js",
+  "send-otp": "send-otp.js",
+  "send-password-reset": "send-password-reset.js",
+  "send-support-notification": "send-support-notification.js",
+  "support-presence": "support-presence.js",
+  "verify-otp": "verify-otp.js",
+  "verify-reset": "verify-reset.js",
+  "whatsapp/notify-inspection": "whatsapp/notify-inspection.js",
+};
+
+function readApiRoute(req: any): string {
+  const pathname = new URL(req.url ?? "/", "http://localhost").pathname;
+  return pathname.replace(/^\/api\/+/, "").replace(/^\/+/, "").replace(/\/+$/, "") || "chat";
+}
+
+// Serve the same handlers locally that Vercel serves through api/[[...path]].js.
+// This keeps support presence, registration, and email tests from becoming
+// misleading local 404s while preserving the bot's separate port.
+function localApiMiddleware() {
+  return {
+    name: "local-api-middleware",
+    async configureServer(server: any) {
+      server.middlewares.use("/api", async (req: any, res: any, next: any) => {
+        const route = readApiRoute(req);
+        if (route === "chat") return next();
+
+        const file = apiHandlerFiles[route];
+        if (!file) return next();
+
+        try {
+          const modulePath = path.resolve(import.meta.dirname, "../../server/api-handlers", file);
+          const mod = await import(pathToFileURL(modulePath).href);
+          const handler = mod.default ?? mod.handler ?? mod;
+          if (typeof handler !== "function") {
+            res.statusCode = 500;
+            res.end(JSON.stringify({ error: "No handler exported" }));
+            return;
+          }
+          await handler(req, res);
+        } catch (error) {
+          console.error(`[local-api] ${route} failed:`, error);
+          if (!res.headersSent) {
+            res.statusCode = 500;
+            res.setHeader("Content-Type", "application/json");
+            res.end(JSON.stringify({ error: String(error) }));
+          }
+        }
+      });
+    },
+  };
+}
 
 // Direct middleware proxy for /api/chat → localhost:3001
 // Avoids http-proxy library quirks that break under Replit's TLS reverse-proxy
@@ -54,6 +113,7 @@ export default defineConfig(async ({ isSsrBuild }) => ({
   plugins: [
     react(),
     tailwindcss(),
+    localApiMiddleware(),
     chatApiMiddleware(),
     ...(!isSsrBuild && process.env.NODE_ENV !== "production"
       ? [

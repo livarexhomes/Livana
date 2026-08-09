@@ -3,7 +3,7 @@ import { X, Send, MessageSquare, Paperclip, ChevronDown, Check, ArrowRight, Load
 import { useLocation, redirect } from '../lib/navigation'
 import { createClient, isSupabaseConfigured } from '../lib/supabase'
 import { getPlatformSettings, getNotificationSettings, phoneToWaLink } from '../lib/platform-settings'
-import { subscribeSupportPresence, type LiveSupportState } from '../lib/live-support'
+import { fetchSupportPresence, subscribeSupportPresence, type LiveSupportState, type SupportAgent } from '../lib/live-support'
 import { assignChatToAgent } from '../lib/support-assignment'
 import {
   getSupportHours, isSupportOpen,
@@ -200,9 +200,13 @@ export default function ChatWidget() {
   const [liveState, setLiveState] = useState<LiveSupportState>({
     status: 'offline', online: false, onlineAgents: [], awayAgents: [], offlineAgents: [], agents: [], availableCount: 0, agentCount: 0,
   })
+  const [presenceReady, setPresenceReady] = useState(false)
 
   useEffect(() => {
-    const unsub = subscribeSupportPresence(setLiveState, (err) => {
+    const unsub = subscribeSupportPresence((state) => {
+      setLiveState(state)
+      setPresenceReady(true)
+    }, (err) => {
       // If the deployed agents table is missing the presence column, log a
       // clear signal instead of silently showing "no agents available".
       const status = (err ?? {}) as { schemaMissingPresence?: boolean }
@@ -246,16 +250,15 @@ export default function ChatWidget() {
     }
   }, [open, view, inquiryId])
 
-  // ── Anonymous sign-in + restore any active agent thread ─────────────────────
+  // ── Restore an authenticated visitor's active agent thread ─────────────────
   useEffect(() => {
     if (!isSupabaseConfigured()) return
     const supabase = createClient()
     supabase.auth.getSession().then(async ({ data: { session } }) => {
-      if (!session) {
-        // Quietly sign the visitor in anonymously; if the Supabase project
-        // doesn't allow anonymous sign-ins, fall back to one-shot behavior.
-        await supabase.auth.signInAnonymously().catch(() => {})
-      }
+      // Anonymous auth is intentionally optional. Some Supabase projects
+      // disable the provider, so guests use the one-shot flow without making
+      // a rejected signInAnonymously request or attempting a protected query.
+      if (!session) return
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
       // Reconnect the visitor to their most recent open thread (if any)
@@ -390,7 +393,18 @@ export default function ChatWidget() {
         setView({ name: 'offline', stage: 'closed' })
         return
       }
-      if (!agentAvailable) {
+
+      // The subscription starts with an empty state while the first roster
+      // request is in flight. Refresh once here as well so a visitor who
+      // clicks immediately after opening the widget does not get a false
+      // "no agent available" result.
+      let currentState = liveState
+      if (!presenceReady) {
+        currentState = await fetchSupportPresence()
+        setLiveState(currentState)
+        setPresenceReady(true)
+      }
+      if (currentState.availableCount === 0) {
         setView({ name: 'offline', stage: 'noagent' })
         return
       }
@@ -401,14 +415,29 @@ export default function ChatWidget() {
         : (user?.email?.split('@')[0] ?? 'Guest')
       setAgentName(name)
       setAgentEmail(user?.email ?? '')
-      connectLiveThread({ name, email: user?.email ?? '', firstMessage: '' })
+      connectLiveThread({
+        name,
+        email: user?.email ?? '',
+        firstMessage: '',
+        agents: currentState.agents,
+      })
     }
     run()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [inquiryId, supportOpen, agentAvailable])
+  }, [inquiryId, supportOpen, agentAvailable, liveState, presenceReady])
 
   /** Create (or resume) a live chat thread and enter it immediately. */
-  async function connectLiveThread({ name, email, firstMessage }: { name: string; email: string; firstMessage: string }) {
+  async function connectLiveThread({
+    name,
+    email,
+    firstMessage,
+    agents,
+  }: {
+    name: string
+    email: string
+    firstMessage: string
+    agents?: SupportAgent[]
+  }) {
     if (!name || !isSupabaseConfigured()) return
     const supabase = createClient()
     const { data: { user } } = await supabase.auth.getUser().catch(() => ({ data: { user: null } }))
@@ -416,7 +445,7 @@ export default function ChatWidget() {
 
     // Auto-assign the least-loaded available agent (presence 'online' AND
     // availability on), else queue. Only roster agents can be assigned.
-    const assignment = assignChatToAgent(liveState.agents.filter(a => a.presence === 'online' && a.available))
+    const assignment = assignChatToAgent((agents ?? liveState.agents).filter(a => a.presence === 'online' && a.available))
 
     const { data: inserted, error } = await supabase.from('chat_inquiries').insert({
       name,

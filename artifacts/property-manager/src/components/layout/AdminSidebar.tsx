@@ -50,10 +50,23 @@ export default function AdminSidebar({ userEmail, userName }: Props) {
   useEffect(() => {
     // The bottom-left admin status reads the SAME single source as the Support
     // page and the customer chatbot: the agents roster (presence + availability).
-    return subscribeSupportPresence((state) => {
-      const my = state.agents.find(a => a.user_id === window.__livarexUserId)
-      if (my) setSupportStatus(my.presence)
-    })
+    let disposed = false
+    let unsubscribe: (() => void) | null = null
+    const start = async () => {
+      const supabase = createClient()
+      const { data: { user } } = await supabase.auth.getUser().catch(() => ({ data: { user: null } }))
+      if (disposed) return
+      if (user?.id) window.__livarexUserId = user.id
+      unsubscribe = subscribeSupportPresence((state) => {
+        const my = state.agents.find(a => a.user_id === window.__livarexUserId)
+        if (my) setSupportStatus(my.presence)
+      })
+    }
+    start()
+    return () => {
+      disposed = true
+      unsubscribe?.()
+    }
   }, [])
 
   useEffect(() => {

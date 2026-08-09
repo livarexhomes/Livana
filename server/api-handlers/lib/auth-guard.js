@@ -16,7 +16,7 @@ function getEnv(key) {
  * Returns the verified user on success, or null on failure.
  */
 export async function requireAdmin(req) {
-  const SUPABASE_URL = getEnv('SUPABASE_URL') || ''
+  const SUPABASE_URL = getEnv('SUPABASE_URL') || getEnv('VITE_SUPABASE_URL') || ''
   const SUPABASE_SERVICE_KEY = getEnv('SUPABASE_SERVICE_KEY') || getEnv('SUPABASE_SERVICE_ROLE_KEY') || ''
 
   // The caller's own access token — this is what identifies THEM, not us.

@@ -18,7 +18,7 @@
 // because the chat widget (anonymous visitor) and the admin UI both need the
 // aggregate; the view-level RLS + security_invoker keeps row access safe.
 export default async function handler(req, res) {
-  const SUPABASE_URL = process.env.SUPABASE_URL || ''
+  const SUPABASE_URL = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || ''
   const SUPABASE_SERVICE_KEY =
     process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY || ''
 
@@ -84,14 +84,43 @@ export default async function handler(req, res) {
       ),
     ])
 
-    const agents = rosterRes.ok ? (await rosterRes.json().catch(() => [])) : []
+    let agents = rosterRes.ok ? (await rosterRes.json().catch(() => [])) : []
     const availableRows = countRes.ok ? (await countRes.json().catch(() => [])) : []
     const allRows = statsRes.ok ? (await statsRes.json().catch(() => [])) : []
 
-    const onlineCount = Array.isArray(availableRows) ? availableRows.length : 0
+    /*
+     * Migration 008 adds presence/available and available_agents. Keep the
+     * endpoint compatible with projects that have the older agents table:
+     * admin-presence still writes last_seen_at there, so a fresh heartbeat is
+     * enough to identify an available agent until the migration is applied.
+     */
+    const hasPresenceSchema = rosterRes.ok && statsRes.ok && countRes.ok
+    if (!hasPresenceSchema) {
+      const legacyRes = await fetch(
+        `${SUPABASE_URL}/rest/v1/agents?select=id,user_id,name,email,role,active,last_seen_at&order=created_at.asc`,
+        { headers },
+      )
+      if (legacyRes.ok) {
+        const legacyRows = await legacyRes.json().catch(() => [])
+        const now = Date.now()
+        agents = Array.isArray(legacyRows)
+          ? legacyRows.map((row) => {
+              const seen = row?.last_seen_at ? Date.parse(row.last_seen_at) : NaN
+              const age = Number.isFinite(seen) ? now - seen : Infinity
+              const presence = age < 90_000 ? 'online' : age < 900_000 ? 'away' : 'offline'
+              return { ...row, presence, available: presence === 'online' }
+            })
+          : []
+      }
+    }
+
+    const onlineCount = hasPresenceSchema
+      ? (Array.isArray(availableRows) ? availableRows.length : 0)
+      : (Array.isArray(agents) ? agents.filter((agent) => agent.active !== false && agent.presence === 'online' && agent.available).length : 0)
 
     const stats = { total: 0, online: 0, away: 0, offline: 0, available: 0, active: 0 }
-    for (const row of Array.isArray(allRows) ? allRows : []) {
+    const statsRows = hasPresenceSchema ? allRows : agents
+    for (const row of Array.isArray(statsRows) ? statsRows : []) {
       stats.total += 1
       if (row?.active) stats.active += 1
       if (row?.available) stats.available += 1
@@ -100,12 +129,32 @@ export default async function handler(req, res) {
       else stats.offline += 1
     }
 
+    const publicAgents = Array.isArray(agents)
+      ? agents
+        .filter((agent) => agent?.active !== false && agent?.presence === 'online' && agent?.available === true)
+        .map((agent) => ({
+          id: agent.id,
+          user_id: agent.user_id,
+          name: agent.name,
+          email: agent.email,
+          role: agent.role,
+          active: true,
+          presence: 'online',
+          available: true,
+          availability_note: agent.availability_note ?? null,
+          last_seen_at: agent.last_seen_at ?? null,
+        }))
+      : []
+
     return sendJson(200, {
       success: true,
       authed: isAuthed,
       onlineCount,
       stats,
-      agents: isAuthed ? agents : [], // full roster only for logged-in users
+      // Anonymous visitors receive only currently available agents. Their
+      // roster IDs are required to assign a new chat, but inactive/offline
+      // agents and private roster details are never exposed.
+      agents: isAuthed ? agents : publicAgents,
       sweptAt: new Date().toISOString(),
     })
   } catch (err) {
