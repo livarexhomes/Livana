@@ -798,6 +798,8 @@ export default function ChatWidget() {
           .cw-composer { padding-bottom:calc(10px + env(safe-area-inset-bottom,0px))!important; }
           .cw-launcher { right:12px; bottom:calc(80px + env(safe-area-inset-bottom,0px)); }
           .cw-toggle   { right:calc(14px + env(safe-area-inset-right,0px)); bottom:calc(14px + env(safe-area-inset-bottom,0px)); }
+          /* Panel is open on mobile — header ChevronDown handles closing; hide the floating toggle so it doesn't block the composer */
+          .cw-toggle.open { display:none; }
         }
         /* Very small Android phones (320–380px) */
         @media(max-width:380px) {
