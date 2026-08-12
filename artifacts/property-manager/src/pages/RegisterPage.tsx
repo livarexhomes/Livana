@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { Link, useLocation } from '@/lib/navigation'
 import { Eye, EyeOff, CheckCircle2, Mail } from 'lucide-react'
 import { createClient, isSupabaseConfigured } from '../lib/supabase'
+import SEO from '../components/SEO'
 
 export default function RegisterPage() {
   const [, navigate] = useLocation()
@@ -201,6 +202,12 @@ export default function RegisterPage() {
 
   return (
     <div className="min-h-screen flex bg-white">
+      <SEO
+        title="Create a Free Account — Find Verified Homes in Nigeria"
+        description="Sign up to Livarex and start browsing verified homes, apartments and commercial properties for rent and lease across Nigeria. No agent fees."
+        url="/register"
+        noIndex={true}
+      />
       {/* ── Left: Form ── */}
       <div className="flex-1 flex flex-col justify-center px-6 sm:px-12 lg:px-16 py-12">
         <div className="max-w-md w-full mx-auto">

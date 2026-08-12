@@ -2,6 +2,7 @@ import { Link } from '@/lib/navigation'
 import { ArrowRight, CheckCircle, Shield, Users, Zap, Eye, TrendingUp, Building2, Heart, Globe, MapPin } from 'lucide-react'
 import PublicNavbar from '@/components/layout/PublicNavbar'
 import Footer from '@/components/layout/Footer'
+import SEO from '@/components/SEO'
 
 const stats = [
   { value: 'Lagos',  label: 'State Coverage', sub: '& Ogun — expanding soon' },
@@ -27,6 +28,11 @@ const team = [
 export default function AboutPage() {
   return (
     <div className="min-h-screen flex flex-col bg-white">
+      <SEO
+        title="About Livarex — Nigeria's Verified Property Marketplace"
+        description="Learn how Livarex is eliminating fake listings and agent scams in Nigeria. Meet the team building a safer, more transparent property marketplace."
+        url="/about"
+      />
       <PublicNavbar />
 
       {/* ── HERO ── */}

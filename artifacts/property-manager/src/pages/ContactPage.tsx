@@ -3,6 +3,7 @@ import { Link } from '@/lib/navigation'
 import { Mail, Phone, MapPin, MessageCircle, Globe, ArrowRight, CheckCircle, Clock, ChevronDown, Instagram, Twitter, Send } from 'lucide-react'
 import PublicNavbar from '@/components/layout/PublicNavbar'
 import Footer from '@/components/layout/Footer'
+import SEO from '@/components/SEO'
 import { createClient, isSupabaseConfigured } from '@/lib/supabase'
 import { getPlatformSettings, getNotificationSettings, phoneToWaLink, phoneToTelLink, type PlatformSettings } from '@/lib/platform-settings'
 
@@ -77,6 +78,11 @@ export default function ContactPage() {
 
   return (
     <div className="min-h-screen flex flex-col bg-white">
+      <SEO
+        title="Contact Livarex — Get Help with Your Property Search"
+        description="Reach the Livarex team by email, WhatsApp or phone. We're available 8 AM–6 PM WAT and reply within 1–2 business days."
+        url="/contact"
+      />
       <PublicNavbar />
 
       {/* ── HERO ── */}

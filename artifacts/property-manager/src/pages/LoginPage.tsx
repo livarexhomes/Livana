@@ -5,6 +5,7 @@ import { Eye, EyeOff, ShieldCheck, Building2, Users, Mail } from 'lucide-react'
 import { createClient, isSupabaseConfigured } from '../lib/supabase'
 import { isAdminUser } from '../lib/auth'
 import type { User } from '@supabase/supabase-js'
+import SEO from '../components/SEO'
 
 export default function LoginPage() {
   const [, navigate] = useLocation()
@@ -63,6 +64,12 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen flex bg-white">
+      <SEO
+        title="Sign In to Livarex — Your Verified Property Account"
+        description="Sign in to your Livarex account to browse verified properties, save listings, and book inspections across Nigeria."
+        url="/login"
+        noIndex={true}
+      />
       {/* ── Left: Form ── */}
       <div className="flex-1 flex flex-col justify-center px-6 sm:px-12 lg:px-16 py-12">
         <div className="max-w-md w-full mx-auto">
