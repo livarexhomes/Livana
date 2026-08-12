@@ -1273,12 +1273,10 @@ export default function AdminSettings() {
                     />
                     <ToggleRow
                       label="Login Notifications"
-                      desc="Email alert on every new admin login"
+                      desc="Email alert on every new admin login (sent to your notification email)"
                       enabled={security.loginNotifications}
                       onChange={() => setSecurity(s => ({ ...s, loginNotifications: !s.loginNotifications }))}
                       icon={BellRing}
-                      tag="soon"
-                      disabled
                     />
                     <ToggleRow
                       label="IP Allowlist"
@@ -1292,36 +1290,44 @@ export default function AdminSettings() {
                   </div>
 
                   {/* Session Timeout */}
-                  <div className="mt-4 bg-white border border-gray-200 rounded-xl p-5 opacity-70">
+                  <div className="mt-4 bg-white border border-gray-200 rounded-xl p-5">
                     <div className="flex items-center gap-2.5 mb-4">
-                      <div className="w-7 h-7 rounded-lg bg-gray-100 flex items-center justify-center">
-                        <Timer className="w-3.5 h-3.5 text-gray-400" strokeWidth={1.8} />
+                      <div className="w-7 h-7 rounded-lg bg-blue-50 flex items-center justify-center">
+                        <Timer className="w-3.5 h-3.5 text-blue-600" strokeWidth={1.8} />
                       </div>
                       <div>
                         <p className="text-sm font-semibold text-gray-900">Session Timeout</p>
-                        <p className="text-xs text-gray-400">Minutes of inactivity before auto-logout</p>
+                        <p className="text-xs text-gray-400">
+                          Auto-logout after inactivity. Set to 0 to disable.
+                        </p>
                       </div>
-                      <span className="ml-auto text-[9px] font-bold tracking-widest uppercase px-1.5 py-0.5 rounded bg-blue-100 text-blue-700">Soon</span>
+                      <span className={`ml-auto text-[10px] font-bold px-2 py-0.5 rounded-full uppercase ${security.sessionTimeout > 0 ? 'bg-green-50 text-green-700' : 'bg-gray-100 text-gray-400'}`}>
+                        {security.sessionTimeout > 0 ? `${security.sessionTimeout} min` : 'Off'}
+                      </span>
                     </div>
                     <div className="flex items-center gap-4">
                       <input
-                        type="range" min={5} max={120} step={5}
+                        type="range" min={0} max={120} step={5}
                         value={security.sessionTimeout}
-                        disabled
                         onChange={e => setSecurity(s => ({ ...s, sessionTimeout: Number(e.target.value) }))}
                         style={{ accentColor: '#2563eb' }}
-                        className="flex-1 h-1.5 rounded-full"
+                        className="flex-1 h-1.5 rounded-full cursor-pointer"
                       />
                       <div className="flex items-center gap-2">
                         <input
-                          type="number" min={5} max={120} disabled
+                          type="number" min={0} max={120}
                           value={security.sessionTimeout}
-                          onChange={e => setSecurity(s => ({ ...s, sessionTimeout: Number(e.target.value) }))}
+                          onChange={e => setSecurity(s => ({ ...s, sessionTimeout: Math.min(120, Math.max(0, Number(e.target.value))) }))}
                           className="w-14 border border-gray-200 rounded-lg px-2 py-1.5 text-sm font-mono font-bold text-gray-900 text-center focus:outline-none focus:ring-2 focus:ring-blue-500/40 bg-white"
                         />
                         <span className="text-xs text-gray-400">min</span>
                       </div>
                     </div>
+                    {security.sessionTimeout > 0 && (
+                      <p className="mt-2 text-[11px] text-blue-600">
+                        Admin sessions will auto-logout after {security.sessionTimeout} minutes of inactivity.
+                      </p>
+                    )}
                   </div>
 
                   {/* ── Admin PIN setup ── */}
@@ -1381,15 +1387,15 @@ export default function AdminSettings() {
                   </div>
 
                   <Divider />
-                  {/* Coming soon notice */}
-                  <div className="flex items-start gap-4 p-5 rounded-xl bg-blue-50/60 border border-blue-100">
-                    <div className="w-9 h-9 rounded-xl bg-blue-100 flex items-center justify-center shrink-0">
-                      <Lock className="w-4 h-4 text-blue-600" />
+                  {/* Coming soon notice — only for remaining unbuilt features */}
+                  <div className="flex items-start gap-4 p-5 rounded-xl bg-slate-50 border border-slate-200">
+                    <div className="w-9 h-9 rounded-xl bg-slate-100 flex items-center justify-center shrink-0">
+                      <Lock className="w-4 h-4 text-slate-400" />
                     </div>
                     <div>
-                      <p className="text-sm font-semibold text-gray-900">Advanced security controls are on the roadmap</p>
+                      <p className="text-sm font-semibold text-gray-900">More controls coming soon</p>
                       <p className="text-xs text-gray-500 mt-1 leading-relaxed">
-                        Two-factor authentication, login notifications, IP allowlisting, and session timeouts are planned.
+                        Two-factor authentication and IP allowlisting are planned for a future update.
                         Your account is currently protected by Supabase's built-in authentication.
                       </p>
                     </div>
