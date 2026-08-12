@@ -23,7 +23,8 @@ const SECTIONS = [
   { id: 'platform',      label: 'Platform',       icon: Building2  },
   { id: 'notifications', label: 'Notifications',   icon: Bell       },
   { id: 'email',         label: 'Email (Resend)',  icon: Mail       },
-  { id: 'security',      label: 'Security',         icon: Shield     },
+  { id: 'security',      label: 'Security & PIN',  icon: Shield     },
+  { id: 'history',       label: 'Audit History',   icon: FileText   },
   { id: 'agents',        label: 'Agents',           icon: Users      },
   { id: 'support_hours', label: 'Support Hours',    icon: Clock      },
   { id: 'listing',       label: 'Listing Rules',    icon: Globe      },
@@ -459,7 +460,7 @@ function AgentSettingsSection({ currentUserId }: { currentUserId?: string }) {
 // ── Main Component ───────────────────────────────────────────────────────────
 
 // Sections that only the true admin can access
-const ADMIN_ONLY_SECTIONS = new Set(['email', 'security', 'agents'])
+const ADMIN_ONLY_SECTIONS = new Set(['email', 'security', 'history', 'agents'])
 
 async function hashPin(pin: string): Promise<string> {
   const data = new TextEncoder().encode(`livarex-admin-pin:${pin}`)
@@ -771,6 +772,80 @@ export default function AdminSettings() {
   const visibleSections = isAgent ? SECTIONS.filter(s => !ADMIN_ONLY_SECTIONS.has(s.id)) : SECTIONS
 
   const displayName = user?.email ? user.email.split('@')[0] : 'Admin'
+
+  // ── Audit history state ──────────────────────────────────────────────────────
+  const [historyTab, setHistoryTab]       = useState<'kyc' | 'listings' | 'settings'>('kyc')
+  const [kycHistory, setKycHistory]       = useState<any[]>([])
+  const [listingHistory, setListingHistory] = useState<any[]>([])
+  const [settingsHistory, setSettingsHistory] = useState<any[]>([])
+  const [historyLoading, setHistoryLoading] = useState(false)
+
+  const loadHistory = useCallback(async () => {
+    setHistoryLoading(true)
+    const supabase = createClient()
+    const [kycRes, listingRes, settingsRes] = await Promise.all([
+      supabase.from('landlords')
+        .select('id, full_name, status, created_at, updated_at, kyc_submitted_at, whatsapp')
+        .not('status', 'eq', 'not_submitted')
+        .order('updated_at', { ascending: false })
+        .limit(50),
+      supabase.from('properties')
+        .select('id, title, city, status, type, price, created_at, updated_at, landlords(full_name)')
+        .not('status', 'eq', 'pending_review')
+        .order('updated_at', { ascending: false })
+        .limit(50),
+      supabase.from('admin_settings')
+        .select('key, value, updated_at, updated_by')
+        .order('updated_at', { ascending: false })
+        .limit(30),
+    ])
+    setKycHistory(kycRes.data ?? [])
+    setListingHistory(listingRes.data ?? [])
+    setSettingsHistory(settingsRes.data ?? [])
+    setHistoryLoading(false)
+  }, [])
+
+  useEffect(() => {
+    if (active === 'history') loadHistory()
+  }, [active, loadHistory])
+
+  function downloadHistoryCsv() {
+    const KYC_STATUS: Record<string, string> = {
+      approved: 'Approved', rejected: 'Rejected', pending: 'Pending',
+      suspended: 'Suspended', not_submitted: 'Not Submitted',
+    }
+    const rows: [string, string][] = [
+      ['Livarex Audit History Export', ''],
+      ['Generated', new Date().toLocaleString('en-GB')],
+      ['', ''],
+      ['=== KYC Decisions ===', ''],
+      ['Landlord', 'Status', 'WhatsApp', 'Submitted', 'Last Updated'],
+      ...kycHistory.map(l => [
+        l.full_name, KYC_STATUS[l.status] ?? l.status, l.whatsapp ?? '',
+        l.kyc_submitted_at ? new Date(l.kyc_submitted_at).toLocaleString('en-GB') : '',
+        l.updated_at ? new Date(l.updated_at).toLocaleString('en-GB') : '',
+      ] as [string, string]),
+      ['', ''],
+      ['=== Listing Approvals ===', ''],
+      ['Title', 'Landlord', 'City', 'Type', 'Status', 'Created', 'Last Updated'],
+      ...listingHistory.map(p => [
+        p.title, (p as any).landlords?.full_name ?? '', p.city ?? '',
+        p.type, p.status,
+        new Date(p.created_at).toLocaleString('en-GB'),
+        new Date(p.updated_at).toLocaleString('en-GB'),
+      ] as [string, string]),
+      ['', ''],
+      ['=== Settings Changes ===', ''],
+      ['Setting Key', 'Last Updated'],
+      ...settingsHistory.map(s => [s.key, s.updated_at ? new Date(s.updated_at).toLocaleString('en-GB') : ''] as [string, string]),
+    ]
+    const csv = '\uFEFF' + rows.map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(',')).join('\r\n')
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url; a.download = `livarex-audit-${new Date().toISOString().slice(0, 10)}.csv`
+    document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url)
+  }
 
   // ── Weekly report download (CSV, Excel-compatible) ─────────────────────────
   const [reportLoading, setReportLoading] = useState(false)
@@ -1406,6 +1481,185 @@ export default function AdminSettings() {
                       <p className="text-xs text-gray-500 mt-1 leading-relaxed">
                         Two-factor authentication and IP allowlisting are planned for a future update.
                         Your account is currently protected by Supabase's built-in authentication.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* ─── AUDIT HISTORY ─── */}
+              {active === 'history' && (
+                <div>
+                  <SectionTitle
+                    title="Audit History"
+                    sub="A record of KYC decisions, listing approvals, and settings changes for accountability and compliance."
+                    action={
+                      <button onClick={downloadHistoryCsv} disabled={historyLoading}
+                        className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold transition-colors disabled:opacity-50">
+                        <FileDown className="w-3.5 h-3.5" /> Export CSV
+                      </button>
+                    }
+                  />
+
+                  {/* Category tabs */}
+                  <div className="inline-flex items-center gap-1 p-1 rounded-xl bg-gray-100 mb-5">
+                    {([
+                      { id: 'kyc',      label: 'KYC Decisions',     count: kycHistory.length      },
+                      { id: 'listings', label: 'Listing Approvals',  count: listingHistory.length  },
+                      { id: 'settings', label: 'Settings Changes',   count: settingsHistory.length },
+                    ] as const).map(t => (
+                      <button key={t.id} type="button" onClick={() => setHistoryTab(t.id)}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 ${
+                          historyTab === t.id ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'
+                        }`}>
+                        {t.label}
+                        <span className={`inline-flex h-4 min-w-[16px] items-center justify-center rounded-full text-[10px] font-bold ${
+                          historyTab === t.id ? 'bg-gray-900 text-white' : 'bg-gray-300 text-gray-600'
+                        }`}>{t.count}</span>
+                      </button>
+                    ))}
+                  </div>
+
+                  {historyLoading ? (
+                    <div className="flex items-center justify-center py-16 gap-2 text-gray-400">
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                      <span className="text-sm">Loading audit records…</span>
+                    </div>
+                  ) : historyTab === 'kyc' ? (
+                    <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+                      <div className="px-5 py-3 border-b border-gray-100 flex items-center justify-between">
+                        <p className="text-sm font-semibold text-gray-900">KYC Decisions</p>
+                        <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400">{kycHistory.length} records</span>
+                      </div>
+                      {kycHistory.length === 0 ? (
+                        <div className="px-5 py-12 text-center">
+                          <ShieldCheck className="w-8 h-8 text-gray-200 mx-auto mb-2" />
+                          <p className="text-sm text-gray-400">No KYC decisions recorded yet.</p>
+                        </div>
+                      ) : (
+                        <div className="divide-y divide-gray-50">
+                          {kycHistory.map(l => {
+                            const STATUS_STYLES: Record<string, string> = {
+                              approved:  'bg-emerald-50 text-emerald-700 border-emerald-100',
+                              rejected:  'bg-red-50 text-red-600 border-red-100',
+                              pending:   'bg-amber-50 text-amber-700 border-amber-100',
+                              suspended: 'bg-orange-50 text-orange-700 border-orange-100',
+                            }
+                            const DOTS: Record<string, string> = {
+                              approved: 'bg-emerald-500', rejected: 'bg-red-500',
+                              pending: 'bg-amber-500', suspended: 'bg-orange-500',
+                            }
+                            const cls = STATUS_STYLES[l.status] ?? 'bg-gray-50 text-gray-500 border-gray-100'
+                            const dot = DOTS[l.status] ?? 'bg-gray-400'
+                            return (
+                              <div key={l.id} className="flex items-center gap-3 px-5 py-3 flex-wrap">
+                                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shrink-0">
+                                  <span className="text-[10px] font-bold text-white">
+                                    {l.full_name.split(' ').slice(0,2).map((w:string)=>w[0]).join('').toUpperCase()}
+                                  </span>
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-sm font-semibold text-gray-900 truncate">{l.full_name}</p>
+                                  <p className="text-[11px] text-gray-400 truncate">{l.whatsapp ?? '—'} · Submitted {l.kyc_submitted_at ? new Date(l.kyc_submitted_at).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}) : '—'}</p>
+                                </div>
+                                <span className={`inline-flex items-center gap-1 text-[10px] font-bold px-2.5 py-1 rounded-full border ${cls}`}>
+                                  <span className={`w-1.5 h-1.5 rounded-full ${dot}`} />
+                                  {l.status.charAt(0).toUpperCase()+l.status.slice(1)}
+                                </span>
+                                <span className="text-[11px] text-gray-400 whitespace-nowrap shrink-0">
+                                  {l.updated_at ? new Date(l.updated_at).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}) : '—'}
+                                </span>
+                              </div>
+                            )
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  ) : historyTab === 'listings' ? (
+                    <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+                      <div className="px-5 py-3 border-b border-gray-100 flex items-center justify-between">
+                        <p className="text-sm font-semibold text-gray-900">Listing Approvals</p>
+                        <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400">{listingHistory.length} records</span>
+                      </div>
+                      {listingHistory.length === 0 ? (
+                        <div className="px-5 py-12 text-center">
+                          <Building2 className="w-8 h-8 text-gray-200 mx-auto mb-2" />
+                          <p className="text-sm text-gray-400">No listing approvals recorded yet.</p>
+                        </div>
+                      ) : (
+                        <div className="divide-y divide-gray-50">
+                          {listingHistory.map(p => {
+                            const PROP_STATUS: Record<string,{label:string;cls:string}> = {
+                              available: { label:'Available', cls:'bg-emerald-50 text-emerald-700 border-emerald-100' },
+                              taken:     { label:'Taken',     cls:'bg-red-50 text-red-600 border-red-100'            },
+                              coming_soon:       { label:'Coming Soon',  cls:'bg-blue-50 text-blue-700 border-blue-100'        },
+                              under_negotiation: { label:'Negotiating',  cls:'bg-amber-50 text-amber-700 border-amber-100'     },
+                              pending_review:    { label:'Pending',      cls:'bg-violet-50 text-violet-700 border-violet-100'  },
+                            }
+                            const sm = PROP_STATUS[p.status] ?? { label: p.status, cls: 'bg-gray-50 text-gray-500 border-gray-100' }
+                            return (
+                              <div key={p.id} className="flex items-center gap-3 px-5 py-3 flex-wrap">
+                                <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center shrink-0">
+                                  <Building2 className="w-4 h-4 text-blue-500" />
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-sm font-semibold text-gray-900 truncate">{p.title}</p>
+                                  <p className="text-[11px] text-gray-400 truncate">
+                                    {(p as any).landlords?.full_name ?? 'Unknown'} · {p.city ?? '—'} · {p.type === 'rent' ? 'For Rent' : 'For Sale'}
+                                  </p>
+                                </div>
+                                <span className={`inline-flex items-center text-[10px] font-bold px-2.5 py-1 rounded-full border ${sm.cls}`}>
+                                  {sm.label}
+                                </span>
+                                <span className="text-[11px] text-gray-400 whitespace-nowrap shrink-0">
+                                  {new Date(p.updated_at).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})}
+                                </span>
+                              </div>
+                            )
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+                      <div className="px-5 py-3 border-b border-gray-100 flex items-center justify-between">
+                        <p className="text-sm font-semibold text-gray-900">Settings Changes</p>
+                        <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400">{settingsHistory.length} records</span>
+                      </div>
+                      {settingsHistory.length === 0 ? (
+                        <div className="px-5 py-12 text-center">
+                          <Shield className="w-8 h-8 text-gray-200 mx-auto mb-2" />
+                          <p className="text-sm text-gray-400">No settings changes recorded yet.</p>
+                        </div>
+                      ) : (
+                        <div className="divide-y divide-gray-50">
+                          {settingsHistory.map(s => (
+                            <div key={s.key} className="flex items-center gap-3 px-5 py-3 flex-wrap">
+                              <div className="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center shrink-0">
+                                <Shield className="w-4 h-4 text-slate-400" />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm font-semibold text-gray-900 capitalize">{s.key.replace(/_/g,' ')}</p>
+                                <p className="text-[11px] text-gray-400">Settings record updated</p>
+                              </div>
+                              <span className="text-[11px] text-gray-400 whitespace-nowrap">
+                                {s.updated_at ? new Date(s.updated_at).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}) : '—'}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  <div className="mt-6 flex items-start gap-4 p-4 rounded-xl bg-blue-50/50 border border-blue-100">
+                    <div className="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center shrink-0">
+                      <FileText className="w-4 h-4 text-blue-600" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold text-gray-900">About audit records</p>
+                      <p className="text-xs text-gray-500 mt-0.5 leading-relaxed">
+                        These records reflect the current state of each entity. For a full timestamped trail with per-field change history, export the CSV or use Supabase's built-in table history in your project dashboard.
                       </p>
                     </div>
                   </div>

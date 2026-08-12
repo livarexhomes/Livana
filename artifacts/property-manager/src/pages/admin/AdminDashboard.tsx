@@ -186,12 +186,12 @@ export default function AdminDashboard() {
             ) : (
               <>
                 {/* ── Hero overview card ─────────────────────────────────────── */}
-                <div className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-[0_18px_80px_-40px_rgba(15,23,42,0.18)]">
-                  <div className="flex flex-col gap-6 xl:flex-row xl:items-start xl:justify-between">
+                <div className="rounded-[32px] border border-slate-200 bg-white p-4 shadow-[0_18px_80px_-40px_rgba(15,23,42,0.18)]">
+                  <div className="flex flex-col gap-3 xl:flex-row xl:items-start xl:justify-between">
                     <div className="max-w-xl">
                       <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">Admin analytics</p>
-                      <h2 className="mt-3 text-3xl font-extrabold text-slate-950">Platform at a glance</h2>
-                      <p className="mt-3 text-sm leading-6 text-slate-500">
+                      <h2 className="mt-1.5 text-lg font-extrabold text-slate-950">Platform at a glance</h2>
+                      <p className="mt-1 text-xs leading-5 text-slate-500">
                         Monitor listings, landlords, KYC, and enquiries from one central dashboard.
                       </p>
                     </div>
@@ -225,7 +225,7 @@ export default function AdminDashboard() {
                   </div>
 
                   {/* ── Metrics grid ── */}
-                  <div className="mt-6 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+                  <div className="mt-3 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
                     {[
                       { label: 'Total Listings', value: stats.properties, accent: 'text-blue-700 bg-blue-500/10',    trend: '+8%',  up: true  },
                       { label: 'Active',         value: stats.active,      accent: 'text-emerald-700 bg-emerald-500/10', trend: '+5%',  up: true  },
@@ -234,9 +234,9 @@ export default function AdminDashboard() {
                       { label: 'Tenants',        value: stats.tenants,     accent: 'text-indigo-700 bg-indigo-500/10', trend: '+3%',  up: true  },
                       { label: 'Enquiries',      value: stats.enquiries,   accent: 'text-amber-700 bg-amber-500/10',  trend: '+21%', up: true  },
                     ].map(item => (
-                      <div key={item.label} className="rounded-3xl border border-slate-100 bg-slate-50 p-4">
-                        <p className={`text-3xl font-extrabold ${item.accent}`}>{item.value.toLocaleString()}</p>
-                        <p className="mt-2 text-xs font-semibold uppercase tracking-[0.25em] text-slate-500">{item.label}</p>
+                      <div key={item.label} className="rounded-3xl border border-slate-100 bg-slate-50 p-3">
+                        <p className={`text-xl font-extrabold ${item.accent}`}>{item.value.toLocaleString()}</p>
+                        <p className="mt-1 text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-500">{item.label}</p>
                         {item.badge && (
                           <span className="mt-2 inline-block text-[10px] font-bold text-amber-700 bg-amber-100 rounded-full px-2 py-0.5">
                             {item.badge}
@@ -253,23 +253,23 @@ export default function AdminDashboard() {
                   </div>
 
                   {/* ── KPI pills ── */}
-                  <div className="mt-6 grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  <div className="mt-3 grid grid-cols-2 sm:grid-cols-4 gap-2">
                     {[
                       { label: 'Occupancy rate', value: `${occupancyRate}%`,   sub: `${stats.occupied}/${stats.properties} taken` },
                       { label: 'Avg enquiries',  value: engagementRate,         sub: 'per listing'                                },
                       { label: 'Active rate',    value: stats.properties > 0 ? `${Math.round((stats.active / stats.properties) * 100)}%` : '0%', sub: 'of all listings live' },
                       { label: 'Pending KYC',    value: String(stats.pendingLandlords), sub: 'landlords awaiting review'          },
                     ].map(k => (
-                      <div key={k.label} className="rounded-3xl bg-slate-900 px-4 py-3.5 text-white">
-                        <p className="text-2xl font-extrabold tabular-nums">{k.value}</p>
-                        <p className="mt-1 text-[11px] font-semibold text-white">{k.label}</p>
-                        <p className="text-[10px] text-slate-400 mt-0.5">{k.sub}</p>
+                      <div key={k.label} className="rounded-3xl bg-slate-900 px-3 py-2.5 text-white">
+                        <p className="text-base font-extrabold tabular-nums">{k.value}</p>
+                        <p className="mt-0.5 text-[10px] font-semibold text-white">{k.label}</p>
+                        <p className="text-[10px] text-slate-400">{k.sub}</p>
                       </div>
                     ))}
                   </div>
 
                   {/* ── Quick action links ── */}
-                  <div className="mt-6 flex flex-wrap items-center gap-2">
+                  <div className="mt-3 flex flex-wrap items-center gap-2">
                     {QUICK_ACTIONS.map(a => {
                       const Icon = a.icon
                       return (
@@ -292,12 +292,12 @@ export default function AdminDashboard() {
                 {/* ── Charts row ─────────────────────────────────────────────── */}
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
                   {/* Area chart — Platform Growth */}
-                  <div className="lg:col-span-2 rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm">
-                    <div className="flex items-start justify-between mb-5">
+                  <div className="lg:col-span-2 rounded-[32px] border border-slate-200 bg-white p-4 shadow-sm">
+                    <div className="flex items-start justify-between mb-4">
                       <div>
                         <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">Year overview</p>
-                        <h3 className="mt-2 text-xl font-extrabold text-slate-950">Platform Growth</h3>
-                        <p className="mt-1 text-sm text-slate-500">Listings &amp; enquiries month by month</p>
+                        <h3 className="mt-1 text-sm font-extrabold text-slate-950">Platform Growth</h3>
+                        <p className="text-xs text-slate-500">Listings &amp; enquiries month by month</p>
                       </div>
                       <div className="flex items-center gap-4 shrink-0">
                         <div className="flex items-center gap-1.5">
@@ -338,10 +338,10 @@ export default function AdminDashboard() {
                   </div>
 
                   {/* Property Types donut */}
-                  <div className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm flex flex-col">
-                    <div className="mb-4">
+                  <div className="rounded-[32px] border border-slate-200 bg-white p-4 shadow-sm flex flex-col">
+                    <div className="mb-3">
                       <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">Breakdown</p>
-                      <h3 className="mt-2 text-xl font-extrabold text-slate-950">Property Types</h3>
+                      <h3 className="mt-1 text-sm font-extrabold text-slate-950">Property Types</h3>
                     </div>
                     <div className="flex items-center justify-center mb-5">
                       <div className="relative w-36 h-36">

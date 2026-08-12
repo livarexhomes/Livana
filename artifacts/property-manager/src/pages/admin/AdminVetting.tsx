@@ -234,57 +234,56 @@ export default function AdminVetting() {
           />
 
           {/* ── Hero header ── */}
-          <div className="shrink-0 px-4 md:px-6 py-4">
-            <div className="rounded-[32px] border border-slate-200 bg-white p-5 shadow-[0_18px_80px_-40px_rgba(15,23,42,0.18)]">
+          <div className="shrink-0 px-4 md:px-6 pt-3 pb-2">
+            <div className="rounded-[28px] border border-slate-200 bg-white px-4 py-3 shadow-[0_18px_80px_-40px_rgba(15,23,42,0.18)]">
 
-              <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+              <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
                 <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">Platform Vetting</p>
-                  <h2 className="mt-2 text-2xl font-extrabold text-slate-950">Vetting Hub</h2>
-                  <p className="mt-1 text-sm text-slate-500">Review identity checks and new listing submissions before they go live.</p>
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-slate-400">Platform Vetting</p>
+                  <h2 className="mt-0.5 text-base font-extrabold text-slate-950">Vetting Hub</h2>
                 </div>
 
                 {/* Stats */}
                 <div className="flex items-center gap-2 flex-wrap shrink-0">
                   {[
-                    { label: 'KYC Pending',       value: kycCounts.pending,      accent: 'text-amber-700',   bg: 'bg-amber-500/10'   },
-                    { label: 'KYC Approved',       value: kycCounts.approved,     accent: 'text-emerald-700', bg: 'bg-emerald-500/10' },
-                    { label: 'Listings Pending',   value: pendingListings.length, accent: 'text-violet-700',  bg: 'bg-violet-500/10'  },
-                    { label: 'Total Landlords',    value: kycCounts.all,          accent: 'text-blue-700',    bg: 'bg-blue-500/10'    },
+                    { label: 'KYC Pending',     value: kycCounts.pending,      accent: 'text-amber-700'   },
+                    { label: 'KYC Approved',    value: kycCounts.approved,     accent: 'text-emerald-700' },
+                    { label: 'Listing Pending', value: pendingListings.length, accent: 'text-violet-700'  },
+                    { label: 'Landlords',       value: kycCounts.all,          accent: 'text-blue-700'    },
                   ].map(s => (
-                    <div key={s.label} className="rounded-3xl border border-slate-100 bg-slate-50 px-4 py-3 text-center min-w-[80px]">
-                      <p className={`text-2xl font-extrabold ${s.accent} ${s.bg} rounded-full px-2`}>{s.value}</p>
-                      <p className="mt-1 text-[10px] font-semibold uppercase tracking-[0.25em] text-slate-500 whitespace-nowrap">{s.label}</p>
+                    <div key={s.label} className="rounded-2xl border border-slate-100 bg-slate-50 px-3 py-2 text-center min-w-[64px]">
+                      <p className={`text-lg font-extrabold ${s.accent}`}>{s.value}</p>
+                      <p className="text-[9px] font-semibold uppercase tracking-[0.22em] text-slate-500 whitespace-nowrap">{s.label}</p>
                     </div>
                   ))}
                 </div>
               </div>
 
               {/* ── Tab switcher ── */}
-              <div className="mt-5 flex items-center gap-2">
+              <div className="mt-2.5 flex items-center gap-2">
                 <button type="button" onClick={() => setActiveTab('identity')}
-                  className={`flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold transition ${
+                  className={`flex items-center gap-1.5 rounded-full px-4 py-1.5 text-xs font-semibold transition ${
                     activeTab === 'identity'
                       ? 'bg-slate-950 text-white shadow-lg shadow-slate-950/10'
                       : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                   }`}>
-                  <ShieldCheck className="w-4 h-4" />
+                  <ShieldCheck className="w-3.5 h-3.5" />
                   Identity Checks
-                  <span className={`inline-flex h-5 min-w-[20px] items-center justify-center rounded-full text-[11px] font-bold ${
+                  <span className={`inline-flex h-4 min-w-[16px] items-center justify-center rounded-full text-[10px] font-bold ${
                     activeTab === 'identity' ? 'bg-white/20 text-white' : 'bg-slate-900/10 text-slate-600'
                   }`}>{kycCounts.pending}</span>
                 </button>
 
                 <button type="button" onClick={() => setActiveTab('listings')}
-                  className={`flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold transition ${
+                  className={`flex items-center gap-1.5 rounded-full px-4 py-1.5 text-xs font-semibold transition ${
                     activeTab === 'listings'
                       ? 'bg-slate-950 text-white shadow-lg shadow-slate-950/10'
                       : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                   }`}>
-                  <Building2 className="w-4 h-4" />
+                  <Building2 className="w-3.5 h-3.5" />
                   Listing Approvals
                   {pendingListings.length > 0 && (
-                    <span className={`inline-flex h-5 min-w-[20px] items-center justify-center rounded-full text-[11px] font-bold ${
+                    <span className={`inline-flex h-4 min-w-[16px] items-center justify-center rounded-full text-[10px] font-bold ${
                       activeTab === 'listings' ? 'bg-white/20 text-white' : 'bg-violet-100 text-violet-700'
                     }`}>{pendingListings.length}</span>
                   )}
