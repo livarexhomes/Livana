@@ -870,7 +870,7 @@ export default function HomePageClient({ initialProperties }: { initialPropertie
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 auto-rows-[200px] sm:auto-rows-[160px] md:grid-rows-[280px_200px] gap-3 md:gap-4">
             {/* Lagos — large feature cell (2 cols × 2 rows) — ACTIVE */}
             <Link
-              href="/properties-in/lagos"
+              href="/listings?city=Lagos"
               className="relative group overflow-hidden rounded-3xl col-span-2 row-span-2 shadow-sm hover:shadow-2xl transition-all duration-500"
             >
               <img src="https://images.pexels.com/photos/36622013/pexels-photo-36622013.jpeg?auto=compress&cs=tinysrgb&w=1200" alt="Lagos" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
@@ -901,7 +901,7 @@ export default function HomePageClient({ initialProperties }: { initialPropertie
 
             {/* Ogun — ACTIVE */}
             <Link
-              href="/properties-in/ogun"
+              href="/listings?city=Ogun"
               className="relative group overflow-hidden rounded-3xl col-span-1 shadow-sm hover:shadow-2xl transition-all duration-500"
             >
               <img src="https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=800" alt="Ogun" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />

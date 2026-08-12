@@ -18,7 +18,6 @@ const TermsPage = lazy(() => import("@/pages/TermsPage"));
 const PrivacyPage = lazy(() => import("@/pages/PrivacyPage"));
 const CookiePolicyPage = lazy(() => import("@/pages/CookiePolicyPage"));
 const HowWeVerifyPage = lazy(() => import("@/pages/HowWeVerifyPage"));
-const LocationLandingPage = lazy(() => import("@/pages/LocationLandingPage"));
 
 const LandlordRegisterPage = lazy(() => import("@/pages/landlord/LandlordRegisterPage"));
 const LandlordDashboard = lazy(() => import("@/pages/landlord/LandlordDashboard"));
@@ -81,7 +80,12 @@ function Router() {
         <Route path="/listings/:id" component={PropertyDetailPage} />
         <Route path="/properties/lagos"><Redirect to="/listings?city=Lagos" /></Route>
         <Route path="/properties/ogun"><Redirect to="/listings?city=Ogun" /></Route>
-        <Route path="/properties-in/:slug" component={LocationLandingPage} />
+        <Route path="/properties-in/:slug">
+          {(params: { slug?: string }) => {
+            const city = (params?.slug ?? '').replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
+            return <Redirect to={`/listings?city=${encodeURIComponent(city)}`} />
+          }}
+        </Route>
         <Route path="/how-we-verify" component={HowWeVerifyPage} />
         <Route path="/login" component={LoginPage} />
         <Route path="/register" component={RegisterPage} />
