@@ -353,7 +353,7 @@ export default function AdminLandlords() {
     // 1. Reset landlord status and clear KYC submission timestamp
     const { error: statusErr } = await supabase
       .from('landlords')
-      .update({ status: 'not_submitted', is_verified: false, kyc_submitted_at: null, rejection_reason: null })
+      .update({ status: 'not_submitted', is_verified: false, kyc_submitted_at: null })
       .eq('id', resetTarget.landlordId)
     if (statusErr) {
       showToast(`Failed to reset: ${statusErr.message}`)
