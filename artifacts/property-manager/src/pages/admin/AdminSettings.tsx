@@ -543,19 +543,28 @@ export default function AdminSettings() {
       setUser({ email: user?.email, id: user?.id })
       if (user?.id) {
         window.__livarexUserId = user.id
-        // Detect if this user is a support agent (not the super-admin).
-        // Agents have a row in the agents table; the true admin does not
-        // (or has role='admin' which we treat as protected/non-removable).
-        const { data: agentRow } = await supabase
-          .from('agents')
-          .select('id, role')
-          .eq('user_id', user.id)
-          .maybeSingle()
-        // role='admin' in agents table = the admin themselves; role='agent'/'support' = actual agents
-        const agentRole = agentRow?.role
-        setIsAgent(!!agentRow && agentRole !== 'admin')
-        // If this is an agent, start them on the first permitted tab
-        if (!!agentRow && agentRole !== 'admin') setActive('platform')
+
+        // Super-admin check: if Supabase app_metadata says role='admin' this is
+        // the platform owner — skip the agents table entirely so they always see
+        // all tabs, even if they happen to have an agents row.
+        const meta = user.app_metadata ?? {}
+        const isSuperAdmin =
+          meta.role === 'admin' ||
+          (Array.isArray(meta.roles) && meta.roles.includes('admin'))
+
+        if (!isSuperAdmin) {
+          // Only look up the agents table for users who aren't the super-admin.
+          const { data: agentRow } = await supabase
+            .from('agents')
+            .select('id, role')
+            .eq('user_id', user.id)
+            .maybeSingle()
+          const agentRole = agentRow?.role
+          const isActualAgent = !!agentRow && agentRole !== 'admin'
+          setIsAgent(isActualAgent)
+          if (isActualAgent) setActive('platform')
+        }
+        // isSuperAdmin → isAgent stays false, all tabs remain visible
       }
     })
 
