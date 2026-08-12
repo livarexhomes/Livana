@@ -218,7 +218,7 @@ export default function HowWeVerifyPage() {
             </div>
             <div className="bg-white/5 border border-white/10 rounded-2xl p-7">
               <h3 className="text-xl font-extrabold text-white mb-2">List your property</h3>
-              <p className="text-gray-400 text-sm mb-5">List your property and reach serious, pre-screened tenants across Lagos & Ogun — free to list, no agent fees.</p>
+              <p className="text-gray-400 text-sm mb-5">List your property and reach serious, pre-screened tenants across Lagos & Ogun — Livarex handles all coordination and inspections.</p>
               <Link href="/landlord/register" className="inline-flex items-center gap-2 px-5 py-2.5 bg-white text-gray-900 font-bold rounded-xl hover:bg-gray-100 transition-all text-sm">
                 Become a verified landlord <ArrowRight className="w-4 h-4" />
               </Link>

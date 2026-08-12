@@ -73,7 +73,7 @@ export default function LandlordRegisterPage() {
             <h1 className="text-3xl sm:text-4xl font-extrabold text-gray-900 leading-tight tracking-tight mb-2">
               List your property<br />with LIVAREX
             </h1>
-            <p className="text-gray-500 text-base">Join our network of verified landlords. Tenants contact you directly — no agent fees.</p>
+            <p className="text-gray-500 text-base">Join our network of verified landlords. Livarex coordinates tenants, inspections and communication on your behalf.</p>
           </div>
           {error && (
             <div className="mb-5 px-4 py-3 bg-red-50 border border-red-200 rounded-2xl text-sm text-red-700">{error}</div>

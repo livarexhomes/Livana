@@ -574,7 +574,7 @@ export default function HomePageClient({ initialProperties }: { initialPropertie
               {[
                 'Verified landlords only',
                 'Lagos & Ogun coverage',
-                '10% platform fee',
+                'Coordinated inspections',
                 '8 AM – 6 PM support',
               ].map((badge) => (
                 <span key={badge} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/10 border border-white/15 text-white/80 text-xs font-semibold">
@@ -931,57 +931,6 @@ export default function HomePageClient({ initialProperties }: { initialPropertie
         </div>
       </section>
 
-      {/* ── TESTIMONIALS ── */}
-      <section className="bg-gray-950 py-20 md:py-28">
-        <div className="max-w-6xl mx-auto px-5 sm:px-8">
-          <div className="mb-14">
-            <p className="text-blue-500 font-semibold text-sm uppercase tracking-widest mb-3">What People Say</p>
-            <h2 className="text-3xl md:text-4xl font-extrabold text-white tracking-tight max-w-sm">Real stories from real people.</h2>
-          </div>
-          <div className="grid md:grid-cols-3 gap-5">
-            {[
-              { name: 'Adebayo O.', role: 'Tenant', city: 'Lagos', text: 'Found my perfect 3-bedroom in Lekki within a week. Livarex handled all the coordination — I never had to chase anyone. Absolutely recommend LIVAREX!', avatar: 'AO', featured: false },
-              { name: 'Chidinma E.', role: 'Landlord', city: 'Lagos', text: 'Listed my property on a Friday, had 3 serious inspection requests by Monday. Livarex screens and coordinates everything — I only meet verified, serious tenants.', avatar: 'CE', featured: true },
-              { name: 'Emeka N.', role: 'Tenant', city: 'Opebi', text: 'Livarex scheduled my inspection and handled all communication on my behalf. I secured a verified apartment without any agent stress.', avatar: 'EN', featured: false },
-            ].map((t, i) => (
-              <div
-                key={i}
-                className={`relative rounded-3xl p-8 flex flex-col gap-6 transition-all duration-300 ${t.featured
-                    ? 'bg-blue-600 shadow-2xl shadow-blue-600/30 scale-[1.02]'
-                    : 'bg-white/5 border border-white/10 hover:bg-white/8'
-                  }`}
-              >
-                {/* Big decorative quote */}
-                <span className={`absolute top-6 right-7 text-8xl font-serif leading-none select-none ${t.featured ? 'text-blue-400/40' : 'text-white/8'}`}>&ldquo;</span>
-
-                {/* Stars */}
-                <div className="flex gap-1">
-                  {Array.from({ length: 5 }).map((_, j) => (
-                    <Star key={j} className={`w-4 h-4 ${t.featured ? 'fill-white text-white' : 'fill-amber-400 text-amber-400'}`} />
-                  ))}
-                </div>
-
-                {/* Quote */}
-                <p className={`text-base leading-relaxed flex-1 relative z-10 ${t.featured ? 'text-white' : 'text-gray-300'}`}>
-                  &ldquo;{t.text}&rdquo;
-                </p>
-
-                {/* Person */}
-                <div className="flex items-center gap-3 pt-2 border-t border-white/10">
-                  <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold shrink-0 ${t.featured ? 'bg-white text-blue-600' : 'bg-blue-600 text-white'}`}>
-                    {t.avatar}
-                  </div>
-                  <div>
-                    <p className={`font-bold text-sm ${t.featured ? 'text-white' : 'text-white'}`}>{t.name}</p>
-                    <p className={`text-xs ${t.featured ? 'text-blue-200' : 'text-gray-500'}`}>{t.role} • {t.city}</p>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
       {/* ── CTA BANNER ── */}
       <section className="py-20 md:py-28 px-5 sm:px-8 bg-gray-50">
         <div className="max-w-7xl mx-auto">
@@ -996,7 +945,7 @@ export default function HomePageClient({ initialProperties }: { initialPropertie
                   Ready to find your<br />perfect home?
                 </h2>
                 <p className="text-gray-400 text-base leading-relaxed mb-8 max-w-md">
-                  Join over 10,000 Nigerians who&apos;ve found their ideal property on LIVAREX. Start your search today — it&apos;s completely free.
+                  Find your next verified home in Lagos or Ogun. Every landlord is screened, every listing reviewed. Start your search today — it&apos;s completely free.
                 </p>
                 <ul className="space-y-2 mb-8">
                   {['Verified properties only', 'Transparent pricing', 'Secure inspection booking'].map(item => (

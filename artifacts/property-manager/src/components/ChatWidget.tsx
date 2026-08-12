@@ -1019,7 +1019,7 @@ export default function ChatWidget() {
 
             {/* Trust strip */}
             <div className="px-5 mt-6 flex items-center justify-center gap-2 text-[11px] text-slate-400 font-medium">
-              <span>Verified listings</span><span>·</span><span>₦0 agent fees</span><span>·</span><span>&lt;2h response</span>
+              <span>Verified listings</span><span>·</span><span>Screened landlords</span><span>·</span><span>8 AM–6 PM support</span>
             </div>
 
             {/* Social links */}

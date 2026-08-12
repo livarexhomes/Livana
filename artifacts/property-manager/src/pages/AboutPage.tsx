@@ -353,7 +353,7 @@ export default function AboutPage() {
             Find your next home —<br />the honest way.
           </h2>
           <p className="text-gray-500 text-lg mb-10 leading-relaxed">
-            Find a verified home in Lagos or Ogun — no agent fees, no scams, no stress.
+            Find a verified home in Lagos or Ogun — no fake listings, no scams, no stress.
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <Link href="/listings" className="inline-flex items-center justify-center gap-2 px-8 py-4 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-2xl transition-all shadow-2xl shadow-blue-600/25 hover:shadow-blue-600/40 text-sm">

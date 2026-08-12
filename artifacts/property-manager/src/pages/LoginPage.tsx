@@ -192,7 +192,7 @@ export default function LoginPage() {
             Nigeria's most<br />trusted property<br />platform.
           </h2>
           <p className="text-gray-400 text-base leading-relaxed max-w-xs">
-            Browse verified listings, submit inspection requests, and move in faster — one flat 10% platform fee.
+            Browse verified listings, submit inspection requests, and move in faster — every landlord screened, every listing reviewed.
           </p>
         </div>
 
@@ -215,16 +215,16 @@ export default function LoginPage() {
           ))}
         </div>
 
-        {/* Bottom: social proof */}
+        {/* Bottom: trust signals */}
         <div className="relative z-10 grid grid-cols-3 gap-4">
           {[
-            { num: '902+', label: 'Properties' },
-            { num: '319+', label: 'Landlords' },
-            { num: '10%', label: 'Platform fee' },
+            { icon: '✓', label: 'Verified properties' },
+            { icon: '✓', label: 'Screened landlords' },
+            { icon: '✓', label: 'Managed inspections' },
           ].map(s => (
-            <div key={s.label} className="bg-white/5 border border-white/10 rounded-2xl px-4 py-4 text-center">
-              <p className="text-xl font-extrabold text-white">{s.num}</p>
-              <p className="text-xs text-gray-500 mt-0.5">{s.label}</p>
+            <div key={s.label} className="bg-white/5 border border-white/10 rounded-2xl px-3 py-4 text-center">
+              <p className="text-base font-extrabold text-blue-400">{s.icon}</p>
+              <p className="text-xs text-gray-400 mt-1 leading-tight">{s.label}</p>
             </div>
           ))}
         </div>

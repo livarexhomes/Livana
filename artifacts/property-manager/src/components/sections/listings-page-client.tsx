@@ -393,7 +393,7 @@ export default function ListingsPageClient({
                   We're onboarding verified landlords across Lagos and Ogun right now.
                 </p>
                 <p className="text-sm text-gray-500 mb-8 leading-relaxed">
-                  Tell us what you're looking for and we'll reach out as soon as a match is available — one flat 10% platform fee, nothing hidden.
+                  Tell us what you're looking for and we'll reach out as soon as a verified match is available.
                 </p>
                 <div className="flex flex-col sm:flex-row gap-3 justify-center">
                   <a
