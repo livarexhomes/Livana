@@ -43,3 +43,7 @@ outputType = "webview"
 task = "shell.exec"
 args = "cd artifacts/property-manager && PORT=21844 ./node_modules/.bin/vite --config vite.config.ts --host 0.0.0.0"
 waitForPort = 21844
+
+[postMerge]
+path = "scripts/post-merge.sh"
+timeoutMs = 120000
