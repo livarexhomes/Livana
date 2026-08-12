@@ -302,13 +302,22 @@ export default function AdminLandlords() {
     if (!deleteTarget) return
     setDeleteLoading(true)
     const supabase = createClient()
-    const del1 = await supabase.from('properties').delete().eq('landlord_id', deleteTarget.landlordId)
-    if (del1.error) { showToast(`Failed to delete listings: ${del1.error.message}`); setDeleteLoading(false); return }
-    const del2 = await supabase.from('landlord_settings').delete().eq('landlord_id', deleteTarget.landlordId)
-    if (del2.error) { showToast(`Failed to delete settings: ${del2.error.message}`); setDeleteLoading(false); return }
-    const del3 = await supabase.from('landlords').delete().eq('id', deleteTarget.landlordId)
-    if (del3.error) { showToast(`Failed to delete: ${del3.error.message}`) }
-    else { setClients(cs => cs.filter(c => c.id !== deleteTarget.landlordId)); showToast(`${deleteTarget.name} deleted.`) }
+    // Delete from auth.users via the server-side endpoint (uses service-role key).
+    // ON DELETE CASCADE propagates to landlords, properties, landlord_settings, etc.
+    const { data: { session } } = await supabase.auth.getSession()
+    const token = session?.access_token ?? ''
+    const resp = await fetch('/api/delete-user', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ userId: deleteTarget.userId }),
+    })
+    const result = await resp.json().catch(() => ({}))
+    if (!resp.ok) {
+      showToast(`Failed to delete: ${result.error ?? resp.statusText}`)
+    } else {
+      setClients(cs => cs.filter(c => c.id !== deleteTarget.landlordId))
+      showToast(`${deleteTarget.name} permanently deleted.`)
+    }
     setDeleteLoading(false); setDeleteTarget(null)
   }
 
