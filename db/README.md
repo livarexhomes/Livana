@@ -18,6 +18,7 @@ and has already been run against the production database.
 | `009_support_ticket_workspace.sql` | Support workspace views |
 | `010_fix_signup_trigger.sql` | Fix handle_new_user trigger (tenants no longer get landlord rows) |
 | `011_visitor_chat_rls.sql` | RLS for anonymous visitor chat sessions |
+| `012_fix_support_agent_rls.sql` | Adds `is_agent()`; updates support ticket/message policies so `agents` table members can see and manage all tickets (fixes admin ticket visibility) |
 
 **To apply a new migration:** paste the SQL into the Supabase SQL Editor and run it.
 Then add the file here with the next sequential number.

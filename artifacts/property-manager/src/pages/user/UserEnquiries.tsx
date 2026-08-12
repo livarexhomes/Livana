@@ -26,7 +26,7 @@ interface SupportMessage {
   ticket_id: string
   sender_role: 'tenant' | 'admin'
   body: string
-  image_url?: string | null
+  attachment_url?: string | null
   created_at: string
 }
 
@@ -266,14 +266,14 @@ function ChatThread({ ticket, onBack }: { ticket: SupportTicket; onBack: () => v
       ticket_id: ticket.id,
       sender_role: 'tenant',
       body: body || '',
-      image_url: imagePreview,
+      attachment_url: imagePreview,
       created_at: new Date().toISOString(),
     }
     setMessages(prev => [...prev, optimistic])
 
     const { data: inserted, error: insertErr } = await supabase
       .from('support_messages')
-      .insert({ ticket_id: ticket.id, sender_role: 'tenant', body: body || '', image_url: uploadedUrl })
+      .insert({ ticket_id: ticket.id, sender_role: 'tenant', body: body || '', attachment_url: uploadedUrl })
       .select()
       .single()
 
@@ -347,12 +347,12 @@ function ChatThread({ ticket, onBack }: { ticket: SupportTicket; onBack: () => v
                         ? 'bg-gray-900 text-white rounded-br-sm'
                         : 'bg-gray-100 text-gray-800 rounded-bl-sm'
                     } ${msg.id.startsWith('opt-') ? 'opacity-60' : ''}`}>
-                      {msg.image_url && (
+                      {msg.attachment_url && (
                         <img
-                          src={msg.image_url}
+                          src={msg.attachment_url}
                           alt="attachment"
                           className="rounded-xl mb-2 max-w-full max-h-48 object-cover cursor-pointer"
-                          onClick={() => window.open(msg.image_url!, '_blank')}
+                          onClick={() => window.open(msg.attachment_url!, '_blank')}
                         />
                       )}
                       {msg.body && <span>{msg.body}</span>}
