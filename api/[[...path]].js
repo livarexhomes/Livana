@@ -16,6 +16,7 @@ const handlers = {
   'delete-user': () => import('../server/api-handlers/delete-user.js'),
   'landlord-register': () => import('../server/api-handlers/landlord-register.js'),
   'manage-support-agent': () => import('../server/api-handlers/manage-support-agent.js'),
+  'notify-kyc-reset': () => import('../server/api-handlers/notify-kyc-reset.js'),
   'notify-signup': () => import('../server/api-handlers/notify-signup.js'),
   'register-support-agent': () => import('../server/api-handlers/register-support-agent.js'),
   'send-confirmation': () => import('../server/api-handlers/send-confirmation.js'),

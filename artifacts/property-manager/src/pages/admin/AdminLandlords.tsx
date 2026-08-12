@@ -4,7 +4,7 @@ import {
   CheckCircle, Clock, XCircle, Ban, ShieldCheck,
   ArrowUpRight, UserCheck, ChevronDown,
   Trash2, ShieldOff, MoreVertical, Building2,
-  X, RefreshCw,
+  X, RefreshCw, RotateCcw,
 } from 'lucide-react'
 import { Link } from '@/lib/navigation'
 import AdminSidebar from '../../components/layout/AdminSidebar'
@@ -51,6 +51,38 @@ function formatDate(iso: string) {
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 type DeleteConfirm = { userId: string; landlordId: string; name: string }
+type ResetConfirm  = { userId: string; landlordId: string; name: string }
+
+// ── Reset confirmation modal ──────────────────────────────────────────────────
+
+function ConfirmResetModal({ target, onConfirm, onCancel, loading }: {
+  target: ResetConfirm; onConfirm: () => void; onCancel: () => void; loading: boolean
+}) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm px-4">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 border border-slate-200">
+        <div className="w-11 h-11 rounded-xl bg-amber-50 flex items-center justify-center mb-4">
+          <RotateCcw className="w-5 h-5 text-amber-600" />
+        </div>
+        <h3 className="text-[15px] font-extrabold text-slate-900 mb-1">Reset KYC account</h3>
+        <p className="text-[13px] text-slate-500 mb-6 leading-relaxed">
+          This will clear <strong className="text-slate-700">{target.name}</strong>'s KYC documents and set their status back to <em>Not Submitted</em>. They will receive an email asking them to resubmit.
+        </p>
+        <div className="flex gap-2.5">
+          <button onClick={onCancel} disabled={loading}
+            className="flex-1 px-4 py-2.5 rounded-xl border border-slate-200 text-[13px] font-semibold text-slate-700 hover:bg-slate-50 transition-colors disabled:opacity-50">
+            Cancel
+          </button>
+          <button onClick={onConfirm} disabled={loading}
+            className="flex-1 px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-[13px] font-semibold transition-colors disabled:opacity-50 flex items-center justify-center gap-1.5">
+            {loading && <RefreshCw className="w-3.5 h-3.5 animate-spin" />}
+            {loading ? 'Resetting…' : 'Reset account'}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
 
 // ── Delete confirmation modal ─────────────────────────────────────────────────
 
@@ -85,11 +117,12 @@ function ConfirmDeleteModal({ target, onConfirm, onCancel, loading }: {
 
 // ── Per-row action menu ───────────────────────────────────────────────────────
 
-function ActionMenu({ l, processing, onStatus, onDelete, onClose }: {
+function ActionMenu({ l, processing, onStatus, onDelete, onReset, onClose }: {
   l: any
   processing: string | null
   onStatus: (id: string, status: string) => void
   onDelete: (userId: string, landlordId: string) => void
+  onReset: (userId: string, landlordId: string, name: string) => void
   onClose: () => void
 }) {
   const ref = useRef<HTMLDivElement>(null)
@@ -136,6 +169,13 @@ function ActionMenu({ l, processing, onStatus, onDelete, onClose }: {
           Suspend
         </button>
       )}
+      {l.status === 'rejected' && (
+        <button type="button" disabled={busy} onClick={() => { onReset(l.user_id, l.id, l.full_name); onClose() }}
+          className="w-full flex items-center gap-2.5 px-3.5 py-2 text-[12.5px] font-medium text-amber-700 hover:bg-amber-50 transition-colors disabled:opacity-40">
+          <RotateCcw className="w-3.5 h-3.5" />
+          Reset KYC
+        </button>
+      )}
       <div className="h-px bg-slate-100 mx-2 my-1" />
       <button type="button" disabled={busy} onClick={() => { onDelete(l.user_id, l.id); onClose() }}
         className="w-full flex items-center gap-2.5 px-3.5 py-2 text-[12.5px] font-medium text-red-600 hover:bg-red-50 transition-colors disabled:opacity-40">
@@ -148,13 +188,14 @@ function ActionMenu({ l, processing, onStatus, onDelete, onClose }: {
 
 // ── Landlord row ──────────────────────────────────────────────────────────────
 
-function LandlordRow({ l, processing, menuOpen, onMenuToggle, onStatus, onDelete }: {
+function LandlordRow({ l, processing, menuOpen, onMenuToggle, onStatus, onDelete, onReset }: {
   l: any
   processing: string | null
   menuOpen: boolean
   onMenuToggle: () => void
   onStatus: (id: string, status: string) => void
   onDelete: (userId: string, landlordId: string) => void
+  onReset: (userId: string, landlordId: string, name: string) => void
 }) {
   const meta    = STATUS_META[l.status] ?? STATUS_META.not_submitted
   const palette = avatarColor(l.full_name)
@@ -215,7 +256,7 @@ function LandlordRow({ l, processing, menuOpen, onMenuToggle, onStatus, onDelete
             : <MoreVertical className="h-3.5 w-3.5" />}
         </button>
         {menuOpen && (
-          <ActionMenu l={l} processing={processing} onStatus={onStatus} onDelete={onDelete} onClose={onMenuToggle} />
+          <ActionMenu l={l} processing={processing} onStatus={onStatus} onDelete={onDelete} onReset={onReset} onClose={onMenuToggle} />
         )}
       </div>
     </div>
@@ -235,6 +276,8 @@ export default function AdminLandlords() {
   const [processing, setProcessing]     = useState<string | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<DeleteConfirm | null>(null)
   const [deleteLoading, setDeleteLoading] = useState(false)
+  const [resetTarget, setResetTarget]   = useState<ResetConfirm | null>(null)
+  const [resetLoading, setResetLoading] = useState(false)
   const [toast, setToast]               = useState<string | null>(null)
   const [menuOpen, setMenuOpen]         = useState<string | null>(null)
 
@@ -296,6 +339,49 @@ export default function AdminLandlords() {
   function handleDelete(userId: string, landlordId: string) {
     const landlord = clients.find(c => c.id === landlordId)
     setDeleteTarget({ userId, landlordId, name: landlord?.full_name ?? 'this landlord' })
+  }
+
+  function handleReset(userId: string, landlordId: string, name: string) {
+    setResetTarget({ userId, landlordId, name })
+  }
+
+  async function confirmReset() {
+    if (!resetTarget) return
+    setResetLoading(true)
+    const supabase = createClient()
+
+    // 1. Reset landlord status and clear KYC submission timestamp
+    const { error: statusErr } = await supabase
+      .from('landlords')
+      .update({ status: 'not_submitted', is_verified: false, kyc_submitted_at: null, rejection_reason: null })
+      .eq('id', resetTarget.landlordId)
+    if (statusErr) {
+      showToast(`Failed to reset: ${statusErr.message}`)
+      setResetLoading(false)
+      return
+    }
+
+    // 2. Delete uploaded KYC documents so they start fresh
+    await supabase.from('kyc_documents').delete().eq('landlord_id', resetTarget.landlordId)
+
+    // 3. Notify the landlord by email (best-effort — non-fatal if email fails)
+    const { data: { session } } = await supabase.auth.getSession()
+    const token = session?.access_token ?? ''
+    await fetch('/api/notify-kyc-reset', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ userId: resetTarget.userId, landlordName: resetTarget.name }),
+    }).catch(() => null)
+
+    // 4. Update local state
+    setClients(cs => cs.map(c =>
+      c.id === resetTarget.landlordId
+        ? { ...c, status: 'not_submitted', is_verified: false, kyc_submitted_at: null }
+        : c
+    ))
+    showToast(`${resetTarget.name}'s account has been reset. They have been notified to refill their information.`)
+    setResetLoading(false)
+    setResetTarget(null)
   }
 
   async function confirmDelete() {
@@ -490,6 +576,7 @@ export default function AdminLandlords() {
                       onMenuToggle={() => setMenuOpen(menuOpen === l.id ? null : l.id)}
                       onStatus={updateStatus}
                       onDelete={handleDelete}
+                      onReset={handleReset}
                     />
                   ))
                 )}
@@ -597,6 +684,15 @@ export default function AdminLandlords() {
           onConfirm={confirmDelete}
           onCancel={() => setDeleteTarget(null)}
           loading={deleteLoading}
+        />
+      )}
+
+      {resetTarget && (
+        <ConfirmResetModal
+          target={resetTarget}
+          onConfirm={confirmReset}
+          onCancel={() => setResetTarget(null)}
+          loading={resetLoading}
         />
       )}
 

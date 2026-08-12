@@ -246,7 +246,7 @@ interface AgentSettingsRow {
  * Add / invite support agents. This is the "Add a support agent" section that
  * used to live on the Support page — it now lives in Settings → Agents.
  */
-function AgentSettingsSection() {
+function AgentSettingsSection({ currentUserId }: { currentUserId?: string }) {
   const [agents, setAgents] = useState<AgentSettingsRow[]>([])
   const [loading, setLoading] = useState(true)
   const [newEmail, setNewEmail] = useState('')
@@ -404,34 +404,51 @@ function AgentSettingsSection() {
           </div>
         ) : (
           <div className="divide-y divide-gray-50">
-            {agents.map(agent => (
-              <div key={agent.id} className="flex items-center gap-3 px-5 py-3 flex-wrap">
-                <div className="w-9 h-9 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shrink-0">
-                  <span className="text-xs font-bold text-white">{agent.name.split(' ').slice(0, 2).map(w => w[0]).join('').toUpperCase() || '?'}</span>
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2">
-                    <p className="font-semibold text-gray-900 text-sm truncate">{agent.name}</p>
-                    <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full uppercase ${agent.active ? 'bg-blue-50 text-blue-700' : 'bg-gray-100 text-gray-500'}`}>
-                      {agent.role}
-                    </span>
+            {agents.map(agent => {
+              const isAdminRow = agent.role === 'admin' || agent.user_id === currentUserId
+              return (
+                <div key={agent.id} className="flex items-center gap-3 px-5 py-3 flex-wrap">
+                  <div className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 ${isAdminRow ? 'bg-gradient-to-br from-indigo-600 to-purple-700' : 'bg-gradient-to-br from-blue-500 to-indigo-600'}`}>
+                    <span className="text-xs font-bold text-white">{agent.name.split(' ').slice(0, 2).map(w => w[0]).join('').toUpperCase() || '?'}</span>
                   </div>
-                  <p className="text-xs text-gray-400 mt-0.5 truncate">{agent.email}</p>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2">
+                      <p className="font-semibold text-gray-900 text-sm truncate">{agent.name}</p>
+                      {isAdminRow ? (
+                        <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full uppercase bg-purple-50 text-purple-700">
+                          Admin
+                        </span>
+                      ) : (
+                        <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full uppercase ${agent.active ? 'bg-blue-50 text-blue-700' : 'bg-gray-100 text-gray-500'}`}>
+                          {agent.role}
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-xs text-gray-400 mt-0.5 truncate">{agent.email}</p>
+                  </div>
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    {isAdminRow ? (
+                      <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-1.5 rounded-lg bg-purple-50 text-purple-600">
+                        <Lock className="w-3 h-3" /> Protected
+                      </span>
+                    ) : (
+                      <>
+                        <button onClick={() => toggleActive(agent)}
+                          className={`inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-1.5 rounded-lg transition-colors ${
+                            agent.active ? 'bg-gray-100 text-gray-600 hover:bg-gray-200' : 'bg-green-50 text-green-700 hover:bg-green-100'
+                          }`}>
+                          {agent.active ? 'Deactivate' : 'Activate'}
+                        </button>
+                        <button onClick={() => removeAgent(agent)} title="Remove agent"
+                          className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-1.5 rounded-lg border border-gray-200 bg-white text-gray-500 hover:text-red-600 hover:border-red-200 transition-colors">
+                          <Trash2 className="w-3 h-3" /> Remove
+                        </button>
+                      </>
+                    )}
+                  </div>
                 </div>
-                <div className="flex items-center gap-1.5 shrink-0">
-                  <button onClick={() => toggleActive(agent)}
-                    className={`inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-1.5 rounded-lg transition-colors ${
-                      agent.active ? 'bg-gray-100 text-gray-600 hover:bg-gray-200' : 'bg-green-50 text-green-700 hover:bg-green-100'
-                    }`}>
-                    {agent.active ? 'Deactivate' : 'Activate'}
-                  </button>
-                  <button onClick={() => removeAgent(agent)} title="Remove agent"
-                    className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-1.5 rounded-lg border border-gray-200 bg-white text-gray-500 hover:text-red-600 hover:border-red-200 transition-colors">
-                    <Trash2 className="w-3 h-3" /> Remove
-                  </button>
-                </div>
-              </div>
-            ))}
+              )
+            })}
           </div>
         )}
       </div>
@@ -441,14 +458,38 @@ function AgentSettingsSection() {
 
 // ── Main Component ───────────────────────────────────────────────────────────
 
+// Sections that only the true admin can access
+const ADMIN_ONLY_SECTIONS = new Set(['email', 'security', 'agents'])
+
+async function hashPin(pin: string): Promise<string> {
+  const data = new TextEncoder().encode(`livarex-admin-pin:${pin}`)
+  const buf  = await crypto.subtle.digest('SHA-256', data)
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('')
+}
+
 export default function AdminSettings() {
   const [user, setUser] = useState<{ email?: string; id?: string } | null>(null)
+  const [isAgent, setIsAgent] = useState(false)
   const [active, setActive] = useState('platform')
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
   const [loading, setLoading] = useState(true)
   const [testEmailLoading, setTestEmailLoading] = useState(false)
   const [testEmailResult, setTestEmailResult] = useState<{success?: boolean; message?: string} | null>(null)
+
+  // ── Admin PIN state ──────────────────────────────────────────────────────────
+  const [adminPinHash, setAdminPinHash]     = useState<string | null>(null)
+  const [pinVerified, setPinVerified]       = useState(false)      // cleared on tab nav away
+  const [showPinGate, setShowPinGate]       = useState(false)
+  const [pendingTab, setPendingTab]         = useState<string | null>(null)
+  const [pinInput, setPinInput]             = useState('')
+  const [pinError, setPinError]             = useState('')
+  // PIN setup (inside Security section)
+  const [showPinSetup, setShowPinSetup]     = useState(false)
+  const [newPin, setNewPin]                 = useState('')
+  const [confirmPin, setConfirmPin]         = useState('')
+  const [pinSetupMsg, setPinSetupMsg]       = useState<{ ok: boolean; text: string } | null>(null)
+  const [savingPin, setSavingPin]           = useState(false)
 
   const [platform, setPlatform] = useState<PlatformSettings>({
     name: 'Livana Property Manager',
@@ -498,9 +539,24 @@ export default function AdminSettings() {
   // Load settings from database
   useEffect(() => {
     const supabase = createClient()
-    supabase.auth.getUser().then(({ data: { user } }) => {
+    supabase.auth.getUser().then(async ({ data: { user } }) => {
       setUser({ email: user?.email, id: user?.id })
-      if (user?.id) window.__livarexUserId = user.id
+      if (user?.id) {
+        window.__livarexUserId = user.id
+        // Detect if this user is a support agent (not the super-admin).
+        // Agents have a row in the agents table; the true admin does not
+        // (or has role='admin' which we treat as protected/non-removable).
+        const { data: agentRow } = await supabase
+          .from('agents')
+          .select('id, role')
+          .eq('user_id', user.id)
+          .maybeSingle()
+        // role='admin' in agents table = the admin themselves; role='agent'/'support' = actual agents
+        const agentRole = agentRow?.role
+        setIsAgent(!!agentRow && agentRole !== 'admin')
+        // If this is an agent, start them on the first permitted tab
+        if (!!agentRow && agentRole !== 'admin') setActive('platform')
+      }
     })
 
     async function loadSettings() {
@@ -533,6 +589,9 @@ export default function AdminSettings() {
             break
           case 'email_config':
             setEmailConfig(prev => ({ ...prev, ...row.value }))
+            break
+          case 'admin_pin':
+            if (typeof row.value?.hash === 'string') setAdminPinHash(row.value.hash)
             break
         }
       })
@@ -650,6 +709,57 @@ export default function AdminSettings() {
       setTestEmailLoading(false)
     }
   }
+
+  // ── Tab change with PIN gate ─────────────────────────────────────────────────
+  function handleTabChange(id: string) {
+    // Agents cannot access admin-only sections
+    if (isAgent && ADMIN_ONLY_SECTIONS.has(id)) return
+    // Admin-only sections require PIN verification (if a PIN is set)
+    if (!isAgent && ADMIN_ONLY_SECTIONS.has(id) && adminPinHash && !pinVerified) {
+      setPendingTab(id)
+      setPinInput('')
+      setPinError('')
+      setShowPinGate(true)
+      return
+    }
+    setActive(id)
+    setPinVerified(false) // require PIN again when switching away and back
+  }
+
+  async function submitPin() {
+    if (!pinInput.trim()) { setPinError('Enter your PIN.'); return }
+    const h = await hashPin(pinInput.trim())
+    if (h !== adminPinHash) { setPinError('Incorrect PIN. Try again.'); setPinInput(''); return }
+    setPinVerified(true)
+    setShowPinGate(false)
+    if (pendingTab) { setActive(pendingTab); setPendingTab(null) }
+  }
+
+  async function saveNewPin() {
+    if (newPin.length < 4) { setPinSetupMsg({ ok: false, text: 'PIN must be at least 4 digits.' }); return }
+    if (newPin !== confirmPin) { setPinSetupMsg({ ok: false, text: 'PINs do not match.' }); return }
+    setSavingPin(true)
+    const h = await hashPin(newPin)
+    const ok = await saveSettings('admin_pin', { hash: h })
+    if (ok) {
+      setAdminPinHash(h)
+      setPinSetupMsg({ ok: true, text: 'Admin PIN saved. It will be required to access sensitive settings.' })
+      setNewPin(''); setConfirmPin(''); setShowPinSetup(false)
+    } else {
+      setPinSetupMsg({ ok: false, text: 'Failed to save PIN. Try again.' })
+    }
+    setSavingPin(false)
+  }
+
+  async function clearPin() {
+    setSavingPin(true)
+    const ok = await saveSettings('admin_pin', { hash: null })
+    if (ok) { setAdminPinHash(null); setPinSetupMsg({ ok: true, text: 'Admin PIN removed.' }) }
+    setSavingPin(false)
+  }
+
+  // Sections visible to the current user (agents can't see admin-only tabs)
+  const visibleSections = isAgent ? SECTIONS.filter(s => !ADMIN_ONLY_SECTIONS.has(s.id)) : SECTIONS
 
   const displayName = user?.email ? user.email.split('@')[0] : 'Admin'
 
@@ -799,14 +909,15 @@ export default function AdminSettings() {
 
           {/* ── Tab bar ── */}
           <div className="flex items-end gap-0 pl-14 md:pl-8 border-b border-gray-200 bg-white shrink-0 overflow-x-auto scrollbar-none">
-            {SECTIONS.map(s => {
+            {visibleSections.map(s => {
               const Icon = s.icon
               const isActive = active === s.id
+              const locked = !isAgent && ADMIN_ONLY_SECTIONS.has(s.id) && adminPinHash && !pinVerified
               return (
                 <button
                   key={s.id}
                   type="button"
-                  onClick={() => setActive(s.id)}
+                  onClick={() => handleTabChange(s.id)}
                   className={`relative flex items-center gap-2 px-4 py-3 text-xs font-semibold whitespace-nowrap transition-all duration-150 border-b-2 -mb-px ${
                     isActive
                       ? 'border-blue-500 text-gray-900'
@@ -815,6 +926,7 @@ export default function AdminSettings() {
                 >
                   <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-blue-600' : ''}`} strokeWidth={1.8} />
                   {s.label}
+                  {locked && <Lock className="w-2.5 h-2.5 text-gray-300 ml-0.5" />}
                 </button>
               )
             })}
@@ -1212,6 +1324,62 @@ export default function AdminSettings() {
                     </div>
                   </div>
 
+                  {/* ── Admin PIN setup ── */}
+                  <Divider />
+                  <div className="bg-white border border-gray-200 rounded-xl p-5">
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="w-8 h-8 rounded-lg bg-indigo-50 flex items-center justify-center">
+                        <Key className="w-4 h-4 text-indigo-600" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold text-gray-900">Admin PIN</p>
+                        <p className="text-xs text-gray-400">Protects sensitive settings (Email, Security, Agents) from support staff access.</p>
+                      </div>
+                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase ${adminPinHash ? 'bg-green-50 text-green-700' : 'bg-gray-100 text-gray-400'}`}>
+                        {adminPinHash ? 'Active' : 'Not set'}
+                      </span>
+                    </div>
+
+                    {!showPinSetup ? (
+                      <div className="flex items-center gap-2">
+                        <button onClick={() => { setShowPinSetup(true); setNewPin(''); setConfirmPin(''); setPinSetupMsg(null) }}
+                          className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold transition-colors">
+                          <Key className="w-3 h-3" />
+                          {adminPinHash ? 'Change PIN' : 'Set PIN'}
+                        </button>
+                        {adminPinHash && (
+                          <button onClick={clearPin} disabled={savingPin}
+                            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg border border-red-200 bg-white text-red-600 hover:bg-red-50 text-xs font-semibold transition-colors disabled:opacity-50">
+                            <X className="w-3 h-3" /> Remove PIN
+                          </button>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          <FieldInput label="New PIN (4–10 digits)" value={newPin}
+                            onChange={v => setNewPin(v.replace(/\D/g, ''))} icon={Key} type="password" mono placeholder="e.g. 1234" />
+                          <FieldInput label="Confirm PIN" value={confirmPin}
+                            onChange={v => setConfirmPin(v.replace(/\D/g, ''))} icon={Key} type="password" mono placeholder="Same as above" />
+                        </div>
+                        {pinSetupMsg && (
+                          <p className={`text-xs font-medium ${pinSetupMsg.ok ? 'text-green-600' : 'text-red-600'}`}>{pinSetupMsg.text}</p>
+                        )}
+                        <div className="flex items-center gap-2">
+                          <button onClick={saveNewPin} disabled={savingPin || !newPin || !confirmPin}
+                            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 disabled:opacity-40 text-white text-xs font-semibold transition-colors">
+                            {savingPin ? <Loader2 className="w-3 h-3 animate-spin" /> : <Check className="w-3 h-3" />}
+                            Save PIN
+                          </button>
+                          <button onClick={() => setShowPinSetup(false)}
+                            className="px-3.5 py-2 rounded-lg border border-gray-200 text-xs font-semibold text-gray-600 hover:bg-gray-50 transition-colors">
+                            Cancel
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
                   <Divider />
                   {/* Coming soon notice */}
                   <div className="flex items-start gap-4 p-5 rounded-xl bg-blue-50/60 border border-blue-100">
@@ -1230,7 +1398,7 @@ export default function AdminSettings() {
               )}
 
               {/* ─── AGENTS ─── */}
-              {active === 'agents' && <AgentSettingsSection />}
+              {active === 'agents' && <AgentSettingsSection currentUserId={user?.id} />}
 
               {/* ─── SUPPORT HOURS ─── */}
               {active === 'support_hours' && (
@@ -1421,6 +1589,40 @@ export default function AdminSettings() {
           </main>
         </div>
       </div>
+      {/* ── PIN gate modal ── */}
+      {showPinGate && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-xs p-6 border border-gray-200">
+            <div className="w-11 h-11 rounded-xl bg-blue-50 flex items-center justify-center mb-4">
+              <Lock className="w-5 h-5 text-blue-600" />
+            </div>
+            <h3 className="text-[15px] font-extrabold text-gray-900 mb-1">Admin verification</h3>
+            <p className="text-[13px] text-gray-500 mb-5">Enter your admin PIN to access this section.</p>
+            <input
+              type="password"
+              inputMode="numeric"
+              maxLength={10}
+              value={pinInput}
+              onChange={e => { setPinInput(e.target.value.replace(/\D/g, '')); setPinError('') }}
+              onKeyDown={e => e.key === 'Enter' && submitPin()}
+              autoFocus
+              placeholder="••••"
+              className="w-full border border-gray-200 rounded-xl px-4 py-3 text-center text-lg font-mono tracking-[0.4em] focus:outline-none focus:ring-2 focus:ring-blue-500/30 mb-2"
+            />
+            {pinError && <p className="text-xs text-red-600 text-center mb-3">{pinError}</p>}
+            <div className="flex gap-2.5 mt-4">
+              <button onClick={() => { setShowPinGate(false); setPendingTab(null) }}
+                className="flex-1 px-4 py-2.5 rounded-xl border border-gray-200 text-[13px] font-semibold text-gray-700 hover:bg-gray-50 transition-colors">
+                Cancel
+              </button>
+              <button onClick={submitPin}
+                className="flex-1 px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-[13px] font-semibold transition-colors">
+                Verify
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </AuthGuard>
   )
 }
