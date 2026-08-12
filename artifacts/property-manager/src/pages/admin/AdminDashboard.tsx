@@ -4,6 +4,7 @@ import { Link } from '@/lib/navigation'
 import {
   TrendingUp, TrendingDown, Building2, Users,
   CheckCircle, MessageSquare, MapPin, ArrowRight, Clock, ShieldCheck,
+  Activity, Eye, Percent,
 } from 'lucide-react'
 import AdminHeader from '../../components/layout/AdminHeader'
 import {
@@ -18,9 +19,9 @@ const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', '
 
 function greeting() {
   const h = new Date().getHours()
-  if (h < 12) return 'Good Morning'
-  if (h < 17) return 'Good Afternoon'
-  return 'Good Evening'
+  if (h < 12) return 'Good morning'
+  if (h < 17) return 'Good afternoon'
+  return 'Good evening'
 }
 
 const AVATAR_COLORS = [
@@ -49,11 +50,10 @@ export default function AdminDashboard() {
   const [typeStats, setTypeStats] = useState<{ name: string; value: number }[]>([])
   const [areaData, setAreaData] = useState<{ month: string; listings: number; enquiries: number }[]>([])
   const [loading, setLoading] = useState(true)
-  const [refreshing, setRefreshing] = useState(false)   // silent background refresh
+  const [refreshing, setRefreshing] = useState(false)
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null)
   const debounceRef = useRef<ReturnType<typeof setTimeout>>()
 
-  // ── Core data loader (called on mount + every realtime event) ───────────────
   const loadData = useCallback(async (initial = false) => {
     if (initial) setLoading(true)
     else setRefreshing(true)
@@ -84,9 +84,9 @@ export default function AdminDashboard() {
       supabase.from('landlords').select('id', { count: 'exact', head: true }).in('status', ['pending', 'not_submitted']),
       supabase.from('tenants').select('id', { count: 'exact', head: true }),
       supabase.from('enquiries').select('id', { count: 'exact', head: true }),
-      supabase.from('enquiries').select('*, properties(title, city), tenants(full_name)').order('created_at', { ascending: false }).limit(5),
-      supabase.from('landlords').select('id, full_name, created_at').order('created_at', { ascending: false }).limit(4),
-      supabase.from('properties').select('id, title, city, price, status').order('created_at', { ascending: false }).limit(3),
+      supabase.from('enquiries').select('*, properties(title, city), tenants(full_name)').order('created_at', { ascending: false }).limit(6),
+      supabase.from('landlords').select('id, full_name, created_at').order('created_at', { ascending: false }).limit(5),
+      supabase.from('properties').select('id, title, city, price, status').order('created_at', { ascending: false }).limit(5),
       supabase.from('properties').select('city').limit(500),
       supabase.from('properties').select('property_type').limit(500),
       supabase.from('properties').select('created_at')
@@ -123,7 +123,6 @@ export default function AdminDashboard() {
     else setRefreshing(false)
   }, [])
 
-  // ── Auth check + initial load (once) ────────────────────────────────────────
   useEffect(() => {
     const supabase = createClient()
     supabase.auth.getUser().then(({ data: { user } }) => {
@@ -134,7 +133,6 @@ export default function AdminDashboard() {
     })
   }, [loadData])
 
-  // ── Realtime subscriptions — debounced reload on any DB change ───────────────
   useEffect(() => {
     const supabase = createClient()
     const debouncedLoad = () => {
@@ -156,60 +154,72 @@ export default function AdminDashboard() {
   const rawName = user?.email ? user.email.split('@')[0] : 'Admin'
   const displayName = rawName.charAt(0).toUpperCase() + rawName.slice(1)
   const occupancyRate = stats.properties > 0 ? Math.round((stats.occupied / stats.properties) * 100) : 0
+  const engagementRate = stats.properties > 0 ? (stats.enquiries / stats.properties).toFixed(1) : '0'
 
   const PROPERTY_STATUS: Record<string, { label: string; cls: string }> = {
-    available: { label: 'Available', cls: 'bg-emerald-100 text-emerald-700' },
-    taken: { label: 'Taken', cls: 'bg-red-100 text-red-700' },
+    available:         { label: 'Available',  cls: 'bg-emerald-100 text-emerald-700' },
+    taken:             { label: 'Taken',       cls: 'bg-red-100 text-red-700' },
     under_negotiation: { label: 'Negotiating', cls: 'bg-amber-100 text-amber-700' },
-    coming_soon: { label: 'Coming Soon', cls: 'bg-blue-100 text-blue-700' },
+    coming_soon:       { label: 'Coming Soon', cls: 'bg-blue-100 text-blue-700' },
   }
 
-  const STAT_CARDS = [
+  // KPI cards — left border color identifies the metric at a glance
+  const KPI_CARDS = [
     {
       label: 'Total Listings',
       value: stats.properties,
       icon: Building2,
-      color: 'text-blue-600',
-      bg: 'bg-blue-50',
+      border: 'border-l-blue-500',
+      iconBg: 'bg-blue-50',
+      iconColor: 'text-blue-600',
       trend: '+8%',
       up: true,
+      href: '/admin/properties',
     },
     {
-      label: 'Active',
+      label: 'Active Listings',
       value: stats.active,
       icon: CheckCircle,
-      color: 'text-emerald-600',
-      bg: 'bg-emerald-50',
+      border: 'border-l-emerald-500',
+      iconBg: 'bg-emerald-50',
+      iconColor: 'text-emerald-600',
       trend: '+5%',
       up: true,
+      href: '/admin/properties',
     },
     {
       label: 'Landlords',
       value: stats.landlords,
       icon: Users,
-      color: 'text-violet-600',
-      bg: 'bg-violet-50',
+      border: 'border-l-violet-500',
+      iconBg: 'bg-violet-50',
+      iconColor: 'text-violet-600',
       trend: '+12%',
       up: true,
-      badge: stats.pendingLandlords > 0 ? `${stats.pendingLandlords} need review` : null,
+      badge: stats.pendingLandlords > 0 ? `${stats.pendingLandlords} pending` : null,
+      href: '/admin/landlords',
     },
     {
       label: 'Tenants',
       value: stats.tenants,
       icon: Users,
-      color: 'text-indigo-600',
-      bg: 'bg-indigo-50',
+      border: 'border-l-indigo-500',
+      iconBg: 'bg-indigo-50',
+      iconColor: 'text-indigo-600',
       trend: '+3%',
       up: true,
+      href: '/admin/users',
     },
     {
       label: 'Enquiries',
       value: stats.enquiries,
       icon: MessageSquare,
-      color: 'text-amber-600',
-      bg: 'bg-amber-50',
+      border: 'border-l-amber-500',
+      iconBg: 'bg-amber-50',
+      iconColor: 'text-amber-600',
       trend: '+21%',
       up: true,
+      href: '/admin/landlords',
     },
   ]
 
@@ -225,21 +235,27 @@ export default function AdminDashboard() {
             pendingCount={stats.pendingLandlords}
           />
 
-          <main className="flex-1 overflow-y-auto p-4 md:p-6 pb-24 md:pb-6 space-y-5">
+          <main className="flex-1 overflow-y-auto">
             {loading ? (
-              <div className="flex items-center justify-center py-40">
+              <div className="flex items-center justify-center h-full">
                 <div className="flex flex-col items-center gap-3">
                   <div className="animate-spin w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full" />
                   <p className="text-sm text-gray-400 font-medium">Loading dashboard…</p>
                 </div>
               </div>
             ) : (
-              <>
-                {/* ── Live status bar ── */}
-                <div className="flex items-center justify-end gap-2.5">
+              <div className="p-4 md:p-6 pb-10 space-y-5">
+
+                {/* ── Top bar: date + live indicator ───────────────────────── */}
+                <div className="flex items-center justify-between">
+                  <p className="text-xs text-slate-400 font-medium">
+                    {new Date().toLocaleDateString('en-NG', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+                  </p>
                   {refreshing ? (
                     <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-blue-50 border border-blue-100 text-[11px] font-semibold text-blue-600">
-                      <svg className="w-3 h-3 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M21 12a9 9 0 11-6.219-8.56"/></svg>
+                      <svg className="w-3 h-3 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                        <path d="M21 12a9 9 0 11-6.219-8.56"/>
+                      </svg>
                       Updating…
                     </span>
                   ) : (
@@ -251,138 +267,85 @@ export default function AdminDashboard() {
                       Live
                       {lastUpdated && (
                         <span className="text-emerald-500 font-normal">
-                          · updated {Math.round((Date.now() - lastUpdated.getTime()) / 1000) < 5
+                          · {Math.round((Date.now() - lastUpdated.getTime()) / 1000) < 5
                             ? 'just now'
-                            : `${Math.round((Date.now() - lastUpdated.getTime()) / 60000) || 1}m ago`}
+                            : `updated ${Math.round((Date.now() - lastUpdated.getTime()) / 60000) || 1}m ago`}
                         </span>
                       )}
                     </span>
                   )}
                 </div>
 
+                {/* ── Pending landlords alert ───────────────────────────────── */}
                 {stats.pendingLandlords > 0 && (
-                  <div className="flex flex-col gap-3 rounded-3xl border border-amber-200 bg-amber-50 p-5 md:p-6 shadow-sm md:flex-row md:items-center md:justify-between">
-                    <div className="flex items-start gap-3">
-                      <div className="w-10 h-10 rounded-2xl bg-amber-100 flex items-center justify-center shrink-0">
-                        <Clock className="w-5 h-5 text-amber-600" />
+                  <div className="flex flex-col gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4 shadow-sm md:flex-row md:items-center md:justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-9 h-9 rounded-xl bg-amber-100 flex items-center justify-center shrink-0">
+                        <Clock className="w-4.5 h-4.5 text-amber-600" />
                       </div>
                       <div>
-                        <p className="text-sm font-bold text-amber-900">{stats.pendingLandlords} landlord{stats.pendingLandlords > 1 ? 's' : ''} awaiting review</p>
-                        <p className="text-sm text-amber-700">Review submissions to activate accounts and keep listings moving.</p>
+                        <p className="text-sm font-bold text-amber-900">
+                          {stats.pendingLandlords} landlord{stats.pendingLandlords > 1 ? 's' : ''} awaiting KYC review
+                        </p>
+                        <p className="text-xs text-amber-700 mt-0.5">Review and approve submissions to activate accounts.</p>
                       </div>
                     </div>
-                    <Link href="/admin/landlords"
-                      className="inline-flex items-center justify-center rounded-2xl bg-amber-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-amber-700 transition-colors">
-                      Review now
+                    <Link href="/admin/kyc"
+                      className="inline-flex items-center gap-1.5 rounded-xl bg-amber-600 px-4 py-2 text-sm font-semibold text-white hover:bg-amber-700 transition-colors shrink-0">
+                      <ShieldCheck className="w-4 h-4" /> Review KYC
                     </Link>
                   </div>
                 )}
 
-                <div className="grid gap-4 xl:grid-cols-[1.55fr_0.95fr]">
-                  <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-                    <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-                      <div className="space-y-3">
-                        <p className="text-xs uppercase tracking-[0.32em] text-slate-400">Admin overview</p>
-                        <h1 className="text-3xl font-extrabold text-slate-950">Welcome back, {displayName}</h1>
-                        <p className="max-w-2xl text-sm text-slate-500">Monitor listings, clients, KYC, and enquiries from one central dashboard.</p>
-                      </div>
-                      <div className="flex flex-wrap gap-2">
-                        <Link href="/admin/properties" className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100 transition-colors">
-                          <Building2 className="w-4 h-4" /> Listings
-                        </Link>
-                        <Link href="/admin/landlords" className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100 transition-colors">
-                          <Users className="w-4 h-4" /> Clients
-                        </Link>
-                        <Link href="/admin/kyc" className="inline-flex items-center gap-2 rounded-2xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 transition-colors">
-                          <ShieldCheck className="w-4 h-4" /> KYC
-                        </Link>
-                      </div>
-                    </div>
-
-                    <div className="mt-6 grid gap-3 sm:grid-cols-3">
-                      {STAT_CARDS.slice(0, 3).map(s => {
-                        const Icon = s.icon
-                        return (
-                          <div key={s.label} className="rounded-3xl bg-slate-50 p-4">
-                            <div className="flex items-center justify-between mb-3">
-                              <span className={`inline-flex h-10 w-10 items-center justify-center rounded-2xl ${s.bg}`}>
-                                <Icon className={`w-5 h-5 ${s.color}`} strokeWidth={1.8} />
-                              </span>
-                              <span className={`rounded-full px-2 py-1 text-[11px] font-semibold ${s.up ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-600'}`}>
-                                {s.trend}
-                              </span>
-                            </div>
-                            <p className="text-2xl font-extrabold text-slate-950">{s.value.toLocaleString()}</p>
-                            <p className="text-xs uppercase tracking-[0.24em] text-slate-400 mt-1">{s.label}</p>
-                          </div>
-                        )
-                      })}
-                    </div>
-                  </div>
-
-                  <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
-                    <h2 className="text-sm font-bold text-slate-950">Insights</h2>
-                    <p className="text-xs text-slate-400 mt-1">Fast access to the most important platform metrics</p>
-                    <div className="mt-5 space-y-3">
-                      <div className="rounded-3xl bg-slate-50 p-4">
-                        <p className="text-sm font-semibold text-slate-900">Open enquiries</p>
-                        <p className="text-2xl font-extrabold text-slate-950 mt-2">{stats.enquiries}</p>
-                      </div>
-                      <div className="rounded-3xl bg-slate-50 p-4">
-                        <p className="text-sm font-semibold text-slate-900">Pending landlords</p>
-                        <p className="text-2xl font-extrabold text-slate-950 mt-2">{stats.pendingLandlords}</p>
-                      </div>
-                      <div className="rounded-3xl bg-slate-50 p-4">
-                        <p className="text-sm font-semibold text-slate-900">Occupancy rate</p>
-                        <p className="text-2xl font-extrabold text-slate-950 mt-2">{occupancyRate}%</p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-5">
-                  {STAT_CARDS.map(s => {
-                    const Icon = s.icon
+                {/* ── KPI strip ─────────────────────────────────────────────── */}
+                <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-3">
+                  {KPI_CARDS.map(k => {
+                    const Icon = k.icon
                     return (
-                      <div key={s.label} className="bg-white rounded-2xl border border-gray-100 p-4 md:p-5 shadow-sm hover:shadow-md transition-shadow">
+                      <Link key={k.label} href={k.href}
+                        className={`group bg-white rounded-2xl border border-slate-200 border-l-4 ${k.border} p-4 shadow-sm hover:shadow-md transition-all hover:-translate-y-0.5`}>
                         <div className="flex items-center justify-between mb-3">
-                          <div className={`w-9 h-9 rounded-xl ${s.bg} flex items-center justify-center`}>
-                            <Icon className={`w-4.5 h-4.5 ${s.color}`} strokeWidth={1.8} />
-                          </div>
-                          <span className={`flex items-center gap-0.5 text-[11px] font-bold px-1.5 py-0.5 rounded-lg ${
-                            s.up ? 'text-emerald-600 bg-emerald-50' : 'text-red-500 bg-red-50'
+                          <span className={`w-9 h-9 rounded-xl ${k.iconBg} flex items-center justify-center`}>
+                            <Icon className={`w-4.5 h-4.5 ${k.iconColor}`} strokeWidth={1.8} />
+                          </span>
+                          <span className={`inline-flex items-center gap-0.5 text-[11px] font-bold px-1.5 py-0.5 rounded-lg ${
+                            k.up ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-500'
                           }`}>
-                            {s.up ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
-                            {s.trend}
+                            {k.up ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
+                            {k.trend}
                           </span>
                         </div>
-                        <p className="text-2xl md:text-3xl font-extrabold text-gray-900 leading-none">{s.value.toLocaleString()}</p>
-                        <p className="text-xs font-semibold text-gray-400 mt-1.5 uppercase tracking-wide">{s.label}</p>
-                        {s.badge && (
-                          <p className="text-[10px] font-bold text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded-md inline-block mt-1.5">{s.badge}</p>
+                        <p className="text-2xl font-extrabold text-slate-950 leading-none tabular-nums">
+                          {k.value.toLocaleString()}
+                        </p>
+                        <p className="text-xs font-semibold text-slate-400 mt-1.5 uppercase tracking-wide">{k.label}</p>
+                        {k.badge && (
+                          <p className="text-[10px] font-bold text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded-md inline-block mt-1.5">
+                            {k.badge}
+                          </p>
                         )}
-                      </div>
+                      </Link>
                     )
                   })}
                 </div>
 
-                {/* Row 2: Area chart + Pie chart */}
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-5">
-                  {/* Area chart */}
-                  <div className="lg:col-span-2 bg-white rounded-2xl border border-gray-100 shadow-sm p-5 md:p-6">
+                {/* ── Charts row: Area + Donut ───────────────────────────────── */}
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                  {/* Platform Growth — area chart */}
+                  <div className="lg:col-span-2 bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
                     <div className="flex items-start justify-between mb-5">
                       <div>
-                        <h2 className="text-base font-bold text-gray-900">Platform Growth</h2>
-                        <p className="text-xs text-gray-400 mt-0.5">Listings & enquiries over the year</p>
+                        <h2 className="text-sm font-bold text-slate-900">Platform Growth</h2>
+                        <p className="text-xs text-slate-400 mt-0.5">Listings &amp; enquiries — {new Date().getFullYear()}</p>
                       </div>
-                      <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-4">
                         <div className="flex items-center gap-1.5">
                           <span className="w-2.5 h-2.5 rounded-full bg-blue-600 inline-block" />
-                          <span className="text-xs text-gray-500 font-medium">Listings</span>
+                          <span className="text-xs text-slate-500 font-medium">Listings</span>
                         </div>
                         <div className="flex items-center gap-1.5">
-                          <span className="w-2.5 h-2.5 rounded-full bg-violet-400 inline-block" />
-                          <span className="text-xs text-gray-500 font-medium">Enquiries</span>
+                          <span className="w-2.5 h-2.5 rounded-full bg-violet-500 inline-block" />
+                          <span className="text-xs text-slate-500 font-medium">Enquiries</span>
                         </div>
                       </div>
                     </div>
@@ -391,11 +354,11 @@ export default function AdminDashboard() {
                         <AreaChart data={areaData} margin={{ top: 4, right: 4, bottom: 0, left: -20 }}>
                           <defs>
                             <linearGradient id="gBlue" x1="0" y1="0" x2="0" y2="1">
-                              <stop offset="5%" stopColor="#2563eb" stopOpacity={0.15} />
+                              <stop offset="5%"  stopColor="#2563eb" stopOpacity={0.18} />
                               <stop offset="95%" stopColor="#2563eb" stopOpacity={0} />
                             </linearGradient>
                             <linearGradient id="gViolet" x1="0" y1="0" x2="0" y2="1">
-                              <stop offset="5%" stopColor="#7c3aed" stopOpacity={0.12} />
+                              <stop offset="5%"  stopColor="#7c3aed" stopOpacity={0.14} />
                               <stop offset="95%" stopColor="#7c3aed" stopOpacity={0} />
                             </linearGradient>
                           </defs>
@@ -406,44 +369,47 @@ export default function AdminDashboard() {
                             contentStyle={{ borderRadius: 12, border: 'none', boxShadow: '0 8px 30px rgba(0,0,0,0.10)', fontSize: 12, padding: '8px 14px' }}
                             labelStyle={{ fontWeight: 700, color: '#1e293b', marginBottom: 4 }}
                           />
-                          <Area type="monotone" dataKey="listings" stroke="#2563eb" strokeWidth={2} fill="url(#gBlue)" dot={false} />
+                          <Area type="monotone" dataKey="listings"  stroke="#2563eb" strokeWidth={2} fill="url(#gBlue)"   dot={false} />
                           <Area type="monotone" dataKey="enquiries" stroke="#7c3aed" strokeWidth={2} fill="url(#gViolet)" dot={false} />
                         </AreaChart>
                       </ResponsiveContainer>
                     </div>
                   </div>
 
-                  {/* Property type donut */}
-                  <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 md:p-6 flex flex-col">
+                  {/* Property Types — donut */}
+                  <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 flex flex-col">
                     <div className="mb-4">
-                      <h2 className="text-base font-bold text-gray-900">Property Types</h2>
-                      <p className="text-xs text-gray-400 mt-0.5">Breakdown by category</p>
+                      <h2 className="text-sm font-bold text-slate-900">Property Types</h2>
+                      <p className="text-xs text-slate-400 mt-0.5">Breakdown by category</p>
                     </div>
                     <div className="flex items-center justify-center mb-4">
                       <div className="relative w-36 h-36">
                         <PieChart width={144} height={144}>
-                          <Pie data={typeStats} cx={68} cy={68} innerRadius={46} outerRadius={66}
-                            dataKey="value" paddingAngle={2} strokeWidth={0}>
-                            {typeStats.map((_, i) => (
-                              <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />
+                          <Pie data={typeStats.length ? typeStats : [{ name: 'None', value: 1 }]}
+                            cx={68} cy={68} innerRadius={46} outerRadius={66}
+                            dataKey="value" paddingAngle={typeStats.length ? 2 : 0} strokeWidth={0}>
+                            {(typeStats.length ? typeStats : [{ name: 'None', value: 1 }]).map((_, i) => (
+                              <Cell key={i} fill={typeStats.length ? PIE_COLORS[i % PIE_COLORS.length] : '#e2e8f0'} />
                             ))}
                           </Pie>
                         </PieChart>
                         <div className="absolute inset-0 flex flex-col items-center justify-center">
-                          <p className="text-2xl font-extrabold text-gray-900">{stats.properties}</p>
-                          <p className="text-[10px] text-gray-400 font-semibold">Total</p>
+                          <p className="text-2xl font-extrabold text-slate-900">{stats.properties}</p>
+                          <p className="text-[10px] text-slate-400 font-semibold">Total</p>
                         </div>
                       </div>
                     </div>
-                    <div className="space-y-1.5 flex-1">
-                      {typeStats.slice(0, 5).map((t, i) => {
+                    <div className="space-y-2 flex-1">
+                      {typeStats.length === 0 ? (
+                        <p className="text-xs text-slate-400 text-center py-2">No listings yet</p>
+                      ) : typeStats.slice(0, 5).map((t, i) => {
                         const pct = stats.properties > 0 ? Math.round((t.value / stats.properties) * 100) : 0
                         return (
                           <div key={t.name} className="flex items-center gap-2">
                             <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: PIE_COLORS[i % PIE_COLORS.length] }} />
-                            <span className="text-xs text-gray-600 flex-1 capitalize truncate">{t.name}</span>
-                            <span className="text-xs font-bold text-gray-800">{t.value}</span>
-                            <span className="text-[10px] text-gray-400 w-8 text-right">{pct}%</span>
+                            <span className="text-xs text-slate-600 flex-1 capitalize truncate">{t.name}</span>
+                            <span className="text-xs font-bold text-slate-800 tabular-nums">{t.value}</span>
+                            <span className="text-[10px] text-slate-400 w-7 text-right tabular-nums">{pct}%</span>
                           </div>
                         )
                       })}
@@ -451,29 +417,30 @@ export default function AdminDashboard() {
                   </div>
                 </div>
 
-                {/* Row 3: Recent enquiries + Top cities + Recent clients */}
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-5">
-                  {/* Recent enquiries */}
-                  <div className="lg:col-span-2 bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-                    <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+                {/* ── Data row: Enquiries table + sidebar ───────────────────── */}
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                  {/* Recent Enquiries */}
+                  <div className="lg:col-span-2 bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+                    <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
                       <div>
-                        <h2 className="text-sm font-bold text-gray-900">Recent Enquiries</h2>
-                        <p className="text-xs text-gray-400 mt-0.5">Latest tenant messages</p>
+                        <h2 className="text-sm font-bold text-slate-900">Recent Enquiries</h2>
+                        <p className="text-xs text-slate-400 mt-0.5">Latest messages from tenants</p>
                       </div>
-                      <Link href="/admin/landlords" className="text-xs font-semibold text-blue-600 hover:text-blue-700 flex items-center gap-1 transition-colors">
+                      <Link href="/admin/landlords"
+                        className="text-xs font-semibold text-blue-600 hover:text-blue-700 flex items-center gap-1 transition-colors">
                         View all <ArrowRight className="w-3 h-3" />
                       </Link>
                     </div>
                     {recentEnquiries.length === 0 ? (
                       <div className="py-16 text-center">
-                        <MessageSquare className="w-10 h-10 text-gray-200 mx-auto mb-2" />
-                        <p className="text-sm text-gray-400">No enquiries yet</p>
+                        <MessageSquare className="w-10 h-10 text-slate-200 mx-auto mb-2" />
+                        <p className="text-sm text-slate-400">No enquiries yet</p>
                       </div>
                     ) : (
-                      <div className="divide-y divide-gray-50">
+                      <div className="divide-y divide-slate-50">
                         {recentEnquiries.map((e: any) => {
-                          const name = e.tenants?.full_name ?? 'Tenant'
-                          const grad = avatarGradient(name)
+                          const name    = e.tenants?.full_name ?? 'Tenant'
+                          const grad    = avatarGradient(name)
                           const initials = name.split(' ').slice(0, 2).map((w: string) => w[0]).join('').toUpperCase()
                           return (
                             <div key={e.id} className="flex items-start gap-3 px-5 py-3.5 hover:bg-slate-50/60 transition-colors">
@@ -481,21 +448,21 @@ export default function AdminDashboard() {
                                 <span className="text-[10px] font-bold text-white">{initials}</span>
                               </div>
                               <div className="flex-1 min-w-0">
-                                <div className="flex items-center gap-2">
-                                  <p className="text-sm font-semibold text-gray-900">{name}</p>
+                                <div className="flex items-center gap-2 flex-wrap">
+                                  <p className="text-sm font-semibold text-slate-900">{name}</p>
                                   <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold ${
-                                    e.status === 'open' ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-500'
+                                    e.status === 'open' ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500'
                                   }`}>{e.status}</span>
                                 </div>
-                                <p className="text-xs text-gray-500 mt-0.5 truncate">{e.properties?.title ?? 'Property enquiry'}</p>
-                                <p className="text-xs text-gray-400 mt-0.5 line-clamp-1">{e.message}</p>
+                                <p className="text-xs text-slate-500 mt-0.5 truncate">{e.properties?.title ?? 'Property enquiry'}</p>
+                                <p className="text-xs text-slate-400 mt-0.5 line-clamp-1">{e.message}</p>
                               </div>
                               <div className="shrink-0 text-right">
-                                <p className="text-[10px] text-gray-400">
+                                <p className="text-[10px] text-slate-400">
                                   {new Date(e.created_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })}
                                 </p>
                                 {e.properties?.city && (
-                                  <div className="flex items-center gap-0.5 text-[10px] text-gray-400 justify-end mt-0.5">
+                                  <div className="flex items-center gap-0.5 text-[10px] text-slate-400 justify-end mt-0.5">
                                     <MapPin className="w-2.5 h-2.5" />{e.properties.city}
                                   </div>
                                 )}
@@ -507,13 +474,13 @@ export default function AdminDashboard() {
                     )}
                   </div>
 
-                  {/* Right column: Top cities + Recent clients */}
+                  {/* Right sidebar: Top Locations + New Landlords */}
                   <div className="space-y-4">
-                    {/* Top cities */}
-                    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-                      <h2 className="text-sm font-bold text-gray-900 mb-4">Top Locations</h2>
+                    {/* Top Locations */}
+                    <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
+                      <h2 className="text-sm font-bold text-slate-900 mb-4">Top Locations</h2>
                       {cityStats.length === 0 ? (
-                        <p className="text-xs text-gray-400 py-4 text-center">No data</p>
+                        <p className="text-xs text-slate-400 py-4 text-center">No data yet</p>
                       ) : (
                         <div className="space-y-3">
                           {cityStats.map((c, i) => {
@@ -521,15 +488,17 @@ export default function AdminDashboard() {
                             const pct = Math.round((c.count / max) * 100)
                             return (
                               <div key={c.city}>
-                                <div className="flex items-center justify-between mb-1">
+                                <div className="flex items-center justify-between mb-1.5">
                                   <div className="flex items-center gap-2">
-                                    <span className="w-5 h-5 rounded-md bg-blue-50 flex items-center justify-center text-[10px] font-black text-blue-600">#{i + 1}</span>
-                                    <span className="text-sm font-semibold text-gray-700">{c.city}</span>
+                                    <span className="w-5 h-5 rounded-md bg-blue-50 flex items-center justify-center text-[10px] font-black text-blue-600">
+                                      #{i + 1}
+                                    </span>
+                                    <span className="text-sm font-medium text-slate-700">{c.city}</span>
                                   </div>
-                                  <span className="text-sm font-bold text-gray-900">{c.count}</span>
+                                  <span className="text-xs font-bold text-slate-900 tabular-nums">{c.count}</span>
                                 </div>
-                                <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                                  <div className="h-full bg-blue-600 rounded-full transition-all" style={{ width: `${pct}%` }} />
+                                <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                                  <div className="h-full bg-blue-500 rounded-full transition-all duration-500" style={{ width: `${pct}%` }} />
                                 </div>
                               </div>
                             )
@@ -538,97 +507,147 @@ export default function AdminDashboard() {
                       )}
                     </div>
 
-                    {/* Recent clients */}
-                    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+                    {/* New Landlords */}
+                    <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
                       <div className="flex items-center justify-between mb-4">
-                        <h2 className="text-sm font-bold text-gray-900">New Landlords</h2>
-                        <Link href="/admin/landlords" className="text-xs font-semibold text-blue-600 hover:text-blue-700 transition-colors">
+                        <h2 className="text-sm font-bold text-slate-900">New Landlords</h2>
+                        <Link href="/admin/landlords"
+                          className="text-xs font-semibold text-blue-600 hover:text-blue-700 transition-colors">
                           View all
                         </Link>
                       </div>
-                      <div className="space-y-3">
-                        {recentLandlords.map((l: any) => {
-                          const grad = avatarGradient(l.full_name)
-                          const initials = l.full_name.split(' ').slice(0, 2).map((w: string) => w[0]).join('').toUpperCase()
-                          return (
-                            <div key={l.id} className="flex items-center gap-3">
-                              <div className={`w-8 h-8 rounded-full bg-gradient-to-br ${grad} flex items-center justify-center shrink-0`}>
-                                <span className="text-[10px] font-bold text-white">{initials}</span>
+                      {recentLandlords.length === 0 ? (
+                        <p className="text-xs text-slate-400 py-3 text-center">No landlords yet</p>
+                      ) : (
+                        <div className="space-y-3">
+                          {recentLandlords.map((l: any) => {
+                            const grad     = avatarGradient(l.full_name)
+                            const initials = l.full_name.split(' ').slice(0, 2).map((w: string) => w[0]).join('').toUpperCase()
+                            return (
+                              <div key={l.id} className="flex items-center gap-3">
+                                <div className={`w-8 h-8 rounded-full bg-gradient-to-br ${grad} flex items-center justify-center shrink-0`}>
+                                  <span className="text-[10px] font-bold text-white">{initials}</span>
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-sm font-semibold text-slate-900 truncate leading-tight">{l.full_name}</p>
+                                  <p className="text-xs text-slate-400">
+                                    Joined {new Date(l.created_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
+                                  </p>
+                                </div>
                               </div>
-                              <div className="flex-1 min-w-0">
-                                <p className="text-sm font-semibold text-gray-900 truncate leading-tight">{l.full_name}</p>
-                                <p className="text-xs text-gray-400 truncate">Joined {new Date(l.created_at).toLocaleDateString()}</p>
-                              </div>
-                            </div>
-                          )
-                        })}
-                      </div>
+                            )
+                          })}
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
 
-                {/* Recent listings */}
-                <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-                  <div className="flex items-center justify-between gap-4 mb-4">
+                {/* ── Recent Listings ───────────────────────────────────────── */}
+                <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+                  <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
                     <div>
-                      <h2 className="text-sm font-bold text-gray-900">Recent Listings</h2>
-                      <p className="text-xs text-gray-400 mt-0.5">Latest properties added to the platform</p>
+                      <h2 className="text-sm font-bold text-slate-900">Recent Listings</h2>
+                      <p className="text-xs text-slate-400 mt-0.5">Latest properties added to the platform</p>
                     </div>
-                    <Link href="/admin/properties" className="text-xs font-semibold text-blue-600 hover:text-blue-700 transition-colors flex items-center gap-1">
+                    <Link href="/admin/properties"
+                      className="text-xs font-semibold text-blue-600 hover:text-blue-700 flex items-center gap-1 transition-colors">
                       View all <ArrowRight className="w-3 h-3" />
                     </Link>
                   </div>
-                  <div className="space-y-3">
-                    {recentListings.length === 0 ? (
-                      <p className="text-xs text-gray-400 py-6 text-center">No recent listings available</p>
-                    ) : (
-                      recentListings.map((p: any) => (
-                        <div key={p.id} className="rounded-3xl border border-slate-100 bg-slate-50 p-4">
-                          <div className="flex items-center justify-between gap-3">
-                            <div>
-                              <p className="text-sm font-semibold text-slate-950 truncate">{p.title}</p>
-                              <p className="mt-1 text-xs text-slate-500">{p.city} · ₦{Number(p.price).toLocaleString()}</p>
+                  {recentListings.length === 0 ? (
+                    <div className="py-12 text-center">
+                      <Building2 className="w-10 h-10 text-slate-200 mx-auto mb-2" />
+                      <p className="text-sm text-slate-400">No recent listings available</p>
+                    </div>
+                  ) : (
+                    <div className="divide-y divide-slate-50">
+                      {recentListings.map((p: any) => (
+                        <div key={p.id} className="flex items-center gap-4 px-5 py-3.5 hover:bg-slate-50/60 transition-colors">
+                          <div className="w-9 h-9 rounded-xl bg-blue-50 flex items-center justify-center shrink-0">
+                            <Building2 className="w-4.5 h-4.5 text-blue-600" strokeWidth={1.8} />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-semibold text-slate-900 truncate">{p.title}</p>
+                            <div className="flex items-center gap-1 mt-0.5">
+                              <MapPin className="w-3 h-3 text-slate-400" />
+                              <p className="text-xs text-slate-500">{p.city}</p>
                             </div>
-                            <span className={`inline-flex items-center rounded-full px-3 py-1 text-[11px] font-semibold ${PROPERTY_STATUS[p.status]?.cls ?? 'bg-gray-100 text-gray-600'}`}>
+                          </div>
+                          <div className="text-right shrink-0">
+                            <p className="text-sm font-bold text-slate-900">₦{Number(p.price).toLocaleString()}</p>
+                            <span className={`inline-block mt-0.5 px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                              PROPERTY_STATUS[p.status]?.cls ?? 'bg-slate-100 text-slate-600'
+                            }`}>
                               {PROPERTY_STATUS[p.status]?.label ?? 'Unknown'}
                             </span>
                           </div>
                         </div>
-                      ))
-                    )}
-                  </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
 
-                {/* Row 4: KPI summary strip */}
+                {/* ── Performance summary strip ─────────────────────────────── */}
                 <div className="bg-slate-900 rounded-2xl p-5 md:p-6 relative overflow-hidden">
-                  <div className="absolute inset-0 bg-gradient-to-r from-blue-900/40 via-transparent to-violet-900/20" />
+                  <div className="absolute inset-0 bg-gradient-to-r from-blue-900/40 via-transparent to-violet-900/20 pointer-events-none" />
                   <div className="relative z-10">
                     <div className="flex items-center justify-between mb-5">
                       <div>
-                        <h2 className="text-base font-bold text-white">Platform KPIs</h2>
-                        <p className="text-xs text-slate-400 mt-0.5">Live performance snapshot</p>
+                        <h2 className="text-sm font-bold text-white">Performance Overview</h2>
+                        <p className="text-xs text-slate-400 mt-0.5">Live platform snapshot</p>
                       </div>
                       <span className="flex items-center gap-1.5 px-3 py-1 bg-emerald-500/10 border border-emerald-500/20 rounded-full text-xs font-bold text-emerald-400">
-                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" /> Live
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                        Live
                       </span>
                     </div>
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                       {[
-                        { label: 'Occupancy Rate', value: `${occupancyRate}%`, sub: 'of all listings taken', color: 'text-emerald-400' },
-                        { label: 'Est. Platform Revenue', value: `₦${(stats.properties * 320_000 / 1_000_000).toFixed(1)}M`, sub: 'based on active listings', color: 'text-blue-400' },
-                        { label: 'Avg. Enquiries/Listing', value: stats.properties > 0 ? (stats.enquiries / stats.properties).toFixed(1) : '0', sub: 'engagement rate', color: 'text-violet-400' },
-                        { label: 'Pending Approvals', value: stats.pendingLandlords, sub: 'landlords awaiting review', color: stats.pendingLandlords > 0 ? 'text-amber-400' : 'text-slate-400' },
-                      ].map(k => (
-                        <div key={k.label} className="bg-white/5 rounded-xl p-4 border border-white/6">
-                          <p className={`text-2xl font-extrabold ${k.color}`}>{k.value}</p>
-                          <p className="text-xs font-semibold text-white mt-1">{k.label}</p>
-                          <p className="text-[10px] text-slate-500 mt-0.5">{k.sub}</p>
-                        </div>
-                      ))}
+                        {
+                          icon: Percent,
+                          label: 'Occupancy Rate',
+                          value: `${occupancyRate}%`,
+                          sub: `${stats.occupied} of ${stats.properties} taken`,
+                          color: 'text-emerald-400',
+                        },
+                        {
+                          icon: Activity,
+                          label: 'Enquiries / Listing',
+                          value: engagementRate,
+                          sub: 'avg engagement rate',
+                          color: 'text-blue-400',
+                        },
+                        {
+                          icon: Eye,
+                          label: 'Active Rate',
+                          value: stats.properties > 0 ? `${Math.round((stats.active / stats.properties) * 100)}%` : '0%',
+                          sub: `${stats.active} listings live`,
+                          color: 'text-violet-400',
+                        },
+                        {
+                          icon: Clock,
+                          label: 'Pending Approvals',
+                          value: String(stats.pendingLandlords),
+                          sub: 'landlords awaiting KYC',
+                          color: stats.pendingLandlords > 0 ? 'text-amber-400' : 'text-slate-400',
+                        },
+                      ].map(k => {
+                        const Icon = k.icon
+                        return (
+                          <div key={k.label} className="bg-white/5 rounded-xl p-4 border border-white/8">
+                            <Icon className={`w-4 h-4 ${k.color} mb-2`} strokeWidth={1.8} />
+                            <p className={`text-2xl font-extrabold ${k.color} tabular-nums`}>{k.value}</p>
+                            <p className="text-xs font-semibold text-white mt-1">{k.label}</p>
+                            <p className="text-[10px] text-slate-500 mt-0.5 leading-tight">{k.sub}</p>
+                          </div>
+                        )
+                      })}
                     </div>
                   </div>
                 </div>
-              </>
+
+              </div>
             )}
           </main>
         </div>

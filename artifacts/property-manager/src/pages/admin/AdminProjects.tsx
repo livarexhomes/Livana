@@ -1,8 +1,9 @@
 import { useState, useEffect, useRef } from 'react'
 import {
-  Search, MapPin, Calendar, Plus, TrendingUp, Building2,
+  Search, MapPin, Calendar, Plus, Building2,
   Pencil, Trash2, X, CheckCircle, AlertCircle, MoreVertical,
-  Upload, ImageIcon, Loader2,
+  Upload, ImageIcon, Loader2, TrendingUp, Filter,
+  LayoutGrid, List, ChevronRight,
 } from 'lucide-react'
 import AdminSidebar from '../../components/layout/AdminSidebar'
 import AdminHeader from '../../components/layout/AdminHeader'
@@ -39,12 +40,20 @@ const CATEGORY_COLORS: Record<string, string> = {
   Commercial:   'bg-emerald-50 text-emerald-700',
 }
 
-const STATUS_META: Record<ProjectStatus, { label: string; bg: string; text: string; dot: string }> = {
-  active:      { label: 'Active',       bg: 'bg-emerald-50', text: 'text-emerald-700', dot: 'bg-emerald-500' },
-  coming_soon: { label: 'Coming Soon',  bg: 'bg-blue-50',    text: 'text-blue-700',    dot: 'bg-blue-500'    },
-  completed:   { label: 'Completed',    bg: 'bg-gray-100',   text: 'text-gray-600',    dot: 'bg-gray-400'    },
-  on_hold:     { label: 'On Hold',      bg: 'bg-amber-50',   text: 'text-amber-700',   dot: 'bg-amber-500'   },
+const STATUS_META: Record<ProjectStatus, { label: string; bg: string; text: string; dot: string; border: string }> = {
+  active:      { label: 'Active',       bg: 'bg-emerald-50', text: 'text-emerald-700', dot: 'bg-emerald-500', border: 'border-l-emerald-500' },
+  coming_soon: { label: 'Coming Soon',  bg: 'bg-blue-50',    text: 'text-blue-700',    dot: 'bg-blue-500',    border: 'border-l-blue-500'    },
+  completed:   { label: 'Completed',    bg: 'bg-slate-100',  text: 'text-slate-600',   dot: 'bg-slate-400',   border: 'border-l-slate-400'   },
+  on_hold:     { label: 'On Hold',      bg: 'bg-amber-50',   text: 'text-amber-700',   dot: 'bg-amber-500',   border: 'border-l-amber-500'   },
 }
+
+const STATUS_FILTERS: { key: 'all' | ProjectStatus; label: string }[] = [
+  { key: 'all',        label: 'All'         },
+  { key: 'active',     label: 'Active'      },
+  { key: 'coming_soon',label: 'Coming Soon' },
+  { key: 'completed',  label: 'Completed'   },
+  { key: 'on_hold',    label: 'On Hold'     },
+]
 
 const EMPTY_FORM = {
   name: '', developer: '', location: '', map_link: '', description: '',
@@ -66,17 +75,12 @@ function progressText(pct: number) {
   return 'text-rose-500'
 }
 
-// Builds an embeddable Google Maps iframe src from a Share link.
-// Works with full google.com/maps links (coordinates or ?q=). Short
-// maps.app.goo.gl links can't be framed, so we return null and let the
-// UI prompt for the full link instead.
 function mapEmbedSrc(link: string): string | null {
   const l = link.trim()
   if (!l) return null
   if (!/^https?:\/\/www\.google\.com\/maps/i.test(l)) return null
   const u = new URL(l)
   if (u.hostname !== 'www.google.com' || !u.pathname.startsWith('/maps')) return null
-  // Keep only the location payload — strip extra UI params like UIstate
   const loc = u.searchParams.get('q')
   if (loc) return `https://www.google.com/maps?q=${encodeURIComponent(loc)}&output=embed`
   const m = u.pathname.match(/\/maps\/place\/[^/]+/)
@@ -86,25 +90,24 @@ function mapEmbedSrc(link: string): string | null {
   return null
 }
 
-
-
 export default function AdminProjects() {
-  const [user, setUser]         = useState<{ email?: string } | null>(null)
-  const [projects, setProjects] = useState<Project[]>([])
-  const [search, setSearch]     = useState('')
+  const [user, setUser]           = useState<{ email?: string } | null>(null)
+  const [projects, setProjects]   = useState<Project[]>([])
+  const [search, setSearch]       = useState('')
+  const [statusFilter, setStatusFilter] = useState<'all' | ProjectStatus>('all')
   const [catFilter, setCatFilter] = useState('all')
-  const [menuOpen, setMenuOpen] = useState<string | null>(null)
+  const [view, setView]           = useState<'grid' | 'list'>('grid')
+  const [menuOpen, setMenuOpen]   = useState<string | null>(null)
 
-  // modal
-  const [modalOpen, setModalOpen]         = useState(false)
-  const [editing, setEditing]             = useState<Project | null>(null)
-  const [form, setForm]                   = useState(EMPTY_FORM)
-  const [deleteId, setDeleteId]           = useState<string | null>(null)
-  const [toast, setToast]                 = useState<{ msg: string; ok: boolean } | null>(null)
-  const [loading, setLoading]             = useState(true)
-  const [saving, setSaving]               = useState(false)
-  const [uploading, setUploading]         = useState(false)
-  const fileInputRef                      = useRef<HTMLInputElement>(null)
+  const [modalOpen, setModalOpen] = useState(false)
+  const [editing, setEditing]     = useState<Project | null>(null)
+  const [form, setForm]           = useState(EMPTY_FORM)
+  const [deleteId, setDeleteId]   = useState<string | null>(null)
+  const [toast, setToast]         = useState<{ msg: string; ok: boolean } | null>(null)
+  const [loading, setLoading]     = useState(true)
+  const [saving, setSaving]       = useState(false)
+  const [uploading, setUploading] = useState(false)
+  const fileInputRef              = useRef<HTMLInputElement>(null)
 
   function syncLocalCache(ps: Project[]) {
     try { localStorage.setItem('livana_admin_projects', JSON.stringify(ps)) } catch { }
@@ -130,26 +133,23 @@ export default function AdminProjects() {
     setTimeout(() => setToast(null), 3000)
   }
 
-  function openAdd() {
-    setEditing(null); setForm(EMPTY_FORM); setModalOpen(true)
-  }
+  function openAdd() { setEditing(null); setForm(EMPTY_FORM); setModalOpen(true) }
   function openEdit(p: Project) {
     setEditing(p)
-    setForm({ name: p.name, developer: p.developer, location: p.location, map_link: p.map_link ?? '', description: p.description,
-      image: p.image, price: p.price, down: p.down, completion: p.completion, progress: p.progress,
-      units: p.units, sold: p.sold, category: p.category, status: p.status, type: p.type ?? 'sale' })
+    setForm({ name: p.name, developer: p.developer, location: p.location, map_link: p.map_link ?? '',
+      description: p.description, image: p.image, price: p.price, down: p.down,
+      completion: p.completion, progress: p.progress, units: p.units, sold: p.sold,
+      category: p.category, status: p.status, type: p.type ?? 'sale' })
     setModalOpen(true)
     setMenuOpen(null)
   }
 
   async function handleSave() {
     if (!form.name.trim() || !form.developer.trim() || !form.location.trim()) {
-      showToast('Name, developer, and location are required.', false)
-      return
+      showToast('Name, developer, and location are required.', false); return
     }
     setSaving(true)
     const supabase = createClient()
-    // Strip fields the live DB may not have yet (map_link), retrying once.
     const trySave = async (payload: Partial<typeof form>) => {
       if (editing) return supabase.from('projects').update(payload).eq('id', editing.id)
       return supabase.from('projects').insert(payload).select().single()
@@ -160,7 +160,7 @@ export default function AdminProjects() {
       result = await trySave(rest)
     }
     const { data, error } = result
-    if (error) { showToast(`Create failed: ${error.message}`, false); setSaving(false); return }
+    if (error) { showToast(`Save failed: ${error.message}`, false); setSaving(false); return }
     if (editing) {
       const next = projects.map(p => p.id === editing.id ? { ...editing, ...form } : p)
       setProjects(next); syncLocalCache(next)
@@ -168,8 +168,7 @@ export default function AdminProjects() {
       const next = [data as Project, ...projects]
       setProjects(next); syncLocalCache(next)
     }
-    setSaving(false)
-    setModalOpen(false)
+    setSaving(false); setModalOpen(false)
     showToast(editing ? 'Project updated.' : 'Project created.')
   }
 
@@ -179,8 +178,7 @@ export default function AdminProjects() {
     const { error } = await supabase.from('projects').delete().eq('id', deleteId)
     if (error) { showToast(`Delete failed: ${error.message}`, false); return }
     const next = projects.filter(p => p.id !== deleteId)
-    setProjects(next); syncLocalCache(next)
-    setDeleteId(null)
+    setProjects(next); syncLocalCache(next); setDeleteId(null)
     showToast('Project deleted.')
   }
 
@@ -189,33 +187,29 @@ export default function AdminProjects() {
     const { error } = await supabase.from('projects').update({ status }).eq('id', id)
     if (error) { showToast(`Status update failed: ${error.message}`, false); return }
     const next = projects.map(p => p.id === id ? { ...p, status } : p)
-    setProjects(next); syncLocalCache(next)
-    setMenuOpen(null)
+    setProjects(next); syncLocalCache(next); setMenuOpen(null)
   }
 
-  const categories = ['all', ...Array.from(new Set(projects.map(p => p.category)))]
+  // Derived stats
+  const totalUnits      = projects.reduce((s, p) => s + (p.units || 0), 0)
+  const totalSold       = projects.reduce((s, p) => s + (p.sold  || 0), 0)
+  const avgProgress     = projects.length > 0 ? Math.round(projects.reduce((s, p) => s + p.progress, 0) / projects.length) : 0
+  const statusTotals    = projects.reduce((acc, p) => { acc[p.status] = (acc[p.status] ?? 0) + 1; return acc }, {} as Record<ProjectStatus, number>)
+  const sellThrough     = totalUnits > 0 ? Math.round((totalSold / totalUnits) * 100) : 0
+  const categories      = ['all', ...Array.from(new Set(projects.map(p => p.category)))]
+  const displayName     = user?.email ? user.email.split('@')[0] : 'Admin'
+
   const filtered = projects.filter(p => {
     const q = search.toLowerCase()
     const matchSearch = !q || p.name.toLowerCase().includes(q) || p.developer.toLowerCase().includes(q) || p.location.toLowerCase().includes(q)
-    const matchCat = catFilter === 'all' || p.category === catFilter
-    return matchSearch && matchCat
+    const matchStatus = statusFilter === 'all' || p.status === statusFilter
+    const matchCat    = catFilter === 'all' || p.category === catFilter
+    return matchSearch && matchStatus && matchCat
   })
-
-  const displayName = user?.email ? user.email.split('@')[0] : 'Admin'
-  const totalUnits = projects.reduce((s, p) => s + (p.units || 0), 0)
-  const totalSold  = projects.reduce((s, p) => s + (p.sold  || 0), 0)
-  const averageProgress = projects.length > 0 ? Math.round(projects.reduce((s, p) => s + p.progress, 0) / projects.length) : 0
-  const statusTotals = projects.reduce((acc, project) => {
-    acc[project.status] = (acc[project.status] ?? 0) + 1
-    return acc
-  }, {} as Record<ProjectStatus, number>)
 
   const F = (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) =>
     setForm(f => ({ ...f, [k]: e.target.type === 'number' ? Number(e.target.value) : e.target.value }))
 
-  // Numeric field helper: renders blank when the value is 0 (so there's no
-  // literal "0" to type around) and selects all text on focus so typing
-  // overwrites cleanly instead of appending.
   const N = (k: keyof typeof form) => ({
     value: form[k] === 0 ? '' : (form[k] as number),
     onFocus: (e: React.FocusEvent<HTMLInputElement>) => e.target.select(),
@@ -229,11 +223,9 @@ export default function AdminProjects() {
     setUploading(true)
     try {
       const supabase = createClient()
-      const ext = file.name.split('.').pop() ?? 'jpg'
+      const ext  = file.name.split('.').pop() ?? 'jpg'
       const path = `covers/${crypto.randomUUID()}.${ext}`
-      const { error } = await supabase.storage
-        .from('project-images')
-        .upload(path, file, { upsert: true, contentType: file.type })
+      const { error } = await supabase.storage.from('project-images').upload(path, file, { upsert: true, contentType: file.type })
       if (error) {
         showToast(`Upload failed: ${error.message}. Run SUPABASE_MIGRATION_5.sql first.`, false)
       } else {
@@ -256,10 +248,10 @@ export default function AdminProjects() {
         <div className="flex-1 flex flex-col min-w-0">
           <AdminHeader
             title="Projects"
-            subtitle="Manage off-plan developments"
+            subtitle="Off-plan developments &amp; launches"
             action={
               <button type="button" onClick={openAdd}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-2xl transition-colors shadow-sm">
+                className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-xl transition-colors shadow-sm">
                 <Plus className="w-4 h-4" />
                 <span className="hidden sm:inline">Add Project</span>
               </button>
@@ -267,241 +259,366 @@ export default function AdminProjects() {
           />
 
           <main className="flex-1 overflow-hidden">
-            <div className="h-full overflow-y-auto p-4 md:p-6">
+            <div className="h-full overflow-y-auto p-4 md:p-6 space-y-4">
+
               {loading ? (
                 <div className="flex items-center justify-center py-40">
                   <div className="animate-spin w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full" />
                 </div>
               ) : (
-                <div className="grid gap-5 xl:grid-cols-[1.7fr_0.9fr]">
-                  <section className="space-y-5">
-                    {/* Hero summary */}
-                    <div className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-[0_24px_50px_-30px_rgba(15,23,42,0.2)]">
-                      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-                        <div>
-                          <p className="text-xs uppercase tracking-[0.3em] text-slate-400">Project dashboard</p>
-                          <h1 className="mt-2 text-3xl font-extrabold text-slate-950">Developments</h1>
-                          <p className="mt-2 max-w-2xl text-sm text-slate-500">Manage active launches, monitor sales progress, and keep your portfolio organized.</p>
-                        </div>
-                        <div className="rounded-3xl border border-slate-100 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700">
-                          {projects.length} projects • {averageProgress}% avg progress
-                        </div>
+                <>
+                  {/* ── KPI strip ──────────────────────────────────────────── */}
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    {[
+                      { label: 'Total Projects',   value: String(projects.length),   color: 'border-l-blue-500',    sub: `${statusTotals.active ?? 0} active`         },
+                      { label: 'Units Sold',        value: `${totalSold}/${totalUnits}`, color: 'border-l-emerald-500', sub: `${sellThrough}% sell-through`            },
+                      { label: 'Avg. Progress',     value: `${avgProgress}%`,         color: 'border-l-violet-500',  sub: 'across all projects'                        },
+                      { label: 'Coming Soon',       value: String(statusTotals.coming_soon ?? 0), color: 'border-l-amber-500', sub: `${statusTotals.on_hold ?? 0} on hold` },
+                    ].map(k => (
+                      <div key={k.label}
+                        className={`bg-white rounded-2xl border border-slate-200 border-l-4 ${k.color} px-4 py-3.5 shadow-sm`}>
+                        <p className="text-2xl font-extrabold text-slate-950 leading-none tabular-nums">{k.value}</p>
+                        <p className="text-xs font-semibold text-slate-500 mt-1.5 uppercase tracking-wide">{k.label}</p>
+                        <p className="text-[11px] text-slate-400 mt-0.5">{k.sub}</p>
                       </div>
+                    ))}
+                  </div>
 
-                      <div className="mt-6 grid gap-3 sm:grid-cols-3">
-                        <div className="rounded-3xl border border-slate-100 bg-slate-50 p-4">
-                          <p className="text-sm text-slate-500">Total projects</p>
-                          <p className="mt-2 text-3xl font-semibold text-slate-950">{projects.length}</p>
-                        </div>
-                        <div className="rounded-3xl border border-slate-100 bg-emerald-50 p-4">
-                          <p className="text-sm text-emerald-700">Units sold</p>
-                          <p className="mt-2 text-3xl font-semibold text-emerald-900">{totalSold} / {totalUnits}</p>
-                        </div>
-                        <div className="rounded-3xl border border-slate-100 bg-blue-50 p-4">
-                          <p className="text-sm text-blue-700">Active launches</p>
-                          <p className="mt-2 text-3xl font-semibold text-blue-900">{statusTotals.active ?? 0}</p>
-                        </div>
-                      </div>
+                  {/* ── Toolbar: search · status tabs · category · view toggle ── */}
+                  <div className="bg-white rounded-2xl border border-slate-200 shadow-sm">
+                    {/* Status filter tabs */}
+                    <div className="flex items-center gap-1 px-4 pt-3 border-b border-slate-100 overflow-x-auto">
+                      {STATUS_FILTERS.map(f => {
+                        const count = f.key === 'all' ? projects.length : (statusTotals[f.key] ?? 0)
+                        const active = statusFilter === f.key
+                        return (
+                          <button key={f.key} type="button" onClick={() => setStatusFilter(f.key)}
+                            className={`shrink-0 flex items-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-t-lg border-b-2 transition-colors ${
+                              active
+                                ? 'border-blue-600 text-blue-600 bg-blue-50/40'
+                                : 'border-transparent text-slate-500 hover:text-slate-900 hover:bg-slate-50'
+                            }`}>
+                            {f.label}
+                            <span className={`rounded-full px-1.5 py-0.5 text-[10px] font-bold tabular-nums ${
+                              active ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-500'
+                            }`}>{count}</span>
+                          </button>
+                        )
+                      })}
                     </div>
 
-                    {/* Filters */}
-                    <div className="rounded-[32px] border border-slate-200 bg-white p-5 shadow-sm">
-                      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-                        <div>
-                          <p className="text-xs uppercase tracking-[0.3em] text-slate-400">Search & filter</p>
-                          <h2 className="mt-2 text-xl font-semibold text-slate-950">Find the right project quickly</h2>
-                        </div>
-                        <div className="flex flex-wrap gap-2">
-                          {categories.map(cat => (
-                            <button key={cat} type="button" onClick={() => setCatFilter(cat)}
-                              className={`shrink-0 rounded-2xl px-4 py-2 text-sm font-semibold transition ${
-                                catFilter === cat ? 'bg-slate-950 text-white shadow-sm' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                              }`}>
-                              {cat === 'all' ? 'All categories' : cat}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-
-                      <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-center">
-                        <div className="flex-1 rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 shadow-sm flex items-center gap-3">
-                          <Search className="w-4 h-4 text-slate-400" />
-                          <input value={search} onChange={e => setSearch(e.target.value)}
-                            placeholder="Search projects, developers or locations"
-                            className="w-full bg-transparent text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none" />
-                        </div>
-                        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 flex-1">
-                          <div className="rounded-3xl border border-slate-200 bg-white px-4 py-3 text-sm">
-                            <p className="text-xs text-slate-500">Coming soon</p>
-                            <p className="mt-2 text-lg font-semibold text-slate-950">{statusTotals.coming_soon ?? 0}</p>
-                          </div>
-                          <div className="rounded-3xl border border-slate-200 bg-white px-4 py-3 text-sm">
-                            <p className="text-xs text-slate-500">Completed</p>
-                            <p className="mt-2 text-lg font-semibold text-slate-950">{statusTotals.completed ?? 0}</p>
-                          </div>
-                          <div className="rounded-3xl border border-slate-200 bg-white px-4 py-3 text-sm">
-                            <p className="text-xs text-slate-500">On hold</p>
-                            <p className="mt-2 text-lg font-semibold text-slate-950">{statusTotals.on_hold ?? 0}</p>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Project cards */}
-                    {filtered.length === 0 ? (
-                      <div className="rounded-[32px] border border-slate-200 bg-white p-16 text-center shadow-sm">
-                        <Building2 className="w-12 h-12 text-slate-200 mx-auto mb-4" />
-                        <p className="text-lg font-semibold text-slate-900 mb-2">{projects.length === 0 ? 'No projects yet' : 'No projects match your filter'}</p>
-                        <p className="text-sm text-slate-500 mb-5">
-                          {projects.length === 0
-                            ? 'Add your first development project and it will appear on the user dashboard.'
-                            : 'Try adjusting your search or filter.'}
-                        </p>
-                        {projects.length === 0 && (
-                          <button type="button" onClick={openAdd}
-                            className="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-2xl transition-colors">
-                            <Plus className="w-4 h-4" /> Add Project
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-3 p-4">
+                      {/* Search */}
+                      <div className="flex-1 flex items-center gap-2.5 rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2.5">
+                        <Search className="w-4 h-4 text-slate-400 shrink-0" />
+                        <input value={search} onChange={e => setSearch(e.target.value)}
+                          placeholder="Search projects, developers, locations…"
+                          className="w-full bg-transparent text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none" />
+                        {search && (
+                          <button type="button" onClick={() => setSearch('')}>
+                            <X className="w-3.5 h-3.5 text-slate-400 hover:text-slate-600" />
                           </button>
                         )}
                       </div>
-                    ) : (
-                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                        {filtered.map(p => {
-                          const soldPct  = p.units > 0 ? Math.round((p.sold / p.units) * 100) : 0
-                          const catColor = CATEGORY_COLORS[p.category] ?? 'bg-gray-100 text-gray-600'
-                          const sm       = STATUS_META[p.status] ?? STATUS_META.active
-                          return (
-                            <div key={p.id} className="group overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg">
-                              <div className="relative h-52 overflow-hidden bg-slate-100">
-                                {p.image ? (
-                                  <img src={p.image} alt={p.name}
-                                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                                    onError={(e: any) => { e.currentTarget.style.display = 'none' }} />
-                                ) : (
-                                  <div className="flex h-full items-center justify-center">
-                                    <Building2 className="w-14 h-14 text-slate-200" />
+
+                      {/* Category filter */}
+                      {categories.length > 1 && (
+                        <div className="flex items-center gap-1.5 shrink-0">
+                          <Filter className="w-3.5 h-3.5 text-slate-400" />
+                          <select value={catFilter} onChange={e => setCatFilter(e.target.value)}
+                            className="text-sm text-slate-700 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer">
+                            {categories.map(c => (
+                              <option key={c} value={c}>{c === 'all' ? 'All categories' : c}</option>
+                            ))}
+                          </select>
+                        </div>
+                      )}
+
+                      {/* View toggle */}
+                      <div className="flex items-center gap-1 bg-slate-100 rounded-xl p-1 shrink-0">
+                        <button type="button" onClick={() => setView('grid')}
+                          className={`p-1.5 rounded-lg transition ${view === 'grid' ? 'bg-white shadow-sm text-slate-900' : 'text-slate-400 hover:text-slate-700'}`}>
+                          <LayoutGrid className="w-4 h-4" />
+                        </button>
+                        <button type="button" onClick={() => setView('list')}
+                          className={`p-1.5 rounded-lg transition ${view === 'list' ? 'bg-white shadow-sm text-slate-900' : 'text-slate-400 hover:text-slate-700'}`}>
+                          <List className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* ── Results count ───────────────────────────────────────── */}
+                  {filtered.length > 0 && (
+                    <p className="text-xs text-slate-400 font-medium px-0.5">
+                      {filtered.length} project{filtered.length !== 1 ? 's' : ''}
+                      {(search || statusFilter !== 'all' || catFilter !== 'all') ? ' matching filters' : ''}
+                    </p>
+                  )}
+
+                  {/* ── Empty state ─────────────────────────────────────────── */}
+                  {filtered.length === 0 && (
+                    <div className="bg-white rounded-2xl border border-slate-200 p-16 text-center shadow-sm">
+                      <Building2 className="w-12 h-12 text-slate-200 mx-auto mb-4" />
+                      <p className="text-lg font-semibold text-slate-900 mb-2">
+                        {projects.length === 0 ? 'No projects yet' : 'No projects match'}
+                      </p>
+                      <p className="text-sm text-slate-500 mb-5">
+                        {projects.length === 0
+                          ? 'Add your first development project and it will appear on the user dashboard.'
+                          : 'Try clearing the search or changing the filter.'}
+                      </p>
+                      {projects.length === 0 && (
+                        <button type="button" onClick={openAdd}
+                          className="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-xl transition-colors">
+                          <Plus className="w-4 h-4" /> Add Project
+                        </button>
+                      )}
+                    </div>
+                  )}
+
+                  {/* ── Grid view ───────────────────────────────────────────── */}
+                  {filtered.length > 0 && view === 'grid' && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                      {filtered.map(p => {
+                        const soldPct  = p.units > 0 ? Math.round((p.sold / p.units) * 100) : 0
+                        const catColor = CATEGORY_COLORS[p.category] ?? 'bg-slate-100 text-slate-600'
+                        const sm       = STATUS_META[p.status] ?? STATUS_META.active
+                        return (
+                          <div key={p.id}
+                            className="group overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm hover:-translate-y-0.5 hover:shadow-lg transition-all">
+                            {/* Cover image */}
+                            <div className="relative h-44 overflow-hidden bg-slate-100">
+                              {p.image ? (
+                                <img src={p.image} alt={p.name}
+                                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                                  onError={(e: any) => { e.currentTarget.style.display = 'none' }} />
+                              ) : (
+                                <div className="flex h-full items-center justify-center">
+                                  <Building2 className="w-12 h-12 text-slate-200" />
+                                </div>
+                              )}
+                              <div className="absolute inset-0 bg-gradient-to-t from-slate-950/70 via-slate-950/10 to-transparent" />
+                              {/* Bottom-left: name + location */}
+                              <div className="absolute bottom-3 left-3 right-12">
+                                <h3 className="text-sm font-bold text-white leading-tight line-clamp-1">{p.name}</h3>
+                                <p className="text-[11px] text-slate-300 mt-0.5 truncate flex items-center gap-1">
+                                  <MapPin className="w-2.5 h-2.5 shrink-0" />{p.location}
+                                </p>
+                              </div>
+                              {/* Progress badge */}
+                              <div className="absolute top-3 right-3 rounded-lg bg-white/95 px-2 py-0.5 text-xs font-bold text-slate-700 shadow-sm">
+                                {p.progress}%
+                              </div>
+                              {/* Category badge */}
+                              <div className={`absolute top-3 left-3 rounded-lg px-2 py-0.5 text-[11px] font-semibold ${catColor}`}>
+                                {p.category}
+                              </div>
+                              {/* ⋮ menu */}
+                              <div className="absolute bottom-3 right-3" onClick={e => e.stopPropagation()}>
+                                <button type="button" onClick={() => setMenuOpen(menuOpen === p.id ? null : p.id)}
+                                  className="w-8 h-8 rounded-lg bg-white/90 text-slate-700 shadow-sm hover:bg-white transition flex items-center justify-center">
+                                  <MoreVertical className="w-4 h-4" />
+                                </button>
+                                {menuOpen === p.id && (
+                                  <div className="absolute right-0 bottom-10 z-10 w-52 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl">
+                                    <button type="button" onClick={() => openEdit(p)}
+                                      className="w-full flex items-center gap-2.5 px-4 py-3 text-sm text-slate-700 hover:bg-slate-50">
+                                      <Pencil className="w-3.5 h-3.5 text-slate-400" /> Edit project
+                                    </button>
+                                    <div className="border-t border-slate-100" />
+                                    <div className="px-4 py-2 text-[10px] font-semibold uppercase tracking-widest text-slate-400">Change status</div>
+                                    {(Object.keys(STATUS_META) as ProjectStatus[]).map(st => (
+                                      <button key={st} type="button" onClick={() => changeStatus(p.id, st)}
+                                        className={`w-full px-4 py-2.5 text-left text-sm transition ${p.status === st ? 'bg-slate-100 text-slate-900' : 'text-slate-600 hover:bg-slate-50'}`}>
+                                        <span className={`inline-block h-2 w-2 rounded-full ${STATUS_META[st].dot} mr-2`} />
+                                        {STATUS_META[st].label}
+                                      </button>
+                                    ))}
+                                    <div className="border-t border-slate-100" />
+                                    <button type="button" onClick={() => { setDeleteId(p.id); setMenuOpen(null) }}
+                                      className="w-full px-4 py-3 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-2">
+                                      <Trash2 className="w-3.5 h-3.5" /> Delete
+                                    </button>
                                   </div>
                                 )}
-                                <div className="absolute inset-0 bg-gradient-to-t from-slate-950/70 via-slate-950/10 to-transparent" />
-                                <div className="absolute left-4 bottom-4 right-4">
-                                  <h3 className="text-lg font-bold text-white leading-tight truncate">{p.name}</h3>
-                                  <p className="mt-1 text-xs text-slate-200 truncate">{p.location}</p>
+                              </div>
+                            </div>
+
+                            <div className="p-4 space-y-3">
+                              {/* Status + developer */}
+                              <div className="flex items-center justify-between">
+                                <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold ${sm.bg} ${sm.text}`}>
+                                  <span className={`h-1.5 w-1.5 rounded-full ${sm.dot}`} />{sm.label}
+                                </span>
+                                <span className="text-xs text-slate-500 truncate max-w-[120px]">{p.developer}</span>
+                              </div>
+
+                              {/* Progress bars */}
+                              <div className="space-y-2.5">
+                                <div>
+                                  <div className="flex items-center justify-between text-[11px] text-slate-500 mb-1">
+                                    <span>Construction</span>
+                                    <span className={`font-bold ${progressText(p.progress)}`}>{p.progress}%</span>
+                                  </div>
+                                  <div className="h-2 overflow-hidden rounded-full bg-slate-100">
+                                    <div className={`h-full rounded-full ${progressColor(p.progress)} transition-all`} style={{ width: `${p.progress}%` }} />
+                                  </div>
                                 </div>
-                                <div className={`absolute top-3 left-3 rounded-2xl px-3 py-1 text-xs font-semibold ${catColor}`}>{p.category}</div>
-                                <div className="absolute top-3 right-3 rounded-2xl bg-white/95 px-3 py-1 text-xs font-semibold text-slate-700">{p.progress}%</div>
-                                <div className="absolute top-3 right-16" onClick={e => e.stopPropagation()}>
-                                  <button type="button" onClick={() => setMenuOpen(menuOpen === p.id ? null : p.id)}
-                                    className="w-9 h-9 rounded-2xl bg-white/90 text-slate-700 shadow-sm transition hover:bg-white">
-                                    <MoreVertical className="w-4 h-4" />
-                                  </button>
-                                  {menuOpen === p.id && (
-                                    <div className="absolute right-0 top-11 z-10 w-52 overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-xl">
-                                      <button type="button" onClick={() => openEdit(p)}
-                                        className="w-full flex items-center gap-2.5 px-4 py-3 text-sm text-slate-700 hover:bg-slate-50">
-                                        <Pencil className="w-3.5 h-3.5 text-slate-400" /> Edit
-                                      </button>
-                                      <div className="border-t border-slate-100" />
-                                      <div className="px-4 py-2 text-[10px] font-semibold uppercase tracking-[0.3em] text-slate-400">Status</div>
-                                      {(Object.keys(STATUS_META) as ProjectStatus[]).map(st => (
-                                        <button key={st} type="button" onClick={() => changeStatus(p.id, st)}
-                                          className={`w-full px-4 py-3 text-left text-sm transition ${p.status === st ? 'bg-slate-100 text-slate-900' : 'text-slate-600 hover:bg-slate-50'}`}>
-                                          <span className={`inline-flex h-2.5 w-2.5 rounded-full ${STATUS_META[st].dot} mr-2`} />{STATUS_META[st].label}
-                                        </button>
-                                      ))}
-                                      <div className="border-t border-slate-100" />
-                                      <button type="button" onClick={() => { setDeleteId(p.id); setMenuOpen(null) }}
-                                        className="w-full px-4 py-3 text-left text-sm text-red-600 hover:bg-red-50">
-                                        <Trash2 className="inline-block w-3.5 h-3.5 mr-2" /> Delete
-                                      </button>
+                                {p.units > 0 && (
+                                  <div>
+                                    <div className="flex items-center justify-between text-[11px] text-slate-500 mb-1">
+                                      <span>Units sold</span>
+                                      <span className="font-bold text-slate-900">{p.sold}/{p.units}</span>
                                     </div>
-                                  )}
+                                    <div className="h-2 overflow-hidden rounded-full bg-slate-100">
+                                      <div className="h-full rounded-full bg-violet-500 transition-all"
+                                        style={{ width: `${p.units > 0 ? Math.round((p.sold / p.units) * 100) : 0}%` }} />
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+
+                              {/* Metrics row */}
+                              <div className="flex items-center justify-between pt-2 border-t border-slate-100 text-[11px]">
+                                <div>
+                                  <p className="text-slate-400 uppercase tracking-wide text-[10px]">Price</p>
+                                  <p className="font-bold text-slate-900 mt-0.5">{p.price > 0 ? `₦${(p.price / 1_000_000).toFixed(0)}M` : '—'}</p>
+                                </div>
+                                <div className="text-center">
+                                  <p className="text-slate-400 uppercase tracking-wide text-[10px]">Down</p>
+                                  <p className="font-bold text-slate-900 mt-0.5">{p.down}%</p>
+                                </div>
+                                <div className="text-right">
+                                  <p className="text-slate-400 uppercase tracking-wide text-[10px]">Delivery</p>
+                                  <p className="font-bold text-slate-900 mt-0.5">{p.completion || '—'}</p>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  )}
+
+                  {/* ── List view ───────────────────────────────────────────── */}
+                  {filtered.length > 0 && view === 'list' && (
+                    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                      {/* Table header */}
+                      <div className="hidden md:grid grid-cols-[auto_1fr_120px_120px_100px_80px_40px] items-center gap-4 px-5 py-3 border-b border-slate-100 bg-slate-50">
+                        <div className="w-12" />
+                        <p className="text-[11px] font-bold uppercase tracking-widest text-slate-400">Project</p>
+                        <p className="text-[11px] font-bold uppercase tracking-widest text-slate-400">Progress</p>
+                        <p className="text-[11px] font-bold uppercase tracking-widest text-slate-400">Units</p>
+                        <p className="text-[11px] font-bold uppercase tracking-widest text-slate-400">Price</p>
+                        <p className="text-[11px] font-bold uppercase tracking-widest text-slate-400">Status</p>
+                        <div />
+                      </div>
+                      <div className="divide-y divide-slate-50">
+                        {filtered.map(p => {
+                          const sm      = STATUS_META[p.status] ?? STATUS_META.active
+                          const soldPct = p.units > 0 ? Math.round((p.sold / p.units) * 100) : 0
+                          return (
+                            <div key={p.id}
+                              className="grid grid-cols-1 md:grid-cols-[auto_1fr_120px_120px_100px_80px_40px] items-center gap-3 md:gap-4 px-5 py-3.5 hover:bg-slate-50/60 transition-colors">
+                              {/* Thumbnail */}
+                              <div className="hidden md:flex w-12 h-10 rounded-xl overflow-hidden bg-slate-100 shrink-0">
+                                {p.image ? (
+                                  <img src={p.image} alt={p.name} className="w-full h-full object-cover"
+                                    onError={(e: any) => { e.currentTarget.style.display = 'none' }} />
+                                ) : (
+                                  <div className="flex h-full w-full items-center justify-center">
+                                    <Building2 className="w-4 h-4 text-slate-300" />
+                                  </div>
+                                )}
+                              </div>
+
+                              {/* Name + location */}
+                              <div className="min-w-0">
+                                <p className="text-sm font-semibold text-slate-900 truncate">{p.name}</p>
+                                <p className="text-xs text-slate-500 truncate flex items-center gap-1 mt-0.5">
+                                  <MapPin className="w-3 h-3 shrink-0" />{p.location}
+                                  <span className="text-slate-300">·</span>{p.developer}
+                                </p>
+                              </div>
+
+                              {/* Construction progress */}
+                              <div className="hidden md:block">
+                                <div className="flex items-center justify-between mb-1">
+                                  <span className={`text-xs font-bold ${progressText(p.progress)}`}>{p.progress}%</span>
+                                </div>
+                                <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                                  <div className={`h-full rounded-full ${progressColor(p.progress)}`} style={{ width: `${p.progress}%` }} />
                                 </div>
                               </div>
 
-                              <div className="space-y-4 p-5">
-                                <div className="flex items-center justify-between gap-3">
-                                  <span className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold ${sm.bg} ${sm.text}`}>
-                                    <span className={`h-2.5 w-2.5 rounded-full ${sm.dot}`} />{sm.label}
-                                  </span>
-                                  <span className="text-xs font-semibold text-slate-500">{p.developer}</span>
+                              {/* Units */}
+                              <div className="hidden md:block">
+                                <p className="text-sm font-semibold text-slate-900">{p.sold}/{p.units}</p>
+                                <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden mt-1">
+                                  <div className="h-full rounded-full bg-violet-500" style={{ width: `${soldPct}%` }} />
                                 </div>
-                                <p className="text-sm leading-6 text-slate-600 line-clamp-2">{p.description}</p>
+                              </div>
 
-                                <div className="space-y-3">
-                                  <div>
-                                    <div className="flex items-center justify-between text-xs text-slate-500 mb-1">
-                                      <span>Construction</span>
-                                      <span className={`font-semibold ${progressText(p.progress)}`}>{p.progress}%</span>
-                                    </div>
-                                    <div className="h-2.5 overflow-hidden rounded-full bg-slate-100">
-                                      <div className={`h-full rounded-full ${progressColor(p.progress)}`} style={{ width: `${p.progress}%` }} />
-                                    </div>
-                                  </div>
-                                  {p.units > 0 && (
-                                    <div>
-                                      <div className="flex items-center justify-between text-xs text-slate-500 mb-1">
-                                        <span>Units sold</span>
-                                        <span className="font-semibold text-slate-900">{p.sold}/{p.units}</span>
-                                      </div>
-                                      <div className="h-2.5 overflow-hidden rounded-full bg-slate-100">
-                                        <div className="h-full rounded-full bg-violet-500" style={{ width: `${soldPct}%` }} />
-                                      </div>
-                                    </div>
-                                  )}
-                                </div>
+                              {/* Price */}
+                              <div className="hidden md:block">
+                                <p className="text-sm font-semibold text-slate-900">
+                                  {p.price > 0 ? `₦${(p.price / 1_000_000).toFixed(0)}M` : '—'}
+                                </p>
+                                <p className="text-[11px] text-slate-400 mt-0.5">{p.down}% down</p>
+                              </div>
 
-                                <div className="grid grid-cols-3 gap-2 pt-4 border-t border-slate-100 text-xs text-slate-500">
-                                  <div>
-                                    <div className="uppercase tracking-[0.2em] text-[10px]">Price</div>
-                                    <div className="mt-1 font-semibold text-slate-900">{p.price > 0 ? `₦${(p.price / 1_000_000).toFixed(0)}M` : '—'}</div>
+                              {/* Status */}
+                              <div>
+                                <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold ${sm.bg} ${sm.text}`}>
+                                  <span className={`h-1.5 w-1.5 rounded-full ${sm.dot}`} />
+                                  <span className="hidden sm:inline">{sm.label}</span>
+                                </span>
+                              </div>
+
+                              {/* Actions */}
+                              <div className="relative" onClick={e => e.stopPropagation()}>
+                                <button type="button" onClick={() => setMenuOpen(menuOpen === p.id ? null : p.id)}
+                                  className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-700 transition">
+                                  <MoreVertical className="w-4 h-4" />
+                                </button>
+                                {menuOpen === p.id && (
+                                  <div className="absolute right-0 top-9 z-10 w-52 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl">
+                                    <button type="button" onClick={() => openEdit(p)}
+                                      className="w-full flex items-center gap-2.5 px-4 py-3 text-sm text-slate-700 hover:bg-slate-50">
+                                      <Pencil className="w-3.5 h-3.5 text-slate-400" /> Edit project
+                                    </button>
+                                    <div className="border-t border-slate-100" />
+                                    <div className="px-4 py-2 text-[10px] font-semibold uppercase tracking-widest text-slate-400">Change status</div>
+                                    {(Object.keys(STATUS_META) as ProjectStatus[]).map(st => (
+                                      <button key={st} type="button" onClick={() => changeStatus(p.id, st)}
+                                        className={`w-full px-4 py-2.5 text-left text-sm transition ${p.status === st ? 'bg-slate-100 text-slate-900' : 'text-slate-600 hover:bg-slate-50'}`}>
+                                        <span className={`inline-block h-2 w-2 rounded-full ${STATUS_META[st].dot} mr-2`} />
+                                        {STATUS_META[st].label}
+                                      </button>
+                                    ))}
+                                    <div className="border-t border-slate-100" />
+                                    <button type="button" onClick={() => { setDeleteId(p.id); setMenuOpen(null) }}
+                                      className="w-full px-4 py-3 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-2">
+                                      <Trash2 className="w-3.5 h-3.5" /> Delete
+                                    </button>
                                   </div>
-                                  <div>
-                                    <div className="uppercase tracking-[0.2em] text-[10px]">Down</div>
-                                    <div className="mt-1 font-semibold text-slate-900">{p.down}%</div>
-                                  </div>
-                                  <div>
-                                    <div className="uppercase tracking-[0.2em] text-[10px]">Completion</div>
-                                    <div className="mt-1 font-semibold text-slate-900">{p.completion || '—'}</div>
-                                  </div>
-                                </div>
+                                )}
                               </div>
                             </div>
                           )
                         })}
                       </div>
-                    )}
-                  </section>
-
-                  <aside className="space-y-5">
-                    <div className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm">
-                      <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-400">Latest projects</p>
-                      <div className="mt-4 space-y-3">
-                        {projects.slice(0, 4).map(p => (
-                          <div key={p.id} className="rounded-3xl border border-slate-100 bg-slate-50 p-4">
-                            <div className="flex items-start gap-3">
-                              <div className="mt-1 h-10 w-10 rounded-3xl bg-slate-200 flex items-center justify-center text-slate-500">
-                                <Building2 className="w-5 h-5" />
-                              </div>
-                              <div className="min-w-0">
-                                <p className="text-sm font-semibold text-slate-950 truncate">{p.name}</p>
-                                <p className="text-xs text-slate-500 truncate">{p.location}</p>
-                              </div>
-                              <span className="text-[11px] font-semibold text-slate-600">{p.progress}%</span>
-                            </div>
-                          </div>
-                        ))}
-                        {projects.length === 0 && <p className="text-sm text-slate-500">No projects yet.</p>}
-                      </div>
                     </div>
-                  </aside>
-                </div>
+                  )}
+                </>
               )}
             </div>
           </main>
         </div>
       </div>
 
-      {/* ── Add / Edit Modal ── */}
+      {/* ── Add / Edit Modal ─────────────────────────────────────────────── */}
       {modalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
           <div className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col">
@@ -514,7 +631,7 @@ export default function AdminProjects() {
             </div>
 
             <div className="flex-1 overflow-y-auto px-6 py-5 space-y-6">
-              {/* ── Section: Basic Info ── */}
+              {/* ── Basic Info ── */}
               <div className="space-y-4">
                 <div>
                   <p className="text-sm font-extrabold text-gray-900">Basic Info</p>
@@ -557,7 +674,7 @@ export default function AdminProjects() {
                       if (form.map_link.trim() && !/^https?:\/\/maps\.app\.goo\.gl\//i.test(form.map_link.trim())) {
                         return (
                           <p className="text-[11px] text-amber-600 mt-1.5">
-                            Couldn't preview this link. Use a full <span className="font-semibold">google.com/maps</span> link (with a place name or coordinates) to see the live preview.
+                            Couldn't preview this link. Use a full <span className="font-semibold">google.com/maps</span> link to see the live preview.
                           </p>
                         )
                       }
@@ -566,13 +683,13 @@ export default function AdminProjects() {
                   </div>
                   <div className="col-span-2">
                     <label className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1.5 block">Description</label>
-                    <textarea value={form.description} onChange={F('description')} rows={3} placeholder="Brief description..."
+                    <textarea value={form.description} onChange={F('description')} rows={3} placeholder="Brief description…"
                       className="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none" />
                   </div>
                 </div>
               </div>
 
-              {/* ── Section: Cover Picture ── */}
+              {/* ── Cover Picture ── */}
               <div className="space-y-4">
                 <div>
                   <p className="text-sm font-extrabold text-gray-900">Cover Picture</p>
@@ -615,10 +732,10 @@ export default function AdminProjects() {
                 )}
               </div>
 
-              {/* ── Section: Pricing & Units ── */}
+              {/* ── Pricing & Units ── */}
               <div className="space-y-4">
                 <div>
-                  <p className="text-sm font-extrabold text-gray-900">Pricing & Units</p>
+                  <p className="text-sm font-extrabold text-gray-900">Pricing &amp; Units</p>
                   <p className="text-xs text-gray-400 mt-0.5">The price buyers start from and how many units are available.</p>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
@@ -635,7 +752,7 @@ export default function AdminProjects() {
                     <label className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1.5 block">Down Payment (%)</label>
                     <input type="number" min={0} max={100} {...N('down')}
                       className="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
-                    <p className="text-[11px] text-gray-400 mt-1">Minimum deposit buyers pay upfront, as % of the price.</p>
+                    <p className="text-[11px] text-gray-400 mt-1">Minimum deposit as % of price.</p>
                   </div>
                   <div>
                     <label className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1.5 block">Total Units</label>
@@ -662,10 +779,10 @@ export default function AdminProjects() {
                 </div>
               </div>
 
-              {/* ── Section: Classification & Status ── */}
+              {/* ── Classification & Status ── */}
               <div className="space-y-4">
                 <div>
-                  <p className="text-sm font-extrabold text-gray-900">Classification & Status</p>
+                  <p className="text-sm font-extrabold text-gray-900">Classification &amp; Status</p>
                   <p className="text-xs text-gray-400 mt-0.5">How this project is categorised and its current state.</p>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
@@ -715,7 +832,7 @@ export default function AdminProjects() {
         </div>
       )}
 
-      {/* ── Delete confirmation ── */}
+      {/* ── Delete confirmation ───────────────────────────────────────────── */}
       {deleteId && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
           <div className="bg-white rounded-3xl shadow-2xl p-7 w-full max-w-sm text-center">
@@ -738,10 +855,12 @@ export default function AdminProjects() {
         </div>
       )}
 
-      {/* ── Toast ── */}
+      {/* ── Toast ───────────────────────────────────────────────────────────── */}
       {toast && (
         <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[60]">
-          <div className={`flex items-center gap-2 px-5 py-3 rounded-2xl shadow-2xl text-sm font-semibold border ${toast.ok ? 'bg-emerald-600 text-white border-emerald-500' : 'bg-red-600 text-white border-red-500'}`}>
+          <div className={`flex items-center gap-2 px-5 py-3 rounded-2xl shadow-2xl text-sm font-semibold border ${
+            toast.ok ? 'bg-emerald-600 text-white border-emerald-500' : 'bg-red-600 text-white border-red-500'
+          }`}>
             {toast.ok ? <CheckCircle className="w-4 h-4" /> : <AlertCircle className="w-4 h-4" />}
             {toast.msg}
           </div>
