@@ -15,7 +15,7 @@ declare global {
 import {
   LayoutDashboard, Building2, UserPlus, FolderKanban, UserCog,
   Settings, LogOut, Menu, X,
-  PanelLeftClose, PanelLeftOpen, ShieldCheck, Activity, List, HeadphonesIcon,
+  PanelLeftClose, PanelLeftOpen, ShieldCheck, List, HeadphonesIcon,
 } from 'lucide-react'
 
 const mainNav = [
@@ -25,7 +25,6 @@ const mainNav = [
   { label: 'Vetting',      href: '/admin/vetting',    exact: false, icon: ShieldCheck },
   { label: 'Projects',     href: '/admin/projects',   exact: false, icon: FolderKanban },
   { label: 'Users',        href: '/admin/users',      exact: false, icon: UserCog },
-  { label: 'Activity Log', href: '/admin/activity',   exact: false, icon: Activity },
   { label: 'Support',      href: '/admin/support',    exact: false, icon: HeadphonesIcon },
 ]
 const supportNav = [

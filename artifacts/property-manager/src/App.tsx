@@ -40,7 +40,6 @@ const AdminProperties = lazy(() => import("@/pages/admin/AdminProperties"));
 const AdminProjects = lazy(() => import("@/pages/admin/AdminProjects"));
 const AdminKYC = lazy(() => import("@/pages/admin/AdminKYC"));
 const AdminVetting = lazy(() => import("@/pages/admin/AdminVetting"));
-const AdminActivity = lazy(() => import("@/pages/admin/AdminActivity"));
 const AdminSettings = lazy(() => import("@/pages/admin/AdminSettings"));
 const AdminSupport = lazy(() => import("@/pages/admin/AdminSupport"));
 const AdminHelp = lazy(() => import("@/pages/admin/AdminHelp"));
@@ -120,7 +119,6 @@ function Router() {
         <Route path="/admin/projects" component={AdminProjects} />
         <Route path="/admin/kyc" component={AdminKYC} />
         <Route path="/admin/vetting" component={AdminVetting} />
-        <Route path="/admin/activity" component={AdminActivity} />
         <Route path="/admin/settings" component={AdminSettings} />
         <Route path="/admin/support" component={AdminSupport} />
         <Route path="/admin/help" component={AdminHelp} />
