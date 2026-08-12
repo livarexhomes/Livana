@@ -71,19 +71,24 @@ export default function AdminSidebar({ userEmail, userName }: Props) {
 
   useEffect(() => {
     const supabase = createClient()
-    // Support badge = open enquiries + unread/queued chats (a shared count query).
+    // Support badge = open enquiries + unread/queued chats + open support tickets.
     const fetchBadge = () => {
       Promise.all([
         supabase.from('enquiries').select('id', { count: 'exact', head: true }).in('status', ['new', 'open']),
         supabase.from('chat_inquiries').select('id', { count: 'exact', head: true })
           .eq('read_by_admin', false)
           .in('agent_status', ['unassigned', 'queued']),
-      ]).then(([enq, ch]) => setOpenEnquiries((enq.count ?? 0) + (ch.count ?? 0)))
+        supabase.from('support_tickets').select('id', { count: 'exact', head: true })
+          .in('status', ['open', 'in_progress']),
+      ]).then(([enq, ch, tix]) =>
+        setOpenEnquiries((enq.count ?? 0) + (ch.count ?? 0) + (tix.count ?? 0))
+      )
     }
     fetchBadge()
     const channel = supabase.channel('sidebar_enquiry_badge')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'enquiries' }, fetchBadge)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'chat_inquiries' }, fetchBadge)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'support_tickets' }, fetchBadge)
       .subscribe()
     return () => { supabase.removeChannel(channel) }
   }, [])

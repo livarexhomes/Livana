@@ -1346,12 +1346,14 @@ function ChatRequestDetail({ inquiry, onBack, onMarkRead, onStatusChange, agents
 // ── SupportTab ────────────────────────────────────────────────────────────────
 
 function SupportTab({ onOpenQueued }: { onOpenQueued: (id: string) => void }) {
+  const { toast } = useToast()
   const [tickets, setTickets]       = useState<SupportTicket[]>([])
   const [queued, setQueued]         = useState<ChatInquiry[]>([])
   const [loading, setLoading]       = useState(true)
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [filterStatus, setFilterStatus] = useState<string>('all')
   const [agents, setAgents]         = useState<SupportAgent[]>([])
+  const [newTicketIds, setNewTicketIds] = useState<string[]>([])  // tickets that arrived live this session
   const [liveState, setLiveState]   = useState<LiveSupportState>({
     status: 'offline', online: false, onlineAgents: [], awayAgents: [], offlineAgents: [], agents: [], availableCount: 0, agentCount: 0,
   })
@@ -1398,11 +1400,24 @@ function SupportTab({ onOpenQueued }: { onOpenQueued: (id: string) => void }) {
     loadTickets()
 
     const channel = supabase.channel('admin_tickets_list')
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'support_tickets' }, loadTickets)
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'support_tickets' },
+        (payload) => {
+          const t = payload.new as { id: string; subject?: string; landlord_id?: string | null }
+          // Track so the "New" panel stays visible until the agent opens it
+          setNewTicketIds(prev => prev.includes(t.id) ? prev : [t.id, ...prev])
+          // Sound + toast alert
+          playSupportSound(getSoundMuted())
+          toast({
+            title: `New support ticket`,
+            description: (t.subject ?? 'A new ticket has been submitted') +
+              (t.landlord_id ? ' · Landlord' : ' · Tenant'),
+          })
+          loadTickets()
+        })
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'support_tickets' }, loadTickets)
       .subscribe()
     return () => { supabase.removeChannel(channel) }
-  }, [])
+  }, [toast])
 
   // When the roster's available agents change, auto-assign the next waiting
   // chat (FIFO) to the first available agent. Re-arms whenever the queue or
@@ -1592,6 +1607,62 @@ function SupportTab({ onOpenQueued }: { onOpenQueued: (id: string) => void }) {
           </div>
         </div>
 
+        {/* ── New-ticket notification panel ── */}
+        {newTicketIds.length > 0 && (() => {
+          const newOnes = tickets.filter(t => newTicketIds.includes(t.id))
+          if (newOnes.length === 0) return null
+          return (
+            <div className="mx-2 mt-2 rounded-xl border border-blue-200 bg-blue-50/70 overflow-hidden">
+              <div className="flex items-center gap-2 px-3 py-2 border-b border-blue-100">
+                <span className="relative flex h-2 w-2">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-500 opacity-75" />
+                  <span className="relative inline-flex h-2 w-2 rounded-full bg-blue-600" />
+                </span>
+                <p className="text-[10.5px] font-bold text-blue-800 uppercase tracking-widest">
+                  {newOnes.length} new {newOnes.length === 1 ? 'ticket' : 'tickets'}
+                </p>
+                <button
+                  onClick={() => setNewTicketIds([])}
+                  className="ml-auto text-[10px] text-blue-500 hover:text-blue-700 font-semibold"
+                >
+                  Dismiss all
+                </button>
+              </div>
+              <div className="p-1.5 space-y-1">
+                {newOnes.map(ticket => {
+                  const isLandlordTicket = !!ticket.landlord_id
+                  const senderName = isLandlordTicket
+                    ? (ticket.landlords?.full_name ?? 'Landlord')
+                    : (ticket.tenants?.full_name ?? 'Tenant')
+                  return (
+                    <button
+                      key={ticket.id}
+                      onClick={() => {
+                        setSelectedId(ticket.id)
+                        setNewTicketIds(prev => prev.filter(id => id !== ticket.id))
+                      }}
+                      className="w-full text-left rounded-lg border border-blue-200 bg-white hover:bg-blue-50 px-2.5 py-2 transition-all"
+                    >
+                      <div className="flex items-center gap-2">
+                        <span className="shrink-0 text-[9px] font-bold px-1.5 py-0.5 rounded bg-blue-600 text-white uppercase tracking-wide">New</span>
+                        <p className="font-semibold text-[12px] truncate text-blue-900 flex-1">{ticket.subject}</p>
+                      </div>
+                      <div className="mt-1 flex items-center gap-1.5 text-[10.5px] text-blue-700/70">
+                        <User className="w-2.5 h-2.5 shrink-0" />
+                        {isLandlordTicket && <span className="rounded bg-violet-100 px-1 py-px text-[8.5px] font-bold text-violet-700 leading-none">LL</span>}
+                        <span className="truncate">{senderName}</span>
+                        <span className="ml-auto shrink-0 tabular-nums">
+                          {formatDistanceToNow(new Date(ticket.created_at), { addSuffix: true })}
+                        </span>
+                      </div>
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+          )
+        })()}
+
         {/* Ticket list */}
         <div className="flex-1 overflow-y-auto p-2 space-y-1">
           {loading ? (
@@ -1614,18 +1685,33 @@ function SupportTab({ onOpenQueued }: { onOpenQueued: (id: string) => void }) {
                 const s = STATUS_META[ticket.status]
                 const p = PRIORITY_META[ticket.priority]
                 const isActive = selectedId === ticket.id
+                const isNew = newTicketIds.includes(ticket.id)
                 const isLandlordTicket = !!ticket.landlord_id
                 const senderName = isLandlordTicket
                   ? (ticket.landlords?.full_name ?? 'Landlord')
                   : (ticket.tenants?.full_name ?? 'Tenant')
                 return (
-                  <button key={ticket.id} onClick={() => setSelectedId(ticket.id)}
-                    className={`w-full text-left rounded-lg border px-2.5 py-2 transition-all ${isActive ? 'border-blue-600 bg-blue-50/60 ring-1 ring-blue-600/10' : 'border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50/50'}`}>
+                  <button key={ticket.id} onClick={() => {
+                    setSelectedId(ticket.id)
+                    setNewTicketIds(prev => prev.filter(id => id !== ticket.id))
+                  }}
+                    className={`w-full text-left rounded-lg border px-2.5 py-2 transition-all ${
+                      isActive
+                        ? 'border-blue-600 bg-blue-50/60 ring-1 ring-blue-600/10'
+                        : isNew
+                          ? 'border-blue-300 bg-blue-50/40 hover:bg-blue-50'
+                          : 'border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50/50'
+                    }`}>
                     <div className="flex items-center justify-between gap-2">
                       <p className={`font-semibold text-[12.5px] truncate ${isActive ? 'text-blue-900' : 'text-slate-900'}`}>{ticket.subject}</p>
-                      <span className={`shrink-0 inline-flex items-center gap-1 text-[9.5px] font-bold px-1.5 py-0.5 rounded ${s.bg} ${s.color}`}>
-                        <span className={`w-1 h-1 rounded-full ${s.dot}`} />{s.label}
-                      </span>
+                      <div className="flex items-center gap-1 shrink-0">
+                        {isNew && !isActive && (
+                          <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-blue-600 text-white">NEW</span>
+                        )}
+                        <span className={`inline-flex items-center gap-1 text-[9.5px] font-bold px-1.5 py-0.5 rounded ${s.bg} ${s.color}`}>
+                          <span className={`w-1 h-1 rounded-full ${s.dot}`} />{s.label}
+                        </span>
+                      </div>
                     </div>
                     <div className="mt-1 flex items-center gap-1.5 text-[10.5px]">
                       <span className={`inline-flex items-center gap-1 min-w-0 ${isActive ? 'text-blue-800/70' : 'text-slate-500'}`}>
