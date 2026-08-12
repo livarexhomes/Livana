@@ -192,7 +192,7 @@ export default function LoginPage() {
             Nigeria's most<br />trusted property<br />platform.
           </h2>
           <p className="text-gray-400 text-base leading-relaxed max-w-xs">
-            Browse verified listings, submit inspection requests, and move in faster — no agent fees.
+            Browse verified listings, submit inspection requests, and move in faster — one flat 10% platform fee.
           </p>
         </div>
 
@@ -220,7 +220,7 @@ export default function LoginPage() {
           {[
             { num: '902+', label: 'Properties' },
             { num: '319+', label: 'Landlords' },
-            { num: '₦0', label: 'Agent fees' },
+            { num: '10%', label: 'Platform fee' },
           ].map(s => (
             <div key={s.label} className="bg-white/5 border border-white/10 rounded-2xl px-4 py-4 text-center">
               <p className="text-xl font-extrabold text-white">{s.num}</p>

@@ -574,8 +574,8 @@ export default function HomePageClient({ initialProperties }: { initialPropertie
               {[
                 'Verified landlords only',
                 'Lagos & Ogun coverage',
-                '₦0 agent fees',
-                '< 2h avg response',
+                '10% platform fee',
+                '8 AM – 6 PM support',
               ].map((badge) => (
                 <span key={badge} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/10 border border-white/15 text-white/80 text-xs font-semibold">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0" />

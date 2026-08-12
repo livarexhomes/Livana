@@ -21,7 +21,7 @@ const LOCATIONS: Record<string, {
     city: 'Lagos', area: 'Lekki',
     title: 'Properties in Lekki, Lagos',
     subtitle: "Lagos' most sought-after address",
-    description: 'Find verified homes, apartments and commercial spaces for rent and lease in Lekki, Lagos. Every listing on LIVAREX is reviewed and landlord-verified — no agents, no hidden fees.',
+    description: 'Find verified homes, apartments and commercial spaces for rent and lease in Lekki, Lagos. Every listing on LIVAREX is reviewed and landlord-verified — one transparent 10% platform fee.',
     neighborhoods: ['Lekki Phase 1', 'Lekki Phase 2', 'VGC', 'Chevron Drive', 'Oral Estate'],
   },
   ikeja: {
@@ -35,7 +35,7 @@ const LOCATIONS: Record<string, {
     city: 'Lagos', area: 'Ajah',
     title: 'Properties in Ajah, Lagos',
     subtitle: 'Fast-growing hub on the Lekki axis',
-    description: 'Find affordable verified homes for rent and lease in Ajah, Lagos. Direct landlord listings in Badore, Abraham Adesanya, Sangotedo and more — with no agent fees.',
+    description: 'Find affordable verified homes for rent and lease in Ajah, Lagos. Direct landlord listings in Badore, Abraham Adesanya, Sangotedo and more — one transparent 10% platform fee.',
     neighborhoods: ['Badore', 'Abraham Adesanya', 'Sangotedo', 'Ogombo', 'Cooperative Villa'],
   },
   yaba: {
@@ -70,14 +70,14 @@ const LOCATIONS: Record<string, {
     city: 'Ogun', area: '',
     title: 'Properties in Ogun',
     subtitle: 'Verified homes and commercial space across Ogun State',
-    description: 'Browse verified homes, apartments and commercial spaces for rent and lease in Ogun State. Every listing on LIVAREX is reviewed and landlord-verified — no agents, no hidden fees.',
+    description: 'Browse verified homes, apartments and commercial spaces for rent and lease in Ogun State. Every listing on LIVAREX is reviewed and landlord-verified — one transparent 10% platform fee.',
     neighborhoods: ['Abeokuta', 'Sagamu', 'Ota', 'Ifo', 'Ijebu-Ode'],
   },
   'victoria-island': {
     city: 'Lagos', area: 'Victoria Island',
     title: 'Properties in Victoria Island, Lagos',
     subtitle: "Lagos' business and luxury district",
-    description: 'Find premium verified apartments and commercial spaces in Victoria Island, Lagos. Direct landlord listings on LIVAREX — no agents required.',
+    description: 'Find premium verified apartments and commercial spaces in Victoria Island, Lagos. Direct landlord listings on LIVAREX — one transparent 10% platform fee.',
     neighborhoods: ['VI', 'Eko Atlantic', 'Bar Beach', 'Ahmadu Bello Way', 'Adeola Odeku'],
   },
 }
@@ -182,7 +182,7 @@ export default function LocationLandingPage() {
           <div className="flex flex-wrap justify-center gap-4 text-sm">
             {[
               { icon: <ShieldCheck className="w-4 h-4" />, text: 'Verified landlords only' },
-              { icon: <span className="font-bold">₦</span>, text: 'No agent fees' },
+              { icon: <span className="font-bold">₦</span>, text: '10% platform fee' },
               { icon: <span>📅</span>, text: 'Book inspection free' },
             ].map(({ icon, text }) => (
               <div key={text} className="flex items-center gap-2 text-blue-200/70">

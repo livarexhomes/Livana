@@ -214,7 +214,7 @@ export default function RegisterPage() {
             <h1 className="text-3xl sm:text-4xl font-extrabold text-gray-900 leading-tight tracking-tight mb-2">
               Find your next home
             </h1>
-            <p className="text-gray-500 text-base">Create a free LIVAREX account — no agent fees, ever.</p>
+            <p className="text-gray-500 text-base">Create a free LIVAREX account — one transparent 10% platform fee.</p>
           </div>
 
           {/* Google */}
@@ -364,7 +364,7 @@ export default function RegisterPage() {
             ))}
           </div>
           <p className="text-gray-300 text-sm leading-relaxed mb-4">
-            "Found my 3-bedroom in Lekki within a week. The landlord was verified and I moved in without paying any agent fees. LIVAREX is a game changer."
+            "Found my 3-bedroom in Lekki within a week. The landlord was verified and Livarex handled all the coordination. LIVAREX is a game changer."
           </p>
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-full bg-blue-600 flex items-center justify-center text-white text-xs font-bold shrink-0">AO</div>
@@ -377,7 +377,7 @@ export default function RegisterPage() {
 
         {/* Bottom: perks */}
         <div className="relative z-10 space-y-3">
-          {['Free to browse — no hidden fees', 'Verified properties only', 'Secure inspection requests'].map(item => (
+          {['Free to browse · 10% fee on move-in', 'Verified properties only', 'Secure inspection requests'].map(item => (
             <div key={item} className="flex items-center gap-3">
               <CheckCircle2 className="w-4 h-4 text-blue-500 shrink-0" />
               <span className="text-sm text-gray-400">{item}</span>

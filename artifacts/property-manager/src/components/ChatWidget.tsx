@@ -975,7 +975,7 @@ export default function ChatWidget() {
                 </div>
                 <div className="min-w-0 flex-1">
                   <div className="text-[14px] font-bold text-slate-900">Chat with Livarex AI</div>
-                  <div className="text-[12px] text-slate-500 mt-0.5">Get instant answers 24/7</div>
+                  <div className="text-[12px] text-slate-500 mt-0.5">AI assistant · always available</div>
                 </div>
                 <ChevronRight className="w-4 h-4 text-slate-300 shrink-0" />
               </button>

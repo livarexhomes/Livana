@@ -36,7 +36,7 @@ export default function ContactPage() {
   const channels = [
     { icon: Mail,          label: 'Email',     value: email,                            href: `mailto:${email}`,                       note: 'Reply within 1–2 business days',   accent: 'bg-blue-600',    glow: 'shadow-blue-500/25'    },
     { icon: MessageCircle, label: 'WhatsApp',  value: phone,                            href: phoneToWaLink(phone),                   note: 'Livarex support on WhatsApp',      accent: 'bg-[#25D366]',   glow: 'shadow-green-500/25'   },
-    { icon: Phone,         label: 'Phone',     value: phone,                            href: phoneToTelLink(phone),                  note: '24/7 available',                   accent: 'bg-emerald-600', glow: 'shadow-emerald-500/25' },
+    { icon: Phone,         label: 'Phone',     value: phone,                            href: phoneToTelLink(phone),                  note: '8 AM – 6 PM WAT',                  accent: 'bg-emerald-600', glow: 'shadow-emerald-500/25' },
     { icon: MapPin,        label: 'Office',    value: platform?.address || 'Joju, Sango Ota, Ogun State', href: `https://maps.google.com/?q=${encodeURIComponent(platform?.address || 'Joju Sango Ota Ogun State Nigeria')}`, note: 'Visit us', accent: 'bg-rose-600', glow: 'shadow-rose-500/25' },
   ]
 
@@ -116,8 +116,8 @@ export default function ContactPage() {
                     <CheckCircle className="w-4.5 h-4.5 text-emerald-400" />
                   </div>
                   <div>
-                    <p className="text-sm font-bold text-white">24/7 Support</p>
-                    <p className="text-xs text-gray-500">Always available</p>
+                    <p className="text-sm font-bold text-white">Live Support</p>
+                    <p className="text-xs text-gray-500">8 AM – 6 PM WAT</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
@@ -126,7 +126,7 @@ export default function ContactPage() {
                   </div>
                   <div>
                     <p className="text-sm font-bold text-white">Fast Response</p>
-                    <p className="text-xs text-gray-500">Within 24 hours</p>
+                    <p className="text-xs text-gray-500">1–2 business days</p>
                   </div>
                 </div>
               </div>
@@ -314,7 +314,7 @@ export default function ContactPage() {
                   <h3 className="font-bold text-sm">Office Hours</h3>
                 </div>
                 <div className="space-y-2.5 text-sm text-blue-100">
-                  {[['Monday – Friday', '24 hrs'], ['Saturday', '24 hrs'], ['Sunday', '24 hrs']].map(([day, hours]) => (
+                  {[['Monday – Friday', '8 AM – 6 PM'], ['Saturday', '8 AM – 6 PM'], ['Sunday', '8 AM – 6 PM']].map(([day, hours]) => (
                     <div key={day} className="flex justify-between items-center">
                       <span>{day}</span>
                       <span className="font-bold text-white text-xs px-2.5 py-1 bg-white/15 rounded-full">{hours}</span>
