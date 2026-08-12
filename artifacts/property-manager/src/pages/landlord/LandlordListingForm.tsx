@@ -53,7 +53,7 @@ const AMENITIES = [
 
 const emptyForm: FormData = {
   title: '', description: '', address: '', city: '', price: '',
-  bedrooms: '1', bathrooms: '1', area_sqft: '', type: 'rent', status: 'available', featured: false,
+  bedrooms: '1', bathrooms: '1', area_sqft: '', type: 'rent', status: 'pending_review', featured: false,
   amenities: [], agreement_fee: '', other_charges: '', latitude: '', longitude: '',
 }
 
@@ -295,7 +295,10 @@ export default function LandlordListingForm() {
       other_charges: form.other_charges ? digitsToNumber(form.other_charges) : null,
       bedrooms: Number(form.bedrooms), bathrooms: Number(form.bathrooms),
       area_sqft: form.area_sqft ? Number(form.area_sqft) : null,
-      type: form.type, status: form.status, featured: form.featured,
+      type: form.type,
+      // New listings always enter as pending_review; edits keep whatever status admin set.
+      status: isEdit ? form.status : 'pending_review',
+      featured: form.featured,
       amenities: form.amenities,
       latitude: form.latitude ? Number(form.latitude) : null,
       longitude: form.longitude ? Number(form.longitude) : null,

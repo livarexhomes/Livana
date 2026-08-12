@@ -76,14 +76,14 @@ export default function AdminHeader({ title, subtitle, action, pendingCount = 0 
     for (const l of kycPending ?? []) {
       if (!seen.has(l.id)) {
         seen.add(l.id)
-        items.push({ id: `kyc-${l.id}`, label: `${l.full_name} submitted KYC`, sub: 'Awaiting your review', href: '/admin/kyc', type: 'kyc' })
+        items.push({ id: `kyc-${l.id}`, label: `${l.full_name} submitted KYC`, sub: 'Awaiting your review', href: '/admin/vetting', type: 'kyc' })
       }
     }
     if (prefs?.newLandlord !== false) {
       for (const l of newLandlords ?? []) {
         if (!seen.has(l.id)) {
           seen.add(l.id)
-          items.push({ id: `ll-${l.id}`, label: `${l.full_name} signed up as landlord`, sub: relAgo(l.created_at), href: '/admin/kyc', type: 'signup' })
+          items.push({ id: `ll-${l.id}`, label: `${l.full_name} signed up as landlord`, sub: relAgo(l.created_at), href: '/admin/vetting', type: 'signup' })
         }
       }
     }
@@ -97,7 +97,7 @@ export default function AdminHeader({ title, subtitle, action, pendingCount = 0 
     }
     if (prefs?.newProperty !== false) {
       for (const p of newProps ?? []) {
-        items.push({ id: `np-${p.id}`, label: `New listing: ${p.title}`, sub: `${p.city ?? ''} · ${relAgo(p.created_at)}`, href: '/admin/properties', type: 'info' })
+        items.push({ id: `np-${p.id}`, label: `New listing: ${p.title}`, sub: `${p.city ?? ''} · ${relAgo(p.created_at)} · Pending approval`, href: '/admin/vetting', type: 'kyc' })
       }
     }
     for (const tk of tickets ?? []) {
@@ -335,9 +335,9 @@ export default function AdminHeader({ title, subtitle, action, pendingCount = 0 
                   className="flex-1 flex items-center justify-center gap-1.5 text-xs font-semibold text-blue-600 hover:text-blue-700 transition-colors">
                   Activity log <ArrowRight className="w-3 h-3" />
                 </button>
-                <button type="button" onClick={() => goTo('/admin/kyc')}
+                <button type="button" onClick={() => goTo('/admin/vetting')}
                   className="flex-1 flex items-center justify-center gap-1.5 text-xs font-semibold text-indigo-600 hover:text-indigo-700 transition-colors">
-                  KYC review <ArrowRight className="w-3 h-3" />
+                  Vetting Hub <ArrowRight className="w-3 h-3" />
                 </button>
               </div>
             </div>

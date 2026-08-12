@@ -22,7 +22,7 @@ const mainNav = [
   { label: 'Dashboard',    href: '/admin',            exact: true,  icon: LayoutDashboard },
   { label: 'Listings',     href: '/admin/properties', exact: false, icon: List },
   { label: 'Clients',      href: '/admin/landlords',  exact: false, icon: UserPlus },
-  { label: 'KYC Review',   href: '/admin/kyc',        exact: false, icon: ShieldCheck },
+  { label: 'Vetting',      href: '/admin/vetting',    exact: false, icon: ShieldCheck },
   { label: 'Projects',     href: '/admin/projects',   exact: false, icon: FolderKanban },
   { label: 'Users',        href: '/admin/users',      exact: false, icon: UserCog },
   { label: 'Activity Log', href: '/admin/activity',   exact: false, icon: Activity },

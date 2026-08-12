@@ -122,7 +122,7 @@ export interface Database {
           bathrooms: number
           area_sqft: number | null
           type: 'sale' | 'rent'
-          status: 'available' | 'taken' | 'coming_soon' | 'under_negotiation'
+          status: 'available' | 'taken' | 'coming_soon' | 'under_negotiation' | 'pending_review'
           featured: boolean
           created_at: string
           updated_at: string
@@ -142,7 +142,7 @@ export interface Database {
           bathrooms: number
           area_sqft?: number | null
           type: 'sale' | 'rent'
-          status?: 'available' | 'taken' | 'coming_soon' | 'under_negotiation'
+          status?: 'available' | 'taken' | 'coming_soon' | 'under_negotiation' | 'pending_review'
           featured?: boolean
           created_at?: string
           updated_at?: string
@@ -162,7 +162,7 @@ export interface Database {
           bathrooms?: number
           area_sqft?: number | null
           type?: 'sale' | 'rent'
-          status?: 'available' | 'taken' | 'coming_soon' | 'under_negotiation'
+          status?: 'available' | 'taken' | 'coming_soon' | 'under_negotiation' | 'pending_review'
           featured?: boolean
           created_at?: string
           updated_at?: string
