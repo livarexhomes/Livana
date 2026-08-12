@@ -1,13 +1,15 @@
 import { useState, useEffect } from 'react'
 import {
   ShieldCheck, Search, CheckCircle, Clock, XCircle, Ban,
-  ChevronRight, X, User, FileText, MapPin,
-  ExternalLink, ImageIcon,
+  X, FileText, Phone, Calendar, CreditCard, Hash,
+  ChevronRight, Loader2, AlertTriangle, Eye,
 } from 'lucide-react'
 import AdminSidebar from '../../components/layout/AdminSidebar'
 import AdminHeader from '../../components/layout/AdminHeader'
 import AuthGuard from '../../components/auth/AuthGuard'
 import { createClient, getKycDocUrl } from '../../lib/supabase'
+
+// ── Constants ────────────────────────────────────────────────────────────────
 
 const DOC_LABELS: Record<string, string> = {
   id_front:     'ID Card — Front',
@@ -16,12 +18,14 @@ const DOC_LABELS: Record<string, string> = {
   selfie:       'Selfie with ID',
 }
 
-const STATUS_META: Record<string, { label: string; icon: any; bg: string; text: string; dot: string }> = {
-  approved:      { label: 'Approved',  icon: CheckCircle, bg: 'bg-emerald-50', text: 'text-emerald-700', dot: 'bg-emerald-500' },
-  pending:       { label: 'Pending KYC', icon: Clock,    bg: 'bg-amber-50',   text: 'text-amber-700',   dot: 'bg-amber-500'   },
-  rejected:      { label: 'Rejected',  icon: XCircle,    bg: 'bg-red-50',     text: 'text-red-600',     dot: 'bg-red-500'     },
-  suspended:     { label: 'Suspended', icon: Ban,         bg: 'bg-orange-50',  text: 'text-orange-700',  dot: 'bg-orange-500'  },
-  not_submitted: { label: 'Not Submitted', icon: Clock,  bg: 'bg-gray-50',    text: 'text-gray-500',    dot: 'bg-gray-400'    },
+const STATUS_META: Record<string, {
+  label: string; bg: string; text: string; border: string; dot: string
+}> = {
+  approved:      { label: 'Approved',      bg: 'bg-emerald-50',  text: 'text-emerald-700', border: 'border-emerald-200', dot: 'bg-emerald-500' },
+  pending:       { label: 'Pending KYC',   bg: 'bg-amber-50',    text: 'text-amber-700',   border: 'border-amber-200',   dot: 'bg-amber-500'   },
+  rejected:      { label: 'Rejected',      bg: 'bg-red-50',      text: 'text-red-600',     border: 'border-red-200',     dot: 'bg-red-500'     },
+  suspended:     { label: 'Suspended',     bg: 'bg-orange-50',   text: 'text-orange-700',  border: 'border-orange-200',  dot: 'bg-orange-500'  },
+  not_submitted: { label: 'Not Submitted', bg: 'bg-slate-50',    text: 'text-slate-500',   border: 'border-slate-200',   dot: 'bg-slate-400'   },
 }
 
 const AVATAR_GRADIENTS = [
@@ -45,19 +49,30 @@ function fmtDate(d: string | null) {
   return new Date(d).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
 }
 
+function daysAgo(d: string | null) {
+  if (!d) return null
+  const diff = Math.floor((Date.now() - new Date(d).getTime()) / 86400000)
+  if (diff === 0) return 'Today'
+  if (diff === 1) return '1 day ago'
+  return `${diff} days ago`
+}
+
+// ── Main Component ────────────────────────────────────────────────────────────
+
 export default function AdminKYC() {
-  const [user, setUser]           = useState<{ email?: string } | null>(null)
-  const [landlords, setLandlords] = useState<any[]>([])
-  const [filtered, setFiltered]   = useState<any[]>([])
-  const [loading, setLoading]     = useState(true)
-  const [search, setSearch]       = useState('')
-  const [statusFilter, setStatusFilter] = useState('all')
-  const [selected, setSelected]     = useState<any | null>(null)
-  const [processing, setProcessing] = useState<string | null>(null)
-  const [kycDocs, setKycDocs]       = useState<{ doc_type: string; url: string; file_name: string }[]>([])
-  const [imgErrors, setImgErrors]   = useState<Record<string, boolean>>({})
+  const [user, setUser]               = useState<{ email?: string } | null>(null)
+  const [landlords, setLandlords]     = useState<any[]>([])
+  const [filtered, setFiltered]       = useState<any[]>([])
+  const [loading, setLoading]         = useState(true)
+  const [search, setSearch]           = useState('')
+  const [statusFilter, setStatusFilter] = useState('pending')
+  const [selected, setSelected]       = useState<any | null>(null)
+  const [processing, setProcessing]   = useState<string | null>(null)
+  const [kycDocs, setKycDocs]         = useState<{ doc_type: string; url: string; file_name: string }[]>([])
+  const [imgErrors, setImgErrors]     = useState<Record<string, boolean>>({})
   const [docsLoading, setDocsLoading] = useState(false)
 
+  // ── Load landlords ──────────────────────────────────────────────────────────
   useEffect(() => {
     const supabase = createClient()
     supabase.auth.getUser().then(({ data: { user } }) => {
@@ -65,386 +80,471 @@ export default function AdminKYC() {
       if (user?.id) window.__livarexUserId = user.id
     })
     supabase
-      .from('landlords')
-      .select('*')
-      .order('created_at', { ascending: false })
-      .then(({ data, error }) => {
-        if (error) console.error('[AdminKYC] landlords query error:', error)
+      .from('landlords').select('*').order('created_at', { ascending: false })
+      .then(({ data }) => {
         const rows = data ?? []
         setLandlords(rows)
-        setFiltered(rows)   // default = all (filter controls below narrow it down)
+        setFiltered(rows.filter(l => l.status === 'pending'))
         setLoading(false)
       })
   }, [])
 
+  // ── Filter / search ─────────────────────────────────────────────────────────
   useEffect(() => {
     let list = [...landlords]
     if (statusFilter !== 'all') list = list.filter(l => l.status === statusFilter)
     if (search.trim()) {
       const q = search.toLowerCase()
-      list = list.filter(l => l.full_name?.toLowerCase().includes(q) || l.whatsapp?.includes(q))
+      list = list.filter(l =>
+        l.full_name?.toLowerCase().includes(q) || l.whatsapp?.includes(q)
+      )
     }
     setFiltered(list)
   }, [search, statusFilter, landlords])
 
+  // ── Load KYC documents ──────────────────────────────────────────────────────
   async function loadKycDocs(landlordId: string) {
     setDocsLoading(true)
     setKycDocs([])
     setImgErrors({})
     const supabase = createClient()
-    const { data, error } = await supabase
-      .from('kyc_documents')
-      .select('doc_type, storage_path, file_name')
-      .eq('landlord_id', landlordId)
-      .order('created_at', { ascending: true })
-    if (error) console.error('[KYC] fetch docs error:', error)
+    const { data } = await supabase
+      .from('kyc_documents').select('doc_type, storage_path, file_name')
+      .eq('landlord_id', landlordId).order('created_at', { ascending: true })
     if (data && data.length > 0) {
       const withUrls = await Promise.all(
-        data.map(async (d: any) => {
-          const url = await getKycDocUrl(d.storage_path)
-          if (!url) console.warn('[KYC] signed URL failed for path:', d.storage_path)
-          return {
-            doc_type:  d.doc_type,
-            file_name: d.file_name ?? d.doc_type,
-            url:       url ?? '',
-          }
-        })
+        data.map(async (d: any) => ({
+          doc_type:  d.doc_type,
+          file_name: d.file_name ?? d.doc_type,
+          url:       (await getKycDocUrl(d.storage_path)) ?? '',
+        }))
       )
       setKycDocs(withUrls)
     }
     setDocsLoading(false)
   }
 
+  // ── Status update ───────────────────────────────────────────────────────────
   async function updateStatus(id: string, status: string) {
     setProcessing(id)
     const supabase = createClient()
     const patch: any = { status }
     if (status === 'approved') patch.is_verified = true
+    if (status !== 'approved') patch.is_verified = false
     await supabase.from('landlords').update(patch).eq('id', id)
     setLandlords(ls => ls.map(l => l.id === id ? { ...l, ...patch } : l))
     if (selected?.id === id) setSelected((s: any) => s ? { ...s, ...patch } : s)
     setProcessing(null)
   }
 
+  // ── Derived ─────────────────────────────────────────────────────────────────
   const displayName = user?.email ? user.email.split('@')[0] : 'Admin'
-  const pending = landlords.filter(l => l.status === 'pending').length
+  const counts = {
+    pending:       landlords.filter(l => l.status === 'pending').length,
+    approved:      landlords.filter(l => l.status === 'approved').length,
+    rejected:      landlords.filter(l => l.status === 'rejected').length,
+    suspended:     landlords.filter(l => l.status === 'suspended').length,
+    not_submitted: landlords.filter(l => l.status === 'not_submitted').length,
+    all:           landlords.length,
+  }
 
-  const STATUS_TABS = [
-    { key: 'pending',       label: 'Pending KYC',  count: landlords.filter(l => l.status === 'pending').length },
-    { key: 'approved',      label: 'Approved',      count: landlords.filter(l => l.status === 'approved').length },
-    { key: 'suspended',     label: 'Suspended',     count: landlords.filter(l => l.status === 'suspended').length },
-    { key: 'not_submitted', label: 'Not Submitted', count: landlords.filter(l => l.status === 'not_submitted').length },
-    { key: 'all',           label: 'All',           count: landlords.length },
+  const FILTER_TABS = [
+    { key: 'pending',       label: 'Pending',       count: counts.pending },
+    { key: 'approved',      label: 'Approved',      count: counts.approved },
+    { key: 'rejected',      label: 'Rejected',      count: counts.rejected },
+    { key: 'suspended',     label: 'Suspended',     count: counts.suspended },
+    { key: 'not_submitted', label: 'Not Submitted', count: counts.not_submitted },
+    { key: 'all',           label: 'All',           count: counts.all },
   ]
 
+  // ── Review panel helpers ────────────────────────────────────────────────────
+  function clearSelection() {
+    setSelected(null)
+    setKycDocs([])
+    setImgErrors({})
+  }
+
+  function selectLandlord(l: any) {
+    if (selected?.id === l.id) { clearSelection(); return }
+    setSelected(l)
+    loadKycDocs(l.id)
+  }
+
+  // ── Render ──────────────────────────────────────────────────────────────────
   return (
     <AuthGuard require="admin">
       <div className="flex h-screen overflow-hidden bg-[#F4F6FB]">
         <AdminSidebar userEmail={user?.email} userName={displayName} />
 
-        <div className="flex-1 flex flex-col min-w-0">
+        <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
           <AdminHeader
             title="KYC Review"
-            subtitle={`${pending} pending review${pending !== 1 ? 's' : ''}`}
-            pendingCount={pending}
+            subtitle={`${counts.pending} pending${counts.pending !== 1 ? '' : ''} · ${landlords.length} landlords total`}
+            pendingCount={counts.pending}
           />
 
-          <main className="flex-1 overflow-y-auto p-4 md:p-5 pb-24 md:pb-6">
-            <div className="grid gap-4 xl:grid-cols-[1.3fr_0.95fr]">
-              <div className="space-y-4">
-                <div className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-[0_20px_80px_-40px_rgba(15,23,42,0.14)]">
-                  <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
-                    <div className="space-y-3">
-                      <p className="text-xs uppercase tracking-[0.28em] text-slate-400">KYC dashboard</p>
-                      <h2 className="text-3xl font-extrabold text-slate-950">Review identity checks quickly</h2>
-                      <p className="max-w-2xl text-sm leading-6 text-slate-500">Manage landlord KYC submissions, track statuses, and approve verified accounts from one place.</p>
-                    </div>
-                    <div className="rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700">
-                      {landlords.length.toLocaleString()} landlords · {pending} pending review
-                    </div>
-                  </div>
-
-                  <div className="mt-6 grid gap-3 sm:grid-cols-4">
-                    {[
-                      { label: 'Pending', value: pending, labelClass: 'text-amber-700', valueClass: 'text-amber-900', subtitle: 'Needs action' },
-                      { label: 'Approved', value: landlords.filter(l => l.status === 'approved').length, labelClass: 'text-emerald-700', valueClass: 'text-emerald-900', subtitle: 'Verified accounts' },
-                      { label: 'Suspended', value: landlords.filter(l => l.status === 'suspended').length, labelClass: 'text-orange-700', valueClass: 'text-orange-900', subtitle: 'Restricted access' },
-                      { label: 'Not submitted', value: landlords.filter(l => l.status === 'not_submitted').length, labelClass: 'text-slate-600', valueClass: 'text-slate-950', subtitle: 'No documents' },
-                    ].map(card => (
-                      <div key={card.label} className="rounded-3xl border border-slate-200 bg-slate-50 p-4">
-                        <p className={`text-xs font-semibold uppercase tracking-[0.28em] ${card.labelClass}`}>{card.label}</p>
-                        <p className={`mt-3 text-3xl font-extrabold ${card.valueClass}`}>{card.value}</p>
-                        <p className="mt-2 text-xs text-slate-500">{card.subtitle}</p>
-                      </div>
-                    ))}
-                  </div>
+          {/* ── Stat strip ── */}
+          <div className="shrink-0 border-b border-slate-200 bg-white px-5 py-3">
+            <div className="flex items-center gap-3 overflow-x-auto">
+              {[
+                { label: 'Pending',       value: counts.pending,       color: 'text-amber-700',   dot: 'bg-amber-400'  },
+                { label: 'Approved',      value: counts.approved,      color: 'text-emerald-700', dot: 'bg-emerald-500'},
+                { label: 'Rejected',      value: counts.rejected,      color: 'text-red-600',     dot: 'bg-red-500'    },
+                { label: 'Suspended',     value: counts.suspended,     color: 'text-orange-700',  dot: 'bg-orange-500' },
+                { label: 'Not Submitted', value: counts.not_submitted, color: 'text-slate-500',   dot: 'bg-slate-400'  },
+              ].map(s => (
+                <div key={s.label} className="flex items-center gap-2 rounded-xl bg-slate-50 border border-slate-200 px-3 py-2 shrink-0">
+                  <span className={`w-2 h-2 rounded-full ${s.dot}`} />
+                  <span className="text-xs text-slate-500">{s.label}</span>
+                  <span className={`text-sm font-extrabold tabular-nums ${s.color}`}>{s.value}</span>
                 </div>
-
-                <div className="rounded-[32px] border border-slate-200 bg-white p-4 shadow-sm">
-                  <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
-                    <div className="space-y-2">
-                      <p className="text-xs uppercase tracking-[0.28em] text-slate-400">Filter and search</p>
-                      <h3 className="text-lg font-semibold text-slate-950">Find submissions fast</h3>
-                    </div>
-                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-                      <div className="flex items-center gap-2 rounded-3xl border border-slate-200 bg-slate-100 px-3 py-2 shadow-sm">
-                        <Search className="w-4 h-4 text-slate-500" />
-                        <input value={search} onChange={e => setSearch(e.target.value)}
-                          placeholder="Search by name or WhatsApp"
-                          className="w-full bg-transparent text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none" />
-                      </div>
-                      <div className="flex flex-wrap items-center gap-2">
-                        {STATUS_TABS.map(tab => (
-                          <button key={tab.key} type="button" onClick={() => setStatusFilter(tab.key)}
-                            className={`rounded-full px-3 py-1.5 text-sm font-semibold transition ${statusFilter === tab.key ? 'bg-slate-950 text-white shadow' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}>
-                            {tab.label}
-                          </button>
-                        ))}
-                      </div>
-                      <div className="rounded-3xl border border-slate-200 bg-white px-3 py-2.5 text-sm font-semibold text-slate-700 shadow-sm">
-                        {filtered.length} result{filtered.length === 1 ? '' : 's'}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {loading ? (
-                  <div className="flex items-center justify-center py-20">
-                    <div className="animate-spin w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full" />
-                  </div>
-                ) : filtered.length === 0 ? (
-                  <div className="rounded-[32px] border border-slate-200 bg-white p-12 text-center shadow-sm">
-                    <ShieldCheck className="mx-auto mb-4 h-12 w-12 text-slate-200" />
-                    <p className="text-lg font-semibold text-slate-700">No submissions match this view</p>
-                    <p className="mt-2 text-sm text-slate-500">Try another filter or search query.</p>
-                  </div>
-                ) : (
-                  <div className="grid gap-3">
-                    {filtered.map(l => {
-                      const meta = STATUS_META[l.status] ?? STATUS_META.pending
-                      const isSelected = selected?.id === l.id
-                      return (
-                        <button key={l.id} type="button" onClick={() => {
-                          if (isSelected) { setSelected(null); setKycDocs([]); setImgErrors({}) }
-                          else { setSelected(l); loadKycDocs(l.id) }
-                        }}
-                          className={`w-full rounded-[28px] border p-3 text-left transition ${isSelected ? 'border-blue-300 bg-blue-50 shadow-sm' : 'border-slate-200 bg-white hover:border-slate-300 hover:shadow-sm'}`}>
-                          <div className="flex items-start gap-4">
-                            <div className={`flex h-12 w-12 items-center justify-center rounded-3xl bg-gradient-to-br ${avatarGrad(l.full_name)}`}>
-                              <span className="text-sm font-semibold text-white">{getInitials(l.full_name)}</span>
-                            </div>
-                            <div className="min-w-0 flex-1">
-                              <div className="flex flex-wrap items-center gap-2">
-                                <p className="truncate text-base font-semibold text-slate-950">{l.full_name}</p>
-                                <span className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-[11px] font-semibold ${meta.bg} ${meta.text}`}>
-                                  <span className={`h-2.5 w-2.5 rounded-full ${meta.dot}`} />{meta.label}
-                                </span>
-                              </div>
-                              <div className="mt-2 flex flex-wrap items-center gap-2 text-sm text-slate-500">
-                                <span>{l.whatsapp || 'No WhatsApp'}</span>
-                                {l.kyc_submitted_at && <span>{fmtDate(l.kyc_submitted_at)}</span>}
-                              </div>
-                            </div>
-                            <ChevronRight className={`mt-1 h-5 w-5 shrink-0 ${isSelected ? 'text-blue-500' : 'text-slate-300'}`} />
-                          </div>
-                        </button>
-                      )
-                    })}
-                  </div>
-                )}
-              </div>
-
-              <aside className="space-y-4">
-                <div className="rounded-[32px] border border-slate-200 bg-white p-5 shadow-sm">
-                  <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">Top pending</p>
-                  <div className="mt-3 space-y-2">
-                    {filtered.filter(item => item.status === 'pending').slice(0, 3).map(item => (
-                      <div key={item.id} className="rounded-3xl border border-slate-100 bg-slate-50 p-3">
-                        <p className="text-sm font-semibold text-slate-950 truncate">{item.full_name}</p>
-                        <p className="mt-1 text-xs text-slate-500">{item.whatsapp || 'No WhatsApp'}</p>
-                      </div>
-                    ))}
-                    {filtered.filter(item => item.status === 'pending').length === 0 && (
-                      <p className="text-sm text-slate-500">No pending submissions in current filter.</p>
-                    )}
-                  </div>
-                </div>
-
-                {selected && (
-                  <div className="rounded-[32px] border border-slate-200 bg-white p-5 shadow-sm">
-                    <div className="flex flex-col gap-4">
-                      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                        <div className="flex items-center gap-3">
-                          <div className={`flex h-12 w-12 items-center justify-center rounded-3xl bg-gradient-to-br ${avatarGrad(selected.full_name)}`}>
-                            <span className="text-sm font-semibold text-white">{getInitials(selected.full_name)}</span>
-                          </div>
-                          <div>
-                            <p className="text-base font-semibold text-slate-950">{selected.full_name}</p>
-                            <p className="text-sm text-slate-500">{selected.whatsapp || 'No WhatsApp'}</p>
-                          </div>
-                        </div>
-                        <button onClick={() => { setSelected(null); setKycDocs([]); setImgErrors({}) }}
-                          className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 transition-colors">
-                          <X className="h-4 w-4" />
-                        </button>
-                      </div>
-
-                      <div className="flex flex-wrap gap-2 items-center">
-                        <div className="rounded-full bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-700">
-                          {STATUS_META[selected.status]?.label ?? 'Pending'}
-                        </div>
-                        <div className="flex flex-wrap gap-2">
-                          {selected.status !== 'approved' && (
-                            <button type="button" onClick={() => updateStatus(selected.id, 'approved')}
-                              disabled={processing === selected.id}
-                              className="rounded-2xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700 transition-colors disabled:opacity-50">
-                              Approve
-                            </button>
-                          )}
-                          {selected.status !== 'rejected' && (
-                            <button type="button" onClick={() => updateStatus(selected.id, 'rejected')}
-                              disabled={processing === selected.id}
-                              className="rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-colors disabled:opacity-50">
-                              Reject
-                            </button>
-                          )}
-                        </div>
-                      </div>
-
-                      <div className="grid gap-2 sm:grid-cols-2">
-                        {[
-                          ['Joined', fmtDate(selected.created_at)],
-                          ['NIN', selected.nin],
-                          ['ID type', selected.id_type],
-                          ['ID number', selected.id_number],
-                        ].map(([label, value]) => (
-                          <div key={label} className="rounded-3xl bg-slate-50 p-4">
-                            <p className="text-[10px] uppercase tracking-[0.25em] text-slate-400">{label}</p>
-                            <p className="mt-2 text-sm font-semibold text-slate-950">{value || '—'}</p>
-                          </div>
-                        ))}
-                      </div>
-
-                      <div className="rounded-3xl border border-slate-200 bg-slate-50 p-4">
-                        <div className="flex items-center justify-between gap-4">
-                          <div>
-                            <p className="text-xs uppercase tracking-[0.25em] text-slate-400">Uploaded documents</p>
-                            <p className="mt-1 text-sm text-slate-500">Open each file for review.</p>
-                          </div>
-                          <p className="text-sm font-semibold text-slate-700">{kycDocs.length} file{kycDocs.length === 1 ? '' : 's'}</p>
-                        </div>
-                        <div className="mt-4 space-y-3">
-                          {docsLoading ? (
-                            <div className="rounded-3xl bg-white p-4 text-sm text-slate-500">Loading documents…</div>
-                          ) : kycDocs.length === 0 ? (
-                            <div className="rounded-3xl bg-white p-4 text-sm text-slate-500">No documents uploaded for this landlord.</div>
-                          ) : kycDocs.map(doc => {
-                            const isImage = /\.(jpe?g|png|webp)$/i.test(doc.file_name)
-                            return (
-                              <a key={doc.doc_type} href={doc.url} target="_blank" rel="noreferrer"
-                                className="flex items-center gap-3 rounded-3xl border border-slate-200 bg-white p-3 transition hover:border-slate-300">
-                                <div className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-3xl bg-slate-100">
-                                  {isImage && !imgErrors[doc.doc_type] ? (
-                                    <img src={doc.url} alt={doc.file_name} className="h-full w-full object-cover"
-                                      onError={() => setImgErrors(prev => ({ ...prev, [doc.doc_type]: true }))} />
-                                  ) : (
-                                    <FileText className="h-6 w-6 text-slate-400" />
-                                  )}
-                                </div>
-                                <div className="min-w-0 flex-1">
-                                  <p className="text-sm font-semibold text-slate-950">{DOC_LABELS[doc.doc_type] ?? doc.doc_type}</p>
-                                  <p className="mt-1 truncate text-sm text-slate-500">{doc.file_name}</p>
-                                </div>
-                                <span className="rounded-full bg-slate-100 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">View</span>
-                              </a>
-                            )
-                          })}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </aside>
+              ))}
             </div>
+          </div>
 
-            {selected && (
-              <div className="mt-4 xl:hidden rounded-[32px] border border-slate-200 bg-white p-4 shadow-sm">
-                <div className="flex items-center justify-between gap-4">
-                  <div className="flex items-center gap-3">
-                    <div className={`flex h-12 w-12 items-center justify-center rounded-3xl bg-gradient-to-br ${avatarGrad(selected.full_name)}`}>
-                      <span className="text-sm font-semibold text-white">{getInitials(selected.full_name)}</span>
-                    </div>
-                    <div>
-                      <p className="text-base font-semibold text-slate-950">{selected.full_name}</p>
-                      <p className="text-sm text-slate-500">{selected.whatsapp || 'No WhatsApp'}</p>
-                    </div>
-                  </div>
-                  <button onClick={() => { setSelected(null); setKycDocs([]); setImgErrors({}) }}
-                    className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 transition-colors">
-                    <X className="h-4 w-4" />
-                  </button>
+          {/* ── Body: queue + review panel ── */}
+          <div className="flex flex-1 min-h-0 overflow-hidden">
+
+            {/* ── LEFT: Queue ── */}
+            <div className="flex flex-col w-full max-w-xs xl:max-w-sm shrink-0 border-r border-slate-200 bg-white">
+
+              {/* Search + filter */}
+              <div className="shrink-0 p-3 border-b border-slate-100 space-y-2">
+                {/* Search */}
+                <div className="flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
+                  <Search className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                  <input
+                    value={search} onChange={e => setSearch(e.target.value)}
+                    placeholder="Search name or WhatsApp…"
+                    className="flex-1 bg-transparent text-[13px] text-slate-900 placeholder:text-slate-400 focus:outline-none"
+                  />
+                  {search && (
+                    <button onClick={() => setSearch('')} className="text-slate-400 hover:text-slate-600">
+                      <X className="w-3 h-3" />
+                    </button>
+                  )}
                 </div>
-                <div className="mt-3 rounded-3xl bg-slate-50 p-3">
-                  <p className="text-xs uppercase tracking-[0.25em] text-slate-400">Status</p>
-                  <div className="mt-3 inline-flex items-center gap-2 rounded-full bg-white px-3 py-2 text-sm font-semibold text-slate-900 shadow-sm">
-                    <span className={`h-2.5 w-2.5 rounded-full ${STATUS_META[selected.status]?.dot ?? STATUS_META.pending.dot}`} />
-                    {STATUS_META[selected.status]?.label ?? 'Pending'}
-                  </div>
-                </div>
-                <div className="mt-3 grid gap-2 sm:grid-cols-2">
-                  {[
-                    ['Joined', fmtDate(selected.created_at)],
-                    ['NIN', selected.nin],
-                    ['ID type', selected.id_type],
-                    ['ID number', selected.id_number],
-                  ].map(([label, value]) => (
-                    <div key={label} className="rounded-3xl bg-slate-50 p-4">
-                      <p className="text-[10px] uppercase tracking-[0.25em] text-slate-400">{label}</p>
-                      <p className="mt-2 text-sm font-semibold text-slate-950">{value || '—'}</p>
-                    </div>
+                {/* Filter tabs */}
+                <div className="flex flex-wrap gap-1">
+                  {FILTER_TABS.map(tab => (
+                    <button key={tab.key} onClick={() => setStatusFilter(tab.key)}
+                      className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-semibold transition-all ${
+                        statusFilter === tab.key
+                          ? 'bg-slate-900 text-white'
+                          : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                      }`}>
+                      {tab.label}
+                      <span className={`text-[10px] tabular-nums ${statusFilter === tab.key ? 'text-white/70' : 'text-slate-400'}`}>
+                        {tab.count}
+                      </span>
+                    </button>
                   ))}
                 </div>
-                <div className="mt-4 rounded-3xl border border-slate-200 bg-slate-50 p-4">
-                  <div className="flex items-center justify-between gap-4">
-                    <div>
-                      <p className="text-xs uppercase tracking-[0.25em] text-slate-400">Uploaded documents</p>
-                      <p className="mt-1 text-sm text-slate-500">Open each file for review.</p>
-                    </div>
-                    <p className="text-sm font-semibold text-slate-700">{kycDocs.length} file{kycDocs.length === 1 ? '' : 's'}</p>
+                <p className="text-[11px] text-slate-400 pl-0.5">
+                  {filtered.length} result{filtered.length !== 1 ? 's' : ''}
+                </p>
+              </div>
+
+              {/* List */}
+              <div className="flex-1 overflow-y-auto">
+                {loading ? (
+                  <div className="flex items-center justify-center py-16">
+                    <Loader2 className="w-6 h-6 text-blue-600 animate-spin" />
                   </div>
-                  <div className="mt-4 space-y-3">
-                    {docsLoading ? (
-                      <div className="rounded-3xl bg-white p-4 text-sm text-slate-500">Loading documents…</div>
-                    ) : kycDocs.length === 0 ? (
-                      <div className="rounded-3xl bg-white p-4 text-sm text-slate-500">No documents uploaded for this landlord.</div>
-                    ) : kycDocs.map(doc => {
-                      const isImage = /\.(jpe?g|png|webp)$/i.test(doc.file_name)
+                ) : filtered.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center h-full py-16 px-6 text-center">
+                    <ShieldCheck className="w-10 h-10 text-slate-200 mb-3" />
+                    <p className="text-sm font-semibold text-slate-600">No results</p>
+                    <p className="text-xs text-slate-400 mt-1">Try a different filter or search term.</p>
+                  </div>
+                ) : (
+                  <div className="divide-y divide-slate-100">
+                    {filtered.map(l => {
+                      const meta  = STATUS_META[l.status] ?? STATUS_META.pending
+                      const isSelected = selected?.id === l.id
+                      const isPending  = l.status === 'pending'
+                      const ago        = isPending ? daysAgo(l.kyc_submitted_at) : null
+
                       return (
-                        <a key={doc.doc_type} href={doc.url} target="_blank" rel="noreferrer"
-                          className="flex items-center gap-3 rounded-3xl border border-slate-200 bg-white p-3 transition hover:border-slate-300">
-                          <div className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-3xl bg-slate-100">
-                            {isImage && !imgErrors[doc.doc_type] ? (
-                              <img src={doc.url} alt={doc.file_name} className="h-full w-full object-cover"
-                                onError={() => setImgErrors(prev => ({ ...prev, [doc.doc_type]: true }))} />
-                            ) : (
-                              <FileText className="h-6 w-6 text-slate-400" />
-                            )}
+                        <button key={l.id} type="button" onClick={() => selectLandlord(l)}
+                          className={`w-full text-left px-4 py-3.5 transition-all ${
+                            isSelected
+                              ? 'bg-blue-50 border-l-2 border-l-blue-600'
+                              : 'hover:bg-slate-50 border-l-2 border-l-transparent'
+                          }`}>
+                          <div className="flex items-start gap-3">
+                            {/* Avatar */}
+                            <div className={`w-9 h-9 rounded-full bg-gradient-to-br ${avatarGrad(l.full_name)} flex items-center justify-center shrink-0 text-[11px] font-bold text-white`}>
+                              {getInitials(l.full_name)}
+                            </div>
+                            {/* Info */}
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <p className={`text-[13px] font-semibold truncate ${isSelected ? 'text-blue-900' : 'text-slate-900'}`}>
+                                  {l.full_name}
+                                </p>
+                                <span className={`inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border ${meta.bg} ${meta.text} ${meta.border}`}>
+                                  <span className={`w-1.5 h-1.5 rounded-full ${meta.dot}`} />
+                                  {meta.label}
+                                </span>
+                              </div>
+                              <div className="mt-1 flex items-center gap-2 text-[11.5px] text-slate-400">
+                                {l.whatsapp
+                                  ? <span className="truncate">{l.whatsapp}</span>
+                                  : <span className="italic">No phone</span>
+                                }
+                                {ago && (
+                                  <span className={`shrink-0 font-semibold ${isPending ? 'text-amber-600' : 'text-slate-400'}`}>
+                                    · {ago}
+                                  </span>
+                                )}
+                                {!isPending && l.kyc_submitted_at && (
+                                  <span className="shrink-0">{fmtDate(l.kyc_submitted_at)}</span>
+                                )}
+                              </div>
+                            </div>
+                            <ChevronRight className={`w-4 h-4 shrink-0 mt-0.5 transition-colors ${isSelected ? 'text-blue-500' : 'text-slate-300'}`} />
                           </div>
-                          <div className="min-w-0 flex-1">
-                            <p className="text-sm font-semibold text-slate-950">{DOC_LABELS[doc.doc_type] ?? doc.doc_type}</p>
-                            <p className="mt-1 truncate text-sm text-slate-500">{doc.file_name}</p>
-                          </div>
-                          <span className="rounded-full bg-slate-100 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">View</span>
-                        </a>
+                        </button>
                       )
                     })}
                   </div>
-                </div>
+                )}
               </div>
-            )}
-          </main>
+            </div>
+
+            {/* ── RIGHT: Review panel ── */}
+            <div className="flex-1 min-w-0 overflow-hidden flex flex-col">
+              {selected ? (
+                <ReviewPanel
+                  landlord={selected}
+                  kycDocs={kycDocs}
+                  docsLoading={docsLoading}
+                  processing={processing}
+                  imgErrors={imgErrors}
+                  onImgError={key => setImgErrors(prev => ({ ...prev, [key]: true }))}
+                  onClose={clearSelection}
+                  onUpdateStatus={updateStatus}
+                />
+              ) : (
+                <EmptyReview pendingCount={counts.pending} />
+              )}
+            </div>
+
+          </div>
         </div>
       </div>
     </AuthGuard>
+  )
+}
+
+// ── Review Panel ──────────────────────────────────────────────────────────────
+
+function ReviewPanel({
+  landlord, kycDocs, docsLoading, processing, imgErrors,
+  onImgError, onClose, onUpdateStatus,
+}: {
+  landlord: any
+  kycDocs: { doc_type: string; url: string; file_name: string }[]
+  docsLoading: boolean
+  processing: string | null
+  imgErrors: Record<string, boolean>
+  onImgError: (key: string) => void
+  onClose: () => void
+  onUpdateStatus: (id: string, status: string) => Promise<void>
+}) {
+  const meta   = STATUS_META[landlord.status] ?? STATUS_META.pending
+  const busy   = processing === landlord.id
+
+  const identityFields = [
+    { icon: Calendar,    label: 'Joined',    value: fmtDate(landlord.created_at) },
+    { icon: Calendar,    label: 'Submitted', value: fmtDate(landlord.kyc_submitted_at) },
+    { icon: Hash,        label: 'NIN',       value: landlord.nin },
+    { icon: CreditCard,  label: 'ID Type',   value: landlord.id_type },
+    { icon: Hash,        label: 'ID Number', value: landlord.id_number },
+    { icon: Phone,       label: 'WhatsApp',  value: landlord.whatsapp },
+  ]
+
+  return (
+    <div className="flex flex-col h-full overflow-hidden">
+
+      {/* ── Panel header ── */}
+      <div className="shrink-0 flex items-center justify-between gap-4 px-6 py-4 border-b border-slate-200 bg-white">
+        <div className="flex items-center gap-3 min-w-0">
+          <div className={`w-11 h-11 rounded-full bg-gradient-to-br ${avatarGrad(landlord.full_name)} flex items-center justify-center shrink-0 text-[13px] font-bold text-white`}>
+            {getInitials(landlord.full_name)}
+          </div>
+          <div className="min-w-0">
+            <p className="text-[15px] font-bold text-slate-900 truncate">{landlord.full_name}</p>
+            <div className="flex items-center gap-2 mt-0.5">
+              <span className={`inline-flex items-center gap-1 text-[10.5px] font-bold px-2 py-0.5 rounded-full border ${meta.bg} ${meta.text} ${meta.border}`}>
+                <span className={`w-1.5 h-1.5 rounded-full ${meta.dot}`} />
+                {meta.label}
+              </span>
+              {landlord.whatsapp && (
+                <span className="text-[12px] text-slate-400">{landlord.whatsapp}</span>
+              )}
+            </div>
+          </div>
+        </div>
+        <button onClick={onClose}
+          className="shrink-0 w-8 h-8 flex items-center justify-center rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-500 transition-colors">
+          <X className="w-4 h-4" />
+        </button>
+      </div>
+
+      {/* ── Scrollable body ── */}
+      <div className="flex-1 overflow-y-auto">
+        <div className="p-6 space-y-6">
+
+          {/* ── Action buttons ── */}
+          <div className="rounded-xl border border-slate-200 bg-white p-4">
+            <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-3">Review Actions</p>
+            <div className="flex flex-wrap gap-2">
+              {landlord.status !== 'approved' && (
+                <button onClick={() => onUpdateStatus(landlord.id, 'approved')} disabled={busy}
+                  className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white text-sm font-semibold transition-colors shadow-sm shadow-emerald-600/20">
+                  {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle className="w-4 h-4" />}
+                  Approve
+                </button>
+              )}
+              {landlord.status !== 'rejected' && (
+                <button onClick={() => onUpdateStatus(landlord.id, 'rejected')} disabled={busy}
+                  className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-red-200 bg-red-50 hover:bg-red-100 disabled:opacity-50 text-red-700 text-sm font-semibold transition-colors">
+                  {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <XCircle className="w-4 h-4" />}
+                  Reject
+                </button>
+              )}
+              {landlord.status !== 'suspended' && (
+                <button onClick={() => onUpdateStatus(landlord.id, 'suspended')} disabled={busy}
+                  className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-orange-200 bg-orange-50 hover:bg-orange-100 disabled:opacity-50 text-orange-700 text-sm font-semibold transition-colors">
+                  {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Ban className="w-4 h-4" />}
+                  Suspend
+                </button>
+              )}
+              {landlord.status !== 'pending' && landlord.status !== 'not_submitted' && (
+                <button onClick={() => onUpdateStatus(landlord.id, 'pending')} disabled={busy}
+                  className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-amber-200 bg-amber-50 hover:bg-amber-100 disabled:opacity-50 text-amber-700 text-sm font-semibold transition-colors">
+                  {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Clock className="w-4 h-4" />}
+                  Reset to Pending
+                </button>
+              )}
+            </div>
+
+            {landlord.status === 'approved' && (
+              <div className="mt-3 flex items-center gap-2 text-[12px] text-emerald-700 bg-emerald-50 border border-emerald-100 rounded-lg px-3 py-2">
+                <CheckCircle className="w-3.5 h-3.5 shrink-0" />
+                This landlord is verified and active on the platform.
+              </div>
+            )}
+            {landlord.status === 'rejected' && (
+              <div className="mt-3 flex items-center gap-2 text-[12px] text-red-600 bg-red-50 border border-red-100 rounded-lg px-3 py-2">
+                <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
+                Account is rejected. Use Reset KYC on the Landlords page to allow resubmission.
+              </div>
+            )}
+          </div>
+
+          {/* ── Identity details ── */}
+          <div className="rounded-xl border border-slate-200 bg-white p-4">
+            <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-3">Identity Details</p>
+            <div className="grid grid-cols-2 gap-2">
+              {identityFields.map(f => (
+                <div key={f.label} className="rounded-lg bg-slate-50 border border-slate-100 px-3 py-2.5">
+                  <div className="flex items-center gap-1.5 mb-1">
+                    <f.icon className="w-3 h-3 text-slate-400" />
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">{f.label}</p>
+                  </div>
+                  <p className="text-[13px] font-semibold text-slate-900 truncate">{f.value || '—'}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* ── KYC Documents ── */}
+          <div className="rounded-xl border border-slate-200 bg-white p-4">
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">KYC Documents</p>
+              <span className="text-[11px] font-semibold text-slate-500">
+                {docsLoading ? 'Loading…' : `${kycDocs.length} file${kycDocs.length !== 1 ? 's' : ''}`}
+              </span>
+            </div>
+
+            {docsLoading ? (
+              <div className="flex items-center justify-center py-10 gap-2 text-slate-400">
+                <Loader2 className="w-4 h-4 animate-spin" />
+                <span className="text-sm">Loading documents…</span>
+              </div>
+            ) : kycDocs.length === 0 ? (
+              <div className="rounded-lg bg-slate-50 border border-slate-100 p-6 text-center">
+                <FileText className="w-8 h-8 text-slate-300 mx-auto mb-2" />
+                <p className="text-sm text-slate-500 font-medium">No documents uploaded</p>
+                <p className="text-xs text-slate-400 mt-0.5">This landlord has not submitted any KYC files yet.</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {kycDocs.map(doc => {
+                  const isImage = /\.(jpe?g|png|webp)$/i.test(doc.file_name)
+                  const showImg = isImage && !imgErrors[doc.doc_type]
+                  return (
+                    <a key={doc.doc_type} href={doc.url} target="_blank" rel="noreferrer"
+                      className="group flex flex-col rounded-xl border border-slate-200 bg-slate-50 overflow-hidden hover:border-blue-300 hover:shadow-sm transition-all">
+                      {/* Thumbnail */}
+                      <div className="relative h-32 bg-slate-100 flex items-center justify-center overflow-hidden">
+                        {showImg ? (
+                          <img src={doc.url} alt={doc.file_name}
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                            onError={() => onImgError(doc.doc_type)} />
+                        ) : (
+                          <FileText className="w-8 h-8 text-slate-400" />
+                        )}
+                        {/* Hover overlay */}
+                        <div className="absolute inset-0 bg-blue-900/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                          <span className="inline-flex items-center gap-1.5 text-white text-xs font-bold bg-blue-600 rounded-full px-3 py-1.5">
+                            <Eye className="w-3.5 h-3.5" /> Open
+                          </span>
+                        </div>
+                      </div>
+                      {/* Label */}
+                      <div className="px-3 py-2.5">
+                        <p className="text-[12px] font-semibold text-slate-800 truncate">
+                          {DOC_LABELS[doc.doc_type] ?? doc.doc_type}
+                        </p>
+                        <p className="text-[11px] text-slate-400 truncate mt-0.5">{doc.file_name}</p>
+                      </div>
+                    </a>
+                  )
+                })}
+              </div>
+            )}
+          </div>
+
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ── Empty review placeholder ──────────────────────────────────────────────────
+
+function EmptyReview({ pendingCount }: { pendingCount: number }) {
+  return (
+    <div className="flex-1 flex flex-col items-center justify-center bg-slate-50/60 p-8 text-center">
+      <div className="w-16 h-16 rounded-2xl bg-white border border-slate-200 shadow-sm flex items-center justify-center mb-4">
+        <ShieldCheck className="w-8 h-8 text-slate-300" />
+      </div>
+      <p className="text-base font-semibold text-slate-700">Select a landlord to review</p>
+      <p className="text-sm text-slate-400 mt-1 max-w-xs">
+        {pendingCount > 0
+          ? `${pendingCount} submission${pendingCount !== 1 ? 's' : ''} waiting for your review.`
+          : 'All submissions are up to date.'}
+      </p>
+      {pendingCount > 0 && (
+        <div className="mt-4 inline-flex items-center gap-2 text-xs text-amber-700 bg-amber-50 border border-amber-100 rounded-full px-3 py-1.5 font-semibold">
+          <span className="w-2 h-2 rounded-full bg-amber-400" />
+          {pendingCount} pending review
+        </div>
+      )}
+    </div>
   )
 }
