@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { Link } from '@/lib/navigation'
 import {
   TrendingUp, TrendingDown, Building2, Users,
@@ -49,81 +49,109 @@ export default function AdminDashboard() {
   const [typeStats, setTypeStats] = useState<{ name: string; value: number }[]>([])
   const [areaData, setAreaData] = useState<{ month: string; listings: number; enquiries: number }[]>([])
   const [loading, setLoading] = useState(true)
+  const [refreshing, setRefreshing] = useState(false)   // silent background refresh
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null)
+  const debounceRef = useRef<ReturnType<typeof setTimeout>>()
 
+  // ── Core data loader (called on mount + every realtime event) ───────────────
+  const loadData = useCallback(async (initial = false) => {
+    if (initial) setLoading(true)
+    else setRefreshing(true)
+
+    const supabase = createClient()
+    const year = new Date().getFullYear()
+
+    const [
+      { count: propCount },
+      { count: activeCount },
+      { count: occupiedCount },
+      { count: landlordCount },
+      { count: pendingCount },
+      { count: tenantCount },
+      { count: enqCount },
+      { data: enqData },
+      { data: llData },
+      { data: recentProps },
+      { data: cityData },
+      { data: typeData },
+      { data: propMonthly },
+      { data: enqMonthly },
+    ] = await Promise.all([
+      supabase.from('properties').select('id', { count: 'exact', head: true }),
+      supabase.from('properties').select('id', { count: 'exact', head: true }).eq('status', 'available'),
+      supabase.from('properties').select('id', { count: 'exact', head: true }).eq('status', 'taken'),
+      supabase.from('landlords').select('id', { count: 'exact', head: true }),
+      supabase.from('landlords').select('id', { count: 'exact', head: true }).in('status', ['pending', 'not_submitted']),
+      supabase.from('tenants').select('id', { count: 'exact', head: true }),
+      supabase.from('enquiries').select('id', { count: 'exact', head: true }),
+      supabase.from('enquiries').select('*, properties(title, city), tenants(full_name)').order('created_at', { ascending: false }).limit(5),
+      supabase.from('landlords').select('id, full_name, created_at').order('created_at', { ascending: false }).limit(4),
+      supabase.from('properties').select('id, title, city, price, status').order('created_at', { ascending: false }).limit(3),
+      supabase.from('properties').select('city').limit(500),
+      supabase.from('properties').select('property_type').limit(500),
+      supabase.from('properties').select('created_at')
+        .gte('created_at', `${year}-01-01`).lte('created_at', `${year}-12-31`),
+      supabase.from('enquiries').select('created_at')
+        .gte('created_at', `${year}-01-01`).lte('created_at', `${year}-12-31`),
+    ])
+
+    setStats({
+      properties: propCount ?? 0, active: activeCount ?? 0, occupied: occupiedCount ?? 0,
+      landlords: landlordCount ?? 0, pendingLandlords: pendingCount ?? 0,
+      tenants: tenantCount ?? 0, enquiries: enqCount ?? 0,
+    })
+    setRecentEnquiries(enqData ?? [])
+    setRecentLandlords(llData ?? [])
+    setRecentListings(recentProps ?? [])
+
+    const cityMap: Record<string, number> = {}
+    for (const p of cityData ?? []) if (p.city) cityMap[p.city] = (cityMap[p.city] ?? 0) + 1
+    setCityStats(Object.entries(cityMap).sort((a, b) => b[1] - a[1]).slice(0, 5).map(([city, count]) => ({ city, count })))
+
+    const typeMap: Record<string, number> = {}
+    for (const p of typeData ?? []) if (p.property_type) typeMap[p.property_type] = (typeMap[p.property_type] ?? 0) + 1
+    setTypeStats(Object.entries(typeMap).sort((a, b) => b[1] - a[1]).slice(0, 6).map(([name, value]) => ({ name, value })))
+
+    const listingsByMonth = new Array(12).fill(0)
+    const enquiriesByMonth = new Array(12).fill(0)
+    for (const p of propMonthly ?? []) listingsByMonth[new Date(p.created_at).getMonth()]++
+    for (const e of enqMonthly ?? []) enquiriesByMonth[new Date(e.created_at).getMonth()]++
+    setAreaData(MONTHS.map((month, i) => ({ month, listings: listingsByMonth[i], enquiries: enquiriesByMonth[i] })))
+
+    setLastUpdated(new Date())
+    if (initial) setLoading(false)
+    else setRefreshing(false)
+  }, [])
+
+  // ── Auth check + initial load (once) ────────────────────────────────────────
   useEffect(() => {
     const supabase = createClient()
-    supabase.auth.getUser().then(async ({ data: { user } }) => {
+    supabase.auth.getUser().then(({ data: { user } }) => {
       if (!user) return
       setUser({ email: user.email })
       window.__livarexUserId = user.id
-
-      const [
-        { count: propCount },
-        { count: activeCount },
-        { count: occupiedCount },
-        { count: landlordCount },
-        { count: pendingCount },
-        { count: tenantCount },
-        { count: enqCount },
-        { data: enqData },
-        { data: llData },
-        { data: recentProps },
-        { data: cityData },
-        { data: typeData },
-        { data: propMonthly },
-        { data: enqMonthly },
-      ] = await Promise.all([
-        supabase.from('properties').select('id', { count: 'exact', head: true }),
-        supabase.from('properties').select('id', { count: 'exact', head: true }).eq('status', 'available'),
-        supabase.from('properties').select('id', { count: 'exact', head: true }).eq('status', 'taken'),
-        supabase.from('landlords').select('id', { count: 'exact', head: true }),
-        supabase.from('landlords').select('id', { count: 'exact', head: true }).in('status', ['pending', 'not_submitted']),
-        supabase.from('tenants').select('id', { count: 'exact', head: true }),
-        supabase.from('enquiries').select('id', { count: 'exact', head: true }),
-        supabase.from('enquiries').select('*, properties(title, city), tenants(full_name)').order('created_at', { ascending: false }).limit(5),
-        supabase.from('landlords').select('id, full_name, created_at').order('created_at', { ascending: false }).limit(4),
-        supabase.from('properties').select('id, title, city, price, status').order('created_at', { ascending: false }).limit(3),
-        supabase.from('properties').select('city').limit(500),
-        supabase.from('properties').select('property_type').limit(500),
-        // Monthly listings for the current year
-        supabase.from('properties').select('created_at')
-          .gte('created_at', `${new Date().getFullYear()}-01-01`)
-          .lte('created_at', `${new Date().getFullYear()}-12-31`),
-        // Monthly enquiries for the current year
-        supabase.from('enquiries').select('created_at')
-          .gte('created_at', `${new Date().getFullYear()}-01-01`)
-          .lte('created_at', `${new Date().getFullYear()}-12-31`),
-      ])
-
-      setStats({
-        properties: propCount ?? 0, active: activeCount ?? 0, occupied: occupiedCount ?? 0,
-        landlords: landlordCount ?? 0, pendingLandlords: pendingCount ?? 0,
-        tenants: tenantCount ?? 0, enquiries: enqCount ?? 0,
-      })
-      setRecentEnquiries(enqData ?? [])
-      setRecentLandlords(llData ?? [])
-      setRecentListings(recentProps ?? [])
-
-      // City breakdown
-      const cityMap: Record<string, number> = {}
-      for (const p of cityData ?? []) if (p.city) cityMap[p.city] = (cityMap[p.city] ?? 0) + 1
-      setCityStats(Object.entries(cityMap).sort((a, b) => b[1] - a[1]).slice(0, 5).map(([city, count]) => ({ city, count })))
-
-      // Property type breakdown
-      const typeMap: Record<string, number> = {}
-      for (const p of typeData ?? []) if (p.property_type) typeMap[p.property_type] = (typeMap[p.property_type] ?? 0) + 1
-      setTypeStats(Object.entries(typeMap).sort((a, b) => b[1] - a[1]).slice(0, 6).map(([name, value]) => ({ name, value })))
-
-      // Monthly chart — bucket real rows by month index
-      const listingsByMonth = new Array(12).fill(0)
-      const enquiriesByMonth = new Array(12).fill(0)
-      for (const p of propMonthly ?? []) listingsByMonth[new Date(p.created_at).getMonth()]++
-      for (const e of enqMonthly ?? []) enquiriesByMonth[new Date(e.created_at).getMonth()]++
-      setAreaData(MONTHS.map((month, i) => ({ month, listings: listingsByMonth[i], enquiries: enquiriesByMonth[i] })))
-
-      setLoading(false)
+      loadData(true)
     })
-  }, [])
+  }, [loadData])
+
+  // ── Realtime subscriptions — debounced reload on any DB change ───────────────
+  useEffect(() => {
+    const supabase = createClient()
+    const debouncedLoad = () => {
+      clearTimeout(debounceRef.current)
+      debounceRef.current = setTimeout(() => loadData(false), 1500)
+    }
+    const channel = supabase.channel('dashboard-live')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'properties' }, debouncedLoad)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'landlords' }, debouncedLoad)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'tenants' }, debouncedLoad)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'enquiries' }, debouncedLoad)
+      .subscribe()
+    return () => {
+      clearTimeout(debounceRef.current)
+      supabase.removeChannel(channel)
+    }
+  }, [loadData])
 
   const rawName = user?.email ? user.email.split('@')[0] : 'Admin'
   const displayName = rawName.charAt(0).toUpperCase() + rawName.slice(1)
@@ -207,6 +235,31 @@ export default function AdminDashboard() {
               </div>
             ) : (
               <>
+                {/* ── Live status bar ── */}
+                <div className="flex items-center justify-end gap-2.5">
+                  {refreshing ? (
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-blue-50 border border-blue-100 text-[11px] font-semibold text-blue-600">
+                      <svg className="w-3 h-3 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M21 12a9 9 0 11-6.219-8.56"/></svg>
+                      Updating…
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 border border-emerald-100 text-[11px] font-semibold text-emerald-700">
+                      <span className="relative flex h-2 w-2">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                        <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
+                      </span>
+                      Live
+                      {lastUpdated && (
+                        <span className="text-emerald-500 font-normal">
+                          · updated {Math.round((Date.now() - lastUpdated.getTime()) / 1000) < 5
+                            ? 'just now'
+                            : `${Math.round((Date.now() - lastUpdated.getTime()) / 60000) || 1}m ago`}
+                        </span>
+                      )}
+                    </span>
+                  )}
+                </div>
+
                 {stats.pendingLandlords > 0 && (
                   <div className="flex flex-col gap-3 rounded-3xl border border-amber-200 bg-amber-50 p-5 md:p-6 shadow-sm md:flex-row md:items-center md:justify-between">
                     <div className="flex items-start gap-3">
