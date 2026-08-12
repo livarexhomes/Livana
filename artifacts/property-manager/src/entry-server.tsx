@@ -11,7 +11,6 @@ import ContactPage from './pages/ContactPage'
 import TermsPage from './pages/TermsPage'
 import PrivacyPage from './pages/PrivacyPage'
 import CookiePolicyPage from './pages/CookiePolicyPage'
-import LocationLandingPage from './pages/LocationLandingPage'
 import HowWeVerifyPage from './pages/HowWeVerifyPage'
 
 function NotFound() {
@@ -44,7 +43,6 @@ export function render(url: string): { html: string; helmet: unknown } {
             <Switch>
               <Route path="/" component={HomePage} />
               <Route path="/listings" component={ListingsPage} />
-              <Route path="/properties-in/:slug" component={LocationLandingPage} />
               <Route path="/how-we-verify" component={HowWeVerifyPage} />
               <Route path="/about" component={AboutPage} />
               <Route path="/contact" component={ContactPage} />

@@ -1,24 +1,32 @@
-How to apply database migrations
+# Database
 
-This repository stores simple SQL migrations under `db/migrations`.
+## Migrations (`migrations/`)
 
-Recommended ways to apply the migration to your Supabase Postgres database:
+Sequential Supabase migrations applied in order. Each file represents a single schema change
+and has already been run against the production database.
 
-1) Using the `psql` CLI:
+| File | Description |
+|---|---|
+| `001_create_verification_codes.sql` | Phone OTP verification codes table |
+| `002_add_property_charges.sql` | Property charge/fee columns |
+| `003_support_and_contact.sql` | Support tickets and contact requests |
+| `004_live_support_redesign.sql` | Live support chat redesign |
+| `005_live_support_multi_agent.sql` | Multi-agent support routing |
+| `006_agent_last_seen.sql` | Support agent presence tracking |
+| `007_security_hardening.sql` | RLS policy hardening |
+| `008_presence_and_availability.sql` | Agent availability status |
+| `009_support_ticket_workspace.sql` | Support workspace views |
+| `010_fix_signup_trigger.sql` | Fix handle_new_user trigger (tenants no longer get landlord rows) |
+| `011_visitor_chat_rls.sql` | RLS for anonymous visitor chat sessions |
 
-   psql "$DATABASE_URL" -f db/migrations/001_create_verification_codes.sql
-   psql "$DATABASE_URL" -f db/migrations/002_add_property_charges.sql
-   psql "$DATABASE_URL" -f db/migrations/003_support_and_contact.sql
+**To apply a new migration:** paste the SQL into the Supabase SQL Editor and run it.
+Then add the file here with the next sequential number.
 
-2) Using the Supabase CLI (recommended if you use Supabase projects):
+## Setup scripts (`*.sql`)
 
-   supabase db remote set <PROJECT_REF>
-   supabase db push --file db/migrations/001_create_verification_codes.sql
-   supabase db push --file db/migrations/002_add_property_charges.sql
-   supabase db push --file db/migrations/003_support_and_contact.sql
+These are one-time setup scripts (idempotent — safe to re-run):
 
-Notes:
-- The migration enables `pgcrypto` for `gen_random_uuid()`. If your project uses a different UUID extension (like `uuid-ossp`), adjust the SQL accordingly.
-- `002_add_property_charges.sql` adds the optional charge columns (`agreement_fee`, `commission_fee`, `other_charges`) to `properties` and an optional `agency_fee_percent` column to `admin_settings`. The Agency Fee percentage is normally stored in the `admin_settings` `listing_rules` JSONB value (`agencyFeePercent`) — the column is a convenience. If `admin_settings` doesn't exist yet, create it first (see the SQL file header).
-- `003_support_and_contact.sql` creates the support/enquiry tables (`enquiries`, `enquiry_replies`, `support_tickets`, `support_messages`, `contact_messages`) plus the `admins` table, with RLS and realtime — safe to re-run.
-- Ensure the `SUPABASE_SERVICE_KEY` has permissions to modify the schema if you run migrations from the server.
+| File | Description |
+|---|---|
+| `chat_inquiries.sql` | Chat inquiries + messages tables with RLS |
+| `projects.sql` | Projects table with RLS and storage bucket |
