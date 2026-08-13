@@ -25,6 +25,7 @@ export default function SEO({
 }: SEOProps) {
   const fullTitle = title ? `${title} | LIVAREX` : "LIVAREX — Nigeria's Verified Property Marketplace"
   const fullUrl = url ? `${BASE_URL}${url}` : BASE_URL
+  const fullImage = image.startsWith('http') ? image : `${BASE_URL}${image}`
 
   return (
     <Helmet>
@@ -38,14 +39,14 @@ export default function SEO({
       <meta property="og:url" content={fullUrl} />
       <meta property="og:title" content={fullTitle} />
       <meta property="og:description" content={description} />
-      <meta property="og:image" content={image} />
+      <meta property="og:image" content={fullImage} />
       <meta property="og:image:width" content="1200" />
       <meta property="og:image:height" content="630" />
 
       <meta name="twitter:card" content="summary_large_image" />
       <meta name="twitter:title" content={fullTitle} />
       <meta name="twitter:description" content={description} />
-      <meta name="twitter:image" content={image} />
+      <meta name="twitter:image" content={fullImage} />
 
       {schema && (
         <script type="application/ld+json">

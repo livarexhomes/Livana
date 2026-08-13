@@ -2,8 +2,8 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { Link } from '@/lib/navigation'
 import {
-  TrendingUp, TrendingDown, Building2, Users,
-  CheckCircle, MessageSquare, MapPin, ArrowRight, Clock, ShieldCheck,
+  Building2, Users,
+  MessageSquare, MapPin, ArrowRight, Clock, ShieldCheck,
 } from 'lucide-react'
 import AdminHeader from '../../components/layout/AdminHeader'
 import {
@@ -34,7 +34,7 @@ function avatarGradient(name: string) {
   return AVATAR_COLORS[h % AVATAR_COLORS.length]
 }
 
-const PIE_COLORS = ['#2563eb', '#7c3aed', '#10b981', '#f59e0b', '#ef4444', '#6366f1']
+const PIE_COLORS = ['#0f172a', '#475569', '#94a3b8', '#cbd5e1', '#e2e8f0', '#f1f5f9']
 
 export default function AdminDashboard() {
   const [user, setUser] = useState<{ email?: string } | null>(null)
@@ -185,127 +185,115 @@ export default function AdminDashboard() {
               </div>
             ) : (
               <>
-                {/* ── Hero overview card ─────────────────────────────────────── */}
-                <div className="rounded-[32px] border border-slate-200 bg-white p-4 shadow-[0_18px_80px_-40px_rgba(15,23,42,0.18)]">
-                  <div className="flex flex-col gap-3 xl:flex-row xl:items-start xl:justify-between">
-                    <div className="max-w-xl">
-                      <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">Admin analytics</p>
-                      <h2 className="mt-1.5 text-lg font-extrabold text-slate-950">Platform at a glance</h2>
-                      <p className="mt-1 text-xs leading-5 text-slate-500">
-                        Monitor listings, landlords, KYC, and enquiries from one central dashboard.
-                      </p>
-                    </div>
-
-                    {/* Live pill */}
-                    <div className="flex items-center gap-3 xl:flex-col xl:items-end shrink-0">
-                      {refreshing ? (
-                        <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-blue-50 border border-blue-100 text-[11px] font-semibold text-blue-600">
-                          <svg className="w-3 h-3 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                            <path d="M21 12a9 9 0 11-6.219-8.56"/>
-                          </svg>
-                          Updating…
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-50 border border-emerald-200 text-[11px] font-semibold text-emerald-700">
-                          <span className="relative flex h-2 w-2">
-                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-                            <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
-                          </span>
-                          Live
-                          {lastUpdated && (
-                            <span className="text-emerald-500 font-normal">
-                              · {Math.round((Date.now() - lastUpdated.getTime()) / 1000) < 5
-                                ? 'just now'
-                                : `${Math.round((Date.now() - lastUpdated.getTime()) / 60000) || 1}m ago`}
-                            </span>
-                          )}
+                {/* ── Top bar: title + live status ─────────────────────────── */}
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">Overview</p>
+                    <h2 className="mt-1 text-lg font-bold text-slate-950">Platform at a glance</h2>
+                  </div>
+                  {refreshing ? (
+                    <span className="inline-flex items-center gap-1.5 text-[11px] font-medium text-slate-400">
+                      <svg className="w-3 h-3 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                        <path d="M21 12a9 9 0 11-6.219-8.56"/>
+                      </svg>
+                      Updating…
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1.5 text-[11px] font-medium text-slate-400">
+                      <span className="relative flex h-1.5 w-1.5">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                        <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                      </span>
+                      Live
+                      {lastUpdated && (
+                        <span>
+                          · {Math.round((Date.now() - lastUpdated.getTime()) / 1000) < 5
+                            ? 'just now'
+                            : `${Math.round((Date.now() - lastUpdated.getTime()) / 60000) || 1}m ago`}
                         </span>
                       )}
+                    </span>
+                  )}
+                </div>
+
+                {/* ── Stat cards ─────────────────────────────────────────────── */}
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                  {[
+                    { label: 'Total Listings', value: stats.properties, icon: Building2,   sub: `${stats.active} active` },
+                    { label: 'Landlords',      value: stats.landlords,  icon: Users,        sub: stats.pendingLandlords > 0 ? `${stats.pendingLandlords} pending` : 'all verified' },
+                    { label: 'Tenants',        value: stats.tenants,    icon: ShieldCheck,  sub: 'registered users' },
+                    { label: 'Enquiries',      value: stats.enquiries, icon: MessageSquare, sub: `${engagementRate} per listing` },
+                  ].map(item => {
+                    const Icon = item.icon
+                    return (
+                      <div key={item.label} className="rounded-2xl border border-slate-200 bg-white p-5">
+                        <div className="flex items-center justify-between">
+                          <p className="text-xs font-semibold text-slate-500">{item.label}</p>
+                          <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center shrink-0">
+                            <Icon className="w-3.5 h-3.5 text-slate-500" strokeWidth={1.8} />
+                          </div>
+                        </div>
+                        <div className="mt-4 flex items-baseline gap-2">
+                          <p className="text-2xl font-bold text-slate-950 tabular-nums">{item.value.toLocaleString()}</p>
+                          <span className="text-xs font-medium text-slate-400 truncate">{item.sub}</span>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+
+                {/* ── KPI strip ── */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                  {[
+                    { label: 'Occupancy rate', value: `${occupancyRate}%`,   sub: `${stats.occupied}/${stats.properties} taken` },
+                    { label: 'Avg enquiries',  value: engagementRate,         sub: 'per listing'                                },
+                    { label: 'Active rate',    value: stats.properties > 0 ? `${Math.round((stats.active / stats.properties) * 100)}%` : '0%', sub: 'of all listings live' },
+                    { label: 'Pending KYC',    value: String(stats.pendingLandlords), sub: 'landlords awaiting review'          },
+                  ].map(k => (
+                    <div key={k.label} className="rounded-2xl bg-slate-950 px-4 py-3.5 text-white">
+                      <p className="text-lg font-bold tabular-nums">{k.value}</p>
+                      <p className="mt-0.5 text-[11px] font-semibold text-white/90">{k.label}</p>
+                      <p className="text-[11px] text-white/40">{k.sub}</p>
                     </div>
-                  </div>
+                  ))}
+                </div>
 
-                  {/* ── Metrics grid ── */}
-                  <div className="mt-3 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
-                    {[
-                      { label: 'Total Listings', value: stats.properties, accent: 'text-blue-700 bg-blue-500/10',    trend: '+8%',  up: true  },
-                      { label: 'Active',         value: stats.active,      accent: 'text-emerald-700 bg-emerald-500/10', trend: '+5%',  up: true  },
-                      { label: 'Landlords',      value: stats.landlords,   accent: 'text-violet-700 bg-violet-500/10', trend: '+12%', up: true,
-                        badge: stats.pendingLandlords > 0 ? `${stats.pendingLandlords} pending` : null },
-                      { label: 'Tenants',        value: stats.tenants,     accent: 'text-indigo-700 bg-indigo-500/10', trend: '+3%',  up: true  },
-                      { label: 'Enquiries',      value: stats.enquiries,   accent: 'text-amber-700 bg-amber-500/10',  trend: '+21%', up: true  },
-                    ].map(item => (
-                      <div key={item.label} className="rounded-3xl border border-slate-100 bg-slate-50 p-3">
-                        <p className={`text-xl font-extrabold ${item.accent}`}>{item.value.toLocaleString()}</p>
-                        <p className="mt-1 text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-500">{item.label}</p>
-                        {item.badge && (
-                          <span className="mt-2 inline-block text-[10px] font-bold text-amber-700 bg-amber-100 rounded-full px-2 py-0.5">
-                            {item.badge}
-                          </span>
-                        )}
-                        {!item.badge && (
-                          <span className={`mt-2 inline-flex items-center gap-0.5 text-[10px] font-bold ${item.up ? 'text-emerald-600' : 'text-red-500'}`}>
-                            {item.up ? <TrendingUp className="w-2.5 h-2.5" /> : <TrendingDown className="w-2.5 h-2.5" />}
-                            {item.trend}
-                          </span>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-
-                  {/* ── KPI pills ── */}
-                  <div className="mt-3 grid grid-cols-2 sm:grid-cols-4 gap-2">
-                    {[
-                      { label: 'Occupancy rate', value: `${occupancyRate}%`,   sub: `${stats.occupied}/${stats.properties} taken` },
-                      { label: 'Avg enquiries',  value: engagementRate,         sub: 'per listing'                                },
-                      { label: 'Active rate',    value: stats.properties > 0 ? `${Math.round((stats.active / stats.properties) * 100)}%` : '0%', sub: 'of all listings live' },
-                      { label: 'Pending KYC',    value: String(stats.pendingLandlords), sub: 'landlords awaiting review'          },
-                    ].map(k => (
-                      <div key={k.label} className="rounded-3xl bg-slate-900 px-3 py-2.5 text-white">
-                        <p className="text-base font-extrabold tabular-nums">{k.value}</p>
-                        <p className="mt-0.5 text-[10px] font-semibold text-white">{k.label}</p>
-                        <p className="text-[10px] text-slate-400">{k.sub}</p>
-                      </div>
-                    ))}
-                  </div>
-
-                  {/* ── Quick action links ── */}
-                  <div className="mt-3 flex flex-wrap items-center gap-2">
-                    {QUICK_ACTIONS.map(a => {
-                      const Icon = a.icon
-                      return (
-                        <Link key={a.label} href={a.href}
-                          className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold transition bg-slate-100 text-slate-600 hover:bg-slate-950 hover:text-white">
-                          <Icon className="w-3.5 h-3.5" />{a.label}
-                        </Link>
-                      )
-                    })}
-                    {stats.pendingLandlords > 0 && (
-                      <Link href="/admin/kyc"
-                        className="inline-flex items-center gap-2 rounded-full bg-amber-600 px-4 py-2 text-sm font-semibold text-white hover:bg-amber-700 transition ml-auto">
-                        <Clock className="w-3.5 h-3.5" />
-                        {stats.pendingLandlords} pending review
+                {/* ── Quick action links ── */}
+                <div className="flex flex-wrap items-center gap-2">
+                  {QUICK_ACTIONS.map(a => {
+                    const Icon = a.icon
+                    return (
+                      <Link key={a.label} href={a.href}
+                        className="inline-flex items-center gap-2 rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium transition text-slate-600 hover:bg-slate-950 hover:text-white hover:border-slate-950">
+                        <Icon className="w-3.5 h-3.5" />{a.label}
                       </Link>
-                    )}
-                  </div>
+                    )
+                  })}
+                  {stats.pendingLandlords > 0 && (
+                    <Link href="/admin/kyc"
+                      className="inline-flex items-center gap-2 rounded-lg bg-amber-500 px-4 py-2 text-sm font-medium text-white hover:bg-amber-600 transition ml-auto">
+                      <Clock className="w-3.5 h-3.5" />
+                      {stats.pendingLandlords} pending review
+                    </Link>
+                  )}
                 </div>
 
                 {/* ── Charts row ─────────────────────────────────────────────── */}
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
                   {/* Area chart — Platform Growth */}
-                  <div className="lg:col-span-2 rounded-[32px] border border-slate-200 bg-white p-4 shadow-sm">
+                  <div className="lg:col-span-2 rounded-2xl border border-slate-200 bg-white p-5">
                     <div className="flex items-start justify-between mb-4">
                       <div>
-                        <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">Year overview</p>
-                        <h3 className="mt-1 text-sm font-extrabold text-slate-950">Platform Growth</h3>
-                        <p className="text-xs text-slate-500">Listings &amp; enquiries month by month</p>
+                        <h3 className="text-sm font-bold text-slate-950">Platform Growth</h3>
+                        <p className="text-xs text-slate-400">Listings &amp; enquiries month by month</p>
                       </div>
                       <div className="flex items-center gap-4 shrink-0">
                         <div className="flex items-center gap-1.5">
-                          <span className="w-2.5 h-2.5 rounded-full bg-blue-600" />
+                          <span className="w-2 h-2 rounded-full bg-slate-950" />
                           <span className="text-xs font-medium text-slate-500">Listings</span>
                         </div>
                         <div className="flex items-center gap-1.5">
-                          <span className="w-2.5 h-2.5 rounded-full bg-violet-500" />
+                          <span className="w-2 h-2 rounded-full bg-slate-300" />
                           <span className="text-xs font-medium text-slate-500">Enquiries</span>
                         </div>
                       </div>
@@ -315,33 +303,32 @@ export default function AdminDashboard() {
                         <AreaChart data={areaData} margin={{ top: 4, right: 4, bottom: 0, left: -20 }}>
                           <defs>
                             <linearGradient id="gBlue" x1="0" y1="0" x2="0" y2="1">
-                              <stop offset="5%"  stopColor="#2563eb" stopOpacity={0.18} />
-                              <stop offset="95%" stopColor="#2563eb" stopOpacity={0} />
+                              <stop offset="5%"  stopColor="#0f172a" stopOpacity={0.16} />
+                              <stop offset="95%" stopColor="#0f172a" stopOpacity={0} />
                             </linearGradient>
                             <linearGradient id="gViolet" x1="0" y1="0" x2="0" y2="1">
-                              <stop offset="5%"  stopColor="#7c3aed" stopOpacity={0.14} />
-                              <stop offset="95%" stopColor="#7c3aed" stopOpacity={0} />
+                              <stop offset="5%"  stopColor="#94a3b8" stopOpacity={0.20} />
+                              <stop offset="95%" stopColor="#94a3b8" stopOpacity={0} />
                             </linearGradient>
                           </defs>
                           <CartesianGrid vertical={false} stroke="#f1f5f9" />
                           <XAxis dataKey="month" tick={{ fontSize: 10, fill: '#94a3b8', fontWeight: 600 }} axisLine={false} tickLine={false} />
                           <YAxis tick={{ fontSize: 10, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
                           <Tooltip
-                            contentStyle={{ borderRadius: 16, border: 'none', boxShadow: '0 8px 30px rgba(0,0,0,0.10)', fontSize: 12, padding: '10px 16px' }}
+                            contentStyle={{ borderRadius: 12, border: '1px solid #f1f5f9', boxShadow: '0 8px 30px rgba(0,0,0,0.08)', fontSize: 12, padding: '10px 16px' }}
                             labelStyle={{ fontWeight: 700, color: '#1e293b', marginBottom: 4 }}
                           />
-                          <Area type="monotone" dataKey="listings"  stroke="#2563eb" strokeWidth={2.5} fill="url(#gBlue)"   dot={false} />
-                          <Area type="monotone" dataKey="enquiries" stroke="#7c3aed" strokeWidth={2.5} fill="url(#gViolet)" dot={false} />
+                          <Area type="monotone" dataKey="listings"  stroke="#0f172a" strokeWidth={2} fill="url(#gBlue)"   dot={false} />
+                          <Area type="monotone" dataKey="enquiries" stroke="#94a3b8" strokeWidth={2} fill="url(#gViolet)" dot={false} />
                         </AreaChart>
                       </ResponsiveContainer>
                     </div>
                   </div>
 
                   {/* Property Types donut */}
-                  <div className="rounded-[32px] border border-slate-200 bg-white p-4 shadow-sm flex flex-col">
+                  <div className="rounded-2xl border border-slate-200 bg-white p-5 flex flex-col">
                     <div className="mb-3">
-                      <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">Breakdown</p>
-                      <h3 className="mt-1 text-sm font-extrabold text-slate-950">Property Types</h3>
+                      <h3 className="text-sm font-bold text-slate-950">Property Types</h3>
                     </div>
                     <div className="flex items-center justify-center mb-5">
                       <div className="relative w-36 h-36">
@@ -383,14 +370,11 @@ export default function AdminDashboard() {
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
 
                   {/* Recent Enquiries */}
-                  <div className="lg:col-span-2 rounded-[32px] border border-slate-200 bg-white shadow-sm overflow-hidden">
+                  <div className="lg:col-span-2 rounded-2xl border border-slate-200 bg-white overflow-hidden">
                     <div className="flex items-center justify-between px-6 py-5 border-b border-slate-100">
-                      <div>
-                        <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">Messages</p>
-                        <h3 className="mt-1 text-lg font-extrabold text-slate-950">Recent Enquiries</h3>
-                      </div>
+                      <h3 className="text-sm font-bold text-slate-950">Recent Enquiries</h3>
                       <Link href="/admin/landlords"
-                        className="inline-flex items-center gap-1 text-xs font-semibold text-blue-600 hover:text-blue-700 transition-colors">
+                        className="inline-flex items-center gap-1 text-xs font-semibold text-slate-500 hover:text-slate-950 transition-colors">
                         View all <ArrowRight className="w-3 h-3" />
                       </Link>
                     </div>
@@ -441,9 +425,8 @@ export default function AdminDashboard() {
                   {/* Right sidebar */}
                   <div className="space-y-5">
                     {/* Top Locations */}
-                    <div className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm">
-                      <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">By area</p>
-                      <h3 className="mt-2 text-lg font-extrabold text-slate-950">Top Locations</h3>
+                    <div className="rounded-2xl border border-slate-200 bg-white p-6">
+                      <h3 className="text-sm font-bold text-slate-950">Top Locations</h3>
                       {cityStats.length === 0 ? (
                         <p className="text-xs text-slate-400 py-4 text-center mt-3">No data yet</p>
                       ) : (
@@ -455,7 +438,7 @@ export default function AdminDashboard() {
                               <div key={c.city}>
                                 <div className="flex items-center justify-between mb-1.5">
                                   <div className="flex items-center gap-2">
-                                    <span className="w-5 h-5 rounded-lg bg-blue-50 flex items-center justify-center text-[10px] font-black text-blue-600">
+                                    <span className="w-5 h-5 rounded-lg bg-slate-100 flex items-center justify-center text-[10px] font-black text-slate-500">
                                       #{i + 1}
                                     </span>
                                     <span className="text-sm font-semibold text-slate-700">{c.city}</span>
@@ -463,7 +446,7 @@ export default function AdminDashboard() {
                                   <span className="text-sm font-bold text-slate-900 tabular-nums">{c.count}</span>
                                 </div>
                                 <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                                  <div className="h-full bg-blue-600 rounded-full" style={{ width: `${pct}%` }} />
+                                  <div className="h-full bg-slate-950 rounded-full" style={{ width: `${pct}%` }} />
                                 </div>
                               </div>
                             )
@@ -473,14 +456,11 @@ export default function AdminDashboard() {
                     </div>
 
                     {/* New Landlords */}
-                    <div className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm">
+                    <div className="rounded-2xl border border-slate-200 bg-white p-6">
                       <div className="flex items-center justify-between mb-4">
-                        <div>
-                          <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">New clients</p>
-                          <h3 className="mt-1 text-lg font-extrabold text-slate-950">Landlords</h3>
-                        </div>
+                        <h3 className="text-sm font-bold text-slate-950">Landlords</h3>
                         <Link href="/admin/landlords"
-                          className="text-xs font-semibold text-blue-600 hover:text-blue-700 transition-colors">
+                          className="text-xs font-semibold text-slate-500 hover:text-slate-950 transition-colors">
                           View all
                         </Link>
                       </div>
@@ -512,14 +492,11 @@ export default function AdminDashboard() {
                 </div>
 
                 {/* ── Recent Listings ─────────────────────────────────────────── */}
-                <div className="rounded-[32px] border border-slate-200 bg-white shadow-sm overflow-hidden">
+                <div className="rounded-2xl border border-slate-200 bg-white overflow-hidden">
                   <div className="flex items-center justify-between px-6 py-5 border-b border-slate-100">
-                    <div>
-                      <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">Latest additions</p>
-                      <h3 className="mt-1 text-lg font-extrabold text-slate-950">Recent Listings</h3>
-                    </div>
+                    <h3 className="text-sm font-bold text-slate-950">Recent Listings</h3>
                     <Link href="/admin/properties"
-                      className="inline-flex items-center gap-1 text-xs font-semibold text-blue-600 hover:text-blue-700 transition-colors">
+                      className="inline-flex items-center gap-1 text-xs font-semibold text-slate-500 hover:text-slate-950 transition-colors">
                       View all <ArrowRight className="w-3 h-3" />
                     </Link>
                   </div>
@@ -534,8 +511,8 @@ export default function AdminDashboard() {
                         const s = PROPERTY_STATUS[p.status] ?? PROPERTY_STATUS.available
                         return (
                           <div key={p.id} className="flex items-center gap-4 px-6 py-4 hover:bg-slate-50/60 transition-colors">
-                            <div className="w-10 h-10 rounded-2xl bg-blue-50 flex items-center justify-center shrink-0">
-                              <Building2 className="w-5 h-5 text-blue-600" strokeWidth={1.8} />
+                            <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center shrink-0">
+                              <Building2 className="w-5 h-5 text-slate-600" strokeWidth={1.8} />
                             </div>
                             <div className="flex-1 min-w-0">
                               <p className="text-sm font-semibold text-slate-900 truncate">{p.title}</p>

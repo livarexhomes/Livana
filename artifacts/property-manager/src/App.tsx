@@ -4,6 +4,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { lazy, Suspense } from "react";
 import ChatWidget from "@/components/ChatWidget";
+import { slugToLocationLabel } from "@/lib/locationSlug";
 
 const HomePage = lazy(() => import("@/pages/HomePage"));
 const ListingsPage = lazy(() => import("@/pages/ListingsPage"));
@@ -82,7 +83,7 @@ function Router() {
         <Route path="/properties/ogun"><Redirect to="/listings?city=Ogun" /></Route>
         <Route path="/properties-in/:slug">
           {(params: { slug?: string }) => {
-            const city = (params?.slug ?? '').replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
+            const city = slugToLocationLabel(params?.slug ?? '')
             return <Redirect to={`/listings?city=${encodeURIComponent(city)}`} />
           }}
         </Route>

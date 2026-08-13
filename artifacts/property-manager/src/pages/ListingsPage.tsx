@@ -11,6 +11,7 @@ import { MoneyInput } from '../components/ui/money-input'
 import { createClient, isSupabaseConfigured } from '../lib/supabase'
 import { isAdminUser } from '../lib/auth'
 import { getPlatformSettings, phoneToWaLink } from '../lib/platform-settings'
+import { getLocationImage } from '../lib/locationImages'
 import type { PropertyWithLandlord } from '@/types'
 
 const PropertyMap = lazy(() => import('../components/property/PropertyMap'))
@@ -135,6 +136,7 @@ export default function ListingsPage() {
     : `${typeLabel} properties across Nigeria — Verified listings`
   const pageDescription = `Browse ${seoTypeLabel} properties ${locationLabel !== 'Any Location' ? `in ${locationLabel}` : 'across Nigeria'}. Filter by price, bedrooms, type, and neighbourhood.`
   const pageUrl = `/listings${search}`
+  const pageImage = getLocationImage(areaFilter) ?? getLocationImage(stateFilter)
 
   const activeCount = [typeFilter, stateFilter || areaFilter, minPrice || maxPrice, bedsFilter].filter(Boolean).length
 
@@ -144,6 +146,7 @@ export default function ListingsPage() {
         title={pageTitle}
         description={pageDescription}
         url={pageUrl}
+        image={pageImage}
       />
       <PublicNavbar />
 

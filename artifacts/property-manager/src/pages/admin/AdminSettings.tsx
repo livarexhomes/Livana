@@ -963,9 +963,9 @@ export default function AdminSettings() {
           {/* ── Hero card ── */}
           <div className="shrink-0 px-4 md:px-6 pt-3 pb-2">
             <div className="rounded-[32px] border border-slate-200 bg-white px-5 py-4 shadow-[0_18px_80px_-40px_rgba(15,23,42,0.18)]">
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">Admin configuration</p>
+              <div className="flex items-start justify-between gap-4 pl-11 md:pl-0">
+                <div className="min-w-0">
+                  <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400 truncate">Admin configuration</p>
                   <h2 className="mt-0.5 text-base font-extrabold text-slate-950">Settings</h2>
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
