@@ -4,7 +4,7 @@ import {
   X, FileText, Phone, Calendar, CreditCard, Hash,
   Loader2, AlertTriangle, Eye, Users, Building2,
   BedDouble, Bath, MapPin, DollarSign, ListChecks,
-  Trash2, ChevronDown,
+  Trash2, ChevronDown, ChevronLeft,
 } from 'lucide-react'
 import AdminSidebar from '../../components/layout/AdminSidebar'
 import AdminHeader from '../../components/layout/AdminHeader'
@@ -416,7 +416,7 @@ function IdentityTab({
     <div className="flex flex-1 min-h-0 overflow-hidden px-4 md:px-6 pb-4 md:pb-6 gap-4">
 
       {/* ── Queue ── */}
-      <div className="flex flex-col w-full max-w-xs xl:max-w-sm shrink-0 rounded-[28px] border border-slate-200 bg-white shadow-sm overflow-hidden">
+      <div className={`${selected ? 'hidden lg:flex' : 'flex'} flex-col w-full lg:max-w-xs xl:max-w-sm shrink-0 rounded-[28px] border border-slate-200 bg-white shadow-sm overflow-hidden`}>
 
         {/* Filter dropdown */}
         <div className="shrink-0 p-4 border-b border-slate-100 space-y-3">
@@ -510,7 +510,7 @@ function IdentityTab({
       </div>
 
       {/* ── Review panel ── */}
-      <div className="flex-1 min-w-0 overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-sm">
+      <div className={`${selected ? 'flex' : 'hidden lg:flex'} flex-1 min-w-0 overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-sm`}>
         {selected ? (
           <KycReviewPanel
             landlord={selected}

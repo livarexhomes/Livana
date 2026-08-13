@@ -2622,17 +2622,19 @@ export default function AdminSupportPage() {
                   <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">Customer operations</p>
                   <h2 className="mt-0.5 text-base font-extrabold text-slate-950">Support &amp; Inbox</h2>
                 </div>
-                <div className="flex items-center gap-2 flex-wrap shrink-0">
-                  {[
-                    { label: 'Enquiries',   value: openCount,       color: openCount > 0 ? 'text-blue-700' : 'text-slate-500'    },
-                    { label: 'Chats',       value: chatOpenCount,   color: chatOpenCount > 0 ? 'text-emerald-700' : 'text-slate-500' },
-                    { label: 'Contact',     value: contactCount,    color: contactCount > 0 ? 'text-violet-700' : 'text-slate-500' },
-                  ].map(s => (
-                    <div key={s.label} className="rounded-2xl border border-slate-100 bg-slate-50 px-3 py-1.5 text-center min-w-[52px]">
-                      <p className={`text-base font-extrabold ${s.color}`}>{s.value}</p>
-                      <p className="text-[9px] font-semibold uppercase tracking-[0.2em] text-slate-400">{s.label}</p>
-                    </div>
-                  ))}
+                <div className="flex items-center gap-2 flex-wrap sm:shrink-0">
+                  <div className="grid grid-cols-3 gap-1.5 sm:flex sm:items-center sm:flex-wrap sm:gap-2">
+                    {[
+                      { label: 'Enquiries',   value: openCount,       color: openCount > 0 ? 'text-blue-700' : 'text-slate-500'    },
+                      { label: 'Chats',       value: chatOpenCount,   color: chatOpenCount > 0 ? 'text-emerald-700' : 'text-slate-500' },
+                      { label: 'Contact',     value: contactCount,    color: contactCount > 0 ? 'text-violet-700' : 'text-slate-500' },
+                    ].map(s => (
+                      <div key={s.label} className="rounded-2xl border border-slate-100 bg-slate-50 px-2 sm:px-3 py-1.5 text-center sm:min-w-[52px]">
+                        <p className={`text-base font-extrabold ${s.color}`}>{s.value}</p>
+                        <p className="text-[9px] font-semibold uppercase tracking-[0.2em] text-slate-400">{s.label}</p>
+                      </div>
+                    ))}
+                  </div>
                   {/* Support online status */}
                   <div className={`inline-flex items-center gap-1.5 rounded-2xl border px-3 py-1.5 text-xs font-semibold ${effectiveSupportOnline ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-slate-200 bg-slate-50 text-slate-500'}`}>
                     <span className="relative flex size-1.5 shrink-0">

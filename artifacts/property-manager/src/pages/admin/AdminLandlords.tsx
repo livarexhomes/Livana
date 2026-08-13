@@ -437,21 +437,23 @@ export default function AdminLandlords() {
                   <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">Landlord management</p>
                   <h2 className="mt-0.5 text-base font-extrabold text-slate-950">Clients</h2>
                 </div>
-                <div className="flex items-center gap-2 flex-wrap shrink-0">
-                  {[
-                    { label: 'Total',     value: clients.length, color: 'text-slate-700'    },
-                    { label: 'Approved',  value: approved,       color: 'text-emerald-700'  },
-                    { label: 'Pending',   value: pending,        color: 'text-amber-700'    },
-                    { label: 'Suspended', value: suspended,      color: 'text-orange-700'   },
-                  ].map(s => (
-                    <div key={s.label} className="rounded-2xl border border-slate-100 bg-slate-50 px-3 py-1.5 text-center min-w-[52px]">
-                      <p className={`text-base font-extrabold ${s.color}`}>{s.value}</p>
-                      <p className="text-[9px] font-semibold uppercase tracking-[0.2em] text-slate-400">{s.label}</p>
-                    </div>
-                  ))}
+                <div className="flex items-center gap-2 flex-wrap sm:shrink-0">
+                  <div className="grid grid-cols-4 gap-1.5 flex-1 min-w-0 sm:flex sm:flex-none sm:flex-wrap sm:items-center sm:gap-2">
+                    {[
+                      { label: 'Total',     value: clients.length, color: 'text-slate-700'    },
+                      { label: 'Approved',  value: approved,       color: 'text-emerald-700'  },
+                      { label: 'Pending',   value: pending,        color: 'text-amber-700'    },
+                      { label: 'Suspended', value: suspended,      color: 'text-orange-700'   },
+                    ].map(s => (
+                      <div key={s.label} className="rounded-2xl border border-slate-100 bg-slate-50 px-2 sm:px-3 py-1.5 text-center sm:min-w-[52px]">
+                        <p className={`text-base font-extrabold ${s.color}`}>{s.value}</p>
+                        <p className="text-[9px] font-semibold uppercase tracking-[0.2em] text-slate-400">{s.label}</p>
+                      </div>
+                    ))}
+                  </div>
                   <Link href="/admin/vetting">
                     <button type="button"
-                      className="inline-flex items-center gap-1.5 rounded-full bg-slate-950 px-3 py-1.5 text-xs font-semibold text-white hover:bg-slate-800 transition-all">
+                      className="inline-flex items-center gap-1.5 rounded-full bg-slate-950 px-3 py-1.5 text-xs font-semibold text-white hover:bg-slate-800 transition-all shrink-0">
                       <ShieldCheck className="h-3 w-3" />
                       Vetting
                       {pending > 0 && (

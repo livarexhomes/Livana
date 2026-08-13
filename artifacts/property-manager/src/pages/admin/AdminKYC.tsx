@@ -219,7 +219,7 @@ export default function AdminKYC() {
           <div className="flex flex-1 min-h-0 overflow-hidden px-4 md:px-6 pb-4 md:pb-6 gap-4">
 
             {/* ── LEFT: Queue ─────────────────────────────────────────────── */}
-            <div className="flex flex-col w-full max-w-xs xl:max-w-sm shrink-0 rounded-[28px] border border-slate-200 bg-white shadow-sm overflow-hidden">
+            <div className={`${selected ? 'hidden lg:flex' : 'flex'} flex-col w-full lg:max-w-xs xl:max-w-sm shrink-0 rounded-[28px] border border-slate-200 bg-white shadow-sm overflow-hidden`}>
 
               {/* Search */}
               <div className="shrink-0 p-4 border-b border-slate-100">
@@ -312,7 +312,7 @@ export default function AdminKYC() {
             </div>
 
             {/* ── RIGHT: Review panel ─────────────────────────────────────── */}
-            <div className="flex-1 min-w-0 overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-sm">
+            <div className={`${selected ? 'flex' : 'hidden lg:flex'} flex-1 min-w-0 overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-sm`}>
               {selected ? (
                 <ReviewPanel
                   landlord={selected}

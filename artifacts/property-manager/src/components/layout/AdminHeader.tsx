@@ -225,7 +225,7 @@ export default function AdminHeader({ title, subtitle, action, pendingCount = 0 
         {/* Search */}
         <div ref={searchRef} className="relative">
           {showSearch ? (
-            <div className="flex items-center gap-2 bg-white border-2 border-blue-500 rounded-xl px-3 py-2 w-56 md:w-72 shadow-lg shadow-blue-500/10 transition-all">
+            <div className="flex items-center gap-2 bg-white border-2 border-blue-500 rounded-xl px-3 py-2 w-[calc(100vw-6.5rem)] max-w-56 md:max-w-none md:w-72 shadow-lg shadow-blue-500/10 transition-all">
               <Search className="w-3.5 h-3.5 text-blue-500 shrink-0" />
               <input ref={inputRef} value={query} onChange={e => setQuery(e.target.value)}
                 placeholder="Search properties, landlords…"

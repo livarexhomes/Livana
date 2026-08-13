@@ -268,14 +268,14 @@ export default function AdminProjects() {
                     <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">Development projects</p>
                     <h2 className="mt-0.5 text-base font-extrabold text-slate-950">Off-plan &amp; Launches</h2>
                   </div>
-                  <div className="flex items-center gap-2 flex-wrap shrink-0">
+                  <div className="grid grid-cols-4 gap-1.5 sm:flex sm:items-center sm:flex-wrap sm:gap-2 sm:shrink-0">
                     {[
                       { label: 'Projects',     value: String(projects.length),            color: 'text-slate-700'   },
                       { label: 'Units Sold',   value: `${totalSold}/${totalUnits}`,       color: 'text-emerald-700' },
                       { label: 'Avg Progress', value: `${avgProgress}%`,                  color: 'text-violet-700'  },
                       { label: 'Coming Soon',  value: String(statusTotals.coming_soon ?? 0), color: 'text-amber-700' },
                     ].map(k => (
-                      <div key={k.label} className="rounded-2xl border border-slate-100 bg-slate-50 px-3 py-1.5 text-center min-w-[56px]">
+                      <div key={k.label} className="rounded-2xl border border-slate-100 bg-slate-50 px-2 sm:px-3 py-1.5 text-center sm:min-w-[56px]">
                         <p className={`text-base font-extrabold tabular-nums ${k.color}`}>{k.value}</p>
                         <p className="text-[9px] font-semibold uppercase tracking-[0.2em] text-slate-400 whitespace-nowrap">{k.label}</p>
                       </div>
