@@ -26,7 +26,7 @@
     <priority>0.8</priority>
   </url>
 
-  <!-- Location landing pages -->
+  <!-- Location landing pages — auto-generated from src/data/locations.json -->
   <url>
     <loc>https://livarex.com.ng/properties-in/lagos</loc>
     <lastmod>2026-08-12</lastmod>

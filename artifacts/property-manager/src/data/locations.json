@@ -1,0 +1,11 @@
+[
+  { "slug": "lagos",           "priority": 0.8, "changefreq": "weekly" },
+  { "slug": "lekki",           "priority": 0.8, "changefreq": "weekly" },
+  { "slug": "ikeja",           "priority": 0.8, "changefreq": "weekly" },
+  { "slug": "ajah",            "priority": 0.7, "changefreq": "weekly" },
+  { "slug": "yaba",            "priority": 0.7, "changefreq": "weekly" },
+  { "slug": "surulere",        "priority": 0.7, "changefreq": "weekly" },
+  { "slug": "victoria-island", "priority": 0.7, "changefreq": "weekly" },
+  { "slug": "abuja",           "priority": 0.8, "changefreq": "weekly" },
+  { "slug": "ogun",            "priority": 0.7, "changefreq": "weekly" }
+]

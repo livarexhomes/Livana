@@ -3,8 +3,129 @@ import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 import path from "path";
 import http from "http";
+import fs from "fs";
 import { pathToFileURL } from "url";
 import runtimeErrorOverlay from "@replit/vite-plugin-runtime-error-modal";
+
+// ---------------------------------------------------------------------------
+// Sitemap generator plugin
+// Reads src/data/locations.json and rewrites public/sitemap.xml so the file
+// always reflects the canonical list of /properties-in/* slugs.
+// ---------------------------------------------------------------------------
+interface LocationEntry {
+  slug: string;
+  priority: number;
+  changefreq: string;
+}
+
+function generateSitemapPlugin() {
+  const writesitemap = () => {
+    const root = path.resolve(import.meta.dirname);
+    const locationsPath = path.join(root, "src", "data", "locations.json");
+    const sitemapPath = path.join(root, "public", "sitemap.xml");
+
+    const locations: LocationEntry[] = JSON.parse(fs.readFileSync(locationsPath, "utf-8"));
+    const today = new Date().toISOString().slice(0, 10);
+    const base = "https://livarex.com.ng";
+
+    const locationEntries = locations
+      .map(
+        ({ slug, priority, changefreq }) => `  <url>
+    <loc>${base}/properties-in/${slug}</loc>
+    <lastmod>${today}</lastmod>
+    <changefreq>${changefreq}</changefreq>
+    <priority>${priority.toFixed(1)}</priority>
+  </url>`
+      )
+      .join("\n");
+
+    const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <!-- Core pages -->
+  <url>
+    <loc>${base}/</loc>
+    <lastmod>${today}</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>1.0</priority>
+  </url>
+  <url>
+    <loc>${base}/listings</loc>
+    <lastmod>${today}</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>${base}/listings?type=rent</loc>
+    <lastmod>${today}</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>${base}/listings?type=lease</loc>
+    <lastmod>${today}</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <!-- Location landing pages — auto-generated from src/data/locations.json -->
+${locationEntries}
+
+  <!-- Informational pages -->
+  <url>
+    <loc>${base}/how-we-verify</loc>
+    <lastmod>${today}</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>${base}/about</loc>
+    <lastmod>${today}</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>${base}/contact</loc>
+    <lastmod>${today}</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+
+  <!-- Legal pages -->
+  <url>
+    <loc>${base}/privacy-policy</loc>
+    <lastmod>${today}</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.3</priority>
+  </url>
+  <url>
+    <loc>${base}/terms</loc>
+    <lastmod>${today}</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.3</priority>
+  </url>
+  <url>
+    <loc>${base}/cookie-policy</loc>
+    <lastmod>${today}</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.3</priority>
+  </url>
+</urlset>
+`;
+
+    fs.writeFileSync(sitemapPath, xml, "utf-8");
+    console.log(`[sitemap] Wrote ${locations.length} location entries → public/sitemap.xml`);
+  };
+
+  return {
+    name: "generate-sitemap",
+    buildStart() {
+      writesitemap();
+    },
+    configureServer() {
+      writesitemap();
+    },
+  };
+}
 
 const apiHandlerFiles: Record<string, string> = {
   chat: "chat.js",
@@ -118,6 +239,7 @@ export default defineConfig(async ({ isSsrBuild }) => ({
   plugins: [
     react(),
     tailwindcss(),
+    generateSitemapPlugin(),
     localApiMiddleware(),
     chatApiMiddleware(),
     ...(!isSsrBuild && process.env.NODE_ENV !== "production"
