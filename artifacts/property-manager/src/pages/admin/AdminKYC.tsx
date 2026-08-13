@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import {
   ShieldCheck, Search, CheckCircle, Clock, XCircle, Ban,
   X, FileText, Phone, Calendar, CreditCard, Hash,
@@ -64,6 +64,7 @@ export default function AdminKYC() {
   const [landlords, setLandlords]         = useState<any[]>([])
   const [filtered, setFiltered]           = useState<any[]>([])
   const [loading, setLoading]             = useState(true)
+  const [refreshing, setRefreshing]       = useState(false)
   const [search, setSearch]               = useState('')
   const [statusFilter, setStatusFilter]   = useState('pending')
   const [selected, setSelected]           = useState<any | null>(null)
@@ -71,22 +72,48 @@ export default function AdminKYC() {
   const [kycDocs, setKycDocs]             = useState<{ doc_type: string; url: string; file_name: string }[]>([])
   const [imgErrors, setImgErrors]         = useState<Record<string, boolean>>({})
   const [docsLoading, setDocsLoading]     = useState(false)
+  const debounceRef                       = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
+
+  const loadData = useCallback(async (initial = false) => {
+    if (initial) setLoading(true)
+    else setRefreshing(true)
+    const supabase = createClient()
+    const { data } = await supabase
+      .from('landlords').select('*').order('created_at', { ascending: false })
+    const rows = data ?? []
+    setLandlords(rows)
+    // Update selected landlord in-place if its record changed externally
+    setSelected((prev: any) => {
+      if (!prev) return prev
+      const updated = rows.find((l: any) => l.id === prev.id)
+      return updated ?? prev
+    })
+    if (initial) setLoading(false)
+    else setRefreshing(false)
+  }, [])
 
   useEffect(() => {
     const supabase = createClient()
     supabase.auth.getUser().then(({ data: { user } }) => {
       setUser({ email: user?.email })
       if (user?.id) window.__livarexUserId = user.id
+      loadData(true)
     })
-    supabase
-      .from('landlords').select('*').order('created_at', { ascending: false })
-      .then(({ data }) => {
-        const rows = data ?? []
-        setLandlords(rows)
-        setFiltered(rows.filter(l => l.status === 'pending'))
-        setLoading(false)
-      })
-  }, [])
+  }, [loadData])
+
+  // Realtime subscription on landlords table
+  useEffect(() => {
+    const supabase = createClient()
+    const debouncedLoad = () => {
+      clearTimeout(debounceRef.current)
+      debounceRef.current = setTimeout(() => loadData(false), 1500)
+    }
+    const channel = supabase.channel('kyc-live')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'landlords' }, debouncedLoad)
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'landlords' }, debouncedLoad)
+      .subscribe()
+    return () => { clearTimeout(debounceRef.current); supabase.removeChannel(channel) }
+  }, [loadData])
 
   useEffect(() => {
     let list = [...landlords]
@@ -180,19 +207,40 @@ export default function AdminKYC() {
                   <p className="mt-1 text-sm text-slate-500">Verify landlord identities before they go live on the platform.</p>
                 </div>
 
-                {/* Stats row */}
-                <div className="flex items-center gap-2 flex-wrap shrink-0">
-                  {[
-                    { label: 'Pending',  value: counts.pending,       accent: 'text-amber-700 bg-amber-500/10'   },
-                    { label: 'Approved', value: counts.approved,      accent: 'text-emerald-700 bg-emerald-500/10' },
-                    { label: 'Rejected', value: counts.rejected,      accent: 'text-red-700 bg-red-500/10'       },
-                    { label: 'Total',    value: counts.all,            accent: 'text-blue-700 bg-blue-500/10'     },
-                  ].map(s => (
-                    <div key={s.label} className="rounded-3xl border border-slate-100 bg-slate-50 px-4 py-3 text-center min-w-[70px]">
-                      <p className={`text-2xl font-extrabold ${s.accent}`}>{s.value}</p>
-                      <p className="mt-0.5 text-[10px] font-semibold uppercase tracking-[0.25em] text-slate-500">{s.label}</p>
-                    </div>
-                  ))}
+                {/* Stats row + live indicator */}
+                <div className="flex flex-col items-end gap-2 shrink-0">
+                  {/* Live indicator */}
+                  <div className="flex items-center self-end">
+                    {refreshing ? (
+                      <span className="inline-flex items-center gap-1.5 text-[11px] font-medium text-slate-400">
+                        <svg className="w-3 h-3 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                          <path d="M21 12a9 9 0 11-6.219-8.56"/>
+                        </svg>
+                        Updating…
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1.5 text-[11px] font-medium text-slate-400">
+                        <span className="relative flex h-1.5 w-1.5">
+                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                          <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                        </span>
+                        Live
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2 flex-wrap justify-end">
+                    {[
+                      { label: 'Pending',  value: counts.pending,  accent: 'text-amber-700 bg-amber-500/10'      },
+                      { label: 'Approved', value: counts.approved, accent: 'text-emerald-700 bg-emerald-500/10'  },
+                      { label: 'Rejected', value: counts.rejected, accent: 'text-red-700 bg-red-500/10'          },
+                      { label: 'Total',    value: counts.all,      accent: 'text-blue-700 bg-blue-500/10'        },
+                    ].map(s => (
+                      <div key={s.label} className="rounded-3xl border border-slate-100 bg-slate-50 px-4 py-3 text-center min-w-[70px]">
+                        <p className={`text-2xl font-extrabold ${s.accent}`}>{s.value}</p>
+                        <p className="mt-0.5 text-[10px] font-semibold uppercase tracking-[0.25em] text-slate-500">{s.label}</p>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </div>
 
