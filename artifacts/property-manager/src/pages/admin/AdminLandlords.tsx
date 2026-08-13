@@ -56,8 +56,9 @@ type ResetConfirm  = { userId: string; landlordId: string; name: string }
 // ── Reset confirmation modal ──────────────────────────────────────────────────
 
 function ConfirmResetModal({ target, onConfirm, onCancel, loading }: {
-  target: ResetConfirm; onConfirm: () => void; onCancel: () => void; loading: boolean
+  target: ResetConfirm; onConfirm: (reason: string) => void; onCancel: () => void; loading: boolean
 }) {
+  const [reason, setReason] = useState('')
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm px-4">
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 border border-slate-200">
@@ -65,15 +66,28 @@ function ConfirmResetModal({ target, onConfirm, onCancel, loading }: {
           <RotateCcw className="w-5 h-5 text-amber-600" />
         </div>
         <h3 className="text-[15px] font-extrabold text-slate-900 mb-1">Reset KYC account</h3>
-        <p className="text-[13px] text-slate-500 mb-6 leading-relaxed">
+        <p className="text-[13px] text-slate-500 mb-4 leading-relaxed">
           This will clear <strong className="text-slate-700">{target.name}</strong>'s KYC documents and set their status back to <em>Not Submitted</em>. They will receive an email asking them to resubmit.
         </p>
+        <div className="mb-4">
+          <label className="block text-[12px] font-semibold text-slate-600 mb-1.5">
+            Reason for reset <span className="font-normal text-slate-400">(sent to landlord — optional)</span>
+          </label>
+          <textarea
+            value={reason}
+            onChange={e => setReason(e.target.value)}
+            disabled={loading}
+            placeholder="e.g. Your passport photo was too blurry. Please resubmit a clear, well-lit image."
+            rows={3}
+            className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-[12.5px] text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-amber-300 focus:bg-white transition-colors resize-none disabled:opacity-50"
+          />
+        </div>
         <div className="flex gap-2.5">
           <button onClick={onCancel} disabled={loading}
             className="flex-1 px-4 py-2.5 rounded-xl border border-slate-200 text-[13px] font-semibold text-slate-700 hover:bg-slate-50 transition-colors disabled:opacity-50">
             Cancel
           </button>
-          <button onClick={onConfirm} disabled={loading}
+          <button onClick={() => onConfirm(reason)} disabled={loading}
             className="flex-1 px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-[13px] font-semibold transition-colors disabled:opacity-50 flex items-center justify-center gap-1.5">
             {loading && <RefreshCw className="w-3.5 h-3.5 animate-spin" />}
             {loading ? 'Resetting…' : 'Reset account'}
@@ -345,7 +359,7 @@ export default function AdminLandlords() {
     setResetTarget({ userId, landlordId, name })
   }
 
-  async function confirmReset() {
+  async function confirmReset(reason: string) {
     if (!resetTarget) return
     setResetLoading(true)
     const supabase = createClient()
@@ -370,7 +384,7 @@ export default function AdminLandlords() {
     await fetch('/api/notify-kyc-reset', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-      body: JSON.stringify({ userId: resetTarget.userId, landlordName: resetTarget.name }),
+      body: JSON.stringify({ userId: resetTarget.userId, landlordName: resetTarget.name, reason: reason.trim() || undefined }),
     }).catch(() => null)
 
     // 4. Update local state

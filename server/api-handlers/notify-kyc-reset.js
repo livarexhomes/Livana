@@ -11,6 +11,15 @@
 
 import { renderEmail } from './lib/email-template.js'
 
+function escapeHtml(str) {
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+}
+
 function getEnv(key) {
   if (typeof process !== 'undefined' && process.env) return process.env[key]
   return undefined
@@ -68,6 +77,7 @@ export default async function handler(req, res) {
   const body         = await parseJsonBody(req)
   const userId       = (body?.userId ?? '').trim()
   const landlordName = (body?.landlordName ?? 'Landlord').trim()
+  const reason       = (body?.reason ?? '').trim().slice(0, 1000) // max 1 000 chars
   if (!userId) return sendJson(res, 400, { error: 'userId required' })
 
   // ── 3. Fetch landlord's email from auth.users ────────────────────────────────
@@ -99,7 +109,13 @@ export default async function handler(req, res) {
   }
 
   // ── 5. Build and send email ───────────────────────────────────────────────────
-  const firstName = landlordName.split(' ')[0]
+  const firstName = escapeHtml(landlordName.split(' ')[0])
+
+  const reasonBlock = reason
+    ? `<p style="margin:0 0 16px;padding:12px 16px;background:#fff8ed;border-left:3px solid #f59e0b;border-radius:4px;font-size:13px;color:#78350f;">
+        <strong>Reason:</strong> ${escapeHtml(reason)}
+      </p>`
+    : ''
 
   const html = renderEmail({
     title: 'Your Livarex account has been reset',
@@ -110,6 +126,7 @@ export default async function handler(req, res) {
         Your Livarex landlord account has been reset by the admin team.
         This means you will need to log in and re-submit your profile and KYC documents.
       </p>
+      ${reasonBlock}
       <p style="margin:0 0 24px;">
         Once you have refilled your information, our team will review and approve your account as quickly as possible.
       </p>
