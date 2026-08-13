@@ -960,65 +960,65 @@ export default function AdminSettings() {
         <AdminSidebar userEmail={user?.email} userName={displayName} />
 
         <div className="flex-1 flex flex-col min-w-0">
-          {/* ── Top bar ── */}
-          <header className="flex items-center justify-between pl-14 pr-6 md:pl-8 md:pr-8 py-3.5 bg-white border-b border-gray-200 shrink-0">
-            <div className="flex items-center gap-3">
-              <p className="text-xs font-mono text-gray-400 hidden sm:block">livarex / admin /</p>
-              <h1 className="text-sm font-bold text-gray-900 tracking-tight">settings</h1>
-            </div>
-            <div className="flex items-center gap-3">
-              {saved && (
-                <span className="flex items-center gap-1.5 text-xs font-medium text-green-600">
-                  <CheckCircle className="w-3.5 h-3.5" /> Saved
-                </span>
-              )}
-              <button
-                type="button"
-                onClick={handleSave}
-                disabled={saving}
-                className={`inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold tracking-wide rounded-lg transition-all duration-200 ${
-                  saving
-                    ? 'bg-gray-400 text-white cursor-not-allowed'
-                    : 'bg-blue-600 hover:bg-blue-700 active:scale-95 text-white'
-                }`}
-              >
-                {saving ? (
-                  <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Saving…</>
-                ) : (
-                  <><Save className="w-3.5 h-3.5" /> Save Changes</>
-                )}
-              </button>
-            </div>
-          </header>
+          {/* ── Hero card ── */}
+          <div className="shrink-0 px-4 md:px-6 pt-3 pb-2">
+            <div className="rounded-[32px] border border-slate-200 bg-white px-5 py-4 shadow-[0_18px_80px_-40px_rgba(15,23,42,0.18)]">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">Admin configuration</p>
+                  <h2 className="mt-0.5 text-base font-extrabold text-slate-950">Settings</h2>
+                </div>
+                <div className="flex items-center gap-2 shrink-0">
+                  {saved && (
+                    <span className="flex items-center gap-1.5 text-xs font-medium text-emerald-600">
+                      <CheckCircle className="w-3.5 h-3.5" /> Saved
+                    </span>
+                  )}
+                  <button
+                    type="button"
+                    onClick={handleSave}
+                    disabled={saving}
+                    className={`inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold rounded-full transition-all duration-200 ${
+                      saving ? 'bg-slate-400 text-white cursor-not-allowed' : 'bg-slate-950 hover:bg-slate-800 active:scale-95 text-white'
+                    }`}
+                  >
+                    {saving ? (
+                      <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Saving…</>
+                    ) : (
+                      <><Save className="w-3.5 h-3.5" /> Save Changes</>
+                    )}
+                  </button>
+                </div>
+              </div>
 
-          {/* ── Tab bar ── */}
-          <div className="flex items-end gap-0 pl-14 md:pl-8 border-b border-gray-200 bg-white shrink-0 overflow-x-auto scrollbar-none">
-            {visibleSections.map(s => {
-              const Icon = s.icon
-              const isActive = active === s.id
-              const locked = !isAgent && ADMIN_ONLY_SECTIONS.has(s.id) && adminPinHash && !pinVerified
-              return (
-                <button
-                  key={s.id}
-                  type="button"
-                  onClick={() => handleTabChange(s.id)}
-                  className={`relative flex items-center gap-2 px-4 py-3 text-xs font-semibold whitespace-nowrap transition-all duration-150 border-b-2 -mb-px ${
-                    isActive
-                      ? 'border-blue-500 text-gray-900'
-                      : 'border-transparent text-gray-400 hover:text-gray-600'
-                  }`}
-                >
-                  <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-blue-600' : ''}`} strokeWidth={1.8} />
-                  {s.label}
-                  {locked && <Lock className="w-2.5 h-2.5 text-gray-300 ml-0.5" />}
-                </button>
-              )
-            })}
+              {/* ── Tab pills ── */}
+              <div className="mt-3 flex items-center gap-1.5 flex-wrap">
+                {visibleSections.map(s => {
+                  const Icon = s.icon
+                  const isActive = active === s.id
+                  const locked = !isAgent && ADMIN_ONLY_SECTIONS.has(s.id) && adminPinHash && !pinVerified
+                  return (
+                    <button
+                      key={s.id}
+                      type="button"
+                      onClick={() => handleTabChange(s.id)}
+                      className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold whitespace-nowrap transition-all ${
+                        isActive ? 'bg-slate-950 text-white shadow-sm shadow-slate-950/10' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                      }`}
+                    >
+                      <Icon className="w-3 h-3" strokeWidth={1.8} />
+                      {s.label}
+                      {locked && <Lock className="w-2.5 h-2.5 opacity-50 ml-0.5" />}
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
           </div>
 
           {/* ── Main content ── */}
           <main className="flex-1 overflow-y-auto">
-            <div className="max-w-4xl mx-auto px-4 md:px-8 py-8">
+            <div className="max-w-4xl mx-auto px-4 md:px-8 py-6">
 
               {/* ─── PLATFORM ─── */}
               {active === 'platform' && (

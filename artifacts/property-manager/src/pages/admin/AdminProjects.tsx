@@ -261,53 +261,50 @@ export default function AdminProjects() {
           <main className="flex-1 overflow-hidden">
             <div className="h-full overflow-y-auto p-4 md:p-6 space-y-4">
 
-              {loading ? (
-                <div className="flex items-center justify-center py-40">
-                  <div className="animate-spin w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full" />
-                </div>
-              ) : (
-                <>
-                  {/* ── KPI strip ──────────────────────────────────────────── */}
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              {/* ── Hero card: KPI + filters ── */}
+              <div className="rounded-[32px] border border-slate-200 bg-white p-4 shadow-[0_18px_80px_-40px_rgba(15,23,42,0.18)]">
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between mb-3">
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">Development projects</p>
+                    <h2 className="mt-0.5 text-base font-extrabold text-slate-950">Off-plan &amp; Launches</h2>
+                  </div>
+                  <div className="flex items-center gap-2 flex-wrap shrink-0">
                     {[
-                      { label: 'Total Projects',   value: String(projects.length),   color: 'border-l-blue-500',    sub: `${statusTotals.active ?? 0} active`         },
-                      { label: 'Units Sold',        value: `${totalSold}/${totalUnits}`, color: 'border-l-emerald-500', sub: `${sellThrough}% sell-through`            },
-                      { label: 'Avg. Progress',     value: `${avgProgress}%`,         color: 'border-l-violet-500',  sub: 'across all projects'                        },
-                      { label: 'Coming Soon',       value: String(statusTotals.coming_soon ?? 0), color: 'border-l-amber-500', sub: `${statusTotals.on_hold ?? 0} on hold` },
+                      { label: 'Projects',     value: String(projects.length),            color: 'text-slate-700'   },
+                      { label: 'Units Sold',   value: `${totalSold}/${totalUnits}`,       color: 'text-emerald-700' },
+                      { label: 'Avg Progress', value: `${avgProgress}%`,                  color: 'text-violet-700'  },
+                      { label: 'Coming Soon',  value: String(statusTotals.coming_soon ?? 0), color: 'text-amber-700' },
                     ].map(k => (
-                      <div key={k.label}
-                        className={`bg-white rounded-2xl border border-slate-200 border-l-4 ${k.color} px-4 py-3.5 shadow-sm`}>
-                        <p className="text-2xl font-extrabold text-slate-950 leading-none tabular-nums">{k.value}</p>
-                        <p className="text-xs font-semibold text-slate-500 mt-1.5 uppercase tracking-wide">{k.label}</p>
-                        <p className="text-[11px] text-slate-400 mt-0.5">{k.sub}</p>
+                      <div key={k.label} className="rounded-2xl border border-slate-100 bg-slate-50 px-3 py-1.5 text-center min-w-[56px]">
+                        <p className={`text-base font-extrabold tabular-nums ${k.color}`}>{k.value}</p>
+                        <p className="text-[9px] font-semibold uppercase tracking-[0.2em] text-slate-400 whitespace-nowrap">{k.label}</p>
                       </div>
                     ))}
                   </div>
+                </div>
 
-                  {/* ── Toolbar: search · status tabs · category · view toggle ── */}
-                  <div className="bg-white rounded-2xl border border-slate-200 shadow-sm">
-                    {/* Status filter tabs */}
-                    <div className="flex items-center gap-1 px-4 pt-3 border-b border-slate-100 overflow-x-auto">
-                      {STATUS_FILTERS.map(f => {
-                        const count = f.key === 'all' ? projects.length : (statusTotals[f.key] ?? 0)
-                        const active = statusFilter === f.key
-                        return (
-                          <button key={f.key} type="button" onClick={() => setStatusFilter(f.key)}
-                            className={`shrink-0 flex items-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-t-lg border-b-2 transition-colors ${
-                              active
-                                ? 'border-blue-600 text-blue-600 bg-blue-50/40'
-                                : 'border-transparent text-slate-500 hover:text-slate-900 hover:bg-slate-50'
-                            }`}>
-                            {f.label}
-                            <span className={`rounded-full px-1.5 py-0.5 text-[10px] font-bold tabular-nums ${
-                              active ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-500'
-                            }`}>{count}</span>
-                          </button>
-                        )
-                      })}
-                    </div>
+                {/* Status filter pills */}
+                <div className="flex items-center gap-1.5 flex-wrap mb-3">
+                  {STATUS_FILTERS.map(f => {
+                    const count = f.key === 'all' ? projects.length : (statusTotals[f.key] ?? 0)
+                    const isActive = statusFilter === f.key
+                    return (
+                      <button key={f.key} type="button" onClick={() => setStatusFilter(f.key)}
+                        className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition-all ${
+                          isActive ? 'bg-slate-950 text-white shadow-sm shadow-slate-950/10' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                        }`}>
+                        {f.label}
+                        <span className={`inline-flex h-4 min-w-[16px] items-center justify-center rounded-full text-[10px] font-bold ${
+                          isActive ? 'bg-white/20 text-white' : 'bg-slate-900/10 text-slate-600'
+                        }`}>{count}</span>
+                      </button>
+                    )
+                  })}
+                </div>
 
-                    <div className="flex flex-col sm:flex-row sm:items-center gap-3 p-4">
+                {/* Search + category + view */}
+                {!loading && (
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-3">
                       {/* Search */}
                       <div className="flex-1 flex items-center gap-2.5 rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2.5">
                         <Search className="w-4 h-4 text-slate-400 shrink-0" />
@@ -346,8 +343,17 @@ export default function AdminProjects() {
                         </button>
                       </div>
                     </div>
-                  </div>
+                )}
+              </div>
 
+              {loading && (
+                <div className="flex items-center justify-center py-40">
+                  <div className="animate-spin w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full" />
+                </div>
+              )}
+
+              {!loading && (
+                <>
                   {/* ── Results count ───────────────────────────────────────── */}
                   {filtered.length > 0 && (
                     <p className="text-xs text-slate-400 font-medium px-0.5">

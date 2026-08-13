@@ -2610,99 +2610,71 @@ export default function AdminSupportPage() {
 
   return (
     <AuthGuard require="admin">
-      <div className="flex h-screen overflow-hidden bg-slate-50">
+      <div className="flex h-screen overflow-hidden bg-[#F4F6FB]">
         <AdminSidebar userEmail={user?.email} userName={displayName} />
 
         <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-          {/* Page header — single compact row */}
-          <header className="bg-white border-b border-slate-200 shrink-0">
-            <div className="px-4 md:px-6 py-2.5 flex items-center gap-3 flex-wrap">
-              {/* Title */}
-              <div className="min-w-0 mr-1">
-                <h1 className="text-[17px] font-bold text-slate-900 tracking-tight leading-tight">Support &amp; Inbox</h1>
+          {/* ── Hero card ── */}
+          <div className="shrink-0 px-4 md:px-6 pt-3 pb-2">
+            <div className="rounded-[32px] border border-slate-200 bg-white px-5 py-3.5 shadow-[0_18px_80px_-40px_rgba(15,23,42,0.18)]">
+              <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">Customer operations</p>
+                  <h2 className="mt-0.5 text-base font-extrabold text-slate-950">Support &amp; Inbox</h2>
+                </div>
+                <div className="flex items-center gap-2 flex-wrap shrink-0">
+                  {[
+                    { label: 'Enquiries',   value: openCount,       color: openCount > 0 ? 'text-blue-700' : 'text-slate-500'    },
+                    { label: 'Chats',       value: chatOpenCount,   color: chatOpenCount > 0 ? 'text-emerald-700' : 'text-slate-500' },
+                    { label: 'Contact',     value: contactCount,    color: contactCount > 0 ? 'text-violet-700' : 'text-slate-500' },
+                  ].map(s => (
+                    <div key={s.label} className="rounded-2xl border border-slate-100 bg-slate-50 px-3 py-1.5 text-center min-w-[52px]">
+                      <p className={`text-base font-extrabold ${s.color}`}>{s.value}</p>
+                      <p className="text-[9px] font-semibold uppercase tracking-[0.2em] text-slate-400">{s.label}</p>
+                    </div>
+                  ))}
+                  {/* Support online status */}
+                  <div className={`inline-flex items-center gap-1.5 rounded-2xl border px-3 py-1.5 text-xs font-semibold ${effectiveSupportOnline ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-slate-200 bg-slate-50 text-slate-500'}`}>
+                    <span className="relative flex size-1.5 shrink-0">
+                      <span className={`size-1.5 rounded-full ${effectiveSupportOnline ? 'bg-emerald-500' : supportOpen ? 'bg-amber-400' : 'bg-slate-400'}`} />
+                      {effectiveSupportOnline && <span className="absolute inset-0 rounded-full bg-emerald-500 animate-ping opacity-60" />}
+                    </span>
+                    {effectiveSupportOnline ? 'Online' : supportOpen ? 'No agent' : 'Away'}
+                  </div>
+                  <button
+                    onClick={() => { const next = !muted; setMuted(next); setSoundMuted(next) }}
+                    title={muted ? 'Unmute' : 'Mute'}
+                    className="grid size-8 place-items-center rounded-xl border border-slate-200 bg-slate-50 text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"
+                  >
+                    {muted ? <VolumeX className="w-3.5 h-3.5" /> : <Volume2 className="w-3.5 h-3.5" />}
+                  </button>
+                </div>
               </div>
 
-              {/* Inline stat pills */}
-              <div className="flex items-center gap-1.5 flex-wrap">
-                <div className={`inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-[12px] font-medium ${openCount > 0 ? 'border-blue-200 bg-blue-50 text-blue-700' : 'border-slate-200 bg-slate-50 text-slate-500'}`}>
-                  <HeadphonesIcon className="w-3.5 h-3.5 shrink-0" />
-                  <span className="tabular-nums font-bold">{openCount}</span>
-                  <span className="hidden sm:inline text-[11px] font-normal opacity-70">enquiries</span>
-                </div>
-                <div className={`inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-[12px] font-medium ${chatOpenCount > 0 ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-slate-200 bg-slate-50 text-slate-500'}`}>
-                  <MessageSquare className="w-3.5 h-3.5 shrink-0" />
-                  <span className="tabular-nums font-bold">{chatOpenCount}</span>
-                  <span className="hidden sm:inline text-[11px] font-normal opacity-70">unread chats</span>
-                </div>
-                <div className={`inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-[12px] font-medium ${contactCount > 0 ? 'border-violet-200 bg-violet-50 text-violet-700' : 'border-slate-200 bg-slate-50 text-slate-500'}`}>
-                  <Mail className="w-3.5 h-3.5 shrink-0" />
-                  <span className="tabular-nums font-bold">{contactCount}</span>
-                  <span className="hidden sm:inline text-[11px] font-normal opacity-70">contact</span>
-                </div>
+              {/* Tab switcher pills */}
+              <div className="mt-2.5 flex items-center gap-1.5 flex-wrap">
+                {([
+                  { key: 'support', label: 'Support Queue', icon: HeadphonesIcon, count: openCount },
+                  { key: 'inbox',   label: 'Inbox',         icon: Inbox,          count: inboxCount },
+                  { key: 'agents',  label: 'Agents',        icon: UserPlus,       count: availableAgentCount },
+                ] as const).map(t => {
+                  const Icon = t.icon
+                  return (
+                    <button key={t.key} type="button" onClick={() => setTab(t.key)}
+                      className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition-all ${
+                        tab === t.key ? 'bg-slate-950 text-white shadow-sm shadow-slate-950/10' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                      }`}>
+                      <Icon className="w-3 h-3" />
+                      {t.label}
+                      {t.count > 0 && (
+                        <span className={`inline-flex h-4 min-w-[16px] items-center justify-center rounded-full text-[10px] font-bold px-1 ${
+                          tab === t.key ? 'bg-white/20 text-white' : 'bg-slate-900/10 text-slate-600'
+                        }`}>{t.count}</span>
+                      )}
+                    </button>
+                  )
+                })}
               </div>
-
-              {/* Spacer */}
-              <div className="flex-1" />
-
-              {/* Support status pill */}
-              <div className={`inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-[12px] ${effectiveSupportOnline ? 'border-emerald-200 bg-emerald-50' : 'border-slate-200 bg-slate-50'}`}>
-                <span className="relative flex size-1.5 shrink-0">
-                  <span className={`size-1.5 rounded-full ${effectiveSupportOnline ? 'bg-emerald-500' : supportOpen ? 'bg-amber-400' : 'bg-slate-400'}`} />
-                  {effectiveSupportOnline && <span className="absolute inset-0 rounded-full bg-emerald-500 animate-ping opacity-60" />}
-                </span>
-                <span className={`font-medium ${effectiveSupportOnline ? 'text-emerald-700' : 'text-slate-500'}`}>
-                  {effectiveSupportOnline ? 'Online' : supportOpen ? 'No agent' : 'Away'}
-                </span>
-                <span className="hidden md:inline text-[11px] text-slate-400">· 8AM–6PM</span>
-              </div>
-
-              {/* Mute toggle */}
-              <button
-                onClick={() => { const next = !muted; setMuted(next); setSoundMuted(next) }}
-                title={muted ? 'Unmute notifications' : 'Mute notifications'}
-                aria-label={muted ? 'Unmute notifications' : 'Mute notifications'}
-                className="grid size-8 place-items-center rounded-lg border border-slate-200 bg-white text-slate-400 hover:text-slate-700 hover:bg-slate-50 transition-colors"
-              >
-                {muted ? <VolumeX className="w-3.5 h-3.5" /> : <Volume2 className="w-3.5 h-3.5" />}
-              </button>
-            </div>
-          </header>
-
-          {/* Tabs — compact dropdown + active-section indicator */}
-          <div className="px-4 md:px-6 py-2 bg-white border-b border-slate-200 shrink-0 flex items-center gap-3">
-            <div className="relative">
-              <select
-                value={tab}
-                onChange={e => setTab(e.target.value as typeof tab)}
-                className="appearance-none pl-3 pr-8 py-2 rounded-xl border border-slate-200 bg-white text-[13px] font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-300 cursor-pointer hover:border-slate-300 transition-colors shadow-[0_1px_2px_rgba(15,23,42,0.04)]"
-              >
-                <option value="support">🎧  Support Queue</option>
-                <option value="inbox">📥  Inbox{inboxCount > 0 ? ` (${inboxCount})` : ''}</option>
-                <option value="agents">👥  Agents{availableAgentCount > 0 ? ` · ${availableAgentCount} online` : ''}</option>
-              </select>
-              <ChevronDownIcon className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 pointer-events-none" />
-            </div>
-            {/* Active section label + badge */}
-            <div className="flex items-center gap-2 text-[12.5px] text-slate-500">
-              {tab === 'support' && <><HeadphonesIcon className="w-3.5 h-3.5" /> Support tickets &amp; queue</>}
-              {tab === 'inbox' && (
-                <>
-                  <Inbox className="w-3.5 h-3.5" />
-                  Live chats, enquiries &amp; contact messages
-                  {inboxCount > 0 && (
-                    <span className="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full text-[9px] font-bold bg-sky-500 text-white">{inboxCount > 99 ? '99+' : inboxCount}</span>
-                  )}
-                </>
-              )}
-              {tab === 'agents' && (
-                <>
-                  <UserPlus className="w-3.5 h-3.5" />
-                  Agent roster
-                  {availableAgentCount > 0 && (
-                    <span className="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full text-[9px] font-bold bg-emerald-500 text-white">{availableAgentCount}</span>
-                  )}
-                </>
-              )}
             </div>
           </div>
 

@@ -424,95 +424,69 @@ export default function AdminLandlords() {
 
   return (
     <AuthGuard require="admin">
-      <div className="flex h-screen overflow-hidden bg-slate-50">
+      <div className="flex h-screen overflow-hidden bg-[#F4F6FB]">
         <AdminSidebar userEmail={user?.email} userName={displayName} />
 
         <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
 
-          {/* ── Compact header ───────────────────────────────────────────── */}
-          <header className="bg-white border-b border-slate-200 shrink-0">
-            <div className="px-5 md:px-6 py-3 flex items-center gap-3 flex-wrap">
-              {/* Title */}
-              <div className="min-w-0">
-                <h1 className="text-[17px] font-bold text-slate-900 tracking-tight">Clients</h1>
+          {/* ── Hero card ── */}
+          <div className="shrink-0 px-4 md:px-6 pt-3 pb-2">
+            <div className="rounded-[32px] border border-slate-200 bg-white px-5 py-3.5 shadow-[0_18px_80px_-40px_rgba(15,23,42,0.18)]">
+              <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">Landlord management</p>
+                  <h2 className="mt-0.5 text-base font-extrabold text-slate-950">Clients</h2>
+                </div>
+                <div className="flex items-center gap-2 flex-wrap shrink-0">
+                  {[
+                    { label: 'Total',     value: clients.length, color: 'text-slate-700'    },
+                    { label: 'Approved',  value: approved,       color: 'text-emerald-700'  },
+                    { label: 'Pending',   value: pending,        color: 'text-amber-700'    },
+                    { label: 'Suspended', value: suspended,      color: 'text-orange-700'   },
+                  ].map(s => (
+                    <div key={s.label} className="rounded-2xl border border-slate-100 bg-slate-50 px-3 py-1.5 text-center min-w-[52px]">
+                      <p className={`text-base font-extrabold ${s.color}`}>{s.value}</p>
+                      <p className="text-[9px] font-semibold uppercase tracking-[0.2em] text-slate-400">{s.label}</p>
+                    </div>
+                  ))}
+                  <Link href="/admin/vetting">
+                    <button type="button"
+                      className="inline-flex items-center gap-1.5 rounded-full bg-slate-950 px-3 py-1.5 text-xs font-semibold text-white hover:bg-slate-800 transition-all">
+                      <ShieldCheck className="h-3 w-3" />
+                      Vetting
+                      {pending > 0 && (
+                        <span className="flex h-4 min-w-[16px] items-center justify-center rounded-full bg-amber-400 px-1 text-[10px] font-bold text-amber-900">
+                          {pending}
+                        </span>
+                      )}
+                    </button>
+                  </Link>
+                </div>
               </div>
 
-              {/* Stat pills */}
-              <div className="flex items-center gap-1.5 flex-wrap">
-                <span className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1 text-[12px] font-medium text-slate-600">
-                  <Users className="w-3.5 h-3.5 text-slate-400" />
-                  <span className="font-bold tabular-nums">{clients.length}</span>
-                  <span className="text-slate-400 text-[11px]">total</span>
-                </span>
-                <span className={`inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-[12px] font-medium ${approved > 0 ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-slate-200 bg-slate-50 text-slate-500'}`}>
-                  <CheckCircle className="w-3.5 h-3.5" />
-                  <span className="font-bold tabular-nums">{approved}</span>
-                  <span className="text-[11px] opacity-70">approved</span>
-                </span>
-                <span className={`inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-[12px] font-medium ${pending > 0 ? 'border-amber-200 bg-amber-50 text-amber-700' : 'border-slate-200 bg-slate-50 text-slate-500'}`}>
-                  <Clock className="w-3.5 h-3.5" />
-                  <span className="font-bold tabular-nums">{pending}</span>
-                  <span className="text-[11px] opacity-70">KYC pending</span>
-                </span>
-                {suspended > 0 && (
-                  <span className="inline-flex items-center gap-1.5 rounded-lg border border-orange-200 bg-orange-50 px-2.5 py-1 text-[12px] font-medium text-orange-700">
-                    <Ban className="w-3.5 h-3.5" />
-                    <span className="font-bold tabular-nums">{suspended}</span>
-                    <span className="text-[11px] opacity-70">suspended</span>
-                  </span>
-                )}
-              </div>
-
-              <div className="flex-1" />
-
-              {/* KYC Review CTA */}
-              <Link href="/admin/kyc">
-                <button type="button"
-                  className="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-3.5 py-2 text-[13px] font-semibold text-white hover:bg-slate-700 active:scale-95 transition-all">
-                  <ShieldCheck className="h-3.5 w-3.5" />
-                  KYC Review
-                  {pending > 0 && (
-                    <span className="flex h-5 min-w-[20px] items-center justify-center rounded-full bg-amber-400 px-1.5 text-[10px] font-bold text-amber-900">
-                      {pending}
-                    </span>
-                  )}
-                </button>
-              </Link>
-            </div>
-          </header>
-
-          {/* ── Content ─────────────────────────────────────────────────── */}
-          <div className="flex flex-1 overflow-hidden">
-
-            {/* Left — client list */}
-            <div className="flex flex-1 flex-col min-w-0 overflow-hidden">
-
-              {/* Filter / search bar */}
-              <div className="px-5 md:px-6 py-2.5 bg-white border-b border-slate-200 shrink-0 flex flex-wrap items-center gap-2 justify-between">
-                {/* Status tabs */}
-                <div className="flex items-center gap-0.5 flex-wrap">
+              {/* Filter + search row */}
+              <div className="mt-2.5 flex flex-wrap items-center gap-2 justify-between">
+                <div className="flex items-center gap-1.5 flex-wrap">
                   {STATUS_TABS.map(tab => (
                     <button key={tab.key} type="button" onClick={() => setStatusFilter(tab.key)}
-                      className={`inline-flex h-7 items-center gap-1.5 rounded-lg px-2.5 text-[12px] font-medium transition-all ${
+                      className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition-all ${
                         statusFilter === tab.key
-                          ? 'bg-slate-900 text-white shadow-sm'
-                          : 'text-slate-500 hover:bg-slate-100 hover:text-slate-700'
+                          ? 'bg-slate-950 text-white shadow-sm shadow-slate-950/10'
+                          : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                       }`}>
                       {tab.label}
-                      <span className={`inline-flex h-4 min-w-[16px] items-center justify-center rounded-full px-1 text-[10px] font-semibold tabular-nums ${
-                        statusFilter === tab.key ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-500'
+                      <span className={`inline-flex h-4 min-w-[16px] items-center justify-center rounded-full text-[10px] font-bold ${
+                        statusFilter === tab.key ? 'bg-white/20 text-white' : 'bg-slate-900/10 text-slate-600'
                       }`}>{tab.count}</span>
                     </button>
                   ))}
                 </div>
-
-                {/* Search + sort */}
                 <div className="flex items-center gap-2">
-                  <label className="flex h-8 items-center gap-2 rounded-lg border border-slate-200 bg-slate-50/60 px-2.5 focus-within:border-slate-300 focus-within:bg-white focus-within:ring-2 focus-within:ring-slate-200/60 transition-all">
+                  <label className="flex h-8 items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 px-3 focus-within:border-slate-300 focus-within:bg-white transition-all">
                     <Search className="h-3.5 w-3.5 shrink-0 text-slate-400" />
                     <input value={search} onChange={e => setSearch(e.target.value)}
                       placeholder="Name, city, phone…"
-                      className="w-36 bg-transparent text-[12.5px] text-slate-800 placeholder:text-slate-400 focus:outline-none" />
+                      className="w-36 bg-transparent text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none" />
                     {search && (
                       <button onClick={() => setSearch('')} className="text-slate-400 hover:text-slate-600">
                         <X className="w-3 h-3" />
@@ -521,7 +495,7 @@ export default function AdminLandlords() {
                   </label>
                   <div className="relative">
                     <select value={sort} onChange={e => setSort(e.target.value)}
-                      className="h-8 appearance-none rounded-lg border border-slate-200 bg-white pl-2.5 pr-7 text-[12px] font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-slate-300 cursor-pointer hover:border-slate-300 transition-colors">
+                      className="h-8 appearance-none rounded-2xl border border-slate-200 bg-white pl-2.5 pr-7 text-xs font-medium text-slate-700 focus:outline-none cursor-pointer hover:border-slate-300 transition-colors">
                       <option value="newest">Newest</option>
                       <option value="oldest">Oldest</option>
                       <option value="name">Name A–Z</option>
@@ -530,6 +504,14 @@ export default function AdminLandlords() {
                   </div>
                 </div>
               </div>
+            </div>
+          </div>
+
+          {/* ── Content ─────────────────────────────────────────────────── */}
+          <div className="flex flex-1 overflow-hidden">
+
+            {/* Left — client list */}
+            <div className="flex flex-1 flex-col min-w-0 overflow-hidden">
 
               {/* Column headers */}
               {!loading && clients.length > 0 && (

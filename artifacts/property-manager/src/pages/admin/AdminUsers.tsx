@@ -320,62 +320,64 @@ export default function AdminUsers() {
         <AdminSidebar userEmail={user?.email} userName={displayName} />
         <div className="flex-1 flex flex-col min-w-0">
           <AdminHeader title="Users" subtitle={`${tenants.length} registered tenants`} />
-          <main className="flex-1 overflow-y-auto p-4 md:p-5 pb-20 md:pb-6">
+          <main className="flex-1 overflow-y-auto pb-20 md:pb-6">
 
-            {/* Stat cards */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5 mb-4">
-              {[
-                { label: 'Total Users',       value: tenants.length,  icon: Users,       color: 'text-slate-900',   bg: 'bg-slate-100' },
-                { label: 'Active',            value: activeCount,     icon: UserCheck,   color: 'text-emerald-700', bg: 'bg-emerald-100' },
-                { label: 'Suspended',         value: suspendedCount,  icon: UserX,       color: 'text-amber-700',   bg: 'bg-amber-100' },
-                { label: 'Joined This Month', value: monthlyCount,    icon: TrendingUp,  color: 'text-blue-700',    bg: 'bg-blue-100' },
-              ].map(s => {
-                const Icon = s.icon
-                return (
-                  <div key={s.label} className="flex items-center gap-3 rounded-xl border border-slate-100 bg-white px-3.5 py-2.5 shadow-[0_1px_3px_rgba(0,0,0,0.05)] transition hover:shadow-[0_3px_10px_rgba(0,0,0,0.08)]">
-                    <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${s.bg}`}>
-                      <Icon className={`h-4 w-4 ${s.color}`} />
-                    </div>
-                    <div className="min-w-0">
-                      <p className={`text-lg leading-tight font-extrabold ${s.color}`}>{s.value}</p>
-                      <p className="text-[11px] text-slate-400 font-medium truncate">{s.label}</p>
-                    </div>
+            {/* ── Hero card ── */}
+            <div className="px-4 md:px-6 pt-3 pb-2">
+              <div className="rounded-[32px] border border-slate-200 bg-white px-5 py-4 shadow-[0_18px_80px_-40px_rgba(15,23,42,0.18)]">
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">Platform users</p>
+                    <h2 className="mt-0.5 text-base font-extrabold text-slate-950">Tenants & Users</h2>
                   </div>
-                )
-              })}
-            </div>
+                  <div className="flex items-center gap-2 flex-wrap shrink-0">
+                    {[
+                      { label: 'Total',     value: tenants.length, color: 'text-slate-700'   },
+                      { label: 'Active',    value: activeCount,    color: 'text-emerald-700' },
+                      { label: 'Suspended', value: suspendedCount, color: 'text-amber-700'   },
+                      { label: 'This Month',value: monthlyCount,   color: 'text-blue-700'    },
+                    ].map(s => (
+                      <div key={s.label} className="rounded-2xl border border-slate-100 bg-slate-50 px-3 py-1.5 text-center min-w-[56px]">
+                        <p className={`text-base font-extrabold ${s.color}`}>{s.value}</p>
+                        <p className="text-[9px] font-semibold uppercase tracking-[0.2em] text-slate-400 whitespace-nowrap">{s.label}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
 
-            {/* Filter + Search */}
-            <div className="bg-white rounded-xl border border-slate-100 shadow-[0_1px_3px_rgba(0,0,0,0.04)] px-3 py-2 mb-3 flex flex-col sm:flex-row gap-2 sm:items-center sm:justify-between">
-              <div className="flex items-center gap-1 flex-wrap">
-                {([
-                  { key: 'all',       label: 'All',       count: tenants.length },
-                  { key: 'active',    label: 'Active',    count: activeCount },
-                  { key: 'suspended', label: 'Suspended', count: suspendedCount },
-                ] as const).map(tab => (
-                  <button key={tab.key} type="button" onClick={() => setStatusFilter(tab.key)}
-                    className={`inline-flex h-7 items-center gap-1.5 rounded-lg px-2.5 text-xs font-semibold transition-all ${
-                      statusFilter === tab.key ? 'bg-slate-900 text-white shadow-sm' : 'text-slate-500 hover:bg-slate-100 hover:text-slate-700'
-                    }`}>
-                    {tab.label}
-                    <span className={`inline-flex h-4 min-w-[16px] items-center justify-center rounded-md px-1 text-[10px] font-bold tabular-nums ${
-                      statusFilter === tab.key ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-500'
-                    }`}>{tab.count}</span>
-                  </button>
-                ))}
+                {/* Filter + Search */}
+                <div className="mt-2.5 flex flex-wrap items-center gap-2 justify-between">
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    {([
+                      { key: 'all',       label: 'All',       count: tenants.length },
+                      { key: 'active',    label: 'Active',    count: activeCount    },
+                      { key: 'suspended', label: 'Suspended', count: suspendedCount },
+                    ] as const).map(tab => (
+                      <button key={tab.key} type="button" onClick={() => setStatusFilter(tab.key)}
+                        className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition-all ${
+                          statusFilter === tab.key ? 'bg-slate-950 text-white shadow-sm shadow-slate-950/10' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                        }`}>
+                        {tab.label}
+                        <span className={`inline-flex h-4 min-w-[16px] items-center justify-center rounded-full text-[10px] font-bold ${
+                          statusFilter === tab.key ? 'bg-white/20 text-white' : 'bg-slate-900/10 text-slate-600'
+                        }`}>{tab.count}</span>
+                      </button>
+                    ))}
+                  </div>
+                  <label className="flex h-8 items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 px-3 focus-within:border-slate-300 focus-within:bg-white transition-all shrink-0">
+                    <Search className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                    <input
+                      value={search} onChange={e => setSearch(e.target.value)}
+                      placeholder="Search name, email, phone…"
+                      className="w-44 bg-transparent text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none"
+                    />
+                  </label>
+                </div>
               </div>
-              <label className="flex h-8 items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-2.5 text-sm focus-within:border-slate-400 focus-within:bg-white transition-all shrink-0">
-                <Search className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                <input
-                  value={search} onChange={e => setSearch(e.target.value)}
-                  placeholder="Search name, email, phone…"
-                  className="w-52 bg-transparent text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none"
-                />
-              </label>
             </div>
 
             {/* Count row */}
-            <div className="flex items-center justify-between px-1 mb-2">
+            <div className="flex items-center justify-between px-4 md:px-6 mb-2">
               <p className="text-xs text-slate-500">
                 <span className="font-bold text-slate-900">{filtered.length}</span> {filtered.length === 1 ? 'user' : 'users'}
                 {statusFilter !== 'all' && <span className="ml-1.5 text-[10px] font-bold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded-md">{statusFilter}</span>}
@@ -388,6 +390,7 @@ export default function AdminUsers() {
             </div>
 
             {/* List */}
+            <div className="px-4 md:px-6 pb-6">
             {loading ? (
               <div className="flex items-center justify-center py-32">
                 <div className="animate-spin w-8 h-8 border-[3px] border-slate-200 border-t-slate-900 rounded-full" />
@@ -468,6 +471,7 @@ export default function AdminUsers() {
                 })}
               </div>
             )}
+            </div>
           </main>
         </div>
       </div>
