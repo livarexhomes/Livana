@@ -210,6 +210,7 @@ function AdminChatThread({
   const [customerTyping, setCustomerTyping] = useState(false)
   const [attachments, setAttachments] = useState<File[]>([])
   const [customer, setCustomer]     = useState<{ name: string; email?: string | null; phone?: string | null; propertyId?: string | null; tickets: SupportTicket[]; enquiries: { id: string; message: string; status: string; created_at: string; properties?: { title: string | null } | null }[] } | null>(null)
+  const { toast } = useToast()
   const fileInputRef = useRef<HTMLInputElement>(null)
   const bottomRef = useRef<HTMLDivElement>(null)
   const typingTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -373,37 +374,52 @@ function AdminChatThread({
     if ((!body && attachments.length === 0) || sending) return
     setSending(true); setInput('')
 
-    // Upload attachments first.
-    const supabase = createClient()
-    const urls: string[] = []
-    const names: string[] = []
-    for (const f of attachments) {
-      const ext = f.name.split('.').pop() ?? 'bin'
-      const path = `support/${ticket.id}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`
-      const { error: upErr } = await supabase.storage.from('support-attachments').upload(path, f)
-      if (!upErr) {
-        const { data: urlData } = supabase.storage.from('support-attachments').getPublicUrl(path)
-        urls.push(urlData.publicUrl)
-        names.push(f.name)
+    let optId: string | null = null
+    try {
+      // Upload attachments first.
+      const supabase = createClient()
+      const urls: string[] = []
+      const names: string[] = []
+      for (const f of attachments) {
+        const ext = f.name.split('.').pop() ?? 'bin'
+        const path = `support/${ticket.id}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`
+        const { error: upErr } = await supabase.storage.from('support-attachments').upload(path, f)
+        if (!upErr) {
+          const { data: urlData } = supabase.storage.from('support-attachments').getPublicUrl(path)
+          urls.push(urlData.publicUrl)
+          names.push(f.name)
+        } else {
+          throw new Error(`Upload failed: ${upErr.message}`)
+        }
       }
-    }
-    setAttachments([])
+      setAttachments([])
 
-    const optId = `opt-${Date.now()}`
-    const optMsg: SupportMessage = {
-      id: optId, ticket_id: ticket.id, sender_role: 'admin', body: body || '',
-      read_by_admin: true, read_by_visitor: false,
-      attachment_url: urls[0] ?? null, attachment_name: names[0] ?? null,
-      created_at: new Date().toISOString(),
-    }
-    setMessages(prev => [...prev, optMsg])
+      // Optimistic message
+      optId = `opt-${Date.now()}`
+      const optMsg: SupportMessage = {
+        id: optId, ticket_id: ticket.id, sender_role: 'admin', body: body || '',
+        read_by_admin: true, read_by_visitor: false,
+        attachment_url: urls[0] ?? null, attachment_name: names[0] ?? null,
+        created_at: new Date().toISOString(),
+      }
+      setMessages(prev => [...prev, optMsg])
 
-    const { data: inserted } = await supabase.from('support_messages')
-      .insert({ ticket_id: ticket.id, sender_role: 'admin', body: body || '', attachment_url: urls[0] ?? null, attachment_name: names[0] ?? null })
-      .select().single()
-    if (inserted) setMessages(prev => prev.map(m => m.id === optId ? inserted as SupportMessage : m))
-    if (ticket.status === 'open') await updateStatus('in_progress')
-    setSending(false)
+      const { data: inserted, error: insertErr } = await supabase.from('support_messages')
+        .insert({ ticket_id: ticket.id, sender_role: 'admin', body: body || '', attachment_url: urls[0] ?? null, attachment_name: names[0] ?? null })
+        .select().single()
+      if (insertErr) throw new Error(insertErr.message)
+      if (inserted && optId) {
+        setMessages(prev => prev.map(m => m.id === optId ? inserted as SupportMessage : m))
+      }
+      if (ticket.status === 'open') await updateStatus('in_progress')
+    } catch (err: any) {
+      // Roll back the optimistic message so the user doesn't think it was sent.
+      if (optId) setMessages(prev => prev.filter(m => m.id !== optId))
+      setInput(body)
+      toast({ title: 'Message not sent', description: err?.message || 'Check your connection and try again.', variant: 'destructive' })
+    } finally {
+      setSending(false)
+    }
   }
 
   function handleComposerChange(v: string) {
@@ -716,6 +732,7 @@ function EnquiryDetail({ enquiry, onBack, onStatusChange }: {
   const [input, setInput]       = useState('')
   const [sending, setSending]   = useState(false)
   const [updating, setUpdating] = useState(false)
+  const { toast } = useToast()
   const bottomRef = useRef<HTMLDivElement>(null)
   
   const s = ENQUIRY_STATUS_META[enquiry.status]
@@ -768,40 +785,43 @@ function EnquiryDetail({ enquiry, onBack, onStatusChange }: {
     e.preventDefault()
     const body = input.trim()
     if (!body || sending) return
-    
-    setSending(true)
-    setInput('')
-    
-    const supabase = createClient()
-    
-    // Insert reply as admin
-    const { data: inserted, error } = await supabase
-      .from('enquiry_replies')
-      .insert({ 
-        enquiry_id: enquiry.id, 
-        message: body,
-        sender_role: 'admin'
-      })
-      .select('*, landlords(full_name), admins(email)')
-      .single()
-    
-    if (error) {
-      console.error('Error sending reply:', error)
+
+    setSending(true); setInput('')
+
+    try {
+      const supabase = createClient()
+
+      // Insert reply as admin
+      const { data: inserted, error } = await supabase
+        .from('enquiry_replies')
+        .insert({
+          enquiry_id: enquiry.id,
+          message: body,
+          sender_role: 'admin'
+        })
+        .select('*, landlords(full_name), admins(email)')
+        .single()
+
+      if (error) {
+        throw new Error(error.message)
+      }
+      if (inserted) {
+        setReplies(prev => [...prev, inserted as EnquiryReply])
+      }
+
+      // Update status to replied if it was open
+      if (enquiry.status === 'open') {
+        const { error: statusErr } = await supabase.from('enquiries').update({ status: 'replied' }).eq('id', enquiry.id)
+        if (statusErr) throw new Error(statusErr.message)
+        onStatusChange(enquiry.id, 'replied')
+      }
+    } catch (err: any) {
+      setInput(body)
+      toast({ title: 'Message not sent', description: err?.message || 'Check your connection and try again.', variant: 'destructive' })
+    } finally {
       setSending(false)
-      return
     }
-    
-    if (inserted) {
-      setReplies(prev => [...prev, inserted as EnquiryReply])
-    }
-    
-    // Update status to replied if it was open
-    if (enquiry.status === 'open') {
-      await supabase.from('enquiries').update({ status: 'replied' }).eq('id', enquiry.id)
-      onStatusChange(enquiry.id, 'replied')
-    }
-    
-    setSending(false)
+  }
   }
 
   async function changeStatus(newStatus: Enquiry['status']) {
@@ -971,6 +991,7 @@ function ChatRequestDetail({ inquiry, onBack, onMarkRead, onStatusChange, agents
   const [sending, setSending]     = useState(false)
   const [updating, setUpdating]   = useState(false)
   const [visitorTyping, setVisitorTyping] = useState(false)
+  const { toast } = useToast()
   const [assigning, setAssigning] = useState(false)
   const [assignedTo, setAssignedTo] = useState<SupportAgent | null>(null)
   const [showClearConfirm, setShowClearConfirm] = useState(false)
@@ -1058,44 +1079,54 @@ function ChatRequestDetail({ inquiry, onBack, onMarkRead, onStatusChange, agents
     const body = input.trim()
     if (!body || sending) return
     setSending(true); setInput('')
+
     const optId = `opt-${Date.now()}`
     setMessages(prev => [...prev, { id: optId, inquiry_id: inquiry.id, sender: 'admin', body, read_by_admin: true, read_by_visitor: false, attachment_url: null, attachment_name: null, created_at: new Date().toISOString() }])
-    const supabase = createClient()
-    const { data: inserted } = await supabase.from('chat_messages')
-      .insert({ inquiry_id: inquiry.id, sender: 'admin', body }).select().single()
-    if (inserted) setMessages(prev => prev.map(m => m.id === optId ? inserted as ChatMessage : m))
-    // Reply counts as read; auto-advance status open → replied
-    await supabase.from('chat_inquiries').update({ read_by_admin: true }).eq('id', inquiry.id)
-    await supabase.from('chat_messages')
-      .update({ read_by_admin: true })
-      .eq('inquiry_id', inquiry.id)
-      .eq('sender', 'visitor')
-    onMarkRead(inquiry.id)
-    if (inquiry.status === 'open') {
-      await supabase.from('chat_inquiries').update({ status: 'replied' }).eq('id', inquiry.id)
-      onStatusChange(inquiry.id, 'replied')
-    }
-    setSending(false)
+    try {
+      const supabase = createClient()
+      const { data: inserted, error: insertErr } = await supabase.from('chat_messages')
+        .insert({ inquiry_id: inquiry.id, sender: 'admin', body }).select().single()
+      if (insertErr) throw new Error(insertErr.message)
+      if (inserted) setMessages(prev => prev.map(m => m.id === optId ? inserted as ChatMessage : m))
+      else setMessages(prev => prev.filter(m => m.id !== optId))
+      // Reply counts as read; auto-advance status open → replied
+      await supabase.from('chat_inquiries').update({ read_by_admin: true }).eq('id', inquiry.id)
+      await supabase.from('chat_messages')
+        .update({ read_by_admin: true })
+        .eq('inquiry_id', inquiry.id)
+        .eq('sender', 'visitor')
+      onMarkRead(inquiry.id)
+      if (inquiry.status === 'open') {
+        await supabase.from('chat_inquiries').update({ status: 'replied' }).eq('id', inquiry.id)
+        onStatusChange(inquiry.id, 'replied')
+      }
 
-    // Email the visitor when they may not have the widget open.
-    if (inquiry.email) {
-      getNotificationSettings().then(notif => {
-        fetch('/api/send-support-notification', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            event: 'chat',
-            adminEmail: notif.adminEmail,
-            userName: inquiry.name,
-            userEmail: inquiry.email,
-            subject: 'New reply from Livarex Support',
-            message: body,
-            ticketId: inquiry.id,
-            ticketNo: inquiry.ticket_no ?? '',
-            channel: 'Live chat reply',
-          }),
+      // Email the visitor when they may not have the widget open.
+      if (inquiry.email) {
+        getNotificationSettings().then(notif => {
+          fetch('/api/send-support-notification', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              event: 'chat',
+              adminEmail: notif.adminEmail,
+              userName: inquiry.name,
+              userEmail: inquiry.email,
+              subject: 'New reply from Livarex Support',
+              message: body,
+              ticketId: inquiry.id,
+              ticketNo: inquiry.ticket_no ?? '',
+              channel: 'Live chat reply',
+            }),
+          }).catch(() => { /* non-fatal */ })
         }).catch(() => { /* non-fatal */ })
-      }).catch(() => { /* non-fatal */ })
+      }
+    } catch (err: any) {
+      setMessages(prev => prev.filter(m => m.id !== optId))
+      setInput(body)
+      toast({ title: 'Message not sent', description: err?.message || 'Check your connection and try again.', variant: 'destructive' })
+    } finally {
+      setSending(false)
     }
   }
 
