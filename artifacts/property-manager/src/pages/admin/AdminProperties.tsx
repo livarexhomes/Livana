@@ -790,7 +790,7 @@ export default function AdminProperties() {
                     </div>
                   </div>
                 </div>
-                <div className="grid grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   <div>
                     <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5 block">Agreement Fee (₦)</label>
                     <MoneyInput
@@ -1098,7 +1098,7 @@ export default function AdminProperties() {
               </div>
 
               {/* Optional fees */}
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div>
                   <label className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1.5 block">Agreement Fee (₦)</label>
                   <MoneyInput
