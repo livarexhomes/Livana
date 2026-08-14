@@ -306,36 +306,46 @@ function NewTicketModal({
     if (!subject.trim() || !message.trim() || submitting) return
 
     setSubmitting(true)
-    const supabase = createClient()
+    try {
+      const supabase = createClient()
 
-    // Create ticket
-    const { data: ticket, error: ticketError } = await supabase
-      .from('support_tickets')
-      .insert({
-        landlord_id: landlordId,
-        subject: subject.trim(),
-        priority,
-        status: 'open',
-        property_id: propertyId,
+      // Create ticket
+      const { data: ticket, error: ticketError } = await supabase
+        .from('support_tickets')
+        .insert({
+          landlord_id: landlordId,
+          subject: subject.trim(),
+          priority,
+          status: 'open',
+          property_id: propertyId,
+        })
+        .select()
+        .single()
+
+      if (ticketError || !ticket) {
+        throw new Error(ticketError?.message || 'Failed to create ticket. Please try again.')
+      }
+
+      // Create first message
+      const { error: msgError } = await supabase.from('support_messages').insert({
+        ticket_id: ticket.id,
+        sender_role: 'landlord',
+        body: message.trim(),
       })
-      .select()
-      .single()
+      if (msgError) {
+        // The ticket row exists, but the initial message didn't persist.
+        // Surface it so it's not a silent "message lost" — the admin can
+        // still open the ticket thread and the landlord sees a real reason.
+        console.error('Failed to save initial message:', msgError)
+        alert(`Ticket created, but the message wasn't saved: ${msgError.message}`)
+      }
 
-    if (ticketError || !ticket) {
+      onCreated(ticket as SupportTicket)
+    } catch (err: any) {
+      alert(err?.message || 'Failed to create ticket. Please try again.')
+    } finally {
       setSubmitting(false)
-      alert('Failed to create ticket. Please try again.')
-      return
     }
-
-    // Create first message
-    await supabase.from('support_messages').insert({
-      ticket_id: ticket.id,
-      sender_role: 'landlord',
-      body: message.trim(),
-    })
-
-    setSubmitting(false)
-    onCreated(ticket as SupportTicket)
   }
 
   return (

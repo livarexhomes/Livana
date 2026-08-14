@@ -1411,21 +1411,35 @@ function SupportTab({ onOpenQueued }: { onOpenQueued: (id: string) => void }) {
   // Load tickets with full context + live counters.
   useEffect(() => {
     const supabase = createClient()
-    const loadTickets = () => {
-      supabase.from('support_tickets')
+    const loadTickets = async () => {
+      // Attach the assigned agent (from the roster) to each ticket.
+      const apply = (rows: SupportTicket[]) => {
+        setAgents(prevAgents => {
+          const enriched = rows.map(t => ({ ...t, assignedAgent: prevAgents.find(a => a.id === t.assigned_to) ?? null }))
+          setTickets(enriched)
+          return prevAgents
+        })
+      }
+      const { data, error } = await supabase.from('support_tickets')
         .select('*, tenants(full_name, phone, email), landlords(full_name, whatsapp, email), properties(id, title, city, price, type, status)')
         .order('updated_at', { ascending: false })
-        .then(({ data, error }) => {
-          if (error) console.error('Error loading tickets:', error)
-          const rows = (data as SupportTicket[]) ?? []
-          // Attach the assigned agent from the roster.
-          setAgents(prevAgents => {
-            const enriched = rows.map(t => ({ ...t, assignedAgent: prevAgents.find(a => a.id === t.assigned_to) ?? null }))
-            setTickets(enriched)
-            return prevAgents
-          })
-          setLoading(false)
-        })
+      if (!error) {
+        apply((data as SupportTicket[]) ?? [])
+      } else {
+        // The joined select can fail (e.g. a nested relation blocked by RLS
+        // or a dropped FK) and would otherwise silently empty the entire
+        // Support Queue — so the page shows "0 tickets" even when they exist.
+        // Fall back to a minimal select so rows still render.
+        console.error('Support queue joined select failed, falling back:', error)
+        const { data: fallback, error: fbErr } = await supabase.from('support_tickets')
+          .select('*').order('updated_at', { ascending: false })
+        if (fbErr) {
+          console.error('Error loading tickets:', fbErr)
+          toast({ title: 'Could not load support tickets', description: fbErr.message || 'Check your connection.', variant: 'destructive' })
+        }
+        apply((fallback as SupportTicket[]) ?? [])
+      }
+      setLoading(false)
     }
     loadTickets()
 
