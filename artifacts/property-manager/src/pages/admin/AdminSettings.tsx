@@ -987,128 +987,137 @@ export default function AdminSettings() {
         <AdminSidebar userEmail={user?.email} userName={displayName} />
 
         <div className="flex-1 flex flex-col min-w-0">
-          {/* ── Page header ── */}
-          <header className="shrink-0 px-4 md:px-8 pt-5 md:pt-6 pb-0">
-            <div className="flex items-start justify-between gap-4">
+          <div className="flex-1 flex flex-col min-h-0 w-full max-w-6xl mx-auto px-4 md:px-8 py-4 md:py-6">
+            {/* ── Page header ── */}
+            <header className="shrink-0 flex items-start justify-between gap-4 pl-11 md:pl-0">
               <div className="min-w-0">
                 <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">Admin configuration</p>
                 <h2 className="mt-1 text-xl md:text-2xl font-extrabold text-slate-950 tracking-tight">Settings</h2>
-                <p className="mt-0.5 text-xs md:text-sm text-slate-500">Manage your platform's configuration, security, and support.</p>
+                <p className="mt-0.5 hidden sm:block text-xs md:text-sm text-slate-500">Manage your platform's configuration, security, and support.</p>
               </div>
-              {/* Desktop: Save Changes in the header (sticky save bar on mobile) */}
-              <div className="hidden md:flex items-center gap-3 shrink-0">
+              {/* Desktop: Save Changes in the header (bottom bar on mobile) */}
+              <div className="hidden md:flex items-center gap-3 shrink-0 pt-1">
                 {saved && (
                   <span className="flex items-center gap-1.5 text-xs font-medium text-emerald-600">
                     <CheckCircle className="w-3.5 h-3.5" /> Saved
                   </span>
                 )}
-                <button
-                  type="button"
-                  onClick={handleSave}
-                  disabled={saving || !SAVEABLE_SECTIONS.has(active)}
-                  className={`inline-flex items-center gap-1.5 px-4 py-2.5 text-xs font-bold rounded-xl transition-all duration-200 ${
-                    saving || !SAVEABLE_SECTIONS.has(active)
-                      ? 'bg-slate-200 text-slate-400 cursor-not-allowed'
-                      : 'bg-slate-950 hover:bg-slate-800 active:scale-95 text-white shadow-sm'
-                  }`}
-                >
-                  {saving ? (
-                    <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Saving…</>
-                  ) : (
-                    <><Save className="w-3.5 h-3.5" /> Save Changes</>
-                  )}
-                </button>
-              </div>
-            </div>
-          </header>
-
-          {/* ── Nav: mobile chip row / desktop rail ── */}
-          <div className="shrink-0 bg-white border-b border-slate-200/70">
-            {/* Mobile: horizontal scrollable chips */}
-            <div className="flex lg:hidden items-center gap-1.5 px-3 py-2.5 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-              {visibleSections.map(s => {
-                const Icon = s.icon
-                const isActive = active === s.id
-                const locked = !isAgent && ADMIN_ONLY_SECTIONS.has(s.id) && adminPinHash && !pinVerified
-                return (
+                {SAVEABLE_SECTIONS.has(active) && (
                   <button
-                    key={s.id}
                     type="button"
-                    onClick={() => handleTabChange(s.id)}
-                    className={`inline-flex items-center gap-1.5 rounded-full px-3.5 py-2 text-xs font-semibold whitespace-nowrap shrink-0 transition-all ${
-                      isActive ? 'bg-slate-950 text-white shadow-sm shadow-slate-950/10' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                    onClick={handleSave}
+                    disabled={saving}
+                    className={`inline-flex items-center gap-1.5 px-4 py-2.5 text-xs font-bold rounded-xl transition-all duration-200 ${
+                      saving ? 'bg-slate-300 text-white cursor-not-allowed' : 'bg-slate-950 hover:bg-slate-800 active:scale-95 text-white shadow-sm'
                     }`}
                   >
-                    <Icon className="w-3.5 h-3.5" strokeWidth={1.8} />
-                    {s.label}
-                    {locked && <Lock className="w-2.5 h-2.5 opacity-50 ml-0.5" />}
+                    {saving ? (
+                      <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Saving…</>
+                    ) : (
+                      <><Save className="w-3.5 h-3.5" /> Save Changes</>
+                    )}
                   </button>
-                )
-              })}
-            </div>
-            {/* Desktop: vertical rail */}
-            <nav className="hidden lg:block p-4">
-              <p className="px-2 mb-1.5 text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400">General</p>
-              <div className="space-y-0.5">
-                {generalSections.map(s => {
-                  const Icon = s.icon
-                  const isActive = active === s.id
-                  return (
-                    <button
-                      key={s.id}
-                      type="button"
-                      onClick={() => handleTabChange(s.id)}
-                      className={`flex items-center justify-between w-full px-3 py-2 rounded-lg text-[13px] font-semibold transition-all ${
-                        isActive ? 'bg-slate-950 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
-                      }`}
-                    >
-                      <span className="flex items-center gap-2.5 min-w-0">
-                        <Icon className="w-4 h-4 shrink-0" strokeWidth={1.8} />
-                        <span className="truncate">{s.label}</span>
-                      </span>
-                      <ChevronRight className={`w-3.5 h-3.5 shrink-0 ${isActive ? 'text-white/60' : 'text-slate-300'}`} />
-                    </button>
-                  )
-                })}
+                )}
               </div>
-              {adminSections.length > 0 && (
-                <>
-                  <p className="px-2 mt-4 mb-1.5 text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400">Admin only</p>
-                  <div className="space-y-0.5">
-                    {adminSections.map(s => {
-                      const Icon = s.icon
-                      const isActive = active === s.id
-                      const locked = !isAgent && ADMIN_ONLY_SECTIONS.has(s.id) && adminPinHash && !pinVerified
-                      return (
-                        <button
-                          key={s.id}
-                          type="button"
-                          onClick={() => handleTabChange(s.id)}
-                          className={`flex items-center justify-between w-full px-3 py-2 rounded-lg text-[13px] font-semibold transition-all ${
-                            isActive ? 'bg-slate-950 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
-                          }`}
-                        >
-                          <span className="flex items-center gap-2.5 min-w-0">
-                            <Icon className="w-4 h-4 shrink-0" strokeWidth={1.8} />
-                            <span className="truncate">{s.label}</span>
-                          </span>
-                          <span className="flex items-center gap-1 shrink-0">
-                            {locked && <Lock className="w-3 h-3 text-slate-400" />}
-                            <ChevronRight className={`w-3.5 h-3.5 ${isActive ? 'text-white/60' : 'text-slate-300'}`} />
-                          </span>
-                        </button>
-                      )
-                    })}
-                  </div>
-                </>
-              )}
-            </nav>
-          </div>
+            </header>
 
-          {/* ── Content ── */}
-          <div className="flex flex-1 min-h-0">
-            <main ref={mainRef} className="flex-1 overflow-y-auto">
-              <div className="max-w-4xl mx-auto px-4 md:px-8 py-6 pb-28 lg:pb-8">
+            {/* ── Settings card ── */}
+            <div className="mt-4 md:mt-5 flex-1 min-h-0 bg-white border border-slate-200/80 rounded-2xl shadow-sm overflow-hidden flex flex-col">
+              {/* Mobile: horizontal scrollable chips */}
+              <div className="lg:hidden shrink-0 border-b border-slate-100">
+                <div className="flex items-center gap-1.5 px-3 py-2.5 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                  {visibleSections.map(s => {
+                    const Icon = s.icon
+                    const isActive = active === s.id
+                    const locked = !isAgent && ADMIN_ONLY_SECTIONS.has(s.id) && adminPinHash && !pinVerified
+                    return (
+                      <button
+                        key={s.id}
+                        type="button"
+                        onClick={() => handleTabChange(s.id)}
+                        className={`inline-flex items-center gap-1.5 rounded-full px-3.5 py-2 text-xs font-semibold whitespace-nowrap shrink-0 transition-all active:scale-95 ${
+                          isActive ? 'bg-slate-950 text-white shadow-sm shadow-slate-950/10' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                        }`}
+                      >
+                        <Icon className="w-3.5 h-3.5" strokeWidth={1.8} />
+                        {s.label}
+                        {locked && <Lock className="w-2.5 h-2.5 opacity-50" />}
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+
+              <div className="flex-1 flex min-h-0">
+                {/* Desktop: nav rail */}
+                <aside className="hidden lg:flex flex-col w-60 xl:w-64 shrink-0 border-r border-slate-100 bg-slate-50/70 overflow-y-auto">
+                  <nav className="p-3.5 space-y-5">
+                    <div>
+                      <p className="px-2 mb-1.5 text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400">General</p>
+                      <div className="space-y-0.5">
+                        {generalSections.map(s => {
+                          const Icon = s.icon
+                          const isActive = active === s.id
+                          return (
+                            <button
+                              key={s.id}
+                              type="button"
+                              onClick={() => handleTabChange(s.id)}
+                              className={`group flex items-center justify-between w-full px-3 py-2 rounded-lg text-[13px] font-semibold transition-all ${
+                                isActive ? 'bg-slate-950 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-200/70 hover:text-slate-900'
+                              }`}
+                            >
+                              <span className="flex items-center gap-2.5 min-w-0">
+                                <Icon className={`w-4 h-4 shrink-0 transition-colors ${isActive ? 'text-white' : 'text-slate-400 group-hover:text-slate-600'}`} strokeWidth={1.8} />
+                                <span className="truncate">{s.label}</span>
+                              </span>
+                              <ChevronRight className={`w-3.5 h-3.5 shrink-0 transition-colors ${isActive ? 'text-white/60' : 'text-slate-300 group-hover:text-slate-400'}`} />
+                            </button>
+                          )
+                        })}
+                      </div>
+                    </div>
+                    {adminSections.length > 0 && (
+                      <div>
+                        <p className="px-2 mb-1.5 flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400">
+                          Admin only
+                          {adminPinHash && !isAgent && <Lock className="w-2.5 h-2.5 text-amber-500" />}
+                        </p>
+                        <div className="space-y-0.5">
+                          {adminSections.map(s => {
+                            const Icon = s.icon
+                            const isActive = active === s.id
+                            const locked = !isAgent && ADMIN_ONLY_SECTIONS.has(s.id) && adminPinHash && !pinVerified
+                            return (
+                              <button
+                                key={s.id}
+                                type="button"
+                                onClick={() => handleTabChange(s.id)}
+                                className={`group flex items-center justify-between w-full px-3 py-2 rounded-lg text-[13px] font-semibold transition-all ${
+                                  isActive ? 'bg-slate-950 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-200/70 hover:text-slate-900'
+                                }`}
+                              >
+                                <span className="flex items-center gap-2.5 min-w-0">
+                                  <Icon className={`w-4 h-4 shrink-0 transition-colors ${isActive ? 'text-white' : 'text-slate-400 group-hover:text-slate-600'}`} strokeWidth={1.8} />
+                                  <span className="truncate">{s.label}</span>
+                                </span>
+                                {locked ? (
+                                  <Lock className="w-3 h-3 shrink-0 text-amber-500" />
+                                ) : (
+                                  <ChevronRight className={`w-3.5 h-3.5 shrink-0 transition-colors ${isActive ? 'text-white/60' : 'text-slate-300 group-hover:text-slate-400'}`} />
+                                )}
+                              </button>
+                            )
+                          })}
+                        </div>
+                      </div>
+                    )}
+                  </nav>
+                </aside>
+
+                {/* ── Content ── */}
+                <main ref={mainRef} className="flex-1 min-w-0 overflow-y-auto">
+                  <div className="max-w-3xl mx-auto px-4 md:px-8 py-5 md:py-7 pb-8">
 
               {/* ─── PLATFORM ─── */}
               {active === 'platform' && (
@@ -1959,26 +1968,35 @@ export default function AdminSettings() {
 
             </div>
             </main>
-          </div>
+              </div>
 
-          {/* ── Mobile sticky save bar ── */}
-          <div className="lg:hidden shrink-0 bg-white/90 backdrop-blur border-t border-slate-200 px-4 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
-            <button
-              type="button"
-              onClick={handleSave}
-              disabled={saving || !SAVEABLE_SECTIONS.has(active)}
-              className={`w-full inline-flex items-center justify-center gap-2 py-3 text-sm font-bold rounded-xl transition-all duration-200 ${
-                saving || !SAVEABLE_SECTIONS.has(active)
-                  ? 'bg-slate-200 text-slate-400 cursor-not-allowed'
-                  : 'bg-slate-950 hover:bg-slate-800 active:scale-[0.98] text-white shadow-lg shadow-slate-950/10'
-              }`}
-            >
-              {saving ? (
-                <><Loader2 className="w-4 h-4 animate-spin" /> Saving…</>
-              ) : (
-                <><Save className="w-4 h-4" /> Save Changes</>
+              {/* ── Mobile save bar ── */}
+              {SAVEABLE_SECTIONS.has(active) && (
+                <div className="lg:hidden shrink-0 border-t border-slate-100 bg-white px-4 py-3">
+                  <div className="flex items-center gap-3">
+                    {saved && (
+                      <span className="flex items-center gap-1.5 text-xs font-semibold text-emerald-600 shrink-0">
+                        <CheckCircle className="w-4 h-4" /> Saved
+                      </span>
+                    )}
+                    <button
+                      type="button"
+                      onClick={handleSave}
+                      disabled={saving}
+                      className={`flex-1 inline-flex items-center justify-center gap-2 py-3 text-sm font-bold rounded-xl transition-all duration-200 ${
+                        saving ? 'bg-slate-300 text-white cursor-not-allowed' : 'bg-slate-950 hover:bg-slate-800 active:scale-[0.98] text-white shadow-lg shadow-slate-950/10'
+                      }`}
+                    >
+                      {saving ? (
+                        <><Loader2 className="w-4 h-4 animate-spin" /> Saving…</>
+                      ) : (
+                        <><Save className="w-4 h-4" /> Save Changes</>
+                      )}
+                    </button>
+                  </div>
+                </div>
               )}
-            </button>
+            </div>
           </div>
         </div>
       </div>
