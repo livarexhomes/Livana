@@ -1036,7 +1036,7 @@ export default function AdminSettings() {
                         type="button"
                         onClick={() => handleTabChange(s.id)}
                         className={`inline-flex items-center gap-1.5 rounded-full px-3.5 py-2 text-xs font-semibold whitespace-nowrap shrink-0 transition-all active:scale-95 ${
-                          isActive ? 'bg-slate-950 text-white shadow-sm shadow-slate-950/10' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                          isActive ? 'bg-[#0B1F42] text-white shadow-sm shadow-blue-950/20' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                         }`}
                       >
                         <Icon className="w-3.5 h-3.5" strokeWidth={1.8} />
@@ -1064,7 +1064,7 @@ export default function AdminSettings() {
                               type="button"
                               onClick={() => handleTabChange(s.id)}
                               className={`group flex items-center justify-between w-full px-3 py-2 rounded-lg text-[13px] font-semibold transition-all ${
-                                isActive ? 'bg-slate-950 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-200/70 hover:text-slate-900'
+                                isActive ? 'bg-[#0B1F42] text-white shadow-sm' : 'text-slate-600 hover:bg-slate-200/70 hover:text-slate-900'
                               }`}
                             >
                               <span className="flex items-center gap-2.5 min-w-0">
