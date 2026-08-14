@@ -246,6 +246,20 @@ export default function AdminKYC() {
 
               {/* Filter pills — exactly matching AdminProperties style */}
               <div className="mt-4 flex items-center gap-2 overflow-x-auto -mx-1 px-1 sm:flex-wrap sm:overflow-visible sm:mx-0 sm:px-0">
+                {FILTER_TABS.map(tab => (
+                  <button key={tab.key} type="button" onClick={() => setStatusFilter(tab.key)}
+                    className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
+                      statusFilter === tab.key
+                        ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/20'
+                        : 'bg-blue-50 text-blue-700 hover:bg-blue-100'
+                    }`}>
+                    {tab.label}
+                    <span className={`ml-2 inline-flex h-5 min-w-[20px] items-center justify-center rounded-full text-[11px] font-bold ${
+                      statusFilter === tab.key ? 'bg-primary-foreground/20 text-primary-foreground' : 'bg-blue-100 text-blue-700'
+                    }`}>{tab.count}</span>
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
 
