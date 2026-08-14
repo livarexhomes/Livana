@@ -822,7 +822,6 @@ function EnquiryDetail({ enquiry, onBack, onStatusChange }: {
       setSending(false)
     }
   }
-  }
 
   async function changeStatus(newStatus: Enquiry['status']) {
     setUpdating(true)
