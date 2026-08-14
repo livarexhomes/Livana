@@ -1610,7 +1610,7 @@ export default function AdminSettings() {
                   />
 
                   {/* Category tabs */}
-                  <div className="inline-flex items-center gap-1 p-1 rounded-xl bg-gray-100 mb-5">
+                  <div className="inline-flex items-center gap-1 p-1 rounded-xl bg-blue-50 mb-5">
                     {([
                       { id: 'kyc',      label: 'KYC Decisions',     count: kycHistory.length      },
                       { id: 'listings', label: 'Listing Approvals',  count: listingHistory.length  },
@@ -1618,11 +1618,11 @@ export default function AdminSettings() {
                     ] as const).map(t => (
                       <button key={t.id} type="button" onClick={() => setHistoryTab(t.id)}
                         className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 ${
-                          historyTab === t.id ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'
+                          historyTab === t.id ? 'bg-primary text-primary-foreground shadow-sm' : 'text-blue-700 hover:text-blue-900 hover:bg-blue-100'
                         }`}>
                         {t.label}
                         <span className={`inline-flex h-4 min-w-[16px] items-center justify-center rounded-full text-[10px] font-bold ${
-                          historyTab === t.id ? 'bg-gray-900 text-white' : 'bg-gray-300 text-gray-600'
+                          historyTab === t.id ? 'bg-primary-foreground/20 text-primary-foreground' : 'bg-blue-200 text-blue-800'
                         }`}>{t.count}</span>
                       </button>
                     ))}

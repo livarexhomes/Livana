@@ -330,7 +330,7 @@ export default function AdminUsers() {
                     <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">Platform users</p>
                     <h2 className="mt-0.5 text-base font-extrabold text-slate-950">Tenants & Users</h2>
                   </div>
-                  <div className="grid grid-cols-4 gap-1.5 sm:flex sm:items-center sm:flex-wrap sm:gap-2 sm:shrink-0">
+                  <div className="grid grid-cols-2 gap-1.5 sm:flex sm:items-center sm:flex-wrap sm:gap-2 sm:shrink-0">
                     {[
                       { label: 'Total',     value: tenants.length, color: 'text-slate-700'   },
                       { label: 'Active',    value: activeCount,    color: 'text-emerald-700' },
@@ -346,7 +346,7 @@ export default function AdminUsers() {
                 </div>
 
                 {/* Filter + Search */}
-                <div className="mt-2.5 flex flex-wrap items-center gap-2 justify-between">
+                <div className="mt-2.5 flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
                   <div className="flex items-center gap-1.5 flex-wrap">
                     {([
                       { key: 'all',       label: 'All',       count: tenants.length },
@@ -355,21 +355,21 @@ export default function AdminUsers() {
                     ] as const).map(tab => (
                       <button key={tab.key} type="button" onClick={() => setStatusFilter(tab.key)}
                         className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition-all ${
-                          statusFilter === tab.key ? 'bg-slate-950 text-white shadow-sm shadow-slate-950/10' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                          statusFilter === tab.key ? 'bg-primary text-primary-foreground shadow-sm shadow-primary/20' : 'bg-blue-50 text-blue-700 hover:bg-blue-100'
                         }`}>
                         {tab.label}
                         <span className={`inline-flex h-4 min-w-[16px] items-center justify-center rounded-full text-[10px] font-bold ${
-                          statusFilter === tab.key ? 'bg-white/20 text-white' : 'bg-slate-900/10 text-slate-600'
+                          statusFilter === tab.key ? 'bg-primary-foreground/20 text-primary-foreground' : 'bg-blue-100 text-blue-700'
                         }`}>{tab.count}</span>
                       </button>
                     ))}
                   </div>
-                  <label className="flex h-8 items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 px-3 focus-within:border-slate-300 focus-within:bg-white transition-all shrink-0">
+                  <label className="flex h-9 sm:h-8 items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 px-3 focus-within:border-slate-300 focus-within:bg-white transition-all w-full sm:w-44 shrink-0">
                     <Search className="w-3.5 h-3.5 text-slate-400 shrink-0" />
                     <input
                       value={search} onChange={e => setSearch(e.target.value)}
                       placeholder="Search name, email, phone…"
-                      className="w-44 bg-transparent text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none"
+                      className="flex-1 sm:w-44 sm:flex-none bg-transparent text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none"
                     />
                   </label>
                 </div>
@@ -417,52 +417,54 @@ export default function AdminUsers() {
                     <article
                       key={t.id}
                       onClick={() => setSelectedTenant(t)}
-                      className={`group relative flex items-center gap-3 rounded-xl border border-slate-100 bg-white px-3 py-2.5 shadow-[0_1px_3px_rgba(0,0,0,0.04)] transition-all duration-200
+                      className={`group relative rounded-xl border border-slate-100 bg-white px-3 py-2.5 shadow-[0_1px_3px_rgba(0,0,0,0.04)] transition-all duration-200
                         hover:border-slate-200 hover:shadow-[0_4px_16px_rgba(0,0,0,0.07)] cursor-pointer ${isSuspended ? 'opacity-80' : ''}`}
                     >
-                      {/* Avatar */}
-                      <div className={`relative flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br ${grad} text-white`}>
-                        <span className="text-[12px] font-semibold">{initials}</span>
-                        <span className={`absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full border-2 border-white ${isSuspended ? 'bg-amber-400' : 'bg-emerald-400'}`} />
+                      <div className="flex items-start gap-3">
+                        {/* Avatar */}
+                        <div className={`relative flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br ${grad} text-white`}>
+                          <span className="text-[12px] font-semibold">{initials}</span>
+                          <span className={`absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full border-2 border-white ${isSuspended ? 'bg-amber-400' : 'bg-emerald-400'}`} />
+                        </div>
+
+                        {/* Identity */}
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-2 min-w-0">
+                            <p className="truncate text-sm font-semibold text-slate-900">{t.full_name}</p>
+                            <span className={`shrink-0 inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[10px] font-semibold ring-1 ${
+                              isSuspended ? 'bg-amber-50 text-amber-700 ring-amber-200/60' : 'bg-emerald-50 text-emerald-700 ring-emerald-200/60'
+                            }`}>
+                              {isSuspended ? 'Suspended' : 'Active'}
+                            </span>
+                          </div>
+                          <div className="mt-0.5 flex items-center gap-x-3 gap-y-0.5 flex-wrap min-w-0">
+                            <span className="truncate text-[11px] text-slate-500">{t.email ?? t.phone ?? 'No contact details'}</span>
+                            <span className="inline-flex items-center gap-1 text-[11px] text-slate-400 shrink-0">
+                              <MessageSquare className="w-3 h-3" />{t.enquiry_count} {t.enquiry_count === 1 ? 'enquiry' : 'enquiries'}
+                            </span>
+                            <span className="hidden sm:inline-flex items-center gap-1 text-[11px] text-slate-400 shrink-0">
+                              <Clock className="w-3 h-3" />Joined {timeAgo(t.created_at)}
+                            </span>
+                          </div>
+                        </div>
                       </div>
 
-                      {/* Identity */}
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-2 min-w-0">
-                          <p className="truncate text-sm font-semibold text-slate-900">{t.full_name}</p>
-                          <span className={`shrink-0 inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[10px] font-semibold ring-1 ${
-                            isSuspended ? 'bg-amber-50 text-amber-700 ring-amber-200/60' : 'bg-emerald-50 text-emerald-700 ring-emerald-200/60'
-                          }`}>
-                            {isSuspended ? 'Suspended' : 'Active'}
-                          </span>
-                        </div>
-                        <div className="mt-0.5 flex items-center gap-x-3 gap-y-0.5 flex-wrap min-w-0">
-                          <span className="truncate text-[11px] text-slate-500">{t.email ?? t.phone ?? 'No contact details'}</span>
-                          <span className="inline-flex items-center gap-1 text-[11px] text-slate-400 shrink-0">
-                            <MessageSquare className="w-3 h-3" />{t.enquiry_count} {t.enquiry_count === 1 ? 'enquiry' : 'enquiries'}
-                          </span>
-                          <span className="inline-flex items-center gap-1 text-[11px] text-slate-400 shrink-0">
-                            <Clock className="w-3 h-3" />Joined {timeAgo(t.created_at)}
-                          </span>
-                        </div>
-                      </div>
-
-                      {/* Actions */}
-                      <div className="flex shrink-0 items-center gap-1.5"
+                      {/* Actions — full-width row on mobile, inline on sm+ */}
+                      <div className="mt-2.5 -mx-3 -mb-2.5 flex items-center gap-1.5 border-t border-slate-100 px-3 py-2 sm:mt-0 sm:mx-0 sm:mb-0 sm:border-0 sm:px-0 sm:py-0 sm:absolute sm:right-3 sm:top-1/2 sm:-translate-y-1/2 sm:bg-white"
                         onClick={e => e.stopPropagation()}>
                         {isSuspended ? (
                           <button type="button" onClick={() => setConfirm({ type: 'unsuspend', tenant: t })}
-                            className="h-7 rounded-lg border border-emerald-200 bg-emerald-50 px-2.5 text-[11px] font-semibold text-emerald-700 hover:bg-emerald-100 transition-colors">
+                            className="flex-1 sm:flex-none h-8 sm:h-7 rounded-lg border border-emerald-200 bg-emerald-50 px-2.5 text-[11px] font-semibold text-emerald-700 hover:bg-emerald-100 transition-colors">
                             Reinstate
                           </button>
                         ) : (
                           <button type="button" onClick={() => setConfirm({ type: 'suspend', tenant: t })}
-                            className="h-7 rounded-lg border border-amber-200 bg-amber-50 px-2.5 text-[11px] font-semibold text-amber-700 hover:bg-amber-100 transition-colors">
+                            className="flex-1 sm:flex-none h-8 sm:h-7 rounded-lg border border-amber-200 bg-amber-50 px-2.5 text-[11px] font-semibold text-amber-700 hover:bg-amber-100 transition-colors">
                             Suspend
                           </button>
                         )}
                         <button type="button" onClick={() => setConfirm({ type: 'delete', tenant: t })}
-                          className="h-7 rounded-lg border border-red-100 bg-red-50 px-2.5 text-[11px] font-semibold text-red-600 hover:bg-red-100 transition-colors flex items-center gap-1.5">
+                          className="flex-1 sm:flex-none h-8 sm:h-7 rounded-lg border border-red-100 bg-red-50 px-2.5 text-[11px] font-semibold text-red-600 hover:bg-red-100 transition-colors flex items-center justify-center gap-1.5">
                           <Trash2 className="w-3 h-3" /> Delete
                         </button>
                       </div>

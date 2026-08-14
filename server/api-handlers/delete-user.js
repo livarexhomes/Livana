@@ -83,6 +83,24 @@ export default async function handler(req, res) {
     return sendJson(res, 400, { error: 'Cannot delete your own account' })
   }
 
+  // SECURITY: admins are protected. This endpoint is intended for tenant
+  // account deletion from the admin dashboard; an admin must never be
+  // deletable through it. Admin accounts can only be removed via direct
+  // Supabase intervention.
+  const targetRes = await fetch(`${SUPABASE_URL}/auth/v1/admin/users/${userId}`, {
+    headers: { Authorization: `Bearer ${SERVICE_ROLE_KEY}`, apikey: SERVICE_ROLE_KEY },
+  })
+  const targetUser = await targetRes.json().catch(() => null)
+  const targetMeta = targetUser?.app_metadata ?? {}
+  const targetIsAdmin =
+    targetMeta.role === 'admin' ||
+    (Array.isArray(targetMeta.roles) && targetMeta.roles.includes('admin'))
+  if (targetIsAdmin) {
+    return sendJson(res, 403, {
+      error: 'Admin accounts are protected and cannot be deleted from this endpoint.',
+    })
+  }
+
   // ── 3. Delete from auth.users ─────────────────────────────────────────────
   // ON DELETE CASCADE propagates to: tenants → enquiries, saved_properties
   //                                  landlords → properties, landlord_settings

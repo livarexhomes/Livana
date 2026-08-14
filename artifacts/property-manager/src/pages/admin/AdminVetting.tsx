@@ -244,15 +244,15 @@ export default function AdminVetting() {
                 </div>
 
                 {/* Stats */}
-                <div className="flex items-center gap-2 flex-wrap shrink-0">
+                <div className="grid grid-cols-2 gap-1.5 sm:flex sm:items-center sm:gap-2 sm:flex-wrap shrink-0">
                   {[
                     { label: 'KYC Pending',     value: kycCounts.pending,      accent: 'text-amber-700'   },
                     { label: 'KYC Approved',    value: kycCounts.approved,     accent: 'text-emerald-700' },
                     { label: 'Listing Pending', value: pendingListings.length, accent: 'text-violet-700'  },
                     { label: 'Landlords',       value: kycCounts.all,          accent: 'text-blue-700'    },
                   ].map(s => (
-                    <div key={s.label} className="rounded-2xl border border-slate-100 bg-slate-50 px-3 py-2 text-center min-w-[64px]">
-                      <p className={`text-lg font-extrabold ${s.accent}`}>{s.value}</p>
+                    <div key={s.label} className="rounded-2xl border border-slate-100 bg-slate-50 px-2 sm:px-3 py-1.5 sm:py-2 text-center sm:min-w-[64px]">
+                      <p className={`text-base sm:text-lg font-extrabold ${s.accent}`}>{s.value}</p>
                       <p className="text-[9px] font-semibold uppercase tracking-[0.22em] text-slate-500 whitespace-nowrap">{s.label}</p>
                     </div>
                   ))}
@@ -260,31 +260,31 @@ export default function AdminVetting() {
               </div>
 
               {/* ── Tab switcher ── */}
-              <div className="mt-2.5 flex items-center gap-2">
+              <div className="mt-2.5 flex items-center gap-2 overflow-x-auto -mx-1 px-1 sm:overflow-visible sm:mx-0 sm:px-0">
                 <button type="button" onClick={() => setActiveTab('identity')}
                   className={`flex items-center gap-1.5 rounded-full px-4 py-1.5 text-xs font-semibold transition ${
                     activeTab === 'identity'
-                      ? 'bg-slate-950 text-white shadow-lg shadow-slate-950/10'
-                      : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                      ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/20'
+                      : 'bg-blue-50 text-blue-700 hover:bg-blue-100'
                   }`}>
                   <ShieldCheck className="w-3.5 h-3.5" />
                   Identity Checks
                   <span className={`inline-flex h-4 min-w-[16px] items-center justify-center rounded-full text-[10px] font-bold ${
-                    activeTab === 'identity' ? 'bg-white/20 text-white' : 'bg-slate-900/10 text-slate-600'
+                    activeTab === 'identity' ? 'bg-primary-foreground/20 text-primary-foreground' : 'bg-blue-100 text-blue-700'
                   }`}>{kycCounts.pending}</span>
                 </button>
 
                 <button type="button" onClick={() => setActiveTab('listings')}
                   className={`flex items-center gap-1.5 rounded-full px-4 py-1.5 text-xs font-semibold transition ${
                     activeTab === 'listings'
-                      ? 'bg-slate-950 text-white shadow-lg shadow-slate-950/10'
-                      : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                      ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/20'
+                      : 'bg-blue-50 text-blue-700 hover:bg-blue-100'
                   }`}>
                   <Building2 className="w-3.5 h-3.5" />
                   Listing Approvals
                   {pendingListings.length > 0 && (
                     <span className={`inline-flex h-4 min-w-[16px] items-center justify-center rounded-full text-[10px] font-bold ${
-                      activeTab === 'listings' ? 'bg-white/20 text-white' : 'bg-violet-100 text-violet-700'
+                      activeTab === 'listings' ? 'bg-primary-foreground/20 text-primary-foreground' : 'bg-violet-100 text-violet-700'
                     }`}>{pendingListings.length}</span>
                   )}
                 </button>

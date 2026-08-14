@@ -2298,7 +2298,16 @@ function AgentsTab({ agents, setAgents, liveState }: {
   const [deleteTarget, setDeleteTarget] = useState<SupportAgent | null>(null)
   const [deleting, setDeleting] = useState(false)
   const [activeCounts, setActiveCounts] = useState<Record<string, number>>({})
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null)
   const { toast } = useToast()
+
+  // Identify the signed-in user so we can protect the admin row (and the
+  // signed-in user's own row) from being removed / demoted via this tab.
+  useEffect(() => {
+    createClient().auth.getUser().then(({ data: { user } }) => {
+      if (user?.id) setCurrentUserId(user.id)
+    })
+  }, [])
 
   // Current active conversations per agent (assigned + open/replied). Refreshed
   // on roster/tab changes and every 30s.
@@ -2368,6 +2377,17 @@ function AgentsTab({ agents, setAgents, liveState }: {
   }
 
   async function removeAgent(agent: SupportAgent) {
+    // Client-side guard: the server endpoint also enforces this, but a local
+    // check prevents an unnecessary round-trip and gives a clearer error.
+    if (agent.role === 'admin' || agent.user_id === currentUserId) {
+      toast({
+        title: 'Cannot remove',
+        description: 'Admin accounts are protected and cannot be removed.',
+        variant: 'destructive',
+      })
+      setDeleteTarget(null)
+      return
+    }
     setDeleting(true)
     try {
       const res = await authedFetch('/api/manage-support-agent', { action: 'remove', userId: agent.user_id })
@@ -2418,9 +2438,14 @@ function AgentsTab({ agents, setAgents, liveState }: {
                     ? 'bg-amber-50 text-amber-700'
                     : 'bg-slate-100 text-slate-500'
                 const statusDot = status === 'online' ? 'bg-emerald-500' : status === 'away' ? 'bg-amber-400' : 'bg-slate-400'
+                // Admins are protected, and the signed-in user cannot remove
+                // their own row (prevents self-lockout).
+                const isProtectedRow = agent.role === 'admin' || agent.user_id === currentUserId
                 return (
                   <div key={agent.id} className="flex items-center gap-3 px-4 py-3 flex-wrap">
-                    <div className="w-9 h-9 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shrink-0 shadow-sm">
+                    <div className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 shadow-sm ${
+                      isProtectedRow ? 'bg-gradient-to-br from-indigo-600 to-purple-700' : 'bg-gradient-to-br from-blue-500 to-indigo-600'
+                    }`}>
                       <span className="text-xs font-bold text-white">{initialsOf(agent.name)}</span>
                     </div>
                     <div className="min-w-0 flex-1">
@@ -2430,9 +2455,15 @@ function AgentsTab({ agents, setAgents, liveState }: {
                           <span className={`w-1.5 h-1.5 rounded-full ${statusDot}`} />
                           {status === 'online' ? 'Online' : status === 'away' ? 'Away' : 'Offline'}
                         </span>
-                        <span className={`shrink-0 text-[10px] font-bold px-1.5 py-0.5 rounded-full uppercase ${agent.active ? 'bg-blue-50 text-blue-700' : 'bg-slate-100 text-slate-500'}`}>
-                          {agent.role}
-                        </span>
+                        {isProtectedRow ? (
+                          <span className="shrink-0 text-[10px] font-bold px-1.5 py-0.5 rounded-full uppercase bg-purple-50 text-purple-700">
+                            Admin
+                          </span>
+                        ) : (
+                          <span className={`shrink-0 text-[10px] font-bold px-1.5 py-0.5 rounded-full uppercase ${agent.active ? 'bg-blue-50 text-blue-700' : 'bg-slate-100 text-slate-500'}`}>
+                            {agent.role}
+                          </span>
+                        )}
                         <span className={`shrink-0 inline-flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded-full ${isAvailable ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-500'}`}>
                           <span className={`w-1.5 h-1.5 rounded-full ${isAvailable ? 'bg-emerald-500' : 'bg-slate-400'}`} />
                           {agent.available ? 'Available' : 'Unavailable'}
@@ -2455,27 +2486,35 @@ function AgentsTab({ agents, setAgents, liveState }: {
                         <MessageSquare className="w-3 h-3" />
                         {activeCounts[agent.id] ?? 0} active
                       </span>
-                      <button onClick={() => toggleAvailable(agent)} disabled={isBusy}
-                        title={agent.available ? 'Stop accepting new conversations' : 'Accept new conversations'}
-                        className={`inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-1.5 rounded-lg transition-colors ${
-                          agent.available ? 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                        }`}>
-                        {agent.available ? 'Available' : 'Unavailable'}
-                      </button>
-                      <button onClick={() => resetPassword(agent)} disabled={isBusy} title="Send password reset"
-                        className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-1.5 rounded-lg border border-gray-200 bg-white text-slate-600 hover:text-blue-700 hover:border-blue-200 disabled:opacity-40 transition-colors">
-                        {isBusy ? <Loader2 className="w-3 h-3 animate-spin" /> : <KeyRound className="w-3 h-3" />} Reset
-                      </button>
-                      <button onClick={() => toggleActive(agent)} disabled={isBusy}
-                        className={`inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-1.5 rounded-lg transition-colors ${
-                          agent.active ? 'bg-slate-100 text-slate-600 hover:bg-slate-200' : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
-                        }`}>
-                        {agent.active ? 'Deactivate' : 'Activate'}
-                      </button>
-                      <button onClick={() => setDeleteTarget(agent)} disabled={busyId === agent.id} title="Remove agent"
-                        className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-1.5 rounded-lg border border-gray-200 bg-white text-slate-500 hover:text-red-600 hover:border-red-200 disabled:opacity-40 transition-colors">
-                        <Trash2 className="w-3 h-3" /> Remove
-                      </button>
+                      {isProtectedRow ? (
+                        <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-1.5 rounded-lg bg-purple-50 text-purple-600">
+                          <ShieldCheck className="w-3 h-3" /> Protected
+                        </span>
+                      ) : (
+                        <>
+                          <button onClick={() => toggleAvailable(agent)} disabled={isBusy}
+                            title={agent.available ? 'Stop accepting new conversations' : 'Accept new conversations'}
+                            className={`inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-1.5 rounded-lg transition-colors ${
+                              agent.available ? 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                            }`}>
+                            {agent.available ? 'Available' : 'Unavailable'}
+                          </button>
+                          <button onClick={() => resetPassword(agent)} disabled={isBusy} title="Send password reset"
+                            className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-1.5 rounded-lg border border-gray-200 bg-white text-slate-600 hover:text-blue-700 hover:border-blue-200 disabled:opacity-40 transition-colors">
+                            {isBusy ? <Loader2 className="w-3 h-3 animate-spin" /> : <KeyRound className="w-3 h-3" />} Reset
+                          </button>
+                          <button onClick={() => toggleActive(agent)} disabled={isBusy}
+                            className={`inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-1.5 rounded-lg transition-colors ${
+                              agent.active ? 'bg-slate-100 text-slate-600 hover:bg-slate-200' : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
+                            }`}>
+                            {agent.active ? 'Deactivate' : 'Activate'}
+                          </button>
+                          <button onClick={() => setDeleteTarget(agent)} disabled={busyId === agent.id} title="Remove agent"
+                            className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-1.5 rounded-lg border border-gray-200 bg-white text-slate-500 hover:text-red-600 hover:border-red-200 disabled:opacity-40 transition-colors">
+                            <Trash2 className="w-3 h-3" /> Remove
+                          </button>
+                        </>
+                      )}
                     </div>
                   </div>
                 )
@@ -2622,7 +2661,7 @@ export default function AdminSupportPage() {
                   <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">Customer operations</p>
                   <h2 className="mt-0.5 text-base font-extrabold text-slate-950">Support &amp; Inbox</h2>
                 </div>
-                <div className="flex items-center gap-2 flex-wrap sm:shrink-0">
+                <div className="flex flex-col gap-2 md:flex-row md:items-center md:shrink-0">
                   <div className="grid grid-cols-3 gap-1.5 sm:flex sm:items-center sm:flex-wrap sm:gap-2">
                     {[
                       { label: 'Enquiries',   value: openCount,       color: openCount > 0 ? 'text-blue-700' : 'text-slate-500'    },
@@ -2635,26 +2674,28 @@ export default function AdminSupportPage() {
                       </div>
                     ))}
                   </div>
-                  {/* Support online status */}
-                  <div className={`inline-flex items-center gap-1.5 rounded-2xl border px-3 py-1.5 text-xs font-semibold ${effectiveSupportOnline ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-slate-200 bg-slate-50 text-slate-500'}`}>
-                    <span className="relative flex size-1.5 shrink-0">
-                      <span className={`size-1.5 rounded-full ${effectiveSupportOnline ? 'bg-emerald-500' : supportOpen ? 'bg-amber-400' : 'bg-slate-400'}`} />
-                      {effectiveSupportOnline && <span className="absolute inset-0 rounded-full bg-emerald-500 animate-ping opacity-60" />}
-                    </span>
-                    {effectiveSupportOnline ? 'Online' : supportOpen ? 'No agent' : 'Away'}
+                  <div className="flex items-center gap-2">
+                    {/* Support online status */}
+                    <div className={`inline-flex items-center gap-1.5 rounded-2xl border px-3 py-1.5 text-xs font-semibold ${effectiveSupportOnline ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-slate-200 bg-slate-50 text-slate-500'}`}>
+                      <span className="relative flex size-1.5 shrink-0">
+                        <span className={`size-1.5 rounded-full ${effectiveSupportOnline ? 'bg-emerald-500' : supportOpen ? 'bg-amber-400' : 'bg-slate-400'}`} />
+                        {effectiveSupportOnline && <span className="absolute inset-0 rounded-full bg-emerald-500 animate-ping opacity-60" />}
+                      </span>
+                      {effectiveSupportOnline ? 'Online' : supportOpen ? 'No agent' : 'Away'}
+                    </div>
+                    <button
+                      onClick={() => { const next = !muted; setMuted(next); setSoundMuted(next) }}
+                      title={muted ? 'Unmute' : 'Mute'}
+                      className="grid size-8 place-items-center rounded-xl border border-slate-200 bg-slate-50 text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"
+                    >
+                      {muted ? <VolumeX className="w-3.5 h-3.5" /> : <Volume2 className="w-3.5 h-3.5" />}
+                    </button>
                   </div>
-                  <button
-                    onClick={() => { const next = !muted; setMuted(next); setSoundMuted(next) }}
-                    title={muted ? 'Unmute' : 'Mute'}
-                    className="grid size-8 place-items-center rounded-xl border border-slate-200 bg-slate-50 text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"
-                  >
-                    {muted ? <VolumeX className="w-3.5 h-3.5" /> : <Volume2 className="w-3.5 h-3.5" />}
-                  </button>
                 </div>
               </div>
 
               {/* Tab switcher pills */}
-              <div className="mt-2.5 flex items-center gap-1.5 flex-wrap">
+              <div className="mt-2.5 flex items-center gap-1.5 flex-wrap overflow-x-auto -mx-1 px-1 sm:overflow-visible sm:mx-0 sm:px-0">
                 {([
                   { key: 'support', label: 'Support Queue', icon: HeadphonesIcon, count: openCount },
                   { key: 'inbox',   label: 'Inbox',         icon: Inbox,          count: inboxCount },
@@ -2664,13 +2705,13 @@ export default function AdminSupportPage() {
                   return (
                     <button key={t.key} type="button" onClick={() => setTab(t.key)}
                       className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition-all ${
-                        tab === t.key ? 'bg-slate-950 text-white shadow-sm shadow-slate-950/10' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                        tab === t.key ? 'bg-primary text-primary-foreground shadow-sm shadow-primary/20' : 'bg-blue-50 text-blue-700 hover:bg-blue-100'
                       }`}>
                       <Icon className="w-3 h-3" />
                       {t.label}
                       {t.count > 0 && (
                         <span className={`inline-flex h-4 min-w-[16px] items-center justify-center rounded-full text-[10px] font-bold px-1 ${
-                          tab === t.key ? 'bg-white/20 text-white' : 'bg-slate-900/10 text-slate-600'
+                          tab === t.key ? 'bg-primary-foreground/20 text-primary-foreground' : 'bg-blue-100 text-blue-700'
                         }`}>{t.count}</span>
                       )}
                     </button>

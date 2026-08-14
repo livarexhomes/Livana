@@ -203,12 +203,12 @@ export default function AdminKYC() {
               <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                 <div>
                   <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">Identity verification</p>
-                  <h2 className="mt-2 text-2xl font-extrabold text-slate-950">KYC Review</h2>
+                  <h2 className="mt-2 text-xl md:text-2xl font-extrabold text-slate-950">KYC Review</h2>
                   <p className="mt-1 text-sm text-slate-500">Verify landlord identities before they go live on the platform.</p>
                 </div>
 
                 {/* Stats row + live indicator */}
-                <div className="flex flex-col items-end gap-2 shrink-0">
+                <div className="flex flex-col items-stretch md:items-end gap-2 shrink-0">
                   {/* Live indicator */}
                   <div className="flex items-center self-end">
                     {refreshing ? (
@@ -228,15 +228,15 @@ export default function AdminKYC() {
                       </span>
                     )}
                   </div>
-                  <div className="flex items-center gap-2 flex-wrap justify-end">
+                  <div className="grid grid-cols-2 sm:flex sm:items-center gap-2 sm:flex-wrap justify-end">
                     {[
                       { label: 'Pending',  value: counts.pending,  accent: 'text-amber-700 bg-amber-500/10'      },
                       { label: 'Approved', value: counts.approved, accent: 'text-emerald-700 bg-emerald-500/10'  },
                       { label: 'Rejected', value: counts.rejected, accent: 'text-red-700 bg-red-500/10'          },
                       { label: 'Total',    value: counts.all,      accent: 'text-blue-700 bg-blue-500/10'        },
                     ].map(s => (
-                      <div key={s.label} className="rounded-3xl border border-slate-100 bg-slate-50 px-4 py-3 text-center min-w-[70px]">
-                        <p className={`text-2xl font-extrabold ${s.accent}`}>{s.value}</p>
+                      <div key={s.label} className="rounded-3xl border border-slate-100 bg-slate-50 px-3 md:px-4 py-2.5 md:py-3 text-center sm:min-w-[70px]">
+                        <p className={`text-xl md:text-2xl font-extrabold ${s.accent}`}>{s.value}</p>
                         <p className="mt-0.5 text-[10px] font-semibold uppercase tracking-[0.25em] text-slate-500">{s.label}</p>
                       </div>
                     ))}
@@ -245,21 +245,7 @@ export default function AdminKYC() {
               </div>
 
               {/* Filter pills — exactly matching AdminProperties style */}
-              <div className="mt-4 flex flex-wrap items-center gap-2">
-                {FILTER_TABS.map(tab => (
-                  <button key={tab.key} type="button" onClick={() => setStatusFilter(tab.key)}
-                    className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
-                      statusFilter === tab.key
-                        ? 'bg-slate-950 text-white shadow-lg shadow-slate-950/10'
-                        : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                    }`}>
-                    {tab.label}
-                    <span className={`ml-2 inline-flex h-5 min-w-[20px] items-center justify-center rounded-full text-[11px] font-bold ${
-                      statusFilter === tab.key ? 'bg-white/20 text-white' : 'bg-slate-900/10 text-slate-600'
-                    }`}>{tab.count}</span>
-                  </button>
-                ))}
-              </div>
+              <div className="mt-4 flex items-center gap-2 overflow-x-auto -mx-1 px-1 sm:flex-wrap sm:overflow-visible sm:mx-0 sm:px-0">
             </div>
           </div>
 

@@ -268,7 +268,7 @@ export default function AdminProjects() {
                     <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">Development projects</p>
                     <h2 className="mt-0.5 text-base font-extrabold text-slate-950">Off-plan &amp; Launches</h2>
                   </div>
-                  <div className="grid grid-cols-4 gap-1.5 sm:flex sm:items-center sm:flex-wrap sm:gap-2 sm:shrink-0">
+                  <div className="grid grid-cols-2 gap-1.5 sm:flex sm:items-center sm:flex-wrap sm:gap-2 sm:shrink-0">
                     {[
                       { label: 'Projects',     value: String(projects.length),            color: 'text-slate-700'   },
                       { label: 'Units Sold',   value: `${totalSold}/${totalUnits}`,       color: 'text-emerald-700' },
@@ -284,18 +284,18 @@ export default function AdminProjects() {
                 </div>
 
                 {/* Status filter pills */}
-                <div className="flex items-center gap-1.5 flex-wrap mb-3">
+                <div className="flex items-center gap-1.5 overflow-x-auto -mx-1 px-1 sm:flex-wrap sm:overflow-visible sm:mx-0 sm:px-0 mb-3">
                   {STATUS_FILTERS.map(f => {
                     const count = f.key === 'all' ? projects.length : (statusTotals[f.key] ?? 0)
                     const isActive = statusFilter === f.key
                     return (
                       <button key={f.key} type="button" onClick={() => setStatusFilter(f.key)}
                         className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition-all ${
-                          isActive ? 'bg-slate-950 text-white shadow-sm shadow-slate-950/10' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                          isActive ? 'bg-primary text-primary-foreground shadow-sm shadow-primary/20' : 'bg-blue-50 text-blue-700 hover:bg-blue-100'
                         }`}>
                         {f.label}
                         <span className={`inline-flex h-4 min-w-[16px] items-center justify-center rounded-full text-[10px] font-bold ${
-                          isActive ? 'bg-white/20 text-white' : 'bg-slate-900/10 text-slate-600'
+                          isActive ? 'bg-primary-foreground/20 text-primary-foreground' : 'bg-blue-100 text-blue-700'
                         }`}>{count}</span>
                       </button>
                     )

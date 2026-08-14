@@ -258,6 +258,29 @@ export default async function handler(req, res) {
     if (action === 'remove') {
       if (!userId) return sendJson(res, 400, { error: 'userId is required' })
 
+      // SECURITY: admins are protected from removal via this endpoint. Their
+      // account can only be deleted by direct Supabase admin intervention, so
+      // a non-admin (or even a fellow admin) cannot nuke the admin roster
+      // through the agent-management UI/API.
+      const targetResp = await fetch(`${SUPABASE_URL}/auth/v1/admin/users/${encodeURIComponent(userId)}`, {
+        headers: { Authorization: `Bearer ${SUPABASE_SERVICE_KEY}`, apikey: SUPABASE_SERVICE_KEY },
+      })
+      const targetData = await targetResp.json().catch(() => null)
+      const targetMeta = targetData?.app_metadata ?? {}
+      const targetIsAdmin =
+        targetMeta.role === 'admin' ||
+        (Array.isArray(targetMeta.roles) && targetMeta.roles.includes('admin'))
+      if (targetIsAdmin) {
+        return sendJson(res, 403, {
+          error: 'Admin accounts are protected and cannot be removed from this endpoint.',
+        })
+      }
+      if (!targetResp.ok) {
+        return sendJson(res, targetResp.status || 500, {
+          error: getErrorMessage(targetData) || 'Failed to load target user',
+        })
+      }
+
       // Fully delete the Supabase auth account. The `agents` row has
       // user_id → auth.users(id) ON DELETE CASCADE, so it's removed too.
       // FK cascade also handles any dependent rows.
@@ -282,6 +305,33 @@ export default async function handler(req, res) {
       if (!['agent', 'support', 'admin'].includes(role)) {
         return sendJson(res, 400, { error: 'role must be agent, support, or admin' })
       }
+
+      // SECURITY: admins are protected — you cannot downgrade an admin through
+      // this endpoint (prevents a fellow admin from stripping another admin's
+      // privileges, and prevents a malicious admin from locking themselves
+      // into a non-admin role). Admin role changes require direct Supabase
+      // intervention. We check `app_metadata.role` (the canonical admin flag),
+      // not the agents row's `role` column, which is unreliable (defaults to
+      // 'agent' even when the underlying auth account is an admin).
+      const targetResp = await fetch(`${SUPABASE_URL}/auth/v1/admin/users/${encodeURIComponent(userId)}`, {
+        headers: { Authorization: `Bearer ${SUPABASE_SERVICE_KEY}`, apikey: SUPABASE_SERVICE_KEY },
+      })
+      const targetData = await targetResp.json().catch(() => null)
+      const targetMeta = targetData?.app_metadata ?? {}
+      const targetIsAdmin =
+        targetMeta.role === 'admin' ||
+        (Array.isArray(targetMeta.roles) && targetMeta.roles.includes('admin'))
+      if (!targetResp.ok && !targetIsAdmin) {
+        return sendJson(res, targetResp.status || 500, {
+          error: getErrorMessage(targetData) || 'Failed to load target user',
+        })
+      }
+      if (targetIsAdmin && role !== 'admin') {
+        return sendJson(res, 403, {
+          error: 'Admin accounts are protected and cannot be demoted from this endpoint.',
+        })
+      }
+
       const update = await fetch(`${SUPABASE_URL}/rest/v1/agents?user_id=eq.${encodeURIComponent(userId)}`, {
         method: 'PATCH',
         headers: {
