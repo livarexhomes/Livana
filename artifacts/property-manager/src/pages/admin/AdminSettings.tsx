@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, type ElementType, type ReactNode } from 'react'
+import { useState, useEffect, useCallback, useRef, type ElementType, type ReactNode } from 'react'
 import {
   Building2, Bell, Shield, Globe, Save, CreditCard,
   CheckCircle, Mail, Phone, MapPin, User, Wifi,
@@ -6,7 +6,7 @@ import {
   FileText, DollarSign, Hash, Users, BarChart3,
   ArrowUpRight, AlertCircle, ShieldCheck, UserPlus,
   Eye, EyeOff, Send, TestTube, Trash2, Plus,
-  Key, Smartphone, Webhook, Loader2, Check, X, FileDown, Clock,
+  Key, Smartphone, Webhook, Loader2, Check, ChevronRight, X, FileDown, Clock,
 } from 'lucide-react'
 import AdminSidebar from '../../components/layout/AdminSidebar'
 import AuthGuard from '../../components/auth/AuthGuard'
@@ -172,20 +172,22 @@ function ToggleRow({
     >
       <div className="flex items-center gap-3 min-w-0">
         {Icon && (
-          <div className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${
-            enabled ? 'bg-blue-100' : 'bg-gray-100'
+          <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 transition-colors ${
+            enabled ? 'bg-blue-100 text-blue-600' : 'bg-slate-100 text-slate-400'
           }`}>
-            <Icon className={`w-3.5 h-3.5 ${enabled ? 'text-blue-600' : 'text-gray-400'}`} strokeWidth={1.8} />
+            <Icon className="w-4 h-4" strokeWidth={1.8} />
           </div>
         )}
         <div className="min-w-0">
           <div className="flex items-center gap-2">
-            <span className={`text-sm font-semibold ${enabled ? 'text-gray-800' : 'text-gray-600'}`}>{label}</span>
+            <span className={`text-sm font-semibold ${enabled ? 'text-gray-900' : 'text-gray-700'}`}>{label}</span>
             {tag && (
               <span className={`text-[9px] font-bold tracking-widest uppercase px-1.5 py-0.5 rounded ${
                 tag === 'live' ? 'bg-green-100 text-green-700' :
                 tag === 'test' ? 'bg-amber-100 text-amber-700' :
                 tag === 'soon' ? 'bg-blue-100 text-blue-700' :
+                tag === 'on' ? 'bg-blue-100 text-blue-700' :
+                tag === 'off' ? 'bg-gray-100 text-gray-500' :
                 'bg-gray-100 text-gray-400'
               }`}>{tag}</span>
             )}
@@ -193,17 +195,27 @@ function ToggleRow({
           <p className="text-xs text-gray-400 mt-0.5 truncate">{desc}</p>
         </div>
       </div>
-      <Toggle enabled={enabled} onChange={onChange} loading={loading} disabled={disabled} />
+      <div className="flex items-center gap-1.5 shrink-0">
+        <Toggle enabled={enabled} onChange={onChange} loading={loading} disabled={disabled} />
+        {!disabled && <ChevronRight className="w-3.5 h-3.5 text-gray-300" />}
+      </div>
     </div>
   )
 }
 
-function SectionTitle({ title, sub, action }: { title: string; sub: string; action?: ReactNode }) {
+function SectionTitle({ title, sub, action, icon: Icon }: { title: string; sub: string; action?: ReactNode; icon?: ElementType }) {
   return (
-    <div className="mb-6 flex items-start justify-between">
-      <div>
-        <h2 className="text-lg font-extrabold text-gray-900 tracking-tight">{title}</h2>
-        <p className="text-xs text-gray-400 mt-0.5">{sub}</p>
+    <div className="mb-6 flex items-start justify-between gap-4">
+      <div className="flex items-start gap-3 min-w-0">
+        {Icon && (
+          <div className="w-9 h-9 rounded-xl bg-white border border-slate-200 shadow-sm flex items-center justify-center shrink-0">
+            <Icon className="w-4 h-4 text-slate-500" strokeWidth={1.8} />
+          </div>
+        )}
+        <div className="min-w-0">
+          <h2 className="text-base md:text-lg font-extrabold text-gray-900 tracking-tight">{title}</h2>
+          <p className="text-xs text-gray-400 mt-0.5">{sub}</p>
+        </div>
       </div>
       {action}
     </div>
@@ -342,6 +354,7 @@ function AgentSettingsSection({ currentUserId }: { currentUserId?: string }) {
       <SectionTitle
         title="Support Agents"
         sub="Create brand-new agent accounts, or invite existing Livarex accounts as agents."
+        icon={Users}
       />
 
       {/* Add / invite form */}
@@ -771,6 +784,20 @@ export default function AdminSettings() {
   // Sections visible to the current user (agents can't see admin-only tabs)
   const visibleSections = isAgent ? SECTIONS.filter(s => !ADMIN_ONLY_SECTIONS.has(s.id)) : SECTIONS
 
+  // Nav grouping for the desktop rail: general settings vs. admin-only settings
+  const GENERAL_IDS = new Set(['platform', 'notifications', 'listing', 'support_hours'])
+  const generalSections = visibleSections.filter(s => GENERAL_IDS.has(s.id))
+  const adminSections = visibleSections.filter(s => !GENERAL_IDS.has(s.id))
+  const activeSection = visibleSections.find(s => s.id === active) ?? visibleSections[0]
+
+  // Sections persisted by the global "Save Changes" button. Audit History and
+  // Agents manage their own state (CSV export, agent CRUD), so no global save.
+  const SAVEABLE_SECTIONS = new Set(['platform', 'notifications', 'email', 'security', 'support_hours', 'listing'])
+
+  // Jump the content back to the top whenever the active section changes
+  const mainRef = useRef<HTMLElement | null>(null)
+  useEffect(() => { mainRef.current?.scrollTo({ top: 0 }) }, [active])
+
   const displayName = user?.email ? user.email.split('@')[0] : 'Admin'
 
   // ── Audit history state ──────────────────────────────────────────────────────
@@ -960,65 +987,128 @@ export default function AdminSettings() {
         <AdminSidebar userEmail={user?.email} userName={displayName} />
 
         <div className="flex-1 flex flex-col min-w-0">
-          {/* ── Hero card ── */}
-          <div className="shrink-0 px-4 md:px-6 pt-3 pb-2">
-            <div className="rounded-[32px] border border-slate-200 bg-white px-5 py-4 shadow-[0_18px_80px_-40px_rgba(15,23,42,0.18)]">
-              <div className="flex items-start justify-between gap-4 pl-11 md:pl-0">
-                <div className="min-w-0">
-                  <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400 truncate">Admin configuration</p>
-                  <h2 className="mt-0.5 text-base font-extrabold text-slate-950">Settings</h2>
-                </div>
-                <div className="flex items-center gap-2 shrink-0">
-                  {saved && (
-                    <span className="flex items-center gap-1.5 text-xs font-medium text-emerald-600">
-                      <CheckCircle className="w-3.5 h-3.5" /> Saved
-                    </span>
+          {/* ── Page header ── */}
+          <header className="shrink-0 px-4 md:px-8 pt-5 md:pt-6 pb-0">
+            <div className="flex items-start justify-between gap-4">
+              <div className="min-w-0">
+                <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">Admin configuration</p>
+                <h2 className="mt-1 text-xl md:text-2xl font-extrabold text-slate-950 tracking-tight">Settings</h2>
+                <p className="mt-0.5 text-xs md:text-sm text-slate-500">Manage your platform's configuration, security, and support.</p>
+              </div>
+              {/* Desktop: Save Changes in the header (sticky save bar on mobile) */}
+              <div className="hidden md:flex items-center gap-3 shrink-0">
+                {saved && (
+                  <span className="flex items-center gap-1.5 text-xs font-medium text-emerald-600">
+                    <CheckCircle className="w-3.5 h-3.5" /> Saved
+                  </span>
+                )}
+                <button
+                  type="button"
+                  onClick={handleSave}
+                  disabled={saving || !SAVEABLE_SECTIONS.has(active)}
+                  className={`inline-flex items-center gap-1.5 px-4 py-2.5 text-xs font-bold rounded-xl transition-all duration-200 ${
+                    saving || !SAVEABLE_SECTIONS.has(active)
+                      ? 'bg-slate-200 text-slate-400 cursor-not-allowed'
+                      : 'bg-slate-950 hover:bg-slate-800 active:scale-95 text-white shadow-sm'
+                  }`}
+                >
+                  {saving ? (
+                    <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Saving…</>
+                  ) : (
+                    <><Save className="w-3.5 h-3.5" /> Save Changes</>
                   )}
+                </button>
+              </div>
+            </div>
+          </header>
+
+          {/* ── Nav: mobile chip row / desktop rail ── */}
+          <div className="shrink-0 bg-white border-b border-slate-200/70">
+            {/* Mobile: horizontal scrollable chips */}
+            <div className="flex lg:hidden items-center gap-1.5 px-3 py-2.5 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+              {visibleSections.map(s => {
+                const Icon = s.icon
+                const isActive = active === s.id
+                const locked = !isAgent && ADMIN_ONLY_SECTIONS.has(s.id) && adminPinHash && !pinVerified
+                return (
                   <button
+                    key={s.id}
                     type="button"
-                    onClick={handleSave}
-                    disabled={saving}
-                    className={`inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold rounded-full transition-all duration-200 ${
-                      saving ? 'bg-slate-400 text-white cursor-not-allowed' : 'bg-slate-950 hover:bg-slate-800 active:scale-95 text-white'
+                    onClick={() => handleTabChange(s.id)}
+                    className={`inline-flex items-center gap-1.5 rounded-full px-3.5 py-2 text-xs font-semibold whitespace-nowrap shrink-0 transition-all ${
+                      isActive ? 'bg-slate-950 text-white shadow-sm shadow-slate-950/10' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                     }`}
                   >
-                    {saving ? (
-                      <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Saving…</>
-                    ) : (
-                      <><Save className="w-3.5 h-3.5" /> Save Changes</>
-                    )}
+                    <Icon className="w-3.5 h-3.5" strokeWidth={1.8} />
+                    {s.label}
+                    {locked && <Lock className="w-2.5 h-2.5 opacity-50 ml-0.5" />}
                   </button>
-                </div>
-              </div>
-
-              {/* ── Tab pills ── */}
-              <div className="mt-3 flex items-center gap-1.5 flex-wrap">
-                {visibleSections.map(s => {
+                )
+              })}
+            </div>
+            {/* Desktop: vertical rail */}
+            <nav className="hidden lg:block p-4">
+              <p className="px-2 mb-1.5 text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400">General</p>
+              <div className="space-y-0.5">
+                {generalSections.map(s => {
                   const Icon = s.icon
                   const isActive = active === s.id
-                  const locked = !isAgent && ADMIN_ONLY_SECTIONS.has(s.id) && adminPinHash && !pinVerified
                   return (
                     <button
                       key={s.id}
                       type="button"
                       onClick={() => handleTabChange(s.id)}
-                      className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold whitespace-nowrap transition-all ${
-                        isActive ? 'bg-slate-950 text-white shadow-sm shadow-slate-950/10' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                      className={`flex items-center justify-between w-full px-3 py-2 rounded-lg text-[13px] font-semibold transition-all ${
+                        isActive ? 'bg-slate-950 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
                       }`}
                     >
-                      <Icon className="w-3 h-3" strokeWidth={1.8} />
-                      {s.label}
-                      {locked && <Lock className="w-2.5 h-2.5 opacity-50 ml-0.5" />}
+                      <span className="flex items-center gap-2.5 min-w-0">
+                        <Icon className="w-4 h-4 shrink-0" strokeWidth={1.8} />
+                        <span className="truncate">{s.label}</span>
+                      </span>
+                      <ChevronRight className={`w-3.5 h-3.5 shrink-0 ${isActive ? 'text-white/60' : 'text-slate-300'}`} />
                     </button>
                   )
                 })}
               </div>
-            </div>
+              {adminSections.length > 0 && (
+                <>
+                  <p className="px-2 mt-4 mb-1.5 text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400">Admin only</p>
+                  <div className="space-y-0.5">
+                    {adminSections.map(s => {
+                      const Icon = s.icon
+                      const isActive = active === s.id
+                      const locked = !isAgent && ADMIN_ONLY_SECTIONS.has(s.id) && adminPinHash && !pinVerified
+                      return (
+                        <button
+                          key={s.id}
+                          type="button"
+                          onClick={() => handleTabChange(s.id)}
+                          className={`flex items-center justify-between w-full px-3 py-2 rounded-lg text-[13px] font-semibold transition-all ${
+                            isActive ? 'bg-slate-950 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                          }`}
+                        >
+                          <span className="flex items-center gap-2.5 min-w-0">
+                            <Icon className="w-4 h-4 shrink-0" strokeWidth={1.8} />
+                            <span className="truncate">{s.label}</span>
+                          </span>
+                          <span className="flex items-center gap-1 shrink-0">
+                            {locked && <Lock className="w-3 h-3 text-slate-400" />}
+                            <ChevronRight className={`w-3.5 h-3.5 ${isActive ? 'text-white/60' : 'text-slate-300'}`} />
+                          </span>
+                        </button>
+                      )
+                    })}
+                  </div>
+                </>
+              )}
+            </nav>
           </div>
 
-          {/* ── Main content ── */}
-          <main className="flex-1 overflow-y-auto">
-            <div className="max-w-4xl mx-auto px-4 md:px-8 py-6">
+          {/* ── Content ── */}
+          <div className="flex flex-1 min-h-0">
+            <main ref={mainRef} className="flex-1 overflow-y-auto">
+              <div className="max-w-4xl mx-auto px-4 md:px-8 py-6 pb-28 lg:pb-8">
 
               {/* ─── PLATFORM ─── */}
               {active === 'platform' && (
@@ -1026,6 +1116,7 @@ export default function AdminSettings() {
                   <SectionTitle 
                     title="Platform Information" 
                     sub="Public-facing details about your real estate platform."
+                    icon={Building2}
                   />
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <FieldInput 
@@ -1109,14 +1200,18 @@ export default function AdminSettings() {
                   <SectionTitle 
                     title="Notification Preferences" 
                     sub="Control which events trigger alerts and how they are delivered."
+                    icon={Bell}
                   />
                   
-                  <div className="bg-white border border-gray-200 rounded-xl p-4 mb-6">
-                    <label className="block text-[10px] font-bold tracking-[0.14em] text-gray-400 uppercase mb-2">
-                      Admin Email Address
-                    </label>
-                    <div className="flex items-center gap-3">
-                      <div className="flex-1">
+                  <div className="bg-white border border-gray-200 rounded-xl p-4 sm:p-5 mb-6">
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-2">
+                          <div className="w-7 h-7 rounded-lg bg-blue-50 flex items-center justify-center shrink-0">
+                            <Mail className="w-3.5 h-3.5 text-blue-600" strokeWidth={1.8} />
+                          </div>
+                          <p className="text-sm font-semibold text-gray-900">Admin Email Address</p>
+                        </div>
                         <FieldInput
                           label=""
                           value={notifications.adminEmail}
@@ -1125,17 +1220,17 @@ export default function AdminSettings() {
                           mono
                           placeholder="admin@livarex.com.ng"
                         />
+                        <p className="text-xs text-gray-400 mt-2">
+                          All admin notifications will be sent to this email address.
+                        </p>
                       </div>
-                      <div className="pt-5">
+                      <div className="shrink-0 sm:pt-0">
                         <StatusBadge 
                           status={notifications.adminEmail ? 'success' : 'warning'} 
                           text={notifications.adminEmail ? 'Configured' : 'Not Set'} 
                         />
                       </div>
                     </div>
-                    <p className="text-xs text-gray-400 mt-2">
-                      All admin notifications will be sent to this email address.
-                    </p>
                   </div>
 
                   <div className="space-y-2">
@@ -1165,12 +1260,13 @@ export default function AdminSettings() {
                     />
                     <div className="bg-white border border-gray-200 rounded-xl p-4 flex flex-col sm:flex-row sm:items-center gap-3">
                       <div className="flex items-center gap-3 min-w-0 flex-1">
-                        <div className="w-7 h-7 rounded-lg bg-gray-100 flex items-center justify-center shrink-0">
-                          <BarChart3 className="w-3.5 h-3.5 text-gray-400" strokeWidth={1.8} />
+                        <div className="w-9 h-9 rounded-xl bg-violet-100 text-violet-600 flex items-center justify-center shrink-0">
+                          <BarChart3 className="w-4 h-4" strokeWidth={1.8} />
                         </div>
                         <div className="min-w-0">
                           <div className="flex items-center gap-2">
-                            <span className="text-sm font-semibold text-gray-800">Weekly Summary Report</span>
+                            <span className="text-sm font-semibold text-gray-900">Weekly Summary Report</span>
+                            <span className="text-[9px] font-bold tracking-widest uppercase px-1.5 py-0.5 rounded bg-blue-100 text-blue-700">csv</span>
                           </div>
                           <p className="text-xs text-gray-400 mt-0.5">Download platform statistics for the last 7 days (CSV — opens in Excel)</p>
                         </div>
@@ -1225,6 +1321,7 @@ export default function AdminSettings() {
                   <SectionTitle 
                     title="Email Configuration (Resend)" 
                     sub="Configure Resend API for sending transactional emails."
+                    icon={Mail}
                     action={
                       emailConfig.enabled ? (
                         <StatusBadge status="success" text="Active" />
@@ -1344,6 +1441,7 @@ export default function AdminSettings() {
                   <SectionTitle 
                     title="Security Settings" 
                     sub="Manage authentication, session control, and access restrictions."
+                    icon={Shield}
                   />
                   <div className="space-y-2">
                     <ToggleRow
@@ -1493,6 +1591,7 @@ export default function AdminSettings() {
                   <SectionTitle
                     title="Audit History"
                     sub="A record of KYC decisions, listing approvals, and settings changes for accountability and compliance."
+                    icon={FileText}
                     action={
                       <button onClick={downloadHistoryCsv} disabled={historyLoading}
                         className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold transition-colors disabled:opacity-50">
@@ -1675,6 +1774,7 @@ export default function AdminSettings() {
                   <SectionTitle
                     title="Support Hours"
                     sub="When Livarex Support is open for customers. Timezone: Africa/Lagos (Nigeria). The customer-facing Online/Away status follows ONLY this schedule — never the agent heartbeat."
+                    icon={Clock}
                   />
 
                   <div className="mt-4 bg-white border border-gray-200 rounded-xl p-5">
@@ -1688,48 +1788,52 @@ export default function AdminSettings() {
                       </div>
                     </div>
 
-                    <div className="space-y-2">
+                    <div className="space-y-1.5">
                       {WEEKDAY_LABELS.map((label, i) => {
                         const day = supportHours.days[i]
                         return (
-                          <div key={label} className="flex items-center gap-3 py-1.5">
-                            <label className="w-28 shrink-0 text-sm font-medium text-gray-700">{label}</label>
-                            <label className="flex items-center gap-2 cursor-pointer">
-                              <input
-                                type="checkbox"
-                                checked={day?.enabled}
-                                onChange={e => {
-                                  const days = [...supportHours.days] as SupportHours['days']
-                                  days[i] = { ...days[i], enabled: e.target.checked }
-                                  setSupportHours(h => ({ ...h, days }))
-                                }}
-                                className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                              />
-                              <span className="text-xs text-gray-500">Open</span>
-                            </label>
-                            <input
-                              type="time"
-                              value={day?.open ?? '08:00'}
-                              disabled={!day?.enabled}
-                              onChange={e => {
-                                const days = [...supportHours.days] as SupportHours['days']
-                                days[i] = { ...days[i], open: e.target.value || '08:00' }
-                                setSupportHours(h => ({ ...h, days }))
-                              }}
-                              className="border border-gray-200 rounded-lg px-2 py-1.5 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500/40 bg-white disabled:opacity-40"
-                            />
-                            <span className="text-xs text-gray-400">to</span>
-                            <input
-                              type="time"
-                              value={day?.close ?? '18:00'}
-                              disabled={!day?.enabled}
-                              onChange={e => {
-                                const days = [...supportHours.days] as SupportHours['days']
-                                days[i] = { ...days[i], close: e.target.value || '18:00' }
-                                setSupportHours(h => ({ ...h, days }))
-                              }}
-                              className="border border-gray-200 rounded-lg px-2 py-1.5 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500/40 bg-white disabled:opacity-40"
-                            />
+                          <div key={label} className={`flex flex-col sm:flex-row sm:items-center gap-2.5 sm:gap-3 px-3 sm:px-0 py-2.5 rounded-lg sm:rounded-none sm:py-1.5 ${day?.enabled ? 'sm:bg-transparent bg-blue-50/40' : ''}`}>
+                            <label className="sm:w-28 shrink-0 text-sm font-semibold text-gray-700">{label}</label>
+                            <div className="flex items-center gap-3 flex-1">
+                              <label className="flex items-center gap-2 cursor-pointer shrink-0">
+                                <input
+                                  type="checkbox"
+                                  checked={day?.enabled}
+                                  onChange={e => {
+                                    const days = [...supportHours.days] as SupportHours['days']
+                                    days[i] = { ...days[i], enabled: e.target.checked }
+                                    setSupportHours(h => ({ ...h, days }))
+                                  }}
+                                  className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                                />
+                                <span className="text-xs text-gray-500">Open</span>
+                              </label>
+                              <div className="flex items-center gap-2 flex-1 justify-end sm:justify-start">
+                                <input
+                                  type="time"
+                                  value={day?.open ?? '08:00'}
+                                  disabled={!day?.enabled}
+                                  onChange={e => {
+                                    const days = [...supportHours.days] as SupportHours['days']
+                                    days[i] = { ...days[i], open: e.target.value || '08:00' }
+                                    setSupportHours(h => ({ ...h, days }))
+                                  }}
+                                  className="border border-gray-200 rounded-lg px-2 py-1.5 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500/40 bg-white disabled:opacity-40"
+                                />
+                                <span className="text-xs text-gray-400">to</span>
+                                <input
+                                  type="time"
+                                  value={day?.close ?? '18:00'}
+                                  disabled={!day?.enabled}
+                                  onChange={e => {
+                                    const days = [...supportHours.days] as SupportHours['days']
+                                    days[i] = { ...days[i], close: e.target.value || '18:00' }
+                                    setSupportHours(h => ({ ...h, days }))
+                                  }}
+                                  className="border border-gray-200 rounded-lg px-2 py-1.5 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500/40 bg-white disabled:opacity-40"
+                                />
+                              </div>
+                            </div>
                           </div>
                         )
                       })}
@@ -1751,6 +1855,7 @@ export default function AdminSettings() {
                   <SectionTitle 
                     title="Listing Rules" 
                     sub="Control publishing constraints and requirements for landlord listings."
+                    icon={Globe}
                   />
                   <div className="space-y-2">
                     <ToggleRow
@@ -1852,10 +1957,29 @@ export default function AdminSettings() {
                 </div>
               )}
 
-
-
             </div>
-          </main>
+            </main>
+          </div>
+
+          {/* ── Mobile sticky save bar ── */}
+          <div className="lg:hidden shrink-0 bg-white/90 backdrop-blur border-t border-slate-200 px-4 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
+            <button
+              type="button"
+              onClick={handleSave}
+              disabled={saving || !SAVEABLE_SECTIONS.has(active)}
+              className={`w-full inline-flex items-center justify-center gap-2 py-3 text-sm font-bold rounded-xl transition-all duration-200 ${
+                saving || !SAVEABLE_SECTIONS.has(active)
+                  ? 'bg-slate-200 text-slate-400 cursor-not-allowed'
+                  : 'bg-slate-950 hover:bg-slate-800 active:scale-[0.98] text-white shadow-lg shadow-slate-950/10'
+              }`}
+            >
+              {saving ? (
+                <><Loader2 className="w-4 h-4 animate-spin" /> Saving…</>
+              ) : (
+                <><Save className="w-4 h-4" /> Save Changes</>
+              )}
+            </button>
+          </div>
         </div>
       </div>
       {/* ── PIN gate modal ── */}
