@@ -4,6 +4,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { lazy, Suspense } from "react";
 import ChatWidget from "@/components/ChatWidget";
+import { ThemeProvider } from "@/lib/theme";
 import { slugToLocationLabel } from "@/lib/locationSlug";
 
 const HomePage = lazy(() => import("@/pages/HomePage"));
@@ -143,7 +144,9 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
-          <Router />
+          <ThemeProvider>
+            <Router />
+          </ThemeProvider>
         </WouterRouter>
         <Toaster />
         <ChatWidget />

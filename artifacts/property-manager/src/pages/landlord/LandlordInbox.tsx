@@ -497,7 +497,13 @@ export default function LandlordInbox() {
         { event: 'INSERT', schema: 'public', table: 'support_tickets' },
         (payload) => {
           if (payload.new.landlord_id === landlord.id) {
-            setTickets((prev) => [payload.new as SupportTicket, ...prev])
+            // Dedupe against the locally-created ticket (handleTicketCreated also
+            // prepends the API response), otherwise every landlord-created ticket
+            // appears twice until the next refresh.
+            setTickets((prev) => {
+              const t = payload.new as SupportTicket
+              return prev.find(x => x.id === t.id) ? prev : [t, ...prev]
+            })
           }
         }
       )

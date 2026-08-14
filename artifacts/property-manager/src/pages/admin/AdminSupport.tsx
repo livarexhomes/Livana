@@ -409,7 +409,12 @@ function AdminChatThread({
         .select().single()
       if (insertErr) throw new Error(insertErr.message)
       if (inserted && optId) {
-        setMessages(prev => prev.map(m => m.id === optId ? inserted as SupportMessage : m))
+        // Replace the optimistic placeholder with the real server message,
+        // then dedupe by id — a realtime INSERT echo of our own message can
+        // otherwise land in state first and create a duplicate reply.
+        setMessages(prev => prev
+          .map(m => (m.id === optId ? (inserted as SupportMessage) : m))
+          .filter((m, i, arr) => arr.findIndex(x => x.id === m.id) === i))
       }
       if (ticket.status === 'open') await updateStatus('in_progress')
     } catch (err: any) {
@@ -1086,7 +1091,9 @@ function ChatRequestDetail({ inquiry, onBack, onMarkRead, onStatusChange, agents
       const { data: inserted, error: insertErr } = await supabase.from('chat_messages')
         .insert({ inquiry_id: inquiry.id, sender: 'admin', body }).select().single()
       if (insertErr) throw new Error(insertErr.message)
-      if (inserted) setMessages(prev => prev.map(m => m.id === optId ? inserted as ChatMessage : m))
+      if (inserted) setMessages(prev => prev
+        .map(m => (m.id === optId ? (inserted as ChatMessage) : m))
+        .filter((m, i, arr) => arr.findIndex(x => x.id === m.id) === i))
       else setMessages(prev => prev.filter(m => m.id !== optId))
       // Reply counts as read; auto-advance status open → replied
       await supabase.from('chat_inquiries').update({ read_by_admin: true }).eq('id', inquiry.id)
@@ -2584,6 +2591,9 @@ export default function AdminSupportPage() {
   const [openCount, setOpenCount]     = useState(0)
   const [chatOpenCount, setChatOpenCount] = useState(0)
   const [contactCount, setContactCount]   = useState(0)
+  // The Support Queue pill must reflect open *support tickets* (not enquiries)
+  // so its badge matches the list rendered by the Support tab.
+  const [supportOpenCount, setSupportOpenCount] = useState(0)
   const [liveState, setLiveState] = useState<LiveSupportState>({
     status: 'offline', online: false, onlineAgents: [], awayAgents: [], offlineAgents: [], agents: [], availableCount: 0, agentCount: 0,
   })
@@ -2671,6 +2681,8 @@ export default function AdminSupportPage() {
         .then(({ count }) => setChatOpenCount(count ?? 0))
       supabase.from('contact_messages').select('id', { count: 'exact', head: true })
         .then(({ count }) => setContactCount(count ?? 0))
+      supabase.from('support_tickets').select('id', { count: 'exact', head: true }).in('status', ['open', 'in_progress'])
+        .then(({ count }) => setSupportOpenCount(count ?? 0))
     }
     fetchCounts()
 
@@ -2683,7 +2695,10 @@ export default function AdminSupportPage() {
     const ch3 = supabase.channel('contact_message_badge')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'contact_messages' }, fetchCounts)
       .subscribe()
-    return () => { supabase.removeChannel(ch1); supabase.removeChannel(ch2); supabase.removeChannel(ch3) }
+    const ch4 = supabase.channel('support_ticket_badge')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'support_tickets' }, fetchCounts)
+      .subscribe()
+    return () => { supabase.removeChannel(ch1); supabase.removeChannel(ch2); supabase.removeChannel(ch3); supabase.removeChannel(ch4) }
   }, [])
 
   const displayName = user?.email ? user.email.split('@')[0] : 'Admin'
@@ -2693,36 +2708,36 @@ export default function AdminSupportPage() {
 
   return (
     <AuthGuard require="admin">
-      <div className="flex h-screen overflow-hidden bg-[#F4F6FB]">
+      <div className="flex h-screen overflow-hidden bg-background">
         <AdminSidebar userEmail={user?.email} userName={displayName} />
 
         <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
           {/* ── Hero card ── */}
           <div className="shrink-0 px-4 md:px-6 pt-3 pb-2">
-            <div className="rounded-[32px] border border-slate-200 bg-white px-5 py-3.5 shadow-[0_18px_80px_-40px_rgba(15,23,42,0.18)]">
+            <div className="rounded-[32px] border border-card-border bg-card px-5 py-3.5 shadow-[0_18px_80px_-40px_rgba(15,23,42,0.18)]">
               <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
                 <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">Customer operations</p>
-                  <h2 className="mt-0.5 text-base font-extrabold text-slate-950">Support &amp; Inbox</h2>
+                  <p className="text-xs font-semibold uppercase tracking-[0.28em] text-muted-foreground">Customer operations</p>
+                  <h2 className="mt-0.5 text-base font-extrabold text-foreground">Support &amp; Inbox</h2>
                 </div>
                 <div className="flex flex-col gap-2 md:flex-row md:items-center md:shrink-0">
                   <div className="grid grid-cols-3 gap-1.5 sm:flex sm:items-center sm:flex-wrap sm:gap-2">
                     {[
-                      { label: 'Enquiries',   value: openCount,       color: openCount > 0 ? 'text-blue-700' : 'text-slate-500'    },
-                      { label: 'Chats',       value: chatOpenCount,   color: chatOpenCount > 0 ? 'text-emerald-700' : 'text-slate-500' },
-                      { label: 'Contact',     value: contactCount,    color: contactCount > 0 ? 'text-violet-700' : 'text-slate-500' },
+                      { label: 'Enquiries',   value: openCount,       color: openCount > 0 ? 'text-blue-700' : 'text-muted-foreground'    },
+                      { label: 'Chats',       value: chatOpenCount,   color: chatOpenCount > 0 ? 'text-emerald-700' : 'text-muted-foreground' },
+                      { label: 'Contact',     value: contactCount,    color: contactCount > 0 ? 'text-violet-700' : 'text-muted-foreground' },
                     ].map(s => (
-                      <div key={s.label} className="rounded-2xl border border-slate-100 bg-slate-50 px-2 sm:px-3 py-1.5 text-center sm:min-w-[52px]">
+                      <div key={s.label} className="rounded-2xl border border-border bg-secondary px-2 sm:px-3 py-1.5 text-center sm:min-w-[52px]">
                         <p className={`text-base font-extrabold ${s.color}`}>{s.value}</p>
-                        <p className="text-[9px] font-semibold uppercase tracking-[0.2em] text-slate-400">{s.label}</p>
+                        <p className="text-[9px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">{s.label}</p>
                       </div>
                     ))}
                   </div>
                   <div className="flex items-center gap-2">
                     {/* Support online status */}
-                    <div className={`inline-flex items-center gap-1.5 rounded-2xl border px-3 py-1.5 text-xs font-semibold ${effectiveSupportOnline ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-slate-200 bg-slate-50 text-slate-500'}`}>
+                    <div className={`inline-flex items-center gap-1.5 rounded-2xl border px-3 py-1.5 text-xs font-semibold ${effectiveSupportOnline ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-border bg-secondary text-muted-foreground'}`}>
                       <span className="relative flex size-1.5 shrink-0">
-                        <span className={`size-1.5 rounded-full ${effectiveSupportOnline ? 'bg-emerald-500' : supportOpen ? 'bg-amber-400' : 'bg-slate-400'}`} />
+                        <span className={`size-1.5 rounded-full ${effectiveSupportOnline ? 'bg-emerald-500' : supportOpen ? 'bg-amber-400' : 'bg-muted-foreground'}`} />
                         {effectiveSupportOnline && <span className="absolute inset-0 rounded-full bg-emerald-500 animate-ping opacity-60" />}
                       </span>
                       {effectiveSupportOnline ? 'Online' : supportOpen ? 'No agent' : 'Away'}
@@ -2730,7 +2745,7 @@ export default function AdminSupportPage() {
                     <button
                       onClick={() => { const next = !muted; setMuted(next); setSoundMuted(next) }}
                       title={muted ? 'Unmute' : 'Mute'}
-                      className="grid size-8 place-items-center rounded-xl border border-slate-200 bg-slate-50 text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"
+                      className="grid size-8 place-items-center rounded-xl border border-border bg-secondary text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
                     >
                       {muted ? <VolumeX className="w-3.5 h-3.5" /> : <Volume2 className="w-3.5 h-3.5" />}
                     </button>
@@ -2741,7 +2756,7 @@ export default function AdminSupportPage() {
               {/* Tab switcher pills */}
               <div className="mt-2.5 flex items-center gap-1.5 flex-wrap overflow-x-auto -mx-1 px-1 sm:overflow-visible sm:mx-0 sm:px-0">
                 {([
-                  { key: 'support', label: 'Support Queue', icon: HeadphonesIcon, count: openCount },
+                  { key: 'support', label: 'Support Queue', icon: HeadphonesIcon, count: supportOpenCount },
                   { key: 'inbox',   label: 'Inbox',         icon: Inbox,          count: inboxCount },
                   { key: 'agents',  label: 'Agents',        icon: UserPlus,       count: availableAgentCount },
                 ] as const).map(t => {
@@ -2749,13 +2764,15 @@ export default function AdminSupportPage() {
                   return (
                     <button key={t.key} type="button" onClick={() => setTab(t.key)}
                       className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition-all ${
-                        tab === t.key ? 'bg-primary text-primary-foreground shadow-sm shadow-primary/20' : 'bg-blue-50 text-blue-700 hover:bg-blue-100'
+                        tab === t.key
+                          ? 'bg-primary text-primary-foreground shadow-sm shadow-primary/20'
+                          : 'border border-border text-muted-foreground hover:bg-accent hover:text-accent-foreground'
                       }`}>
                       <Icon className="w-3 h-3" />
                       {t.label}
                       {t.count > 0 && (
                         <span className={`inline-flex h-4 min-w-[16px] items-center justify-center rounded-full text-[10px] font-bold px-1 ${
-                          tab === t.key ? 'bg-primary-foreground/20 text-primary-foreground' : 'bg-blue-100 text-blue-700'
+                          tab === t.key ? 'bg-primary-foreground/20 text-primary-foreground' : 'bg-muted text-muted-foreground'
                         }`}>{t.count}</span>
                       )}
                     </button>
