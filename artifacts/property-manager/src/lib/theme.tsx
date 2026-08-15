@@ -16,6 +16,17 @@ const ThemeProviderContext = createContext<{
 
 export const useTheme = () => useContext(ThemeProviderContext)
 
+/**
+ * Programmatically force light mode on non-admin pages.
+ * Removes the `dark` class from <html> and ensures the stored
+ * preference is not re-applied by the ThemeProvider's effect.
+ */
+export function forceLightMode(): void {
+  if (typeof document !== 'undefined') {
+    document.documentElement.classList.remove('dark')
+  }
+}
+
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const [theme, setTheme] = useState<Theme>(() => {
     try {
@@ -47,6 +58,13 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const root = document.documentElement
+    // Admin theme is scoped to /admin/* routes only.
+    // Tenant, Landlord, and public pages are always light.
+    const isAdminRoute = window.location.pathname.startsWith('/admin')
+    if (!isAdminRoute) {
+      root.classList.remove('dark')
+      return
+    }
     if (resolvedDark) {
       root.classList.add('dark')
     } else {

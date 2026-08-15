@@ -55,6 +55,7 @@ function NewTicketForm({ tenantId, onCreated }: { tenantId: string; onCreated: (
   const [loading, setLoading]   = useState(false)
   const [error, setError]       = useState('')
   const [propertyId, setPropertyId] = useState<string | null>(null)
+  const submittingRef = useRef(false)
 
   // If the customer has a property enquiry, auto-attach that property context
   // so the admin never has to identify the listing manually.
@@ -68,6 +69,8 @@ function NewTicketForm({ tenantId, onCreated }: { tenantId: string; onCreated: (
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!subject.trim() || !body.trim()) return
+    if (submittingRef.current || loading) return
+    submittingRef.current = true
     setLoading(true); setError('')
     const supabase = createClient()
 
@@ -87,6 +90,7 @@ function NewTicketForm({ tenantId, onCreated }: { tenantId: string; onCreated: (
     })
 
     setLoading(false)
+    submittingRef.current = false
     onCreated(ticket as SupportTicket)
   }
 
@@ -110,7 +114,7 @@ function NewTicketForm({ tenantId, onCreated }: { tenantId: string; onCreated: (
             value={subject}
             onChange={e => setSubject(e.target.value)}
             placeholder="Brief description of your issue"
-            className="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-gray-900 transition-all"
+            className="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm bg-white text-gray-900 placeholder-gray-400 caret-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-900 transition-all"
           />
         </div>
 
@@ -141,7 +145,7 @@ function NewTicketForm({ tenantId, onCreated }: { tenantId: string; onCreated: (
             value={body}
             onChange={e => setBody(e.target.value)}
             placeholder="Describe the issue in detail…"
-            className="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-gray-900 transition-all resize-none"
+            className="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm bg-white text-gray-900 placeholder-gray-400 caret-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-900 transition-all resize-none"
           />
         </div>
 
@@ -169,11 +173,12 @@ function ChatThread({ ticket, onBack }: { ticket: SupportTicket; onBack: () => v
   const [messages, setMessages]     = useState<SupportMessage[]>([])
   const [loading, setLoading]       = useState(true)
   const [input, setInput]           = useState('')
-  const [sending, setSending]       = useState(false)
+  const [sending, setSending]    = useState(false)
   const [imageFile, setImageFile]   = useState<File | null>(null)
   const [imagePreview, setImagePreview] = useState<string | null>(null)
   const fileInputRef                = useRef<HTMLInputElement>(null)
   const bottomRef                   = useRef<HTMLDivElement>(null)
+  const sendingRef                  = useRef(false)
   const s = STATUS_META[ticket.status]
   const p = PRIORITY_META[ticket.priority]
 
@@ -234,8 +239,10 @@ function ChatThread({ ticket, onBack }: { ticket: SupportTicket; onBack: () => v
 
   async function sendMessage(e: React.FormEvent) {
     e.preventDefault()
+    if (sendingRef.current || sending) return
     const body = input.trim()
-    if ((!body && !imageFile) || sending) return
+    if ((!body && !imageFile)) return
+    sendingRef.current = true
     setSending(true)
     setInput('')
 
@@ -259,35 +266,49 @@ function ChatThread({ ticket, onBack }: { ticket: SupportTicket; onBack: () => v
     }
 
     const optId = `opt-${Date.now()}`
+    const messageBody = body || ''
 
     // Optimistic insert
     const optimistic: SupportMessage = {
       id: optId,
       ticket_id: ticket.id,
       sender_role: 'tenant',
-      body: body || '',
+      body: messageBody,
       attachment_url: imagePreview,
       created_at: new Date().toISOString(),
     }
-    setMessages(prev => [...prev, optimistic])
+    setMessages(prev => prev.find(m => m.id === optId) ? prev : [...prev, optimistic])
 
-    const { data: inserted, error: insertErr } = await supabase
-      .from('support_messages')
-      .insert({ ticket_id: ticket.id, sender_role: 'tenant', body: body || '', attachment_url: uploadedUrl })
-      .select()
-      .single()
+    try {
+      const { data: inserted, error: insertErr } = await supabase
+        .from('support_messages')
+        .insert({ ticket_id: ticket.id, sender_role: 'tenant', body: messageBody, attachment_url: uploadedUrl })
+        .select()
+        .single()
 
-    if (insertErr) {
-      console.error('Error sending message:', insertErr)
+      if (insertErr) {
+        console.error('Error sending message:', insertErr)
+        // Roll back optimistic message, restore input
+        setMessages(prev => prev.filter(m => m.id !== optId))
+        setInput(messageBody)
+      }
+
+      // Replace optimistic entry with the real row (deduped by id)
+      if (inserted) {
+        setMessages(prev =>
+          prev
+            .map(m => m.id === optId ? inserted as SupportMessage : m)
+            .filter((m, i, arr) => arr.findIndex(x => x.id === m.id) === i)
+        )
+      }
+    } catch (err: any) {
+      console.error('Error sending message:', err)
+      setMessages(prev => prev.filter(m => m.id !== optId))
+      setInput(messageBody)
+    } finally {
+      setSending(false)
+      sendingRef.current = false
     }
-
-    // Replace optimistic entry with the real row (avoids Realtime duplicate)
-    if (inserted) {
-      console.log('Message sent:', inserted)
-      setMessages(prev => prev.map(m => m.id === optId ? inserted as SupportMessage : m))
-    }
-
-    setSending(false)
   }
 
   const isClosed = ticket.status === 'closed' || ticket.status === 'resolved'
@@ -404,7 +425,7 @@ function ChatThread({ ticket, onBack }: { ticket: SupportTicket; onBack: () => v
             <button
               type="button"
               onClick={() => fileInputRef.current?.click()}
-              className="w-10 h-10 rounded-xl border border-gray-200 bg-gray-50 hover:bg-gray-100 text-gray-500 flex items-center justify-center transition-colors shrink-0"
+              className="w-10 h-10 rounded-xl border border-gray-200 bg-white hover:bg-gray-100 text-gray-500 flex items-center justify-center transition-colors shrink-0"
               title="Attach image"
             >
               <ImageIcon className="w-4 h-4" />
@@ -422,7 +443,7 @@ function ChatThread({ ticket, onBack }: { ticket: SupportTicket; onBack: () => v
               onChange={e => setInput(e.target.value)}
               onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(e as any) } }}
               placeholder="Type a message… (Enter to send)"
-              className="flex-1 px-4 py-2.5 rounded-xl border border-gray-200 text-sm bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-gray-900 transition-all resize-none"
+              className="flex-1 px-4 py-2.5 rounded-xl border border-gray-200 text-sm bg-white text-gray-900 placeholder-gray-400 caret-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-900 transition-all resize-none"
             />
             <button
               type="submit" disabled={(!input.trim() && !imageFile) || sending}

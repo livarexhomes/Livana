@@ -264,7 +264,7 @@ function ChatThread({
               }
             }}
             placeholder="Type your message… (Enter to send)"
-            className="flex-1 px-4 py-2.5 rounded-xl border border-gray-200 text-sm bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all resize-none"
+            className="flex-1 px-4 py-2.5 rounded-xl border border-gray-200 text-sm bg-white text-slate-900 placeholder-slate-400 caret-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all resize-none"
           />
           <button
             type="submit"

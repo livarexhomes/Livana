@@ -4,7 +4,7 @@ import {
   Clock, CheckCircle2, XCircle, User,
   ChevronLeft, ChevronDown as ChevronDownIcon, RefreshCw, Inbox, Building2, Mail,
   Volume2, VolumeX, ShieldCheck, KeyRound, Trash2, Search, X, Lock,
-  Paperclip, CheckCheck, Calendar, Home, Activity,
+  Paperclip, CheckCheck, Calendar, Home, Activity, Archive,
 } from 'lucide-react'
 import AdminSidebar from '../../components/layout/AdminSidebar'
 import AdminHeader from '../../components/layout/AdminHeader'
@@ -39,6 +39,7 @@ interface SupportTicket {
   ticket_no?: string | null
   created_by?: string | null
   last_updated_by?: string | null
+  archived?: boolean | null
   tenants?: { full_name: string | null; phone: string | null; email?: string | null } | null
   landlords?: { full_name: string | null; whatsapp: string | null; email?: string | null } | null
   properties?: { id: string; title: string; city: string; price: number; type?: string | null; status?: string | null } | null
@@ -223,11 +224,12 @@ function broadcastTicketTyping(ticketId: string) {
 }
 
 function AdminChatThread({
-  ticket, onBack, onStatusChange, agents, liveState,
+  ticket, onBack, onStatusChange, onArchive, agents, liveState,
 }: {
   ticket: SupportTicket
   onBack: () => void
   onStatusChange: (id: string, status: SupportTicket['status']) => void
+  onArchive: (id: string) => void
   agents: SupportAgent[]
   liveState: LiveSupportState
 }) {
@@ -236,7 +238,8 @@ function AdminChatThread({
   const [loading, setLoading]       = useState(true)
   const [loadError, setLoadError]   = useState<string | null>(null)
   const [input, setInput]           = useState('')
-  const [sending, setSending]       = useState(false)
+  const [sending, setSending] = useState(false)
+  const [showMore, setShowMore] = useState(false)
   const [updatingStatus, setUpdatingStatus] = useState(false)
   const [assigning, setAssigning]   = useState(false)
   const [customerTyping, setCustomerTyping] = useState(false)
@@ -249,6 +252,7 @@ function AdminChatThread({
   const typingSentAt = useRef(0)
   const scrollRef = useRef<HTMLDivElement>(null)
   const sendingRef = useRef(false)
+  const moreRef = useRef<HTMLDivElement>(null)
 
   const s = STATUS_META[ticket.status]
   const p = PRIORITY_META[ticket.priority]
@@ -330,6 +334,17 @@ function AdminChatThread({
 
     return () => { active = false; supabase.removeChannel(channel); if (typingTimer.current) clearTimeout(typingTimer.current) }
   }, [ticket.id])
+
+  // Click-outside handler for the "More" dropdown
+  useEffect(() => {
+    const handleOutsideClick = (e: MouseEvent) => {
+      if (showMore && moreRef.current && !moreRef.current.contains(e.target as Node)) {
+        setShowMore(false)
+      }
+    }
+    document.addEventListener('mousedown', handleOutsideClick)
+    return () => document.removeEventListener('mousedown', handleOutsideClick)
+  }, [showMore])
 
   // ── Customer context: name/email/phone + previous tickets + enquiries + property ──
   useEffect(() => {
@@ -577,6 +592,45 @@ function AdminChatThread({
               <RefreshCw className="w-3 h-3" /> Reopen
             </button>
           )}
+
+          {/* More actions (Archive/Restore) */}
+          <div className="relative inline-flex">
+            <button
+              type="button"
+              onClick={() => setShowMore(!showMore)}
+              className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-1.5 rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 transition-colors"
+            >
+              More ⋯
+            </button>
+            {showMore && (
+              <div
+                ref={moreRef}
+                className="absolute right-0 mt-1 z-20 w-44 rounded-lg border border-slate-200 bg-white shadow-lg py-1 text-xs"
+              >
+                <button
+                  type="button"
+                  onClick={() => { onArchive(ticket.id); setShowMore(false) }}
+                  className={`flex items-center gap-2 w-full px-3 py-1.5 text-left hover:bg-gray-50 ${
+                    ticket.archived
+                      ? 'text-green-700'
+                      : 'text-slate-700'
+                  }`}
+                >
+                  {ticket.archived ? (
+                    <>
+                      <RefreshCw className="w-3 h-3" />
+                      Restore
+                    </>
+                  ) : (
+                    <>
+                      <Archive className="w-3 h-3" />
+                      Archive
+                    </>
+                  )}
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
@@ -1494,6 +1548,8 @@ function SupportTab({ onOpenQueued }: { onOpenQueued: (id: string) => void }) {
   const [loading, setLoading]       = useState(true)
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [filterStatus, setFilterStatus] = useState<string>('all')
+  const [searchQuery, setSearchQuery] = useState('')
+  const [archivedOnly, setArchivedOnly] = useState(false)
   const [agents, setAgents]         = useState<SupportAgent[]>([])
   const [newTicketIds, setNewTicketIds] = useState<string[]>([])  // tickets that arrived live this session
   const [liveState, setLiveState]   = useState<LiveSupportState>({
@@ -1676,14 +1732,36 @@ function SupportTab({ onOpenQueued }: { onOpenQueued: (id: string) => void }) {
     setTickets(prev => prev.map(t => t.id === id ? { ...t, status } : t))
   }
 
-  const filtered = filterStatus === 'all' ? tickets : tickets.filter(t => t.status === filterStatus)
+  // Archive/unarchive a ticket by ID. Uses ticket.id as the unique key
+  // so a ticket can never be archived twice or duplicated.
+  async function archiveTicket(id: string) {
+    const supabase = createClient()
+    const ticket = tickets.find(t => t.id === id)
+    if (!ticket) return
+    const currentlyArchived = !!ticket.archived
+    const { error } = await supabase.from('support_tickets')
+      .update({ archived: !currentlyArchived })
+      .eq('id', id)
+    if (error) {
+      toast({ title: 'Could not update ticket', description: error.message, variant: 'destructive' })
+    } else {
+      setTickets(prev => prev.map(t => t.id === id ? { ...t, archived: !currentlyArchived } : t))
+    }
+  }
+
+  // Filter by archived state, then status, then search query.
+  const activeTickets = tickets.filter(t => !t.archived)
+  const archivedTickets = tickets.filter(t => t.archived)
+  const visibleTickets = archivedOnly ? archivedTickets : activeTickets
+  const filtered = (filterStatus === 'all' ? visibleTickets : visibleTickets.filter(t => t.status === filterStatus))
+    .filter(t => searchQuery.trim() === '' || t.subject.toLowerCase().includes(searchQuery.toLowerCase()))
   const selected = tickets.find(t => t.id === selectedId) ?? null
   const counts = {
-    all: tickets.length,
-    open: tickets.filter(t => t.status === 'open').length,
-    in_progress: tickets.filter(t => t.status === 'in_progress').length,
-    resolved: tickets.filter(t => t.status === 'resolved').length,
-    closed: tickets.filter(t => t.status === 'closed').length,
+    all: visibleTickets.length,
+    open: visibleTickets.filter(t => t.status === 'open').length,
+    in_progress: visibleTickets.filter(t => t.status === 'in_progress').length,
+    resolved: visibleTickets.filter(t => t.status === 'resolved').length,
+    closed: visibleTickets.filter(t => t.status === 'closed').length,
   }
 
   return (
@@ -1698,20 +1776,51 @@ function SupportTab({ onOpenQueued }: { onOpenQueued: (id: string) => void }) {
               <p className="text-[9px] uppercase tracking-[0.22em] text-slate-400 font-bold">Support queue</p>
               <h2 className="mt-0.5 text-[15px] font-bold text-slate-950 leading-tight tracking-tight">Tickets</h2>
             </div>
-            <div className="shrink-0 text-right">
-              <p className="text-[9px] uppercase tracking-[0.18em] text-slate-400 font-bold">Total Tickets</p>
-              <p className="mt-0.5 text-[15px] font-bold text-slate-900 leading-tight tabular-nums">{tickets.length}</p>
+            <div className="shrink-0 text-right flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setArchivedOnly(!archivedOnly)}
+                className={`inline-flex items-center gap-1 h-6 px-2 rounded-lg text-[10px] font-semibold border transition-all ${
+                  archivedOnly
+                    ? 'bg-blue-50 border-blue-200 text-blue-700'
+                    : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300 hover:bg-slate-50'
+                }`}
+                title="Show archived tickets"
+              >
+                <Archive className="w-2.5 h-2.5" />
+                Archived
+              </button>
+              <div className="text-right">
+                <p className="text-[9px] uppercase tracking-[0.18em] text-slate-400 font-bold">Total</p>
+                <p className="mt-0.5 text-[15px] font-bold text-slate-900 leading-tight tabular-nums">{activeTickets.length}</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Search */}
+          <div className="mt-2.5">
+            <div className="relative">
+              <input
+                type="text"
+                placeholder="Search tickets..."
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+                className="w-full pl-8 pr-3 py-1.75 rounded-lg border border-slate-200 bg-white text-sm text-slate-900 placeholder-slate-400 caret-slate-900 focus:outline-none focus:ring-2 focus:ring-primary/30"
+              />
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-300" />
             </div>
           </div>
 
           {/* Status filters — pills on desktop, dropdown on mobile */}
-          <div className="mt-2.5 sm:hidden">
+          <div className="mt-2 sm:hidden">
             <select
               value={filterStatus}
               onChange={e => setFilterStatus(e.target.value as typeof filterStatus)}
               className="w-full appearance-none rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-sm font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/30 cursor-pointer"
             >
-              {(['all', 'open', 'in_progress', 'resolved', 'closed'] as const).map(key => (
+              {(['all', 'open', 'in_progress', 'resolved', 'closed'] as const).filter(
+                key => archivedOnly ? key === 'closed' : key !== 'closed'
+              ).map(key => (
                 <option key={key} value={key}>
                   {key === 'all' ? 'All' : STATUS_META[key].label} ({counts[key]})
                 </option>
@@ -1719,7 +1828,9 @@ function SupportTab({ onOpenQueued }: { onOpenQueued: (id: string) => void }) {
             </select>
           </div>
           <div className="mt-2.5 hidden sm:flex items-center gap-1.5 flex-wrap">
-            {(['all', 'open', 'in_progress', 'resolved', 'closed'] as const).map(key => {
+            {(['all', 'open', 'in_progress', 'resolved', 'closed'] as (typeof STATUS_OPTIONS)[number] | 'all').filter(
+              key => archivedOnly ? key === 'closed' || key === 'all' : true
+            ).map(key => {
               const active = filterStatus === key
               return (
                 <button key={key} onClick={() => setFilterStatus(key)}
@@ -1822,28 +1933,38 @@ function SupportTab({ onOpenQueued }: { onOpenQueued: (id: string) => void }) {
                   ? (ticket.landlords?.full_name ?? 'Landlord')
                   : (ticket.tenants?.full_name ?? 'Tenant')
                 return (
-                  <button key={ticket.id} onClick={() => {
-                    setSelectedId(ticket.id)
-                    setNewTicketIds(prev => prev.filter(id => id !== ticket.id))
-                  }}
-                    className={`w-full text-left rounded-lg border px-2.5 py-2 transition-all ${
-                      isActive
-                        ? 'border-blue-600 bg-blue-50/60 ring-1 ring-blue-600/10'
-                        : isNew
-                          ? 'border-blue-300 bg-blue-50/40 hover:bg-blue-50'
-                          : 'border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50/50'
-                    }`}>
-                    <div className="flex items-center justify-between gap-2">
-                      <p className={`font-semibold text-[12.5px] truncate ${isActive ? 'text-blue-900' : 'text-slate-900'}`}>{ticket.subject}</p>
-                      <div className="flex items-center gap-1 shrink-0">
-                        {isNew && !isActive && (
-                          <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-blue-600 text-white">NEW</span>
-                        )}
-                        <span className={`inline-flex items-center gap-1 text-[9.5px] font-bold px-1.5 py-0.5 rounded ${s.bg} ${s.color}`}>
-                          <span className={`w-1 h-1 rounded-full ${s.dot}`} />{s.label}
-                        </span>
-                      </div>
-                    </div>
+                   <button key={ticket.id} onClick={() => {
+                     setSelectedId(ticket.id)
+                     setNewTicketIds(prev => prev.filter(id => id !== ticket.id))
+                   }}
+                     className={`w-full text-left rounded-lg border px-2.5 py-2 transition-all ${
+                       isActive
+                         ? 'border-blue-600 bg-blue-50/60 ring-1 ring-blue-600/10'
+                         : isNew
+                           ? 'border-blue-300 bg-blue-50/40 hover:bg-blue-50'
+                           : 'border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50/50'
+                     }`}>
+                     <div className="flex items-center justify-between gap-2">
+                       <p className={`font-semibold text-[12.5px] truncate ${isActive ? 'text-blue-900' : 'text-slate-900'}`}>{ticket.subject}</p>
+                       <div className="flex items-center gap-1 shrink-0">
+                         {isNew && !isActive && (
+                           <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-blue-600 text-white">NEW</span>
+                         )}
+                         <span className={`inline-flex items-center gap-1 text-[9.5px] font-bold px-1.5 py-0.5 rounded ${s.bg} ${s.color}`}>
+                           <span className={`w-1 h-1 rounded-full ${s.dot}`} />{s.label}
+                         </span>
+                         {archivedOnly && (
+                           <button
+                             type="button"
+                             onClick={e => { e.stopPropagation(); archiveTicket(ticket.id) }}
+                             title="Restore"
+                             className="p-0.5 rounded hover:bg-green-50 text-green-600 transition-colors"
+                           >
+                             <RefreshCw className="w-2.5 h-2.5" />
+                           </button>
+                         )}
+                       </div>
+                     </div>
                     <div className="mt-1 flex items-center gap-1.5 text-[10.5px]">
                       <span className={`inline-flex items-center gap-1 min-w-0 ${isActive ? 'text-blue-800/70' : 'text-slate-500'}`}>
                         <User className="w-2.5 h-2.5 shrink-0" />
@@ -1867,7 +1988,7 @@ function SupportTab({ onOpenQueued }: { onOpenQueued: (id: string) => void }) {
       <div className={`flex-1 min-w-0 ${selected ? 'flex' : 'hidden lg:flex'} flex-col`}>
         {selected ? (
           <ConversationErrorBoundary ticketId={selected.id}>
-            <AdminChatThread key={selected.id} ticket={selected} onBack={() => setSelectedId(null)} onStatusChange={handleStatusChange} agents={agents} liveState={liveState} />
+            <AdminChatThread key={selected.id} ticket={selected} onBack={() => setSelectedId(null)} onStatusChange={handleStatusChange} onArchive={archiveTicket} agents={agents} liveState={liveState} />
           </ConversationErrorBoundary>
         ) : (
           <div className="flex-1 flex flex-col items-center justify-center bg-white rounded-xl border border-slate-200 shadow-[0_1px_2px_rgba(15,23,42,0.04)] text-center p-8 h-full">

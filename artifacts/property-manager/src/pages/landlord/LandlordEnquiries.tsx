@@ -189,7 +189,7 @@ export default function LandlordEnquiries() {
                         onChange={e => setContactMsg(e.target.value)}
                         placeholder="Describe your issue or question…"
                         required
-                        className="flex-1 px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50 focus:bg-white transition-all"
+                        className="flex-1 px-4 py-2.5 rounded-xl border border-gray-200 bg-white text-sm text-gray-900 placeholder-gray-400 caret-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                       />
                       <button type="submit" disabled={contactLoading || contactMsg.trim().length < 5}
                         className="flex items-center gap-1.5 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white text-sm font-bold rounded-xl transition-colors shrink-0">

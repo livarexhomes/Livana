@@ -50,6 +50,7 @@ export function MoneyInput({
         value={formatDigits(value)}
         placeholder={placeholder}
         onChange={(e) => onChange(unformatDigits(e.target.value))}
+        className="text-gray-900 placeholder-gray-400 caret-gray-900"
         {...props}
       />
     </InputGroup>

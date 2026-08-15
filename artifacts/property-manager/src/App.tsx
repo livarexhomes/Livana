@@ -1,10 +1,10 @@
-import { Switch, Route, Router as WouterRouter, Redirect } from "wouter";
+import { Switch, Route, Router as WouterRouter, Redirect, useLocation } from "wouter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { lazy, Suspense } from "react";
+import { lazy, Suspense, useEffect } from "react";
 import ChatWidget from "@/components/ChatWidget";
-import { ThemeProvider } from "@/lib/theme";
+import { ThemeProvider, useTheme } from "@/lib/theme";
 import { slugToLocationLabel } from "@/lib/locationSlug";
 
 const HomePage = lazy(() => import("@/pages/HomePage"));
@@ -74,6 +74,24 @@ function Loading() {
 const queryClient = new QueryClient();
 
 function Router() {
+  const [location] = useLocation();
+  const { resolvedDark } = useTheme();
+
+  // Enforce theme scoping: Admin routes respect the admin theme toggle.
+  // All other routes (landlord, tenant, public) are always light.
+  useEffect(() => {
+    const root = document.documentElement;
+    const isAdminRoute = location.startsWith('/admin');
+    if (!isAdminRoute) {
+      // Tenant/Landlord/public: force light mode regardless of admin preference
+      root.classList.remove('dark');
+    } else {
+      // Admin: respect stored preference
+      if (resolvedDark) root.classList.add('dark');
+      else root.classList.remove('dark');
+    }
+  }, [location, resolvedDark]);
+
   return (
     <Suspense fallback={<Loading />}>
       <Switch>
