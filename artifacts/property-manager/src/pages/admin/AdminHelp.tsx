@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import {
   HelpCircle, ChevronDown, ChevronUp, MessageSquare, Mail,
   Phone, BookOpen, Video, ExternalLink, Search, Loader2,
@@ -86,8 +86,12 @@ export default function AdminHelp() {
     f.a.toLowerCase().includes(search.toLowerCase())
   )
 
+  const submittingRef = useRef(false)
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
+    if (submittingRef.current) return
+    submittingRef.current = true
     setSubmitting(true)
     setSubmitError('')
     try {
@@ -121,6 +125,7 @@ export default function AdminHelp() {
       setSubmitError(err.message || 'Something went wrong. Please try again.')
     } finally {
       setSubmitting(false)
+      submittingRef.current = false
     }
   }
 

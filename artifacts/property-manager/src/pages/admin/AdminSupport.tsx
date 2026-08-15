@@ -832,13 +832,14 @@ function EnquiryDetail({ enquiry, onBack, onStatusChange }: {
   onBack: () => void
   onStatusChange: (id: string, status: Enquiry['status']) => void
 }) {
-  const [replies, setReplies]   = useState<EnquiryReply[]>([])
+   const [replies, setReplies]   = useState<EnquiryReply[]>([])
   const [loading, setLoading]   = useState(true)
   const [input, setInput]       = useState('')
   const [sending, setSending]   = useState(false)
   const [updating, setUpdating] = useState(false)
   const { toast } = useToast()
   const bottomRef = useRef<HTMLDivElement>(null)
+  const sendingRef = useRef(false)
   
   const s = ENQUIRY_STATUS_META[enquiry.status]
   const tenantName    = enquiry.tenants?.full_name ?? 'Tenant'
@@ -888,9 +889,10 @@ function EnquiryDetail({ enquiry, onBack, onStatusChange }: {
 
   async function sendReply(e: React.FormEvent) {
     e.preventDefault()
+    if (sendingRef.current) return
     const body = input.trim()
     if (!body || sending) return
-
+    sendingRef.current = true
     setSending(true); setInput('')
 
     try {
@@ -925,6 +927,7 @@ function EnquiryDetail({ enquiry, onBack, onStatusChange }: {
       toast({ title: 'Message not sent', description: err?.message || 'Check your connection and try again.', variant: 'destructive' })
     } finally {
       setSending(false)
+      sendingRef.current = false
     }
   }
 
@@ -1103,6 +1106,7 @@ function ChatRequestDetail({ inquiry, onBack, onMarkRead, onStatusChange, agents
   const bottomRef = useRef<HTMLDivElement>(null)
   const visitorTypingTimer = useRef<number | null>(null)
   const typingSentAt = useRef(0)
+  const sendingRef = useRef(false)
 
   async function clearChat() {
     setClearing(true)
@@ -1180,8 +1184,10 @@ function ChatRequestDetail({ inquiry, onBack, onMarkRead, onStatusChange, agents
 
   async function sendReply(e: React.FormEvent) {
     e.preventDefault()
+    if (sendingRef.current) return
     const body = input.trim()
     if (!body || sending) return
+    sendingRef.current = true
     setSending(true); setInput('')
 
     const optId = `opt-${Date.now()}`
@@ -1233,6 +1239,7 @@ function ChatRequestDetail({ inquiry, onBack, onMarkRead, onStatusChange, agents
       toast({ title: 'Message not sent', description: err?.message || 'Check your connection and try again.', variant: 'destructive' })
     } finally {
       setSending(false)
+      sendingRef.current = false
     }
   }
 
@@ -2061,28 +2068,28 @@ function InboxTab({ liveState, onOpenThreadChange, initialChatId, onInitialChatC
       .then(({ data }) => setAgents((data as SupportAgent[]) ?? []))
 
     const enqChannel = supabase.channel('admin_enquiries_list')
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'enquiries' },
-        async (payload) => {
-          const supabase2 = createClient()
-          const { data } = await supabase2.from('enquiries')
-            .select('*, tenants(full_name, phone), properties(title, city, address)')
-            .eq('id', payload.new.id).single()
-          if (data) setEnquiries(prev => [data as Enquiry, ...prev])
-        })
+       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'enquiries' },
+      async (payload) => {
+        const supabase2 = createClient()
+        const { data } = await supabase2.from('enquiries')
+          .select('*, tenants(full_name, phone), properties(title, city, address)')
+          .eq('id', payload.new.id).single()
+        if (data) setEnquiries(prev => prev.find(e => e.id === data.id) ? prev : [data as Enquiry, ...prev])
+      })
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'enquiries' },
         (payload) => setEnquiries(prev => prev.map(e => e.id === payload.new.id ? { ...e, ...payload.new } as Enquiry : e)))
       .subscribe()
 
     const chatChannel = supabase.channel('admin_chat_inquiries')
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'chat_inquiries' },
-        (payload) => setChats(prev => [payload.new as ChatInquiry, ...prev]))
+         (payload) => setChats(prev => prev.find(c => c.id === payload.new.id) ? prev : [payload.new as ChatInquiry, ...prev]))
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'chat_inquiries' },
         (payload) => setChats(prev => prev.map(i => i.id === payload.new.id ? { ...i, ...payload.new } as ChatInquiry : i)))
       .subscribe()
 
     const contactChannel = supabase.channel('admin_contact_messages')
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'contact_messages' },
-        (payload) => setContacts(prev => [payload.new as ContactMessage, ...prev]))
+         (payload) => setContacts(prev => prev.find(c => c.id === payload.new.id) ? prev : [payload.new as ContactMessage, ...prev]))
       .subscribe()
 
     // The roster feed is the single source of truth for presence + availability.
@@ -2370,11 +2377,16 @@ function InboxTab({ liveState, onOpenThreadChange, initialChatId, onInitialChatC
           ) : selected.type === 'contact' && selected.contact ? (
             <ContactDetail key={selected.id} contact={selected.contact}
               onBack={() => setSelectedKey(null)} />
-          ) : selected.enquiry ? (
+        ) : selected.enquiry ? (
             <EnquiryDetail key={selected.id} enquiry={selected.enquiry}
               onBack={() => setSelectedKey(null)}
               onStatusChange={handleEnquiryStatusChange} />
-          ) : null
+          ) : (
+            <div className="flex-1 flex flex-col items-center justify-center text-center p-8 h-full">
+              <MessageSquare className="w-10 h-10 text-slate-300 mb-3" />
+              <p className="text-sm font-medium text-slate-500">Unable to load conversation.</p>
+            </div>
+          )
         ) : (
           <div className="flex-1 flex flex-col items-center justify-center px-6 text-center">
             <div className="relative mb-5">

@@ -55,11 +55,12 @@ function ChatThread({
   onBack: () => void
   onStatusChange: (id: string, status: SupportTicket['status']) => void
 }) {
-  const [messages, setMessages] = useState<SupportMessage[]>([])
+   const [messages, setMessages] = useState<SupportMessage[]>([])
   const [loading, setLoading] = useState(true)
   const [input, setInput] = useState('')
   const [sending, setSending] = useState(false)
   const bottomRef = useRef<HTMLDivElement>(null)
+  const sendingRef = useRef(false)
 
   const s = STATUS_META[ticket.status]
   const isClosed = ticket.status === 'closed' || ticket.status === 'resolved'
@@ -106,23 +107,25 @@ function ChatThread({
 
   async function sendReply(e: React.FormEvent) {
     e.preventDefault()
+    if (sendingRef.current) return
     const body = input.trim()
     if (!body || sending || isClosed) return
-
+    sendingRef.current = true
     setSending(true)
     setInput('')
 
     const optId = `opt-${Date.now()}`
-    setMessages((prev) => [
-      ...prev,
-      {
-        id: optId,
-        ticket_id: ticket.id,
-        sender_role: 'landlord',
-        body,
-        created_at: new Date().toISOString(),
-      },
-    ])
+    setMessages((prev) =>
+      prev.find(m => m.id === optId)
+        ? prev
+        : [...prev, {
+            id: optId,
+            ticket_id: ticket.id,
+            sender_role: 'landlord',
+            body,
+            created_at: new Date().toISOString(),
+          }]
+    )
 
     const supabase = createClient()
     const { data: inserted, error } = await supabase
@@ -137,16 +140,21 @@ function ChatThread({
 
     if (error) {
       console.error('Error sending message:', error)
+      setMessages((prev) => prev.filter((m) => m.id !== optId))
+      setInput(body)
     }
 
     if (inserted) {
       console.log('Message sent:', inserted)
       setMessages((prev) =>
-        prev.map((m) => (m.id === optId ? (inserted as SupportMessage) : m))
+        prev
+          .map((m) => (m.id === optId ? (inserted as SupportMessage) : m))
+          .filter((m, i, arr) => arr.findIndex((x) => x.id === m.id) === i)
       )
     }
 
     setSending(false)
+    sendingRef.current = false
   }
 
   return (
