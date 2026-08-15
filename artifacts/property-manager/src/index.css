@@ -143,6 +143,26 @@
 
   --primary-foreground: 0 0% 100%;
 
+  /* ── Livarex brand palette ────────────────────────────────────────────── */
+  --lv-navy: 221 55% 15%;
+  --lv-deep-navy: 221 60% 8%;
+  --lv-primary: 221 83% 53%;
+  --lv-bright: 218 92% 62%;
+
+  --lv-success: 120 61% 35%;
+  --lv-warning: 36 93% 52%;
+  --lv-error: 0 68% 45%;
+  --lv-info: 198 91% 50%;
+  --lv-purple: 264 83% 58%;
+  --lv-teal: 173 82% 41%;
+
+  /* ── Livarex data-visualisation palette (5 steps, accessible) ────────── */
+  --lv-chart-1: 221 83% 53%; /* primary blue    */
+  --lv-chart-2: 264 83% 58%; /* purple          */
+  --lv-chart-3: 173 82% 41%; /* teal            */
+  --lv-chart-4: 36 93% 52%;  /* amber           */
+  --lv-chart-5: 120 61% 35%; /* green           */
+
   --secondary: 210 40% 96%;
 
   --secondary-foreground: 222.2 47.4% 11.2%;
@@ -260,6 +280,26 @@
   --primary: 221 83% 53%;
 
   --primary-foreground: 0 0% 100%;
+
+  /* ── Livarex brand palette (dark) ─────────────────────────────────────── */
+  --lv-navy: 221 55% 18%;
+  --lv-deep-navy: 221 60% 12%;
+  --lv-primary: 221 83% 53%;
+  --lv-bright: 218 92% 62%;
+
+  --lv-success: 120 61% 35%;
+  --lv-warning: 36 93% 52%;
+  --lv-error: 0 68% 45%;
+  --lv-info: 198 91% 50%;
+  --lv-purple: 264 83% 58%;
+  --lv-teal: 173 82% 41%;
+
+  /* ── Livarex data-visualisation palette (dark) ────────────────────────── */
+  --lv-chart-1: 221 83% 53%; /* primary blue */
+  --lv-chart-2: 264 83% 58%; /* purple      */
+  --lv-chart-3: 173 82% 41%; /* teal        */
+  --lv-chart-4: 36 93% 52%;  /* amber       */
+  --lv-chart-5: 120 61% 35%; /* green       */
 
   --secondary: 220 60% 11%;
 

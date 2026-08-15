@@ -4,10 +4,12 @@ import {
   ShieldOff, Trash2, ShieldCheck, X, Home, Calendar,
   TrendingUp, UserCheck,
 } from 'lucide-react'
+import { Link } from '@/lib/navigation'
 import AdminSidebar from '../../components/layout/AdminSidebar'
 import AdminHeader from '../../components/layout/AdminHeader'
 import AuthGuard from '../../components/auth/AuthGuard'
 import { createClient, isSupabaseConfigured } from '../../lib/supabase'
+import { ResponsiveFilters } from '@/components/ui/responsive-filters'
 
 const AVATAR_GRADIENTS = [
   'from-violet-500 to-purple-600', 'from-blue-500 to-blue-700',
@@ -324,12 +326,12 @@ export default function AdminUsers() {
 
             {/* ── Hero card ── */}
             <div className="px-4 md:px-6 pt-3 pb-2">
-              <div className="rounded-[32px] border border-slate-200 bg-white px-5 py-4 shadow-[0_18px_80px_-40px_rgba(15,23,42,0.18)]">
-                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                  <div>
-                    <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">Platform users</p>
-                    <h2 className="mt-0.5 text-base font-extrabold text-slate-950">Tenants & Users</h2>
-                  </div>
+            <div className="rounded-2xl border border-slate-200 bg-white px-5 py-4 shadow-sm">
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">Platform users</p>
+                  <h2 className="mt-0.5 text-xl sm:text-2xl font-extrabold text-slate-950">Tenants &amp; Users</h2>
+                </div>
                   <div className="grid grid-cols-2 gap-1.5 sm:flex sm:items-center sm:flex-wrap sm:gap-2 sm:shrink-0">
                     {[
                       { label: 'Total',     value: tenants.length, color: 'text-slate-700'   },
@@ -346,23 +348,18 @@ export default function AdminUsers() {
                 </div>
 
                 {/* Filter + Search */}
-                <div className="mt-2.5 flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
-                  <div className="flex items-center gap-1.5 flex-wrap">
-                    {([
-                      { key: 'all',       label: 'All',       count: tenants.length },
-                      { key: 'active',    label: 'Active',    count: activeCount    },
-                      { key: 'suspended', label: 'Suspended', count: suspendedCount },
-                    ] as const).map(tab => (
-                      <button key={tab.key} type="button" onClick={() => setStatusFilter(tab.key)}
-                        className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition-all ${
-                          statusFilter === tab.key ? 'bg-primary text-primary-foreground shadow-sm shadow-primary/20' : 'bg-blue-50 text-blue-700 hover:bg-blue-100'
-                        }`}>
-                        {tab.label}
-                        <span className={`inline-flex h-4 min-w-[16px] items-center justify-center rounded-full text-[10px] font-bold ${
-                          statusFilter === tab.key ? 'bg-primary-foreground/20 text-primary-foreground' : 'bg-blue-100 text-blue-700'
-                        }`}>{tab.count}</span>
-                      </button>
-                    ))}
+                <div className="mt-2.5 flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="w-full sm:w-auto">
+                    <ResponsiveFilters
+                      tabs={[
+                        { key: 'all',       label: 'All',       count: tenants.length },
+                        { key: 'active',    label: 'Active',    count: activeCount },
+                        { key: 'suspended', label: 'Suspended', count: suspendedCount },
+                      ]}
+                      value={statusFilter}
+                      onChange={v => setStatusFilter(v as 'all' | 'active' | 'suspended')}
+                      label="Status"
+                    />
                   </div>
                   <label className="flex h-9 sm:h-8 items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 px-3 focus-within:border-slate-300 focus-within:bg-white transition-all w-full sm:w-44 shrink-0">
                     <Search className="w-3.5 h-3.5 text-slate-400 shrink-0" />
@@ -430,13 +427,9 @@ export default function AdminUsers() {
                         {/* Identity */}
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center gap-2 min-w-0">
-                            <p className="truncate text-sm font-semibold text-slate-900">{t.full_name}</p>
-                            <span className={`shrink-0 inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[10px] font-semibold ring-1 ${
-                              isSuspended ? 'bg-amber-50 text-amber-700 ring-amber-200/60' : 'bg-emerald-50 text-emerald-700 ring-emerald-200/60'
-                            }`}>
-                              {isSuspended ? 'Suspended' : 'Active'}
-                            </span>
-                          </div>
+                                    <p className="truncate text-sm font-semibold text-slate-900">{t.full_name}</p>
+                                    {isSuspended ? <StatusBadge status="suspended" label="Suspended" size="sm" /> : <StatusBadge status="approved" label="Active" size="sm" />}
+                                  </div>
                           <div className="mt-0.5 flex items-center gap-x-3 gap-y-0.5 flex-wrap min-w-0">
                             <span className="truncate text-[11px] text-slate-500">{t.email ?? t.phone ?? 'No contact details'}</span>
                             <span className="inline-flex items-center gap-1 text-[11px] text-slate-400 shrink-0">
@@ -482,7 +475,8 @@ export default function AdminUsers() {
       {confirm && <ConfirmModal action={confirm} onConfirm={handleConfirm} onCancel={() => setConfirm(null)} loading={actionLoading} />}
 
       {toast && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-gray-900 text-white text-sm font-medium px-5 py-3 rounded-2xl shadow-2xl animate-fade-in whitespace-nowrap">
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-slate-900 text-white text-sm font-medium px-5 py-3 rounded-2xl shadow-2xl flex items-center gap-2">
+          <div className="w-2 h-2 rounded-full bg-primary"></div>
           {toast}
         </div>
       )}

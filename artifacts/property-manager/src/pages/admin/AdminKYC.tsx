@@ -8,6 +8,7 @@ import AdminSidebar from '../../components/layout/AdminSidebar'
 import AdminHeader from '../../components/layout/AdminHeader'
 import AuthGuard from '../../components/auth/AuthGuard'
 import { createClient, getKycDocUrl } from '../../lib/supabase'
+import { ResponsiveFilters } from '../../components/ui/responsive-filters'
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -199,7 +200,7 @@ export default function AdminKYC() {
 
           {/* ── Hero header ────────────────────────────────────────────────── */}
           <div className="shrink-0 px-4 md:px-6 py-4">
-            <div className="rounded-[32px] border border-slate-200 bg-white p-5 shadow-[0_18px_80px_-40px_rgba(15,23,42,0.18)]">
+            <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-[0_18px_80px_-40px_rgba(15,23,42,0.18)]">
               <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                 <div>
                   <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">Identity verification</p>
@@ -244,22 +245,13 @@ export default function AdminKYC() {
                 </div>
               </div>
 
-              {/* Filter pills — exactly matching AdminProperties style */}
-              <div className="mt-4 flex items-center gap-2 overflow-x-auto -mx-1 px-1 sm:flex-wrap sm:overflow-visible sm:mx-0 sm:px-0">
-                {FILTER_TABS.map(tab => (
-                  <button key={tab.key} type="button" onClick={() => setStatusFilter(tab.key)}
-                    className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
-                      statusFilter === tab.key
-                        ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/20'
-                        : 'bg-blue-50 text-blue-700 hover:bg-blue-100'
-                    }`}>
-                    {tab.label}
-                    <span className={`ml-2 inline-flex h-5 min-w-[20px] items-center justify-center rounded-full text-[11px] font-bold ${
-                      statusFilter === tab.key ? 'bg-primary-foreground/20 text-primary-foreground' : 'bg-blue-100 text-blue-700'
-                    }`}>{tab.count}</span>
-                  </button>
-                ))}
-              </div>
+              {/* Filter pills — compact, dropdown on mobile */}
+              <ResponsiveFilters
+                tabs={FILTER_TABS.map(t => ({ key: t.key, label: t.label, count: t.count }))}
+                value={statusFilter}
+                onChange={setStatusFilter}
+                className="mt-4"
+              />
             </div>
           </div>
 
@@ -267,7 +259,7 @@ export default function AdminKYC() {
           <div className="flex flex-1 min-h-0 overflow-hidden px-4 md:px-6 pb-4 md:pb-6 gap-4">
 
             {/* ── LEFT: Queue ─────────────────────────────────────────────── */}
-            <div className={`${selected ? 'hidden lg:flex' : 'flex'} flex-col w-full lg:max-w-xs xl:max-w-sm shrink-0 rounded-[28px] border border-slate-200 bg-white shadow-sm overflow-hidden`}>
+            <div className={`${selected ? 'hidden lg:flex' : 'flex'} flex-col w-full lg:max-w-xs xl:max-w-sm shrink-0 rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden`}>
 
               {/* Search */}
               <div className="shrink-0 p-4 border-b border-slate-100">
@@ -360,7 +352,7 @@ export default function AdminKYC() {
             </div>
 
             {/* ── RIGHT: Review panel ─────────────────────────────────────── */}
-            <div className={`${selected ? 'flex' : 'hidden lg:flex'} flex-1 min-w-0 overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-sm`}>
+            <div className={`${selected ? 'flex' : 'hidden lg:flex'} flex-1 min-w-0 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm`}>
               {selected ? (
                 <ReviewPanel
                   landlord={selected}
@@ -472,7 +464,7 @@ function ReviewPanel({
       <div className="flex-1 overflow-y-auto p-6 space-y-5">
 
         {/* ── Action buttons ── */}
-        <div className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm">
+        <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
           <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400 mb-4">Review Actions</p>
           <div className="flex flex-wrap gap-2">
             {ACTIONS.filter(a => a.show).map(a => {
@@ -508,7 +500,7 @@ function ReviewPanel({
         </div>
 
         {/* ── Identity details ── */}
-        <div className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm">
+        <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
           <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400 mb-4">Identity Details</p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {identityFields.map(f => (
@@ -524,7 +516,7 @@ function ReviewPanel({
         </div>
 
         {/* ── KYC Documents ── */}
-        <div className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm">
+        <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
           <div className="flex items-center justify-between mb-4">
             <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">KYC Documents</p>
             <span className="text-[11px] font-semibold text-slate-500">
@@ -594,7 +586,7 @@ function ReviewPanel({
 function EmptyReview({ pendingCount }: { pendingCount: number }) {
   return (
     <div className="flex-1 h-full flex flex-col items-center justify-center p-10 text-center">
-      <div className="w-20 h-20 rounded-[28px] bg-slate-50 border border-slate-200 shadow-sm flex items-center justify-center mb-5">
+      <div className="w-20 h-20 rounded-xl bg-slate-50 border border-slate-200 shadow-sm flex items-center justify-center mb-5">
         <ShieldCheck className="w-10 h-10 text-slate-300" />
       </div>
       <h3 className="text-lg font-extrabold text-slate-800">Select a landlord to review</h3>

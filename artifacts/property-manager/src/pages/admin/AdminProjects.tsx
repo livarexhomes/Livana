@@ -10,6 +10,7 @@ import AdminHeader from '../../components/layout/AdminHeader'
 import AuthGuard from '../../components/auth/AuthGuard'
 import { createClient, getSupabaseProjectImageUrl } from '../../lib/supabase'
 import { MoneyInput } from '../../components/ui/money-input'
+import { ResponsiveFilters } from '../../components/ui/responsive-filters'
 import { digitsToNumber } from '../../lib/currency'
 
 type ProjectStatus = 'active' | 'coming_soon' | 'completed' | 'on_hold'
@@ -262,7 +263,7 @@ export default function AdminProjects() {
             <div className="h-full overflow-y-auto p-4 md:p-6 space-y-4">
 
               {/* ── Hero card: KPI + filters ── */}
-              <div className="rounded-[32px] border border-slate-200 bg-white p-4 shadow-[0_18px_80px_-40px_rgba(15,23,42,0.18)]">
+              <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
                 <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between mb-3">
                   <div>
                     <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">Development projects</p>
@@ -283,24 +284,18 @@ export default function AdminProjects() {
                   </div>
                 </div>
 
-                {/* Status filter pills */}
-                <div className="flex items-center gap-1.5 overflow-x-auto -mx-1 px-1 sm:flex-wrap sm:overflow-visible sm:mx-0 sm:px-0 mb-3">
-                  {STATUS_FILTERS.map(f => {
-                    const count = f.key === 'all' ? projects.length : (statusTotals[f.key] ?? 0)
-                    const isActive = statusFilter === f.key
-                    return (
-                      <button key={f.key} type="button" onClick={() => setStatusFilter(f.key)}
-                        className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition-all ${
-                          isActive ? 'bg-primary text-primary-foreground shadow-sm shadow-primary/20' : 'bg-blue-50 text-blue-700 hover:bg-blue-100'
-                        }`}>
-                        {f.label}
-                        <span className={`inline-flex h-4 min-w-[16px] items-center justify-center rounded-full text-[10px] font-bold ${
-                          isActive ? 'bg-primary-foreground/20 text-primary-foreground' : 'bg-blue-100 text-blue-700'
-                        }`}>{count}</span>
-                      </button>
-                    )
-                  })}
-                </div>
+                {/* Status filter — compact pills, dropdown on mobile */}
+                <ResponsiveFilters
+                  tabs={STATUS_FILTERS.map(f => ({
+                    key: f.key,
+                    label: f.label,
+                    count: f.key === 'all' ? projects.length : (statusTotals[f.key] ?? 0),
+                  }))}
+                  value={statusFilter}
+                  onChange={v => setStatusFilter(v as typeof statusFilter)}
+                  label="Project status"
+                  className="mb-3"
+                />
 
                 {/* Search + category + view */}
                 {!loading && (
@@ -318,12 +313,12 @@ export default function AdminProjects() {
                         )}
                       </div>
 
-                      {/* Category filter */}
+                      {/* Category filter — compact select */}
                       {categories.length > 1 && (
-                        <div className="flex items-center gap-1.5 shrink-0">
+                        <div className="sm:flex items-center gap-1.5 shrink-0 hidden">
                           <Filter className="w-3.5 h-3.5 text-slate-400" />
                           <select value={catFilter} onChange={e => setCatFilter(e.target.value)}
-                            className="text-sm text-slate-700 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer">
+                            className="text-sm text-slate-700 bg-white border border-slate-200 rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary/30 cursor-pointer">
                             {categories.map(c => (
                               <option key={c} value={c}>{c === 'all' ? 'All categories' : c}</option>
                             ))}
@@ -385,7 +380,7 @@ export default function AdminProjects() {
 
                   {/* ── Grid view ───────────────────────────────────────────── */}
                   {filtered.length > 0 && view === 'grid' && (
-                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-4">
                       {filtered.map(p => {
                         const soldPct  = p.units > 0 ? Math.round((p.sold / p.units) * 100) : 0
                         const catColor = CATEGORY_COLORS[p.category] ?? 'bg-slate-100 text-slate-600'

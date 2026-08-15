@@ -34,7 +34,7 @@ function avatarGradient(name: string) {
   return AVATAR_COLORS[h % AVATAR_COLORS.length]
 }
 
-const PIE_COLORS = ['#0f172a', '#475569', '#94a3b8', '#cbd5e1', '#e2e8f0', '#f1f5f9']
+const PIE_COLORS = ['#2563EB', '#8B5CF6', '#14B8A6', '#F59E0B', '#16A34A']
 
 export default function AdminDashboard() {
   const [user, setUser] = useState<{ email?: string } | null>(null)
@@ -217,20 +217,26 @@ export default function AdminDashboard() {
                 </div>
 
                 {/* ── Stat cards ─────────────────────────────────────────────── */}
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                  <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                   {[
-                    { label: 'Total Listings', value: stats.properties, icon: Building2,   sub: `${stats.active} active` },
-                    { label: 'Landlords',      value: stats.landlords,  icon: Users,        sub: stats.pendingLandlords > 0 ? `${stats.pendingLandlords} pending` : 'all verified' },
-                    { label: 'Tenants',        value: stats.tenants,    icon: ShieldCheck,  sub: 'registered users' },
-                    { label: 'Enquiries',      value: stats.enquiries, icon: MessageSquare, sub: `${engagementRate} per listing` },
+                    { label: 'Total Listings', value: stats.properties, icon: Building2,  sub: `${stats.active} active`,  color: 'blue'   },
+                    { label: 'Landlords',      value: stats.landlords,  icon: Users,       sub: stats.pendingLandlords > 0 ? `${stats.pendingLandlords} pending` : 'all verified', color: 'purple' },
+                    { label: 'Tenants',        value: stats.tenants,    icon: ShieldCheck, sub: 'registered users',          color: 'teal'   },
+                    { label: 'Enquiries',      value: stats.enquiries, icon: MessageSquare, sub: `${engagementRate} per listing`, color: 'green' },
                   ].map(item => {
                     const Icon = item.icon
+                    const iconBg = {
+                      blue:   'bg-blue-50 text-blue-600',
+                      purple: 'bg-violet-50 text-violet-600',
+                      teal:   'bg-teal-50 text-teal-600',
+                      green:  'bg-emerald-50 text-emerald-600',
+                    }[item.color as keyof typeof iconBg]
                     return (
                       <div key={item.label} className="rounded-2xl border border-slate-200 bg-white p-5">
                         <div className="flex items-center justify-between">
                           <p className="text-xs font-semibold text-slate-500">{item.label}</p>
-                          <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center shrink-0">
-                            <Icon className="w-3.5 h-3.5 text-slate-500" strokeWidth={1.8} />
+                          <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${iconBg}`}>
+                            <Icon className="w-3.5 h-3.5" strokeWidth={1.8} />
                           </div>
                         </div>
                         <div className="mt-4 flex items-baseline gap-2">
@@ -245,17 +251,30 @@ export default function AdminDashboard() {
                 {/* ── KPI strip ── */}
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                   {[
-                    { label: 'Occupancy rate', value: `${occupancyRate}%`,   sub: `${stats.occupied}/${stats.properties} taken` },
-                    { label: 'Avg enquiries',  value: engagementRate,         sub: 'per listing'                                },
-                    { label: 'Active rate',    value: stats.properties > 0 ? `${Math.round((stats.active / stats.properties) * 100)}%` : '0%', sub: 'of all listings live' },
-                    { label: 'Pending KYC',    value: String(stats.pendingLandlords), sub: 'landlords awaiting review'          },
-                  ].map(k => (
-                    <div key={k.label} className="rounded-2xl bg-slate-950 px-4 py-3.5 text-white">
-                      <p className="text-lg font-bold tabular-nums">{k.value}</p>
-                      <p className="mt-0.5 text-[11px] font-semibold text-white/90">{k.label}</p>
-                      <p className="text-[11px] text-white/40">{k.sub}</p>
-                    </div>
-                  ))}
+                    { label: 'Occupancy rate', value: `${occupancyRate}%`,   sub: `${stats.occupied}/${stats.properties} taken`, color: 'blue'   },
+                    { label: 'Avg enquiries',  value: engagementRate,         sub: 'per listing',                                   color: 'purple' },
+                    { label: 'KYC Pending',    value: String(stats.pendingLandlords), sub: 'landlords awaiting review',              color: 'amber'  },
+                    { label: 'Active rate',    value: stats.properties > 0 ? `${Math.round((stats.active / stats.properties) * 100)}%` : '0%', sub: 'of all listings live', color: 'green' },
+                  ].map(k => {
+                    const iconColor = {
+                      blue:   'text-blue-600',
+                      purple: 'text-violet-600',
+                      amber:  'text-amber-600',
+                      green:  'text-emerald-600',
+                    }[k.color as keyof typeof iconColor]
+                    return (
+                      <div key={k.label} className="rounded-xl border border-slate-200 bg-white px-4 py-3.5 flex items-center gap-2.5 text-slate-900">
+                        <span className={`w-6 h-6 rounded-lg bg-slate-50 flex items-center justify-center ${iconColor}`}>
+                          <svg className="w-3 h-3 fill-current" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5" /></svg>
+                        </span>
+                        <div>
+                          <p className="text-lg font-bold tabular-nums">{k.value}</p>
+                          <p className="mt-0.5 text-[11px] font-semibold text-slate-500">{k.label}</p>
+                          <p className="text-[11px] text-slate-400">{k.sub}</p>
+                        </div>
+                      </div>
+                    )
+                  })}
                 </div>
 
                 {/* ── Quick action links ── */}
@@ -264,7 +283,7 @@ export default function AdminDashboard() {
                     const Icon = a.icon
                     return (
                       <Link key={a.label} href={a.href}
-                        className="inline-flex items-center gap-2 rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium transition text-slate-600 hover:bg-slate-950 hover:text-white hover:border-slate-950">
+                        className="inline-flex items-center gap-2 rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium transition text-slate-600 hover:bg-slate-50 hover:border-slate-300">
                         <Icon className="w-3.5 h-3.5" />{a.label}
                       </Link>
                     )
@@ -287,13 +306,13 @@ export default function AdminDashboard() {
                         <h3 className="text-sm font-bold text-slate-950">Platform Growth</h3>
                         <p className="text-xs text-slate-400">Listings &amp; enquiries month by month</p>
                       </div>
-                      <div className="flex items-center gap-4 shrink-0">
+                    <div className="flex items-center gap-4 shrink-0">
                         <div className="flex items-center gap-1.5">
-                          <span className="w-2 h-2 rounded-full bg-slate-950" />
+                          <span className="w-3 h-3 rounded-full bg-blue-500" />
                           <span className="text-xs font-medium text-slate-500">Listings</span>
                         </div>
                         <div className="flex items-center gap-1.5">
-                          <span className="w-2 h-2 rounded-full bg-slate-300" />
+                          <span className="w-3 h-3 rounded-full bg-violet-500" />
                           <span className="text-xs font-medium text-slate-500">Enquiries</span>
                         </div>
                       </div>
@@ -303,12 +322,12 @@ export default function AdminDashboard() {
                         <AreaChart data={areaData} margin={{ top: 4, right: 4, bottom: 0, left: -20 }}>
                           <defs>
                             <linearGradient id="gBlue" x1="0" y1="0" x2="0" y2="1">
-                              <stop offset="5%"  stopColor="#0f172a" stopOpacity={0.16} />
-                              <stop offset="95%" stopColor="#0f172a" stopOpacity={0} />
+                              <stop offset="5%"  stopColor="#2563EB" stopOpacity={0.16} />
+                              <stop offset="95%" stopColor="#2563EB" stopOpacity={0} />
                             </linearGradient>
                             <linearGradient id="gViolet" x1="0" y1="0" x2="0" y2="1">
-                              <stop offset="5%"  stopColor="#94a3b8" stopOpacity={0.20} />
-                              <stop offset="95%" stopColor="#94a3b8" stopOpacity={0} />
+                              <stop offset="5%"  stopColor="#8B5CF6" stopOpacity={0.20} />
+                              <stop offset="95%" stopColor="#8B5CF6" stopOpacity={0} />
                             </linearGradient>
                           </defs>
                           <CartesianGrid vertical={false} stroke="#f1f5f9" />
@@ -318,8 +337,8 @@ export default function AdminDashboard() {
                             contentStyle={{ borderRadius: 12, border: '1px solid #f1f5f9', boxShadow: '0 8px 30px rgba(0,0,0,0.08)', fontSize: 12, padding: '10px 16px' }}
                             labelStyle={{ fontWeight: 700, color: '#1e293b', marginBottom: 4 }}
                           />
-                          <Area type="monotone" dataKey="listings"  stroke="#0f172a" strokeWidth={2} fill="url(#gBlue)"   dot={false} />
-                          <Area type="monotone" dataKey="enquiries" stroke="#94a3b8" strokeWidth={2} fill="url(#gViolet)" dot={false} />
+                          <Area type="monotone" dataKey="listings"  stroke="#2563EB" strokeWidth={2} fill="url(#gBlue)"   dot={false} />
+                          <Area type="monotone" dataKey="enquiries" stroke="#8B5CF6" strokeWidth={2} fill="url(#gViolet)" dot={false} />
                         </AreaChart>
                       </ResponsiveContainer>
                     </div>
@@ -438,15 +457,13 @@ export default function AdminDashboard() {
                               <div key={c.city}>
                                 <div className="flex items-center justify-between mb-1.5">
                                   <div className="flex items-center gap-2">
-                                    <span className="w-5 h-5 rounded-lg bg-slate-100 flex items-center justify-center text-[10px] font-black text-slate-500">
-                                      #{i + 1}
-                                    </span>
+                                     <span className="w-6 h-6 rounded-lg bg-slate-100 flex items-center justify-center text-[9px] font-black text-slate-500">#{i + 1}</span>
                                     <span className="text-sm font-semibold text-slate-700">{c.city}</span>
                                   </div>
                                   <span className="text-sm font-bold text-slate-900 tabular-nums">{c.count}</span>
                                 </div>
                                 <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                                  <div className="h-full bg-slate-950 rounded-full" style={{ width: `${pct}%` }} />
+                                <div className="h-full bg-blue-600 rounded-full" style={{ width: `${pct}%` }} />
                                 </div>
                               </div>
                             )

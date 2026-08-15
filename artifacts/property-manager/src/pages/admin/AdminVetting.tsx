@@ -235,12 +235,12 @@ export default function AdminVetting() {
 
           {/* ── Hero header ── */}
           <div className="shrink-0 px-4 md:px-6 pt-3 pb-2">
-            <div className="rounded-[28px] border border-slate-200 bg-white px-4 py-3 shadow-[0_18px_80px_-40px_rgba(15,23,42,0.18)]">
+            <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
 
               <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
                 <div>
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-slate-400">Platform Vetting</p>
-                  <h2 className="mt-0.5 text-base font-extrabold text-slate-950">Vetting Hub</h2>
+                  <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">Platform Vetting</p>
+                  <h2 className="mt-0.5 text-xl md:text-2xl font-extrabold text-slate-950">Vetting Hub</h2>
                 </div>
 
                 {/* Stats */}
@@ -251,8 +251,8 @@ export default function AdminVetting() {
                     { label: 'Listing Pending', value: pendingListings.length, accent: 'text-violet-700'  },
                     { label: 'Landlords',       value: kycCounts.all,          accent: 'text-blue-700'    },
                   ].map(s => (
-                    <div key={s.label} className="rounded-2xl border border-slate-100 bg-slate-50 px-2 sm:px-3 py-1.5 sm:py-2 text-center sm:min-w-[64px]">
-                      <p className={`text-base sm:text-lg font-extrabold ${s.accent}`}>{s.value}</p>
+                    <div key={s.label} className="rounded-xl border border-slate-100 bg-slate-50 px-2 sm:px-3 py-1.5 sm:py-2 text-center sm:min-w-[64px]">
+                      <p className={`text-sm sm:text-lg font-extrabold ${s.accent}`}>{s.value}</p>
                       <p className="text-[9px] font-semibold uppercase tracking-[0.22em] text-slate-500 whitespace-nowrap">{s.label}</p>
                     </div>
                   ))}
@@ -263,29 +263,29 @@ export default function AdminVetting() {
               <div className="mt-2.5 flex items-center gap-2 overflow-x-auto -mx-1 px-1 sm:overflow-visible sm:mx-0 sm:px-0">
                 <button type="button" onClick={() => setActiveTab('identity')}
                   className={`flex items-center gap-1.5 rounded-full px-4 py-1.5 text-xs font-semibold transition ${
-                    activeTab === 'identity'
-                      ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/20'
-                      : 'bg-blue-50 text-blue-700 hover:bg-blue-100'
-                  }`}>
+                  activeTab === 'identity'
+                    ? 'bg-primary text-primary-foreground shadow-sm shadow-primary/20'
+                    : 'bg-blue-50 text-blue-700 hover:bg-blue-100'
+                }`}>
                   <ShieldCheck className="w-3.5 h-3.5" />
                   Identity Checks
                   <span className={`inline-flex h-4 min-w-[16px] items-center justify-center rounded-full text-[10px] font-bold ${
-                    activeTab === 'identity' ? 'bg-primary-foreground/20 text-primary-foreground' : 'bg-blue-100 text-blue-700'
-                  }`}>{kycCounts.pending}</span>
+                activeTab === 'identity' ? 'bg-primary-foreground/20 text-primary-foreground' : 'bg-blue-100 text-blue-700'
+                }`}>{kycCounts.pending}</span>
                 </button>
 
                 <button type="button" onClick={() => setActiveTab('listings')}
                   className={`flex items-center gap-1.5 rounded-full px-4 py-1.5 text-xs font-semibold transition ${
-                    activeTab === 'listings'
-                      ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/20'
-                      : 'bg-blue-50 text-blue-700 hover:bg-blue-100'
-                  }`}>
+                  activeTab === 'listings'
+                    ? 'bg-primary text-primary-foreground shadow-sm shadow-primary/20'
+                    : 'bg-blue-50 text-blue-700 hover:bg-blue-100'
+                }`}>
                   <Building2 className="w-3.5 h-3.5" />
                   Listing Approvals
                   {pendingListings.length > 0 && (
                     <span className={`inline-flex h-4 min-w-[16px] items-center justify-center rounded-full text-[10px] font-bold ${
-                      activeTab === 'listings' ? 'bg-primary-foreground/20 text-primary-foreground' : 'bg-violet-100 text-violet-700'
-                    }`}>{pendingListings.length}</span>
+                activeTab === 'listings' ? 'bg-primary-foreground/20 text-primary-foreground' : 'bg-violet-100 text-violet-700'
+                }`}>{pendingListings.length}</span>
                   )}
                 </button>
               </div>
@@ -384,7 +384,7 @@ function StatusFilterDropdown({ value, onChange, tabs }: {
               onClick={() => { onChange(tab.key); setOpen(false) }}
               className={`flex w-full items-center justify-between px-3.5 py-2.5 text-xs font-semibold transition-colors ${
                 tab.key === value
-                  ? 'bg-slate-950 text-white'
+                  ? 'bg-primary text-primary-foreground'
                   : 'text-slate-700 hover:bg-slate-50'
               }`}
             >
@@ -416,7 +416,7 @@ function IdentityTab({
     <div className="flex flex-1 min-h-0 overflow-hidden px-4 md:px-6 pb-4 md:pb-6 gap-4">
 
       {/* ── Queue ── */}
-      <div className={`${selected ? 'hidden lg:flex' : 'flex'} flex-col w-full lg:max-w-xs xl:max-w-sm shrink-0 rounded-[28px] border border-slate-200 bg-white shadow-sm overflow-hidden`}>
+      <div className={`${selected ? 'hidden lg:flex' : 'flex'} flex-col w-full lg:max-w-xs xl:max-w-sm shrink-0 rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden`}>
 
         {/* Filter dropdown */}
         <div className="shrink-0 p-4 border-b border-slate-100 space-y-3">
@@ -510,7 +510,7 @@ function IdentityTab({
       </div>
 
       {/* ── Review panel ── */}
-      <div className={`${selected ? 'flex' : 'hidden lg:flex'} flex-1 min-w-0 overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-sm`}>
+      <div className={`${selected ? 'flex' : 'hidden lg:flex'} flex-1 min-w-0 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm`}>
         {selected ? (
           <KycReviewPanel
             landlord={selected}
@@ -524,7 +524,7 @@ function IdentityTab({
           />
         ) : (
           <div className="flex-1 h-full flex flex-col items-center justify-center p-10 text-center">
-            <div className="w-20 h-20 rounded-[28px] bg-slate-50 border border-slate-200 shadow-sm flex items-center justify-center mb-5">
+            <div className="w-20 h-20 rounded-2xl bg-slate-50 border border-slate-200 shadow-sm flex items-center justify-center mb-5">
               <ShieldCheck className="w-10 h-10 text-slate-300" />
             </div>
             <h3 className="text-lg font-extrabold text-slate-800">Select a landlord to review</h3>
@@ -607,7 +607,7 @@ function KycReviewPanel({
       {/* Scrollable body */}
       <div className="flex-1 overflow-y-auto p-6 space-y-5">
         {/* Actions */}
-        <div className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm">
+        <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
           <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400 mb-4">Review Actions</p>
           <div className="flex flex-wrap gap-2">
             {ACTIONS.filter(a => a.show).map(a => {
@@ -642,7 +642,7 @@ function KycReviewPanel({
         </div>
 
         {/* Identity details */}
-        <div className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm">
+        <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
           <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400 mb-4">Identity Details</p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {identityFields.map(f => (
@@ -658,7 +658,7 @@ function KycReviewPanel({
         </div>
 
         {/* KYC Documents */}
-        <div className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm">
+        <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
           <div className="flex items-center justify-between mb-4">
             <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">KYC Documents</p>
             <span className="text-[11px] font-semibold text-slate-500">
@@ -731,7 +731,7 @@ function ListingsTab({
 }) {
   return (
     <div className="flex-1 min-h-0 overflow-hidden px-4 md:px-6 pb-4 md:pb-6">
-      <div className="h-full rounded-[28px] border border-slate-200 bg-white shadow-sm overflow-hidden flex flex-col">
+      <div className="h-full rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden flex flex-col">
 
         {/* Panel header */}
         <div className="shrink-0 flex items-center justify-between gap-4 px-6 py-5 border-b border-slate-100">
@@ -760,7 +760,7 @@ function ListingsTab({
             </div>
           ) : listings.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-24 text-center">
-              <div className="w-20 h-20 rounded-[28px] bg-slate-50 border border-slate-200 shadow-sm flex items-center justify-center mb-5">
+              <div className="w-20 h-20 rounded-2xl bg-slate-50 border border-slate-200 shadow-sm flex items-center justify-center mb-5">
                 <ListChecks className="w-10 h-10 text-slate-300" />
               </div>
               <h3 className="text-lg font-extrabold text-slate-800">All caught up!</h3>
@@ -811,7 +811,7 @@ function ListingCard({
   const landlordName = listing.landlords?.full_name ?? 'Unknown landlord'
 
   return (
-    <div className="flex flex-col rounded-[24px] border border-slate-200 bg-white shadow-sm overflow-hidden hover:shadow-md hover:border-slate-300 transition-all">
+    <div className="flex flex-col rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden hover:shadow-md hover:border-slate-300 transition-all">
       {/* Cover image */}
       <div className="relative h-44 bg-slate-100 overflow-hidden">
         {coverUrl ? (
