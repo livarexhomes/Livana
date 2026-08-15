@@ -10,6 +10,7 @@ import AdminHeader from '../../components/layout/AdminHeader'
 import AuthGuard from '../../components/auth/AuthGuard'
 import { createClient, isSupabaseConfigured } from '../../lib/supabase'
 import { ResponsiveFilters } from '@/components/ui/responsive-filters'
+import { StatusBadge } from '@/components/ui/status-badge'
 
 const AVATAR_GRADIENTS = [
   'from-violet-500 to-purple-600', 'from-blue-500 to-blue-700',

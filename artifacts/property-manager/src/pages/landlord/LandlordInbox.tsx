@@ -369,7 +369,7 @@ function NewTicketModal({
               value={subject}
               onChange={(e) => setSubject(e.target.value)}
               placeholder="What do you need help with?"
-              className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+              className="w-full px-4 py-2.5 rounded-xl border border-gray-200 bg-white text-slate-900 text-sm placeholder-slate-400 caret-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
               required
             />
           </div>
@@ -401,7 +401,7 @@ function NewTicketModal({
               onChange={(e) => setMessage(e.target.value)}
               placeholder="Describe your issue in detail..."
               rows={5}
-              className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all resize-none"
+              className="w-full px-4 py-2.5 rounded-xl border border-gray-200 bg-white text-slate-900 text-sm placeholder-slate-400 caret-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all resize-none"
               required
             />
           </div>
@@ -530,7 +530,7 @@ export default function LandlordInbox() {
   }
 
   function handleTicketCreated(ticket: SupportTicket) {
-    setTickets((prev) => [ticket, ...prev])
+    setTickets((prev) => prev.find((x) => x.id === ticket.id) ? prev : [ticket, ...prev])
     setSelectedId(ticket.id)
     setShowNewTicket(false)
     setMobileView('thread')

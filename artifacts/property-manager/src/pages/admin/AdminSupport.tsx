@@ -3,8 +3,8 @@ import {
   HeadphonesIcon, Send, Loader2, MessageSquare,
   Clock, CheckCircle2, XCircle, User,
   ChevronLeft, ChevronDown as ChevronDownIcon, RefreshCw, Inbox, Building2, Mail,
-  Volume2, VolumeX, ShieldCheck, KeyRound, Trash2, Search, X,
-  Paperclip, CheckCheck, History, Home, Phone, Calendar, Activity,
+  Volume2, VolumeX, ShieldCheck, KeyRound, Trash2, Search, X, Lock,
+  Paperclip, CheckCheck, Calendar,
 } from 'lucide-react'
 import AdminSidebar from '../../components/layout/AdminSidebar'
 import AdminHeader from '../../components/layout/AdminHeader'
