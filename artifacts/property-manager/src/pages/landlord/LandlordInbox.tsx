@@ -291,6 +291,7 @@ function NewTicketModal({
   const [message, setMessage] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [propertyId, setPropertyId] = useState<string | null>(null)
+  const submittingRef = useRef(false)
 
   // Auto-attach the landlord's most recent property so the admin gets the
   // property context without having to identify the listing manually.
@@ -303,8 +304,9 @@ function NewTicketModal({
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
+    if (submittingRef.current) return
     if (!subject.trim() || !message.trim() || submitting) return
-
+    submittingRef.current = true
     setSubmitting(true)
     try {
       const supabase = createClient()
@@ -345,6 +347,7 @@ function NewTicketModal({
       alert(err?.message || 'Failed to create ticket. Please try again.')
     } finally {
       setSubmitting(false)
+      submittingRef.current = false
     }
   }
 
