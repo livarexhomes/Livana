@@ -3,7 +3,7 @@ import { Link } from '@/lib/navigation'
 import {
   Building2, Search, LayoutGrid, List,
   MapPin, BedDouble, Bath, Pencil, Trash2, ArrowRight, Plus, Eye,
-  CheckCircle, Clock, XCircle, X, Save, Loader2, ImagePlus, Star,
+  CheckCircle, Clock, XCircle, X, Save, Loader2, ImagePlus, Star, MoreVertical,
   Wifi, Car, Dumbbell, Waves, Wind, Shield, Zap,
   Droplets, TreePine, UtensilsCrossed, Tv, Lock, Sun, Package,
   ReceiptText,
@@ -15,6 +15,8 @@ import { createClient, getSupabaseImageUrl } from '../../lib/supabase'
 import LocationField from '../../components/property/LocationField'
 import { MoneyInput } from '../../components/ui/money-input'
 import { ResponsiveFilters } from '../../components/ui/responsive-filters'
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '@/components/ui/dropdown-menu'
+import { MobileSidebarProvider, MobilePageHeader, MobileStatGrid, MobileStatCard, MobileEmptyState } from '@/components/ui/mobile-admin'
 import { digitsToNumber, formatNaira } from '../../lib/currency'
 import { getFeeConfig, calcFeeBreakdown, type FeeConfig, type FeeBreakdown } from '../../lib/fees'
 import { subscribeListingRulesChange } from '../../lib/settings-store'
@@ -494,6 +496,7 @@ export default function AdminProperties() {
 
   return (
     <AuthGuard require="admin">
+      <MobileSidebarProvider>
       <div className="flex h-screen overflow-hidden bg-[#F4F6FB]">
         <AdminSidebar userEmail={user?.email} userName={displayName} />
 
@@ -503,7 +506,7 @@ export default function AdminProperties() {
             subtitle={`${properties.length.toLocaleString()} total listings`}
             action={
               <button type="button" onClick={() => { setAddForm({ ...emptyAdd, assigned_to: currentAdminId ?? '' }); setAddOpen(true) }}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-xl transition-colors shadow-sm">
+                className="inline-flex items-center justify-center gap-2 min-w-[44px] h-10 sm:h-auto sm:px-4 sm:py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-xl transition-colors shadow-sm">
                 <Plus className="w-4 h-4" />
                 <span className="hidden sm:inline">Add Listing</span>
               </button>
@@ -513,7 +516,44 @@ export default function AdminProperties() {
           <main className="flex-1 overflow-y-auto p-4 md:p-6 pb-24 md:pb-6">
             <div className="grid gap-5 xl:grid-cols-[1.75fr_0.9fr]">
               <div className="space-y-5">
-                <div className="rounded-2xl border border-slate-200 bg-white p-4 md:p-6 shadow-sm">
+
+                {/* ── Mobile: compact header + stats + filters ── */}
+                <div className="sm:hidden">
+                  <MobilePageHeader title="Listings"
+                    subtitle={`${properties.length} total · ${available} available`} />
+                  <MobileStatGrid>
+                    <MobileStatCard label="Total" value={properties.length} color="text-blue-700" />
+                    <MobileStatCard label="Available" value={available} color="text-emerald-700" />
+                    <MobileStatCard label="Taken" value={taken} color="text-rose-700" />
+                  </MobileStatGrid>
+                  {/* Mobile filter bar */}
+                  <div className="px-3 pb-2">
+                    <div className="relative mb-2">
+                      <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-300" />
+                      <input value={search} onChange={e => setSearch(e.target.value)}
+                        placeholder="Search properties, neighborhoods…"
+                        className="w-full pl-8 pr-3 py-2 rounded-xl border border-slate-200 bg-white text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-300" />
+                    </div>
+                    <div className="flex gap-2">
+                      <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)}
+                        className="w-full appearance-none rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-700 focus:outline-none cursor-pointer">
+                        {STATUS_TABS.map(t => (
+                          <option key={t.key} value={t.key}>{t.label} ({t.count})</option>
+                        ))}
+                      </select>
+                      <select value={sort} onChange={e => setSort(e.target.value)}
+                        className="w-full appearance-none rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-700 focus:outline-none cursor-pointer">
+                        <option value="newest">Newest</option>
+                        <option value="oldest">Oldest</option>
+                        <option value="price_asc">Price ↑</option>
+                        <option value="price_desc">Price ↓</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+
+                {/* ── Hero card (desktop only) ── */}
+                <div className="hidden sm:block rounded-2xl border border-slate-200 bg-white p-4 md:p-6 shadow-sm">
                 <div className="flex flex-col gap-6 xl:flex-row xl:items-center xl:justify-between">
                   <div className="max-w-2xl">
                     <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">Property management</p>
@@ -542,18 +582,18 @@ export default function AdminProperties() {
                   />
                 </div>
 
-                <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-                  <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                <div className="rounded-2xl border border-slate-200 bg-white p-3 sm:p-5 shadow-sm">
+                  <div className="flex flex-col sm:gap-4 lg:flex-row lg:items-center lg:justify-between">
                     <div className="flex-1">
-                      <div className="flex items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 shadow-sm">
+                      <div className="flex items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 px-3 sm:px-4 py-2 sm:py-3 shadow-sm">
                         <Search className="w-4 h-4 text-slate-500" />
                         <input value={search} onChange={e => setSearch(e.target.value)}
                           placeholder="Search properties, neighborhoods, or landlords"
-                          className="w-full bg-transparent text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none" />
+                          className="w-full bg-transparent text-xs sm:text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none" />
                       </div>
                     </div>
-                    <div className="flex flex-wrap items-center gap-3">
-                      <div className="inline-flex overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+                    <div className="flex flex-wrap items-center gap-3 mt-2 sm:mt-0">
+                      <div className="hidden sm:inline-flex overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
                         <button type="button" onClick={() => setViewMode('grid')}
                           className={`px-4 py-2.5 transition ${viewMode === 'grid' ? 'bg-primary text-primary-foreground' : 'text-slate-500 hover:bg-slate-50'}`}>
                           <LayoutGrid className="w-4 h-4" />
@@ -564,7 +604,7 @@ export default function AdminProperties() {
                         </button>
                       </div>
                       <select value={sort} onChange={e => setSort(e.target.value)}
-                        className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm focus:outline-none focus:ring-2 focus:ring-primary/30">
+                        className="rounded-xl border border-slate-200 bg-white px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-semibold text-slate-700 shadow-sm focus:outline-none focus:ring-2 focus:ring-primary/30">
                         <option value="newest">Newest</option>
                         <option value="oldest">Oldest</option>
                         <option value="price_asc">Price ↑</option>
@@ -575,25 +615,30 @@ export default function AdminProperties() {
                 </div>
 
                 {loading ? (
-              <div className="flex items-center justify-center py-40">
+              <div className="flex items-center justify-center py-20 sm:py-40">
                 <div className="animate-spin w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full" />
               </div>
             ) : filtered.length === 0 ? (
-              <div className="bg-white rounded-2xl border border-gray-100 p-16 text-center shadow-sm">
-                <Building2 className="w-12 h-12 text-gray-200 mx-auto mb-4" />
-                <p className="text-gray-500 font-medium">{search ? 'No properties match your search.' : 'No properties found.'}</p>
+              <div className="py-12">
+                <MobileEmptyState
+                  title={search ? 'No properties match your search.' : 'No properties found.'}
+                  description={search ? 'Try a different search term or filter.' : 'Create your first listing to get started.'}
+                  icon={<Building2 className="w-5 h-5 text-slate-300" />}
+                />
               </div>
-            ) : viewMode === 'grid' ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            ) : (
+              <>
+                <div className={viewMode === 'grid' ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4" : "grid grid-cols-1 gap-4 sm:hidden"}>
                 {filtered.map(p => {
                   const badge = TYPE_BADGE[p.type] ?? TYPE_BADGE.sale
                   const status = STATUS_META[p.status] ?? STATUS_META.available
                   const StatusIcon = status.icon
                   const cover = getCoverImage(p)
+                  const breakdown = calcFeeBreakdown(p, feeConfig ?? undefined)
                   return (
-                    <div key={p.id} className="bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-sm hover:shadow-md transition-all duration-200 group flex flex-col">
+                    <div key={p.id} className="bg-white rounded-[12px] border border-gray-100 overflow-hidden shadow-sm hover:shadow-md transition-all duration-200 group flex flex-col">
                       {/* Image */}
-                      <div className="relative h-44 overflow-hidden bg-gray-100 shrink-0">
+                      <div className="relative h-28 sm:h-44 overflow-hidden bg-gray-100 shrink-0">
                         {cover ? (
                           <img src={cover} alt={p.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                         ) : (
@@ -602,36 +647,61 @@ export default function AdminProperties() {
                             <span className="text-xs">No photo</span>
                           </div>
                         )}
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
-                        <span className={`absolute top-3 left-3 px-2 py-0.5 rounded-lg text-[11px] font-bold ${badge.cls}`}>{badge.label}</span>
-                        {p.featured && <span className="absolute top-3 right-3 px-2 py-0.5 bg-amber-400 text-gray-900 text-[10px] font-black rounded-lg">★ Featured</span>}
-                        <p className="absolute bottom-3 left-3 text-sm font-extrabold text-white drop-shadow">₦{Number(p.price).toLocaleString()}</p>
+                        {/* Desktop: gradient overlay + badges + price */}
+                        <div className="hidden sm:block">
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
+                          <span className={`absolute top-3 left-3 px-2 py-0.5 rounded-lg text-[11px] font-bold ${badge.cls}`}>{badge.label}</span>
+                          {p.featured && <span className="absolute top-3 right-3 px-2 py-0.5 bg-amber-400 text-gray-900 text-[10px] font-black rounded-lg">★ Featured</span>}
+                          <p className="absolute bottom-3 left-3 text-sm font-extrabold text-white drop-shadow">₦{Number(p.price).toLocaleString()}</p>
+                        </div>
+                      </div>
+
+                      {/* Mobile: price + badges below image */}
+                      <div className="sm:hidden px-3 pt-2 pb-1 flex items-center justify-between">
+                        <p className="font-extrabold text-slate-900 text-base">₦{Number(p.price).toLocaleString()}</p>
+                        <div className="flex items-center gap-1.5">
+                          <span className={`inline-flex items-center px-2 py-0.5 rounded-lg text-[10px] font-bold ${badge.cls}`}>{badge.label}</span>
+                          {p.featured && <span className="px-1.5 py-0.5 bg-amber-400 text-gray-900 text-[10px] font-black rounded">★</span>}
+                        </div>
                       </div>
 
                       {/* Body */}
-                      <div className="p-4 flex flex-col flex-1">
+                      <div className="p-3 sm:p-4 flex flex-col flex-1">
                         <div className="flex items-start justify-between gap-2 mb-1.5">
-                          <h3 className="font-semibold text-slate-950 text-sm leading-snug line-clamp-1 flex-1">{p.title}</h3>
+                          <h3 className="font-semibold text-slate-950 text-sm leading-snug line-clamp-2 flex-1">{p.title}</h3>
                           <span className={`shrink-0 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold ${status.cls}`}>
                             <span className={`w-2 h-2 rounded-full ${status.dot}`} />
                             {status.label}
                           </span>
                         </div>
 
-                        <div className="flex items-center gap-1 text-xs text-gray-400 mb-3">
+                        <div className="flex items-center gap-1 text-xs text-gray-400 mb-2">
                           <MapPin className="w-3 h-3 shrink-0" />
                           <span className="truncate">{formatLocation(p)}{p.landlords?.full_name ? ` · ${p.landlords.full_name}` : ''}</span>
                         </div>
 
                         {(p.bedrooms != null || p.bathrooms != null) && (
-                          <div className="flex items-center gap-3 text-xs text-gray-500 mb-3 pb-3 border-b border-gray-100">
+                          <div className="flex items-center gap-3 text-xs text-gray-500 mb-2">
                             {p.bedrooms != null && <span className="flex items-center gap-1"><BedDouble className="w-3.5 h-3.5 text-gray-400" />{p.bedrooms} Beds</span>}
                             {p.bathrooms != null && <span className="flex items-center gap-1"><Bath className="w-3.5 h-3.5 text-gray-400" />{p.bathrooms} Baths</span>}
                             <span className="ml-auto text-[10px] font-semibold text-gray-400 uppercase">{p.property_type ?? p.type}</span>
                           </div>
                         )}
 
-                        <div className="flex items-center justify-between mt-auto pt-1">
+                        {/* Mobile: fee breakdown */}
+                        <div className="sm:hidden mt-1.5 space-y-1 text-[11px]">
+                          <div className="flex items-center justify-between text-slate-500">
+                            <span>Agency fee</span>
+                            <span className="font-semibold text-slate-700">{formatNaira(breakdown.agencyFee)}</span>
+                          </div>
+                          <div className="flex items-center justify-between pt-1 border-t border-slate-100 font-semibold">
+                            <span className="text-slate-500">Total</span>
+                            <span className="text-blue-700">{formatNaira(breakdown.total)}</span>
+                          </div>
+                        </div>
+
+                        {/* Desktop actions — icon buttons */}
+                        <div className="hidden sm:flex items-center justify-between mt-auto pt-1">
                           <div className="flex items-center gap-0.5">
                             <button title="Edit" onClick={() => openEdit(p)}
                               className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-colors">
@@ -647,15 +717,43 @@ export default function AdminProperties() {
                             View <ArrowRight className="w-3 h-3" />
                           </Link>
                         </div>
+
+                        {/* Mobile actions — primary + overflow */}
+                        <div className="sm:hidden mt-2 flex items-center gap-1.5">
+                          <button title="Edit" onClick={() => openEdit(p)}
+                            className="flex-1 h-9 flex items-center justify-center gap-1.5 rounded-lg text-[12px] font-semibold text-slate-700 hover:bg-slate-50 transition-colors">
+                            Edit
+                          </button>
+                          <Link href={`/listings/${p.id}`}
+                            className="flex-1 flex items-center justify-center gap-1 text-[12px] font-semibold text-blue-600 hover:text-blue-700 transition-colors">
+                            View <ArrowRight className="w-3 h-3" />
+                          </Link>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <button type="button" title="More actions"
+                                className="h-9 w-9 flex items-center justify-center rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors">
+                                <MoreVertical className="w-4 h-4" />
+                              </button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="w-44">
+                              <DropdownMenuItem
+                                onSelect={() => handleDelete(p.id)}
+                                disabled={deleting === p.id}
+                                className="text-red-600 focus:text-red-600 focus:bg-red-50 cursor-pointer">
+                                Delete
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
                       </div>
                     </div>
                   )
                 })}
               </div>
-            ) : (
-              <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-sm">
-                <div className="overflow-x-auto">
-                  <table className="w-full min-w-[560px]">
+              {viewMode === 'list' && (
+                <div className="hidden sm:block bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-sm">
+                  <div className="overflow-x-auto">
+                    <table className="w-full min-w-[560px]">
                     <thead>
                       <tr className="border-b border-gray-100 bg-gray-50/70">
                         <th className="text-left px-5 py-3 text-[10px] font-black text-gray-400 uppercase tracking-widest">Property</th>
@@ -718,6 +816,8 @@ export default function AdminProperties() {
                   </table>
                 </div>
               </div>
+                )}
+              </>
             )}
           </div>
         </div>
@@ -1270,6 +1370,7 @@ export default function AdminProperties() {
           </div> {/* ← end modal card */}
         </div>
       )}
+    </MobileSidebarProvider>
     </AuthGuard >
   )
 }

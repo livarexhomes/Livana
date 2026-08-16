@@ -8,6 +8,7 @@ import {
 import AdminSidebar from '../../components/layout/AdminSidebar'
 import AdminHeader from '../../components/layout/AdminHeader'
 import AuthGuard from '../../components/auth/AuthGuard'
+import { MobileSidebarProvider, MobilePageHeader, MobileStatGrid, MobileStatCard, MobileEmptyState } from '@/components/ui/mobile-admin'
 import { createClient, getSupabaseProjectImageUrl } from '../../lib/supabase'
 import { MoneyInput } from '../../components/ui/money-input'
 import { ResponsiveFilters } from '../../components/ui/responsive-filters'
@@ -243,6 +244,7 @@ export default function AdminProjects() {
 
   return (
     <AuthGuard require="admin">
+      <MobileSidebarProvider>
       <div className="flex h-screen overflow-hidden bg-[#F4F6FB]">
         <AdminSidebar userEmail={user?.email} userName={displayName} />
 

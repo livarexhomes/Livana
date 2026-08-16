@@ -294,16 +294,19 @@ function LandlordMobileCard({ l, processing, menuOpen, onMenuToggle, onStatus, o
   const busy    = processing === l.id
 
   return (
-    <div className="rounded-xl border border-slate-200 bg-white p-3.5 mb-2 last:mb-0">
-      <div className="flex items-start gap-3">
-        <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-[12px] font-semibold ${palette.bg} ${palette.text}`}>
+    <div className="rounded-[11px] border border-slate-200 bg-white p-3 mb-2 last:mb-0">
+      <div className="flex items-start gap-2.5">
+        <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[12px] font-semibold ${palette.bg} ${palette.text}`}>
           {getInitials(l.full_name)}
         </div>
         <div className="min-w-0 flex-1">
-          <p className="text-[13px] font-semibold text-slate-900 truncate">{l.full_name}</p>
-          <p className="text-[11px] text-slate-400">Joined {formatDate(l.created_at)}</p>
+          <div className="flex items-center justify-between gap-2">
+            <p className="text-[13px] font-semibold text-slate-900 truncate">{l.full_name}</p>
+            <StatusBadge status={l.status} label={meta.label} size="sm" />
+          </div>
+          <p className="text-[11px] text-slate-400 mt-0.5">Joined {formatDate(l.created_at)}</p>
           {l.city && (
-            <div className="mt-1 flex items-center gap-1 text-[11px] text-slate-500">
+            <div className="mt-1.5 flex items-center gap-1 text-[11px] text-slate-500">
               <MapPin className="h-3 w-3 shrink-0 text-slate-300" />
               <span className="truncate">{l.city}</span>
             </div>
@@ -321,23 +324,29 @@ function LandlordMobileCard({ l, processing, menuOpen, onMenuToggle, onStatus, o
             </div>
           )}
         </div>
-        <div className="flex items-start gap-2 shrink-0">
-          <StatusBadge status={l.status} label={meta.label} size="sm" />
-          <div className="relative">
-            <button type="button" disabled={busy} onClick={onMenuToggle}
-              className={`grid h-8 w-8 place-items-center rounded-lg border transition-colors ${
+      </div>
+      {/* Primary action + overflow */}
+      <div className="mt-2 flex items-center justify-between gap-2">
+        <Link href="/admin/kyc" className="flex-1">
+          <button type="button"
+            className="w-full flex items-center justify-center gap-1.5 py-2 rounded-lg text-[12.5px] font-semibold text-slate-700 hover:bg-slate-50 active:scale-[0.98] transition-colors">
+            View client
+          </button>
+        </Link>
+        <div className="relative shrink-0">
+          <button type="button" disabled={busy} onClick={onMenuToggle}
+            className={`h-9 w-9 grid place-items-center rounded-lg border transition-colors ${
               menuOpen
                 ? 'border-slate-300 bg-slate-100 text-slate-700'
                 : 'border-slate-200 bg-white text-slate-400 hover:border-slate-300 hover:bg-slate-100 hover:text-slate-700'
             } disabled:opacity-30`}>
-              {busy
-                ? <RefreshCw className="h-3.5 w-3.5 animate-spin" />
-                : <MoreVertical className="h-3.5 w-3.5" />}
-            </button>
-            {menuOpen && (
-              <ActionMenu l={l} processing={processing} onStatus={onStatus} onDelete={onDelete} onReset={onReset} onClose={onMenuToggle} />
-            )}
-          </div>
+            {busy
+              ? <RefreshCw className="h-3.5 w-3.5 animate-spin" />
+              : <MoreVertical className="h-3.5 w-3.5" />}
+          </button>
+          {menuOpen && (
+            <ActionMenu l={l} processing={processing} onStatus={onStatus} onDelete={onDelete} onReset={onReset} onClose={onMenuToggle} />
+          )}
         </div>
       </div>
     </div>
@@ -511,8 +520,55 @@ export default function AdminLandlords() {
 
         <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
 
-          {/* ── Hero card ── */}
-          <div className="shrink-0 px-4 md:px-6 pt-3 pb-2">
+          <AdminHeader title="Clients"
+            subtitle={`${clients.length} clients · ${approved} approved`}
+            pendingCount={approved} />
+
+          {/* ── Mobile: compact page header + stats + filters ── */}
+          <div className="sm:hidden">
+            <MobilePageHeader title="Clients"
+              subtitle={`${clients.length} ${clients.length === 1 ? 'client' : 'clients'} · ${approved} approved`} />
+
+            <div className="grid grid-cols-2 gap-2.5 px-4 py-3">
+              <MobileStatCard label="Total"     value={clients.length} color="text-slate-700" />
+              <MobileStatCard label="Approved"  value={approved}       color="text-emerald-700" />
+              <MobileStatCard label="Pending"   value={pending}        color="text-amber-700" />
+              <MobileStatCard label="Suspended" value={suspended}      color="text-orange-700" />
+            </div>
+
+            {/* Mobile filter bar */}
+            <div className="px-3 pb-2 space-y-2">
+              <div className="relative">
+                <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-300" />
+                <input value={search} onChange={e => setSearch(e.target.value)}
+                  placeholder="Search name, city, phone…"
+                  className="w-full pl-8 pr-3 py-2 rounded-xl border border-slate-200 bg-white text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-300" />
+              </div>
+              <div className="flex gap-2">
+                <div className="relative flex-1">
+                  <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)}
+                    className="w-full appearance-none rounded-xl border border-slate-200 bg-white pl-2.5 pr-7 py-2 text-xs font-medium text-slate-700 focus:outline-none cursor-pointer">
+                    {STATUS_TABS.map(t => (
+                      <option key={t.key} value={t.key}>{t.label} ({t.count})</option>
+                    ))}
+                  </select>
+                  <ChevronDown className="pointer-events-none absolute right-2 top-1/2 h-3 w-3 -translate-y-1/2 text-slate-400" />
+                </div>
+                <div className="relative flex-1">
+                  <select value={sort} onChange={e => setSort(e.target.value)}
+                    className="w-full appearance-none rounded-xl border border-slate-200 bg-white pl-2.5 pr-7 py-2 text-xs font-medium text-slate-700 focus:outline-none cursor-pointer">
+                    <option value="newest">Newest</option>
+                    <option value="oldest">Oldest</option>
+                    <option value="name">Name A–Z</option>
+                  </select>
+                  <ChevronDown className="pointer-events-none absolute right-2 top-1/2 h-3 w-3 -translate-y-1/2 text-slate-400" />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* ── Hero card (desktop only) ── */}
+          <div className="hidden sm:block shrink-0 px-4 md:px-6 pt-3 pb-2">
             <div className="rounded-2xl border border-slate-200 bg-white px-5 py-3.5 shadow-sm">
               <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
                 <div>
@@ -590,9 +646,9 @@ export default function AdminLandlords() {
             {/* Left — client list */}
             <div className="flex flex-1 flex-col min-w-0 overflow-hidden">
 
-              {/* Column headers */}
+              {/* Column headers — desktop only */}
               {!loading && clients.length > 0 && (
-                <div className="flex items-center gap-3 px-4 py-2 bg-slate-50 border-b border-slate-100 shrink-0">
+                <div className="hidden sm:flex items-center gap-3 px-4 py-2 bg-slate-50 border-b border-slate-100 shrink-0">
                   <div className="w-9 shrink-0" /> {/* avatar spacer */}
                   <div className="w-40 shrink-0 text-[10.5px] font-semibold uppercase tracking-wider text-slate-400">Client</div>
                   <div className="hidden md:block w-28 shrink-0 text-[10.5px] font-semibold uppercase tracking-wider text-slate-400">Location</div>
@@ -781,6 +837,7 @@ export default function AdminLandlords() {
           {toast}
         </div>
       )}
+      </MobileSidebarProvider>
     </AuthGuard>
   )
 }

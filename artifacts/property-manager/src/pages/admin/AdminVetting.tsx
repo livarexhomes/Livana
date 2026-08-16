@@ -9,6 +9,7 @@ import {
 import AdminSidebar from '../../components/layout/AdminSidebar'
 import AdminHeader from '../../components/layout/AdminHeader'
 import AuthGuard from '../../components/auth/AuthGuard'
+import { MobileSidebarProvider, MobilePageHeader, MobileStatGrid, MobileStatCard, MobileEmptyState } from '@/components/ui/mobile-admin'
 import { createClient, getKycDocUrl, getSupabaseImageUrl } from '../../lib/supabase'
 
 // ── Types ──────────────────────────────────────────────────────────────────────
@@ -223,6 +224,7 @@ export default function AdminVetting() {
 
   return (
     <AuthGuard require="admin">
+      <MobileSidebarProvider>
       <div className="flex h-screen overflow-hidden bg-[#F4F6FB]">
         <AdminSidebar userEmail={user?.email} userName={displayName} />
 
@@ -233,18 +235,36 @@ export default function AdminVetting() {
             pendingCount={totalPending}
           />
 
+          {/* ── Mobile: compact page header ── */}
+          <div className="sm:hidden px-3 pb-1">
+            <MobilePageHeader
+              title="Vetting Hub"
+              subtitle={`${kycCounts.pending} identity ${kycCounts.pending === 1 ? 'check' : 'checks'} · ${pendingListings.length} listing ${pendingListings.length === 1 ? 'approval' : 'approvals'}`}
+            />
+          </div>
+
           {/* ── Hero header ── */}
           <div className="shrink-0 px-4 md:px-6 pt-3 pb-2">
             <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
 
               <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-                <div>
+                <div className="hidden sm:block">
                   <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">Platform Vetting</p>
-                  <h2 className="mt-0.5 text-xl md:text-2xl font-extrabold text-slate-950">Vetting Hub</h2>
+                  <h2 className="mt-0.5 text-xl md:text-2xxl font-extrabold text-slate-950">Vetting Hub</h2>
                 </div>
 
-                {/* Stats */}
-                <div className="grid grid-cols-2 gap-1.5 sm:flex sm:items-center sm:gap-2 sm:flex-wrap shrink-0">
+                {/* Mobile: compact KPI grid */}
+                <div className="sm:hidden">
+                  <MobileStatGrid>
+                    <MobileStatCard label="KYC Pending" value={kycCounts.pending} color="text-amber-700" icon={Clock} />
+                    <MobileStatCard label="KYC Approved" value={kycCounts.approved} color="text-emerald-700" icon={CheckCircle} />
+                    <MobileStatCard label="Listing Pending" value={pendingListings.length} color="text-violet-700" icon={ListChecks} />
+                    <MobileStatCard label="Landlords" value={kycCounts.all} color="text-blue-700" icon={Users} />
+                  </MobileStatGrid>
+                </div>
+
+                {/* Stats — desktop only */}
+                <div className="hidden sm:grid sm:grid-cols-2 sm:gap-1.5 sm:flex sm:items-center sm:gap-2 sm:flex-wrap shrink-0">
                   {[
                     { label: 'KYC Pending',     value: kycCounts.pending,      accent: 'text-amber-700'   },
                     { label: 'KYC Approved',    value: kycCounts.approved,     accent: 'text-emerald-700' },
@@ -262,11 +282,11 @@ export default function AdminVetting() {
               {/* ── Tab switcher ── */}
               <div className="mt-2.5 flex items-center gap-2 overflow-x-auto -mx-1 px-1 sm:overflow-visible sm:mx-0 sm:px-0">
                 <button type="button" onClick={() => setActiveTab('identity')}
-                  className={`flex items-center gap-1.5 rounded-full px-4 py-1.5 text-xs font-semibold transition ${
-                  activeTab === 'identity'
-                    ? 'bg-primary text-primary-foreground shadow-sm shadow-primary/20'
-                    : 'bg-blue-50 text-blue-700 hover:bg-blue-100'
-                }`}>
+                  className={`flex items-center gap-1.5 rounded-full px-4 py-2 sm:py-1.5 text-xs font-semibold transition h-10 sm:h-auto min-h-[44px] ${
+                    activeTab === 'identity'
+                      ? 'bg-primary text-primary-foreground shadow-sm shadow-primary/20'
+                      : 'bg-blue-50 text-blue-700 hover:bg-blue-100'
+                  }`}>
                   <ShieldCheck className="w-3.5 h-3.5" />
                   Identity Checks
                   <span className={`inline-flex h-4 min-w-[16px] items-center justify-center rounded-full text-[10px] font-bold ${
@@ -275,8 +295,8 @@ export default function AdminVetting() {
                 </button>
 
                 <button type="button" onClick={() => setActiveTab('listings')}
-                  className={`flex items-center gap-1.5 rounded-full px-4 py-1.5 text-xs font-semibold transition ${
-                  activeTab === 'listings'
+                  className={`flex items-center gap-1.5 rounded-full px-4 py-2 sm:py-1.5 text-xs font-semibold transition h-10 sm:h-auto min-h-[44px] ${
+                    activeTab === 'listings'
                     ? 'bg-primary text-primary-foreground shadow-sm shadow-primary/20'
                     : 'bg-blue-50 text-blue-700 hover:bg-blue-100'
                 }`}>
@@ -328,6 +348,7 @@ export default function AdminVetting() {
           )}
         </div>
       </div>
+      </MobileSidebarProvider>
     </AuthGuard>
   )
 }
@@ -363,7 +384,7 @@ function StatusFilterDropdown({ value, onChange, tabs }: {
       <button
         type="button"
         onClick={() => setOpen(o => !o)}
-        className="flex w-full items-center justify-between gap-2 rounded-2xl border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-xs font-semibold text-slate-700 hover:bg-slate-100 transition-colors"
+        className="flex w-full items-center justify-between gap-2 rounded-xl sm:rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 sm:px-3.5 sm:py-2.5 text-xs font-semibold text-slate-700 hover:bg-slate-100 transition-colors min-h-[44px]"
       >
         <div className="flex items-center gap-2">
           <span className={`w-2 h-2 rounded-full shrink-0 ${DOT[selected.key] ?? 'bg-slate-400'}`} />
@@ -452,12 +473,12 @@ function IdentityTab({
               <Loader2 className="w-5 h-5 animate-spin text-slate-400" />
             </div>
           ) : filtered.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-20 px-6 text-center">
-              <div className="w-14 h-14 rounded-2xl bg-slate-50 border border-slate-200 flex items-center justify-center mb-3">
-                <Users className="w-6 h-6 text-slate-300" />
-              </div>
-              <p className="text-sm font-semibold text-slate-600">No results</p>
-              <p className="text-xs text-slate-400 mt-1">Try a different filter or search term.</p>
+            <div className="py-12">
+              <MobileEmptyState
+                title="No results"
+                description="Try a different filter or search term."
+                icon={<Users className="w-5 h-5 text-slate-300" />}
+              />
             </div>
           ) : (
             <div className="divide-y divide-slate-50">
@@ -578,7 +599,7 @@ function KycReviewPanel({
   return (
     <div className="flex flex-col h-full overflow-hidden">
       {/* Header */}
-      <div className="shrink-0 flex items-center justify-between gap-4 px-6 py-5 border-b border-slate-100">
+      <div className="shrink-0 flex items-center justify-between gap-4 px-4 py-3 sm:px-6 sm:py-5 border-b border-slate-100">
         <div className="flex items-center gap-4 min-w-0">
           <div className={`w-12 h-12 rounded-full bg-gradient-to-br ${avatarGrad(landlord.full_name)} flex items-center justify-center shrink-0 text-[13px] font-bold text-white shadow-sm`}>
             {getInitials(landlord.full_name)}
@@ -605,17 +626,17 @@ function KycReviewPanel({
       </div>
 
       {/* Scrollable body */}
-      <div className="flex-1 overflow-y-auto p-6 space-y-5">
+      <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 sm:space-y-5">
         {/* Actions */}
-        <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-          <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400 mb-4">Review Actions</p>
-          <div className="flex flex-wrap gap-2">
+        <div className="rounded-xl border border-slate-200 bg-white p-4 sm:p-5 shadow-sm">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-slate-400 mb-3">Review Actions</p>
+          <div className="flex flex-wrap gap-1.5">
             {ACTIONS.filter(a => a.show).map(a => {
               const Icon = a.icon
               return (
                 <button key={a.key} onClick={() => onUpdateStatus(landlord.id, a.status)} disabled={busy}
-                  className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl text-sm font-semibold transition-colors disabled:opacity-50 ${a.cls}`}>
-                  {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Icon className="w-4 h-4" />}
+                  className={`inline-flex items-center gap-1.5 px-3 py-2 sm:px-4 sm:py-2.5 rounded-lg sm:rounded-2xl text-[11px] sm:text-sm font-semibold transition-colors disabled:opacity-50 ${a.cls}`}>
+                  {busy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Icon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />}
                   {a.label}
                 </button>
               )
@@ -642,8 +663,8 @@ function KycReviewPanel({
         </div>
 
         {/* Identity details */}
-        <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-          <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400 mb-4">Identity Details</p>
+        <div className="rounded-xl border border-slate-200 bg-white p-4 sm:p-5 shadow-sm">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-slate-400 mb-3">Identity Details</p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {identityFields.map(f => (
               <div key={f.label} className="rounded-3xl border border-slate-100 bg-slate-50 px-4 py-3">
@@ -658,9 +679,9 @@ function KycReviewPanel({
         </div>
 
         {/* KYC Documents */}
-        <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-          <div className="flex items-center justify-between mb-4">
-            <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">KYC Documents</p>
+        <div className="rounded-xl border border-slate-200 bg-white p-4 sm:p-5 shadow-sm">
+          <div className="flex items-center justify-between mb-3 sm:mb-4">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-slate-400">KYC Documents</p>
             <span className="text-[11px] font-semibold text-slate-500">
               {docsLoading ? 'Loading…' : `${kycDocs.length} file${kycDocs.length !== 1 ? 's' : ''}`}
             </span>
@@ -684,7 +705,7 @@ function KycReviewPanel({
                 return (
                   <a key={doc.doc_type} href={doc.url} target="_blank" rel="noreferrer"
                     className="group flex flex-col rounded-3xl border border-slate-200 bg-slate-50 overflow-hidden hover:border-blue-300 hover:shadow-md transition-all">
-                    <div className="relative h-36 bg-slate-100 flex items-center justify-center overflow-hidden">
+                    <div className="relative h-28 sm:h-36 bg-slate-100 flex items-center justify-center overflow-hidden">
                       {showImg ? (
                         <img src={doc.url} alt={doc.file_name}
                           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
@@ -734,7 +755,7 @@ function ListingsTab({
       <div className="h-full rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden flex flex-col">
 
         {/* Panel header */}
-        <div className="shrink-0 flex items-center justify-between gap-4 px-6 py-5 border-b border-slate-100">
+        <div className="shrink-0 flex items-center justify-between gap-4 px-4 py-3 sm:px-6 sm:py-5 border-b border-slate-100">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">Listing Approvals</p>
             <h3 className="mt-1 text-base font-extrabold text-slate-950">
@@ -752,21 +773,19 @@ function ListingsTab({
         </div>
 
         {/* Body */}
-        <div className="flex-1 overflow-y-auto p-6">
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6">
           {loading ? (
-            <div className="flex items-center justify-center py-24 gap-3 text-slate-400">
-              <Loader2 className="w-6 h-6 animate-spin" />
+            <div className="flex items-center justify-center py-16 sm:py-24 gap-3 text-slate-400">
+              <Loader2 className="w-5 h-5 animate-spin" />
               <span className="text-sm font-medium">Loading pending listings…</span>
             </div>
           ) : listings.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-24 text-center">
-              <div className="w-20 h-20 rounded-2xl bg-slate-50 border border-slate-200 shadow-sm flex items-center justify-center mb-5">
-                <ListChecks className="w-10 h-10 text-slate-300" />
-              </div>
-              <h3 className="text-lg font-extrabold text-slate-800">All caught up!</h3>
-              <p className="text-sm text-slate-400 mt-2 max-w-xs leading-relaxed">
-                No listing submissions waiting for review. New landlord listings will appear here automatically.
-              </p>
+            <div className="py-12">
+              <MobileEmptyState
+                title="All caught up!"
+                description="No listing submissions waiting for review. New landlord listings will appear here automatically."
+                icon={<ListChecks className="w-5 h-5 text-slate-300" />}
+              />
             </div>
           ) : (
             <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
@@ -813,7 +832,7 @@ function ListingCard({
   return (
     <div className="flex flex-col rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden hover:shadow-md hover:border-slate-300 transition-all">
       {/* Cover image */}
-      <div className="relative h-44 bg-slate-100 overflow-hidden">
+      <div className="relative h-32 sm:h-44 bg-slate-100 overflow-hidden">
         {coverUrl ? (
           <img src={coverUrl} alt={listing.title}
             className="w-full h-full object-cover" />
