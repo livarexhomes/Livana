@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef, ReactNode } from 'react'
 import { useLocation } from '@/lib/navigation'
-import { Search, Bell, X, Building2, Users, MessageSquare, ArrowRight, ChevronRight, ShieldCheck, Headphones } from 'lucide-react'
+import { Search, Bell, X, Building2, Users, MessageSquare, ArrowRight, ChevronRight, ShieldCheck, Headphones, Menu } from 'lucide-react'
 import { createClient } from '@/lib/supabase'
+import { useMobileSidebar } from '@/components/ui/mobile-sidebar-context'
 import { getNotificationSettings } from '@/lib/platform-settings'
 import { playSupportSound, getSoundMuted } from '@/lib/support-notifications'
 
@@ -30,6 +31,7 @@ interface AdminHeaderProps {
 
 export default function AdminHeader({ title, subtitle, action, pendingCount = 0 }: AdminHeaderProps) {
   const [, navigate] = useLocation()
+  const { setOpen } = useMobileSidebar()
   const [query, setQuery]           = useState('')
   const [results, setResults]       = useState<SearchResult[]>([])
   const [searching, setSearching]   = useState(false)
@@ -215,10 +217,17 @@ export default function AdminHeader({ title, subtitle, action, pendingCount = 0 
   }
 
   return (
-    <header className="flex items-center justify-between pl-14 pr-4 md:px-6 py-3.5 bg-white border-b border-gray-100 shrink-0 gap-3">
-      <div className="min-w-0">
-        <h1 className="text-base font-extrabold text-gray-900 truncate">{title}</h1>
-        {subtitle && <p className="text-xs text-gray-400 mt-0.5 truncate">{subtitle}</p>}
+    <header className="flex items-center justify-between px-3 md:px-6 py-2 md:py-3.5 bg-white border-b border-gray-100 shrink-0 gap-3 h-14 md:h-auto">
+      <div className="flex items-center gap-2 min-w-0">
+        <button type="button" onClick={() => setOpen(true)}
+          className="md:hidden w-10 h-10 flex items-center justify-center rounded-lg text-slate-700 hover:bg-slate-100 active:scale-95 transition-all shrink-0"
+          aria-label="Open menu">
+          <Menu className="w-5 h-5" />
+        </button>
+        <div className="min-w-0">
+          <h1 className="text-base font-extrabold text-gray-900 truncate">{title}</h1>
+          {subtitle && <p className="text-xs text-gray-400 mt-0.5 truncate hidden md:inline-block">{subtitle}</p>}
+        </div>
       </div>
 
       <div className="flex items-center gap-2 shrink-0">
@@ -239,7 +248,7 @@ export default function AdminHeader({ title, subtitle, action, pendingCount = 0 
             </div>
           ) : (
             <button type="button" onClick={openSearch}
-              className="flex items-center gap-2 bg-slate-50 border border-slate-200 hover:border-slate-300 hover:bg-slate-100 rounded-xl px-3 py-2 w-9 sm:w-36 md:w-48 transition-all group justify-center sm:justify-start">
+              className="flex items-center gap-2 bg-slate-50 border border-slate-200 hover:border-slate-300 hover:bg-slate-100 rounded-xl px-3 py-2 w-10 h-10 sm:w-36 sm:h-auto md:w-48 transition-all group justify-center sm:justify-start">
               <Search className="w-3.5 h-3.5 text-slate-400 group-hover:text-slate-600 shrink-0 transition-colors" />
               <span className="text-xs text-slate-400 group-hover:text-slate-600 transition-colors hidden sm:inline">Search…</span>
             </button>
@@ -284,7 +293,7 @@ export default function AdminHeader({ title, subtitle, action, pendingCount = 0 
         {/* Notification bell */}
         <div ref={notifRef} className="relative">
           <button type="button" onClick={openNotif}
-            className="relative w-9 h-9 flex items-center justify-center rounded-xl bg-slate-50 border border-slate-200 hover:bg-slate-100 hover:border-slate-300 transition-all group">
+            className="relative w-10 h-10 flex items-center justify-center rounded-xl bg-slate-50 border border-slate-200 hover:bg-slate-100 hover:border-slate-300 transition-all group">
             <Bell className="w-4 h-4 text-slate-500 group-hover:text-slate-800 transition-colors" />
             {unread > 0 && (
               <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full flex items-center justify-center border-2 border-white">

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Link, useLocation } from '@/lib/navigation'
+import { useMobileSidebar } from '@/components/ui/mobile-sidebar-context'
 import { createClient } from '@/lib/supabase'
 import { useAdminPresence } from '@/lib/admin-presence'
 import { subscribeSupportPresence, type SupportStatus } from '@/lib/live-support'
@@ -41,7 +42,7 @@ export default function AdminSidebar({ userEmail, userName }: Props) {
   // availability accurate no matter where the admin is.
   useAdminPresence()
   const [location] = useLocation()
-  const [open, setOpen] = useState(false)
+  const { open, setOpen } = useMobileSidebar()
   const [collapsed, setCollapsed] = useState(() => {
     try { return localStorage.getItem('admin-sidebar-collapsed') === 'true' } catch { return false }
   })
@@ -259,12 +260,6 @@ export default function AdminSidebar({ userEmail, userName }: Props) {
       <aside className={`hidden md:flex shrink-0 flex-col h-screen sticky top-0 z-30 border-r border-sidebar-border bg-sidebar transition-all duration-300 ease-in-out ${collapsed ? 'w-16' : 'w-64'}`}>
         <SidebarContent />
       </aside>
-
-      <button type="button" onClick={() => setOpen(true)}
-        className="md:hidden fixed top-3 left-3 z-50 w-9 h-9 flex items-center justify-center rounded-xl bg-white border border-slate-200 shadow-sm text-slate-700 hover:bg-slate-50 active:scale-95 transition-all"
-        aria-label="Open menu">
-        <Menu className="w-4 h-4" />
-      </button>
 
       <div onClick={() => setOpen(false)}
         className={`md:hidden fixed inset-0 z-40 bg-slate-950/50 backdrop-blur-sm transition-opacity duration-300 ${open ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`} />

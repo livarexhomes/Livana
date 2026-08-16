@@ -14,6 +14,7 @@ import { createClient, isSupabaseConfigured } from '../../lib/supabase'
 import { ResponsiveFilters } from '@/components/ui/responsive-filters'
 import { StatusBadge } from '@/components/ui/status-badge'
 import { SmartSelect } from '@/components/ui/smart-select'
+import { MobileSidebarProvider, MobilePageHeader, MobileStatGrid, MobileStatCard, MobileEmptyState } from '@/components/ui/mobile-admin'
 
 // ── Status metadata ────────────────────────────────────────────────────────────
 
@@ -504,6 +505,7 @@ export default function AdminLandlords() {
 
   return (
     <AuthGuard require="admin">
+      <MobileSidebarProvider>
       <div className="flex h-screen overflow-hidden bg-[#F4F6FB]">
         <AdminSidebar userEmail={user?.email} userName={displayName} />
 
