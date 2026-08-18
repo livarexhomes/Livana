@@ -14,7 +14,7 @@ import { createClient, isSupabaseConfigured } from '../../lib/supabase'
 import { ResponsiveFilters } from '@/components/ui/responsive-filters'
 import { StatusBadge } from '@/components/ui/status-badge'
 import { SmartSelect } from '@/components/ui/smart-select'
-import { MobileSidebarProvider, MobilePageHeader, MobileStatGrid, MobileStatCard, MobileEmptyState } from '@/components/ui/mobile-admin'
+import { MobileSidebarProvider, MobileStatGrid, MobileStatCard, MobileSearch, MobileFilterBar } from '@/components/ui/mobile-admin'
 
 // ── Status metadata ────────────────────────────────────────────────────────────
 
@@ -64,8 +64,8 @@ function ConfirmResetModal({ target, onConfirm, onCancel, loading }: {
 }) {
   const [reason, setReason] = useState('')
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm px-4">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 border border-slate-200">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
+      <div className="bg-white rounded-xl md:rounded-2xl shadow-2xl w-full max-w-sm p-6 border border-slate-200">
         <div className="w-11 h-11 rounded-xl bg-amber-50 flex items-center justify-center mb-4">
           <RotateCcw className="w-5 h-5 text-amber-600" />
         </div>
@@ -108,8 +108,8 @@ function ConfirmDeleteModal({ target, onConfirm, onCancel, loading }: {
   target: DeleteConfirm; onConfirm: () => void; onCancel: () => void; loading: boolean
 }) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm px-4">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 border border-slate-200">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
+      <div className="bg-white rounded-xl md:rounded-2xl shadow-2xl w-full max-w-sm p-6 border border-slate-200">
         <div className="w-11 h-11 rounded-xl bg-red-50 flex items-center justify-center mb-4">
           <Trash2 className="w-5 h-5 text-red-600" />
         </div>
@@ -524,47 +524,36 @@ export default function AdminLandlords() {
             subtitle={`${clients.length} clients · ${approved} approved`}
             pendingCount={approved} />
 
-          {/* ── Mobile: compact page header + stats + filters ── */}
-          <div className="sm:hidden">
-            <MobilePageHeader title="Clients"
-              subtitle={`${clients.length} ${clients.length === 1 ? 'client' : 'clients'} · ${approved} approved`} />
-
-            <div className="grid grid-cols-2 gap-2.5 px-4 py-3">
-              <MobileStatCard label="Total"     value={clients.length} color="text-slate-700" />
-              <MobileStatCard label="Approved"  value={approved}       color="text-emerald-700" />
-              <MobileStatCard label="Pending"   value={pending}        color="text-amber-700" />
-              <MobileStatCard label="Suspended" value={suspended}      color="text-orange-700" />
-            </div>
-
-            {/* Mobile filter bar */}
-            <div className="px-3 pb-2 space-y-2">
-              <div className="relative">
-                <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-300" />
-                <input value={search} onChange={e => setSearch(e.target.value)}
-                  placeholder="Search name, city, phone…"
-                  className="w-full pl-8 pr-3 py-2 rounded-xl border border-slate-200 bg-white text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-300" />
+          {/* ── Mobile: compact stats + filters ── */}
+          <div className="sm:hidden -mx-4">
+            <MobileStatGrid>
+              <MobileStatCard label="Total" value={clients.length} color="text-slate-700" icon={Users} />
+              <MobileStatCard label="Approved" value={approved} color="text-emerald-700" icon={ShieldCheck} />
+              <MobileStatCard label="Pending" value={pending} color="text-amber-700" icon={Clock} />
+              <MobileStatCard label="Suspended" value={suspended} color="text-orange-700" icon={ShieldOff} />
+            </MobileStatGrid>
+            <MobileSearch
+              placeholder="Search name, city, phone…"
+              value={search}
+              onChange={setSearch}
+            />
+            <MobileFilterBar>
+              <ResponsiveFilters
+                tabs={STATUS_TABS.map(t => ({ key: t.key, label: t.label, count: t.count }))}
+                value={statusFilter}
+                onChange={setStatusFilter}
+                label="Status"
+              />
+              <div className="relative flex-1 min-w-[120px]">
+                <select value={sort} onChange={e => setSort(e.target.value)}
+                  className="w-full appearance-none rounded-xl border border-slate-200 bg-white pl-2.5 pr-7 py-2 text-xs font-medium text-slate-700 focus:outline-none cursor-pointer min-h-[44px]">
+                  <option value="newest">Newest</option>
+                  <option value="oldest">Oldest</option>
+                  <option value="name">Name A–Z</option>
+                </select>
+                <ChevronDown className="pointer-events-none absolute right-2 top-1/2 h-3 w-3 -translate-y-1/2 text-slate-400" />
               </div>
-              <div className="flex gap-2">
-                <div className="relative flex-1">
-                  <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)}
-                    className="w-full appearance-none rounded-xl border border-slate-200 bg-white pl-2.5 pr-7 py-2 text-xs font-medium text-slate-700 focus:outline-none cursor-pointer">
-                    {STATUS_TABS.map(t => (
-                      <option key={t.key} value={t.key}>{t.label} ({t.count})</option>
-                    ))}
-                  </select>
-                  <ChevronDown className="pointer-events-none absolute right-2 top-1/2 h-3 w-3 -translate-y-1/2 text-slate-400" />
-                </div>
-                <div className="relative flex-1">
-                  <select value={sort} onChange={e => setSort(e.target.value)}
-                    className="w-full appearance-none rounded-xl border border-slate-200 bg-white pl-2.5 pr-7 py-2 text-xs font-medium text-slate-700 focus:outline-none cursor-pointer">
-                    <option value="newest">Newest</option>
-                    <option value="oldest">Oldest</option>
-                    <option value="name">Name A–Z</option>
-                  </select>
-                  <ChevronDown className="pointer-events-none absolute right-2 top-1/2 h-3 w-3 -translate-y-1/2 text-slate-400" />
-                </div>
-              </div>
-            </div>
+            </MobileFilterBar>
           </div>
 
           {/* ── Hero card (desktop only) ── */}
@@ -832,7 +821,7 @@ export default function AdminLandlords() {
       )}
 
       {toast && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-slate-900 text-white text-[13px] font-medium px-5 py-3 rounded-2xl shadow-2xl whitespace-nowrap flex items-center gap-2">
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-slate-900 text-white text-[13px] font-medium px-5 py-3 rounded-xl shadow-2xl flex items-center gap-2">
           <div className="w-2 h-2 rounded-full bg-primary"></div>
           {toast}
         </div>

@@ -9,6 +9,7 @@ import {
 import AdminSidebar from '../../components/layout/AdminSidebar'
 import AdminHeader from '../../components/layout/AdminHeader'
 import AuthGuard from '../../components/auth/AuthGuard'
+import { MobileSidebarProvider } from '@/components/ui/mobile-admin'
 import { createClient } from '../../lib/supabase'
 import { SmartSelect } from '../../components/ui/smart-select'
 import { subscribeSupportPresence, type LiveSupportState, type SupportAgent, type SupportStatus } from '../../lib/live-support'
@@ -2929,14 +2930,19 @@ export default function AdminSupportPage() {
 
   return (
     <AuthGuard require="admin">
-      <div className="flex h-screen overflow-hidden bg-background">
-        <AdminSidebar userEmail={user?.email} userName={displayName} />
+      <MobileSidebarProvider>
+        <div className="flex h-screen overflow-hidden bg-background">
+          <AdminSidebar userEmail={user?.email} userName={displayName} />
 
-        <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-          {/* ── Hero card ── */}
-          <div className="shrink-0 px-4 md:px-6 pt-3 pb-2">
-            <div className="rounded-2xl border border-card-border bg-card px-5 py-3.5 shadow-sm">
-              <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+          <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+            <div className="md:hidden">
+              <AdminHeader title="Support" subtitle={`${openCount} enquiries · ${chatOpenCount} chats · ${contactCount} contacts`} />
+            </div>
+
+            {/* ── Hero card ── */}
+            <div className="shrink-0 px-4 md:px-6 pt-3 pb-2">
+              <div className="rounded-2xl border border-card-border bg-card px-5 py-3.5 shadow-sm">
+                <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
                 <div>
                   <p className="text-xs font-semibold uppercase tracking-[0.28em] text-muted-foreground">Customer operations</p>
                   <h2 className="mt-0.5 text-base font-extrabold text-foreground">Support &amp; Inbox</h2>
@@ -3019,7 +3025,8 @@ export default function AdminSupportPage() {
             )}
           </div>
         </div>
-      </div>
+        </div>
+      </MobileSidebarProvider>
     </AuthGuard>
   )
 }

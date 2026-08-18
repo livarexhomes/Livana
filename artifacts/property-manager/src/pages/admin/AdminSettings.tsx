@@ -9,7 +9,9 @@ import {
   Key, Smartphone, Webhook, Loader2, Check, ChevronRight, X, FileDown, Clock,
 } from 'lucide-react'
 import AdminSidebar from '../../components/layout/AdminSidebar'
+import AdminHeader from '../../components/layout/AdminHeader'
 import AuthGuard from '../../components/auth/AuthGuard'
+import { MobileSidebarProvider } from '@/components/ui/mobile-admin'
 import { createClient } from '../../lib/supabase'
 import { invalidateFeeConfig } from '../../lib/fees'
 import { notifyListingRulesChange } from '../../lib/settings-store'
@@ -971,25 +973,31 @@ export default function AdminSettings() {
   if (loading) {
     return (
       <AuthGuard require="admin">
-        <div className="flex h-screen overflow-hidden bg-[#F4F6FB]">
-          <AdminSidebar userEmail={user?.email} userName={displayName} />
-          <div className="flex-1 flex items-center justify-center">
-            <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+        <MobileSidebarProvider>
+          <div className="flex h-screen overflow-hidden bg-[#F4F6FB]">
+            <AdminSidebar userEmail={user?.email} userName={displayName} />
+            <div className="flex-1 flex items-center justify-center">
+              <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+            </div>
           </div>
-        </div>
+        </MobileSidebarProvider>
       </AuthGuard>
     )
   }
 
   return (
     <AuthGuard require="admin">
-      <div className="flex h-screen overflow-hidden bg-[#F4F6FB]">
-        <AdminSidebar userEmail={user?.email} userName={displayName} />
+      <MobileSidebarProvider>
+        <div className="flex h-screen overflow-hidden bg-[#F4F6FB]">
+          <AdminSidebar userEmail={user?.email} userName={displayName} />
 
-        <div className="flex-1 flex flex-col min-w-0">
-          <div className="flex-1 flex flex-col min-h-0 w-full max-w-6xl mx-auto px-4 md:px-8 py-4 md:py-6">
-            {/* ── Page header ── */}
-            <header className="shrink-0 flex items-start justify-between gap-4 pl-11 md:pl-0">
+          <div className="flex-1 flex flex-col min-w-0">
+            <div className="md:hidden">
+              <AdminHeader title="Settings" subtitle="Admin configuration" />
+            </div>
+
+            {/* ── Page header (desktop only — AdminHeader covers mobile) ── */}
+            <header className="shrink-0 hidden md:flex items-start justify-between gap-4 pl-0">
               <div className="min-w-0">
                 <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">Admin configuration</p>
                 <h2 className="mt-1 text-xl md:text-2xl font-extrabold text-slate-950 tracking-tight">Settings</h2>
@@ -1972,7 +1980,7 @@ export default function AdminSettings() {
 
               {/* ── Mobile save bar ── */}
               {SAVEABLE_SECTIONS.has(active) && (
-                <div className="lg:hidden shrink-0 border-t border-slate-100 bg-white px-4 py-3">
+                <div className="md:hidden shrink-0 border-t border-slate-100 bg-white px-4 py-3">
                   <div className="flex items-center gap-3">
                     {saved && (
                       <span className="flex items-center gap-1.5 text-xs font-semibold text-emerald-600 shrink-0">
@@ -2034,6 +2042,8 @@ export default function AdminSettings() {
           </div>
         </div>
       )}
+      </div>
+      </MobileSidebarProvider>
     </AuthGuard>
   )
 }

@@ -16,7 +16,7 @@ import LocationField from '../../components/property/LocationField'
 import { MoneyInput } from '../../components/ui/money-input'
 import { ResponsiveFilters } from '../../components/ui/responsive-filters'
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '@/components/ui/dropdown-menu'
-import { MobileSidebarProvider, MobilePageHeader, MobileStatGrid, MobileStatCard, MobileEmptyState } from '@/components/ui/mobile-admin'
+import { MobileSidebarProvider, MobileStatGrid, MobileStatCard, MobileEmptyState, MobileSearch, MobileFilterBar } from '@/components/ui/mobile-admin'
 import { digitsToNumber, formatNaira } from '../../lib/currency'
 import { getFeeConfig, calcFeeBreakdown, type FeeConfig, type FeeBreakdown } from '../../lib/fees'
 import { subscribeListingRulesChange } from '../../lib/settings-store'
@@ -517,39 +517,43 @@ export default function AdminProperties() {
             <div className="grid gap-5 xl:grid-cols-[1.75fr_0.9fr]">
               <div className="space-y-5">
 
-                {/* ── Mobile: compact header + stats + filters ── */}
-                <div className="sm:hidden">
-                  <MobilePageHeader title="Listings"
-                    subtitle={`${properties.length} total · ${available} available`} />
+                {/* ── Mobile: compact stats + filters ── */}
+                <div className="sm:hidden -mx-4">
                   <MobileStatGrid>
-                    <MobileStatCard label="Total" value={properties.length} color="text-blue-700" />
-                    <MobileStatCard label="Available" value={available} color="text-emerald-700" />
-                    <MobileStatCard label="Taken" value={taken} color="text-rose-700" />
+                    <MobileStatCard label="Total" value={properties.length} color="text-blue-700" icon={Building2} />
+                    <MobileStatCard label="Available" value={available} color="text-emerald-700" icon={CheckCircle} />
+                    <MobileStatCard label="Taken" value={taken} color="text-rose-700" icon={XCircle} />
                   </MobileStatGrid>
-                  {/* Mobile filter bar */}
-                  <div className="px-3 pb-2">
-                    <div className="relative mb-2">
-                      <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-300" />
-                      <input value={search} onChange={e => setSearch(e.target.value)}
-                        placeholder="Search properties, neighborhoods…"
-                        className="w-full pl-8 pr-3 py-2 rounded-xl border border-slate-200 bg-white text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-300" />
+                  <MobileSearch
+                    placeholder="Search properties, neighborhoods…"
+                    value={search}
+                    onChange={setSearch}
+                  />
+                  <MobileFilterBar>
+                    <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)}
+                      className="w-full appearance-none rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-700 focus:outline-none cursor-pointer min-h-[44px]">
+                      {STATUS_TABS.map(t => (
+                        <option key={t.key} value={t.key}>{t.label} ({t.count})</option>
+                      ))}
+                    </select>
+                    <select value={sort} onChange={e => setSort(e.target.value)}
+                      className="w-full appearance-none rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-700 focus:outline-none cursor-pointer min-h-[44px]">
+                      <option value="newest">Newest</option>
+                      <option value="oldest">Oldest</option>
+                      <option value="price_asc">Price ↑</option>
+                      <option value="price_desc">Price ↓</option>
+                    </select>
+                    <div className="flex items-center gap-1 bg-slate-100 rounded-xl p-1 shrink-0">
+                      <button type="button" onClick={() => setViewMode('grid')}
+                        className={`p-1.5 rounded-lg min-w-[44px] min-h-[44px] flex items-center justify-center transition ${viewMode === 'grid' ? 'bg-blue-600 text-white' : 'text-slate-500 hover:text-slate-700'}`}>
+                        <LayoutGrid className="w-4 h-4" />
+                      </button>
+                      <button type="button" onClick={() => setViewMode('list')}
+                        className={`p-1.5 rounded-lg min-w-[44px] min-h-[44px] flex items-center justify-center transition ${viewMode === 'list' ? 'bg-blue-600 text-white' : 'text-slate-500 hover:text-slate-700'}`}>
+                        <List className="w-4 h-4" />
+                      </button>
                     </div>
-                    <div className="flex gap-2">
-                      <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)}
-                        className="w-full appearance-none rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-700 focus:outline-none cursor-pointer">
-                        {STATUS_TABS.map(t => (
-                          <option key={t.key} value={t.key}>{t.label} ({t.count})</option>
-                        ))}
-                      </select>
-                      <select value={sort} onChange={e => setSort(e.target.value)}
-                        className="w-full appearance-none rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-700 focus:outline-none cursor-pointer">
-                        <option value="newest">Newest</option>
-                        <option value="oldest">Oldest</option>
-                        <option value="price_asc">Price ↑</option>
-                        <option value="price_desc">Price ↓</option>
-                      </select>
-                    </div>
-                  </div>
+                  </MobileFilterBar>
                 </div>
 
                 {/* ── Hero card (desktop only) ── */}
@@ -623,7 +627,7 @@ export default function AdminProperties() {
                 <MobileEmptyState
                   title={search ? 'No properties match your search.' : 'No properties found.'}
                   description={search ? 'Try a different search term or filter.' : 'Create your first listing to get started.'}
-                  icon={<Building2 className="w-5 h-5 text-slate-300" />}
+                  icon={Building2}
                 />
               </div>
             ) : (
@@ -826,9 +830,9 @@ export default function AdminProperties() {
 
     {/* Edit modal */}
         {editingProp && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
-            <div className="w-full max-w-lg bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
-              <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 shrink-0">
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-0 md:p-4 bg-black/40">
+            <div className="w-full h-full md:max-w-lg md:h-auto bg-white md:rounded-2xl shadow-2xl overflow-hidden flex flex-col">
+              <div className="flex items-center justify-between px-4 py-3 sm:px-6 sm:py-4 border-b border-gray-100 shrink-0">
                 <div>
                   <h2 className="text-base font-bold text-gray-900">Edit Property</h2>
                   <p className="text-xs text-gray-400 mt-0.5 truncate max-w-xs">{editingProp.title}</p>
@@ -838,7 +842,7 @@ export default function AdminProperties() {
                 </button>
               </div>
               <div className="flex-1 overflow-y-auto">
-              <div className="p-6 space-y-4">
+              <div className="px-4 py-4 sm:px-6 sm:py-5 space-y-4">
                 <div>
                   <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5 block">Title</label>
                   <input value={editForm.title} onChange={e => setEditForm(f => ({ ...f, title: e.target.value }))}
@@ -856,7 +860,7 @@ export default function AdminProperties() {
                     </div>
                   </div>
                 </div>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5 block">City</label>
                     <input value={editForm.city} onChange={e => setEditForm(f => ({ ...f, city: e.target.value }))}
@@ -869,7 +873,7 @@ export default function AdminProperties() {
                       className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gray-50 focus:bg-white transition-all" />
                   </div>
                 </div>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5 block">Rent Amount (₦)</label>
                     <MoneyInput
@@ -933,7 +937,7 @@ export default function AdminProperties() {
                     <option value="coming_soon">Coming Soon</option>
                   </select>
                 </div>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5 block">Bedrooms</label>
                     <input type="number" min="0" value={editForm.bedrooms} onChange={e => setEditForm(f => ({ ...f, bedrooms: e.target.value }))}
@@ -990,7 +994,7 @@ export default function AdminProperties() {
                 </div>
               </div>
               {/* Photos */}
-              <div className="px-6 pb-5 space-y-3">
+              <div className="px-4 sm:px-6 pb-5 space-y-3">
                 <div className="flex items-center gap-2 pb-2 border-b border-gray-100">
                   <ImagePlus className="w-4 h-4 text-blue-600" />
                   <h3 className="text-sm font-bold text-gray-900">Photos</h3>
@@ -1062,7 +1066,7 @@ export default function AdminProperties() {
               </div>
               </div> {/* end scrollable */}
 
-              <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-gray-100 bg-gray-50 shrink-0">
+              <div className="flex items-center justify-end gap-3 px-4 py-3 sm:px-6 sm:py-4 border-t border-gray-100 bg-gray-50 shrink-0">
                 <button onClick={() => { setEditingProp(null); setEditImageFiles([]); setEditImagePreviews([]); setExistingImages([]); }}
                   className="px-4 py-2 text-sm font-semibold text-gray-600 hover:text-gray-800 transition-colors">
                   Cancel
@@ -1080,11 +1084,11 @@ export default function AdminProperties() {
 
       {/* ── Add Listing Modal ── */}
       {addOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-0 md:p-4 bg-black/60">
+          <div className="bg-white rounded-none md:rounded-3xl shadow-2xl w-full h-full md:max-w-2xl md:max-h-[90vh] flex flex-col">
 
             {/* ── Header ── */}
-            <div className="flex items-center justify-between px-6 py-5 border-b border-gray-100 shrink-0">
+            <div className="flex items-center justify-between px-4 py-3 sm:px-6 sm:py-5 border-b border-gray-100 shrink-0">
               <div>
                 <h2 className="text-lg font-extrabold text-gray-900">Add New Listing</h2>
                 <p className="text-xs text-gray-400 mt-0.5">Create a property listing on behalf of a landlord</p>
@@ -1096,7 +1100,7 @@ export default function AdminProperties() {
             </div>
 
             {/* ── Scrollable body ── */}
-            <div className="flex-1 overflow-y-auto px-6 py-5 space-y-4">
+            <div className="flex-1 overflow-y-auto px-4 py-4 sm:px-6 sm:py-5 space-y-4">
 
               {/* Landlord */}
               <div>
@@ -1138,7 +1142,7 @@ export default function AdminProperties() {
               </div>
 
               {/* City + State */}
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1.5 block">City *</label>
                   <input value={addForm.city} onChange={e => setAddForm(f => ({ ...f, city: e.target.value }))}
@@ -1154,7 +1158,7 @@ export default function AdminProperties() {
               </div>
 
               {/* Listing Type + Property Type */}
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1.5 block">Listing Type</label>
                   <select value={addForm.type} onChange={e => setAddForm(f => ({ ...f, type: e.target.value }))}
@@ -1175,7 +1179,7 @@ export default function AdminProperties() {
               </div>
 
               {/* Rent + Status */}
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1.5 block">Rent Amount (₦) *</label>
                   <MoneyInput
@@ -1223,7 +1227,7 @@ export default function AdminProperties() {
 
               <FeesSummary breakdown={addBreakdown} percent={feeConfig?.agencyFeePercent} />
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1.5 block">Status</label>
                   <select value={addForm.status} onChange={e => setAddForm(f => ({ ...f, status: e.target.value }))}
@@ -1237,7 +1241,7 @@ export default function AdminProperties() {
               </div>
 
               {/* Bedrooms + Bathrooms */}
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1.5 block">Bedrooms</label>
                   <input type="number" min="0" value={addForm.bedrooms} onChange={e => setAddForm(f => ({ ...f, bedrooms: e.target.value }))}
@@ -1341,7 +1345,7 @@ export default function AdminProperties() {
                 )}
 
                 <button type="button" onClick={() => fileInputRef.current?.click()}
-                  className="w-full border-2 border-dashed border-gray-200 hover:border-blue-400 hover:bg-blue-50/40 rounded-xl py-8 flex flex-col items-center gap-2 text-gray-400 hover:text-blue-600 transition-all">
+                  className="w-full border-2 border-dashed border-gray-200 hover:border-blue-400 hover:bg-blue-50/40 rounded-xl py-6 sm:py-8 flex flex-col items-center gap-2 text-gray-400 hover:text-blue-600 transition-all">
                   <ImagePlus className="w-7 h-7" />
                   <div className="text-center">
                     <p className="text-sm font-semibold">Click to add photos</p>
@@ -1355,7 +1359,7 @@ export default function AdminProperties() {
             </div> {/* ← end scrollable body */}
 
             {/* ── Footer ── */}
-            <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-gray-100 bg-gray-50 rounded-b-3xl shrink-0">
+            <div className="flex items-center justify-end gap-3 px-4 py-3 sm:px-6 sm:py-4 border-t border-gray-100 bg-gray-50 md:rounded-b-3xl shrink-0">
               <button type="button" onClick={() => { setAddOpen(false); setAddForm(emptyAdd) }}
                 className="px-4 py-2 text-sm font-semibold text-gray-600 hover:text-gray-800 transition-colors">
                 Cancel

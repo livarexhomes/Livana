@@ -9,6 +9,7 @@ import AdminHeader from '../../components/layout/AdminHeader'
 import AuthGuard from '../../components/auth/AuthGuard'
 import { createClient, getKycDocUrl } from '../../lib/supabase'
 import { ResponsiveFilters } from '../../components/ui/responsive-filters'
+import { MobileSidebarProvider } from '@/components/ui/mobile-admin'
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -188,6 +189,7 @@ export default function AdminKYC() {
 
   return (
     <AuthGuard require="admin">
+      <MobileSidebarProvider>
       <div className="flex h-screen overflow-hidden bg-[#F4F6FB]">
         <AdminSidebar userEmail={user?.email} userName={displayName} />
 
@@ -236,7 +238,7 @@ export default function AdminKYC() {
                       { label: 'Rejected', value: counts.rejected, accent: 'text-red-700 bg-red-500/10'          },
                       { label: 'Total',    value: counts.all,      accent: 'text-blue-700 bg-blue-500/10'        },
                     ].map(s => (
-                      <div key={s.label} className="rounded-3xl border border-slate-100 bg-slate-50 px-3 md:px-4 py-2.5 md:py-3 text-center sm:min-w-[70px]">
+                      <div key={s.label} className="rounded-xl sm:rounded-3xl border border-slate-100 bg-slate-50 px-3 md:px-4 py-2.5 md:py-3 text-center sm:min-w-[70px]">
                         <p className={`text-xl md:text-2xl font-extrabold ${s.accent}`}>{s.value}</p>
                         <p className="mt-0.5 text-[10px] font-semibold uppercase tracking-[0.25em] text-slate-500">{s.label}</p>
                       </div>
@@ -372,6 +374,7 @@ export default function AdminKYC() {
           </div>
         </div>
       </div>
+      </MobileSidebarProvider>
     </AuthGuard>
   )
 }
@@ -434,7 +437,7 @@ function ReviewPanel({
     <div className="flex flex-col h-full overflow-hidden">
 
       {/* ── Panel header ── */}
-      <div className="shrink-0 flex items-center justify-between gap-4 px-6 py-5 border-b border-slate-100">
+      <div className="shrink-0 flex items-center justify-between gap-4 px-4 py-3 sm:px-6 sm:py-5 border-b border-slate-100">
         <div className="flex items-center gap-4 min-w-0">
           <div className={`w-12 h-12 rounded-full bg-gradient-to-br ${avatarGrad(landlord.full_name)} flex items-center justify-center shrink-0 text-[13px] font-bold text-white shadow-sm`}>
             {getInitials(landlord.full_name)}
@@ -460,18 +463,18 @@ function ReviewPanel({
         </button>
       </div>
 
-      {/* ── Scrollable body ── */}
-      <div className="flex-1 overflow-y-auto p-6 space-y-5">
+      {/* ── Body ── */}
+      <div className="flex-1 overflow-y-auto px-4 py-4 sm:px-6 sm:py-5 space-y-5">
 
         {/* ── Action buttons ── */}
-        <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+        <div className="rounded-xl border border-slate-200 bg-white p-4 sm:p-5 shadow-sm">
           <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400 mb-4">Review Actions</p>
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-col sm:flex-row gap-2 sm:flex-wrap">
             {ACTIONS.filter(a => a.show).map(a => {
               const Icon = a.icon
               return (
                 <button key={a.key} onClick={() => onUpdateStatus(landlord.id, a.status)} disabled={busy}
-                  className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl text-sm font-semibold transition-colors disabled:opacity-50 ${a.cls}`}>
+                  className={`w-full sm:w-auto inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl text-sm font-semibold transition-colors disabled:opacity-50 ${a.cls}`}>
                   {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Icon className="w-4 h-4" />}
                   {a.label}
                 </button>
@@ -500,11 +503,11 @@ function ReviewPanel({
         </div>
 
         {/* ── Identity details ── */}
-        <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+        <div className="rounded-xl border border-slate-200 bg-white p-4 sm:p-5 shadow-sm">
           <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400 mb-4">Identity Details</p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {identityFields.map(f => (
-              <div key={f.label} className="rounded-3xl border border-slate-100 bg-slate-50 px-4 py-3">
+              <div key={f.label} className="rounded-3xl border border-slate-100 bg-slate-50 px-3 py-2.5 sm:px-4 sm:py-3">
                 <div className="flex items-center gap-1.5 mb-1">
                   <f.icon className="w-3 h-3 text-slate-400" />
                   <p className="text-[10px] font-semibold uppercase tracking-[0.25em] text-slate-400">{f.label}</p>
@@ -516,7 +519,7 @@ function ReviewPanel({
         </div>
 
         {/* ── KYC Documents ── */}
-        <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+          <div className="rounded-xl border border-slate-200 bg-white p-4 sm:p-5 shadow-sm">
           <div className="flex items-center justify-between mb-4">
             <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">KYC Documents</p>
             <span className="text-[11px] font-semibold text-slate-500">

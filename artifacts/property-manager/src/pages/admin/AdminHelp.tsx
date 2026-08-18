@@ -4,7 +4,9 @@ import {
   Phone, BookOpen, Video, ExternalLink, Search, Loader2,
 } from 'lucide-react'
 import AdminSidebar from '../../components/layout/AdminSidebar'
+import AdminHeader from '../../components/layout/AdminHeader'
 import AuthGuard from '../../components/auth/AuthGuard'
+import { MobileSidebarProvider } from '@/components/ui/mobile-admin'
 import { createClient } from '../../lib/supabase'
 import { getPlatformSettings, getNotificationSettings } from '../../lib/platform-settings'
 
@@ -133,33 +135,38 @@ export default function AdminHelp() {
 
   return (
     <AuthGuard require="admin">
-      <div className="flex h-screen overflow-hidden bg-[#F4F6FB]">
-        <AdminSidebar userEmail={user?.email} userName={displayName} />
+      <MobileSidebarProvider>
+        <div className="flex h-screen overflow-hidden bg-[#F4F6FB]">
+          <AdminSidebar userEmail={user?.email} userName={displayName} />
 
-        <div className="flex-1 flex flex-col min-w-0">
-          <header className="bg-white border-b border-gray-100 shrink-0">
-            <div className="px-4 md:px-8 py-5 max-w-7xl mx-auto flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-              <div>
-                <p className="text-xs uppercase tracking-[0.32em] text-slate-400">Help center</p>
-                <h1 className="mt-2 text-3xl font-extrabold text-slate-950 tracking-tight">Help & Support</h1>
-                <p className="mt-2 max-w-2xl text-sm text-slate-500">Find answers, documentation, and direct support for your admin workflow.</p>
-              </div>
-              <div className="rounded-3xl bg-slate-50 border border-slate-200 px-4 py-3 shadow-sm">
-                <p className="text-xs uppercase tracking-[0.3em] text-slate-400">Need help?</p>
-                <p className="mt-1 text-sm font-semibold text-slate-900">We’re here for you</p>
-              </div>
+          <div className="flex-1 flex flex-col min-w-0">
+            <div className="md:hidden">
+              <AdminHeader title="Help & Support" />
             </div>
-          </header>
+
+            <header className="bg-white border-b border-gray-100 shrink-0 hidden md:block">
+              <div className="px-4 md:px-8 py-5 max-w-7xl mx-auto flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+                <div>
+                  <p className="text-xs uppercase tracking-[0.32em] text-slate-400">Help center</p>
+                  <h1 className="mt-2 text-2xl sm:text-3xl font-extrabold text-slate-950 tracking-tight">Help & Support</h1>
+                  <p className="mt-2 max-w-2xl text-sm text-slate-500">Find answers, documentation, and direct support for your admin workflow.</p>
+                </div>
+                <div className="rounded-xl sm:rounded-3xl bg-slate-50 border border-slate-200 px-4 py-3 shadow-sm">
+                  <p className="text-xs uppercase tracking-[0.3em] text-slate-400">Need help?</p>
+                  <p className="mt-1 text-sm font-semibold text-slate-900">We’re here for you</p>
+                </div>
+              </div>
+            </header>
 
           <main className="flex-1 overflow-hidden">
             <div className="h-full overflow-y-auto p-4 md:p-6">
               <div className="grid gap-4 xl:grid-cols-[1.5fr_0.9fr]">
                 <section className="space-y-4">
-                  <div className="rounded-[32px] border border-slate-200 bg-white p-5 shadow-[0_24px_50px_-30px_rgba(15,23,42,0.18)]">
+                  <div className="rounded-xl sm:rounded-[32px] border border-slate-200 bg-white p-4 sm:p-5 shadow-sm">
                     <div className="grid gap-4 lg:grid-cols-[1.5fr_0.9fr] lg:items-center">
                       <div>
                         <p className="text-xs uppercase tracking-[0.3em] text-slate-400">Get support</p>
-                        <h2 className="mt-3 text-2xl font-extrabold text-slate-950">Support that helps you move faster</h2>
+                        <h2 className="mt-3 text-xl sm:text-2xl font-extrabold text-slate-950">Support that helps you move faster</h2>
                         <p className="mt-3 text-sm leading-6 text-slate-500">Browse frequently asked questions, explore docs, or submit a ticket to reach our team directly.</p>
                       </div>
                       <div className="grid gap-3 sm:grid-cols-3">
@@ -168,7 +175,7 @@ export default function AdminHelp() {
                           { label: 'Support channels', value: '3 options' },
                           { label: 'Ticket SLA', value: '24 hrs' },
                         ].map(item => (
-                          <div key={item.label} className="rounded-3xl bg-slate-50 p-4 border border-slate-100">
+                          <div key={item.label} className="rounded-xl sm:rounded-3xl bg-slate-50 p-4 border border-slate-100">
                             <p className="text-[11px] uppercase tracking-[0.3em] text-slate-400">{item.label}</p>
                             <p className="mt-2 text-xl font-semibold text-slate-950">{item.value}</p>
                           </div>
@@ -185,13 +192,13 @@ export default function AdminHelp() {
                     ].map(c => {
                       const Icon = c.icon
                       return (
-                        <div key={c.title} className="rounded-[28px] border border-slate-200 bg-white p-4 shadow-sm hover:shadow-md transition">
-                          <div className={`w-11 h-11 rounded-3xl ${c.accent} flex items-center justify-center text-white mb-4`}>
+                        <div key={c.title} className="rounded-xl sm:rounded-[28px] border border-slate-200 bg-white p-4 shadow-sm hover:shadow-md transition">
+                          <div className={`w-11 h-11 rounded-xl sm:rounded-3xl ${c.accent} flex items-center justify-center text-white mb-4`}>
                             <Icon className="w-5 h-5" strokeWidth={1.7} />
                           </div>
                           <p className="text-sm font-semibold text-slate-950">{c.title}</p>
                           <p className="mt-2 text-sm text-slate-500 leading-relaxed">{c.desc}</p>
-                          <button type="button" className="mt-4 inline-flex items-center justify-center rounded-2xl bg-slate-950 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800 transition">
+                          <button type="button" className="mt-4 w-full sm:w-auto inline-flex items-center justify-center rounded-xl sm:rounded-2xl bg-slate-950 px-4 py-2.5 sm:py-2 text-sm font-semibold text-white hover:bg-slate-800 transition">
                             Contact
                           </button>
                         </div>
@@ -212,16 +219,16 @@ export default function AdminHelp() {
                     </div>
                     <div className="space-y-3">
                       {filteredFaqs.length === 0 ? (
-                        <div className="rounded-3xl border border-slate-100 bg-slate-50 p-5 text-center text-sm text-slate-500">No FAQs match your search.</div>
+                        <div className="rounded-xl sm:rounded-3xl border border-slate-100 bg-slate-50 p-4 sm:p-5 text-center text-sm text-slate-500">No FAQs match your search.</div>
                       ) : filteredFaqs.map((faq, i) => (
-                        <div key={i} className="rounded-[26px] border border-slate-100 overflow-hidden">
+                        <div key={i} className="rounded-xl sm:rounded-[26px] border border-slate-100 overflow-hidden">
                           <button type="button" onClick={() => setOpenFaq(openFaq === i ? null : i)}
-                            className="w-full flex items-center justify-between gap-3 px-5 py-4 bg-white text-left hover:bg-slate-50 transition">
+                            className="w-full flex items-center justify-between gap-3 px-4 py-3.5 sm:px-5 sm:py-4 bg-white text-left hover:bg-slate-50 transition">
                             <p className="text-sm font-semibold text-slate-900">{faq.q}</p>
                             {openFaq === i ? <ChevronUp className="w-4 h-4 text-slate-400" /> : <ChevronDown className="w-4 h-4 text-slate-400" />}
                           </button>
                           {openFaq === i && (
-                            <div className="px-5 pb-4 pt-3 bg-slate-50 text-sm text-slate-600 leading-relaxed">
+                            <div className="px-4 pb-4 pt-3 bg-slate-50 text-sm text-slate-600 leading-relaxed">
                               {faq.a}
                             </div>
                           )}
@@ -242,8 +249,8 @@ export default function AdminHelp() {
                         const Icon = doc.icon
                         return (
                           <a key={doc.title} href={doc.href}
-                            className="group flex items-start gap-3 rounded-3xl border border-slate-100 p-4 hover:border-blue-200 hover:bg-blue-50 transition-colors">
-                            <div className="flex h-11 w-11 items-center justify-center rounded-3xl bg-blue-50 text-blue-600">
+                            className="group flex items-start gap-3 rounded-xl sm:rounded-3xl border border-slate-100 p-4 hover:border-blue-200 hover:bg-blue-50 transition-colors">
+                            <div className="flex h-11 w-11 items-center justify-center rounded-xl sm:rounded-3xl bg-blue-50 text-blue-600">
                               <Icon className="w-5 h-5" />
                             </div>
                             <div className="min-w-0">
@@ -262,7 +269,7 @@ export default function AdminHelp() {
                       <h2 className="text-base font-bold text-slate-950">Submit a Ticket</h2>
                     </div>
                     {submitted ? (
-                      <div className="rounded-3xl bg-emerald-50 p-5 text-center">
+                      <div className="rounded-xl sm:rounded-3xl bg-emerald-50 p-4 sm:p-5 text-center">
                         <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-emerald-100 mb-4">
                           <MessageSquare className="w-6 h-6 text-emerald-600" />
                         </div>
@@ -275,12 +282,12 @@ export default function AdminHelp() {
                           <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5 block">Subject</label>
                           <input required value={ticket.subject} onChange={e => setTicket(t => ({ ...t, subject: e.target.value }))}
                             placeholder="What do you need help with?"
-                            className="w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-200" />
+                            className="w-full rounded-xl sm:rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-200" />
                         </div>
                         <div>
                           <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5 block">Priority</label>
                           <select value={ticket.priority} onChange={e => setTicket(t => ({ ...t, priority: e.target.value }))}
-                            className="w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-200 cursor-pointer">
+                             className="w-full rounded-xl sm:rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-200 cursor-pointer">
                             <option value="low">Low — general question</option>
                             <option value="normal">Normal — something's not working</option>
                             <option value="high">High — data at risk</option>
@@ -291,13 +298,13 @@ export default function AdminHelp() {
                           <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5 block">Message</label>
                           <textarea required rows={5} value={ticket.message} onChange={e => setTicket(t => ({ ...t, message: e.target.value }))}
                             placeholder="Tell us more about the issue..."
-                            className="w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-200 resize-none" />
+                            className="w-full rounded-xl sm:rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-200 resize-none" />
                         </div>
                         {submitError && (
                           <p className="text-sm text-red-600 rounded-2xl bg-red-50 border border-red-100 px-4 py-3">{submitError}</p>
                         )}
                         <button type="submit" disabled={submitting}
-                          className="w-full rounded-3xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-blue-600/10 hover:bg-blue-700 transition-colors disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2">
+                          className="w-full rounded-xl sm:rounded-3xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-blue-600/10 hover:bg-blue-700 transition-colors disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2">
                           {submitting && <Loader2 className="w-4 h-4 animate-spin" />}
                           {submitting ? 'Submitting…' : 'Submit Ticket'}
                         </button>
@@ -309,7 +316,8 @@ export default function AdminHelp() {
             </div>
           </main>
         </div>
-      </div>
+          </div>
+      </MobileSidebarProvider>
     </AuthGuard>
   )
 }

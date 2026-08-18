@@ -8,7 +8,7 @@ import {
 import AdminSidebar from '../../components/layout/AdminSidebar'
 import AdminHeader from '../../components/layout/AdminHeader'
 import AuthGuard from '../../components/auth/AuthGuard'
-import { MobileSidebarProvider, MobilePageHeader, MobileStatGrid, MobileStatCard, MobileEmptyState } from '@/components/ui/mobile-admin'
+import { MobileSidebarProvider, MobileStatGrid, MobileStatCard, MobileEmptyState, MobileSearch, MobileFilterBar } from '@/components/ui/mobile-admin'
 import { createClient, getSupabaseProjectImageUrl } from '../../lib/supabase'
 import { MoneyInput } from '../../components/ui/money-input'
 import { ResponsiveFilters } from '../../components/ui/responsive-filters'
@@ -254,7 +254,7 @@ export default function AdminProjects() {
             subtitle="Off-plan developments &amp; launches"
             action={
               <button type="button" onClick={openAdd}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-xl transition-colors shadow-sm">
+                className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-xl transition-colors shadow-sm min-h-[44px] sm:min-h-[auto]">
                 <Plus className="w-4 h-4" />
                 <span className="hidden sm:inline">Add Project</span>
               </button>
@@ -264,8 +264,49 @@ export default function AdminProjects() {
           <main className="flex-1 overflow-hidden">
             <div className="h-full overflow-y-auto p-4 md:p-6 space-y-4">
 
-              {/* ── Hero card: KPI + filters ── */}
-              <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+              {/* ── Mobile: compact stats + filters ── */}
+          <div className="sm:hidden -mx-4">
+             <MobileStatGrid>
+               <MobileStatCard label="Projects" value={projects.length} color="text-slate-700" icon={Building2} />
+               <MobileStatCard label="Units Sold" value={`${totalSold}/${totalUnits}`} color="text-emerald-700" icon={CheckCircle} />
+               <MobileStatCard label="Avg Progress" value={`${avgProgress}%`} color="text-violet-700" icon={TrendingUp} />
+               <MobileStatCard label="Coming Soon" value={statusTotals.coming_soon ?? 0} color="text-amber-700" icon={Calendar} />
+             </MobileStatGrid>
+             <MobileSearch
+               placeholder="Search projects, developers, locations…"
+               value={search}
+               onChange={setSearch}
+             />
+             <MobileFilterBar>
+               <select value={statusFilter} onChange={e => setStatusFilter(e.target.value as 'all' | ProjectStatus)}
+                 className="flex-1 appearance-none rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-700 focus:outline-none cursor-pointer min-h-[44px]">
+                 {STATUS_FILTERS.map(f => (
+                   <option key={f.key} value={f.key}>{f.label} ({f.key === 'all' ? projects.length : (statusTotals[f.key] ?? 0)})</option>
+                 ))}
+               </select>
+               {categories.length > 1 && (
+                 <select value={catFilter} onChange={e => setCatFilter(e.target.value)}
+                   className="flex-1 appearance-none rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-700 focus:outline-none cursor-pointer min-h-[44px]">
+                   {categories.map(c => (
+                     <option key={c} value={c}>{c === 'all' ? 'All categories' : c}</option>
+                   ))}
+                 </select>
+               )}
+               <div className="flex items-center gap-1 bg-slate-100 rounded-xl p-1 shrink-0">
+                 <button type="button" onClick={() => setView('grid')}
+                   className={`p-1.5 rounded-lg min-w-[44px] min-h-[44px] flex items-center justify-center transition ${view === 'grid' ? 'bg-white shadow-sm text-slate-900' : 'text-slate-400 hover:text-slate-700'}`}>
+                   <LayoutGrid className="w-4 h-4" />
+                 </button>
+                 <button type="button" onClick={() => setView('list')}
+                   className={`p-1.5 rounded-lg min-w-[44px] min-h-[44px] flex items-center justify-center transition ${view === 'list' ? 'bg-white shadow-sm text-slate-900' : 'text-slate-400 hover:text-slate-700'}`}>
+                   <List className="w-4 h-4" />
+                 </button>
+               </div>
+             </MobileFilterBar>
+           </div>
+
+          {/* ── Hero card: KPI + filters (desktop only) ── */}
+              <div className="hidden sm:block rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
                 <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between mb-3">
                   <div>
                     <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">Development projects</p>
@@ -344,7 +385,7 @@ export default function AdminProjects() {
               </div>
 
               {loading && (
-                <div className="flex items-center justify-center py-40">
+                <div className="flex items-center justify-center py-20 sm:py-40">
                   <div className="animate-spin w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full" />
                 </div>
               )}
@@ -361,28 +402,26 @@ export default function AdminProjects() {
 
                   {/* ── Empty state ─────────────────────────────────────────── */}
                   {filtered.length === 0 && (
-                    <div className="bg-white rounded-2xl border border-slate-200 p-16 text-center shadow-sm">
-                      <Building2 className="w-12 h-12 text-slate-200 mx-auto mb-4" />
-                      <p className="text-lg font-semibold text-slate-900 mb-2">
-                        {projects.length === 0 ? 'No projects yet' : 'No projects match'}
-                      </p>
-                      <p className="text-sm text-slate-500 mb-5">
-                        {projects.length === 0
+                    <div className="py-8">
+                      <MobileEmptyState
+                        title={projects.length === 0 ? 'No projects yet' : 'No projects match'}
+                        description={projects.length === 0
                           ? 'Add your first development project and it will appear on the user dashboard.'
                           : 'Try clearing the search or changing the filter.'}
-                      </p>
-                      {projects.length === 0 && (
-                        <button type="button" onClick={openAdd}
-                          className="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-xl transition-colors">
-                          <Plus className="w-4 h-4" /> Add Project
-                        </button>
-                      )}
+                        icon={Building2}
+                        action={projects.length === 0 && (
+                          <button type="button" onClick={openAdd}
+                            className="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-xl transition-colors shadow-sm min-h-[44px]">
+                            <Plus className="w-4 h-4" /> Add Project
+                          </button>
+                        )}
+                      />
                     </div>
                   )}
 
                   {/* ── Grid view ───────────────────────────────────────────── */}
-                  {filtered.length > 0 && view === 'grid' && (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-4">
+                  {filtered.length > 0 && (
+                    <div className={view === 'grid' ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-4" : "grid grid-cols-1 gap-4 sm:hidden"}>
                       {filtered.map(p => {
                         const soldPct  = p.units > 0 ? Math.round((p.sold / p.units) * 100) : 0
                         const catColor = CATEGORY_COLORS[p.category] ?? 'bg-slate-100 text-slate-600'
@@ -391,7 +430,7 @@ export default function AdminProjects() {
                           <div key={p.id}
                             className="group overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm hover:-translate-y-0.5 hover:shadow-lg transition-all">
                             {/* Cover image */}
-                            <div className="relative h-44 overflow-hidden bg-slate-100">
+                            <div className="relative h-32 sm:h-44 overflow-hidden bg-slate-100">
                               {p.image ? (
                                 <img src={p.image} alt={p.name}
                                   className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
@@ -420,7 +459,7 @@ export default function AdminProjects() {
                               {/* ⋮ menu */}
                               <div className="absolute bottom-3 right-3" onClick={e => e.stopPropagation()}>
                                 <button type="button" onClick={() => setMenuOpen(menuOpen === p.id ? null : p.id)}
-                                  className="w-8 h-8 rounded-lg bg-white/90 text-slate-700 shadow-sm hover:bg-white transition flex items-center justify-center">
+                                  className="min-w-[44px] h-9 w-9 sm:w-8 sm:h-8 rounded-lg bg-white/90 text-slate-700 shadow-sm hover:bg-white transition flex items-center justify-center">
                                   <MoreVertical className="w-4 h-4" />
                                 </button>
                                 {menuOpen === p.id && (
@@ -448,7 +487,7 @@ export default function AdminProjects() {
                               </div>
                             </div>
 
-                            <div className="p-4 space-y-3">
+                            <div className="p-3 sm:p-4 space-y-3">
                               {/* Status + developer */}
                               <div className="flex items-center justify-between">
                                 <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold ${sm.bg} ${sm.text}`}>
@@ -506,7 +545,7 @@ export default function AdminProjects() {
 
                   {/* ── List view ───────────────────────────────────────────── */}
                   {filtered.length > 0 && view === 'list' && (
-                    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                    <div className="hidden sm:block bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
                       {/* Table header */}
                       <div className="hidden md:grid grid-cols-[auto_1fr_120px_120px_100px_80px_40px] items-center gap-4 px-5 py-3 border-b border-slate-100 bg-slate-50">
                         <div className="w-12" />
@@ -623,9 +662,9 @@ export default function AdminProjects() {
 
       {/* ── Add / Edit Modal ─────────────────────────────────────────────── */}
       {modalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col">
-            <div className="flex items-center justify-between px-6 py-5 border-b border-gray-100 shrink-0">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-0 md:p-4 bg-black/60">
+          <div className="bg-white rounded-none md:rounded-3xl shadow-2xl w-full h-full md:h-auto md:max-h-[90vh] flex flex-col overflow-hidden">
+            <div className="flex items-center justify-between px-4 py-3 sm:px-6 sm:py-5 border-b border-gray-100 shrink-0">
               <h2 className="text-lg font-extrabold text-gray-900">{editing ? 'Edit Project' : 'Add New Project'}</h2>
               <button type="button" onClick={() => setModalOpen(false)}
                 className="w-8 h-8 flex items-center justify-center rounded-xl text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors">
@@ -633,7 +672,7 @@ export default function AdminProjects() {
               </button>
             </div>
 
-            <div className="flex-1 overflow-y-auto px-6 py-5 space-y-6">
+            <div className="flex-1 overflow-y-auto px-4 py-4 sm:px-6 sm:py-5 space-y-6">
               {/* ── Basic Info ── */}
               <div className="space-y-4">
                 <div>
@@ -741,7 +780,7 @@ export default function AdminProjects() {
                   <p className="text-sm font-extrabold text-gray-900">Pricing &amp; Units</p>
                   <p className="text-xs text-gray-400 mt-0.5">The price buyers start from and how many units are available.</p>
                 </div>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1.5 block">Starting Price (₦)</label>
                     <MoneyInput
@@ -788,7 +827,7 @@ export default function AdminProjects() {
                   <p className="text-sm font-extrabold text-gray-900">Classification &amp; Status</p>
                   <p className="text-xs text-gray-400 mt-0.5">How this project is categorised and its current state.</p>
                 </div>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1.5 block">Category</label>
                     <select value={form.category} onChange={F('category')}
@@ -821,7 +860,7 @@ export default function AdminProjects() {
               </div>
             </div>
 
-            <div className="flex gap-3 px-6 py-4 border-t border-gray-100 shrink-0">
+            <div className="flex flex-col sm:flex-row gap-3 px-4 py-3 sm:px-6 sm:py-4 border-t border-gray-100 shrink-0">
               <button type="button" onClick={() => setModalOpen(false)}
                 className="flex-1 py-2.5 border border-gray-200 rounded-xl text-sm font-semibold text-gray-600 hover:bg-gray-50 transition-colors">
                 Cancel
@@ -837,8 +876,8 @@ export default function AdminProjects() {
 
       {/* ── Delete confirmation ───────────────────────────────────────────── */}
       {deleteId && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="bg-white rounded-3xl shadow-2xl p-7 w-full max-w-sm text-center">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60">
+          <div className="bg-white rounded-xl md:rounded-3xl shadow-2xl p-7 w-full max-w-sm text-center">
             <div className="w-14 h-14 rounded-full bg-red-100 flex items-center justify-center mx-auto mb-4">
               <Trash2 className="w-7 h-7 text-red-600" />
             </div>
@@ -869,6 +908,7 @@ export default function AdminProjects() {
           </div>
         </div>
       )}
+    </MobileSidebarProvider>
     </AuthGuard>
   )
 }

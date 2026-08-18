@@ -13,6 +13,11 @@ import {
 import AdminSidebar from '../../components/layout/AdminSidebar'
 import AuthGuard from '../../components/auth/AuthGuard'
 import { createClient } from '../../lib/supabase'
+import {
+  MobileSidebarProvider,
+  MobileStatCard,
+  MobileStatGrid,
+} from '@/components/ui/mobile-admin'
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
 
@@ -51,7 +56,7 @@ export default function AdminDashboard() {
   const [loading, setLoading]                   = useState(true)
   const [refreshing, setRefreshing]             = useState(false)
   const [lastUpdated, setLastUpdated]           = useState<Date | null>(null)
-  const debounceRef                             = useRef<ReturnType<typeof setTimeout>>()
+  const debounceRef                             = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const loadData = useCallback(async (initial = false) => {
     if (initial) setLoading(true)
@@ -165,6 +170,7 @@ export default function AdminDashboard() {
 
   return (
     <AuthGuard require="admin">
+      <MobileSidebarProvider>
       <div className="flex h-screen overflow-hidden bg-[#F4F6FB]">
         <AdminSidebar userEmail={user?.email} userName={displayName} />
 
@@ -217,7 +223,16 @@ export default function AdminDashboard() {
                 </div>
 
                 {/* ── Stat cards ─────────────────────────────────────────────── */}
-                  <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="sm:hidden">
+                  <MobileStatGrid>
+                    <MobileStatCard label="Listings" value={stats.properties} icon={Building2} />
+                    <MobileStatCard label="Landlords" value={stats.landlords} icon={Users} />
+                    <MobileStatCard label="Tenants" value={stats.tenants} icon={ShieldCheck} />
+                    <MobileStatCard label="Enquiries" value={stats.enquiries} icon={MessageSquare} />
+                  </MobileStatGrid>
+                </div>
+
+                <div className="hidden sm:grid grid-cols-2 lg:grid-cols-4 gap-4">
                   {[
                     { label: 'Total Listings', value: stats.properties, icon: Building2,  sub: `${stats.active} active`,  color: 'blue'   },
                     { label: 'Landlords',      value: stats.landlords,  icon: Users,       sub: stats.pendingLandlords > 0 ? `${stats.pendingLandlords} pending` : 'all verified', color: 'purple' },
@@ -225,12 +240,13 @@ export default function AdminDashboard() {
                     { label: 'Enquiries',      value: stats.enquiries, icon: MessageSquare, sub: `${engagementRate} per listing`, color: 'green' },
                   ].map(item => {
                     const Icon = item.icon
-                    const iconBg = {
+                    const iconBgMap: Record<string, string> = {
                       blue:   'bg-blue-50 text-blue-600',
                       purple: 'bg-violet-50 text-violet-600',
                       teal:   'bg-teal-50 text-teal-600',
                       green:  'bg-emerald-50 text-emerald-600',
-                    }[item.color as keyof typeof iconBg]
+                    }
+                    const iconBg = iconBgMap[item.color as keyof typeof iconBgMap] ?? ''
                     return (
                       <div key={item.label} className="rounded-2xl border border-slate-200 bg-white p-5">
                         <div className="flex items-center justify-between">
@@ -256,12 +272,13 @@ export default function AdminDashboard() {
                     { label: 'KYC Pending',    value: String(stats.pendingLandlords), sub: 'landlords awaiting review',              color: 'amber'  },
                     { label: 'Active rate',    value: stats.properties > 0 ? `${Math.round((stats.active / stats.properties) * 100)}%` : '0%', sub: 'of all listings live', color: 'green' },
                   ].map(k => {
-                    const iconColor = {
+                    const iconColorMap: Record<string, string> = {
                       blue:   'text-blue-600',
                       purple: 'text-violet-600',
                       amber:  'text-amber-600',
                       green:  'text-emerald-600',
-                    }[k.color as keyof typeof iconColor]
+                    }
+                    const iconColor = iconColorMap[k.color as keyof typeof iconColorMap] ?? ''
                     return (
                       <div key={k.label} className="rounded-xl border border-slate-200 bg-white px-4 py-3.5 flex items-center gap-2.5 text-slate-900">
                         <span className={`w-6 h-6 rounded-lg bg-slate-50 flex items-center justify-center ${iconColor}`}>
@@ -300,8 +317,8 @@ export default function AdminDashboard() {
                 {/* ── Charts row ─────────────────────────────────────────────── */}
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
                   {/* Area chart — Platform Growth */}
-                  <div className="lg:col-span-2 rounded-2xl border border-slate-200 bg-white p-5">
-                    <div className="flex items-start justify-between mb-4">
+                   <div className="lg:col-span-2 rounded-2xl border border-slate-200 bg-white p-4 sm:p-5">
+                    <div className="flex items-start justify-between mb-3 sm:mb-4 px-1">
                       <div>
                         <h3 className="text-sm font-bold text-slate-950">Platform Growth</h3>
                         <p className="text-xs text-slate-400">Listings &amp; enquiries month by month</p>
@@ -317,7 +334,7 @@ export default function AdminDashboard() {
                         </div>
                       </div>
                     </div>
-                    <div className="h-52">
+                    <div className="h-44 sm:h-52">
                       <ResponsiveContainer width="100%" height="100%">
                         <AreaChart data={areaData} margin={{ top: 4, right: 4, bottom: 0, left: -20 }}>
                           <defs>
@@ -345,7 +362,7 @@ export default function AdminDashboard() {
                   </div>
 
                   {/* Property Types donut */}
-                  <div className="rounded-2xl border border-slate-200 bg-white p-5 flex flex-col">
+                  <div className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-5 flex flex-col">
                     <div className="mb-3">
                       <h3 className="text-sm font-bold text-slate-950">Property Types</h3>
                     </div>
@@ -390,7 +407,7 @@ export default function AdminDashboard() {
 
                   {/* Recent Enquiries */}
                   <div className="lg:col-span-2 rounded-2xl border border-slate-200 bg-white overflow-hidden">
-                    <div className="flex items-center justify-between px-6 py-5 border-b border-slate-100">
+                    <div className="flex items-center justify-between px-4 py-3 sm:px-6 sm:py-5 border-b border-slate-100">
                       <h3 className="text-sm font-bold text-slate-950">Recent Enquiries</h3>
                       <Link href="/admin/landlords"
                         className="inline-flex items-center gap-1 text-xs font-semibold text-slate-500 hover:text-slate-950 transition-colors">
@@ -398,7 +415,7 @@ export default function AdminDashboard() {
                       </Link>
                     </div>
                     {recentEnquiries.length === 0 ? (
-                      <div className="py-20 text-center">
+                      <div className="py-12 sm:py-20 text-center">
                         <MessageSquare className="w-10 h-10 text-slate-200 mx-auto mb-3" />
                         <p className="text-sm font-semibold text-slate-500">No enquiries yet</p>
                         <p className="text-xs text-slate-400 mt-1">Tenant messages will appear here.</p>
@@ -410,7 +427,7 @@ export default function AdminDashboard() {
                           const grad     = avatarGradient(name)
                           const initials = name.split(' ').slice(0, 2).map((w: string) => w[0]).join('').toUpperCase()
                           return (
-                            <div key={e.id} className="flex items-start gap-3.5 px-6 py-4 hover:bg-slate-50/60 transition-colors">
+                            <div key={e.id} className="flex items-start gap-3.5 px-4 py-3 sm:px-6 sm:py-4 hover:bg-slate-50/60 transition-colors">
                               <div className={`w-9 h-9 rounded-full bg-gradient-to-br ${grad} flex items-center justify-center shrink-0`}>
                                 <span className="text-[10px] font-bold text-white">{initials}</span>
                               </div>
@@ -444,7 +461,7 @@ export default function AdminDashboard() {
                   {/* Right sidebar */}
                   <div className="space-y-5">
                     {/* Top Locations */}
-                    <div className="rounded-2xl border border-slate-200 bg-white p-6">
+                    <div className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-6">
                       <h3 className="text-sm font-bold text-slate-950">Top Locations</h3>
                       {cityStats.length === 0 ? (
                         <p className="text-xs text-slate-400 py-4 text-center mt-3">No data yet</p>
@@ -473,7 +490,7 @@ export default function AdminDashboard() {
                     </div>
 
                     {/* New Landlords */}
-                    <div className="rounded-2xl border border-slate-200 bg-white p-6">
+                    <div className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-6">
                       <div className="flex items-center justify-between mb-4">
                         <h3 className="text-sm font-bold text-slate-950">Landlords</h3>
                         <Link href="/admin/landlords"
@@ -510,7 +527,7 @@ export default function AdminDashboard() {
 
                 {/* ── Recent Listings ─────────────────────────────────────────── */}
                 <div className="rounded-2xl border border-slate-200 bg-white overflow-hidden">
-                  <div className="flex items-center justify-between px-6 py-5 border-b border-slate-100">
+                  <div className="flex items-center justify-between px-4 py-3 sm:px-6 sm:py-5 border-b border-slate-100">
                     <h3 className="text-sm font-bold text-slate-950">Recent Listings</h3>
                     <Link href="/admin/properties"
                       className="inline-flex items-center gap-1 text-xs font-semibold text-slate-500 hover:text-slate-950 transition-colors">
@@ -518,7 +535,7 @@ export default function AdminDashboard() {
                     </Link>
                   </div>
                   {recentListings.length === 0 ? (
-                    <div className="py-16 text-center">
+                      <div className="py-10 sm:py-16 text-center">
                       <Building2 className="w-10 h-10 text-slate-200 mx-auto mb-3" />
                       <p className="text-sm font-semibold text-slate-500">No listings yet</p>
                     </div>
@@ -527,7 +544,7 @@ export default function AdminDashboard() {
                       {recentListings.map((p: any) => {
                         const s = PROPERTY_STATUS[p.status] ?? PROPERTY_STATUS.available
                         return (
-                          <div key={p.id} className="flex items-center gap-4 px-6 py-4 hover:bg-slate-50/60 transition-colors">
+                          <div key={p.id} className="flex items-center gap-4 px-4 py-3 sm:px-6 sm:py-4 hover:bg-slate-50/60 transition-colors">
                             <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center shrink-0">
                               <Building2 className="w-5 h-5 text-slate-600" strokeWidth={1.8} />
                             </div>
@@ -555,6 +572,7 @@ export default function AdminDashboard() {
           </main>
         </div>
       </div>
+      </MobileSidebarProvider>
     </AuthGuard>
   )
 }
