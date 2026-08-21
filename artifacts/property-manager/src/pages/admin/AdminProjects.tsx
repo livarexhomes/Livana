@@ -262,7 +262,7 @@ export default function AdminProjects() {
           />
 
           <main className="flex-1 overflow-hidden">
-            <div className="h-full overflow-y-auto p-4 md:p-6 space-y-4">
+            <div className="h-full overflow-y-auto p-4 md:p-6 space-y-5">
 
               {/* ── Mobile: compact stats + filters ── */}
           <div className="sm:hidden -mx-4">
@@ -306,11 +306,11 @@ export default function AdminProjects() {
            </div>
 
           {/* ── Hero card: KPI + filters (desktop only) ── */}
-              <div className="hidden sm:block rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between mb-3">
+              <div className="hidden sm:block rounded-xl border border-slate-200 bg-white p-4 shadow-[0_2px_10px_rgba(15,23,42,0.04)]">
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between mb-4">
                   <div>
-                    <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">Development projects</p>
-                    <h2 className="mt-0.5 text-base font-extrabold text-slate-950">Off-plan &amp; Launches</h2>
+                    <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-blue-600">Development projects</p>
+                    <h2 className="mt-1 text-lg font-extrabold tracking-tight text-slate-950">Off-plan &amp; launches</h2>
                   </div>
                   <div className="grid grid-cols-2 gap-1.5 sm:flex sm:items-center sm:flex-wrap sm:gap-2 sm:shrink-0">
                     {[
@@ -319,7 +319,7 @@ export default function AdminProjects() {
                       { label: 'Avg Progress', value: `${avgProgress}%`,                  color: 'text-violet-700'  },
                       { label: 'Coming Soon',  value: String(statusTotals.coming_soon ?? 0), color: 'text-amber-700' },
                     ].map(k => (
-                      <div key={k.label} className="rounded-2xl border border-slate-100 bg-slate-50 px-2 sm:px-3 py-1.5 text-center sm:min-w-[56px]">
+                      <div key={k.label} className="rounded-xl border border-slate-200/80 bg-slate-50/70 px-3 py-2 text-center sm:min-w-[64px]">
                         <p className={`text-base font-extrabold tabular-nums ${k.color}`}>{k.value}</p>
                         <p className="text-[9px] font-semibold uppercase tracking-[0.2em] text-slate-400 whitespace-nowrap">{k.label}</p>
                       </div>
@@ -337,7 +337,7 @@ export default function AdminProjects() {
                   value={statusFilter}
                   onChange={v => setStatusFilter(v as typeof statusFilter)}
                   label="Project status"
-                  className="mb-3"
+                  className="mb-4"
                 />
 
                 {/* Search + category + view */}
@@ -421,16 +421,16 @@ export default function AdminProjects() {
 
                   {/* ── Grid view ───────────────────────────────────────────── */}
                   {filtered.length > 0 && (
-                    <div className={view === 'grid' ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-4" : "grid grid-cols-1 gap-4 sm:hidden"}>
+                    <div className={view === 'grid' ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-5" : "grid grid-cols-1 gap-4 sm:hidden"}>
                       {filtered.map(p => {
                         const soldPct  = p.units > 0 ? Math.round((p.sold / p.units) * 100) : 0
                         const catColor = CATEGORY_COLORS[p.category] ?? 'bg-slate-100 text-slate-600'
                         const sm       = STATUS_META[p.status] ?? STATUS_META.active
                         return (
                           <div key={p.id}
-                            className="group overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm hover:-translate-y-0.5 hover:shadow-lg transition-all">
+                            className={`group overflow-hidden rounded-xl border border-slate-200 bg-white shadow-[0_2px_8px_rgba(15,23,42,0.04)] hover:-translate-y-0.5 hover:shadow-[0_10px_24px_rgba(15,23,42,0.10)] transition-all duration-200 border-l-[3px] ${sm.border}`}>
                             {/* Cover image */}
-                            <div className="relative h-32 sm:h-44 overflow-hidden bg-slate-100">
+                            <div className="relative aspect-[16/9] overflow-hidden bg-slate-100">
                               {p.image ? (
                                 <img src={p.image} alt={p.name}
                                   className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
@@ -440,7 +440,7 @@ export default function AdminProjects() {
                                   <Building2 className="w-12 h-12 text-slate-200" />
                                 </div>
                               )}
-                              <div className="absolute inset-0 bg-gradient-to-t from-slate-950/70 via-slate-950/10 to-transparent" />
+                              <div className="absolute inset-0 bg-gradient-to-t from-slate-950/75 via-slate-950/5 to-transparent" />
                               {/* Bottom-left: name + location */}
                               <div className="absolute bottom-3 left-3 right-12">
                                 <h3 className="text-sm font-bold text-white leading-tight line-clamp-1">{p.name}</h3>
@@ -453,7 +453,7 @@ export default function AdminProjects() {
                                 {p.progress}%
                               </div>
                               {/* Category badge */}
-                              <div className={`absolute top-3 left-3 rounded-lg px-2 py-0.5 text-[11px] font-semibold ${catColor}`}>
+                              <div className={`absolute top-3 left-3 rounded-md px-2 py-1 text-[10px] font-bold ${catColor}`}>
                                 {p.category}
                               </div>
                               {/* ⋮ menu */}
@@ -487,10 +487,10 @@ export default function AdminProjects() {
                               </div>
                             </div>
 
-                            <div className="p-3 sm:p-4 space-y-3">
+                            <div className="p-3.5 sm:p-4 space-y-3">
                               {/* Status + developer */}
                               <div className="flex items-center justify-between">
-                                <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold ${sm.bg} ${sm.text}`}>
+                                <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-bold ${sm.bg} ${sm.text}`}>
                                   <span className={`h-1.5 w-1.5 rounded-full ${sm.dot}`} />{sm.label}
                                 </span>
                                 <span className="text-xs text-slate-500 truncate max-w-[120px]">{p.developer}</span>

@@ -513,7 +513,7 @@ function AdminChatThread({
   return (
     <div className="flex flex-col h-full bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
       {/* ── Header ────────────────────────────────────────────────────────── */}
-      <div className="flex items-center gap-3 px-4 py-3 border-b border-gray-100 shrink-0 flex-wrap">
+      <div className="flex items-start gap-x-3 gap-y-3 px-4 py-4 border-b border-gray-100 shrink-0 flex-wrap">
         <button onClick={onBack} className="lg:hidden p-1.5 rounded-lg hover:bg-gray-100 text-gray-500 transition-colors">
           <ChevronLeft className="w-4 h-4" />
         </button>
@@ -540,7 +540,7 @@ function AdminChatThread({
         </div>
 
         {/* Actions */}
-        <div className="flex items-center gap-1.5 shrink-0 flex-wrap">
+        <div className="w-full flex items-center justify-end gap-1.5 pt-3 border-t border-slate-100 shrink-0 flex-wrap">
           {/* Status */}
           <SmartSelect
             value={ticket.status}
@@ -974,7 +974,7 @@ function EnquiryDetail({ enquiry, onBack, onStatusChange }: {
   return (
     <div className="flex flex-col h-full bg-white overflow-hidden">
       {/* Header */}
-      <div className="flex items-center gap-3 px-5 py-3.5 border-b border-slate-100 shrink-0">
+      <div className="flex items-start gap-x-3 gap-y-3 px-5 py-4 border-b border-slate-100 shrink-0 flex-wrap">
         <button onClick={onBack} className="lg:hidden p-1.5 -ml-1.5 rounded-lg hover:bg-slate-100 text-slate-500 transition-colors">
           <ChevronLeft className="w-4 h-4" />
         </button>
@@ -1341,7 +1341,7 @@ function ChatRequestDetail({ inquiry, onBack, onMarkRead, onStatusChange, agents
             {format(new Date(inquiry.created_at), 'dd MMM yyyy, h:mm a')}
           </p>
         </div>
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="w-full flex items-center justify-end gap-2 pt-3 border-t border-slate-100 shrink-0">
           <SmartSelect
             value={inquiry.status}
             onValueChange={(v) => changeStatus(v as ChatInquiry['status'])}
