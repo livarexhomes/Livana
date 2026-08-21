@@ -16,7 +16,7 @@ import LocationField from '../../components/property/LocationField'
 import { MoneyInput } from '../../components/ui/money-input'
 import { ResponsiveFilters } from '../../components/ui/responsive-filters'
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '@/components/ui/dropdown-menu'
-import { MobileSidebarProvider, MobileStatGrid, MobileStatCard, MobileEmptyState, MobileSearch, MobileFilterBar } from '@/components/ui/mobile-admin'
+import { MobileSidebarProvider, MobileEmptyState, MobileSearch, MobileFilterBar } from '@/components/ui/mobile-admin'
 import { digitsToNumber, formatNaira } from '../../lib/currency'
 import { getFeeConfig, calcFeeBreakdown, type FeeConfig, type FeeBreakdown } from '../../lib/fees'
 import { subscribeListingRulesChange } from '../../lib/settings-store'
@@ -517,13 +517,8 @@ export default function AdminProperties() {
             <div className="grid gap-5 xl:grid-cols-[1.75fr_0.9fr]">
               <div className="space-y-5">
 
-                {/* ── Mobile: compact stats + filters ── */}
+                {/* ── Mobile: compact filters ── */}
                 <div className="sm:hidden -mx-4">
-                  <MobileStatGrid>
-                    <MobileStatCard label="Total" value={properties.length} color="text-blue-700" icon={Building2} />
-                    <MobileStatCard label="Available" value={available} color="text-emerald-700" icon={CheckCircle} />
-                    <MobileStatCard label="Taken" value={taken} color="text-rose-700" icon={XCircle} />
-                  </MobileStatGrid>
                   <MobileSearch
                     placeholder="Search properties, neighborhoods…"
                     value={search}
@@ -556,33 +551,11 @@ export default function AdminProperties() {
                   </MobileFilterBar>
                 </div>
 
-                {/* ── Hero card (desktop only) ── */}
-                <div className="hidden sm:block rounded-2xl border border-slate-200 bg-white p-4 md:p-6 shadow-sm">
-                <div className="flex flex-col gap-6 xl:flex-row xl:items-center xl:justify-between">
-                  <div className="max-w-2xl">
-                    <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">Property management</p>
-                    <h2 className="mt-3 text-xl md:text-2xl font-extrabold text-slate-950">Control listings with clarity</h2>
-                    <p className="mt-3 text-sm leading-6 text-slate-500">Find, filter, and manage your portfolio from a polished admin workspace.</p>
-                  </div>
-                  <div className="grid grid-cols-3 gap-3">
-                    {[
-                      { label: 'Total listings', value: properties.length, accent: 'text-blue-700' },
-                      { label: 'Available', value: available, accent: 'text-emerald-700' },
-                      { label: 'Taken', value: taken, accent: 'text-rose-700' },
-                    ].map(item => (
-                      <div key={item.label} className="rounded-2xl border border-slate-100 bg-slate-50 px-3 py-2.5 text-center">
-                        <p className={`text-xl md:text-2xl font-extrabold ${item.accent}`}>{item.value}</p>
-                        <p className="mt-1 text-[10px] md:text-xs font-semibold uppercase tracking-[0.25em] text-slate-500">{item.label}</p>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                <ResponsiveFilters
-                   tabs={STATUS_TABS.map(t => ({ key: t.key, label: t.label, count: t.count }))}
-                   value={statusFilter}
-                   onChange={setStatusFilter}
-                   className="mt-6"
+                <div className="hidden sm:block">
+                  <ResponsiveFilters
+                    tabs={STATUS_TABS.map(t => ({ key: t.key, label: t.label, count: t.count }))}
+                    value={statusFilter}
+                    onChange={setStatusFilter}
                   />
                 </div>
 

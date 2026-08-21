@@ -248,23 +248,23 @@ export default function AdminVetting() {
             <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
 
               <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-                <div className="hidden sm:block">
+                {/* <div className="hidden sm:block">
                   <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">Platform Vetting</p>
                   <h2 className="mt-0.5 text-xl md:text-2xxl font-extrabold text-slate-950">Vetting Hub</h2>
-                </div>
+                </div> */}
 
                 {/* Mobile: compact KPI grid */}
-                <div className="sm:hidden">
+                {/* <div className="sm:hidden">
                   <MobileStatGrid>
                     <MobileStatCard label="KYC Pending" value={kycCounts.pending} color="text-amber-700" icon={Clock} />
                     <MobileStatCard label="KYC Approved" value={kycCounts.approved} color="text-emerald-700" icon={CheckCircle} />
                     <MobileStatCard label="Listing Pending" value={pendingListings.length} color="text-violet-700" icon={ListChecks} />
                     <MobileStatCard label="Landlords" value={kycCounts.all} color="text-blue-700" icon={Users} />
                   </MobileStatGrid>
-                </div>
+                </div> */}
 
                 {/* Stats — desktop only */}
-                <div className="hidden sm:grid sm:grid-cols-2 sm:gap-1.5 sm:flex sm:items-center sm:gap-2 sm:flex-wrap shrink-0">
+                {/* <div className="hidden sm:grid sm:grid-cols-2 sm:gap-1.5 sm:flex sm:items-center sm:gap-2 sm:flex-wrap shrink-0">
                   {[
                     { label: 'KYC Pending',     value: kycCounts.pending,      accent: 'text-amber-700'   },
                     { label: 'KYC Approved',    value: kycCounts.approved,     accent: 'text-emerald-700' },
@@ -276,7 +276,7 @@ export default function AdminVetting() {
                       <p className="text-[9px] font-semibold uppercase tracking-[0.22em] text-slate-500 whitespace-nowrap">{s.label}</p>
                     </div>
                   ))}
-                </div>
+                </div> */}
               </div>
 
               {/* ── Tab switcher ── */}

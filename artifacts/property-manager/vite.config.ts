@@ -267,6 +267,7 @@ export default defineConfig(async ({ isSsrBuild }) => ({
     dedupe: ["react", "react-dom"],
   },
   root: path.resolve(import.meta.dirname),
+  envDir: path.resolve(import.meta.dirname, "../../"),
   build: {
     outDir: isSsrBuild
       ? path.resolve(import.meta.dirname, "dist/server")
