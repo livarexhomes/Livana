@@ -212,6 +212,63 @@ function initialsOf(name: string) {
   return name.split(' ').slice(0, 2).map(w => w[0] ?? '').join('').toUpperCase() || '?'
 }
 
+function ArchivePanel({
+  tickets, onArchive, onClose,
+}: {
+  tickets: SupportTicket[]
+  onArchive: (ids: string[]) => Promise<void>
+  onClose: () => void
+}) {
+  const [types, setTypes] = useState<SupportTicket['status'][]>(['resolved', 'closed'])
+  const [olderThan, setOlderThan] = useState('all')
+  const [saving, setSaving] = useState(false)
+  const typeOptions: { value: SupportTicket['status']; label: string; description: string }[] = [
+    { value: 'open', label: 'Open', description: 'Active tickets still awaiting work' },
+    { value: 'in_progress', label: 'In Progress', description: 'Tickets currently being handled' },
+    { value: 'resolved', label: 'Resolved', description: 'Tickets with a completed resolution' },
+    { value: 'closed', label: 'Closed', description: 'Tickets that are no longer active' },
+  ]
+  const cutoff = olderThan === 'all' ? 0 : Date.now() - Number(olderThan) * 86400000
+  const matching = tickets.filter(t => types.includes(t.status) && (!cutoff || new Date(t.updated_at).getTime() < cutoff))
+  const toggleType = (type: SupportTicket['status']) => setTypes(prev => prev.includes(type) ? prev.filter(v => v !== type) : [...prev, type])
+  const selectAll = () => setTypes(types.length === typeOptions.length ? [] : typeOptions.map(option => option.value))
+  const submit = async () => { if (!matching.length) return; setSaving(true); await onArchive(matching.map(t => t.id)); setSaving(false); onClose() }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/35 px-4 py-6 backdrop-blur-sm">
+      <div className="w-full max-w-lg overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl">
+        <div className="flex items-start justify-between border-b border-slate-100 px-5 py-4">
+          <div>
+            <div className="flex items-center gap-2"><Archive className="h-4 w-4 text-primary" /><h2 className="text-base font-bold text-slate-950">Archive / Move to History</h2></div>
+            <p className="mt-1 max-w-md text-xs leading-relaxed text-slate-500">Select the tickets you want to move to history. Archived tickets are removed from your active workspace but are never deleted.</p>
+          </div>
+          <button type="button" onClick={onClose} className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700"><X className="h-4 w-4" /></button>
+        </div>
+        <div className="space-y-4 px-5 py-4">
+          <div className="rounded-xl border border-blue-100 bg-blue-50/60 px-3 py-2.5 text-xs leading-relaxed text-blue-800">Archived tickets remain accessible in History and can be restored at any time. No conversation data will be permanently deleted.</div>
+          <div>
+            <div className="mb-2 flex items-center justify-between"><p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Select ticket types</p><button type="button" onClick={selectAll} className="text-xs font-semibold text-primary hover:underline">{types.length === typeOptions.length ? 'Clear all' : 'Select all'}</button></div>
+            <div className="grid gap-2 sm:grid-cols-2">
+              {typeOptions.map(option => {
+                const selected = types.includes(option.value)
+                const Icon = STATUS_META[option.value].icon
+                return <label key={option.value} className={`flex cursor-pointer items-start gap-2.5 rounded-xl border px-3 py-2.5 transition-colors ${selected ? 'border-primary/30 bg-primary/5' : 'border-slate-200 hover:bg-slate-50'}`}>
+                  <input type="checkbox" checked={selected} onChange={() => toggleType(option.value)} className="mt-0.5 accent-primary" />
+                  <Icon className={`mt-0.5 h-3.5 w-3.5 ${STATUS_META[option.value].color}`} />
+                  <span><span className="block text-xs font-semibold text-slate-800">{option.label}</span><span className="mt-0.5 block text-[10px] leading-snug text-slate-400">{option.description}</span></span>
+                </label>
+              })}
+            </div>
+          </div>
+          <label className="block"><span className="mb-1.5 block text-[10px] font-bold uppercase tracking-widest text-slate-400">Older than</span><select value={olderThan} onChange={e => setOlderThan(e.target.value)} className="h-9 w-full rounded-lg border border-slate-200 bg-white px-3 text-xs font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/25"><option value="all">Any age</option><option value="7">7 days</option><option value="14">14 days</option><option value="30">30 days</option><option value="60">60 days</option><option value="90">90 days</option></select></label>
+          <p className="text-xs text-slate-500"><span className="font-bold text-slate-900">{matching.length}</span> ticket{matching.length === 1 ? '' : 's'} match these filters.</p>
+        </div>
+        <div className="flex justify-end gap-2 border-t border-slate-100 bg-slate-50/50 px-5 py-3"><button type="button" onClick={onClose} className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-50">Cancel</button><button type="button" disabled={!matching.length || saving} onClick={submit} className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-40"><Archive className="h-3.5 w-3.5" />{saving ? 'Moving…' : 'Move to History'}</button></div>
+      </div>
+    </div>
+  )
+}
+
 // ── AdminChatThread ───────────────────────────────────────────────────────────
 
 const PRIORITY_OPTIONS = ['low', 'normal', 'high', 'urgent'] as const
