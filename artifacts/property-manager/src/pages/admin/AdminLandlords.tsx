@@ -24,22 +24,22 @@ const STATUS_META: Record<string, {
   dot: string
   border: string
 }> = {
-  approved:      { label: 'Approved',      pill: 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200/80', dot: 'bg-emerald-400', border: 'border-l-emerald-400' },
-  pending:       { label: 'KYC Pending',   pill: 'bg-amber-50 text-amber-700 ring-1 ring-amber-200/80',       dot: 'bg-amber-400',   border: 'border-l-amber-400'   },
-  rejected:      { label: 'Rejected',      pill: 'bg-red-50 text-red-600 ring-1 ring-red-200/80',             dot: 'bg-red-400',     border: 'border-l-red-400'     },
-  suspended:     { label: 'Suspended',     pill: 'bg-orange-50 text-orange-700 ring-1 ring-orange-200/80',    dot: 'bg-orange-400',  border: 'border-l-orange-400'  },
-  not_submitted: { label: 'Not Submitted', pill: 'bg-slate-100 text-slate-500 ring-1 ring-slate-200/60',      dot: 'bg-slate-300',   border: 'border-l-slate-200'   },
+  approved: { label: 'Approved', pill: 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200/80', dot: 'bg-emerald-400', border: 'border-l-emerald-400' },
+  pending: { label: 'KYC Pending', pill: 'bg-amber-50 text-amber-700 ring-1 ring-amber-200/80', dot: 'bg-amber-400', border: 'border-l-amber-400' },
+  rejected: { label: 'Rejected', pill: 'bg-red-50 text-red-600 ring-1 ring-red-200/80', dot: 'bg-red-400', border: 'border-l-red-400' },
+  suspended: { label: 'Suspended', pill: 'bg-orange-50 text-orange-700 ring-1 ring-orange-200/80', dot: 'bg-orange-400', border: 'border-l-orange-400' },
+  not_submitted: { label: 'Not Submitted', pill: 'bg-slate-100 text-slate-500 ring-1 ring-slate-200/60', dot: 'bg-slate-300', border: 'border-l-slate-200' },
 }
 
 // ── Avatar helpers ────────────────────────────────────────────────────────────
 
 const AVATAR_PALETTE = [
-  { bg: 'bg-sky-100',    text: 'text-sky-700'    },
+  { bg: 'bg-sky-100', text: 'text-sky-700' },
   { bg: 'bg-indigo-100', text: 'text-indigo-700' },
-  { bg: 'bg-teal-100',   text: 'text-teal-700'   },
-  { bg: 'bg-blue-100',   text: 'text-blue-700'   },
+  { bg: 'bg-teal-100', text: 'text-teal-700' },
+  { bg: 'bg-blue-100', text: 'text-blue-700' },
   { bg: 'bg-violet-100', text: 'text-violet-700' },
-  { bg: 'bg-slate-100',  text: 'text-slate-700'  },
+  { bg: 'bg-slate-100', text: 'text-slate-700' },
 ]
 function avatarColor(name: string) {
   let h = 0; for (const c of name) h = (h * 31 + c.charCodeAt(0)) & 0xffff
@@ -55,7 +55,7 @@ function formatDate(iso: string) {
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 type DeleteConfirm = { userId: string; landlordId: string; name: string }
-type ResetConfirm  = { userId: string; landlordId: string; name: string }
+type ResetConfirm = { userId: string; landlordId: string; name: string }
 
 // ── Reset confirmation modal ──────────────────────────────────────────────────
 
@@ -215,9 +215,9 @@ function LandlordRow({ l, processing, menuOpen, onMenuToggle, onStatus, onDelete
   onDelete: (userId: string, landlordId: string) => void
   onReset: (userId: string, landlordId: string, name: string) => void
 }) {
-  const meta    = STATUS_META[l.status] ?? STATUS_META.not_submitted
+  const meta = STATUS_META[l.status] ?? STATUS_META.not_submitted
   const palette = avatarColor(l.full_name)
-  const busy    = processing === l.id
+  const busy = processing === l.id
 
   return (
     <div className={`group flex items-center gap-3 px-4 py-3 border-b border-slate-100 border-l-[3px] ${meta.border} hover:bg-slate-50/70 transition-colors`}>
@@ -261,11 +261,10 @@ function LandlordRow({ l, processing, menuOpen, onMenuToggle, onStatus, onDelete
       {/* ⋮ action menu */}
       <div className="relative shrink-0 sm:ml-2">
         <button type="button" disabled={busy} onClick={onMenuToggle}
-          className={`grid h-10 w-10 place-items-center rounded-xl border transition-colors ${
-          menuOpen
-            ? 'border-slate-300 bg-slate-100 text-slate-700'
-            : 'border-slate-200 bg-white text-slate-400 hover:border-slate-300 hover:bg-slate-100 hover:text-slate-700'
-        } disabled:opacity-30`}>
+          className={`grid h-10 w-10 place-items-center rounded-xl border transition-colors ${menuOpen
+              ? 'border-slate-300 bg-slate-100 text-slate-700'
+              : 'border-slate-200 bg-white text-slate-400 hover:border-slate-300 hover:bg-slate-100 hover:text-slate-700'
+            } disabled:opacity-30`}>
           {busy
             ? <RefreshCw className="h-3.5 w-3.5 animate-spin" />
             : <MoreVertical className="h-3.5 w-3.5" />}
@@ -289,9 +288,9 @@ function LandlordMobileCard({ l, processing, menuOpen, onMenuToggle, onStatus, o
   onDelete: (userId: string, landlordId: string) => void
   onReset: (userId: string, landlordId: string, name: string) => void
 }) {
-  const meta    = STATUS_META[l.status] ?? STATUS_META.not_submitted
+  const meta = STATUS_META[l.status] ?? STATUS_META.not_submitted
   const palette = avatarColor(l.full_name)
-  const busy    = processing === l.id
+  const busy = processing === l.id
 
   return (
     <div className="rounded-[11px] border border-slate-200 bg-white p-3 mb-2 last:mb-0">
@@ -335,11 +334,10 @@ function LandlordMobileCard({ l, processing, menuOpen, onMenuToggle, onStatus, o
         </Link>
         <div className="relative shrink-0">
           <button type="button" disabled={busy} onClick={onMenuToggle}
-            className={`h-9 w-9 grid place-items-center rounded-lg border transition-colors ${
-              menuOpen
+            className={`h-9 w-9 grid place-items-center rounded-lg border transition-colors ${menuOpen
                 ? 'border-slate-300 bg-slate-100 text-slate-700'
                 : 'border-slate-200 bg-white text-slate-400 hover:border-slate-300 hover:bg-slate-100 hover:text-slate-700'
-            } disabled:opacity-30`}>
+              } disabled:opacity-30`}>
             {busy
               ? <RefreshCw className="h-3.5 w-3.5 animate-spin" />
               : <MoreVertical className="h-3.5 w-3.5" />}
@@ -356,20 +354,20 @@ function LandlordMobileCard({ l, processing, menuOpen, onMenuToggle, onStatus, o
 // ── Page ──────────────────────────────────────────────────────────────────────
 
 export default function AdminLandlords() {
-  const [user, setUser]           = useState<{ email?: string } | null>(null)
-  const [clients, setClients]     = useState<any[]>([])
-  const [filtered, setFiltered]   = useState<any[]>([])
-  const [loading, setLoading]     = useState(true)
-  const [search, setSearch]       = useState('')
-  const [sort, setSort]           = useState('newest')
+  const [user, setUser] = useState<{ email?: string } | null>(null)
+  const [clients, setClients] = useState<any[]>([])
+  const [filtered, setFiltered] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+  const [search, setSearch] = useState('')
+  const [sort, setSort] = useState('newest')
   const [statusFilter, setStatusFilter] = useState('all')
-  const [processing, setProcessing]     = useState<string | null>(null)
+  const [processing, setProcessing] = useState<string | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<DeleteConfirm | null>(null)
   const [deleteLoading, setDeleteLoading] = useState(false)
-  const [resetTarget, setResetTarget]   = useState<ResetConfirm | null>(null)
+  const [resetTarget, setResetTarget] = useState<ResetConfirm | null>(null)
   const [resetLoading, setResetLoading] = useState(false)
-  const [toast, setToast]               = useState<string | null>(null)
-  const [menuOpen, setMenuOpen]         = useState<string | null>(null)
+  const [toast, setToast] = useState<string | null>(null)
+  const [menuOpen, setMenuOpen] = useState<string | null>(null)
 
   useEffect(() => {
     if (!isSupabaseConfigured()) return
@@ -408,7 +406,7 @@ export default function AdminLandlords() {
     }
     if (sort === 'newest') list.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
     if (sort === 'oldest') list.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
-    if (sort === 'name')   list.sort((a, b) => a.full_name.localeCompare(b.full_name))
+    if (sort === 'name') list.sort((a, b) => a.full_name.localeCompare(b.full_name))
     setFiltered(list)
   }, [search, sort, statusFilter, clients])
 
@@ -498,334 +496,307 @@ export default function AdminLandlords() {
   }
 
   const displayName = user?.email ? user.email.split('@')[0] : 'Admin'
-  const pending   = clients.filter(c => c.status === 'pending').length
-  const approved  = clients.filter(c => c.status === 'approved').length
+  const pending = clients.filter(c => c.status === 'pending').length
+  const approved = clients.filter(c => c.status === 'approved').length
   const suspended = clients.filter(c => c.status === 'suspended').length
-  const notSub    = clients.filter(c => c.status === 'not_submitted').length
+  const notSub = clients.filter(c => c.status === 'not_submitted').length
   const topPending = clients.filter(c => c.status === 'pending').slice(0, 5)
 
   const STATUS_TABS = [
-    { key: 'all',           label: 'All',           count: clients.length },
-    { key: 'approved',      label: 'Approved',      count: approved },
-    { key: 'pending',       label: 'KYC Pending',   count: pending },
-    { key: 'suspended',     label: 'Suspended',     count: suspended },
+    { key: 'all', label: 'All', count: clients.length },
+    { key: 'approved', label: 'Approved', count: approved },
+    { key: 'pending', label: 'KYC Pending', count: pending },
+    { key: 'suspended', label: 'Suspended', count: suspended },
     { key: 'not_submitted', label: 'Not Submitted', count: notSub },
   ]
 
   return (
     <AuthGuard require="admin">
       <MobileSidebarProvider>
-      <div className="flex h-screen overflow-hidden bg-[#F4F6FB]">
-        <AdminSidebar userEmail={user?.email} userName={displayName} />
+        <div className="flex h-screen overflow-hidden bg-[#F4F6FB]">
+          <AdminSidebar userEmail={user?.email} userName={displayName} />
 
-        <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+          <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
 
-          <AdminHeader title="Clients"
-            subtitle={`${clients.length} clients · ${approved} approved`}
-            pendingCount={approved} />
+            <AdminHeader title="Clients"
+              subtitle={`${clients.length} clients · ${approved} approved`}
+              pendingCount={approved} />
 
-          {/* ── Mobile: compact stats + filters ── */}
-          <div className="sm:hidden -mx-4">
-            <MobileStatGrid>
-              <MobileStatCard label="Total" value={clients.length} color="text-slate-700" icon={Users} />
-              <MobileStatCard label="Approved" value={approved} color="text-emerald-700" icon={ShieldCheck} />
-              <MobileStatCard label="Pending" value={pending} color="text-amber-700" icon={Clock} />
-              <MobileStatCard label="Suspended" value={suspended} color="text-orange-700" icon={ShieldOff} />
-            </MobileStatGrid>
-            <MobileSearch
-              placeholder="Search name, city, phone…"
-              value={search}
-              onChange={setSearch}
-            />
-            <MobileFilterBar>
-              <ResponsiveFilters
-                tabs={STATUS_TABS.map(t => ({ key: t.key, label: t.label, count: t.count }))}
-                value={statusFilter}
-                onChange={setStatusFilter}
-                label="Status"
+            {/* ── Mobile: compact stats + filters ── */}
+            <div className="sm:hidden -mx-4">
+              <MobileStatGrid>
+                <MobileStatCard label="Total" value={clients.length} color="text-slate-700" icon={Users} />
+                <MobileStatCard label="Approved" value={approved} color="text-emerald-700" icon={ShieldCheck} />
+                <MobileStatCard label="Pending" value={pending} color="text-amber-700" icon={Clock} />
+                <MobileStatCard label="Suspended" value={suspended} color="text-orange-700" icon={ShieldOff} />
+              </MobileStatGrid>
+              <MobileSearch
+                placeholder="Search name, city, phone…"
+                value={search}
+                onChange={setSearch}
               />
-              <div className="relative flex-1 min-w-[120px]">
-                <select value={sort} onChange={e => setSort(e.target.value)}
-                  className="w-full appearance-none rounded-xl border border-slate-200 bg-white pl-2.5 pr-7 py-2 text-xs font-medium text-slate-700 focus:outline-none cursor-pointer min-h-[44px]">
-                  <option value="newest">Newest</option>
-                  <option value="oldest">Oldest</option>
-                  <option value="name">Name A–Z</option>
-                </select>
-                <ChevronDown className="pointer-events-none absolute right-2 top-1/2 h-3 w-3 -translate-y-1/2 text-slate-400" />
-              </div>
-            </MobileFilterBar>
-          </div>
-
-          {/* ── Hero card (desktop only) ── */}
-          <div className="hidden sm:block shrink-0 px-4 md:px-6 pt-3 pb-2">
-            <div className="rounded-2xl border border-slate-200 bg-white px-5 py-3.5 shadow-sm">
-              <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">Landlord management</p>
-                  <h2 className="mt-0.5 text-xl md:text-2xl font-extrabold text-slate-950">Clients</h2>
+              <MobileFilterBar>
+                <ResponsiveFilters
+                  tabs={STATUS_TABS.map(t => ({ key: t.key, label: t.label, count: t.count }))}
+                  value={statusFilter}
+                  onChange={setStatusFilter}
+                  label="Status"
+                />
+                <div className="relative flex-1 min-w-[120px]">
+                  <select value={sort} onChange={e => setSort(e.target.value)}
+                    className="w-full appearance-none rounded-xl border border-slate-200 bg-white pl-2.5 pr-7 py-2 text-xs font-medium text-slate-700 focus:outline-none cursor-pointer min-h-[44px]">
+                    <option value="newest">Newest</option>
+                    <option value="oldest">Oldest</option>
+                    <option value="name">Name A–Z</option>
+                  </select>
+                  <ChevronDown className="pointer-events-none absolute right-2 top-1/2 h-3 w-3 -translate-y-1/2 text-slate-400" />
                 </div>
-                <div className="flex flex-col gap-2 md:flex-row md:items-center md:shrink-0">
-                  {/* <div className="grid grid-cols-2 gap-1.5 flex-1 min-w-0 sm:flex sm:flex-none sm:flex-wrap sm:items-center sm:gap-2">
+              </MobileFilterBar>
+            </div>
+
+            {/* ── Hero card (desktop only) ── */}
+            <div className="hidden sm:block shrink-0 px-4 md:px-6 pt-3 pb-2">
+              <div className="rounded-2xl border border-slate-200 bg-white px-5 py-3.5 shadow-sm">
+                <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">Landlord management</p>
+                    <h2 className="mt-0.5 text-xl md:text-2xl font-extrabold text-slate-950">Clients</h2>
+                  </div>
+                </div>
+
+                {/* Filter + search row */}
+                <div className="mt-2.5 flex flex-col gap-2 md:flex-row md:flex-wrap md:items-center md:justify-between">
+                  <div className="w-full sm:w-auto">
+                    <ResponsiveFilters
+                      tabs={STATUS_TABS.map(t => ({ key: t.key, label: t.label, count: t.count }))}
+                      value={statusFilter}
+                      onChange={setStatusFilter}
+                      label="Status"
+                    />
+                  </div>
+                  <div className="flex items-center gap-2 w-full md:w-auto">
+                    <label className="flex h-9 md:h-8 items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 px-3 focus-within:border-slate-300 focus-within:bg-white transition-all flex-1 md:flex-none md:w-36">
+                      <Search className="h-3.5 w-3.5 shrink-0 text-slate-400" />
+                      <input value={search} onChange={e => setSearch(e.target.value)}
+                        placeholder="Name, city, phone…"
+                        className="flex-1 md:flex-none md:w-36 bg-transparent text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none" />
+                      {search && (
+                        <button onClick={() => setSearch('')} className="text-slate-400 hover:text-slate-600">
+                          <X className="w-3 h-3" />
+                        </button>
+                      )}
+                    </label>
+                    <div className="relative shrink-0">
+                      <select value={sort} onChange={e => setSort(e.target.value)}
+                        className="h-9 md:h-8 appearance-none rounded-2xl border border-slate-200 bg-white pl-2.5 pr-7 text-xs font-medium text-slate-700 focus:outline-none cursor-pointer hover:border-slate-300 transition-colors">
+                        <option value="newest">Newest</option>
+                        <option value="oldest">Oldest</option>
+                        <option value="name">Name A–Z</option>
+                      </select>
+                      <ChevronDown className="pointer-events-none absolute right-2 top-1/2 h-3 w-3 -translate-y-1/2 text-slate-400" />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* ── Content ─────────────────────────────────────────────────── */}
+            <div className="flex flex-1 overflow-hidden">
+
+              {/* Left — client list */}
+              <div className="flex flex-1 flex-col min-w-0 overflow-hidden">
+
+                {/* Column headers — desktop only */}
+                {!loading && clients.length > 0 && (
+                  <div className="hidden sm:flex items-center gap-3 px-4 py-2 bg-slate-50 border-b border-slate-100 shrink-0">
+                    <div className="w-9 shrink-0" /> {/* avatar spacer */}
+                    <div className="w-40 shrink-0 text-[10.5px] font-semibold uppercase tracking-wider text-slate-400">Client</div>
+                    <div className="hidden md:block w-28 shrink-0 text-[10.5px] font-semibold uppercase tracking-wider text-slate-400">Location</div>
+                    <div className="hidden lg:block w-36 shrink-0 text-[10.5px] font-semibold uppercase tracking-wider text-slate-400">Contact</div>
+                    <div className="hidden sm:block w-24 shrink-0 text-[10.5px] font-semibold uppercase tracking-wider text-slate-400">Listings</div>
+                    <div className="flex-1" />
+                    <div className="text-[10.5px] font-semibold uppercase tracking-wider text-slate-400 pr-8">Status</div>
+                  </div>
+                )}
+
+                {/* Rows — desktop table / mobile cards */}
+                <div className="flex-1 overflow-y-auto bg-white">
+                  {loading ? (
+                    <div className="flex h-48 items-center justify-center">
+                      <div className="h-8 w-8 animate-spin rounded-full border-[3px] border-slate-200 border-t-slate-900" />
+                    </div>
+                  ) : clients.length === 0 ? (
+                    <div className="flex h-64 flex-col items-center justify-center text-center px-6">
+                      <div className="mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-50 border border-slate-200">
+                        <Users className="h-6 w-6 text-slate-300" />
+                      </div>
+                      <p className="text-[14px] font-semibold text-slate-700">No landlords yet</p>
+                      <p className="mt-1 text-[12.5px] text-slate-400">They'll appear here once they register.</p>
+                    </div>
+                  ) : filtered.length === 0 ? (
+                    <div className="flex h-48 flex-col items-center justify-center text-center px-6">
+                      <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-50 border border-slate-200">
+                        <Search className="h-5 w-5 text-slate-300" />
+                      </div>
+                      <p className="text-[13px] font-semibold text-slate-600">No results</p>
+                      <p className="mt-1 text-[12px] text-slate-400">Try adjusting the filter or search term.</p>
+                    </div>
+                  ) : (
+                    <>
+                      {/* Mobile: cards */}
+                      <div className="sm:hidden">
+                        {filtered.map(l => (
+                          <LandlordMobileCard
+                            key={l.id}
+                            l={l}
+                            processing={processing}
+                            menuOpen={menuOpen === l.id}
+                            onMenuToggle={() => setMenuOpen(menuOpen === l.id ? null : l.id)}
+                            onStatus={updateStatus}
+                            onDelete={handleDelete}
+                            onReset={handleReset}
+                          />
+                        ))}
+                      </div>
+                      {/* Desktop: table rows */}
+                      <div className="hidden sm:block">
+                        {filtered.map(l => (
+                          <LandlordRow
+                            key={l.id}
+                            l={l}
+                            processing={processing}
+                            menuOpen={menuOpen === l.id}
+                            onMenuToggle={() => setMenuOpen(menuOpen === l.id ? null : l.id)}
+                            onStatus={updateStatus}
+                            onDelete={handleDelete}
+                            onReset={handleReset}
+                          />
+                        ))}
+                      </div>
+                    </>
+                  )}
+                </div>
+              </div>
+
+              {/* Right sidebar */}
+              <aside className="hidden xl:flex flex-col w-72 shrink-0 border-l border-slate-200 bg-white overflow-y-auto">
+
+                {/* Pending queue */}
+                <div className="p-4 border-b border-slate-100">
+                  <div className="flex items-center justify-between mb-3">
+                    <p className="text-[11px] font-bold uppercase tracking-widest text-slate-400">KYC Queue</p>
+                    {pending > 0 && (
+                      <span className="rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-semibold text-amber-700 ring-1 ring-amber-200">
+                        {pending} waiting
+                      </span>
+                    )}
+                  </div>
+                  {topPending.length === 0 ? (
+                    <div className="flex flex-col items-center py-6 text-center">
+                      <UserCheck className="mb-2 h-8 w-8 text-emerald-200" />
+                      <p className="text-[12.5px] font-medium text-slate-500">Queue is clear</p>
+                      <p className="text-[11px] text-slate-400 mt-0.5">No pending KYC reviews</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-1.5">
+                      {topPending.map(item => {
+                        const pal = avatarColor(item.full_name)
+                        return (
+                          <div key={item.id} className="flex items-center gap-2.5 rounded-xl border border-slate-100 bg-slate-50/60 p-2.5 hover:bg-slate-100/70 transition-colors">
+                            <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[11px] font-semibold ${pal.bg} ${pal.text}`}>
+                              {getInitials(item.full_name)}
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <p className="truncate text-[12.5px] font-semibold text-slate-800">{item.full_name}</p>
+                              <p className="truncate text-[11px] text-slate-400">{item.city ?? 'No city listed'}</p>
+                            </div>
+                            <Link href="/admin/kyc" className="shrink-0">
+                              <span className="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-white text-slate-400 ring-1 ring-slate-200 hover:text-slate-700 hover:ring-slate-300 transition-colors">
+                                <ArrowUpRight className="h-3.5 w-3.5" />
+                              </span>
+                            </Link>
+                          </div>
+                        )
+                      })}
+                      {pending > 5 && (
+                        <Link href="/admin/kyc">
+                          <button type="button" className="mt-1 w-full rounded-xl border border-amber-200 bg-amber-50 py-2 text-[12px] font-medium text-amber-700 hover:bg-amber-100 transition-colors">
+                            View all {pending} pending →
+                          </button>
+                        </Link>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                {/* Distribution breakdown */}
+                <div className="p-4 border-b border-slate-100">
+                  <p className="mb-3 text-[11px] font-bold uppercase tracking-widest text-slate-400">Breakdown</p>
+                  <div className="space-y-2.5">
                     {[
-                      { label: 'Total',     value: clients.length, color: 'text-slate-700'    },
-                      { label: 'Approved',  value: approved,       color: 'text-emerald-700'  },
-                      { label: 'Pending',   value: pending,        color: 'text-amber-700'    },
-                      { label: 'Suspended', value: suspended,      color: 'text-orange-700'   },
-                    ].map(s => (
-                      <div key={s.label} className="rounded-2xl border border-slate-100 bg-slate-50 px-2 sm:px-3 py-1.5 text-center sm:min-w-[52px]">
-                        <p className={`text-base font-extrabold ${s.color}`}>{s.value}</p>
-                        <p className="text-[9px] font-semibold uppercase tracking-[0.2em] text-slate-400">{s.label}</p>
+                      { label: 'Approved', value: approved, color: 'bg-emerald-400', text: 'text-emerald-700' },
+                      { label: 'KYC Pending', value: pending, color: 'bg-amber-400', text: 'text-amber-700' },
+                      { label: 'Suspended', value: suspended, color: 'bg-orange-400', text: 'text-orange-700' },
+                      { label: 'Not submitted', value: notSub, color: 'bg-slate-300', text: 'text-slate-500' },
+                    ].map(row => (
+                      <div key={row.label}>
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-[12px] text-slate-600">{row.label}</span>
+                          <span className={`text-[12px] font-semibold tabular-nums ${row.text}`}>{row.value}</span>
+                        </div>
+                        <div className="h-1.5 rounded-full bg-slate-100 overflow-hidden">
+                          <div className={`h-full rounded-full ${row.color} transition-all duration-700`}
+                            style={{ width: clients.length ? `${(row.value / clients.length) * 100}%` : '0%' }} />
+                        </div>
                       </div>
                     ))}
                   </div>
-                  <Link href="/admin/vetting">
+                </div>
+
+                {/* Quick link */}
+                <div className="p-4">
+                  <Link href="/admin/kyc">
                     <button type="button"
-                      className="inline-flex items-center gap-1.5 rounded-full bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground hover:bg-primary/90 transition-all shrink-0 self-start md:self-auto">
-                      <ShieldCheck className="h-3 w-3" />
-                      Vetting
+                      className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-primary py-2.5 text-[13px] font-semibold text-primary-foreground hover:bg-primary/90 transition-colors">
+                      <ShieldCheck className="h-4 w-4" />
+                      Open KYC Review
                       {pending > 0 && (
-                        <span className="flex h-4 min-w-[16px] items-center justify-center rounded-full bg-amber-400 px-1 text-[10px] font-bold text-amber-900">
+                        <span className="flex h-5 min-w-[20px] items-center justify-center rounded-full bg-amber-400 px-1.5 text-[10px] font-bold text-amber-900">
                           {pending}
                         </span>
                       )}
                     </button>
                   </Link>
-                </div> */}
-              </div>
-
-              {/* Filter + search row */}
-              <div className="mt-2.5 flex flex-col gap-2 md:flex-row md:flex-wrap md:items-center md:justify-between">
-                <div className="w-full sm:w-auto">
-                  <ResponsiveFilters
-                    tabs={STATUS_TABS.map(t => ({ key: t.key, label: t.label, count: t.count }))}
-                    value={statusFilter}
-                    onChange={setStatusFilter}
-                    label="Status"
-                  />
                 </div>
-                <div className="flex items-center gap-2 w-full md:w-auto">
-                  <label className="flex h-9 md:h-8 items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 px-3 focus-within:border-slate-300 focus-within:bg-white transition-all flex-1 md:flex-none md:w-36">
-                    <Search className="h-3.5 w-3.5 shrink-0 text-slate-400" />
-                    <input value={search} onChange={e => setSearch(e.target.value)}
-                      placeholder="Name, city, phone…"
-                      className="flex-1 md:flex-none md:w-36 bg-transparent text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none" />
-                    {search && (
-                      <button onClick={() => setSearch('')} className="text-slate-400 hover:text-slate-600">
-                        <X className="w-3 h-3" />
-                      </button>
-                    )}
-                  </label>
-                  <div className="relative shrink-0">
-                    <select value={sort} onChange={e => setSort(e.target.value)}
-                      className="h-9 md:h-8 appearance-none rounded-2xl border border-slate-200 bg-white pl-2.5 pr-7 text-xs font-medium text-slate-700 focus:outline-none cursor-pointer hover:border-slate-300 transition-colors">
-                      <option value="newest">Newest</option>
-                      <option value="oldest">Oldest</option>
-                      <option value="name">Name A–Z</option>
-                    </select>
-                    <ChevronDown className="pointer-events-none absolute right-2 top-1/2 h-3 w-3 -translate-y-1/2 text-slate-400" />
-                  </div>
-                </div>
-              </div>
+              </aside>
             </div>
           </div>
+        </div>
 
-          {/* ── Content ─────────────────────────────────────────────────── */}
-          <div className="flex flex-1 overflow-hidden">
+        {deleteTarget && (
+          <ConfirmDeleteModal
+            target={deleteTarget}
+            onConfirm={confirmDelete}
+            onCancel={() => setDeleteTarget(null)}
+            loading={deleteLoading}
+          />
+        )}
 
-            {/* Left — client list */}
-            <div className="flex flex-1 flex-col min-w-0 overflow-hidden">
+        {resetTarget && (
+          <ConfirmResetModal
+            target={resetTarget}
+            onConfirm={confirmReset}
+            onCancel={() => setResetTarget(null)}
+            loading={resetLoading}
+          />
+        )}
 
-              {/* Column headers — desktop only */}
-              {!loading && clients.length > 0 && (
-                <div className="hidden sm:flex items-center gap-3 px-4 py-2 bg-slate-50 border-b border-slate-100 shrink-0">
-                  <div className="w-9 shrink-0" /> {/* avatar spacer */}
-                  <div className="w-40 shrink-0 text-[10.5px] font-semibold uppercase tracking-wider text-slate-400">Client</div>
-                  <div className="hidden md:block w-28 shrink-0 text-[10.5px] font-semibold uppercase tracking-wider text-slate-400">Location</div>
-                  <div className="hidden lg:block w-36 shrink-0 text-[10.5px] font-semibold uppercase tracking-wider text-slate-400">Contact</div>
-                  <div className="hidden sm:block w-24 shrink-0 text-[10.5px] font-semibold uppercase tracking-wider text-slate-400">Listings</div>
-                  <div className="flex-1" />
-                  <div className="text-[10.5px] font-semibold uppercase tracking-wider text-slate-400 pr-8">Status</div>
-                </div>
-              )}
-
-              {/* Rows — desktop table / mobile cards */}
-              <div className="flex-1 overflow-y-auto bg-white">
-                {loading ? (
-                  <div className="flex h-48 items-center justify-center">
-                    <div className="h-8 w-8 animate-spin rounded-full border-[3px] border-slate-200 border-t-slate-900" />
-                  </div>
-                ) : clients.length === 0 ? (
-                  <div className="flex h-64 flex-col items-center justify-center text-center px-6">
-                    <div className="mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-50 border border-slate-200">
-                      <Users className="h-6 w-6 text-slate-300" />
-                    </div>
-                    <p className="text-[14px] font-semibold text-slate-700">No landlords yet</p>
-                    <p className="mt-1 text-[12.5px] text-slate-400">They'll appear here once they register.</p>
-                  </div>
-                ) : filtered.length === 0 ? (
-                  <div className="flex h-48 flex-col items-center justify-center text-center px-6">
-                    <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-50 border border-slate-200">
-                      <Search className="h-5 w-5 text-slate-300" />
-                    </div>
-                    <p className="text-[13px] font-semibold text-slate-600">No results</p>
-                    <p className="mt-1 text-[12px] text-slate-400">Try adjusting the filter or search term.</p>
-                  </div>
-                ) : (
-                  <>
-                    {/* Mobile: cards */}
-                    <div className="sm:hidden">
-                      {filtered.map(l => (
-                        <LandlordMobileCard
-                          key={l.id}
-                          l={l}
-                          processing={processing}
-                          menuOpen={menuOpen === l.id}
-                          onMenuToggle={() => setMenuOpen(menuOpen === l.id ? null : l.id)}
-                          onStatus={updateStatus}
-                          onDelete={handleDelete}
-                          onReset={handleReset}
-                        />
-                      ))}
-                    </div>
-                    {/* Desktop: table rows */}
-                    <div className="hidden sm:block">
-                      {filtered.map(l => (
-                        <LandlordRow
-                          key={l.id}
-                          l={l}
-                          processing={processing}
-                          menuOpen={menuOpen === l.id}
-                          onMenuToggle={() => setMenuOpen(menuOpen === l.id ? null : l.id)}
-                          onStatus={updateStatus}
-                          onDelete={handleDelete}
-                          onReset={handleReset}
-                        />
-                      ))}
-                    </div>
-                  </>
-                )}
-              </div>
-            </div>
-
-            {/* Right sidebar */}
-            <aside className="hidden xl:flex flex-col w-72 shrink-0 border-l border-slate-200 bg-white overflow-y-auto">
-
-              {/* Pending queue */}
-              <div className="p-4 border-b border-slate-100">
-                <div className="flex items-center justify-between mb-3">
-                  <p className="text-[11px] font-bold uppercase tracking-widest text-slate-400">KYC Queue</p>
-                  {pending > 0 && (
-                    <span className="rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-semibold text-amber-700 ring-1 ring-amber-200">
-                      {pending} waiting
-                    </span>
-                  )}
-                </div>
-                {topPending.length === 0 ? (
-                  <div className="flex flex-col items-center py-6 text-center">
-                    <UserCheck className="mb-2 h-8 w-8 text-emerald-200" />
-                    <p className="text-[12.5px] font-medium text-slate-500">Queue is clear</p>
-                    <p className="text-[11px] text-slate-400 mt-0.5">No pending KYC reviews</p>
-                  </div>
-                ) : (
-                  <div className="space-y-1.5">
-                    {topPending.map(item => {
-                      const pal = avatarColor(item.full_name)
-                      return (
-                        <div key={item.id} className="flex items-center gap-2.5 rounded-xl border border-slate-100 bg-slate-50/60 p-2.5 hover:bg-slate-100/70 transition-colors">
-                          <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[11px] font-semibold ${pal.bg} ${pal.text}`}>
-                            {getInitials(item.full_name)}
-                          </div>
-                          <div className="min-w-0 flex-1">
-                            <p className="truncate text-[12.5px] font-semibold text-slate-800">{item.full_name}</p>
-                            <p className="truncate text-[11px] text-slate-400">{item.city ?? 'No city listed'}</p>
-                          </div>
-                          <Link href="/admin/kyc" className="shrink-0">
-                            <span className="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-white text-slate-400 ring-1 ring-slate-200 hover:text-slate-700 hover:ring-slate-300 transition-colors">
-                              <ArrowUpRight className="h-3.5 w-3.5" />
-                            </span>
-                          </Link>
-                        </div>
-                      )
-                    })}
-                    {pending > 5 && (
-                      <Link href="/admin/kyc">
-                        <button type="button" className="mt-1 w-full rounded-xl border border-amber-200 bg-amber-50 py-2 text-[12px] font-medium text-amber-700 hover:bg-amber-100 transition-colors">
-                          View all {pending} pending →
-                        </button>
-                      </Link>
-                    )}
-                  </div>
-                )}
-              </div>
-
-              {/* Distribution breakdown */}
-              <div className="p-4 border-b border-slate-100">
-                <p className="mb-3 text-[11px] font-bold uppercase tracking-widest text-slate-400">Breakdown</p>
-                <div className="space-y-2.5">
-                  {[
-                    { label: 'Approved',      value: approved,  color: 'bg-emerald-400', text: 'text-emerald-700' },
-                    { label: 'KYC Pending',   value: pending,   color: 'bg-amber-400',   text: 'text-amber-700'   },
-                    { label: 'Suspended',     value: suspended, color: 'bg-orange-400',  text: 'text-orange-700'  },
-                    { label: 'Not submitted', value: notSub,    color: 'bg-slate-300',   text: 'text-slate-500'   },
-                  ].map(row => (
-                    <div key={row.label}>
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="text-[12px] text-slate-600">{row.label}</span>
-                        <span className={`text-[12px] font-semibold tabular-nums ${row.text}`}>{row.value}</span>
-                      </div>
-                      <div className="h-1.5 rounded-full bg-slate-100 overflow-hidden">
-                        <div className={`h-full rounded-full ${row.color} transition-all duration-700`}
-                          style={{ width: clients.length ? `${(row.value / clients.length) * 100}%` : '0%' }} />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Quick link */}
-              <div className="p-4">
-                <Link href="/admin/kyc">
-                  <button type="button"
-                    className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-primary py-2.5 text-[13px] font-semibold text-primary-foreground hover:bg-primary/90 transition-colors">
-                    <ShieldCheck className="h-4 w-4" />
-                    Open KYC Review
-                    {pending > 0 && (
-                      <span className="flex h-5 min-w-[20px] items-center justify-center rounded-full bg-amber-400 px-1.5 text-[10px] font-bold text-amber-900">
-                        {pending}
-                      </span>
-                    )}
-                  </button>
-                </Link>
-              </div>
-            </aside>
+        {toast && (
+          <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-slate-900 text-white text-[13px] font-medium px-5 py-3 rounded-xl shadow-2xl flex items-center gap-2">
+            <div className="w-2 h-2 rounded-full bg-primary"></div>
+            {toast}
           </div>
-        </div>
-      </div>
-
-      {deleteTarget && (
-        <ConfirmDeleteModal
-          target={deleteTarget}
-          onConfirm={confirmDelete}
-          onCancel={() => setDeleteTarget(null)}
-          loading={deleteLoading}
-        />
-      )}
-
-      {resetTarget && (
-        <ConfirmResetModal
-          target={resetTarget}
-          onConfirm={confirmReset}
-          onCancel={() => setResetTarget(null)}
-          loading={resetLoading}
-        />
-      )}
-
-      {toast && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-slate-900 text-white text-[13px] font-medium px-5 py-3 rounded-xl shadow-2xl flex items-center gap-2">
-          <div className="w-2 h-2 rounded-full bg-primary"></div>
-          {toast}
-        </div>
-      )}
+        )}
       </MobileSidebarProvider>
     </AuthGuard>
   )
