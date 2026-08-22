@@ -218,7 +218,7 @@ export default function AdminHeader({ title, subtitle, action, pendingCount = 0 
   }
 
   return (
-    <header className="flex items-center justify-between px-3 md:px-6 py-2 md:py-3.5 bg-white border-b border-gray-100 shrink-0 gap-3 h-14 md:h-auto">
+    <header className="flex items-center justify-between px-3 md:px-6 py-1.5 md:py-2.5 bg-white border-b border-gray-100 shrink-0 gap-3 h-12 md:h-auto">
       <div className="flex items-center gap-2 min-w-0">
         {showSearch ? (
           <button type="button" onClick={() => setShowSearch(false)}

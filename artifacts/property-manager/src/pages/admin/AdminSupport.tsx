@@ -1367,42 +1367,40 @@ function ChatRequestDetail({ inquiry, onBack, onMarkRead, onStatusChange, agents
   return (
     <div className="flex flex-col h-full bg-white overflow-hidden">
       {/* Header */}
-      <div className="flex items-center gap-3 px-5 py-3.5 border-b border-slate-100 shrink-0">
-        <button onClick={onBack} className="lg:hidden p-1.5 -ml-1.5 rounded-lg hover:bg-slate-100 text-slate-500 transition-colors">
+      <div className="flex items-center gap-2.5 px-3.5 py-2.5 sm:gap-3 sm:px-5 sm:py-3.5 border-b border-slate-100 shrink-0">
+          <button onClick={onBack} className="lg:hidden p-1.5 -ml-1.5 rounded-lg hover:bg-slate-100 text-slate-500 transition-colors shrink-0">
           <ChevronLeft className="w-4 h-4" />
         </button>
-        <div className={`w-10 h-10 rounded-full bg-gradient-to-br ${avatarGrad(inquiry.name)} flex items-center justify-center shrink-0 text-[13px] font-semibold text-white`}>
+          <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gradient-to-br ${avatarGrad(inquiry.name)} flex items-center justify-center shrink-0 text-[12px] sm:text-[13px] font-semibold text-white`}>
           <span>{inquiry.name[0]?.toUpperCase() ?? 'U'}</span>
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
-            <p className="font-semibold text-slate-900 text-[15px] truncate">{inquiry.name}</p>
-            <span className={`shrink-0 inline-flex items-center gap-1.5 text-[11px] font-medium px-2 py-0.5 rounded-full ${s.bg} ${s.color}`}>
+              <p className="font-semibold text-slate-900 text-sm sm:text-[15px] truncate max-w-[45vw]">{inquiry.name}</p>
+              <span className={`shrink-0 inline-flex items-center gap-1 text-[10px] sm:text-[11px] font-medium px-1.5 sm:px-2 py-0.5 rounded-full ${s.bg} ${s.color}`}>
               <span className={`w-1.5 h-1.5 rounded-full ${s.dot}`} />{s.label}
             </span>
             {/* Assignment status badge */}
             {inquiry.agent_status === 'assigned' && assignedAgent ? (
-              <span className="shrink-0 inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">
+              <span className="hidden sm:inline-flex shrink-0 items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">
                 <User className="w-3 h-3" />{assignedAgent.name.split(' ')[0]}
               </span>
             ) : inquiry.agent_status === 'queued' ? (
-              <span className="shrink-0 inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-full bg-amber-50 text-amber-600">
+              <span className="hidden sm:inline-flex shrink-0 items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-full bg-amber-50 text-amber-600">
                 <Clock className="w-3 h-3" />Queued
               </span>
             ) : (
-              <span className="shrink-0 inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-full bg-slate-100 text-slate-500">
+              <span className="hidden sm:inline-flex shrink-0 items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-full bg-slate-100 text-slate-500">
                 Unassigned
               </span>
             )}
           </div>
-          <p className="text-[12.5px] text-slate-400 mt-0.5">
+          <p className="text-[10.5px] sm:text-[12.5px] text-slate-400 mt-0.5 truncate">
             {inquiry.ticket_no && <span className="font-medium text-slate-500">{inquiry.ticket_no} · </span>}
-            {inquiry.email && <span>{inquiry.email} · </span>}
-            {inquiry.phone && <span>{inquiry.phone} · </span>}
-            {format(new Date(inquiry.created_at), 'dd MMM yyyy, h:mm a')}
+            {inquiry.email || inquiry.phone || format(new Date(inquiry.created_at), 'dd MMM yyyy, h:mm a')}
           </p>
         </div>
-        <div className="w-full flex items-center justify-end gap-2 pt-3 border-t border-slate-100 shrink-0">
+        <div className="w-full flex items-center justify-end gap-1.5 pt-2 sm:gap-2 sm:pt-3 border-t border-slate-100 shrink-0">
           <SmartSelect
             value={inquiry.status}
             onValueChange={(v) => changeStatus(v as ChatInquiry['status'])}
@@ -1417,7 +1415,7 @@ function ChatRequestDetail({ inquiry, onBack, onMarkRead, onStatusChange, agents
           <button
             onClick={() => setShowClearConfirm(true)}
             title="Clear chat history"
-            className="grid size-9 place-items-center rounded-lg border border-slate-200 bg-white text-slate-400 hover:text-red-500 hover:border-red-200 transition-colors"
+            className="grid size-8 sm:size-9 place-items-center rounded-lg border border-slate-200 bg-white text-slate-400 hover:text-red-500 hover:border-red-200 transition-colors"
           >
             <Trash2 className="w-4 h-4" />
           </button>
@@ -1453,12 +1451,12 @@ function ChatRequestDetail({ inquiry, onBack, onMarkRead, onStatusChange, agents
       )}
 
       {/* Assignment bar */}
-      <div className="flex items-center gap-2 px-5 py-2 border-b border-slate-100 bg-slate-50/60 shrink-0 flex-wrap">
-        <span className="text-[11px] font-medium text-slate-400">Assigned</span>
-        <span className="text-[12.5px] font-medium text-slate-700">
+      <div className="flex items-center gap-1.5 px-3.5 py-1.5 sm:gap-2 sm:px-5 sm:py-2 border-b border-slate-100 bg-slate-50/60 shrink-0 flex-wrap">
+        <span className="text-[10px] sm:text-[11px] font-medium text-slate-400">Assigned</span>
+        <span className="text-[11px] sm:text-[12.5px] font-medium text-slate-700 truncate max-w-[32vw]">
           {assignedAgent ? assignedAgent.name : (inquiry.agent_status === 'queued' ? 'Queued — no agent claimed this yet' : 'Unassigned')}
         </span>
-        <div className="ml-auto flex items-center gap-1.5">
+        <div className="ml-auto flex items-center gap-1 sm:gap-1.5">
           {inquiry.agent_status !== 'assigned' && (
             <button onClick={() => doClaim(liveState.onlineAgents[0]?.id ?? agents[0]?.id ?? '')}
               disabled={assigning || agents.length === 0}
@@ -1489,7 +1487,7 @@ function ChatRequestDetail({ inquiry, onBack, onMarkRead, onStatusChange, agents
       </div>
 
       {/* Body — chat thread */}
-      <div className="flex-1 overflow-y-auto px-6 py-5 space-y-3">
+      <div className="flex-1 overflow-y-auto px-3 py-4 sm:px-6 sm:py-5 space-y-3">
         {/* Original visitor message */}
         <div className="flex items-end gap-2.5 justify-start">
           <div className={`w-8 h-8 rounded-full bg-gradient-to-br ${avatarGrad(inquiry.name)} flex items-center justify-center shrink-0 text-[11px] font-semibold text-white`}>
@@ -1558,7 +1556,7 @@ function ChatRequestDetail({ inquiry, onBack, onMarkRead, onStatusChange, agents
               {inquiry.name} is typing…
             </div>
           )}
-          <form onSubmit={sendReply} className="px-5 py-3.5 border-t border-slate-100 flex items-end gap-2 shrink-0">
+          <form onSubmit={sendReply} className="px-3 py-2.5 sm:px-5 sm:py-3.5 border-t border-slate-100 flex items-end gap-2 shrink-0">
             <textarea rows={1} value={input} onChange={e => { setInput(e.target.value); broadcastTyping() }}
               onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendReply(e as any) } }}
               placeholder={`Reply to ${inquiry.name}… (Enter to send)`}
@@ -2958,7 +2956,7 @@ export default function AdminSupportPage() {
             </div>
 
             {/* Compact support workspace header */}
-            <div className="shrink-0 border-b border-slate-200 bg-white px-4 py-2.5 md:px-5">
+            <div className="shrink-0 border-b border-slate-200 bg-white px-3.5 py-2 md:px-5 md:py-2.5">
               <div className="flex items-center justify-between gap-3">
                 <div className="min-w-0">
                   <div className="flex items-center gap-2">
@@ -2983,7 +2981,7 @@ export default function AdminSupportPage() {
               </div>
 
               {/* Tab switcher — pills on desktop, dropdown on mobile */}
-              <div className="mt-2 sm:hidden">
+              <div className="mt-1.5 sm:hidden">
                 <select
                   value={tab}
                   onChange={e => setTab(e.target.value as 'support' | 'inbox' | 'history')}
@@ -2994,7 +2992,7 @@ export default function AdminSupportPage() {
                   <option value="history">History</option>
                 </select>
               </div>
-              <div className="mt-2 hidden sm:flex items-center gap-1.5 overflow-x-auto -mx-1 px-1 sm:overflow-visible sm:mx-0 sm:px-0">
+              <div className="mt-1.5 hidden sm:flex items-center gap-1.5 overflow-x-auto -mx-1 px-1 sm:overflow-visible sm:mx-0 sm:px-0">
                 {([
                   { key: 'support', label: 'Support Queue', icon: HeadphonesIcon, count: supportOpenCount },
                   { key: 'inbox',   label: 'Inbox',         icon: Inbox,          count: inboxCount },
@@ -3022,7 +3020,7 @@ export default function AdminSupportPage() {
             </div>
 
           {/* Tab content */}
-          <div className="flex flex-1 min-h-0 overflow-hidden">
+          <div className="flex flex-1 min-h-0 overflow-hidden bg-slate-50/40">
             {tab === 'support' || tab === 'history' ? <SupportTab view={tab === 'history' ? 'history' : 'queue'} onOpenQueued={(id) => { setPendingChatId(id); setTab('inbox') }} /> : (
               <InboxTab liveState={liveState} onOpenThreadChange={handleOpenThreadChange} initialChatId={pendingChatId} onInitialChatConsumed={() => setPendingChatId(null)} />
             )}
