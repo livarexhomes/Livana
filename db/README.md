@@ -20,6 +20,7 @@ and has already been run against the production database.
 | `011_visitor_chat_rls.sql` | RLS for anonymous visitor chat sessions |
 | `012_fix_support_agent_rls.sql` | Adds `is_agent()`; updates support ticket/message policies so `agents` table members can see and manage all tickets (fixes admin ticket visibility) |
 | `013_drop_duplicate_landlord_trigger.sql` | Drops `on_landlord_signup` trigger + `handle_new_landlord` function — a second trigger on `auth.users` that was creating landlord rows for every new signup, bypassing the migration 010 fix |
+| `015_support_ticket_history.sql` | Adds the `support_tickets.archived` flag and index for moving preserved conversations between the active workspace and History |
 
 **To apply a new migration:** paste the SQL into the Supabase SQL Editor and run it.
 Then add the file here with the next sequential number.

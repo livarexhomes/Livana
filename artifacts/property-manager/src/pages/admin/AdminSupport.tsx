@@ -591,21 +591,16 @@ function AdminChatThread({
             {ticket.ticket_no && (
               <span className="shrink-0 text-[10px] font-bold px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">{ticket.ticket_no}</span>
             )}
-            <span className={`shrink-0 inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full ${s.bg} ${s.color}`}>
-              <span className={`w-1.5 h-1.5 rounded-full ${s.dot}`} />{s.label}
-            </span>
-            <span className={`shrink-0 text-[10px] font-bold px-2 py-0.5 rounded-full ${p.bg} ${p.color}`}>{p.label}</span>
           </div>
           <p className="text-xs text-gray-400 mt-0.5">
             From <span className="font-semibold text-gray-600">{senderName}</span>
-            {assignedAgent && <span> · Assigned to <span className="font-semibold text-gray-600">{assignedAgent.name}</span></span>}
             <span> · Created {formatDistanceToNow(new Date(ticket.created_at), { addSuffix: true })}</span>
             <span> · Updated {formatDistanceToNow(new Date(ticket.updated_at), { addSuffix: true })}</span>
           </p>
         </div>
 
         {/* Actions */}
-        <div className="w-full flex items-center justify-end gap-1.5 pt-3 border-t border-slate-100 shrink-0 flex-wrap">
+        <div className="w-full flex items-center justify-end gap-1.5 pt-2.5 border-t border-slate-100 shrink-0 flex-wrap sm:pt-3">
           {/* Status */}
           <SmartSelect
             value={ticket.status}
@@ -677,7 +672,7 @@ function AdminChatThread({
       <div className="flex flex-1 min-h-0">
         {/* Conversation column */}
         <div className="flex-1 flex flex-col min-w-0">
-          <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-3 space-y-2">
+          <div ref={scrollRef} className="flex-1 overflow-y-auto px-3 py-3 sm:px-4 sm:py-3 space-y-2">
             {loading ? (
               <div className="flex flex-col items-center justify-center h-full gap-3 py-8">
                 <Loader2 className="w-6 h-6 animate-spin text-gray-300" />
@@ -799,7 +794,7 @@ function AdminChatThread({
 
           {/* Composer */}
           {!isClosed ? (
-            <form onSubmit={sendReply} className="px-4 py-3 border-t border-gray-100 flex items-end gap-2 shrink-0">
+            <form onSubmit={sendReply} className="px-3 py-2.5 sm:px-4 sm:py-3 border-t border-gray-100 flex items-end gap-2 shrink-0">
               <input ref={fileInputRef} type="file" multiple accept="image/*" className="hidden"
                 onChange={e => setAttachments(prev => [...prev, ...Array.from(e.target.files ?? [])])} />
               <button type="button" onClick={() => fileInputRef.current?.click()} title="Attach image"
