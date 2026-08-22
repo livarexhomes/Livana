@@ -3,7 +3,7 @@ import { Link, useLocation } from '@/lib/navigation'
 import { MapPin, BedDouble, Bath, Bookmark, ShieldCheck, Building2, Phone, MessageCircle } from 'lucide-react'
 import type { PropertyWithLandlord } from '@/types'
 import { getSupabaseImageUrl, createClient } from '@/lib/supabase'
-import { getPlatformSettings } from '@/lib/platform-settings'
+import { DEFAULT_PLATFORM, getPlatformSettings } from '@/lib/platform-settings'
 import { formatDistanceToNow } from 'date-fns'
 
 function waLink(raw: string) {
@@ -63,7 +63,7 @@ export default function ListingCard({
   const [, navigate] = useLocation()
   const [saved, setSaved]   = useState(initialSaved)
   const [saving, setSaving] = useState(false)
-  const [fallbackNum, setFallbackNum] = useState('07061370742')
+  const [fallbackNum, setFallbackNum] = useState(DEFAULT_PLATFORM.phone)
 
   // Load the admin phone (Admin → Settings) as the WhatsApp fallback when a
   // landlord has no number of their own — single source of truth.
@@ -81,7 +81,7 @@ export default function ListingCard({
   const period    = PERIOD[p.type] ?? ''
   const timeAgo   = formatDistanceToNow(new Date(p.created_at), { addSuffix: false })
 
-  const contactNum  = p.landlords?.whatsapp ?? fallbackNum
+  const contactNum  = fallbackNum
   const displayName = p.landlords?.full_name ?? 'Livarex'
   const avatarUrl   = p.landlords?.avatar_url ?? null
   const initials    = displayName.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()

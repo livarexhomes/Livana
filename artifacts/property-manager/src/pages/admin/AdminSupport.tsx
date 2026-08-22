@@ -221,6 +221,7 @@ function ArchivePanel({
 }) {
   const [types, setTypes] = useState<SupportTicket['status'][]>(['resolved', 'closed'])
   const [olderThan, setOlderThan] = useState('all')
+  const [channel, setChannel] = useState('all')
   const [saving, setSaving] = useState(false)
   const typeOptions: { value: SupportTicket['status']; label: string; description: string }[] = [
     { value: 'open', label: 'Open', description: 'Active tickets still awaiting work' },
@@ -229,7 +230,10 @@ function ArchivePanel({
     { value: 'closed', label: 'Closed', description: 'Tickets that are no longer active' },
   ]
   const cutoff = olderThan === 'all' ? 0 : Date.now() - Number(olderThan) * 86400000
-  const matching = tickets.filter(t => types.includes(t.status) && (!cutoff || new Date(t.updated_at).getTime() < cutoff))
+  const matching = tickets.filter(t => {
+    const matchesChannel = channel === 'all' || (channel === 'tenant' ? !!t.tenant_id : channel === 'landlord' ? !!t.landlord_id : !t.tenant_id && !t.landlord_id)
+    return types.includes(t.status) && matchesChannel && (!cutoff || new Date(t.updated_at).getTime() < cutoff)
+  })
   const toggleType = (type: SupportTicket['status']) => setTypes(prev => prev.includes(type) ? prev.filter(v => v !== type) : [...prev, type])
   const selectAll = () => setTypes(types.length === typeOptions.length ? [] : typeOptions.map(option => option.value))
   const submit = async () => { if (!matching.length) return; setSaving(true); await onArchive(matching.map(t => t.id)); setSaving(false); onClose() }
@@ -260,7 +264,11 @@ function ArchivePanel({
               })}
             </div>
           </div>
-          <label className="block"><span className="mb-1.5 block text-[10px] font-bold uppercase tracking-widest text-slate-400">Older than</span><select value={olderThan} onChange={e => setOlderThan(e.target.value)} className="h-9 w-full rounded-lg border border-slate-200 bg-white px-3 text-xs font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/25"><option value="all">Any age</option><option value="7">7 days</option><option value="14">14 days</option><option value="30">30 days</option><option value="60">60 days</option><option value="90">90 days</option></select></label>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <label className="block"><span className="mb-1.5 block text-[10px] font-bold uppercase tracking-widest text-slate-400">Older than</span><select value={olderThan} onChange={e => setOlderThan(e.target.value)} className="h-9 w-full rounded-lg border border-slate-200 bg-white px-3 text-xs font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/25"><option value="all">Any age</option><option value="7">7 days</option><option value="14">14 days</option><option value="30">30 days</option><option value="60">60 days</option><option value="90">90 days</option></select></label>
+            <label className="block"><span className="mb-1.5 block text-[10px] font-bold uppercase tracking-widest text-slate-400">Channel</span><select value={channel} onChange={e => setChannel(e.target.value)} className="h-9 w-full rounded-lg border border-slate-200 bg-white px-3 text-xs font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/25"><option value="all">All Channels</option><option value="tenant">Tenant</option><option value="landlord">Landlord</option><option value="other">Other</option></select></label>
+          </div>
+          <label className="flex items-center gap-2 rounded-lg border border-emerald-100 bg-emerald-50/60 px-3 py-2.5 text-xs text-emerald-800"><input type="checkbox" checked readOnly className="accent-emerald-600" /><span><span className="block font-semibold">Keep in History (Don't Delete)</span><span className="text-[11px] text-emerald-700/80">Archived tickets will be moved to History, not deleted.</span></span></label>
           <p className="text-xs text-slate-500"><span className="font-bold text-slate-900">{matching.length}</span> ticket{matching.length === 1 ? '' : 's'} match these filters.</p>
         </div>
         <div className="flex justify-end gap-2 border-t border-slate-100 bg-slate-50/50 px-5 py-3"><button type="button" onClick={onClose} className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-50">Cancel</button><button type="button" disabled={!matching.length || saving} onClick={submit} className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-40"><Archive className="h-3.5 w-3.5" />{saving ? 'Moving…' : 'Move to History'}</button></div>
@@ -621,47 +629,43 @@ function AdminChatThread({
             }))}
           />
 
-          {/* Assign */}
-          <SmartSelect
-            value={assignedAgent?.id ?? ''}
-            onValueChange={v => assignTo(v || null)}
-            options={[
-              { value: '', label: 'Assign…' },
-              ...availableAgents.map(a => ({ value: a.id, label: a.name, color: 'info' }))
-            ]}
-            disabled={assigning}
-          />
-
-          {/* Resolve / Close */}
-          {ticket.status === 'open' || ticket.status === 'in_progress' ? (
-            <>
-              <button onClick={() => updateStatus('resolved')} disabled={updatingStatus}
-                className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-1.5 rounded-lg bg-emerald-50 text-emerald-700 hover:bg-emerald-100 disabled:opacity-40 transition-colors">
-                <CheckCircle2 className="w-3 h-3" /> Resolve
-              </button>
-              <button onClick={() => updateStatus('closed')} disabled={updatingStatus}
-                className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-1.5 rounded-lg bg-gray-100 text-gray-600 hover:bg-gray-200 disabled:opacity-40 transition-colors">
-                <XCircle className="w-3 h-3" /> Close
-              </button>
-            </>
-          ) : (
-            <button onClick={() => updateStatus('open')} disabled={updatingStatus}
-              className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-1.5 rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 disabled:opacity-40 transition-colors">
-              <RefreshCw className="w-3 h-3" /> Reopen
-            </button>
-          )}
-
-          {/* More actions (Archive/Restore) */}
+          {/* Contextual actions stay together so the conversation remains primary. */}
           <div className="relative inline-flex">
             <button type="button" onClick={() => setShowMore(!showMore)}
               className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-1.5 rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 transition-colors">
-              More ⋯
+              Actions <ChevronDownIcon className="w-3 h-3" />
             </button>
             {showMore && (
-              <div ref={moreRef} className="absolute right-0 mt-1 z-20 w-44 rounded-lg border border-slate-200 bg-white shadow-lg py-1 text-xs">
+              <div ref={moreRef} className="absolute right-0 mt-1 z-20 w-56 rounded-xl border border-slate-200 bg-white shadow-lg py-1 text-xs">
+                <div className="border-b border-slate-100 px-3 py-2">
+                  <p className="mb-1.5 text-[10px] font-bold uppercase tracking-widest text-slate-400">Assign ticket</p>
+                  <select value={assignedAgent?.id ?? ''} onChange={e => assignTo(e.target.value || null)} disabled={assigning}
+                    className="w-full rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-xs text-slate-700 focus:outline-none">
+                    <option value="">Unassigned</option>
+                    {availableAgents.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
+                  </select>
+                </div>
+                {(ticket.status === 'resolved' || ticket.status === 'closed') && (
+                  <button type="button" onClick={() => { updateStatus('open'); setShowMore(false) }} className="flex w-full items-center gap-2 px-3 py-2 text-left text-slate-700 hover:bg-slate-50">
+                    <RefreshCw className="w-3 h-3" /> Reopen ticket
+                  </button>
+                )}
+                {(ticket.status === 'open' || ticket.status === 'in_progress') && (
+                  <>
+                    <button type="button" onClick={() => { updateStatus('resolved'); setShowMore(false) }} className="flex w-full items-center gap-2 px-3 py-2 text-left text-emerald-700 hover:bg-emerald-50">
+                      <CheckCircle2 className="w-3 h-3" /> Resolve ticket
+                    </button>
+                    <button type="button" onClick={() => { updateStatus('closed'); setShowMore(false) }} className="flex w-full items-center gap-2 px-3 py-2 text-left text-slate-700 hover:bg-slate-50">
+                      <XCircle className="w-3 h-3" /> Close ticket
+                    </button>
+                  </>
+                )}
                 <button type="button" onClick={() => { onArchive(ticket.id); setShowMore(false) }}
                   className={`flex items-center gap-2 w-full px-3 py-1.5 text-left hover:bg-gray-50 ${ticket.archived ? 'text-green-700' : 'text-slate-700'}`}>
                   {ticket.archived ? <><RefreshCw className="w-3 h-3" />Restore</> : <><Archive className="w-3 h-3" />Archive</>}
+                </button>
+                <button type="button" onClick={() => { navigator.clipboard?.writeText(ticket.ticket_no ?? ticket.id); setShowMore(false) }} className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-slate-700 hover:bg-slate-50">
+                  <MessageSquare className="w-3 h-3" /> Copy ticket reference
                 </button>
               </div>
             )}
@@ -1576,7 +1580,7 @@ function ChatRequestDetail({ inquiry, onBack, onMarkRead, onStatusChange, agents
 
 // ── SupportTab ────────────────────────────────────────────────────────────────
 
-function SupportTab({ onOpenQueued }: { onOpenQueued: (id: string) => void }) {
+function SupportTab({ onOpenQueued, view = 'queue' }: { onOpenQueued: (id: string) => void; view?: 'queue' | 'history' }) {
   const { toast } = useToast()
   const [tickets, setTickets]       = useState<SupportTicket[]>([])
   const [queued, setQueued]         = useState<ChatInquiry[]>([])
@@ -1584,7 +1588,7 @@ function SupportTab({ onOpenQueued }: { onOpenQueued: (id: string) => void }) {
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [filterStatus, setFilterStatus] = useState<string>('all')
   const [searchQuery, setSearchQuery] = useState('')
-  const [archivedOnly, setArchivedOnly] = useState(false)
+  const [showArchivePanel, setShowArchivePanel] = useState(false)
   const [agents, setAgents]         = useState<SupportAgent[]>([])
   const [newTicketIds, setNewTicketIds] = useState<string[]>([])  // tickets that arrived live this session
   const [liveState, setLiveState]   = useState<LiveSupportState>({
@@ -1787,7 +1791,7 @@ function SupportTab({ onOpenQueued }: { onOpenQueued: (id: string) => void }) {
   // Filter by archived state, then status, then search query.
   const activeTickets = tickets.filter(t => !t.archived)
   const archivedTickets = tickets.filter(t => t.archived)
-  const visibleTickets = archivedOnly ? archivedTickets : activeTickets
+  const visibleTickets = view === 'history' ? archivedTickets : activeTickets
   const filtered = (filterStatus === 'all' ? visibleTickets : visibleTickets.filter(t => t.status === filterStatus))
     .filter(t => searchQuery.trim() === '' || t.subject.toLowerCase().includes(searchQuery.toLowerCase()))
   const selected = tickets.find(t => t.id === selectedId) ?? null
@@ -1814,16 +1818,12 @@ function SupportTab({ onOpenQueued }: { onOpenQueued: (id: string) => void }) {
             <div className="shrink-0 text-right flex items-center gap-2">
               <button
                 type="button"
-                onClick={() => setArchivedOnly(!archivedOnly)}
-                className={`inline-flex items-center gap-1 h-6 px-2 rounded-lg text-[10px] font-semibold border transition-all ${
-                  archivedOnly
-                    ? 'bg-blue-50 border-blue-200 text-blue-700'
-                    : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300 hover:bg-slate-50'
-                }`}
-                title="Show archived tickets"
+                onClick={() => setShowArchivePanel(true)}
+                className="inline-flex items-center gap-1 h-7 px-2.5 rounded-lg text-[10px] font-semibold border border-slate-200 bg-white text-slate-600 hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700 transition-all"
+                title="Move tickets to History"
               >
                 <Archive className="w-2.5 h-2.5" />
-                Archived
+                Move to History
               </button>
               <div className="text-right">
                 <p className="text-[9px] uppercase tracking-[0.18em] text-slate-400 font-bold">Total</p>
@@ -1846,41 +1846,19 @@ function SupportTab({ onOpenQueued }: { onOpenQueued: (id: string) => void }) {
             </div>
           </div>
 
-          {/* Status filters — pills on desktop, dropdown on mobile */}
-          <div className="mt-2 sm:hidden">
-            <select
+          {/* One compact status filter keeps the queue calm and scannable. */}
+          <div className="mt-2.5">
+            <SmartSelect
               value={filterStatus}
-              onChange={e => setFilterStatus(e.target.value as typeof filterStatus)}
-              className="w-full appearance-none rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-sm font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/30 cursor-pointer"
-            >
-              {(['all', 'open', 'in_progress', 'resolved', 'closed'] as const).filter(
-                key => archivedOnly ? key === 'closed' : key !== 'closed'
-              ).map(key => (
-                <option key={key} value={key}>
-                  {key === 'all' ? 'All' : STATUS_META[key].label} ({counts[key]})
-                </option>
-              ))}
-            </select>
-          </div>
-          <div className="mt-2.5 hidden sm:flex items-center gap-1.5 flex-wrap">
-            {(['all', 'open', 'in_progress', 'resolved', 'closed'] as (typeof STATUS_OPTIONS)[number] | 'all').filter(
-              key => archivedOnly ? key === 'closed' || key === 'all' : true
-            ).map(key => {
-              const active = filterStatus === key
-              return (
-                <button key={key} onClick={() => setFilterStatus(key)}
-                  className={`inline-flex items-center gap-1.5 h-6 px-2.5 rounded-lg text-[11px] font-semibold border transition-all ${
-                    active
-                      ? 'bg-primary text-white border-primary shadow-sm shadow-primary/20'
-                      : 'bg-white text-slate-500 border-slate-200 hover:border-slate-300 hover:bg-slate-50 hover:text-slate-700'
-                  }`}>
-                  {key === 'all' ? 'All' : STATUS_META[key].label}
-                  <span className={`min-w-[15px] inline-flex items-center justify-center h-[15px] px-1 rounded text-[9px] font-bold tabular-nums ${
-                    active ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-500'
-                  }`}>{counts[key]}</span>
-                </button>
-              )
-            })}
+              onValueChange={setFilterStatus}
+              label="Status"
+              triggerClassName="h-8 w-full justify-between rounded-lg px-2.5 text-xs sm:w-auto sm:min-w-[150px]"
+              options={(['all', 'open', 'in_progress', 'resolved', 'closed'] as const).map(key => ({
+                value: key,
+                label: `${key === 'all' ? 'All' : STATUS_META[key].label} — ${counts[key]}`,
+                color: key === 'open' ? 'amber' : key === 'in_progress' ? 'blue' : key === 'resolved' ? 'success' : key === 'closed' ? 'neutral' : undefined,
+              }))}
+            />
           </div>
         </div>
 
@@ -1988,11 +1966,11 @@ function SupportTab({ onOpenQueued }: { onOpenQueued: (id: string) => void }) {
                          <span className={`inline-flex items-center gap-1 text-[9.5px] font-bold px-1.5 py-0.5 rounded ${s.bg} ${s.color}`}>
                            <span className={`w-1 h-1 rounded-full ${s.dot}`} />{s.label}
                          </span>
-                         {archivedOnly && (
+                         {view === 'history' && (
                            <button
                              type="button"
                              onClick={e => { e.stopPropagation(); archiveTicket(ticket.id) }}
-                             title="Restore"
+                             title="Restore to active workspace"
                              className="p-0.5 rounded hover:bg-green-50 text-green-600 transition-colors"
                            >
                              <RefreshCw className="w-2.5 h-2.5" />
@@ -2035,6 +2013,12 @@ function SupportTab({ onOpenQueued }: { onOpenQueued: (id: string) => void }) {
           </div>
         )}
       </div>
+    {showArchivePanel && view === 'queue' && (
+      <ArchivePanel tickets={activeTickets} onArchive={async ids => {
+        await Promise.all(ids.map(id => archiveTicket(id)))
+        setSelectedId(current => ids.includes(current ?? '') ? null : current)
+      }} onClose={() => setShowArchivePanel(false)} />
+    )}
     </div>
   )
 }
@@ -2843,7 +2827,7 @@ function AgentsTab({ agents, setAgents, liveState }: {
 
 export default function AdminSupportPage() {
   const [user, setUser]   = useState<{ email?: string; id?: string } | null>(null)
-  const [tab, setTab]     = useState<'support' | 'inbox'>('support')
+  const [tab, setTab]     = useState<'support' | 'inbox' | 'history'>('support')
   const [openCount, setOpenCount]     = useState(0)
   const [chatOpenCount, setChatOpenCount] = useState(0)
   const [contactCount, setContactCount]   = useState(0)
@@ -3002,17 +2986,19 @@ export default function AdminSupportPage() {
               <div className="mt-2 sm:hidden">
                 <select
                   value={tab}
-                  onChange={e => setTab(e.target.value as 'support' | 'inbox')}
+                  onChange={e => setTab(e.target.value as 'support' | 'inbox' | 'history')}
                   className="w-full appearance-none rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/30 cursor-pointer"
                 >
                   <option value="support">Support Queue ({supportOpenCount})</option>
                   <option value="inbox">Inbox ({inboxCount})</option>
+                  <option value="history">History</option>
                 </select>
               </div>
               <div className="mt-2 hidden sm:flex items-center gap-1.5 overflow-x-auto -mx-1 px-1 sm:overflow-visible sm:mx-0 sm:px-0">
                 {([
                   { key: 'support', label: 'Support Queue', icon: HeadphonesIcon, count: supportOpenCount },
                   { key: 'inbox',   label: 'Inbox',         icon: Inbox,          count: inboxCount },
+                  { key: 'history', label: 'History',        icon: Archive,        count: 0 },
                 ] as const).map(t => {
                   const Icon = t.icon
                   return (
@@ -3037,7 +3023,7 @@ export default function AdminSupportPage() {
 
           {/* Tab content */}
           <div className="flex flex-1 min-h-0 overflow-hidden">
-            {tab === 'support' ? <SupportTab onOpenQueued={(id) => { setPendingChatId(id); setTab('inbox') }} /> : (
+            {tab === 'support' || tab === 'history' ? <SupportTab view={tab === 'history' ? 'history' : 'queue'} onOpenQueued={(id) => { setPendingChatId(id); setTab('inbox') }} /> : (
               <InboxTab liveState={liveState} onOpenThreadChange={handleOpenThreadChange} initialChatId={pendingChatId} onInitialChatConsumed={() => setPendingChatId(null)} />
             )}
           </div>

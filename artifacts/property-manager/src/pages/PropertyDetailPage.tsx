@@ -397,7 +397,7 @@ export default function PropertyDetailPage() {
       <section className="pt-[80px]">
         <div className="relative">
           {/* Main image */}
-          <div className="relative h-[55vh] md:h-[70vh] overflow-hidden bg-gray-100">
+          <div className="relative w-full aspect-[4/3] max-h-[460px] md:aspect-auto md:h-[70vh] md:max-h-none overflow-hidden bg-gray-100">
             <AnimatePresence mode="wait">
               {images[activeImg] ? (
                 <motion.img
@@ -407,7 +407,7 @@ export default function PropertyDetailPage() {
                   exit={{ opacity: 0 }}
                   transition={{ duration: 0.5 }}
                   src={getSupabaseImageUrl(images[activeImg].storage_path)}
-                  className="w-full h-full object-cover cursor-zoom-in"
+                  className="w-full h-full object-cover object-center cursor-zoom-in"
                   alt={images[activeImg].alt_text || property.title}
                   onClick={() => setLightboxOpen(true)}
                 />
