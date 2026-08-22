@@ -330,6 +330,11 @@ function AdminChatThread({
   const isClosed = ticket.status === 'closed' || ticket.status === 'resolved'
   const assignedAgent = ticket.assignedAgent ?? agents.find(a => a.id === ticket.assigned_to) ?? null
   const availableAgents = liveState.agents.filter(a => a.presence === 'online' && a.available && a.active)
+  const activityEvents = events.filter((event, index, all) => {
+    if (event.label.toLowerCase().startsWith('ticket created')) return false
+    const previous = all.slice(0, index).reverse().find(item => item.label === event.label)
+    return !previous || Math.abs(new Date(event.created_at).getTime() - new Date(previous.created_at).getTime()) > 2 * 60 * 1000
+  })
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -708,26 +713,20 @@ function AdminChatThread({
               </div>
             ) : (
               <>
-                <div className="flex justify-center">
-                  <span className="text-[10px] text-gray-400 bg-gray-50 border border-gray-100 px-2.5 py-1 rounded-full">
-                    Ticket opened · {format(new Date(ticket.created_at), 'dd MMM yyyy, h:mm a')}
-                  </span>
-                </div>
-
-                {/* Activity timeline (events) */}
-                {events.length > 0 && (
-                  <div className="mx-auto max-w-md space-y-1.5 py-1">
-                    {events.map(ev => (
-                      <div key={ev.id} className="flex items-start gap-2 text-[11px]">
-                        <span className="mt-0.5 shrink-0 size-1.5 rounded-full bg-slate-300" />
-                        <span className="text-slate-500">
-                          <span className="font-semibold text-slate-600">{ev.label}</span>
-                          <span className="text-slate-400"> · {formatDistanceToNow(new Date(ev.created_at), { addSuffix: true })}</span>
-                        </span>
-                      </div>
+                {/* Quiet activity summary keeps the conversation visually primary. */}
+                <div className="mx-auto w-full max-w-2xl rounded-xl border border-slate-100 bg-slate-50/70 px-3 py-2">
+                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px] text-slate-400">
+                    <span className="font-semibold uppercase tracking-[0.14em] text-slate-400">Activity</span>
+                    <span>Opened {formatDistanceToNow(new Date(ticket.created_at), { addSuffix: true })}</span>
+                    {activityEvents.slice(-3).map(event => (
+                      <span key={event.id} className="inline-flex items-center gap-1">
+                        <span className="size-1 rounded-full bg-slate-300" />
+                        <span className="font-medium text-slate-500">{event.label}</span>
+                        <span>{formatDistanceToNow(new Date(event.created_at), { addSuffix: true })}</span>
+                      </span>
                     ))}
                   </div>
-                )}
+                </div>
 
                 {messages.length === 0 ? (
                   <div className="flex justify-center py-6">
