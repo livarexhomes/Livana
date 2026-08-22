@@ -565,7 +565,7 @@ export default function AdminLandlords() {
                   <h2 className="mt-0.5 text-xl md:text-2xl font-extrabold text-slate-950">Clients</h2>
                 </div>
                 <div className="flex flex-col gap-2 md:flex-row md:items-center md:shrink-0">
-                  <div className="grid grid-cols-2 gap-1.5 flex-1 min-w-0 sm:flex sm:flex-none sm:flex-wrap sm:items-center sm:gap-2">
+                  {/* <div className="grid grid-cols-2 gap-1.5 flex-1 min-w-0 sm:flex sm:flex-none sm:flex-wrap sm:items-center sm:gap-2">
                     {[
                       { label: 'Total',     value: clients.length, color: 'text-slate-700'    },
                       { label: 'Approved',  value: approved,       color: 'text-emerald-700'  },
@@ -590,7 +590,7 @@ export default function AdminLandlords() {
                       )}
                     </button>
                   </Link>
-                </div>
+                </div> */}
               </div>
 
               {/* Filter + search row */}

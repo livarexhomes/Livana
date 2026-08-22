@@ -307,7 +307,7 @@ export default function AdminProjects() {
 
           {/* ── Hero card: KPI + filters (desktop only) ── */}
               <div className="hidden sm:block rounded-xl border border-slate-200 bg-white p-4 shadow-[0_2px_10px_rgba(15,23,42,0.04)]">
-                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between mb-4">
+                {/* <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between mb-4">
                   <div>
                     <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-blue-600">Development projects</p>
                     <h2 className="mt-1 text-lg font-extrabold tracking-tight text-slate-950">Off-plan &amp; launches</h2>
@@ -325,7 +325,7 @@ export default function AdminProjects() {
                       </div>
                     ))}
                   </div>
-                </div>
+                </div> */}
 
                 {/* Status filter — compact pills, dropdown on mobile */}
                 <ResponsiveFilters

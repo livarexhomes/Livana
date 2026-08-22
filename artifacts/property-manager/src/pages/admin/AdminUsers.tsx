@@ -358,7 +358,7 @@ export default function AdminUsers() {
             {/* ── Hero card (desktop only) ── */}
             <div className="hidden sm:block px-4 md:px-6 pt-3 pb-2">
             <div className="rounded-2xl border border-slate-200 bg-white px-5 py-4 shadow-sm">
-              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+              {/* <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                   <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">Platform users</p>
                   <h2 className="mt-0.5 text-xl sm:text-2xl font-extrabold text-slate-950">Tenants &amp; Users</h2>
@@ -376,7 +376,7 @@ export default function AdminUsers() {
                       </div>
                     ))}
                   </div>
-                </div>
+                </div> */}
 
                 {/* Filter + Search */}
                 <div className="mt-2.5 flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between">
