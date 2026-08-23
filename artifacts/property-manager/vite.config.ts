@@ -234,8 +234,16 @@ const rawPort = process.env.PORT ?? "3000";
 const port = Number(rawPort);
 const basePath = process.env.BASE_PATH ?? "/";
 
+// Launch mode: on Vercel production deploys (VERCEL_ENV=production) show the
+// temporary launch page at `/`; preview/dev show the real HomePage so the
+// preview URL acts as a live preview of the app.
+const launchMode = process.env.VERCEL_ENV === "production";
+
 export default defineConfig(async ({ isSsrBuild }) => ({
   base: basePath,
+  define: {
+    __LAUNCH_MODE__: JSON.stringify(launchMode),
+  },
   plugins: [
     react(),
     tailwindcss(),

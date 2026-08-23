@@ -96,7 +96,7 @@ function Router() {
   return (
     <Suspense fallback={<Loading />}>
       <Switch>
-        <Route path="/" component={LaunchPage} />
+         <Route path="/" component={__LAUNCH_MODE__ ? LaunchPage : HomePage} />
         <Route path="/home" component={HomePage} />
         <Route path="/listings" component={ListingsPage} />
         <Route path="/listings/:id" component={PropertyDetailPage} />

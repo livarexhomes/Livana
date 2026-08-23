@@ -5,6 +5,7 @@ import { Router, Switch, Route } from 'wouter'
 import { TooltipProvider } from './components/ui/tooltip'
 
 import HomePage from './pages/HomePage'
+import LaunchPage from './pages/LaunchPage'
 import ListingsPage from './pages/ListingsPage'
 import AboutPage from './pages/AboutPage'
 import ContactPage from './pages/ContactPage'
@@ -73,7 +74,7 @@ export function render(url: string): { html: string; helmet: unknown } {
         <TooltipProvider>
           <Router hook={staticHook}>
             <Switch>
-              <Route path="/" component={HomePage} />
+              <Route path="/" component={__LAUNCH_MODE__ ? LaunchPage : HomePage} />
               <Route path="/listings" component={ListingsPage} />
               <Route path="/properties-in/:slug">
                 {(params: { slug?: string }) => <LocationLanding slug={params?.slug ?? ''} />}
