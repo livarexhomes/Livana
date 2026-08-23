@@ -1,5 +1,5 @@
 {
-  "buildCommand": "pnpm run build && pnpm run build:ssr && pnpm run prerender",
+  "buildCommand": "pnpm run build",
   "outputDirectory": "artifacts/property-manager/dist/public",
   "installCommand": "pnpm install",
   "framework": null,
