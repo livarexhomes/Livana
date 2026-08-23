@@ -8,6 +8,7 @@ import { ThemeProvider, useTheme } from "@/lib/theme";
 import { slugToLocationLabel } from "@/lib/locationSlug";
 
 const HomePage = lazy(() => import("@/pages/HomePage"));
+const LaunchPage = lazy(() => import("@/pages/LaunchPage"));
 const ListingsPage = lazy(() => import("@/pages/ListingsPage"));
 const PropertyDetailPage = lazy(() => import("@/pages/PropertyDetailPage"));
 const LoginPage = lazy(() => import("@/pages/LoginPage"));
@@ -95,7 +96,8 @@ function Router() {
   return (
     <Suspense fallback={<Loading />}>
       <Switch>
-        <Route path="/" component={HomePage} />
+        <Route path="/" component={LaunchPage} />
+        <Route path="/home" component={HomePage} />
         <Route path="/listings" component={ListingsPage} />
         <Route path="/listings/:id" component={PropertyDetailPage} />
         <Route path="/properties/lagos"><Redirect to="/listings?city=Lagos" /></Route>
