@@ -36,33 +36,50 @@ import { execFileSync } from 'node:child_process'
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const projectRoot = resolve(__dirname, '../artifacts/property-manager')
 
-const STATIC_ROUTES = [
-  '/',
-  '/listings',
-  '/about',
-  '/contact',
-  '/terms',
-  '/privacy-policy',
-  '/cookie-policy',
-  '/how-we-verify',
-]
+// In production launch mode (VERCEL_ENV=production and LAUNCH_MODE !== 'disabled'),
+// the site is a temporary "Launching Soon" page. Only `/` is prerendered; the
+// vercel.json rewrite rule catches all other routes and falls back to /index.html
+// (the launch page), so no application functionality is exposed.
+// Set LAUNCH_MODE=disabled in the Vercel Production environment to manually go
+// live (prerenders all routes with real app content).
+// In preview/dev (VERCEL_ENV !== 'production'), every key route is prerendered
+// with its real content so the Vercel preview URL serves as a live demo.
+const isLaunchMode = process.env.VERCEL_ENV === 'production' && process.env.LAUNCH_MODE !== 'disabled'
 
-const slugsPath = resolve(__dirname, 'location-slugs.json')
-if (!existsSync(slugsPath)) {
-  // Regenerate on demand so a stale/missing file never silently falls back
-  // to a hand-picked subset of routes.
-  execFileSync(
-    process.execPath,
-    ['--import', resolve(__dirname, 'node_modules/tsx/dist/loader.mjs'), resolve(__dirname, 'build-location-slugs.mjs')],
-    { stdio: 'inherit' }
-  )
-}
-const locationSlugs = JSON.parse(readFileSync(slugsPath, 'utf-8'))
+const STATIC_ROUTES = isLaunchMode
+  ? ['/']
+  : [
+      '/',
+      '/listings',
+      '/about',
+      '/contact',
+      '/terms',
+      '/privacy-policy',
+      '/cookie-policy',
+      '/how-we-verify',
+    ]
 
 // Every canonical state + neighbourhood (see nigerianStates.ts) gets its own
 // prerendered /properties-in/:slug page so all of them — not just a
 // hand-picked subset — are crawlable with correct location-specific SEO.
-const ROUTES = [...STATIC_ROUTES, ...locationSlugs.map(slug => `/properties-in/${slug}`)]
+// Skipped in launch mode since the launch page serves as a catch-all.
+let ROUTES
+if (isLaunchMode) {
+  ROUTES = ['/']
+} else {
+  const slugsPath = resolve(__dirname, 'location-slugs.json')
+  if (!existsSync(slugsPath)) {
+    // Regenerate on demand so a stale/missing file never silently falls back
+    // to a hand-picked subset of routes.
+    execFileSync(
+      process.execPath,
+      ['--import', resolve(__dirname, 'node_modules/tsx/dist/loader.mjs'), resolve(__dirname, 'build-location-slugs.mjs')],
+      { stdio: 'inherit' }
+    )
+  }
+  const locationSlugs = JSON.parse(readFileSync(slugsPath, 'utf-8'))
+  ROUTES = [...STATIC_ROUTES, ...locationSlugs.map(slug => `/properties-in/${slug}`)]
+}
 
 // Tags rendered by <SEO/> that need to be lifted out of the body markup and
 // merged into <head>, keyed by their name/property/rel so a route's tag

@@ -1,10 +1,21 @@
 import { motion } from 'framer-motion'
-import { Check } from 'lucide-react'
+import { Check, Clock } from 'lucide-react'
+import { useEffect, useState } from 'react'
 import SEO from '@/components/SEO'
+import { getTimeRemaining, LAUNCH_TIMESTAMP, isLaunchLive } from '@/lib/launchTimer'
 
 const prefersReducedMotion = () => {
   if (typeof window === 'undefined') return false
   return window.matchMedia('(prefers-reduced-motion: reduce)').matches
+}
+
+function formatLaunchDate(ts: number): string {
+  return new Date(ts).toLocaleDateString('en-US', {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  })
 }
 
 const containerVariants = {
@@ -48,8 +59,34 @@ const pulseVariants = {
   },
 }
 
+function CountdownBlock({ label, value }: { label: string; value: number }) {
+  return (
+    <div className="flex flex-col items-center min-w-[56px]">
+      <div className="bg-white border border-slate-200 rounded-lg shadow-sm px-3 py-2 min-w-[56px]">
+        <span className="text-2xl sm:text-3xl font-bold text-slate-900 tabular-nums">
+          {String(value).padStart(2, '0')}
+        </span>
+      </div>
+      <span className="text-xs text-slate-500 uppercase tracking-wider mt-1">
+        {label}
+      </span>
+    </div>
+  )
+}
+
 export default function LaunchPage() {
   const reducedMotion = prefersReducedMotion()
+  const [timeLeft, setTimeLeft] = useState(() => getTimeRemaining())
+
+  useEffect(() => {
+    if (isLaunchLive()) return
+
+    const interval = setInterval(() => {
+      setTimeLeft(getTimeRemaining())
+    }, 1000)
+
+    return () => clearInterval(interval)
+  }, [])
 
   const containerTransition = reducedMotion
     ? { opacity: { duration: 0 } }
@@ -63,7 +100,7 @@ export default function LaunchPage() {
     <>
       <SEO
         title="Launching Soon"
-        description="LIVAREX is launching soon. We're putting the finishing touches on our platform and preparing for launch this Wednesday."
+        description={`LIVAREX launches on ${formatLaunchDate(LAUNCH_TIMESTAMP)}. We're putting the finishing touches on our platform and preparing to go live.`}
         url="/"
       />
 
@@ -132,7 +169,7 @@ export default function LaunchPage() {
             We're putting the finishing touches on our platform and preparing for launch.
           </motion.p>
 
-          {/* Launch info */}
+          {/* Launch date info */}
           <motion.div
             className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6 py-4 sm:py-6"
             initial={reducedMotion ? 'visible' : 'hidden'}
@@ -142,9 +179,26 @@ export default function LaunchPage() {
             <div className="flex items-center gap-2 px-4 py-2 bg-emerald-50 border border-emerald-200 rounded-lg">
               <Check className="w-5 h-5 text-emerald-600" />
               <span className="text-emerald-700 font-medium text-sm sm:text-base">
-                Official launch: Wednesday
+                Official launch: {formatLaunchDate(LAUNCH_TIMESTAMP)}
               </span>
             </div>
+          </motion.div>
+
+          {/* Countdown timer */}
+          <motion.div
+            className="flex items-center justify-center gap-3 sm:gap-4 py-4"
+            initial={reducedMotion ? 'visible' : 'hidden'}
+            animate="visible"
+            variants={reducedMotion ? {} : itemTransition}
+          >
+            <Clock className="w-5 h-5 text-slate-400 sm:hidden" />
+            <CountdownBlock label="Days" value={timeLeft.days} />
+            <span className="text-slate-300 text-xl sm:text-2xl">:</span>
+            <CountdownBlock label="Hours" value={timeLeft.hours} />
+            <span className="text-slate-300 text-xl sm:text-2xl">:</span>
+            <CountdownBlock label="Minutes" value={timeLeft.minutes} />
+            <span className="text-slate-300 text-xl sm:text-2xl">:</span>
+            <CountdownBlock label="Seconds" value={timeLeft.seconds} />
           </motion.div>
 
           {/* Call-to-action status */}
