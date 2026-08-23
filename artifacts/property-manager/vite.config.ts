@@ -234,8 +234,21 @@ const rawPort = process.env.PORT ?? "3000";
 const port = Number(rawPort);
 const basePath = process.env.BASE_PATH ?? "/";
 
+// Launch mode: on Vercel production deploys (VERCEL_ENV=production) show the
+// "Launching Soon" page for all routes; preview/dev show the real application
+// so the preview URL acts as a live demo.
+//
+// Manual launch switch — deliberately NOT controlled by a timer:
+// Set LAUNCH_MODE=disabled in the Vercel Production environment variables
+// to flip production from "Launching Soon" to the real application.
+// Remove the variable to return to "Launching Soon" (fully reversible).
+const launchMode = process.env.VERCEL_ENV === "production" && process.env.LAUNCH_MODE !== "disabled";
+
 export default defineConfig(async ({ isSsrBuild }) => ({
   base: basePath,
+  define: {
+    __LAUNCH_MODE__: JSON.stringify(launchMode),
+  },
   plugins: [
     react(),
     tailwindcss(),
