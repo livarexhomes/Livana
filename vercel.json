@@ -1,5 +1,5 @@
 {
-  "buildCommand": "pnpm --filter @workspace/property-manager run build && pnpm --filter @workspace/property-manager run build:ssr && node \"$(if [ -f scripts/prerender.mjs ]; then printf scripts/prerender.mjs; else printf ../../scripts/prerender.mjs; fi)\"",
+  "buildCommand": "pnpm run build && pnpm run build:ssr && pnpm run prerender",
   "outputDirectory": "artifacts/property-manager/dist/public",
   "installCommand": "pnpm install",
   "framework": null,
