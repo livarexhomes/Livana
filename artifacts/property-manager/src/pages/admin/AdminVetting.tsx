@@ -9,7 +9,6 @@ import AdminSidebar from '../../components/layout/AdminSidebar'
 import AuthGuard from '../../components/auth/AuthGuard'
 import { MobileSidebarProvider, MobilePageHeader, MobileStatGrid, MobileStatCard, MobileEmptyState } from '@/components/ui/mobile-admin'
 import { createClient, getKycDocUrl, getSupabaseImageUrl } from '../../lib/supabase'
-import { useTheme } from '../../lib/theme'
 import {
   VettingHeader,
   VettingTabs,
@@ -47,7 +46,6 @@ const KYC_FILTER_TABS_BASE = [
 // ── Main Component ────────────────────────────────────────────────────────────
 
 export default function AdminVetting() {
-  const { setTheme } = useTheme()
   const [user, setUser]               = useState<{ email?: string } | null>(null)
   const [activeTab, setActiveTab]     = useState<VettingTab>('identity')
 
@@ -69,10 +67,6 @@ export default function AdminVetting() {
   const [listingsLoading, setListingsLoading]   = useState<boolean>(!USE_MOCK_VETTING)
   const [listingProcessing, setListingProcessing] = useState<string | null>(null)
   const [listingConfirm, setListingConfirm]     = useState<{ id: string; action: 'approve' | 'reject' } | null>(null)
-
-  useEffect(() => {
-    setTheme('light')
-  }, [setTheme])
 
   // ── Auth ───────────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -291,7 +285,7 @@ export default function AdminVetting() {
 
               {activeTab === 'identity' ? (
                 <div
-                  className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,35%)_minmax(0,65%)]"
+                  className="grid min-h-[520px] grid-cols-1 gap-4 lg:min-h-[calc(100vh-12rem)] lg:grid-cols-[minmax(0,35%)_minmax(0,65%)]"
                   data-testid="vetting-grid"
                 >
                   <ApplicantList
