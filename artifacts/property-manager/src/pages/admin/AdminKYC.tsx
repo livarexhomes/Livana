@@ -362,7 +362,7 @@ export default function AdminKYC() {
                   docsLoading={docsLoading}
                   processing={processing}
                   imgErrors={imgErrors}
-                  onImgError={key => setImgErrors(prev => ({ ...prev, [key]: true }))}
+                  onImgError={(key: string) => setImgErrors(prev => ({ ...prev, [key]: true }))}
                   onClose={clearSelection}
                   onUpdateStatus={updateStatus}
                 />

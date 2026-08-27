@@ -329,7 +329,7 @@ export default function AdminVetting() {
               docsLoading={docsLoading}
               processing={kycProcessing}
               imgErrors={imgErrors}
-              onImgError={key => setImgErrors(prev => ({ ...prev, [key]: true }))}
+              onImgError={(key: string) => setImgErrors(prev => ({ ...prev, [key]: true }))}
               onSelect={selectLandlord}
               onClear={clearKycSelection}
               onUpdateStatus={updateKycStatus}

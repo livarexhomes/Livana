@@ -1,4 +1,4 @@
-import { createElement, isValidElement, ReactNode, type ElementType } from 'react'
+import { createElement, isValidElement, ReactNode, type ElementType, type ReactElement } from 'react'
 import { ChevronLeft, Search, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import {
@@ -77,7 +77,7 @@ export function MobileEmptyState({
 }: {
   title?: string
   description?: string
-  icon?: ElementType
+  icon?: ElementType | ReactElement
   action?: ReactNode
 }) {
   const iconNode = isValidElement(icon)

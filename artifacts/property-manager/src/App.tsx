@@ -8,7 +8,6 @@ import { ThemeProvider, useTheme } from "@/lib/theme";
 import { slugToLocationLabel } from "@/lib/locationSlug";
 
 const HomePage = lazy(() => import("@/pages/HomePage"));
-const LaunchPage = lazy(() => import("@/pages/LaunchPage"));
 const ListingsPage = lazy(() => import("@/pages/ListingsPage"));
 const PropertyDetailPage = lazy(() => import("@/pages/PropertyDetailPage"));
 const LoginPage = lazy(() => import("@/pages/LoginPage"));
@@ -92,22 +91,6 @@ function Router() {
       else root.classList.remove('dark');
     }
   }, [location, resolvedDark]);
-
-  // Production launch mode: show ONLY the launch page for every route.
-  // This blocks public access to registration, login, property search,
-  // dashboards, and any unfinished application functionality.
-  // Production stays locked to the launch page until LAUNCH_MODE=disabled
-  // is set in the Vercel Production environment variables (manual switch).
-  if (__LAUNCH_MODE__) {
-    return (
-      <Suspense fallback={<Loading />}>
-        <Switch>
-          <Route path="/" component={LaunchPage} />
-          <Route component={LaunchPage} />
-        </Switch>
-      </Suspense>
-    );
-  }
 
   return (
     <Suspense fallback={<Loading />}>

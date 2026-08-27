@@ -843,7 +843,7 @@ export default function AdminSettings() {
       approved: 'Approved', rejected: 'Rejected', pending: 'Pending',
       suspended: 'Suspended', not_submitted: 'Not Submitted',
     }
-    const rows: [string, string][] = [
+    const rows: string[][] = [
       ['Livarex Audit History Export', ''],
       ['Generated', new Date().toLocaleString('en-GB')],
       ['', ''],
@@ -853,7 +853,7 @@ export default function AdminSettings() {
         l.full_name, KYC_STATUS[l.status] ?? l.status, l.whatsapp ?? '',
         l.kyc_submitted_at ? new Date(l.kyc_submitted_at).toLocaleString('en-GB') : '',
         l.updated_at ? new Date(l.updated_at).toLocaleString('en-GB') : '',
-      ] as [string, string]),
+      ]),
       ['', ''],
       ['=== Listing Approvals ===', ''],
       ['Title', 'Landlord', 'City', 'Type', 'Status', 'Created', 'Last Updated'],
@@ -862,11 +862,11 @@ export default function AdminSettings() {
         p.type, p.status,
         new Date(p.created_at).toLocaleString('en-GB'),
         new Date(p.updated_at).toLocaleString('en-GB'),
-      ] as [string, string]),
+      ]),
       ['', ''],
       ['=== Settings Changes ===', ''],
       ['Setting Key', 'Last Updated'],
-      ...settingsHistory.map(s => [s.key, s.updated_at ? new Date(s.updated_at).toLocaleString('en-GB') : ''] as [string, string]),
+      ...settingsHistory.map(s => [s.key, s.updated_at ? new Date(s.updated_at).toLocaleString('en-GB') : '']),
     ]
     const csv = '\uFEFF' + rows.map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(',')).join('\r\n')
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })

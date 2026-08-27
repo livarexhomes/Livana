@@ -138,7 +138,7 @@ export default function AdminDashboard() {
   useEffect(() => {
     const supabase = createClient()
     const debouncedLoad = () => {
-      clearTimeout(debounceRef.current)
+      if (debounceRef.current) clearTimeout(debounceRef.current)
       debounceRef.current = setTimeout(() => loadData(false), 1500)
     }
     const channel = supabase.channel('dashboard-live')
@@ -147,7 +147,7 @@ export default function AdminDashboard() {
       .on('postgres_changes', { event: '*', schema: 'public', table: 'tenants' },    debouncedLoad)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'enquiries' },  debouncedLoad)
       .subscribe()
-    return () => { clearTimeout(debounceRef.current); supabase.removeChannel(channel) }
+    return () => { if (debounceRef.current) clearTimeout(debounceRef.current); supabase.removeChannel(channel) }
   }, [loadData])
 
   const rawName        = user?.email ? user.email.split('@')[0] : 'Admin'
