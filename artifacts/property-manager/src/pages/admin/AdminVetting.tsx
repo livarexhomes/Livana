@@ -9,6 +9,7 @@ import AdminSidebar from '../../components/layout/AdminSidebar'
 import AuthGuard from '../../components/auth/AuthGuard'
 import { MobileSidebarProvider, MobilePageHeader, MobileStatGrid, MobileStatCard, MobileEmptyState } from '@/components/ui/mobile-admin'
 import { createClient, getKycDocUrl, getSupabaseImageUrl } from '../../lib/supabase'
+import { useTheme } from '../../lib/theme'
 import {
   VettingHeader,
   VettingTabs,
@@ -46,6 +47,7 @@ const KYC_FILTER_TABS_BASE = [
 // ── Main Component ────────────────────────────────────────────────────────────
 
 export default function AdminVetting() {
+  const { setTheme } = useTheme()
   const [user, setUser]               = useState<{ email?: string } | null>(null)
   const [activeTab, setActiveTab]     = useState<VettingTab>('identity')
 
@@ -67,6 +69,10 @@ export default function AdminVetting() {
   const [listingsLoading, setListingsLoading]   = useState<boolean>(!USE_MOCK_VETTING)
   const [listingProcessing, setListingProcessing] = useState<string | null>(null)
   const [listingConfirm, setListingConfirm]     = useState<{ id: string; action: 'approve' | 'reject' } | null>(null)
+
+  useEffect(() => {
+    setTheme('light')
+  }, [setTheme])
 
   // ── Auth ───────────────────────────────────────────────────────────────────
   useEffect(() => {
