@@ -14,7 +14,7 @@ import { createClient, isSupabaseConfigured } from '../../lib/supabase'
 import { ResponsiveFilters } from '@/components/ui/responsive-filters'
 import { StatusBadge } from '@/components/ui/status-badge'
 import { SmartSelect } from '@/components/ui/smart-select'
-import { MobileSidebarProvider, MobileStatGrid, MobileStatCard, MobileSearch, MobileFilterBar } from '@/components/ui/mobile-admin'
+import { MobileSidebarProvider, MobileSearch, MobileFilterBar } from '@/components/ui/mobile-admin'
 
 // ── Status metadata ────────────────────────────────────────────────────────────
 
@@ -522,14 +522,8 @@ export default function AdminLandlords() {
               subtitle={`${clients.length} clients · ${approved} approved`}
               pendingCount={approved} />
 
-            {/* ── Mobile: compact stats + filters ── */}
+            {/* ── Mobile: search + filters ── */}
             <div className="sm:hidden -mx-4">
-              <MobileStatGrid>
-                <MobileStatCard label="Total" value={clients.length} color="text-slate-700" icon={Users} />
-                <MobileStatCard label="Approved" value={approved} color="text-emerald-700" icon={ShieldCheck} />
-                <MobileStatCard label="Pending" value={pending} color="text-amber-700" icon={Clock} />
-                <MobileStatCard label="Suspended" value={suspended} color="text-orange-700" icon={ShieldOff} />
-              </MobileStatGrid>
               <MobileSearch
                 placeholder="Search name, city, phone…"
                 value={search}

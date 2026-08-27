@@ -10,6 +10,10 @@ import AuthGuard from '../../components/auth/AuthGuard'
 import { createClient, getKycDocUrl } from '../../lib/supabase'
 import { ResponsiveFilters } from '../../components/ui/responsive-filters'
 import { MobileSidebarProvider } from '@/components/ui/mobile-admin'
+import {
+  Pagination, PaginationContent, PaginationItem, PaginationLink,
+  PaginationNext, PaginationPrevious,
+} from '@/components/ui/pagination'
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -35,6 +39,8 @@ const AVATAR_GRADIENTS = [
   'from-emerald-400 to-teal-600',  'from-rose-400 to-pink-600',
   'from-amber-400 to-orange-500',  'from-indigo-400 to-indigo-600',
 ]
+
+const PAGE_SIZE = 10
 
 function avatarGrad(name: string) {
   let h = 0
@@ -69,6 +75,7 @@ export default function AdminKYC() {
   const [refreshing, setRefreshing]       = useState(false)
   const [search, setSearch]               = useState('')
   const [statusFilter, setStatusFilter]   = useState('pending')
+  const [currentPage, setCurrentPage]     = useState(1)
   const [selected, setSelected]           = useState<any | null>(null)
   const [processing, setProcessing]       = useState<string | null>(null)
   const [kycDocs, setKycDocs]             = useState<{ doc_type: string; url: string; file_name: string }[]>([])
@@ -127,6 +134,20 @@ export default function AdminKYC() {
     setFiltered(list)
   }, [search, statusFilter, landlords])
 
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [search, statusFilter])
+
+  const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
+  const paginatedLandlords = filtered.slice(
+    (currentPage - 1) * PAGE_SIZE,
+    currentPage * PAGE_SIZE,
+  )
+
+  useEffect(() => {
+    setCurrentPage(page => Math.min(page, pageCount))
+  }, [pageCount])
+
   async function loadKycDocs(landlordId: string) {
     setDocsLoading(true)
     setKycDocs([])
@@ -171,12 +192,12 @@ export default function AdminKYC() {
   }
 
   const FILTER_TABS = [
+    { key: 'all',           label: 'All',           count: counts.all           },
     { key: 'pending',       label: 'Pending',       count: counts.pending       },
     { key: 'approved',      label: 'Approved',      count: counts.approved      },
     { key: 'rejected',      label: 'Rejected',      count: counts.rejected      },
     { key: 'suspended',     label: 'Suspended',     count: counts.suspended     },
     { key: 'not_submitted', label: 'Not Submitted', count: counts.not_submitted },
-    { key: 'all',           label: 'All',           count: counts.all           },
   ]
 
   function clearSelection() { setSelected(null); setKycDocs([]); setImgErrors({}) }
@@ -204,12 +225,6 @@ export default function AdminKYC() {
           <div className="shrink-0 px-4 md:px-6 py-4">
             <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-[0_18px_80px_-40px_rgba(15,23,42,0.18)]">
               <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">Identity verification</p>
-                  <h2 className="mt-2 text-xl md:text-2xl font-extrabold text-slate-950">KYC Review</h2>
-                  <p className="mt-1 text-sm text-slate-500">Verify landlord identities before they go live on the platform.</p>
-                </div>
-
                 {/* Stats row + live indicator */}
                 <div className="flex flex-col items-stretch md:items-end gap-2 shrink-0">
                   {/* Live indicator */}
@@ -230,19 +245,6 @@ export default function AdminKYC() {
                         Live
                       </span>
                     )}
-                  </div>
-                  <div className="grid grid-cols-2 sm:flex sm:items-center gap-2 sm:flex-wrap justify-end">
-                    {[
-                      { label: 'Pending',  value: counts.pending,  accent: 'text-amber-700 bg-amber-500/10'      },
-                      { label: 'Approved', value: counts.approved, accent: 'text-emerald-700 bg-emerald-500/10'  },
-                      { label: 'Rejected', value: counts.rejected, accent: 'text-red-700 bg-red-500/10'          },
-                      { label: 'Total',    value: counts.all,      accent: 'text-blue-700 bg-blue-500/10'        },
-                    ].map(s => (
-                      <div key={s.label} className="rounded-xl sm:rounded-3xl border border-slate-100 bg-slate-50 px-3 md:px-4 py-2.5 md:py-3 text-center sm:min-w-[70px]">
-                        <p className={`text-xl md:text-2xl font-extrabold ${s.accent}`}>{s.value}</p>
-                        <p className="mt-0.5 text-[10px] font-semibold uppercase tracking-[0.25em] text-slate-500">{s.label}</p>
-                      </div>
-                    ))}
                   </div>
                 </div>
               </div>
@@ -300,7 +302,7 @@ export default function AdminKYC() {
                   </div>
                 ) : (
                   <div className="divide-y divide-slate-50">
-                    {filtered.map(l => {
+                    {paginatedLandlords.map(l => {
                       const meta       = STATUS_META[l.status] ?? STATUS_META.pending
                       const isSelected = selected?.id === l.id
                       const isPending  = l.status === 'pending'
@@ -351,6 +353,55 @@ export default function AdminKYC() {
                   </div>
                 )}
               </div>
+
+              {pageCount > 1 && (
+                <div className="shrink-0 border-t border-slate-100 px-3 py-3">
+                  <Pagination>
+                    <PaginationContent className="w-full justify-between gap-1">
+                      <PaginationItem>
+                        <PaginationPrevious
+                          href="#"
+                          aria-disabled={currentPage === 1}
+                          className={currentPage === 1 ? 'pointer-events-none opacity-40' : ''}
+                          onClick={event => {
+                            event.preventDefault()
+                            setCurrentPage(page => Math.max(1, page - 1))
+                          }}
+                        />
+                      </PaginationItem>
+                      <div className="flex items-center gap-1">
+                        {Array.from({ length: pageCount }, (_, index) => index + 1).map(page => (
+                          <PaginationItem key={page}>
+                            <PaginationLink
+                              href="#"
+                              size="icon"
+                              isActive={page === currentPage}
+                              aria-label={`Go to page ${page}`}
+                              onClick={event => {
+                                event.preventDefault()
+                                setCurrentPage(page)
+                              }}
+                            >
+                              {page}
+                            </PaginationLink>
+                          </PaginationItem>
+                        ))}
+                      </div>
+                      <PaginationItem>
+                        <PaginationNext
+                          href="#"
+                          aria-disabled={currentPage === pageCount}
+                          className={currentPage === pageCount ? 'pointer-events-none opacity-40' : ''}
+                          onClick={event => {
+                            event.preventDefault()
+                            setCurrentPage(page => Math.min(pageCount, page + 1))
+                          }}
+                        />
+                      </PaginationItem>
+                    </PaginationContent>
+                  </Pagination>
+                </div>
+              )}
             </div>
 
             {/* ── RIGHT: Review panel ─────────────────────────────────────── */}
@@ -575,7 +626,7 @@ function ReviewPanel({
                   </a>
                 )
               })}
-            </div>
+                  </div>
           )}
         </div>
 

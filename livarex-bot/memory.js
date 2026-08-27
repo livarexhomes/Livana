@@ -14,6 +14,7 @@
 const SUPABASE_URL         = process.env.VITE_SUPABASE_URL
 const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY
 const MAX_HISTORY          = 20
+const MAX_MESSAGE_LENGTH   = 4096
 const useSupabase          = !!(SUPABASE_URL && SUPABASE_SERVICE_KEY)
 const memoryStore          = new Map()
 
@@ -49,11 +50,12 @@ export async function getConversationHistory(phone) {
 }
 
 export async function saveMessage(phone, role, content) {
+  const safeContent = String(content ?? "").slice(0, MAX_MESSAGE_LENGTH)
   if (useSupabase) {
     try {
       await supabaseFetch("/bot_messages", {
         method: "POST",
-        body: JSON.stringify({ phone, role, content }),
+        body: JSON.stringify({ phone, role, content: safeContent }),
       })
       return
     } catch (err) {
@@ -62,7 +64,7 @@ export async function saveMessage(phone, role, content) {
   }
   if (!memoryStore.has(phone)) memoryStore.set(phone, [])
   const history = memoryStore.get(phone)
-  history.push({ role, content })
+  history.push({ role, content: safeContent })
   if (history.length > MAX_HISTORY) memoryStore.set(phone, history.slice(-MAX_HISTORY))
 }
 

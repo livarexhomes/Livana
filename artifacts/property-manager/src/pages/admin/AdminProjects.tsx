@@ -1,14 +1,14 @@
 import { useState, useEffect, useRef } from 'react'
 import {
-  Search, MapPin, Calendar, Plus, Building2,
+  Search, MapPin, Plus, Building2,
   Pencil, Trash2, X, CheckCircle, AlertCircle, MoreVertical,
-  Upload, ImageIcon, Loader2, TrendingUp, Filter,
+  Upload, ImageIcon, Loader2, Filter,
   LayoutGrid, List, ChevronRight,
 } from 'lucide-react'
 import AdminSidebar from '../../components/layout/AdminSidebar'
 import AdminHeader from '../../components/layout/AdminHeader'
 import AuthGuard from '../../components/auth/AuthGuard'
-import { MobileSidebarProvider, MobileStatGrid, MobileStatCard, MobileEmptyState, MobileSearch, MobileFilterBar } from '@/components/ui/mobile-admin'
+import { MobileSidebarProvider, MobileEmptyState, MobileSearch, MobileFilterBar } from '@/components/ui/mobile-admin'
 import { createClient, getSupabaseProjectImageUrl } from '../../lib/supabase'
 import { MoneyInput } from '../../components/ui/money-input'
 import { ResponsiveFilters } from '../../components/ui/responsive-filters'
@@ -193,11 +193,7 @@ export default function AdminProjects() {
   }
 
   // Derived stats
-  const totalUnits      = projects.reduce((s, p) => s + (p.units || 0), 0)
-  const totalSold       = projects.reduce((s, p) => s + (p.sold  || 0), 0)
-  const avgProgress     = projects.length > 0 ? Math.round(projects.reduce((s, p) => s + p.progress, 0) / projects.length) : 0
   const statusTotals    = projects.reduce((acc, p) => { acc[p.status] = (acc[p.status] ?? 0) + 1; return acc }, {} as Record<ProjectStatus, number>)
-  const sellThrough     = totalUnits > 0 ? Math.round((totalSold / totalUnits) * 100) : 0
   const categories      = ['all', ...Array.from(new Set(projects.map(p => p.category)))]
   const displayName     = user?.email ? user.email.split('@')[0] : 'Admin'
 
@@ -264,14 +260,8 @@ export default function AdminProjects() {
           <main className="flex-1 overflow-hidden">
             <div className="h-full overflow-y-auto p-4 md:p-6 space-y-5">
 
-              {/* ── Mobile: compact stats + filters ── */}
+              {/* ── Mobile: search + filters ── */}
           <div className="sm:hidden -mx-4">
-             <MobileStatGrid>
-               <MobileStatCard label="Projects" value={projects.length} color="text-slate-700" icon={Building2} />
-               <MobileStatCard label="Units Sold" value={`${totalSold}/${totalUnits}`} color="text-emerald-700" icon={CheckCircle} />
-               <MobileStatCard label="Avg Progress" value={`${avgProgress}%`} color="text-violet-700" icon={TrendingUp} />
-               <MobileStatCard label="Coming Soon" value={statusTotals.coming_soon ?? 0} color="text-amber-700" icon={Calendar} />
-             </MobileStatGrid>
              <MobileSearch
                placeholder="Search projects, developers, locations…"
                value={search}

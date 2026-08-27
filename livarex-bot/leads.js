@@ -61,9 +61,11 @@ export async function scheduleFollowUp(phone, delayHours = 24) {
 
   if (useSupabase) {
     try {
-      await sbFetch("/bot_leads", {
-        method: "POST",
-        body: JSON.stringify({ phone, follow_up_due_at: dueAt, follow_up_sent_at: null }),
+      // PATCH so we don't clobber name / last_message on the lead row.
+      await sbFetch(`/bot_leads?phone=eq.${encodeURIComponent(phone)}`, {
+        method: "PATCH",
+        body: JSON.stringify({ follow_up_due_at: dueAt }),
+        headers: { Prefer: "return=minimal" },
       })
       return
     } catch (err) { console.error("scheduleFollowUp failed:", err.message) }
@@ -71,6 +73,24 @@ export async function scheduleFollowUp(phone, delayHours = 24) {
 
   const lead = leadsStore.get(phone) || { phone }
   leadsStore.set(phone, { ...lead, follow_up_due_at: dueAt })
+}
+
+export async function isFollowUpScheduled(phone) {
+  if (useSupabase) {
+    try {
+      const rows = await sbFetch(
+        `/bot_leads?phone=eq.${encodeURIComponent(phone)}&select=follow_up_sent_at&limit=1`,
+        { method: "GET" }
+      )
+      const sentAt = rows?.[0]?.follow_up_sent_at
+      return !!sentAt
+    } catch (err) {
+      console.error("isFollowUpScheduled failed:", err.message)
+      return false
+    }
+  }
+  const lead = leadsStore.get(phone)
+  return !!(lead && lead.follow_up_sent_at)
 }
 
 export async function getLeadsDueForFollowUp() {

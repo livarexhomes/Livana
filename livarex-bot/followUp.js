@@ -8,10 +8,11 @@ const MAX_FOLLOW_UPS = 3
 
 export function startFollowUpScheduler() {
   // Run every 30 minutes
-  setInterval(runFollowUps, 30 * 60 * 1000)
+  const interval = setInterval(runFollowUps, 30 * 60 * 1000)
   // Also run once after 15 seconds on startup
   setTimeout(runFollowUps, 15_000)
   console.log("⏰ Follow-up scheduler started (runs every 30 min)")
+  return interval
 }
 
 async function runFollowUps() {

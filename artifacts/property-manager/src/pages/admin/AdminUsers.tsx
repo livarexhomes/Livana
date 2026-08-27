@@ -1,14 +1,14 @@
 import { useState, useEffect, useRef } from 'react'
 import {
-  Search, Users, MessageSquare, Clock, UserX,
+  Search, MessageSquare, Clock, UserX,
   ShieldOff, Trash2, ShieldCheck, X, Home, Calendar,
-  TrendingUp, UserCheck, MoreVertical, ChevronLeft,
+  UserCheck, MoreVertical, ChevronLeft,
 } from 'lucide-react'
 import { Link } from '@/lib/navigation'
 import AdminSidebar from '../../components/layout/AdminSidebar'
 import AdminHeader from '../../components/layout/AdminHeader'
 import AuthGuard from '../../components/auth/AuthGuard'
-import { MobileSidebarProvider, MobileStatGrid, MobileStatCard, MobileEmptyState, MobileSearch, MobileFilterBar } from '@/components/ui/mobile-admin'
+import { MobileSidebarProvider, MobileEmptyState, MobileSearch, MobileFilterBar } from '@/components/ui/mobile-admin'
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '@/components/ui/dropdown-menu'
 import { createClient, isSupabaseConfigured } from '../../lib/supabase'
 import { ResponsiveFilters } from '@/components/ui/responsive-filters'
@@ -317,7 +317,6 @@ export default function AdminUsers() {
   const totalEnquiries  = tenants.reduce((s, t) => s + t.enquiry_count, 0)
   const suspendedCount  = tenants.filter(t => t.status === 'suspended').length
   const activeCount     = tenants.filter(t => t.status === 'active').length
-  const monthlyCount    = tenants.filter(t => new Date(t.created_at) > new Date(Date.now() - 30 * 86400000)).length
 
   return (
     <AuthGuard require="admin">
@@ -328,14 +327,8 @@ export default function AdminUsers() {
           <AdminHeader title="Users" subtitle={`${tenants.length} registered tenants`} />
           <main className="flex-1 overflow-y-auto pb-20 md:pb-6">
 
-            {/* ── Mobile: compact stats + filters ── */}
+            {/* ── Mobile: search + filters ── */}
             <div className="sm:hidden">
-              <MobileStatGrid>
-                <MobileStatCard label="Total" value={tenants.length} color="text-slate-700" icon={Users} />
-                <MobileStatCard label="Active" value={activeCount} color="text-emerald-700" icon={ShieldCheck} />
-                <MobileStatCard label="Suspended" value={suspendedCount} color="text-amber-700" icon={ShieldOff} />
-                <MobileStatCard label="This Month" value={monthlyCount} color="text-blue-700" icon={TrendingUp} />
-              </MobileStatGrid>
               <MobileSearch
                 placeholder="Search name, email, phone…"
                 value={search}
@@ -368,7 +361,6 @@ export default function AdminUsers() {
                       { label: 'Total',     value: tenants.length, color: 'text-slate-700'   },
                       { label: 'Active',    value: activeCount,    color: 'text-emerald-700' },
                       { label: 'Suspended', value: suspendedCount, color: 'text-amber-700'   },
-                      { label: 'This Month',value: monthlyCount,   color: 'text-blue-700'    },
                     ].map(s => (
                       <div key={s.label} className="rounded-2xl border border-slate-100 bg-slate-50 px-2 sm:px-3 py-1.5 text-center sm:min-w-[56px]">
                         <p className={`text-base font-extrabold ${s.color}`}>{s.value}</p>

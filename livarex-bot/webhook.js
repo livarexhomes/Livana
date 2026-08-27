@@ -2,7 +2,7 @@
 import { sendText, sendButtons, markRead } from "./whatsapp.js"
 import { processMessage } from "./ai.js"
 import { getSession, saveSession } from "./sessions.js"
-import { upsertLead, scheduleFollowUp } from "./leads.js"
+import { upsertLead, scheduleFollowUp, isFollowUpScheduled } from "./leads.js"
 import { getConversationHistory } from "./memory.js"
 
 // Fail closed: if WHATSAPP_VERIFY_TOKEN isn't configured, webhook
@@ -94,8 +94,12 @@ async function handleMessage(phone, contactName, msg) {
     const reply = await processMessage(phone, name, msgText)
     await sendText(phone, reply)
 
-    // Schedule a follow-up if no response within 24h
-    await scheduleFollowUp(phone, 24)
+    // Schedule a follow-up if no response within 24h. Only reschedule
+    // while a follow-up is still pending — once one has been sent, this is
+    // a continuing conversation, not an abandoned one.
+    if (!(await isFollowUpScheduled(phone))) {
+      await scheduleFollowUp(phone, 24)
+    }
 
     // Offer next step every 6 turns
     const history = await getConversationHistory(phone)
