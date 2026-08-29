@@ -3,7 +3,7 @@ import {
   CheckCircle, Clock,
   Loader2, Users, Building2,
   BedDouble, Bath, MapPin, DollarSign, ListChecks,
-  Trash2, ChevronDown,
+  Trash2, ChevronDown, ChevronRight,
 } from 'lucide-react'
 import AdminSidebar from '../../components/layout/AdminSidebar'
 import AuthGuard from '../../components/auth/AuthGuard'
@@ -254,7 +254,7 @@ export default function AdminVetting() {
   return (
     <AuthGuard require="admin">
       <MobileSidebarProvider>
-        <div className="vetting-page flex min-h-[100dvh] h-screen overflow-hidden bg-slate-50 text-slate-900">
+        <div className="vetting-page flex h-screen overflow-hidden bg-slate-50 text-slate-900">
         <AdminSidebar userEmail={user?.email} userName={displayName} />
 
         <div className="flex flex-1 min-w-0 flex-col overflow-hidden">
@@ -266,7 +266,7 @@ export default function AdminVetting() {
             adminName={displayName}
           />
 
-          {/* Mobile: legacy stat grid (kept compact, fits below header) */}
+          {/* Mobile: stat grid */}
           <div className="sm:hidden px-3 pt-3">
             <MobileStatGrid>
                <MobileStatCard label="KYC pending"     value={kycCounts.pending}      color="#2563EB" icon={Clock} />
@@ -276,8 +276,8 @@ export default function AdminVetting() {
             </MobileStatGrid>
           </div>
 
-          {/* Desktop stable stats bar */}
-          <div className="hidden sm:flex items-center gap-0 border-b border-slate-200 bg-white px-6 py-0 shrink-0">
+          {/* Desktop stable status tabs */}
+          <div className="hidden sm:flex items-center gap-0 border-b border-slate-200 bg-white px-6 shrink-0">
             {kycFilterTabs.map(tab => (
               <button
                 key={tab.key}
@@ -301,39 +301,74 @@ export default function AdminVetting() {
             ))}
           </div>
 
-          <div className="flex-1 overflow-y-auto px-4 pb-6 sm:px-6 sm:pt-4">
-            <div className="space-y-4 pt-3 sm:pt-0">
-              <VettingTabs
-                active={activeTab}
-                onChange={setActiveTab}
-                kycCount={kycCounts.pending}
-                listingsCount={pendingListings.length}
-              />
+          {/* Tab switcher */}
+          <div className="shrink-0 border-b border-slate-100 bg-white px-4 sm:px-6">
+            <VettingTabs
+              active={activeTab}
+              onChange={setActiveTab}
+              kycCount={kycCounts.pending}
+              listingsCount={pendingListings.length}
+            />
+          </div>
 
-              {activeTab === 'identity' ? (
-                <div
-                  className="grid min-h-[520px] grid-cols-1 gap-4 lg:min-h-[calc(100vh-12rem)] lg:grid-cols-[minmax(0,35%)_minmax(0,65%)]"
-                  data-testid="vetting-grid"
-                >
-                  <ApplicantList
-                    landlords={kycFiltered}
-                    selectedId={selectedLandlord?.id}
-                    onSelect={selectLandlord}
-                    loading={kycLoading}
-                    toolbar={
-                      <VettingToolbar
-                        search={kycSearch}
-                        onSearch={setKycSearch}
-                        statusFilter={kycStatusFilter}
-                        onStatusFilter={setKycStatusFilter}
-                        filterTabs={kycFilterTabs as any}
-                        sort={sortOrder}
-                        onSort={setSortOrder}
-                        resultCount={kycFiltered.length}
-                        hideFiltersOnDesktop={true}
-                      />
-                    }
-                  />
+          {activeTab === 'identity' ? (
+            /* ── Two-panel workspace — each panel scrolls independently ── */
+            <div
+              className="flex flex-1 min-h-0 overflow-hidden"
+              data-testid="vetting-grid"
+            >
+              {/* LEFT: landlord queue — independently scrollable */}
+              <div className="w-80 xl:w-[22rem] shrink-0 overflow-hidden border-r border-slate-200 bg-white hidden md:flex md:flex-col">
+                <VettingToolbar
+                  search={kycSearch}
+                  onSearch={setKycSearch}
+                  statusFilter={kycStatusFilter}
+                  onStatusFilter={setKycStatusFilter}
+                  filterTabs={kycFilterTabs as any}
+                  sort={sortOrder}
+                  onSort={setSortOrder}
+                  resultCount={kycFiltered.length}
+                  hideFiltersOnDesktop={false}
+                />
+                <ApplicantList
+                  landlords={kycFiltered}
+                  selectedId={selectedLandlord?.id}
+                  onSelect={selectLandlord}
+                  loading={kycLoading}
+                  className="flex-1 min-h-0 border-0 shadow-none"
+                />
+              </div>
+
+              {/* RIGHT: review workspace — sticky, independently scrollable */}
+              <div className="flex-1 min-w-0 min-h-0 overflow-y-auto">
+                {/* Mobile: back button when no landlord selected */}
+                {selectedLandlord && (
+                  <div className="md:hidden px-4 pt-3">
+                    <button onClick={clearKycSelection}
+                      className="flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-slate-800 transition">
+                      <ChevronDown className="w-4 h-4 rotate-90" /> Back to queue
+                    </button>
+                  </div>
+                )}
+                <div className="px-4 pb-6 pt-3 sm:px-6 md:pt-4">
+                  {/* Mobile: compact queue header */}
+                  <div className="sm:hidden mb-4">
+                    <div className="flex items-center justify-between mb-3">
+                      <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Landlord queue</p>
+                      <span className="text-[11px] font-semibold text-slate-500">{kycFiltered.length}</span>
+                    </div>
+                    <VettingToolbar
+                      search={kycSearch}
+                      onSearch={setKycSearch}
+                      statusFilter={kycStatusFilter}
+                      onStatusFilter={setKycStatusFilter}
+                      filterTabs={kycFilterTabs as any}
+                      sort={sortOrder}
+                      onSort={setSortOrder}
+                      resultCount={kycFiltered.length}
+                      hideFiltersOnDesktop={true}
+                    />
+                  </div>
                   <ReviewWorkspace
                     landlord={selectedLandlord}
                     kycDocs={kycDocs}
@@ -345,19 +380,21 @@ export default function AdminVetting() {
                     onUpdateStatus={updateKycStatus}
                   />
                 </div>
-              ) : (
-                <ListingsTab
-                  listings={pendingListings}
-                  loading={listingsLoading}
-                  processing={listingProcessing}
-                  confirm={listingConfirm}
-                  setConfirm={setListingConfirm}
-                  onApprove={approveListing}
-                  onReject={rejectListing}
-                />
-              )}
+              </div>
             </div>
-          </div>
+          ) : (
+            <div className="flex-1 min-h-0 overflow-hidden px-4 pb-6 sm:px-6 sm:pt-4">
+              <ListingsTab
+                listings={pendingListings}
+                loading={listingsLoading}
+                processing={listingProcessing}
+                confirm={listingConfirm}
+                setConfirm={setListingConfirm}
+                onApprove={approveListing}
+                onReject={rejectListing}
+              />
+            </div>
+          )}
         </div>
 
         {/* Mobile full-screen review */}

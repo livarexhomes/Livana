@@ -2,8 +2,6 @@ import { useRef, useEffect, useState } from 'react'
 import { Search, X, ChevronDown, SlidersHorizontal } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
-const BRAND = '#2563EB'
-
 export type SortOrder = 'newest' | 'oldest' | 'name_asc'
 
 interface FilterTab {
@@ -130,10 +128,9 @@ export default function VettingToolbar({
             className={cn(
               'inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-[11px] font-bold transition-all duration-150',
               statusFilter === tab.key
-                ? 'border-transparent text-white shadow-sm'
+                ? 'border-primary bg-primary text-white shadow-sm'
                 : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50',
             )}
-            style={statusFilter === tab.key ? { background: BRAND, borderColor: BRAND } : undefined}
           >
             {tab.label}
             <span
