@@ -948,10 +948,10 @@ export default function AdminSettings() {
 
     const [ll, tn] = await Promise.all([
       supabase.from('landlords')
-        .select('id, user_id, full_name, email, whatsapp, phone, status, city, created_at, updated_at, avatar_url, admin_notes, provider')
+        .select('*')
         .order('created_at', { ascending: false }),
       supabase.from('tenants')
-        .select('id, user_id, full_name, email, phone, status, city, created_at, updated_at, avatar_url, admin_notes, provider')
+        .select('*')
         .order('created_at', { ascending: false }),
     ])
 
