@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
+import { cn } from '@/lib/utils'
 import {
   CheckCircle, Clock,
   Loader2, Users, Building2,
@@ -276,25 +277,25 @@ export default function AdminVetting() {
             </MobileStatGrid>
           </div>
 
-          {/* Desktop stable status tabs */}
-          <div className="hidden sm:flex items-center gap-0 border-b border-slate-200 bg-white px-6 shrink-0">
+          {/* Status filter pills */}
+          <div className="hidden sm:flex items-center gap-1.5 px-6 py-2.5 bg-white border-b border-slate-100 shrink-0 overflow-x-auto">
             {kycFilterTabs.map(tab => (
               <button
                 key={tab.key}
                 type="button"
                 onClick={() => setKycStatusFilter(tab.key)}
-                className={`flex items-center gap-2 border-b-2 px-4 py-3 text-xs font-bold transition-colors ${
+                className={cn(
+                  'shrink-0 inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-semibold transition-all',
                   kycStatusFilter === tab.key
-                    ? 'border-[#2563EB] text-[#2563EB]'
-                    : 'border-transparent text-slate-500 hover:text-slate-800'
-                }`}
+                    ? 'bg-primary text-white'
+                    : 'border border-slate-200 bg-white text-slate-500 hover:border-slate-300 hover:bg-slate-50',
+                )}
               >
                 {tab.label}
-                <span className={`inline-flex h-5 min-w-[20px] items-center justify-center rounded-full px-1.5 text-[10px] font-black ${
-                  kycStatusFilter === tab.key
-                    ? 'bg-[#2563EB] text-white'
-                    : 'bg-slate-100 text-slate-500'
-                }`}>
+                <span className={cn(
+                  'inline-flex h-4 min-w-[18px] items-center justify-center rounded-full px-1 text-[10px] font-bold',
+                  kycStatusFilter === tab.key ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-400',
+                )}>
                   {tab.count}
                 </span>
               </button>
@@ -302,7 +303,7 @@ export default function AdminVetting() {
           </div>
 
           {/* Tab switcher */}
-          <div className="shrink-0 border-b border-slate-100 bg-white px-4 sm:px-6">
+          <div className="shrink-0 border-b border-slate-100 bg-white px-4 sm:px-6 py-2">
             <VettingTabs
               active={activeTab}
               onChange={setActiveTab}

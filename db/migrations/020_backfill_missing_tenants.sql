@@ -37,7 +37,7 @@ SELECT
   ),
   au.email,
   CASE WHEN au.raw_app_meta_data->>'provider' = 'google' THEN 'google' ELSE 'email' END,
-  'not_submitted',
+  'active',
   au.created_at
 FROM auth.users au
 WHERE NOT EXISTS (SELECT 1 FROM public.landlords WHERE user_id = au.id)
