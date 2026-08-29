@@ -378,7 +378,7 @@ function StatusFilterDropdown({ value, onChange, tabs }: {
   const DOT: Record<string, string> = {
     pending: 'bg-amber-400', approved: 'bg-emerald-500',
     rejected: 'bg-red-500', suspended: 'bg-orange-500',
-    not_submitted: 'bg-slate-400', all: 'bg-blue-500',
+    not_submitted: 'bg-slate-400', all: '',
   }
 
   return (
