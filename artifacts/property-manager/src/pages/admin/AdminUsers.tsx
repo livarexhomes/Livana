@@ -231,22 +231,23 @@ export default function AdminUsers() {
       if (user?.id) window.__livarexUserId = user.id
     })
     ;(async () => {
-      const [{ data: tenantData, error: tenantError }, { data: landlordData }] = await Promise.all([
-        supabase.from('tenants').select('*').order('created_at', { ascending: false }),
-        supabase.from('landlords').select('user_id'),
-      ])
+      const { data: tenantData, error: tenantError } = await supabase
+        .from('tenants')
+        .select('*')
+        .order('created_at', { ascending: false })
       if (tenantError) { setLoading(false); return }
-      const landlordUserIds = new Set((landlordData ?? []).map((l: any) => l.user_id))
-      const tenantsOnly = (tenantData ?? []).filter((t: any) => !landlordUserIds.has(t.user_id))
-      const tenantIds = tenantsOnly.map(t => t.id)
+      const tenantIds = (tenantData ?? []).map(t => t.id)
       let enquiryCounts: Record<string, number> = {}
       if (tenantIds.length > 0) {
-        const { data: enquiries } = await supabase.from('enquiries').select('tenant_id').in('tenant_id', tenantIds)
+        const { data: enquiries } = await supabase
+          .from('enquiries')
+          .select('tenant_id')
+          .in('tenant_id', tenantIds)
         enquiryCounts = (enquiries ?? []).reduce((acc: Record<string, number>, e: any) => {
           acc[e.tenant_id] = (acc[e.tenant_id] || 0) + 1; return acc
         }, {})
       }
-      setTenants(tenantsOnly.map((t: any) => ({
+      setTenants((tenantData ?? []).map((t: any) => ({
         id: t.id, user_id: t.user_id,
         full_name: t.full_name ?? 'Unknown Tenant',
         phone: t.phone ?? null, email: t.email ?? null,

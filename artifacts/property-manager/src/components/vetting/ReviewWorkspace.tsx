@@ -172,34 +172,18 @@ export default function ReviewWorkspace({
             </h3>
             <div className="h-px flex-1 bg-slate-100" />
           </div>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="mt-3 flex flex-wrap items-center gap-2">
             {landlord.status !== 'approved' && (
-              <ActionBtn
-                variant="approve"
-                onClick={() => handleStatus('approved', 'Approval')}
-                loading={busy}
-              />
+              <ActionBtn variant="approve"  onClick={() => handleStatus('approved',   'Approved')}   loading={busy} />
             )}
             {landlord.status !== 'rejected' && (
-              <ActionBtn
-                variant="reject"
-                onClick={() => handleStatus('rejected', 'Rejection')}
-                loading={busy}
-              />
+              <ActionBtn variant="reject"   onClick={() => handleStatus('rejected',   'Rejected')}  loading={busy} />
             )}
             {landlord.status !== 'suspended' && (
-              <ActionBtn
-                variant="suspend"
-                onClick={() => handleStatus('suspended', 'Suspension')}
-                loading={busy}
-              />
+              <ActionBtn variant="suspend"  onClick={() => handleStatus('suspended',   'Suspended')} loading={busy} />
             )}
             {landlord.status !== 'pending' && landlord.status !== 'not_submitted' && (
-              <ActionBtn
-                variant="reset"
-                onClick={() => handleStatus('pending', 'Reset')}
-                loading={busy}
-              />
+              <ActionBtn variant="reset"    onClick={() => handleStatus('pending',     'Reset')}      loading={busy} />
             )}
           </div>
           <p className="mt-3 text-[11px] leading-relaxed text-slate-400">
@@ -307,13 +291,13 @@ function ActionBtn({ variant, onClick, loading }: { variant: ActionVariant; onCl
       disabled={loading}
       aria-busy={loading}
       className={cn(
-        'flex items-center justify-center gap-2 rounded-2xl border-2 px-4 py-3 text-[13px] font-bold transition-all duration-150 disabled:opacity-50',
+        'flex items-center justify-center gap-1.5 rounded-xl border px-3 py-2 text-[11px] font-bold transition-all duration-150 disabled:opacity-50',
         s.cls,
       )}
     >
       {loading
-        ? <Loader2 className="h-4 w-4 animate-spin" />
-        : <Icon className="h-4 w-4" />
+        ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
+        : <Icon className="h-3.5 w-3.5" />
       }
       {s.label}
     </button>

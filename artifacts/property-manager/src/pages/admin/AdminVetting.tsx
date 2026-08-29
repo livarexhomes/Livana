@@ -276,6 +276,31 @@ export default function AdminVetting() {
             </MobileStatGrid>
           </div>
 
+          {/* Desktop stable stats bar */}
+          <div className="hidden sm:flex items-center gap-0 border-b border-slate-200 bg-white px-6 py-0 shrink-0">
+            {kycFilterTabs.map(tab => (
+              <button
+                key={tab.key}
+                type="button"
+                onClick={() => setKycStatusFilter(tab.key)}
+                className={`flex items-center gap-2 border-b-2 px-4 py-3 text-xs font-bold transition-colors ${
+                  kycStatusFilter === tab.key
+                    ? 'border-[#2563EB] text-[#2563EB]'
+                    : 'border-transparent text-slate-500 hover:text-slate-800'
+                }`}
+              >
+                {tab.label}
+                <span className={`inline-flex h-5 min-w-[20px] items-center justify-center rounded-full px-1.5 text-[10px] font-black ${
+                  kycStatusFilter === tab.key
+                    ? 'bg-[#2563EB] text-white'
+                    : 'bg-slate-100 text-slate-500'
+                }`}>
+                  {tab.count}
+                </span>
+              </button>
+            ))}
+          </div>
+
           <div className="flex-1 overflow-y-auto px-4 pb-6 sm:px-6 sm:pt-4">
             <div className="space-y-4 pt-3 sm:pt-0">
               <VettingTabs
@@ -305,6 +330,7 @@ export default function AdminVetting() {
                         sort={sortOrder}
                         onSort={setSortOrder}
                         resultCount={kycFiltered.length}
+                        hideFiltersOnDesktop={true}
                       />
                     }
                   />

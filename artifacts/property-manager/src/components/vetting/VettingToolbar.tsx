@@ -21,6 +21,7 @@ interface VettingToolbarProps {
   sort: SortOrder
   onSort: (s: SortOrder) => void
   resultCount: number
+  hideFiltersOnDesktop?: boolean
 }
 
 export default function VettingToolbar({
@@ -32,6 +33,7 @@ export default function VettingToolbar({
   sort,
   onSort,
   resultCount,
+  hideFiltersOnDesktop = false,
 }: VettingToolbarProps) {
   const [sortOpen, setSortOpen] = useState(false)
   const sortRef = useRef<HTMLDivElement>(null)
@@ -117,7 +119,8 @@ export default function VettingToolbar({
         </div>
       </div>
 
-      {/* Status filter pills */}
+      {/* Status filter pills — hidden on desktop when dedicated stats bar is shown */}
+      {!hideFiltersOnDesktop && (
       <div className="flex items-center gap-1.5 flex-wrap">
         {filterTabs.map(tab => (
           <button
@@ -151,6 +154,7 @@ export default function VettingToolbar({
           {resultCount} result{resultCount !== 1 ? 's' : ''}
         </span>
       </div>
+      )} {/* end hideFiltersOnDesktop */}
     </div>
   )
 }
