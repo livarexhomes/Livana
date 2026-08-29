@@ -3,8 +3,6 @@ import { Loader2, Users } from 'lucide-react'
 import ApplicantCard from './ApplicantCard'
 import type { VettingLandlord } from './mockData'
 
-const BRAND = '#2563EB'
-
 interface ApplicantListProps {
   landlords: VettingLandlord[]
   selectedId?: string
@@ -48,13 +46,11 @@ export default function ApplicantList({
 
   return (
     <div
-      className={`flex h-full min-h-0 flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm ${className ?? ''}`}
+      className={`flex h-full min-h-0 flex-col overflow-hidden bg-white ${className ?? ''}`}
     >
       {/* Toolbar area */}
       {toolbar && (
-        <div className="shrink-0 border-b border-slate-100 p-3">
-          {/* Brand accent top line */}
-          <div className="h-0.5 rounded-full mb-3" style={{ background: `linear-gradient(90deg, ${BRAND}, ${BRAND}60)` }} />
+        <div className="shrink-0">
           {toolbar}
         </div>
       )}

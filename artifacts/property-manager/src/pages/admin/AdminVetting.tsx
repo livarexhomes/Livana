@@ -310,18 +310,21 @@ export default function AdminVetting() {
               data-testid="vetting-grid"
             >
               {/* LEFT: landlord queue — independently scrollable */}
-              <div className="w-80 xl:w-[22rem] shrink-0 overflow-hidden border-r border-slate-200 bg-white hidden md:flex md:flex-col">
-                <VettingToolbar
-                  search={kycSearch}
-                  onSearch={setKycSearch}
-                  statusFilter={kycStatusFilter}
-                  onStatusFilter={setKycStatusFilter}
-                  filterTabs={kycFilterTabs as any}
-                  sort={sortOrder}
-                  onSort={setSortOrder}
-                  resultCount={kycFiltered.length}
-                  hideFiltersOnDesktop={false}
-                />
+              <div className="w-80 xl:w-[22rem] shrink-0 overflow-y-auto border-r border-slate-200 bg-white hidden md:flex md:flex-col">
+                {/* Toolbar without status pills on desktop (pills already in header dropdown) */}
+                <div className="px-3 pt-3 pb-0 border-b border-slate-100">
+                  <VettingToolbar
+                    search={kycSearch}
+                    onSearch={setKycSearch}
+                    statusFilter={kycStatusFilter}
+                    onStatusFilter={setKycStatusFilter}
+                    filterTabs={kycFilterTabs as any}
+                    sort={sortOrder}
+                    onSort={setSortOrder}
+                    resultCount={kycFiltered.length}
+                    hideFiltersOnDesktop={true}
+                  />
+                </div>
                 <ApplicantList
                   landlords={kycFiltered}
                   selectedId={selectedLandlord?.id}
