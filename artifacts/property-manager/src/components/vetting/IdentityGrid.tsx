@@ -32,15 +32,15 @@ export default function IdentityGrid({ landlord }: IdentityGridProps) {
         return (
           <div
             key={f.label}
-            className="rounded-2xl border border-slate-100 bg-slate-50 p-4 transition-colors dark:border-slate-700 dark:bg-slate-800/60"
+            className="rounded-2xl border border-[#e0e9e1] bg-[#f3f7f3] p-4 transition-colors hover:border-[#bdd1c2] dark:border-slate-700 dark:bg-slate-800/60"
           >
             <div className="flex items-center gap-1.5">
-              <Icon className="h-3 w-3 text-slate-400 dark:text-slate-500" />
+              <Icon className="h-3 w-3 text-[#6d9b87] dark:text-slate-500" />
               <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
                 {f.label}
               </p>
             </div>
-            <p className="mt-1.5 truncate text-[14px] font-semibold text-slate-900 dark:text-white">
+            <p className="mt-1.5 truncate text-[14px] font-semibold text-[#244239] dark:text-white">
               {f.value}
             </p>
           </div>

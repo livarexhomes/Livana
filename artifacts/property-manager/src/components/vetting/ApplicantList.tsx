@@ -1,5 +1,5 @@
 import { useRef, type ReactNode } from 'react'
-import { Loader2, Users } from 'lucide-react'
+import { Loader2, Users, ListFilter } from 'lucide-react'
 import ApplicantCard from './ApplicantCard'
 import { MobileEmptyState } from '@/components/ui/mobile-admin'
 import type { VettingLandlord } from './mockData'
@@ -48,11 +48,19 @@ export default function ApplicantList({
   return (
     <div
       className={
-        'flex h-full min-h-0 flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900 ' +
+        'flex h-full min-h-0 flex-col overflow-hidden rounded-[1.25rem] border border-[#d7e0d9] bg-[#fbfcfa] shadow-[0_5px_18px_rgba(24,53,47,0.05)] dark:border-slate-700 dark:bg-slate-900 ' +
         (className ?? '')
       }
     >
-      {toolbar && <div className="shrink-0 p-3 pb-0">{toolbar}</div>}
+      {toolbar && (
+        <div className="shrink-0 border-b border-[#e5ece6] p-3 pb-3 dark:border-slate-800">
+          <div className="mb-2 flex items-center gap-2 px-1">
+            <ListFilter className="h-3.5 w-3.5 text-[#6d9b87]" />
+            <span className="ops-mono text-[9px] font-bold uppercase tracking-[0.18em] text-[#728279]">Review queue</span>
+          </div>
+          {toolbar}
+        </div>
+      )}
 
       <div
         ref={containerRef}
@@ -65,7 +73,7 @@ export default function ApplicantList({
             <Loader2 className="h-5 w-5 animate-spin text-slate-400" />
           </div>
         ) : landlords.length === 0 ? (
-          <div className="py-12">
+            <div className="py-12">
             <MobileEmptyState
               title="No applicants"
               description="Try a different filter or search term."

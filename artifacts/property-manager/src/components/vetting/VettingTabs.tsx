@@ -1,4 +1,4 @@
-import { ShieldCheck, Building2, ChevronRight } from 'lucide-react'
+import { ShieldCheck, Building2, ArrowUpRight } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 export type VettingTab = 'identity' | 'listings'
@@ -21,7 +21,7 @@ export default function VettingTabs({ active, onChange, kycCount, listingsCount 
         active={active === 'identity'}
         onClick={() => onChange('identity')}
         icon={ShieldCheck}
-        iconBg="bg-blue-50 text-blue-600 dark:bg-blue-950/50 dark:text-blue-300"
+        iconBg="bg-[#dfece4] text-[#2f7560] dark:bg-blue-950/50 dark:text-blue-300"
         title="Identity Checks"
         description="Review landlord KYC submissions and documents"
         count={kycCount}
@@ -31,7 +31,7 @@ export default function VettingTabs({ active, onChange, kycCount, listingsCount 
         active={active === 'listings'}
         onClick={() => onChange('listings')}
         icon={Building2}
-        iconBg="bg-violet-50 text-violet-600 dark:bg-violet-950/50 dark:text-violet-300"
+        iconBg="bg-[#dce9ed] text-[#315f6f] dark:bg-violet-950/50 dark:text-violet-300"
         title="Listing Approvals"
         description="Approve or reject new property submissions"
         count={listingsCount}
@@ -55,13 +55,13 @@ interface TabCardProps {
 function TabCard({ active, onClick, icon: Icon, iconBg, title, description, count, accent }: TabCardProps) {
   const activeRing =
     accent === 'blue'
-      ? 'border-blue-600 ring-1 ring-blue-200 bg-blue-50/40 dark:border-blue-500 dark:ring-blue-900/60 dark:bg-blue-950/20'
-      : 'border-violet-600 ring-1 ring-violet-200 bg-violet-50/40 dark:border-violet-500 dark:ring-violet-900/60 dark:bg-violet-950/20'
+      ? 'border-[#6d9b87] ring-1 ring-[#c9d8cf] bg-[#edf5ef] dark:border-blue-500 dark:ring-blue-900/60 dark:bg-blue-950/20'
+      : 'border-[#6d9b87] ring-1 ring-[#c9d8cf] bg-[#eef5f5] dark:border-violet-500 dark:ring-violet-900/60 dark:bg-violet-950/20'
 
   const countTone =
     accent === 'blue'
-      ? 'bg-blue-600 text-white'
-      : 'bg-violet-600 text-white'
+      ? 'bg-[#2f7560] text-white'
+      : 'bg-[#315f6f] text-white'
 
   return (
     <button
@@ -71,10 +71,10 @@ function TabCard({ active, onClick, icon: Icon, iconBg, title, description, coun
       aria-pressed={active}
       onClick={onClick}
       className={cn(
-        'group relative flex w-full items-center gap-4 rounded-2xl border bg-white p-5 text-left shadow-sm transition-all duration-200 ease-out hover:-translate-y-0.5 hover:shadow-md motion-reduce:transform-none motion-reduce:transition-none dark:bg-slate-900',
+        'group relative flex w-full items-center gap-4 rounded-[1.25rem] border bg-[#fbfcfa] p-4 text-left shadow-[0_5px_18px_rgba(24,53,47,0.05)] transition-all duration-200 ease-out hover:-translate-y-0.5 hover:shadow-[0_12px_26px_rgba(24,53,47,0.09)] motion-reduce:transform-none motion-reduce:transition-none dark:bg-slate-900',
         active
           ? activeRing
-          : 'border-slate-200 hover:border-slate-300 dark:border-slate-700 dark:hover:border-slate-600',
+          : 'border-[#d7e0d9] hover:border-[#a7c0b0] dark:border-slate-700 dark:hover:border-slate-600',
       )}
     >
       <div
@@ -87,7 +87,7 @@ function TabCard({ active, onClick, icon: Icon, iconBg, title, description, coun
       </div>
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
-          <h3 className="truncate text-[15px] font-semibold text-[#0B1F4D] dark:text-white">
+          <h3 className="truncate text-[15px] font-semibold text-[#18352f] dark:text-white">
             {title}
           </h3>
           {count > 0 && (
@@ -106,7 +106,7 @@ function TabCard({ active, onClick, icon: Icon, iconBg, title, description, coun
           {description}
         </p>
       </div>
-      <ChevronRight
+      <ArrowUpRight
         className={cn(
           'h-4 w-4 shrink-0 text-slate-300 transition-transform duration-200 group-hover:translate-x-0.5 dark:text-slate-600',
           active && 'text-slate-500 dark:text-slate-400',

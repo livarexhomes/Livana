@@ -34,12 +34,6 @@ export default function ReviewWorkspace({
   onClose,
   onUpdateStatus,
 }: ReviewWorkspaceProps) {
-  if (!landlord) {
-    return <EmptyWorkspace />
-  }
-
-  const meta = KYC_STATUS_META[landlord.status] ?? KYC_STATUS_META.pending
-  const busy = processing === landlord.id
   const [liveMessage, setLiveMessage] = useState<string>('')
 
   useEffect(() => {
@@ -47,6 +41,13 @@ export default function ReviewWorkspace({
     const t = setTimeout(() => setLiveMessage(''), 3000)
     return () => clearTimeout(t)
   }, [liveMessage])
+
+  if (!landlord) {
+    return <EmptyWorkspace />
+  }
+
+  const meta = KYC_STATUS_META[landlord.status] ?? KYC_STATUS_META.pending
+  const busy = processing === landlord.id
 
   async function handleStatus(next: VettingStatus, label: string) {
     setLiveMessage(`${label} in progress…`)
@@ -56,18 +57,18 @@ export default function ReviewWorkspace({
 
   return (
     <div
-      className="flex h-full min-h-0 flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900"
+      className="flex h-full min-h-0 flex-col overflow-hidden rounded-[1.25rem] border border-[#d7e0d9] bg-[#fbfcfa] shadow-[0_5px_18px_rgba(24,53,47,0.05)] dark:border-slate-700 dark:bg-slate-900"
       role="region"
       aria-label={`Review ${landlord.full_name}`}
     >
       <div
-        className="shrink-0 border-b border-slate-100 px-4 py-4 sm:px-6 sm:py-5 dark:border-slate-800"
+        className="shrink-0 border-b border-[#e5ece6] bg-[#f7f9f5] px-4 py-4 sm:px-6 sm:py-5 dark:border-slate-800 dark:bg-slate-900"
         aria-live="polite"
       >
         <div className="flex items-start gap-3 sm:gap-4">
           <div
             className={cn(
-              'flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-gradient-to-br text-[13px] font-bold text-white shadow-sm sm:h-16 sm:w-16 sm:text-[15px]',
+              'flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br text-[13px] font-bold text-white shadow-sm sm:h-16 sm:w-16 sm:text-[15px]',
               avatarGrad(landlord.full_name),
             )}
             aria-hidden="true"
@@ -76,13 +77,13 @@ export default function ReviewWorkspace({
           </div>
           <div className="min-w-0 flex-1">
             <div className="flex items-center justify-between gap-2">
-              <h2 className="truncate text-[18px] font-semibold text-[#0B1F4D] dark:text-white sm:text-[20px]">
+              <h2 className="truncate text-[18px] font-semibold tracking-[-0.02em] text-[#18352f] dark:text-white sm:text-[20px]">
                 {landlord.full_name}
               </h2>
               <button
                 type="button"
                 onClick={onClose}
-                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-500 transition-colors hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-[#d7e0d9] bg-[#eef3ee] text-[#587067] transition-colors hover:bg-[#e3ece5] dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
                 aria-label="Close review"
               >
                 <X className="h-4 w-4" />
@@ -135,15 +136,25 @@ export default function ReviewWorkspace({
               id="actions-heading"
               className="text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-400"
             >
-              Review Actions
+              Decision
             </h3>
             <div className="flex flex-col gap-3 sm:flex-row sm:items-stretch">
+              {landlord.status !== 'approved' && (
+                <ReviewActionCard
+                  variant="approve"
+                  icon={CheckCircle}
+                  title="Approve"
+                  description="Verify this landlord for Livarex"
+                  onClick={() => handleStatus('approved', 'Approval')}
+                  loading={busy}
+                />
+              )}
               {landlord.status !== 'rejected' && (
                 <ReviewActionCard
                   variant="reject"
                   icon={AlertTriangle}
                   title="Reject"
-                  description="Permanently reject this submission"
+                  description="Mark this identity as not approved"
                   onClick={() => handleStatus('rejected', 'Rejection')}
                   loading={busy}
                 />
@@ -153,7 +164,7 @@ export default function ReviewWorkspace({
                   variant="suspend"
                   icon={Ban}
                   title="Suspend"
-                  description="Temporarily suspend this account"
+                  description="Pause this account's activity"
                   onClick={() => handleStatus('suspended', 'Suspension')}
                   loading={busy}
                 />
@@ -163,23 +174,15 @@ export default function ReviewWorkspace({
                   variant="reset"
                   icon={Clock}
                   title="Reset to Pending"
-                  description="Move back to pending review"
+                  description="Return this case to the queue"
                   onClick={() => handleStatus('pending', 'Reset')}
                   loading={busy}
                 />
               )}
             </div>
-            {landlord.status !== 'approved' && landlord.status !== 'pending' && (
-              <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 text-[11px] text-slate-500 dark:border-slate-700 dark:bg-slate-800/60 dark:text-slate-400">
-                <p className="font-semibold uppercase tracking-wider text-slate-400">
-                  Quick add
-                </p>
-                <p className="mt-1">
-                  Use the Approve button on the <span className="font-semibold">Landlords</span>{' '}
-                  page to verify this landlord. This panel is for review state changes only.
-                </p>
-              </div>
-            )}
+            <p className="text-[11px] leading-relaxed text-[#728279]">
+              Decisions update the landlord record immediately. Review the identity details and evidence above before continuing.
+            </p>
           </section>
 
           {/* Identity information */}
@@ -200,19 +203,19 @@ export default function ReviewWorkspace({
                 id="docs-heading"
                 className="text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-400"
               >
-                Documents
+              Evidence
               </h3>
-              <span className="text-[11px] font-semibold text-slate-500">
+              <span className="ops-mono text-[10px] font-bold uppercase tracking-[0.12em] text-[#728279]">
                 {docsLoading ? 'Loading…' : `${kycDocs.length} file${kycDocs.length !== 1 ? 's' : ''}`}
               </span>
             </div>
             {docsLoading ? (
-              <div className="flex items-center justify-center gap-2 rounded-2xl border border-dashed border-slate-200 p-8 text-slate-400 dark:border-slate-700">
+              <div className="flex items-center justify-center gap-2 rounded-2xl border border-dashed border-[#cbd9cd] bg-[#f3f7f3] p-8 text-[#728279] dark:border-slate-700">
                 <Loader2 className="h-5 w-5 animate-spin" />
                 <span className="text-sm font-medium">Loading documents…</span>
               </div>
             ) : kycDocs.length === 0 ? (
-              <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-8 text-center dark:border-slate-700 dark:bg-slate-800/40">
+              <div className="rounded-2xl border border-dashed border-[#cbd9cd] bg-[#f3f7f3] p-8 text-center dark:border-slate-700 dark:bg-slate-800/40">
                 <FileText className="mx-auto mb-2 h-8 w-8 text-slate-300 dark:text-slate-600" />
                 <p className="text-[13px] font-semibold text-slate-500 dark:text-slate-400">
                   No documents uploaded
@@ -247,7 +250,7 @@ export default function ReviewWorkspace({
 function StatusBanner({ status }: { status: VettingStatus }) {
   if (status === 'approved') {
     return (
-      <div className="flex items-start gap-2.5 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-emerald-700 dark:border-emerald-800/60 dark:bg-emerald-950/40 dark:text-emerald-200">
+      <div className="flex items-start gap-2.5 rounded-2xl border border-[#b8d7c3] bg-[#e4efe8] px-4 py-3 text-[#2f7560] dark:border-emerald-800/60 dark:bg-emerald-950/40 dark:text-emerald-200">
         <CheckCircle className="mt-0.5 h-4 w-4 shrink-0" />
         <div>
           <p className="text-[12px] font-semibold">Verification successful</p>
@@ -260,7 +263,7 @@ function StatusBanner({ status }: { status: VettingStatus }) {
   }
   if (status === 'rejected') {
     return (
-      <div className="flex items-start gap-2.5 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-red-700 dark:border-red-800/60 dark:bg-red-950/40 dark:text-red-200">
+      <div className="flex items-start gap-2.5 rounded-2xl border border-[#e6beb9] bg-[#f8e9e6] px-4 py-3 text-[#963e38] dark:border-red-800/60 dark:bg-red-950/40 dark:text-red-200">
         <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
         <div>
           <p className="text-[12px] font-semibold">Submission rejected</p>
@@ -286,7 +289,7 @@ function StatusBanner({ status }: { status: VettingStatus }) {
   }
   if (status === 'pending') {
     return (
-      <div className="flex items-start gap-2.5 rounded-2xl border border-blue-200 bg-blue-50 px-4 py-3 text-blue-700 dark:border-blue-800/60 dark:bg-blue-950/40 dark:text-blue-200">
+      <div className="flex items-start gap-2.5 rounded-2xl border border-[#b9d1d8] bg-[#dce9ed] px-4 py-3 text-[#315f6f] dark:border-blue-800/60 dark:bg-blue-950/40 dark:text-blue-200">
         <Clock className="mt-0.5 h-4 w-4 shrink-0" />
         <div>
           <p className="text-[12px] font-semibold">Awaiting your review</p>

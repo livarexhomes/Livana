@@ -1,4 +1,4 @@
-import { Phone, ChevronRight } from 'lucide-react'
+import { Phone, ChevronRight, MapPin } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { KYC_STATUS_META, daysAgo, avatarGrad, getInitials, type VettingLandlord } from './mockData'
 
@@ -30,10 +30,10 @@ export default function ApplicantCard({
       onKeyDown={onKeyDown}
       tabIndex={tabIndex}
       className={cn(
-        'group relative flex h-[72px] w-full items-center gap-3 border-l-[3px] px-3 py-2 text-left transition-all duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1 dark:focus-visible:ring-offset-slate-900 motion-reduce:transition-none',
+        'group relative flex min-h-[82px] w-full items-center gap-3 border-l-[3px] px-3 py-3 text-left transition-all duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#6d9b87] focus-visible:ring-offset-1 dark:focus-visible:ring-offset-slate-900 motion-reduce:transition-none',
         selected
-          ? 'border-l-blue-600 bg-blue-50/60 dark:border-l-blue-400 dark:bg-blue-950/30'
-          : 'border-l-transparent hover:bg-slate-50 dark:hover:bg-slate-800/60',
+           ? 'border-l-[#2f7560] bg-[#edf5ef] dark:border-l-blue-400 dark:bg-blue-950/30'
+           : 'border-l-transparent hover:bg-[#f1f5f1] dark:hover:bg-slate-800/60',
       )}
     >
       <div
@@ -52,7 +52,7 @@ export default function ApplicantCard({
             className={cn(
               'truncate text-[14px] font-semibold',
               selected
-                ? 'text-blue-900 dark:text-blue-100'
+                 ? 'text-[#18352f] dark:text-blue-100'
                 : 'text-slate-900 dark:text-white',
             )}
           >
@@ -80,6 +80,12 @@ export default function ApplicantCard({
             <span className="flex min-w-0 items-center gap-1 truncate text-[11px] text-slate-500 dark:text-slate-400">
               <Phone className="h-2.5 w-2.5 shrink-0" />
               <span className="truncate">{landlord.whatsapp}</span>
+            </span>
+          )}
+          {landlord.city && (
+            <span className="hidden min-w-0 items-center gap-1 truncate text-[11px] text-[#7b8980] lg:flex">
+              <MapPin className="h-2.5 w-2.5 shrink-0" />
+              <span className="truncate">{landlord.city}</span>
             </span>
           )}
         </div>

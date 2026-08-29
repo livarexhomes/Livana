@@ -1,4 +1,4 @@
-import { ArrowLeft, Phone, Mail, AlertTriangle, Ban, Clock, FileText, Loader2, X } from 'lucide-react'
+import { ArrowLeft, Phone, Mail, AlertTriangle, Ban, Clock, FileText, Loader2, X, CheckCircle } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import {
   KYC_STATUS_META,
@@ -37,29 +37,29 @@ export default function MobileReviewScreen({
 
   return (
     <div
-      className="fixed inset-0 z-40 flex flex-col overflow-hidden bg-[#F4F6FB] dark:bg-slate-950 animate-in slide-in-from-right duration-200 motion-reduce:animate-none"
+      className="vetting-page fixed inset-0 z-40 flex flex-col overflow-hidden bg-[#edf1ed] dark:bg-slate-950 animate-in slide-in-from-right duration-200 motion-reduce:animate-none"
       role="dialog"
       aria-modal="true"
       aria-label={`Review ${landlord.full_name}`}
     >
       {/* Top bar */}
-      <div className="shrink-0 border-b border-slate-200 bg-white px-3 py-3 dark:border-slate-800 dark:bg-slate-900">
+      <div className="shrink-0 border-b border-[#d7e0d9] bg-[#f7f9f5] px-3 py-3 dark:border-slate-800 dark:bg-slate-900">
         <div className="flex items-center gap-2">
           <button
             type="button"
             onClick={onBack}
-            className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-100 text-slate-600 transition-colors hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
+             className="flex h-10 w-10 items-center justify-center rounded-xl border border-[#d7e0d9] bg-[#eef3ee] text-[#587067] transition-colors hover:bg-[#e3ece5] dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
             aria-label="Back to applicants"
           >
             <ArrowLeft className="h-4 w-4" />
           </button>
-          <p className="text-[15px] font-semibold text-[#0B1F4D] dark:text-white">
+           <p className="text-[15px] font-semibold tracking-[-0.01em] text-[#18352f] dark:text-white">
             Review applicant
           </p>
           <button
             type="button"
             onClick={onBack}
-            className="ml-auto flex h-10 w-10 items-center justify-center rounded-xl bg-slate-100 text-slate-500 transition-colors hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
+             className="ml-auto flex h-10 w-10 items-center justify-center rounded-xl border border-[#d7e0d9] bg-[#eef3ee] text-[#587067] transition-colors hover:bg-[#e3ece5] dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
             aria-label="Close"
           >
             <X className="h-4 w-4" />
@@ -78,7 +78,7 @@ export default function MobileReviewScreen({
             {getInitials(landlord.full_name)}
           </div>
           <div className="min-w-0 flex-1">
-            <h2 className="truncate text-[16px] font-semibold text-[#0B1F4D] dark:text-white">
+             <h2 className="truncate text-[16px] font-semibold text-[#18352f] dark:text-white">
               {landlord.full_name}
             </h2>
             <div className="mt-1 flex flex-wrap items-center gap-2">
@@ -112,7 +112,7 @@ export default function MobileReviewScreen({
       {/* Scrollable body */}
       <div className="flex-1 overflow-y-auto px-3 pb-32 pt-4">
         <div className="space-y-5">
-          <section aria-labelledby="m-identity" className="space-y-2">
+           <section aria-labelledby="m-identity" className="space-y-2">
             <h3
               id="m-identity"
               className="text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-400"
@@ -128,19 +128,19 @@ export default function MobileReviewScreen({
                 id="m-docs"
                 className="text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-400"
               >
-                Documents
+               Evidence
               </h3>
               <span className="text-[11px] font-semibold text-slate-500">
                 {docsLoading ? 'Loading…' : `${kycDocs.length}`}
               </span>
             </div>
             {docsLoading ? (
-              <div className="flex items-center justify-center gap-2 rounded-2xl border border-dashed border-slate-200 p-8 text-slate-400 dark:border-slate-700">
+               <div className="flex items-center justify-center gap-2 rounded-2xl border border-dashed border-[#cbd9cd] bg-[#f3f7f3] p-8 text-[#728279] dark:border-slate-700">
                 <Loader2 className="h-5 w-5 animate-spin" />
                 <span className="text-sm font-medium">Loading documents…</span>
               </div>
             ) : kycDocs.length === 0 ? (
-              <div className="rounded-2xl border border-dashed border-slate-200 bg-white p-8 text-center dark:border-slate-700 dark:bg-slate-900">
+              <div className="rounded-2xl border border-dashed border-[#cbd9cd] bg-[#f7f9f5] p-8 text-center dark:border-slate-700 dark:bg-slate-900">
                 <FileText className="mx-auto mb-2 h-8 w-8 text-slate-300 dark:text-slate-600" />
                 <p className="text-[13px] font-semibold text-slate-500 dark:text-slate-400">
                   No documents uploaded
@@ -163,8 +163,15 @@ export default function MobileReviewScreen({
       </div>
 
       {/* Sticky bottom action bar */}
-      <div className="fixed inset-x-0 bottom-0 z-50 border-t border-slate-200 bg-white/95 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 shadow-[0_-8px_24px_-12px_rgba(15,23,42,0.15)] backdrop-blur dark:border-slate-800 dark:bg-slate-900/95">
+      <div className="fixed inset-x-0 bottom-0 z-50 border-t border-[#d7e0d9] bg-[#f7f9f5]/95 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 shadow-[0_-8px_24px_-12px_rgba(24,53,47,0.18)] backdrop-blur dark:border-slate-800 dark:bg-slate-900/95">
         <div className="flex items-stretch gap-2">
+          {landlord.status !== 'approved' && (
+            <ActionBtn
+              variant="approve"
+              onClick={() => onUpdateStatus(landlord.id, 'approved')}
+              loading={busy}
+            />
+          )}
           {landlord.status !== 'rejected' && (
             <ActionBtn
               variant="reject"
@@ -192,12 +199,17 @@ export default function MobileReviewScreen({
   )
 }
 
-type MobileActionVariant = 'reject' | 'suspend' | 'reset'
+type MobileActionVariant = 'approve' | 'reject' | 'suspend' | 'reset'
 
 const MOBILE_VARIANT: Record<
   MobileActionVariant,
   { label: string; icon: typeof AlertTriangle; cls: string }
 > = {
+  approve: {
+    label: 'Approve',
+    icon: CheckCircle,
+    cls: 'border-[#b8d7c3] bg-[#e4efe8] text-[#2f7560] hover:bg-[#d8e9de] active:bg-[#c9ddcf] dark:border-emerald-800/60 dark:bg-emerald-950/40 dark:text-emerald-300 dark:hover:bg-emerald-950/60',
+  },
   reject: {
     label: 'Reject',
     icon: AlertTriangle,

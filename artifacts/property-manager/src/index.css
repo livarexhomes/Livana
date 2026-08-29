@@ -1,3 +1,4 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap');
 @import "tailwindcss";
 @import "tw-animate-css";
 @plugin "@tailwindcss/typography";
@@ -457,4 +458,21 @@
   .border.hover-elevate:not(.no-hover-interaction-elevate)::after {
     inset: -1px;
   }
+}
+
+/* The vetting surface uses a quieter operations palette than the broader admin shell. */
+.vetting-page {
+  font-family: 'DM Sans', ui-sans-serif, system-ui, sans-serif;
+  background:
+    radial-gradient(circle at 88% 0%, rgba(182, 151, 79, 0.1), transparent 25rem),
+    #edf1ed;
+}
+
+.vetting-page .ops-mono {
+  font-family: 'Space Mono', ui-monospace, monospace;
+}
+
+.vetting-page ::selection {
+  background: #c9d8cf;
+  color: #18352f;
 }

@@ -20,9 +20,10 @@ export default function DocumentCard({ doc, imgErrored, onImgError }: DocumentCa
       onClick={e => {
         if (!doc.url) e.preventDefault()
       }}
-      className="group flex flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-blue-300 hover:shadow-md motion-reduce:transform-none motion-reduce:transition-none dark:border-slate-700 dark:bg-slate-900 dark:hover:border-blue-500"
+      aria-label={`Open ${label}`}
+      className="group flex flex-col overflow-hidden rounded-2xl border border-[#d7e0d9] bg-[#fbfcfa] shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-[#6d9b87] hover:shadow-md motion-reduce:transform-none motion-reduce:transition-none dark:border-slate-700 dark:bg-slate-900 dark:hover:border-blue-500"
     >
-      <div className="relative flex h-28 items-center justify-center overflow-hidden bg-slate-100 dark:bg-slate-800">
+        <div className="relative flex h-32 items-center justify-center overflow-hidden bg-[#e8efea] dark:bg-slate-800">
         {showImg ? (
           <img
             src={doc.url}
@@ -38,8 +39,8 @@ export default function DocumentCard({ doc, imgErrored, onImgError }: DocumentCa
             </span>
           </div>
         )}
-        <div className="absolute inset-0 flex items-center justify-center bg-blue-900/40 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-white px-3 py-1.5 text-[11px] font-bold text-blue-700 shadow-sm">
+          <div className="absolute inset-0 flex items-center justify-center bg-[#18352f]/55 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-[#fbfcfa] px-3 py-1.5 text-[11px] font-bold text-[#2f7560] shadow-sm">
             <Eye className="h-3.5 w-3.5" /> Preview
           </span>
         </div>
@@ -55,8 +56,8 @@ export default function DocumentCard({ doc, imgErrored, onImgError }: DocumentCa
           </p>
         </div>
         <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300">
-          <CheckCircle2 className="h-3 w-3" />
-          Verified
+           <CheckCircle2 className="h-3 w-3" />
+           Ready to review
         </span>
       </div>
     </a>
