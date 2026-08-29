@@ -269,7 +269,7 @@ export default function AdminVetting() {
           {/* Mobile: legacy stat grid (kept compact, fits below header) */}
           <div className="sm:hidden px-3 pt-3">
             <MobileStatGrid>
-               <MobileStatCard label="KYC pending"     value={kycCounts.pending}      color="#C8102E" icon={Clock} />
+               <MobileStatCard label="KYC pending"     value={kycCounts.pending}      color="#2563EB" icon={Clock} />
                <MobileStatCard label="KYC approved"    value={kycCounts.approved}     color="#16a34a" icon={CheckCircle} />
                <MobileStatCard label="Listings pending" value={pendingListings.length} color="#7c3aed" icon={ListChecks} />
                <MobileStatCard label="Landlords"       value={kycCounts.all}          color="#1e40af" icon={Users} />
@@ -452,7 +452,7 @@ function ListingsTab({
         </div>
         {listings.length > 0 && (
           <div className="inline-flex items-center gap-2 text-xs text-slate-600 bg-slate-100 border border-slate-200 rounded-full px-4 py-2 font-semibold shrink-0">
-             <span className="w-2 h-2 rounded-full bg-[#C8102E] animate-pulse" />
+             <span className="w-2 h-2 rounded-full bg-[#2563EB] animate-pulse" />
             {listings.length} pending
           </div>
         )}
@@ -522,7 +522,7 @@ function ListingCard({
         )}
         <div className="absolute top-3 left-3">
           <span className={`text-[11px] font-bold px-2.5 py-1 rounded-full ${
-             listing.type === 'sale' ? 'bg-[#C8102E] text-white' : 'bg-slate-800 text-white'
+             listing.type === 'sale' ? 'bg-[#2563EB] text-white' : 'bg-slate-800 text-white'
           }`}>
             {listing.type === 'sale' ? 'For Sale' : 'For Rent'}
           </span>

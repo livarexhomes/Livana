@@ -1,7 +1,7 @@
 import { FileText, Eye, CheckCircle2, Download } from 'lucide-react'
 import { DOC_LABELS, type VettingKycDoc } from './mockData'
 
-const BRAND = '#C8102E'
+const BRAND = '#2563EB'
 
 interface DocumentCardProps {
   doc: VettingKycDoc

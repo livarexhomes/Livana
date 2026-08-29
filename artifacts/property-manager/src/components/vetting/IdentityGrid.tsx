@@ -4,7 +4,7 @@ import {
 } from 'lucide-react'
 import { fmtDate, type VettingLandlord } from './mockData'
 
-const BRAND = '#C8102E'
+const BRAND = '#2563EB'
 
 interface IdentityGridProps {
   landlord: VettingLandlord

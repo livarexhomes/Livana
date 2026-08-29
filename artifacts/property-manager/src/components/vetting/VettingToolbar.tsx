@@ -2,7 +2,7 @@ import { useRef, useEffect, useState } from 'react'
 import { Search, X, ChevronDown, SlidersHorizontal } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
-const BRAND = '#C8102E'
+const BRAND = '#2563EB'
 
 export type SortOrder = 'newest' | 'oldest' | 'name_asc'
 

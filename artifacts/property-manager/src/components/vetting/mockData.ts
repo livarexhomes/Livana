@@ -27,7 +27,7 @@ export type VettingKycDoc = {
 
 const AVATAR_GRADIENTS = [
   'from-violet-500 to-purple-600',
-  'from-[#C8102E] to-[#9B0C23]',
+  'from-[#2563EB] to-[#1D4ED8]',
   'from-emerald-400 to-teal-600',
   'from-rose-400 to-pink-600',
   'from-amber-400 to-orange-500',

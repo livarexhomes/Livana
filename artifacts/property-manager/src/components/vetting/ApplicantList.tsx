@@ -3,7 +3,7 @@ import { Loader2, Users } from 'lucide-react'
 import ApplicantCard from './ApplicantCard'
 import type { VettingLandlord } from './mockData'
 
-const BRAND = '#C8102E'
+const BRAND = '#2563EB'
 
 interface ApplicantListProps {
   landlords: VettingLandlord[]

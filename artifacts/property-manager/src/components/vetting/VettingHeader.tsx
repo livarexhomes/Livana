@@ -3,8 +3,8 @@ import { Search, Bell, X, ShieldCheck, Wifi } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 // ── Brand color constants ──────────────────────────────────────────────────────
-const BRAND   = '#C8102E'
-const BRAND_D = '#9B0C23'
+const BRAND   = '#2563EB'
+const BRAND_D = '#1D4ED8'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 interface VettingHeaderProps {
@@ -273,7 +273,7 @@ function NotifRow({
                   {(badge != null && badge > 0) && (
             <span
               className="shrink-0 rounded-full px-1.5 py-0.5 text-[10px] font-bold text-white"
-              style={{ background: brandColor ?? '#C8102E' }}
+              style={{ background: brandColor ?? '#2563EB' }}
             >
               {badge}
             </span>

@@ -2,7 +2,7 @@ import { Phone, ChevronRight, MapPin } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { KYC_STATUS_META, daysAgo, avatarGrad, getInitials, type VettingLandlord } from './mockData'
 
-const BRAND = '#C8102E'
+const BRAND = '#2563EB'
 
 interface ApplicantCardProps {
   landlord: VettingLandlord

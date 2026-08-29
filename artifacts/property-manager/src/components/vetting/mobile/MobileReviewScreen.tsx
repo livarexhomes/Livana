@@ -11,8 +11,8 @@ import {
 import IdentityGrid from '../IdentityGrid'
 import DocumentCard from '../DocumentCard'
 
-const BRAND   = '#C8102E'
-const BRAND_D = '#9B0C23'
+const BRAND   = '#2563EB'
+const BRAND_D = '#1D4ED8'
 
 interface MobileReviewScreenProps {
   landlord: VettingLandlord

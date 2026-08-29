@@ -1,8 +1,8 @@
 import { ShieldCheck, Building2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
-const BRAND = '#C8102E'
-const BRAND_D = '#9B0C23'
+const BRAND = '#2563EB'
+const BRAND_D = '#1D4ED8'
 
 export type VettingTab = 'identity' | 'listings'
 
