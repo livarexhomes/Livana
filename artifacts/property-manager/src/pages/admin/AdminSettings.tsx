@@ -2222,76 +2222,255 @@ export default function AdminSettings() {
                 <div>
                   <SectionTitle
                     title="Support Hours"
-                    sub="When Livarex Support is open for customers. Timezone: Africa/Lagos (Nigeria). The customer-facing Online/Away status follows ONLY this schedule — never the agent heartbeat."
+                    sub="Configure when customers can reach support. Timezone: Africa/Lagos (Nigeria)."
                     icon={Clock}
                   />
 
-                  <div className="mt-4 bg-white border border-gray-200 rounded-xl p-5">
-                    <div className="flex items-center gap-2.5 mb-4">
-                      <div className="w-7 h-7 rounded-lg bg-blue-50 flex items-center justify-center">
-                        <Clock className="w-3.5 h-3.5 text-blue-600" strokeWidth={1.8} />
+                  {/* Status Banner */}
+                  {(() => {
+                    const now = new Date()
+                    const dayIndex = (now.getDay() + 6) % 7 // Monday = 0
+                    const today = supportHours.days[dayIndex]
+                    const isOpen = today?.enabled && today?.open && today?.close
+                      ? (now.toTimeString().slice(0,5) >= (today.open) && now.toTimeString().slice(0,5) <= (today.close))
+                      : false
+                    return (
+                      <div className={`mb-6 flex items-center gap-3 px-4 py-3 rounded-2xl border ${
+                        isOpen 
+                          ? 'bg-emerald-50/70 border-emerald-200' 
+                          : 'bg-amber-50/70 border-amber-200'
+                      }`}>
+                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
+                          isOpen ? 'bg-emerald-100' : 'bg-amber-100'
+                        }`}>
+                          <div className={`w-3 h-3 rounded-full ${isOpen ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500'}`} />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className={`text-sm font-bold ${isOpen ? 'text-emerald-700' : 'text-amber-700'}`}>
+                            {isOpen ? 'Support is currently open' : 'Support is currently closed'}
+                          </p>
+                          <p className="text-xs text-gray-500 mt-0.5">
+                            {today?.enabled 
+                              ? `Today: ${today.open} – ${today.close} (WAT)`
+                              : 'Today: Closed'}
+                          </p>
+                        </div>
                       </div>
-                      <div>
-                        <p className="text-sm font-semibold text-gray-900">Weekly Schedule</p>
-                        <p className="text-xs text-gray-400">08:00 – 18:00 Africa/Lagos by default</p>
-                      </div>
-                    </div>
+                    )
+                  })()}
 
-                    <div className="space-y-1.5">
-                      {WEEKDAY_LABELS.map((label, i) => {
-                        const day = supportHours.days[i]
-                        return (
-                          <div key={label} className={`flex flex-col sm:flex-row sm:items-center gap-2.5 sm:gap-3 px-3 sm:px-0 py-2.5 rounded-lg sm:rounded-none sm:py-1.5 ${day?.enabled ? 'sm:bg-transparent bg-blue-50/40' : ''}`}>
-                            <label className="sm:w-28 shrink-0 text-sm font-semibold text-gray-700">{label}</label>
-                            <div className="flex items-center gap-3 flex-1">
-                              <label className="flex items-center gap-2 cursor-pointer shrink-0">
-                                <input
-                                  type="checkbox"
-                                  checked={day?.enabled}
-                                  onChange={e => {
-                                    const days = [...supportHours.days] as SupportHours['days']
-                                    days[i] = { ...days[i], enabled: e.target.checked }
-                                    setSupportHours(h => ({ ...h, days }))
-                                  }}
-                                  className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                                />
-                                <span className="text-xs text-gray-500">Open</span>
-                              </label>
-                              <div className="flex items-center gap-2 flex-1 justify-end sm:justify-start">
-                                <input
-                                  type="time"
-                                  value={day?.open ?? '08:00'}
-                                  disabled={!day?.enabled}
-                                  onChange={e => {
-                                    const days = [...supportHours.days] as SupportHours['days']
-                                    days[i] = { ...days[i], open: e.target.value || '08:00' }
-                                    setSupportHours(h => ({ ...h, days }))
-                                  }}
-                                  className="border border-gray-200 rounded-lg px-2 py-1.5 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500/40 bg-white disabled:opacity-40"
-                                />
-                                <span className="text-xs text-gray-400">to</span>
-                                <input
-                                  type="time"
-                                  value={day?.close ?? '18:00'}
-                                  disabled={!day?.enabled}
-                                  onChange={e => {
-                                    const days = [...supportHours.days] as SupportHours['days']
-                                    days[i] = { ...days[i], close: e.target.value || '18:00' }
-                                    setSupportHours(h => ({ ...h, days }))
-                                  }}
-                                  className="border border-gray-200 rounded-lg px-2 py-1.5 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500/40 bg-white disabled:opacity-40"
-                                />
+                  {/* Visual Week Grid */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3">
+                    {WEEKDAY_LABELS.map((label, i) => {
+                      const day = supportHours.days[i]
+                      const isEnabled = day?.enabled ?? false
+                      const now = new Date()
+                      const dayIndex = (now.getDay() + 6) % 7
+                      const isToday = dayIndex === i
+
+                      // Parse hours for duration calculation
+                      const openHour = isEnabled && day?.open ? parseInt(day.open.split(':')[0]) : 8
+                      const closeHour = isEnabled && day?.close ? parseInt(day.close.split(':')[0]) : 18
+                      const duration = isEnabled ? Math.max(0, closeHour - openHour) : 0
+
+                      // Generate hour markers
+                      const hours = Array.from({ length: 12 }, (_, idx) => idx + 6) // 6am to 6pm
+
+                      return (
+                        <div 
+                          key={label}
+                          className={`relative rounded-2xl border transition-all duration-200 overflow-hidden ${
+                            isEnabled 
+                              ? 'bg-white border-slate-200/80 shadow-sm hover:shadow-md hover:border-primary/30' 
+                              : 'bg-slate-50/60 border-slate-200/60'
+                          } ${isToday ? 'ring-2 ring-primary/30' : ''}`}
+                        >
+                          {/* Day Header */}
+                          <div className={`px-4 pt-4 pb-3 ${isToday ? 'bg-primary/5' : ''}`}>
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-2">
+                                <span className={`text-xs font-bold uppercase tracking-wider ${
+                                  isEnabled ? 'text-slate-900' : 'text-slate-400'
+                                }`}>
+                                  {label}
+                                </span>
+                                {isToday && (
+                                  <span className="px-1.5 py-0.5 rounded-full bg-primary/10 text-primary text-[10px] font-bold">
+                                    Today
+                                  </span>
+                                )}
                               </div>
+                              {/* Toggle Switch */}
+                              <button
+                                type="button"
+                                role="switch"
+                                aria-checked={isEnabled}
+                                onClick={() => {
+                                  const days = [...supportHours.days] as SupportHours['days']
+                                  days[i] = { 
+                                    ...days[i], 
+                                    enabled: !isEnabled,
+                                    open: days[i]?.open ?? '08:00',
+                                    close: days[i]?.close ?? '18:00'
+                                  }
+                                  setSupportHours(h => ({ ...h, days }))
+                                }}
+                                className={`relative w-11 h-6 rounded-full transition-all duration-200 shrink-0 ${
+                                  isEnabled ? 'bg-primary' : 'bg-slate-200'
+                                }`}
+                              >
+                                <span className={`absolute top-1 w-4 h-4 rounded-full bg-white shadow transition-all duration-200 ${
+                                  isEnabled ? 'left-6' : 'left-1'
+                                }`} />
+                              </button>
+                            </div>
+                            
+                            {/* Time Display */}
+                            <div className="mt-3">
+                              {isEnabled ? (
+                                <div className="flex items-center gap-2">
+                                  <div className="flex-1">
+                                    <input
+                                      type="time"
+                                      value={day?.open ?? '08:00'}
+                                      onChange={e => {
+                                        const days = [...supportHours.days] as SupportHours['days']
+                                        days[i] = { ...days[i], open: e.target.value }
+                                        setSupportHours(h => ({ ...h, days }))
+                                      }}
+                                      className="w-full bg-slate-50/80 border border-slate-200 rounded-xl px-3 py-2.5 text-sm font-mono font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/40 transition-all"
+                                    />
+                                  </div>
+                                  <span className="text-slate-400 font-bold text-sm">–</span>
+                                  <div className="flex-1">
+                                    <input
+                                      type="time"
+                                      value={day?.close ?? '18:00'}
+                                      onChange={e => {
+                                        const days = [...supportHours.days] as SupportHours['days']
+                                        days[i] = { ...days[i], close: e.target.value }
+                                        setSupportHours(h => ({ ...h, days }))
+                                      }}
+                                      className="w-full bg-slate-50/80 border border-slate-200 rounded-xl px-3 py-2.5 text-sm font-mono font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/40 transition-all"
+                                    />
+                                  </div>
+                                </div>
+                              ) : (
+                                <div className="flex items-center gap-2 text-slate-400">
+                                  <div className="flex-1 h-10 rounded-xl bg-slate-100/50 border border-dashed border-slate-200 flex items-center justify-center">
+                                    <span className="text-xs font-medium">Closed</span>
+                                  </div>
+                                </div>
+                              )}
                             </div>
                           </div>
-                        )
-                      })}
-                    </div>
 
-                    <div className="mt-3 flex items-center gap-2 px-4 py-3 rounded-lg bg-blue-50 border border-blue-100">
-                      <CheckCircle className="w-4 h-4 text-blue-600 shrink-0" strokeWidth={2} />
-                      <p className="text-sm text-blue-700">
-                        Global Support status = open/away based on this schedule only. Individual agent presence is tracked separately and never changes the global status.
+                          {/* Hour Bar Visualization */}
+                          {isEnabled && (
+                            <div className="px-4 pb-4">
+                              <div className="flex items-center gap-0.5">
+                                {hours.map(hour => {
+                                  const isActive = hour >= openHour && hour < closeHour
+                                  const isCurrent = now.getHours() === hour && isToday
+                                  return (
+                                    <div 
+                                      key={hour}
+                                      className={`flex-1 h-8 rounded-md transition-all duration-200 flex items-center justify-center ${
+                                        isCurrent 
+                                          ? 'bg-primary text-white' 
+                                          : isActive 
+                                            ? 'bg-primary/20' 
+                                            : 'bg-slate-100'
+                                      }`}
+                                    >
+                                      {hour % 3 === 0 && (
+                                        <span className={`text-[9px] font-bold ${isActive || isCurrent ? 'text-primary/80' : 'text-slate-400'}`}>
+                                          {hour.toString().padStart(2,'0')}
+                                        </span>
+                                      )}
+                                    </div>
+                                  )
+                                })}
+                              </div>
+                              <div className="flex justify-between mt-1.5">
+                                <span className="text-[10px] text-slate-400 font-medium">6am</span>
+                                <span className={`text-[10px] font-bold ${duration > 0 ? 'text-primary' : 'text-slate-400'}`}>
+                                  {duration}h
+                                </span>
+                                <span className="text-[10px] text-slate-400 font-medium">6pm</span>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      )
+                    })}
+                  </div>
+
+                  {/* Quick Actions */}
+                  <div className="mt-6 flex flex-wrap items-center gap-3">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const newDays = supportHours.days.map((d, i) => ({
+                          ...d,
+                          enabled: i < 5,
+                          open: '09:00',
+                          close: '17:00',
+                        })) as SupportHours['days']
+                        setSupportHours({ ...supportHours, days: newDays })
+                      }}
+                      className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white border border-slate-200 hover:border-primary/40 hover:bg-primary/5 text-slate-600 hover:text-primary text-xs font-semibold transition-all"
+                    >
+                      <span className="w-4 h-4 rounded border border-current flex items-center justify-center opacity-60">
+                        <span className="w-2 h-2 bg-current rounded-sm" />
+                      </span>
+                      Weekdays (9–5)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const newDays = supportHours.days.map(d => ({
+                          ...d,
+                          enabled: true,
+                        })) as SupportHours['days']
+                        setSupportHours({ ...supportHours, days: newDays })
+                      }}
+                      className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white border border-slate-200 hover:border-primary/40 hover:bg-primary/5 text-slate-600 hover:text-primary text-xs font-semibold transition-all"
+                    >
+                      <span className="w-4 h-4 rounded border border-current flex items-center justify-center opacity-60">
+                        <span className="w-2 h-2 bg-current rounded-full" />
+                      </span>
+                      24/7 (all days)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const newDays = supportHours.days.map(d => ({
+                          ...d,
+                          enabled: false,
+                        })) as SupportHours['days']
+                        setSupportHours({ ...supportHours, days: newDays })
+                      }}
+                      className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white border border-slate-200 hover:border-amber-400 hover:bg-amber-50 text-slate-600 hover:text-amber-600 text-xs font-semibold transition-all"
+                    >
+                      <span className="w-4 h-4 rounded border border-current flex items-center justify-center opacity-60">
+                        <span className="w-2 h-0.5 bg-current" />
+                      </span>
+                      Close all
+                    </button>
+                  </div>
+
+                  {/* Info Notice */}
+                  <div className="mt-6 flex items-start gap-3 p-4 rounded-2xl bg-slate-50/80 border border-slate-200/60">
+                    <div className="w-8 h-8 rounded-xl bg-slate-100 flex items-center justify-center shrink-0">
+                      <CheckCircle className="w-4 h-4 text-slate-500" strokeWidth={2} />
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-sm font-semibold text-slate-700">How this works</p>
+                      <p className="text-xs text-slate-500 mt-1 leading-relaxed">
+                        This schedule controls the customer-facing Online/Away status shown on your website. 
+                        Individual agent availability is tracked separately and never affects the global support status.
+                        All times are in West Africa Time (WAT / UTC+1).
                       </p>
                     </div>
                   </div>

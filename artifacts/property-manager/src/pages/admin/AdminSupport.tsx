@@ -4,7 +4,7 @@ import {
   Clock, CheckCircle2, XCircle, User,
   ChevronLeft, ChevronDown as ChevronDownIcon, RefreshCw, Inbox, Building2, Mail,
   Volume2, VolumeX, ShieldCheck, KeyRound, Trash2, Search, X, Lock,
-  Paperclip, CheckCheck, Calendar, Home, Activity, Archive,
+  Paperclip, CheckCheck, Calendar, Home, Activity, Archive, Users,
 } from 'lucide-react'
 import AdminSidebar from '../../components/layout/AdminSidebar'
 import AdminHeader from '../../components/layout/AdminHeader'
@@ -1567,7 +1567,7 @@ function ChatRequestDetail({ inquiry, onBack, onMarkRead, onStatusChange, agents
 
 // ── SupportTab ────────────────────────────────────────────────────────────────
 
-function SupportTab({ onOpenQueued, view = 'queue' }: { onOpenQueued: (id: string) => void; view?: 'queue' | 'history' }) {
+function SupportTab({ onOpenQueued, view = 'queue' }: { onOpenQueued: (id: string) => void; view?: 'queue' }) {
   const { toast } = useToast()
   const [tickets, setTickets]       = useState<SupportTicket[]>([])
   const [queued, setQueued]         = useState<ChatInquiry[]>([])
@@ -1777,35 +1777,38 @@ function SupportTab({ onOpenQueued, view = 'queue' }: { onOpenQueued: (id: strin
 
   // Filter by archived state, then status, then search query.
   const activeTickets = tickets.filter(t => !t.archived)
-  const archivedTickets = tickets.filter(t => t.archived)
-  const visibleTickets = view === 'history' ? archivedTickets : activeTickets
-  const filtered = (filterStatus === 'all' ? visibleTickets : visibleTickets.filter(t => t.status === filterStatus))
+  const filtered = (filterStatus === 'all' ? activeTickets : activeTickets.filter(t => t.status === filterStatus))
     .filter(t => searchQuery.trim() === '' || t.subject.toLowerCase().includes(searchQuery.toLowerCase()))
   const selected = tickets.find(t => t.id === selectedId) ?? null
   const counts = {
-    all: visibleTickets.length,
-    open: visibleTickets.filter(t => t.status === 'open').length,
-    in_progress: visibleTickets.filter(t => t.status === 'in_progress').length,
-    resolved: visibleTickets.filter(t => t.status === 'resolved').length,
-    closed: visibleTickets.filter(t => t.status === 'closed').length,
+    all: activeTickets.length,
+    open: activeTickets.filter(t => t.status === 'open').length,
+    in_progress: activeTickets.filter(t => t.status === 'in_progress').length,
+    resolved: activeTickets.filter(t => t.status === 'resolved').length,
+    closed: activeTickets.filter(t => t.status === 'closed').length,
   }
 
   return (
     <div className="flex flex-1 min-h-0 overflow-hidden">
 
       {/* Ticket queue */}
-      <div className={`flex flex-col border-r border-slate-200 bg-white w-full lg:w-[22rem] xl:w-[24rem] shrink-0 overflow-hidden ${selected ? 'hidden lg:flex' : 'flex'}`}>
+      <div className={`flex flex-col border-r border-slate-100 bg-white/60 backdrop-blur-sm w-full lg:w-[22rem] xl:w-[24rem] shrink-0 overflow-hidden ${selected ? 'hidden lg:flex' : 'flex'}`}>
         {/* Header */}
-        <div className="px-4 pt-4 pb-3 border-b border-slate-100">
+        <div className="px-4 pt-4 pb-3 border-b border-slate-100/80 bg-white/80 backdrop-blur-sm">
           <div className="flex items-center justify-between gap-3 mb-3">
-            <div>
-              <p className="text-[10px] uppercase tracking-[0.18em] text-slate-400 font-bold">Queue</p>
-              <h2 className="text-[15px] font-bold text-slate-950 leading-tight tracking-tight">{activeTickets.length} open tickets</h2>
+            <div className="flex items-center gap-2">
+              <div className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center">
+                <HeadphonesIcon className="w-3.5 h-3.5 text-primary" />
+              </div>
+              <div>
+                <p className="text-[10px] uppercase tracking-[0.18em] text-slate-400 font-bold">Support Queue</p>
+                <h2 className="text-[14px] font-bold text-slate-950 leading-tight">{counts.all} tickets</h2>
+              </div>
             </div>
             <button
               type="button"
               onClick={() => setShowArchivePanel(true)}
-              className="inline-flex items-center gap-1.5 h-8 px-3 rounded-xl text-[11px] font-semibold border border-slate-200 bg-white text-slate-500 hover:border-slate-300 hover:bg-slate-50 hover:text-slate-800 transition-all shadow-sm"
+              className="inline-flex items-center gap-1.5 h-7 px-2.5 rounded-lg text-[11px] font-medium border border-slate-200 bg-white text-slate-500 hover:border-slate-300 hover:bg-slate-50 hover:text-slate-700 transition-all"
               title="Move tickets to History"
             >
               <Archive className="w-3 h-3" />
@@ -1820,7 +1823,7 @@ function SupportTab({ onOpenQueued, view = 'queue' }: { onOpenQueued: (id: strin
               placeholder="Search tickets..."
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-3 py-2 rounded-xl border border-slate-200 bg-slate-50/80 text-sm text-slate-900 placeholder-slate-400 caret-slate-900 focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary/40 focus:bg-white transition-all"
+              className="w-full pl-9 pr-3 py-2 rounded-xl border border-slate-200/80 bg-white text-sm text-slate-900 placeholder-slate-400 caret-slate-900 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/30 focus:bg-white transition-all shadow-sm"
             />
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
           </div>
@@ -1831,9 +1834,9 @@ function SupportTab({ onOpenQueued, view = 'queue' }: { onOpenQueued: (id: strin
               <button
                 key={key}
                 onClick={() => setFilterStatus(key)}
-                className={`shrink-0 inline-flex items-center gap-1.5 h-7 px-2.5 rounded-lg text-[11px] font-semibold transition-all ${
+                className={`shrink-0 inline-flex items-center gap-1.5 h-6 px-2.5 rounded-lg text-[11px] font-semibold transition-all ${
                   filterStatus === key
-                    ? 'bg-primary text-white shadow-sm shadow-primary/20'
+                    ? 'bg-primary text-white shadow-sm'
                     : 'bg-white border border-slate-200 text-slate-500 hover:border-slate-300 hover:bg-slate-50'
                 }`}
               >
@@ -1851,23 +1854,23 @@ function SupportTab({ onOpenQueued, view = 'queue' }: { onOpenQueued: (id: strin
           const newOnes = tickets.filter(t => newTicketIds.includes(t.id))
           if (newOnes.length === 0) return null
           return (
-            <div className="mx-2 mt-2 rounded-xl border border-blue-200 bg-blue-50/70 overflow-hidden">
-              <div className="flex items-center gap-2 px-3 py-2 border-b border-blue-100">
+            <div className="mx-3 mt-2 rounded-xl border border-blue-200/60 bg-gradient-to-br from-blue-50/50 to-indigo-50/50 overflow-hidden shadow-sm">
+              <div className="flex items-center gap-2 px-3 py-2 border-b border-blue-100/50">
                 <span className="relative flex h-2 w-2">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-500 opacity-75" />
                   <span className="relative inline-flex h-2 w-2 rounded-full bg-blue-600" />
                 </span>
-                <p className="text-[10.5px] font-bold text-blue-800 uppercase tracking-widest">
+                <p className="text-[10px] font-bold text-blue-700 uppercase tracking-widest">
                   {newOnes.length} new {newOnes.length === 1 ? 'ticket' : 'tickets'}
                 </p>
                 <button
                   onClick={() => setNewTicketIds([])}
                   className="ml-auto text-[10px] text-blue-500 hover:text-blue-700 font-semibold"
                 >
-                  Dismiss all
+                  Dismiss
                 </button>
               </div>
-              <div className="p-1.5 space-y-1">
+              <div className="p-1.5 space-y-0.5">
                 {newOnes.map(ticket => {
                   const isLandlordTicket = !!ticket.landlord_id
                   const senderName = isLandlordTicket
@@ -1880,15 +1883,15 @@ function SupportTab({ onOpenQueued, view = 'queue' }: { onOpenQueued: (id: strin
                         setSelectedId(ticket.id)
                         setNewTicketIds(prev => prev.filter(id => id !== ticket.id))
                       }}
-                      className="w-full text-left rounded-lg border border-blue-200 bg-white hover:bg-blue-50 px-2.5 py-2 transition-all"
+                      className="w-full text-left rounded-lg border border-blue-200/50 bg-white hover:bg-blue-50/80 px-2.5 py-2 transition-all"
                     >
                       <div className="flex items-center gap-2">
-                        <span className="shrink-0 text-[9px] font-bold px-1.5 py-0.5 rounded bg-blue-600 text-white uppercase tracking-wide">New</span>
+                        <span className="shrink-0 text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-blue-600 text-white uppercase tracking-wide">New</span>
                         <p className="font-semibold text-[12px] truncate text-blue-900 flex-1">{ticket.subject}</p>
                       </div>
-                      <div className="mt-1 flex items-center gap-1.5 text-[10.5px] text-blue-700/70">
+                      <div className="mt-1 flex items-center gap-1.5 text-[10px] text-blue-700/70">
                         <User className="w-2.5 h-2.5 shrink-0" />
-                        {isLandlordTicket && <span className="rounded bg-violet-100 px-1 py-px text-[8.5px] font-bold text-violet-700 leading-none">LL</span>}
+                        {isLandlordTicket && <span className="rounded bg-violet-100 px-1 py-px text-[8px] font-bold text-violet-700 leading-none">LL</span>}
                         <span className="truncate">{senderName}</span>
                         <span className="ml-auto shrink-0 tabular-nums">
                           {formatDistanceToNow(new Date(ticket.created_at), { addSuffix: true })}
@@ -1903,20 +1906,20 @@ function SupportTab({ onOpenQueued, view = 'queue' }: { onOpenQueued: (id: strin
         })()}
 
         {/* Ticket list */}
-        <div className="flex-1 overflow-y-auto p-2 space-y-1">
+        <div className="flex-1 overflow-y-auto p-2 space-y-1 bg-white/40">
           {loading ? (
-            <div className="space-y-1">
+            <div className="space-y-1 p-1">
               {Array.from({ length: 5 }).map((_, i) => (
-                <div key={i} className="h-14 rounded-lg bg-slate-100 animate-pulse" />
+                <div key={i} className="h-14 rounded-xl bg-slate-100/80 animate-pulse" />
               ))}
             </div>
           ) : filtered.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-full py-8 px-4 text-center">
-              <div className="w-8 h-8 rounded-lg bg-slate-50 border border-slate-100 flex items-center justify-center mb-2">
-                <MessageSquare className="w-3.5 h-3.5 text-slate-300" />
+            <div className="flex flex-col items-center justify-center h-full py-12 px-4 text-center">
+              <div className="w-12 h-12 rounded-2xl bg-slate-100/80 border border-slate-200/50 flex items-center justify-center mb-3">
+                <MessageSquare className="w-5 h-5 text-slate-300" />
               </div>
-              <p className="text-xs font-semibold text-slate-500">No tickets in this view</p>
-              <p className="text-[11px] text-slate-400 mt-0.5">Tickets will appear here when created</p>
+              <p className="text-sm font-semibold text-slate-500">No tickets found</p>
+              <p className="text-xs text-slate-400 mt-1">Try a different filter or search</p>
             </div>
           ) : (
             <div className="space-y-1">
@@ -1931,49 +1934,41 @@ function SupportTab({ onOpenQueued, view = 'queue' }: { onOpenQueued: (id: strin
                   : (ticket.tenants?.full_name ?? 'Tenant')
                 return (
                    <button key={ticket.id} onClick={() => {
-                     setSelectedId(ticket.id)
-                     setNewTicketIds(prev => prev.filter(id => id !== ticket.id))
+                    setSelectedId(ticket.id)
+                    setNewTicketIds(prev => prev.filter(id => id !== ticket.id))
                    }}
-                     className={`w-full text-left rounded-lg border px-2.5 py-2 transition-all ${
+                     className={`w-full text-left rounded-xl border transition-all ${
                        isActive
-                         ? 'border-blue-600 bg-blue-50/60 ring-1 ring-blue-600/10'
+                         ? 'border-primary/30 bg-gradient-to-br from-primary/5 to-blue-50/50 ring-1 ring-primary/10 shadow-sm'
                          : isNew
-                           ? 'border-blue-300 bg-blue-50/40 hover:bg-blue-50'
-                           : 'border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50/50'
+                           ? 'border-blue-300/60 bg-gradient-to-br from-blue-50/40 to-indigo-50/40 hover:border-blue-300'
+                           : 'border-slate-200/70 bg-white hover:border-slate-300/80 hover:shadow-sm'
                      }`}>
-                     <div className="flex items-center justify-between gap-2">
-                       <p className={`font-semibold text-[12.5px] truncate ${isActive ? 'text-blue-900' : 'text-slate-900'}`}>{ticket.subject}</p>
-                       <div className="flex items-center gap-1 shrink-0">
-                         {isNew && !isActive && (
-                           <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-blue-600 text-white">NEW</span>
-                         )}
-                         <span className={`inline-flex items-center gap-1 text-[9.5px] font-bold px-1.5 py-0.5 rounded ${s.bg} ${s.color}`}>
-                           <span className={`w-1 h-1 rounded-full ${s.dot}`} />{s.label}
+                     <div className="p-2.5">
+                       <div className="flex items-center justify-between gap-2">
+                         <div className="flex items-center gap-2 min-w-0 flex-1">
+                           {isNew && !isActive && (
+                             <span className="shrink-0 text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-blue-600 text-white animate-pulse">New</span>
+                           )}
+                           <p className={`font-semibold text-[13px] truncate ${isActive ? 'text-primary' : 'text-slate-900'}`}>{ticket.subject}</p>
+                         </div>
+                         <span className={`shrink-0 inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-1 rounded-lg ${s.bg} ${s.color}`}>
+                           <span className={`w-1.5 h-1.5 rounded-full ${s.dot}`} />{s.label}
                          </span>
-                         {view === 'history' && (
-                           <button
-                             type="button"
-                             onClick={e => { e.stopPropagation(); archiveTicket(ticket.id) }}
-                             title="Restore to active workspace"
-                             className="p-0.5 rounded hover:bg-green-50 text-green-600 transition-colors"
-                           >
-                             <RefreshCw className="w-2.5 h-2.5" />
-                           </button>
-                         )}
+                       </div>
+                       <div className="mt-2 flex items-center gap-2">
+                         <span className={`inline-flex items-center gap-1 min-w-0 text-[11px] ${isActive ? 'text-primary/80' : 'text-slate-500'}`}>
+                           <User className="w-3 h-3 shrink-0" />
+                           {isLandlordTicket && <span className="rounded bg-violet-100 px-1 py-px text-[9px] font-bold text-violet-700 leading-none">LL</span>}
+                           <span className="truncate">{senderName}</span>
+                         </span>
+                         <span className={`shrink-0 inline-flex items-center rounded-md px-1.5 py-0.5 text-[10px] font-semibold ${p.bg} ${p.color}`}>{p.label}</span>
+                         <span className={`ml-auto shrink-0 text-[10px] tabular-nums ${isActive ? 'text-primary/60' : 'text-slate-400'}`}>
+                           {formatDistanceToNow(new Date(ticket.updated_at), { addSuffix: true })}
+                         </span>
                        </div>
                      </div>
-                    <div className="mt-1 flex items-center gap-1.5 text-[10.5px]">
-                      <span className={`inline-flex items-center gap-1 min-w-0 ${isActive ? 'text-blue-800/70' : 'text-slate-500'}`}>
-                        <User className="w-2.5 h-2.5 shrink-0" />
-                        {isLandlordTicket && <span className="rounded bg-violet-100 px-1 py-px text-[8.5px] font-bold text-violet-700 leading-none">LL</span>}
-                        <span className="truncate">{senderName}</span>
-                      </span>
-                      <span className={`shrink-0 inline-flex items-center rounded px-1.5 py-0.5 text-[9.5px] font-semibold ${p.bg} ${p.color}`}>{p.label}</span>
-                      <span className={`ml-auto shrink-0 text-[9.5px] tabular-nums ${isActive ? 'text-blue-800/50' : 'text-slate-400'}`}>
-                        {formatDistanceToNow(new Date(ticket.updated_at), { addSuffix: true })}
-                      </span>
-                    </div>
-                  </button>
+                   </button>
                 )
               })}
             </div>
@@ -1988,16 +1983,16 @@ function SupportTab({ onOpenQueued, view = 'queue' }: { onOpenQueued: (id: strin
             <AdminChatThread key={selected.id} ticket={selected} onBack={() => setSelectedId(null)} onStatusChange={handleStatusChange} onArchive={archiveTicket} agents={agents} liveState={liveState} />
           </ConversationErrorBoundary>
         ) : (
-          <div className="flex-1 flex flex-col items-center justify-center bg-white rounded-xl border border-slate-200 shadow-[0_1px_2px_rgba(15,23,42,0.04)] text-center p-8 h-full">
-            <div className="w-11 h-11 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center mb-3">
-              <HeadphonesIcon className="w-5 h-5 text-slate-300" />
+          <div className="flex-1 flex flex-col items-center justify-center bg-gradient-to-br from-slate-50/50 to-white text-center p-8 h-full">
+            <div className="w-16 h-16 rounded-2xl bg-white border border-slate-200/50 shadow-sm flex items-center justify-center mb-4">
+              <HeadphonesIcon className="w-7 h-7 text-slate-300" />
             </div>
-            <p className="font-semibold text-slate-700 mb-1">Select a ticket</p>
-            <p className="text-[13px] text-slate-400">Choose a ticket from the list to reply.</p>
+            <p className="text-base font-semibold text-slate-700 mb-1">Select a ticket</p>
+            <p className="text-sm text-slate-400 max-w-[240px]">Choose a ticket from the queue to view and respond.</p>
           </div>
         )}
       </div>
-    {showArchivePanel && view === 'queue' && (
+    {showArchivePanel && (
       <ArchivePanel tickets={activeTickets} onArchive={async ids => {
         await Promise.all(ids.map(id => archiveTicket(id)))
         setSelectedId(current => ids.includes(current ?? '') ? null : current)
@@ -2315,115 +2310,80 @@ function InboxTab({ liveState, onOpenThreadChange, initialChatId, onInitialChatC
       )}
 
       {/* Inbox queue */}
-      <div className={`flex flex-col bg-white w-full lg:w-[22rem] xl:w-[24rem] shrink-0 overflow-hidden border-r border-slate-200/70 ${selected ? 'hidden lg:flex' : 'flex'}`}>
-        <div className="px-4 pt-3.5 pb-2.5">
-          <div className="flex items-center justify-between gap-2">
-            <h2 className="text-[15px] font-semibold text-slate-900 tracking-tight">Inbox</h2>
+      <div className={`flex flex-col bg-white/60 backdrop-blur-sm w-full lg:w-[22rem] xl:w-[24rem] shrink-0 overflow-hidden border-r border-slate-100/80 ${selected ? 'hidden lg:flex' : 'flex'}`}>
+        <div className="px-4 pt-4 pb-3 border-b border-slate-100/80 bg-white/80 backdrop-blur-sm">
+          <div className="flex items-center justify-between gap-2 mb-3">
             <div className="flex items-center gap-2">
-              <span className="text-[11px] font-medium text-slate-400 tabular-nums">{items.length} conversations</span>
-              {/* Admin: bulk-clear all chat conversations */}
-              <button
-                onClick={() => setShowClearAllConfirm(true)}
-                title="Clear all chat conversations"
-                className="inline-flex items-center gap-1 h-7 px-2 rounded-lg border border-slate-200 bg-white text-[11.5px] font-medium text-slate-500 hover:text-red-600 hover:border-red-200 transition-colors"
-              >
-                <Trash2 className="w-3 h-3" />
-                Clear all
-              </button>
+              <div className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center">
+                <Inbox className="w-3.5 h-3.5 text-primary" />
+              </div>
+              <div>
+                <p className="text-[10px] uppercase tracking-[0.15em] text-slate-400 font-bold">Inbox</p>
+                <p className="text-[13px] font-semibold text-slate-900">{items.length} conversations</p>
+              </div>
             </div>
+            {/* Admin: bulk-clear all chat conversations */}
+            <button
+              onClick={() => setShowClearAllConfirm(true)}
+              title="Clear all chat conversations"
+              className="inline-flex items-center gap-1 h-7 px-2.5 rounded-lg border border-slate-200 bg-white text-[11px] font-medium text-slate-500 hover:text-red-600 hover:border-red-200 transition-colors"
+            >
+              <Trash2 className="w-3 h-3" />
+            </button>
           </div>
 
           {/* Search */}
-          <div className="mt-2.5 relative">
-            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 pointer-events-none" />
+          <div className="relative mb-3">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 pointer-events-none" />
             <input
               value={search}
               onChange={e => setSearch(e.target.value)}
               placeholder="Search conversations…"
-              className="w-full h-8 pl-8 pr-8 rounded-lg border border-slate-200 bg-slate-50/60 text-[12.5px] text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-300 focus:bg-white transition-colors"
+              className="w-full pl-9 pr-3 py-2 rounded-xl border border-slate-200/80 bg-white text-[12.5px] text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/30 transition-all shadow-sm"
             />
             {search && (
-              <button onClick={() => setSearch('')} className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+              <button onClick={() => setSearch('')} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
                 <X className="w-3.5 h-3.5" />
               </button>
             )}
           </div>
 
-          {/* Filter group — Type + Status, visually grouped in one container */}
-          <div className="mt-3 space-y-2">
-            {/* Type filters — pills on desktop, dropdown on mobile */}
-            <div className="sm:hidden">
-              <select
-                value={filterType}
-                onChange={e => setFilterType(e.target.value as InboxItemType)}
-                className="w-full appearance-none rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-sm font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/30 cursor-pointer"
-              >
-                {(['all', 'enquiry', 'chat', 'contact'] as const).map(key => (
-                  <option key={key} value={key}>
-                    {key === 'all' ? 'All Types' : key === 'enquiry' ? 'Enquiries' : key === 'chat' ? 'Chat' : 'Contact'} ({typeCounts[key]})
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="hidden sm:flex items-center gap-1">
-              {(['all', 'enquiry', 'chat', 'contact'] as const).map(key => {
-                const active = filterType === key
-                return (
-                  <button key={key} onClick={() => setFilterType(key)}
-                    className={`inline-flex items-center gap-1.5 h-7 px-2.5 rounded-lg text-[12px] font-medium transition-colors ${
-                      active
-                        ? 'bg-white text-slate-900 shadow-sm border border-slate-200/70'
-                        : 'text-slate-500 hover:text-slate-800 hover:bg-white/60'
-                    }`}>
-                    {key === 'all' ? 'All' : key === 'enquiry' ? 'Enquiries' : key === 'chat' ? 'Chat' : 'Contact'}
-                    <span className={`min-w-[16px] inline-flex items-center justify-center h-[16px] px-1 rounded-full text-[10px] font-semibold tabular-nums ${
-                      active ? 'bg-slate-900 text-white' : 'bg-slate-200/70 text-slate-500'
-                    }`}>{typeCounts[key]}</span>
-                  </button>
-                )
-              })}
-            </div>
-
-            {/* Divider between Type and Status */}
-            <div className="h-px bg-slate-200/70 mx-0.5" />
-
-            {/* Status filter — dropdown select */}
-            <div className="flex items-center gap-1.5">
-              <span className="text-[11px] font-medium text-slate-400 shrink-0">Status</span>
-              <div className="relative flex-1 min-w-0">
-                <select
-                  value={filterStatus}
-                  onChange={e => setFilterStatus(e.target.value)}
-                  className="appearance-none w-full h-7 pl-2.5 pr-7 rounded-lg border border-slate-200 bg-white text-[12px] font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-slate-300 cursor-pointer hover:border-slate-300 transition-colors"
-                >
-                  <option value="all">All statuses</option>
-                  {(['new', 'open', 'replied', 'closed'] as const).map(key => (
-                    <option key={key} value={key}>
-                      {ENQUIRY_STATUS_META[key].label} ({counts[key]})
-                    </option>
-                  ))}
-                </select>
-                <ChevronDownIcon className="absolute right-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 pointer-events-none" />
-              </div>
-            </div>
+          {/* Filter pills */}
+          <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-hide -mx-1 px-1">
+            {(['all', 'enquiry', 'chat', 'contact'] as const).map(key => {
+              const active = filterType === key
+              return (
+                <button key={key} onClick={() => setFilterType(key)}
+                  className={`shrink-0 inline-flex items-center gap-1.5 h-6 px-2.5 rounded-lg text-[11px] font-semibold transition-all ${
+                    active
+                      ? 'bg-primary text-white shadow-sm'
+                      : 'bg-white border border-slate-200 text-slate-500 hover:border-slate-300 hover:bg-slate-50'
+                  }`}>
+                  {key === 'all' ? 'All' : key === 'enquiry' ? 'Enquiries' : key === 'chat' ? 'Chat' : 'Contact'}
+                  <span className={`min-w-[16px] inline-flex items-center justify-center h-4 px-1 rounded-full text-[10px] font-bold ${
+                    active ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-500'
+                  }`}>{typeCounts[key]}</span>
+                </button>
+              )
+            })}
           </div>
         </div>
 
         {/* Message list */}
-        <div className="flex-1 overflow-y-auto px-2 pb-2 space-y-0.5">
+        <div className="flex-1 overflow-y-auto p-2 space-y-0.5 bg-white/40">
           {loading ? (
-            <div className="space-y-1.5 px-1 pt-1">
+            <div className="space-y-1 p-1">
               {Array.from({ length: 5 }).map((_, i) => (
-                <div key={i} className="h-[60px] rounded-xl bg-slate-100/80 animate-pulse" />
+                <div key={i} className="h-[68px] rounded-xl bg-slate-100/80 animate-pulse" />
               ))}
             </div>
           ) : filtered.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-full py-10 px-6 text-center">
-              <div className="w-10 h-10 rounded-xl bg-slate-50 flex items-center justify-center mb-3">
-                <Inbox className="w-4 h-4 text-slate-300" />
+            <div className="flex flex-col items-center justify-center h-full py-12 px-6 text-center">
+              <div className="w-12 h-12 rounded-2xl bg-slate-100/80 border border-slate-200/50 flex items-center justify-center mb-3">
+                <Inbox className="w-5 h-5 text-slate-300" />
               </div>
-              <p className="text-[13px] font-medium text-slate-600">No conversations here</p>
-              <p className="text-[12px] text-slate-400 mt-1">Try a different filter.</p>
+              <p className="text-sm font-semibold text-slate-500">No conversations</p>
+              <p className="text-xs text-slate-400 mt-1">Try a different filter</p>
             </div>
           ) : (
             <div className="space-y-0.5">
@@ -2435,49 +2395,57 @@ function InboxTab({ liveState, onOpenThreadChange, initialChatId, onInitialChatC
                 const isUnread = (isChat || isContact) && item.unread
                 const chatInq = item.chatInquiry
                 const assignedAgent = chatInq?.agent_id ? agents.find(a => a.id === chatInq.agent_id) : null
+                const typeColors = {
+                  enquiry: 'from-blue-500 to-cyan-500',
+                  chat: 'from-violet-500 to-purple-500',
+                  contact: 'from-amber-500 to-orange-500',
+                }
+                const typeColor = typeColors[item.type]
                 return (
                   <button key={`${item.type}:${item.id}`} onClick={() => setSelectedKey(`${item.type}:${item.id}`)}
-                    className={`relative w-full text-left rounded-2xl px-3 py-3 transition-all flex items-start gap-3 ${
+                    className={`relative w-full text-left rounded-xl px-3 py-3 transition-all flex items-start gap-3 ${
                       isActive
-                        ? 'bg-primary/5 border border-primary/20 shadow-sm'
+                        ? 'bg-gradient-to-br from-primary/5 to-blue-50/50 border border-primary/20 shadow-sm'
                         : isUnread
-                          ? 'bg-white border border-slate-200 shadow-sm hover:border-primary/30 hover:shadow-md'
+                          ? 'bg-white border border-slate-200/80 shadow-sm hover:border-primary/30 hover:shadow-md'
                           : 'bg-white/60 hover:bg-white border border-transparent hover:border-slate-200'
                     }`}>
                     {/* Unread left accent */}
-                    {isUnread && <span className="absolute left-0 top-3 bottom-3 w-[2.5px] rounded-r-full bg-primary" />}
+                    {isUnread && <span className="absolute left-0 top-3 bottom-3 w-[3px] rounded-r-full bg-gradient-to-b from-primary to-blue-500" />}
                     {/* Avatar */}
-                    <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${avatarGrad(item.name)} flex items-center justify-center shrink-0 text-[11px] font-bold text-white shadow-sm`}>
+                    <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${typeColor} flex items-center justify-center shrink-0 text-[11px] font-bold text-white shadow-sm`}>
                       {initialsOf(item.name)}
                     </div>
                     <div className="min-w-0 flex-1">
                       {/* Name + time */}
                       <div className="flex items-center justify-between gap-2">
                         <p className={`truncate font-semibold text-[13px] ${isUnread ? 'text-slate-900' : 'text-slate-700'}`}>{item.name}</p>
-                        <span className={`shrink-0 text-[10.5px] tabular-nums ${isUnread ? 'text-primary font-semibold' : 'text-slate-400'}`}>
+                        <span className={`shrink-0 text-[10px] tabular-nums ${isUnread ? 'text-primary font-semibold' : 'text-slate-400'}`}>
                           {formatDistanceToNow(new Date(item.created_at), { addSuffix: true })}
                         </span>
                       </div>
                       {/* Preview + badges */}
-                      <div className="mt-1 flex items-center gap-2 min-w-0">
-                        <p className={`text-[12px] truncate min-w-0 flex-1 ${isUnread ? 'text-slate-600' : 'text-slate-500'}`}>{item.subtitle}</p>
-                        <span className={`shrink-0 inline-flex items-center gap-1 text-[10.5px] font-semibold ${s.color}`}>
+                      <div className="mt-1.5 flex items-center gap-2 min-w-0">
+                        <span className={`shrink-0 text-[9px] font-bold px-1.5 py-0.5 rounded-md uppercase tracking-wide ${
+                          item.type === 'enquiry' ? 'bg-blue-100 text-blue-700' :
+                          item.type === 'chat' ? 'bg-violet-100 text-violet-700' :
+                          'bg-amber-100 text-amber-700'
+                        }`}>
+                          {item.type}
+                        </span>
+                        <p className={`text-[11.5px] truncate min-w-0 flex-1 ${isUnread ? 'text-slate-600' : 'text-slate-500'}`}>{item.subtitle}</p>
+                        <span className={`shrink-0 inline-flex items-center gap-1 text-[10px] font-semibold ${s.color}`}>
                           <span className={`w-1.5 h-1.5 rounded-full ${s.dot}`} />{s.label}
                         </span>
-                        {isChat && chatInq?.agent_status === 'queued' && (
-                          <span className="shrink-0 inline-flex items-center gap-1 text-[10.5px] font-semibold text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded-full">
-                            <Clock className="w-2.5 h-2.5" />Queued
-                          </span>
-                        )}
-                        {isChat && assignedAgent && (
-                          <span className="shrink-0 text-[10.5px] font-medium text-slate-400">
-                            {assignedAgent.name.split(' ')[0]}
-                          </span>
-                        )}
                       </div>
                       {/* Body preview */}
                       {item.body && (
-                        <p className={`text-[11.5px] mt-1 line-clamp-1 ${isUnread ? 'text-slate-500 font-medium' : 'text-slate-400'}`}>{item.body}</p>
+                        <p className={`text-[11px] mt-1 line-clamp-1 ${isUnread ? 'text-slate-500 font-medium' : 'text-slate-400'}`}>{item.body}</p>
+                      )}
+                      {isChat && chatInq?.agent_status === 'queued' && (
+                        <span className="mt-1.5 shrink-0 inline-flex items-center gap-1 text-[10px] font-semibold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full">
+                          <Clock className="w-2.5 h-2.5" />Queued
+                        </span>
                       )}
                     </div>
                   </button>
@@ -2683,115 +2651,168 @@ function AgentsTab({ agents, setAgents, liveState }: {
   const availableCount = liveState.availableCount
 
   return (
-    <div className="flex-1 overflow-y-auto p-4">
-      <div className="max-w-3xl mx-auto space-y-4">
-        {/* Roster */}
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-[0_1px_2px_rgba(15,23,42,0.04)] overflow-hidden">
-          <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-between">
-            <h3 className="text-sm font-bold text-slate-900">Agents</h3>
-            <span className="text-[10px] uppercase tracking-widest text-slate-400 font-bold">
-              {agents.length} total · {availableCount} available
-            </span>
+    <div className="flex-1 overflow-y-auto p-4 md:p-6">
+      <div className="max-w-4xl mx-auto space-y-4">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-blue-600 flex items-center justify-center shadow-lg shadow-primary/20">
+              <Users className="w-5 h-5 text-white" />
+            </div>
+            <div>
+              <h3 className="text-base font-bold text-slate-900">Support Team</h3>
+              <p className="text-xs text-slate-400">{agents.length} agents · {availableCount} available now</p>
+            </div>
           </div>
+        </div>
+
+        {/* Agent cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           {agents.length === 0 ? (
-            <div className="px-4 py-10 text-center">
-              <ShieldCheck className="w-8 h-8 text-slate-200 mx-auto mb-2" />
-              <p className="text-sm text-slate-500">No agents yet. Add one from Settings → Agents.</p>
+            <div className="md:col-span-2 bg-white rounded-2xl border border-slate-200 p-10 text-center">
+              <ShieldCheck className="w-10 h-10 text-slate-200 mx-auto mb-3" />
+              <p className="text-sm font-semibold text-slate-500">No agents yet</p>
+              <p className="text-xs text-slate-400 mt-1">Add agents from Settings → Agents</p>
             </div>
           ) : (
-            <div className="divide-y divide-slate-50">
-              {agents.map(agent => {
-                const isBusy = busyId === agent.id
-                const status: 'online' | 'away' | 'offline' = agent.presence
-                const isAvailable = agent.available && agent.presence === 'online'
-                const statusStyles = status === 'online'
-                  ? 'bg-emerald-50 text-emerald-700'
-                  : status === 'away'
-                    ? 'bg-amber-50 text-amber-700'
-                    : 'bg-slate-100 text-slate-500'
-                const statusDot = status === 'online' ? 'bg-emerald-500' : status === 'away' ? 'bg-amber-400' : 'bg-slate-400'
-                // Admins are protected, and the signed-in user cannot remove
-                // their own row (prevents self-lockout).
-                const isProtectedRow = agent.role === 'admin' || agent.user_id === currentUserId
-                return (
-                  <div key={agent.id} className="flex items-center gap-3 px-4 py-3 flex-wrap">
-                    <div className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 shadow-sm ${
-                      isProtectedRow ? 'bg-gradient-to-br from-indigo-600 to-purple-700' : 'bg-gradient-to-br from-blue-500 to-indigo-600'
-                    }`}>
-                      <span className="text-xs font-bold text-white">{initialsOf(agent.name)}</span>
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2">
-                        <p className="font-semibold text-slate-900 text-sm truncate">{agent.name}</p>
-                        <span className={`shrink-0 inline-flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded-full ${statusStyles}`}>
-                          <span className={`w-1.5 h-1.5 rounded-full ${statusDot}`} />
-                          {status === 'online' ? 'Online' : status === 'away' ? 'Away' : 'Offline'}
-                        </span>
-                        {isProtectedRow ? (
-                          <span className="shrink-0 text-[10px] font-bold px-1.5 py-0.5 rounded-full uppercase bg-purple-50 text-purple-700">
-                            Admin
-                          </span>
-                        ) : (
-                          <span className={`shrink-0 text-[10px] font-bold px-1.5 py-0.5 rounded-full uppercase ${agent.active ? 'bg-blue-50 text-blue-700' : 'bg-slate-100 text-slate-500'}`}>
-                            {agent.role}
-                          </span>
-                        )}
-                        <span className={`shrink-0 inline-flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded-full ${isAvailable ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-500'}`}>
-                          <span className={`w-1.5 h-1.5 rounded-full ${isAvailable ? 'bg-emerald-500' : 'bg-slate-400'}`} />
-                          {agent.available ? 'Available' : 'Unavailable'}
-                        </span>
+            agents.map(agent => {
+              const isBusy = busyId === agent.id
+              const status: 'online' | 'away' | 'offline' = agent.presence
+              const isAvailable = agent.available && agent.presence === 'online'
+              const statusColors = status === 'online'
+                ? { bg: 'bg-emerald-50', text: 'text-emerald-700', dot: 'bg-emerald-500', border: 'border-emerald-200' }
+                : status === 'away'
+                  ? { bg: 'bg-amber-50', text: 'text-amber-700', dot: 'bg-amber-400', border: 'border-amber-200' }
+                  : { bg: 'bg-slate-100', text: 'text-slate-500', dot: 'bg-slate-400', border: 'border-slate-200' }
+              const isProtectedRow = agent.role === 'admin' || agent.user_id === currentUserId
+              const isOnline = status === 'online'
+              const activeCount = activeCounts[agent.id] ?? 0
+              return (
+                <div key={agent.id} className={`bg-white rounded-2xl border shadow-sm overflow-hidden transition-all hover:shadow-md ${
+                  isProtectedRow 
+                    ? 'border-purple-200/60' 
+                    : isOnline 
+                      ? 'border-emerald-200/50' 
+                      : 'border-slate-200/60'
+                }`}>
+                  {/* Agent card header */}
+                  <div className={`px-4 pt-4 pb-3 ${
+                    isProtectedRow 
+                      ? 'bg-gradient-to-br from-purple-50/50 to-indigo-50/50' 
+                      : isOnline 
+                        ? 'bg-gradient-to-br from-emerald-50/30 to-green-50/30'
+                        : 'bg-slate-50/50'
+                  }`}>
+                    <div className="flex items-start gap-3">
+                      {/* Avatar */}
+                      <div className={`relative w-12 h-12 rounded-xl flex items-center justify-center shrink-0 shadow-sm ${
+                        isProtectedRow 
+                          ? 'bg-gradient-to-br from-indigo-600 to-purple-700' 
+                          : isOnline
+                            ? 'bg-gradient-to-br from-emerald-500 to-teal-600'
+                            : 'bg-gradient-to-br from-slate-500 to-slate-600'
+                      }`}>
+                        <span className="text-sm font-bold text-white">{initialsOf(agent.name)}</span>
+                        {/* Status indicator */}
+                        <span className={`absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full border-2 border-white ${
+                          isOnline ? 'bg-emerald-400 animate-pulse' : status === 'away' ? 'bg-amber-400' : 'bg-slate-300'
+                        }`} />
                       </div>
-                      <p className="text-xs text-slate-400 mt-0.5 truncate">
-                        {agent.email}
-                        {agent.last_seen_at && (
-                          <span className="ml-1.5">
-                            · last seen {formatDistanceToNow(new Date(agent.last_seen_at), { addSuffix: true })}
+                      
+                      {/* Info */}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <p className="font-bold text-slate-900 text-sm truncate">{agent.name}</p>
+                          {isProtectedRow && (
+                            <span className="shrink-0 text-[9px] font-bold px-1.5 py-0.5 rounded-full uppercase bg-purple-100 text-purple-700">
+                              Admin
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-xs text-slate-400 mt-0.5 truncate">{agent.email}</p>
+                        
+                        {/* Status badges */}
+                        <div className="mt-2 flex items-center gap-1.5 flex-wrap">
+                          <span className={`inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-1 rounded-lg ${statusColors.bg} ${statusColors.text}`}>
+                            <span className={`w-1.5 h-1.5 rounded-full ${statusColors.dot}`} />
+                            {status === 'online' ? 'Online' : status === 'away' ? 'Away' : 'Offline'}
                           </span>
-                        )}
-                        {agent.availability_note && (
-                          <span className="ml-1.5 text-amber-600">· {agent.availability_note}</span>
-                        )}
+                          <span className={`inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-1 rounded-lg ${isAvailable ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-500'}`}>
+                            <span className={`w-1.5 h-1.5 rounded-full ${isAvailable ? 'bg-emerald-500' : 'bg-slate-400'}`} />
+                            {isAvailable ? 'Available' : 'Unavailable'}
+                          </span>
+                          {activeCount > 0 && (
+                            <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-1 rounded-lg bg-blue-50 text-blue-700">
+                              <MessageSquare className="w-3 h-3" />
+                              {activeCount} active
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {/* Last seen */}
+                    {agent.last_seen_at && status !== 'online' && (
+                      <p className="text-[10px] text-slate-400 mt-2">
+                        Last seen {formatDistanceToNow(new Date(agent.last_seen_at), { addSuffix: true })}
                       </p>
-                    </div>
-                    <div className="flex items-center gap-1.5 shrink-0">
-                      <span className={`inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-1 rounded-lg ${activeCounts[agent.id] ? 'bg-blue-50 text-blue-700' : 'bg-slate-50 text-slate-400'}`}>
-                        <MessageSquare className="w-3 h-3" />
-                        {activeCounts[agent.id] ?? 0} active
-                      </span>
-                      {isProtectedRow ? (
-                        <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-1.5 rounded-lg bg-purple-50 text-purple-600">
-                          <ShieldCheck className="w-3 h-3" /> Protected
-                        </span>
-                      ) : (
-                        <>
-                          <button onClick={() => toggleAvailable(agent)} disabled={isBusy}
-                            title={agent.available ? 'Stop accepting new conversations' : 'Accept new conversations'}
-                            className={`inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-1.5 rounded-lg transition-colors ${
-                              agent.available ? 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                            }`}>
-                            {agent.available ? 'Available' : 'Unavailable'}
-                          </button>
-                          <button onClick={() => resetPassword(agent)} disabled={isBusy} title="Send password reset"
-                            className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-1.5 rounded-lg border border-gray-200 bg-white text-slate-600 hover:text-blue-700 hover:border-blue-200 disabled:opacity-40 transition-colors">
-                            {isBusy ? <Loader2 className="w-3 h-3 animate-spin" /> : <KeyRound className="w-3 h-3" />} Reset
-                          </button>
-                          <button onClick={() => toggleActive(agent)} disabled={isBusy}
-                            className={`inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-1.5 rounded-lg transition-colors ${
-                              agent.active ? 'bg-slate-100 text-slate-600 hover:bg-slate-200' : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
-                            }`}>
-                            {agent.active ? 'Deactivate' : 'Activate'}
-                          </button>
-                          <button onClick={() => setDeleteTarget(agent)} disabled={busyId === agent.id} title="Remove agent"
-                            className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-1.5 rounded-lg border border-gray-200 bg-white text-slate-500 hover:text-red-600 hover:border-red-200 disabled:opacity-40 transition-colors">
-                            <Trash2 className="w-3 h-3" /> Remove
-                          </button>
-                        </>
-                      )}
-                    </div>
+                    )}
+                    {agent.availability_note && (
+                      <p className="text-[10px] text-amber-600 mt-1 font-medium">{agent.availability_note}</p>
+                    )}
                   </div>
-                )
-              })}
-            </div>
+                  
+                  {/* Card footer */}
+                  <div className="px-4 py-3 bg-slate-50/50 border-t border-slate-100/80">
+                    {isProtectedRow ? (
+                      <div className="flex items-center gap-2">
+                        <ShieldCheck className="w-4 h-4 text-purple-500" />
+                        <span className="text-xs font-medium text-purple-700">Protected admin account</span>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <button 
+                          onClick={() => toggleAvailable(agent)} 
+                          disabled={isBusy}
+                          className={`inline-flex items-center gap-1 text-[11px] font-semibold px-3 py-1.5 rounded-lg transition-colors ${
+                            agent.available 
+                              ? 'bg-amber-50 text-amber-700 hover:bg-amber-100' 
+                              : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
+                          }`}
+                        >
+                          {agent.available ? 'Set Unavailable' : 'Set Available'}
+                        </button>
+                        <button 
+                          onClick={() => resetPassword(agent)} 
+                          disabled={isBusy} 
+                          className="inline-flex items-center gap-1 text-[11px] font-semibold px-3 py-1.5 rounded-lg border border-slate-200 bg-white text-slate-600 hover:text-blue-700 hover:border-blue-200 disabled:opacity-40 transition-colors"
+                        >
+                          {isBusy ? <Loader2 className="w-3 h-3 animate-spin" /> : <KeyRound className="w-3 h-3" />} Reset
+                        </button>
+                        <button 
+                          onClick={() => toggleActive(agent)} 
+                          disabled={isBusy}
+                          className={`inline-flex items-center gap-1 text-[11px] font-semibold px-3 py-1.5 rounded-lg transition-colors ${
+                            agent.active 
+                              ? 'bg-slate-100 text-slate-600 hover:bg-slate-200' 
+                              : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
+                          }`}
+                        >
+                          {agent.active ? 'Deactivate' : 'Activate'}
+                        </button>
+                        <button 
+                          onClick={() => setDeleteTarget(agent)} 
+                          disabled={busyId === agent.id} 
+                          className="inline-flex items-center gap-1 text-[11px] font-semibold px-3 py-1.5 rounded-lg border border-slate-200 bg-white text-slate-500 hover:text-red-600 hover:border-red-200 disabled:opacity-40 transition-colors"
+                        >
+                          <Trash2 className="w-3 h-3" />
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )
+            })
           )}
         </div>
       </div>
@@ -2808,22 +2829,19 @@ function AgentsTab({ agents, setAgents, liveState }: {
 
 export default function AdminSupportPage() {
   const [user, setUser]   = useState<{ email?: string; id?: string } | null>(null)
-  const [tab, setTab]     = useState<'support' | 'inbox' | 'history'>('support')
+  const [tab, setTab]     = useState<'support' | 'inbox' | 'agents'>('support')
   const [openCount, setOpenCount]     = useState(0)
   const [chatOpenCount, setChatOpenCount] = useState(0)
   const [contactCount, setContactCount]   = useState(0)
-  // The Support Queue pill must reflect open *support tickets* (not enquiries)
-  // so its badge matches the list rendered by the Support tab.
   const [supportOpenCount, setSupportOpenCount] = useState(0)
   const [liveState, setLiveState] = useState<LiveSupportState>({
     status: 'offline', online: false, onlineAgents: [], awayAgents: [], offlineAgents: [], agents: [], availableCount: 0, agentCount: 0,
   })
   const [agents, setAgents] = useState<SupportAgent[]>([])
   const [muted, setMuted] = useState(getSoundMuted)
-  // Global support status = business hours (Africa/Lagos). Re-evaluated every
-  // 60s so it flips exactly at 08:00/18:00 — never on heartbeat/realtime.
   const [supportHours, setSupportHours] = useState<SupportHours | null>(null)
   const [, setHoursTick] = useState(0)
+  const [totalResolvedCount, setTotalResolvedCount] = useState(0)
 
   useEffect(() => {
     getSupportHours().then(setSupportHours).catch(() => {})
@@ -2832,8 +2850,6 @@ export default function AdminSupportPage() {
   }, [])
 
   const supportOpen = supportHours ? isSupportOpen(supportHours) : true
-  // Set when the admin clicks "Open thread" from the Queued section; the Inbox
-  // tab consumes it as its initial selection.
   const [pendingChatId, setPendingChatId] = useState<string | null>(null)
   const { toast } = useToast()
 
@@ -2841,7 +2857,6 @@ export default function AdminSupportPage() {
     return subscribeSupportPresence(setLiveState)
   }, [])
 
-  // Keep the standalone roster list in sync with the same single source.
   useEffect(() => {
     const supabase = createClient()
     const load = () => {
@@ -2855,8 +2870,6 @@ export default function AdminSupportPage() {
     return () => { supabase.removeChannel(ch) }
   }, [])
 
-  // Sound + toast alerts for new chats / messages (only when not looking at the
-  // open thread — a page-level check keeps it simple; the bell + badges always update).
   const openInquiryIdRef = useRef<string | null>(null)
   const handleOpenThreadChange = useCallback((id: string | null) => {
     openInquiryIdRef.current = id
@@ -2864,8 +2877,6 @@ export default function AdminSupportPage() {
   useEffect(() => {
     return subscribeToSupportAlerts((event) => {
       const isOpenThread = event.type === 'new_message' && openInquiryIdRef.current === event.inquiryId
-      // Suppress sound (and toast) when the visitor is messaging inside the
-      // thread the admin is already looking at.
       if (isOpenThread) return
       playSupportSound(getSoundMuted())
       if (event.type === 'new_queued') {
@@ -2894,7 +2905,6 @@ export default function AdminSupportPage() {
       if (user?.id) window.__livarexUserId = user.id
     })
 
-    // Badge counts
     const fetchCounts = () => {
       supabase.from('enquiries').select('id', { count: 'exact', head: true }).in('status', ['new', 'open'])
         .then(({ count }) => setOpenCount(count ?? 0))
@@ -2904,6 +2914,8 @@ export default function AdminSupportPage() {
         .then(({ count }) => setContactCount(count ?? 0))
       supabase.from('support_tickets').select('id', { count: 'exact', head: true }).in('status', ['open', 'in_progress'])
         .then(({ count }) => setSupportOpenCount(count ?? 0))
+      supabase.from('support_tickets').select('id', { count: 'exact', head: true }).in('status', ['resolved', 'closed'])
+        .then(({ count }) => setTotalResolvedCount(count ?? 0))
     }
     fetchCounts()
 
@@ -2924,112 +2936,144 @@ export default function AdminSupportPage() {
 
   const displayName = user?.email ? user.email.split('@')[0] : 'Admin'
   const inboxCount = openCount + chatOpenCount + contactCount
+  const totalActiveCount = supportOpenCount + inboxCount
   const availableAgentCount = liveState.availableCount
+  const onlineAgentCount = liveState.onlineAgents.length
   const effectiveSupportOnline = supportOpen && availableAgentCount > 0
 
   return (
     <AuthGuard require="admin">
       <MobileSidebarProvider>
-        <div className="flex h-screen overflow-hidden bg-background">
+        <div className="flex h-screen overflow-hidden bg-gradient-to-br from-slate-50 to-slate-100/50">
           <AdminSidebar userEmail={user?.email} userName={displayName} />
 
           <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
             <div className="md:hidden">
-              <AdminHeader title="Support" subtitle={`${openCount} enquiries · ${chatOpenCount} chats · ${contactCount} contacts`} />
+              <AdminHeader title="Support" subtitle={`${totalActiveCount} active conversations`} />
             </div>
 
-            {/* ── Sleek support workspace header ── */}
-            <div className="shrink-0 border-b border-slate-100 bg-white px-4 py-3 md:px-6">
-              <div className="flex items-center justify-between gap-4">
-                {/* Left — title */}
-                <div className="min-w-0">
-                  <div className="flex items-center gap-2.5">
-                    <div className="hidden sm:flex size-8 items-center justify-center rounded-xl bg-primary/10">
-                      <HeadphonesIcon className="w-4 h-4 text-primary" />
+            {/* ── Modern Support Workspace Header ── */}
+            <div className="shrink-0 bg-white border-b border-slate-200/80 shadow-sm">
+              {/* Top bar */}
+              <div className="px-4 pt-4 pb-0 md:px-6 md:pt-5 md:pb-0">
+                <div className="flex items-start justify-between gap-4">
+                  {/* Title block */}
+                  <div className="flex items-center gap-3">
+                    <div className="hidden sm:flex size-11 items-center justify-center rounded-2xl bg-gradient-to-br from-primary to-blue-600 shadow-lg shadow-primary/20">
+                      <HeadphonesIcon className="w-5 h-5 text-white" />
                     </div>
                     <div>
-                      <h1 className="text-base font-bold tracking-tight text-slate-950">Support Center</h1>
-                      <p className="hidden sm:block text-[11px] text-slate-400 mt-0.5">Keep customer conversations moving</p>
+                      <h1 className="text-lg md:text-xl font-bold tracking-tight text-slate-950">Support Center</h1>
+                      <p className="text-xs text-slate-400 mt-0.5">Manage customer conversations</p>
                     </div>
-                    <span className="hidden sm:inline-flex items-center gap-1.5 ml-1 rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-[11px] font-semibold text-slate-500 tabular-nums">
-                      <span className="relative flex h-1.5 w-1.5">
-                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-50" />
-                        <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-primary" />
-                      </span>
-                      {inboxCount} open
-                    </span>
                   </div>
-                </div>
 
-                {/* Right — status + controls */}
-                <div className="flex items-center gap-2.5 shrink-0">
-                  {/* Status badge */}
-                  <div className={`hidden sm:flex items-center gap-2 rounded-full border px-3 py-1.5 text-[11px] font-semibold transition-all ${
+                  {/* Status pill */}
+                  <div className={`flex items-center gap-2 rounded-full border px-3.5 py-2 text-xs font-semibold transition-all ${
                     effectiveSupportOnline
-                      ? 'border-emerald-200/70 bg-emerald-50/80 text-emerald-700'
+                      ? 'border-emerald-200/80 bg-gradient-to-r from-emerald-50/80 to-green-50/80 text-emerald-700'
                       : supportOpen
-                        ? 'border-amber-200/70 bg-amber-50/80 text-amber-700'
+                        ? 'border-amber-200/80 bg-gradient-to-r from-amber-50/80 to-orange-50/80 text-amber-700'
                         : 'border-slate-200 bg-slate-50 text-slate-500'
                   }`}>
-                    <span className={`size-1.5 rounded-full ${effectiveSupportOnline ? 'bg-emerald-500' : supportOpen ? 'bg-amber-400' : 'bg-slate-400'}`} />
-                    {effectiveSupportOnline
-                      ? `Online · ${availableAgentCount} agent${availableAgentCount !== 1 ? 's' : ''}`
-                      : supportOpen ? 'No agent' : 'Support closed'}
-                  </div>
-
-                  {/* Sound toggle */}
-                  <button
-                    onClick={() => { const next = !muted; setMuted(next); setSoundMuted(next) }}
-                    title={muted ? 'Unmute notifications' : 'Mute notifications'}
-                    className="grid size-8 place-items-center rounded-xl border border-slate-200 bg-white text-slate-400 hover:border-slate-300 hover:text-slate-700 transition-all hover:shadow-sm"
-                  >
-                    {muted ? <VolumeX className="w-3.5 h-3.5" /> : <Volume2 className="w-3.5 h-3.5" />}
-                  </button>
-                </div>
-              </div>
-
-              {/* Tab switcher */}
-              <div className="mt-3 sm:hidden">
-                <select
-                  value={tab}
-                  onChange={e => setTab(e.target.value as 'support' | 'inbox' | 'history')}
-                  className="w-full appearance-none rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/30 cursor-pointer"
-                >
-                  <option value="support">Support Queue ({supportOpenCount})</option>
-                  <option value="inbox">Inbox ({inboxCount})</option>
-                  <option value="history">History</option>
-                </select>
-              </div>
-              <div className="mt-3 hidden sm:flex items-center gap-1.5">
-                {([
-                  { key: 'support', label: 'Queue',      icon: HeadphonesIcon, count: supportOpenCount },
-                  { key: 'inbox',   label: 'Inbox',      icon: Inbox,          count: inboxCount },
-                  { key: 'history', label: 'History',    icon: Archive,        count: 0 },
-                ] as const).map(t => {
-                  const Icon = t.icon
-                  return (
-                    <button key={t.key} type="button" onClick={() => setTab(t.key)}
-                      className={`inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold transition-all duration-200 ${
-                        tab === t.key
-                          ? 'bg-primary text-white shadow-md shadow-primary/25'
-                          : 'border border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900'
-                      }`}>
-                      <Icon className="w-3.5 h-3.5" />
-                      {t.label}
-                      {t.count > 0 && (
-                        <span className={`inline-flex h-5 min-w-[20px] items-center justify-center rounded-full text-[11px] font-bold px-1.5 ${
-                          tab === t.key ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-500'
-                        }`}>{t.count}</span>
+                    <span className={`relative flex h-2 w-2`}>
+                      {effectiveSupportOnline && (
+                        <>
+                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                          <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
+                        </>
                       )}
-                    </button>
-                  )
-                })}
+                      {!effectiveSupportOnline && supportOpen && (
+                        <span className="relative inline-flex h-2 w-2 rounded-full bg-amber-500" />
+                      )}
+                      {!effectiveSupportOnline && !supportOpen && (
+                        <span className="relative inline-flex h-2 w-2 rounded-full bg-slate-400" />
+                      )}
+                    </span>
+                    {effectiveSupportOnline
+                      ? `${availableAgentCount} agent${availableAgentCount !== 1 ? 's' : ''} online`
+                      : supportOpen ? 'No agents available' : 'Support closed'}
+                  </div>
+                </div>
+
+                {/* Stats row */}
+                <div className="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                  <div className={`rounded-xl border px-3.5 py-3 transition-all ${totalActiveCount > 0 ? 'bg-gradient-to-br from-blue-50/50 to-indigo-50/50 border-blue-200/60' : 'bg-slate-50/80 border-slate-200/60'}`}>
+                    <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Active</p>
+                    <p className="text-2xl font-extrabold text-slate-900 mt-1 tabular-nums">{totalActiveCount}</p>
+                    <p className="text-[10px] text-slate-400 mt-0.5">conversations</p>
+                  </div>
+                  <div className="rounded-xl border bg-slate-50/80 border-slate-200/60 px-3.5 py-3">
+                    <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Resolved</p>
+                    <p className="text-2xl font-extrabold text-slate-900 mt-1 tabular-nums">{totalResolvedCount}</p>
+                    <p className="text-[10px] text-slate-400 mt-0.5">tickets closed</p>
+                  </div>
+                  <div className="rounded-xl border bg-slate-50/80 border-slate-200/60 px-3.5 py-3">
+                    <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Online</p>
+                    <p className="text-2xl font-extrabold text-emerald-600 mt-1 tabular-nums">{onlineAgentCount}</p>
+                    <p className="text-[10px] text-slate-400 mt-0.5">agents now</p>
+                  </div>
+                  <div className={`rounded-xl border px-3.5 py-3 transition-all ${supportOpen ? 'bg-emerald-50/50 border-emerald-200/60' : 'bg-slate-50/80 border-slate-200/60'}`}>
+                    <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Hours</p>
+                    <p className={`text-2xl font-extrabold mt-1 tabular-nums ${supportOpen ? 'text-emerald-600' : 'text-slate-400'}`}>
+                      {supportOpen ? 'Open' : 'Closed'}
+                    </p>
+                    <p className="text-[10px] text-slate-400 mt-0.5">support status</p>
+                  </div>
+                </div>
+
+                {/* Tab navigation */}
+                <div className="mt-4 -mb-px">
+                  <div className="flex items-center gap-1">
+                    {([
+                      { key: 'support', label: 'Queue',      icon: HeadphonesIcon, count: supportOpenCount },
+                      { key: 'inbox',   label: 'Inbox',      icon: Inbox,          count: inboxCount },
+                      { key: 'agents', label: 'Agents',     icon: Users,          count: 0 },
+                    ] as const).map(t => {
+                      const Icon = t.icon
+                      return (
+                        <button key={t.key} type="button" onClick={() => setTab(t.key)}
+                          className={`relative inline-flex items-center gap-2 rounded-t-xl px-4 py-2.5 text-sm font-semibold transition-all duration-200 ${
+                            tab === t.key
+                              ? 'bg-gradient-to-b from-white to-slate-50 text-primary border-t-2 border-x border-slate-200 -mb-px shadow-sm'
+                              : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50/80'
+                          }`}>
+                          <Icon className="w-4 h-4" />
+                          {t.label}
+                          {t.count > 0 && (
+                            <span className={`inline-flex h-5 min-w-[20px] items-center justify-center rounded-full text-[11px] font-bold px-1.5 ${
+                              tab === t.key ? 'bg-primary text-white' : 'bg-slate-100 text-slate-500'
+                            }`}>{t.count}</span>
+                          )}
+                        </button>
+                      )
+                    })}
+                    <div className="ml-auto flex items-center gap-2">
+                      {/* Sound toggle */}
+                      <button
+                        onClick={() => { const next = !muted; setMuted(next); setSoundMuted(next) }}
+                        title={muted ? 'Unmute notifications' : 'Mute notifications'}
+                        className={`size-9 rounded-xl border flex items-center justify-center transition-all ${
+                          muted 
+                            ? 'border-slate-200 bg-slate-50 text-slate-400 hover:border-slate-300 hover:text-slate-600' 
+                            : 'border-primary/20 bg-primary/5 text-primary hover:bg-primary/10'
+                        }`}
+                      >
+                        {muted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
+                      </button>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
 
           {/* Tab content */}
-          <div className="flex flex-1 min-h-0 overflow-hidden">
-            {tab === 'support' || tab === 'history' ? <SupportTab view={tab === 'history' ? 'history' : 'queue'} onOpenQueued={(id) => { setPendingChatId(id); setTab('inbox') }} /> : (
+          <div className="flex flex-1 min-h-0 overflow-hidden bg-white border-t border-slate-200/80">
+            {tab === 'support' ? (
+              <SupportTab view="queue" onOpenQueued={(id) => { setPendingChatId(id); setTab('inbox') }} />
+            ) : tab === 'agents' ? (
+              <AgentsTab agents={agents} setAgents={setAgents} liveState={liveState} />
+            ) : (
               <InboxTab liveState={liveState} onOpenThreadChange={handleOpenThreadChange} initialChatId={pendingChatId} onInitialChatConsumed={() => setPendingChatId(null)} />
             )}
           </div>
@@ -3037,21 +3081,6 @@ export default function AdminSupportPage() {
         </div>
       </MobileSidebarProvider>
     </AuthGuard>
-  )
-}
-
-/** Compact stat card used in the page header. Highlights when there's action needed. */
-function StatCard({ icon, label, count, highlight = false }: { icon: React.ReactNode; label: string; count: number; highlight?: boolean }) {
-  return (
-    <div className={`flex items-center gap-2.5 rounded-xl border px-3 py-2 transition-shadow ${highlight ? 'border-slate-200 bg-white shadow-sm' : 'border-slate-200/70 bg-white'}`}>
-      <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${highlight ? 'bg-slate-900' : 'bg-slate-50 border border-slate-100'}`}>
-        {icon}
-      </div>
-      <div className="min-w-0">
-        <p className="text-[10.5px] font-medium text-slate-400 leading-none truncate">{label}</p>
-        <p className={`mt-1 text-lg leading-none tabular-nums ${highlight ? 'font-bold text-slate-900' : 'font-semibold text-slate-800'}`}>{count}</p>
-      </div>
-    </div>
   )
 }
 
