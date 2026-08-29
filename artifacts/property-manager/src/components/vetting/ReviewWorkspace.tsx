@@ -1,5 +1,9 @@
 import { useState, useEffect } from 'react'
-import { X, Phone, Mail, CheckCircle, AlertTriangle, Ban, Clock, ShieldCheck, FileText, Loader2 } from 'lucide-react'
+import {
+  X, Phone, Mail, CheckCircle, AlertTriangle, Ban, Clock,
+  ShieldCheck, FileText, Loader2, MapPin, Calendar, Hash,
+  CreditCard, Eye, ExternalLink,
+} from 'lucide-react'
 import { cn } from '@/lib/utils'
 import {
   KYC_STATUS_META,
@@ -11,7 +15,9 @@ import {
 } from './mockData'
 import IdentityGrid from './IdentityGrid'
 import DocumentCard from './DocumentCard'
-import ReviewActionCard from './ReviewActionCard'
+
+const BRAND   = '#C8102E'
+const BRAND_D = '#9B0C23'
 
 interface ReviewWorkspaceProps {
   landlord: VettingLandlord | null
@@ -42,9 +48,7 @@ export default function ReviewWorkspace({
     return () => clearTimeout(t)
   }, [liveMessage])
 
-  if (!landlord) {
-    return <EmptyWorkspace />
-  }
+  if (!landlord) return <EmptyWorkspace />
 
   const meta = KYC_STATUS_META[landlord.status] ?? KYC_STATUS_META.pending
   const busy = processing === landlord.id
@@ -57,59 +61,89 @@ export default function ReviewWorkspace({
 
   return (
     <div
-      className="flex h-full min-h-0 flex-col overflow-hidden rounded-[1.25rem] border border-[#d7e0d9] bg-[#fbfcfa] shadow-[0_5px_18px_rgba(24,53,47,0.05)] dark:border-slate-700 dark:bg-slate-900"
+      className="flex h-full min-h-0 flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm"
       role="region"
       aria-label={`Review ${landlord.full_name}`}
     >
+      {/* ── Profile header ── */}
       <div
-        className="shrink-0 border-b border-[#e5ece6] bg-[#f7f9f5] px-4 py-4 sm:px-6 sm:py-5 dark:border-slate-800 dark:bg-slate-900"
+        className="shrink-0 border-b border-slate-100 bg-gradient-to-r from-slate-50 to-white px-5 py-5"
         aria-live="polite"
       >
-        <div className="flex items-start gap-3 sm:gap-4">
+        <div className="flex items-start gap-4">
+          {/* Avatar */}
           <div
             className={cn(
-              'flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br text-[13px] font-bold text-white shadow-sm sm:h-16 sm:w-16 sm:text-[15px]',
+              'relative flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl text-[16px] font-black text-white shadow-lg',
               avatarGrad(landlord.full_name),
             )}
             aria-hidden="true"
           >
             {getInitials(landlord.full_name)}
+            <span
+              className={cn(
+                'absolute -bottom-1 -right-1 h-4 w-4 rounded-full border-2 border-white',
+                landlord.status === 'approved'     && 'bg-emerald-500',
+                landlord.status === 'pending'     && 'bg-amber-400',
+                landlord.status === 'rejected'    && 'bg-red-500',
+                landlord.status === 'suspended'   && 'bg-orange-500',
+                landlord.status === 'not_submitted' && 'bg-slate-300',
+              )}
+            />
           </div>
+
+          {/* Name + meta */}
           <div className="min-w-0 flex-1">
-            <div className="flex items-center justify-between gap-2">
-              <h2 className="truncate text-[18px] font-semibold tracking-[-0.02em] text-[#18352f] dark:text-white sm:text-[20px]">
-                {landlord.full_name}
-              </h2>
+            <div className="flex items-start justify-between gap-2">
+              <div>
+                <h2 className="text-[18px] font-black text-slate-900 tracking-tight">
+                  {landlord.full_name}
+                </h2>
+                {/* Status badge */}
+                <span
+                  className={cn(
+                    'mt-1 inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[11px] font-bold',
+                    meta.bg, meta.text, meta.border,
+                  )}
+                >
+                  <span className={cn('h-1.5 w-1.5 rounded-full', meta.dot)} />
+                  {meta.label}
+                </span>
+              </div>
               <button
                 type="button"
                 onClick={onClose}
-                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-[#d7e0d9] bg-[#eef3ee] text-[#587067] transition-colors hover:bg-[#e3ece5] dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-400 shadow-sm transition-colors hover:bg-slate-50 hover:text-slate-600"
                 aria-label="Close review"
               >
                 <X className="h-4 w-4" />
               </button>
             </div>
-            <div className="mt-1.5 flex flex-wrap items-center gap-2">
-              <span
-                className={cn(
-                  'inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[11px] font-bold',
-                  meta.bg,
-                  meta.text,
-                  meta.border,
-                )}
-              >
-                <span className={cn('h-1.5 w-1.5 rounded-full', meta.dot)} />
-                {meta.label}
-              </span>
+
+            {/* Contact chips */}
+            <div className="mt-2 flex flex-wrap items-center gap-2">
               {landlord.whatsapp && (
-                <span className="inline-flex items-center gap-1 text-[12px] text-slate-500 dark:text-slate-400">
-                  <Phone className="h-3 w-3" /> {landlord.whatsapp}
-                </span>
+                <a
+                  href={`tel:${landlord.whatsapp}`}
+                  className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-semibold text-slate-600 shadow-sm transition-colors hover:bg-emerald-50 hover:border-emerald-200 hover:text-emerald-700"
+                >
+                  <Phone className="h-3 w-3" />
+                  {landlord.whatsapp}
+                </a>
               )}
               {landlord.email && (
-                <span className="inline-flex items-center gap-1 truncate text-[12px] text-slate-500 dark:text-slate-400">
-                  <Mail className="h-3 w-3 shrink-0" />
-                  <span className="truncate">{landlord.email}</span>
+                <a
+                  href={`mailto:${landlord.email}`}
+                  className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-semibold text-slate-600 shadow-sm transition-colors hover:bg-violet-50 hover:border-violet-200 hover:text-violet-700"
+                >
+                  <Mail className="h-3 w-3" />
+                  <span className="truncate max-w-[180px]">{landlord.email}</span>
+                </a>
+              )}
+              {landlord.city && (
+                <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-semibold text-slate-500 shadow-sm">
+                  <MapPin className="h-3 w-3" />
+                  {landlord.city}
                 </span>
               )}
             </div>
@@ -122,208 +156,235 @@ export default function ReviewWorkspace({
         </div>
       </div>
 
+      {/* ── Scrollable body ── */}
       <div
-        className={cn(
-          'flex-1 overflow-y-auto p-4 sm:p-6 motion-reduce:transition-none',
-          'animate-in fade-in-50 duration-200',
-        )}
+        className="flex-1 overflow-y-auto p-5 space-y-6"
         key={landlord.id}
       >
-        <div className="space-y-5 sm:space-y-6">
-          {/* Review actions */}
-          <section aria-labelledby="actions-heading" className="space-y-3">
+        {/* ── Decision actions ── */}
+        <section aria-labelledby="actions-heading">
+          <div className="mb-3 flex items-center gap-2">
             <h3
               id="actions-heading"
-              className="text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-400"
+              className="text-[11px] font-bold uppercase tracking-widest text-slate-400"
             >
-              Decision
+              Make a Decision
             </h3>
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-stretch">
-              {landlord.status !== 'approved' && (
-                <ReviewActionCard
-                  variant="approve"
-                  icon={CheckCircle}
-                  title="Approve"
-                  description="Verify this landlord for Livarex"
-                  onClick={() => handleStatus('approved', 'Approval')}
-                  loading={busy}
-                />
-              )}
-              {landlord.status !== 'rejected' && (
-                <ReviewActionCard
-                  variant="reject"
-                  icon={AlertTriangle}
-                  title="Reject"
-                  description="Mark this identity as not approved"
-                  onClick={() => handleStatus('rejected', 'Rejection')}
-                  loading={busy}
-                />
-              )}
-              {landlord.status !== 'suspended' && (
-                <ReviewActionCard
-                  variant="suspend"
-                  icon={Ban}
-                  title="Suspend"
-                  description="Pause this account's activity"
-                  onClick={() => handleStatus('suspended', 'Suspension')}
-                  loading={busy}
-                />
-              )}
-              {landlord.status !== 'pending' && landlord.status !== 'not_submitted' && (
-                <ReviewActionCard
-                  variant="reset"
-                  icon={Clock}
-                  title="Reset to Pending"
-                  description="Return this case to the queue"
-                  onClick={() => handleStatus('pending', 'Reset')}
-                  loading={busy}
-                />
-              )}
-            </div>
-            <p className="text-[11px] leading-relaxed text-[#728279]">
-              Decisions update the landlord record immediately. Review the identity details and evidence above before continuing.
-            </p>
-          </section>
+            <div className="h-px flex-1 bg-slate-100" />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            {landlord.status !== 'approved' && (
+              <ActionBtn
+                variant="approve"
+                onClick={() => handleStatus('approved', 'Approval')}
+                loading={busy}
+              />
+            )}
+            {landlord.status !== 'rejected' && (
+              <ActionBtn
+                variant="reject"
+                onClick={() => handleStatus('rejected', 'Rejection')}
+                loading={busy}
+              />
+            )}
+            {landlord.status !== 'suspended' && (
+              <ActionBtn
+                variant="suspend"
+                onClick={() => handleStatus('suspended', 'Suspension')}
+                loading={busy}
+              />
+            )}
+            {landlord.status !== 'pending' && landlord.status !== 'not_submitted' && (
+              <ActionBtn
+                variant="reset"
+                onClick={() => handleStatus('pending', 'Reset')}
+                loading={busy}
+              />
+            )}
+          </div>
+          <p className="mt-3 text-[11px] leading-relaxed text-slate-400">
+            Decisions are applied immediately and the landlord will be notified.
+          </p>
+        </section>
 
-          {/* Identity information */}
-          <section aria-labelledby="identity-heading" className="space-y-3">
+        {/* ── Identity information ── */}
+        <section aria-labelledby="identity-heading">
+          <div className="mb-3 flex items-center gap-2">
             <h3
               id="identity-heading"
-              className="text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-400"
+              className="text-[11px] font-bold uppercase tracking-widest text-slate-400"
             >
-              Identity Information
+              Identity Details
             </h3>
-            <IdentityGrid landlord={landlord} />
-          </section>
+            <div className="h-px flex-1 bg-slate-100" />
+          </div>
+          <IdentityGrid landlord={landlord} />
+        </section>
 
-          {/* Documents */}
-          <section aria-labelledby="docs-heading" className="space-y-3">
-            <div className="flex items-center justify-between">
+        {/* ── Documents ── */}
+        <section aria-labelledby="docs-heading">
+          <div className="mb-3 flex items-center justify-between">
+            <div className="flex items-center gap-2">
               <h3
                 id="docs-heading"
-                className="text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-400"
+                className="text-[11px] font-bold uppercase tracking-widest text-slate-400"
               >
-              Evidence
+                Evidence &amp; Documents
               </h3>
-              <span className="ops-mono text-[10px] font-bold uppercase tracking-[0.12em] text-[#728279]">
-                {docsLoading ? 'Loading…' : `${kycDocs.length} file${kycDocs.length !== 1 ? 's' : ''}`}
-              </span>
+              <div className="h-px flex-1 bg-slate-100 min-w-8" />
             </div>
-            {docsLoading ? (
-              <div className="flex items-center justify-center gap-2 rounded-2xl border border-dashed border-[#cbd9cd] bg-[#f3f7f3] p-8 text-[#728279] dark:border-slate-700">
-                <Loader2 className="h-5 w-5 animate-spin" />
-                <span className="text-sm font-medium">Loading documents…</span>
-              </div>
-            ) : kycDocs.length === 0 ? (
-              <div className="rounded-2xl border border-dashed border-[#cbd9cd] bg-[#f3f7f3] p-8 text-center dark:border-slate-700 dark:bg-slate-800/40">
-                <FileText className="mx-auto mb-2 h-8 w-8 text-slate-300 dark:text-slate-600" />
-                <p className="text-[13px] font-semibold text-slate-500 dark:text-slate-400">
-                  No documents uploaded
-                </p>
-                <p className="mt-1 text-[11px] text-slate-400 dark:text-slate-500">
-                  This landlord hasn&apos;t submitted KYC files yet.
-                </p>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                {kycDocs.map(doc => (
-                  <DocumentCard
-                    key={doc.doc_type}
-                    doc={doc}
-                    imgErrored={Boolean(imgErrors[doc.doc_type])}
-                    onImgError={() => onImgError(doc.doc_type)}
-                  />
-                ))}
-              </div>
-            )}
-          </section>
-        </div>
+            <span className="text-[11px] font-bold text-slate-400">
+              {docsLoading ? 'Loading…' : `${kycDocs.length} file${kycDocs.length !== 1 ? 's' : ''}`}
+            </span>
+          </div>
+
+          {docsLoading ? (
+            <div className="flex items-center justify-center gap-3 rounded-2xl border border-dashed border-slate-200 bg-slate-50 py-12">
+              <Loader2 className="h-5 w-5 animate-spin text-slate-400" />
+              <span className="text-sm font-medium text-slate-500">Loading documents…</span>
+            </div>
+          ) : kycDocs.length === 0 ? (
+            <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 py-10 text-center">
+              <FileText className="mx-auto mb-2 h-8 w-8 text-slate-300" />
+              <p className="text-[13px] font-semibold text-slate-500">No documents uploaded</p>
+              <p className="mt-1 text-[11px] text-slate-400">This landlord hasn't submitted KYC files yet.</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              {kycDocs.map(doc => (
+                <DocumentCard
+                  key={doc.doc_type}
+                  doc={doc}
+                  imgErrored={Boolean(imgErrors[doc.doc_type])}
+                  onImgError={() => onImgError(doc.doc_type)}
+                />
+              ))}
+            </div>
+          )}
+        </section>
       </div>
 
-      <div role="status" className="sr-only">
-        {liveMessage}
-      </div>
+      <div role="status" className="sr-only">{liveMessage}</div>
     </div>
   )
 }
 
-function StatusBanner({ status }: { status: VettingStatus }) {
-  if (status === 'approved') {
-    return (
-      <div className="flex items-start gap-2.5 rounded-2xl border border-[#b8d7c3] bg-[#e4efe8] px-4 py-3 text-[#2f7560] dark:border-emerald-800/60 dark:bg-emerald-950/40 dark:text-emerald-200">
-        <CheckCircle className="mt-0.5 h-4 w-4 shrink-0" />
-        <div>
-          <p className="text-[12px] font-semibold">Verification successful</p>
-          <p className="text-[11px] text-emerald-700/80 dark:text-emerald-300/80">
-            This landlord has been verified and is active on the platform.
-          </p>
-        </div>
-      </div>
-    )
-  }
-  if (status === 'rejected') {
-    return (
-      <div className="flex items-start gap-2.5 rounded-2xl border border-[#e6beb9] bg-[#f8e9e6] px-4 py-3 text-[#963e38] dark:border-red-800/60 dark:bg-red-950/40 dark:text-red-200">
-        <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
-        <div>
-          <p className="text-[12px] font-semibold">Submission rejected</p>
-          <p className="text-[11px] text-red-700/80 dark:text-red-300/80">
-            Use Reset KYC on the Landlords page to allow resubmission.
-          </p>
-        </div>
-      </div>
-    )
-  }
-  if (status === 'suspended') {
-    return (
-      <div className="flex items-start gap-2.5 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-amber-700 dark:border-amber-800/60 dark:bg-amber-950/40 dark:text-amber-200">
-        <Ban className="mt-0.5 h-4 w-4 shrink-0" />
-        <div>
-          <p className="text-[12px] font-semibold">Account suspended</p>
-          <p className="text-[11px] text-amber-700/80 dark:text-amber-300/80">
-            This account is currently suspended from the platform.
-          </p>
-        </div>
-      </div>
-    )
-  }
-  if (status === 'pending') {
-    return (
-      <div className="flex items-start gap-2.5 rounded-2xl border border-[#b9d1d8] bg-[#dce9ed] px-4 py-3 text-[#315f6f] dark:border-blue-800/60 dark:bg-blue-950/40 dark:text-blue-200">
-        <Clock className="mt-0.5 h-4 w-4 shrink-0" />
-        <div>
-          <p className="text-[12px] font-semibold">Awaiting your review</p>
-          <p className="text-[11px] text-blue-700/80 dark:text-blue-300/80">
-            Review identity &amp; documents, then approve, reject, or suspend.
-          </p>
-        </div>
-      </div>
-    )
-  }
+// ── Action buttons ───────────────────────────────────────────────────────────────
+type ActionVariant = 'approve' | 'reject' | 'suspend' | 'reset'
+
+const ACTION_STYLES: Record<ActionVariant, {
+  label: string; icon: typeof CheckCircle; cls: string
+}> = {
+  approve: {
+    label: 'Approve',
+    icon: CheckCircle,
+    cls: 'border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 hover:border-emerald-300 active:bg-emerald-200',
+  },
+  reject: {
+    label: 'Reject',
+    icon: AlertTriangle,
+    cls: 'border-red-200 bg-red-50 text-red-700 hover:bg-red-100 hover:border-red-300 active:bg-red-200',
+  },
+  suspend: {
+    label: 'Suspend',
+    icon: Ban,
+    cls: 'border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100 hover:border-amber-300 active:bg-amber-200',
+  },
+  reset: {
+    label: 'Reset',
+    icon: Clock,
+    cls: 'border-slate-200 bg-white text-slate-600 hover:bg-slate-100 hover:border-slate-300 active:bg-slate-200',
+  },
+}
+
+function ActionBtn({ variant, onClick, loading }: { variant: ActionVariant; onClick: () => void; loading: boolean }) {
+  const s = ACTION_STYLES[variant]
+  const Icon = s.icon
   return (
-    <div className="flex items-start gap-2.5 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200">
-      <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0" />
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={loading}
+      aria-busy={loading}
+      className={cn(
+        'flex items-center justify-center gap-2 rounded-2xl border-2 px-4 py-3 text-[13px] font-bold transition-all duration-150 disabled:opacity-50',
+        s.cls,
+      )}
+    >
+      {loading
+        ? <Loader2 className="h-4 w-4 animate-spin" />
+        : <Icon className="h-4 w-4" />
+      }
+      {s.label}
+    </button>
+  )
+}
+
+// ── Status banner ───────────────────────────────────────────────────────────────
+function StatusBanner({ status }: { status: VettingStatus }) {
+  const configs = {
+    approved: {
+      icon: CheckCircle,
+      bg: 'bg-emerald-50 border-emerald-200',
+      text: 'text-emerald-700',
+      title: 'Verification successful',
+      sub: 'This landlord has been verified and is active on the platform.',
+    },
+    pending: {
+      icon: Clock,
+      bg: 'bg-amber-50 border-amber-200',
+      text: 'text-amber-700',
+      title: 'Awaiting your review',
+      sub: 'Review the identity details and documents above, then make a decision.',
+    },
+    rejected: {
+      icon: AlertTriangle,
+      bg: 'bg-red-50 border-red-200',
+      text: 'text-red-700',
+      title: 'Submission rejected',
+      sub: 'This landlord was rejected. Reset their status to allow resubmission.',
+    },
+    suspended: {
+      icon: Ban,
+      bg: 'bg-orange-50 border-orange-200',
+      text: 'text-orange-700',
+      title: 'Account suspended',
+      sub: 'This account has been suspended and cannot access the platform.',
+    },
+    not_submitted: {
+      icon: ShieldCheck,
+      bg: 'bg-slate-50 border-slate-200',
+      text: 'text-slate-600',
+      title: 'No submission yet',
+      sub: "This landlord hasn't started KYC. They'll appear here once they submit.",
+    },
+  }
+  const cfg = configs[status]
+  const Icon = cfg.icon
+  return (
+    <div className={cn('flex items-start gap-3 rounded-2xl border px-4 py-3', cfg.bg, cfg.text)}>
+      <Icon className="mt-0.5 h-4 w-4 shrink-0" />
       <div>
-        <p className="text-[12px] font-semibold">No submission yet</p>
-        <p className="text-[11px] text-slate-500 dark:text-slate-400">
-          This landlord hasn&apos;t started KYC yet. They will appear here once they submit documents.
-        </p>
+        <p className="text-[13px] font-bold">{cfg.title}</p>
+        <p className="mt-0.5 text-[11px] opacity-80">{cfg.sub}</p>
       </div>
     </div>
   )
 }
 
+// ── Empty state ────────────────────────────────────────────────────────────────
 function EmptyWorkspace() {
   return (
-    <div className="flex h-full min-h-0 flex-col items-center justify-center rounded-2xl border border-slate-200 bg-white p-10 text-center shadow-sm dark:border-slate-700 dark:bg-slate-900">
-      <div className="mb-5 flex h-20 w-20 items-center justify-center rounded-2xl border border-slate-200 bg-slate-50 shadow-sm dark:border-slate-700 dark:bg-slate-800">
-        <ShieldCheck className="h-10 w-10 text-slate-300 dark:text-slate-600" />
+    <div className="flex h-full min-h-0 flex-col items-center justify-center rounded-2xl border border-dashed border-slate-200 bg-slate-50/50 p-10 text-center">
+      <div
+        className="mb-5 flex h-20 w-20 items-center justify-center rounded-3xl shadow-lg"
+        style={{ background: `linear-gradient(135deg, ${BRAND} 0%, ${BRAND_D} 100%)` }}
+      >
+        <ShieldCheck className="h-10 w-10 text-white" />
       </div>
-      <h3 className="text-[18px] font-semibold text-slate-800 dark:text-white">
-        Select a landlord to review
-      </h3>
-      <p className="mt-2 max-w-xs text-[13px] leading-relaxed text-slate-500 dark:text-slate-400">
-        Pick a name from the queue to view identity details, documents, and review actions.
+      <h3 className="text-[18px] font-black text-slate-800">Select a landlord to review</h3>
+      <p className="mt-2 max-w-xs text-[13px] leading-relaxed text-slate-500">
+        Pick a landlord from the queue to view their identity details, documents, and make a decision.
       </p>
     </div>
   )

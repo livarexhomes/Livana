@@ -1,5 +1,7 @@
-import { FileText, Eye, CheckCircle2 } from 'lucide-react'
+import { FileText, Eye, CheckCircle2, Download } from 'lucide-react'
 import { DOC_LABELS, type VettingKycDoc } from './mockData'
+
+const BRAND = '#C8102E'
 
 interface DocumentCardProps {
   doc: VettingKycDoc
@@ -13,53 +15,68 @@ export default function DocumentCard({ doc, imgErrored, onImgError }: DocumentCa
   const label = DOC_LABELS[doc.doc_type] ?? doc.doc_type
 
   return (
-    <a
-      href={doc.url || '#'}
-      target="_blank"
-      rel="noreferrer"
-      onClick={e => {
-        if (!doc.url) e.preventDefault()
-      }}
-      aria-label={`Open ${label}`}
-      className="group flex flex-col overflow-hidden rounded-2xl border border-[#d7e0d9] bg-[#fbfcfa] shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-[#6d9b87] hover:shadow-md motion-reduce:transform-none motion-reduce:transition-none dark:border-slate-700 dark:bg-slate-900 dark:hover:border-blue-500"
-    >
-        <div className="relative flex h-32 items-center justify-center overflow-hidden bg-[#e8efea] dark:bg-slate-800">
+    <div className="group overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-all duration-200 hover:shadow-md">
+      {/* Thumbnail area */}
+      <div
+        className="relative h-36 overflow-hidden bg-slate-100"
+        style={{ background: `linear-gradient(135deg, #f8fafc, #e2e8f0)` }}
+      >
         {showImg ? (
           <img
             src={doc.url}
             alt={label}
             onError={onImgError}
-            className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.04]"
+            className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
           />
         ) : (
-          <div className="flex flex-col items-center gap-2 text-slate-300 dark:text-slate-600">
-            <FileText className="h-8 w-8" />
-            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+          <div className="flex h-full flex-col items-center justify-center gap-2 text-slate-300">
+            <FileText className="h-10 w-10" />
+            <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
               {isImage ? 'Image unavailable' : 'Document'}
             </span>
           </div>
         )}
-          <div className="absolute inset-0 flex items-center justify-center bg-[#18352f]/55 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-[#fbfcfa] px-3 py-1.5 text-[11px] font-bold text-[#2f7560] shadow-sm">
-            <Eye className="h-3.5 w-3.5" /> Preview
-          </span>
+
+        {/* Hover overlay */}
+        <div className="absolute inset-0 flex items-center justify-center gap-3 bg-slate-900/60 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
+          {doc.url && (
+            <>
+              <a
+                href={doc.url}
+                target="_blank"
+                rel="noreferrer"
+                className="flex h-10 w-10 items-center justify-center rounded-full bg-white/90 text-slate-700 shadow-sm transition-transform hover:scale-110"
+              >
+                <Eye className="h-4 w-4" />
+              </a>
+              <a
+                href={doc.url}
+                download={doc.file_name}
+                className="flex h-10 w-10 items-center justify-center rounded-full bg-white/90 text-slate-700 shadow-sm transition-transform hover:scale-110"
+              >
+                <Download className="h-4 w-4" />
+              </a>
+            </>
+          )}
         </div>
+
+        {/* Brand accent stripe */}
+        <div
+          className="absolute bottom-0 left-0 right-0 h-1"
+          style={{ background: `linear-gradient(90deg, ${BRAND}, ${BRAND}80)` }}
+        />
       </div>
 
-      <div className="flex items-center justify-between gap-2 px-3 py-2.5">
+      {/* Footer */}
+      <div className="flex items-center justify-between gap-2 px-4 py-3">
         <div className="min-w-0 flex-1">
-          <p className="truncate text-[12px] font-semibold text-slate-900 dark:text-white">
-            {label}
-          </p>
-          <p className="truncate text-[10px] text-slate-400 dark:text-slate-500">
-            {doc.file_name}
-          </p>
+          <p className="truncate text-[13px] font-bold text-slate-900">{label}</p>
+          <p className="truncate text-[11px] text-slate-400">{doc.file_name}</p>
         </div>
-        <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300">
-           <CheckCircle2 className="h-3 w-3" />
-           Ready to review
+        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-emerald-50">
+          <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
         </span>
       </div>
-    </a>
+    </div>
   )
 }

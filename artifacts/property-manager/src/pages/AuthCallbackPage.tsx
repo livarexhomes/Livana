@@ -67,27 +67,38 @@ export default function AuthCallbackPage() {
       // Update-or-insert so that re-logins (especially Google OAuth) always keep
       // the tenant row in sync with the latest name, email, avatar and provider.
       // Safe against missing UNIQUE constraint on user_id — uses UPDATE then INSERT.
+      // Also handles pre-migration DBs where the `provider` column doesn't exist yet.
       const provider = user.app_metadata?.provider ?? 'email'
+      const tenantData = {
+        full_name:  meta.full_name ?? meta.name ?? user.email?.split('@')[0] ?? 'User',
+        email:      user.email ?? null,
+        avatar_url: meta.avatar_url ?? meta.picture ?? null,
+        provider,
+      }
       const { error: updateError } = await supabase
         .from('tenants')
-        .update({
-          full_name:  meta.full_name ?? meta.name ?? user.email?.split('@')[0] ?? 'User',
-          email:      user.email ?? null,
-          avatar_url: meta.avatar_url ?? meta.picture ?? null,
-          provider,
-        })
+        .update(tenantData)
         .eq('user_id', user.id)
       if (updateError && updateError.code === 'PGRST116') {
         // Row didn't exist — insert it.
-        await supabase.from('tenants').insert({
-          user_id:    user.id,
-          full_name:  meta.full_name ?? meta.name ?? user.email?.split('@')[0] ?? 'User',
-          email:      user.email ?? null,
-          avatar_url: meta.avatar_url ?? meta.picture ?? null,
-          provider,
+        const { error: insertError } = await supabase.from('tenants').insert({
+          user_id: user.id,
+          ...tenantData,
         })
+        if (insertError) console.error('Tenant insert failed:', insertError)
       } else if (updateError) {
-        console.error('Tenant upsert failed:', updateError)
+        // Column may not exist yet (pre-migration) — try INSERT without provider.
+        if (updateError.code === 'PGRST204' || updateError.message?.includes('provider')) {
+          const { error: insertError } = await supabase.from('tenants').insert({
+            user_id:    user.id,
+            full_name:  tenantData.full_name,
+            email:      tenantData.email,
+            avatar_url: tenantData.avatar_url,
+          })
+          if (insertError) console.error('Tenant insert (no provider) failed:', insertError)
+        } else {
+          console.error('Tenant update failed:', updateError)
+        }
       }
       navigate(redirectTo)
     }

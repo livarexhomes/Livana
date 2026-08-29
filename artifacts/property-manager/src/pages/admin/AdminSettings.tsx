@@ -87,6 +87,9 @@ interface ContactRecord {
   propertyCount: number
   bio?: string | null
   provider?: string | null
+  city?: string | null
+  avatarUrl?: string | null
+  adminNotes?: string | null
 }
 
 interface EmailConfig {
@@ -673,7 +676,6 @@ export default function AdminSettings() {
         key,
         value,
         category: key.split('_')[0],
-        updated_by: user?.id,
         updated_at: new Date().toISOString(),
       }, { onConflict: 'key' })
 
@@ -697,7 +699,7 @@ export default function AdminSettings() {
     }
     console.error('Save error:', error)
     return false
-  }, [user?.id])
+  }, [])
 
   // Handle save all for current section
   const handleSave = async () => {
@@ -874,32 +876,45 @@ export default function AdminSettings() {
   }, [active, loadHistory])
 
   // ── Registration tab state ─────────────────────────────────────────────────────
-  const [regTab, setRegTab]         = useState<'all' | 'landlord' | 'tenant'>('all')
-  const [regSearch, setRegSearch]   = useState('')
+  // ── Registration / Contact Hub state ────────────────────────────────────────────────
+  const [regTab, setRegTab]           = useState<'all' | 'landlord' | 'tenant'>('all')
+  const [regSearch, setRegSearch]       = useState('')
+  const [regStatus, setRegStatus]       = useState<string>('all')
   const [regLandlords, setRegLandlords] = useState<any[]>([])
-  const [regTenants, setRegTenants] = useState<any[]>([])
-  const [regLoading, setRegLoading] = useState(false)
+  const [regTenants, setRegTenants]     = useState<any[]>([])
+  const [regLoading, setRegLoading]    = useState(false)
   const [selectedContact, setSelectedContact] = useState<ContactRecord | null>(null)
+  const [contactDrawerTab, setContactDrawerTab] = useState<'overview' | 'activity' | 'notes'>('overview')
 
-  const loadRegData = useCallback(async () => {
-    setRegLoading(true)
-    const supabase = createClient()
-    const [ll, tn] = await Promise.all([
-      supabase.from('landlords')
-        .select('id, user_id, full_name, email, whatsapp, phone, status, created_at, updated_at')
-        .order('created_at', { ascending: false }),
-      supabase.from('tenants')
-        .select('id, user_id, full_name, email, phone, status, created_at, provider')
-        .order('created_at', { ascending: false }),
-    ])
-    setRegLandlords(ll.data ?? [])
-    setRegTenants(tn.data ?? [])
-    setRegLoading(false)
-  }, [])
+  // Contact profile drawer data
+  const [contactDetail, setContactDetail]     = useState<any | null>(null)
+  const [detailLoading, setDetailLoading]     = useState(false)
+  const [notes, setNotes]                     = useState('')
+  const [savingNotes, setSavingNotes]         = useState(false)
+  const [contactNotes, setContactNotes]         = useState<any[]>([])
+  const [contactEnquiries, setContactEnquiries] = useState<any[]>([])
+  const [contactProperties, setContactProperties] = useState<any[]>([])
+  const [contactComms, setContactComms]       = useState<any[]>([])
 
-  useEffect(() => {
-    if (active === 'registration') loadRegData()
-  }, [active, loadRegData])
+  // Email composer modal
+  const [showEmailComposer, setShowEmailComposer]   = useState(false)
+  const [emailSubject, setEmailSubject]               = useState('')
+  const [emailBody, setEmailBody]                   = useState('')
+  const [sendingEmail, setSendingEmail]             = useState(false)
+  const [emailSent, setEmailSent]                 = useState(false)
+
+  // Send Advert modal
+  const [showAdvertModal, setShowAdvertModal]     = useState(false)
+  const [advertProperties, setAdvertProperties]   = useState<any[]>([])
+  const [advertSearch, setAdvertSearch]         = useState('')
+  const [selectedProperty, setSelectedProperty]   = useState<any | null>(null)
+  const [advertChannel, setAdvertChannel]         = useState<'email' | 'whatsapp' | 'message'>('email')
+  const [sendingAdvert, setSendingAdvert]       = useState(false)
+  const [advertSent, setAdvertSent]           = useState(false)
+
+  // Toast
+  const [regToast, setRegToast] = useState<string | null>(null)
+  function showRegToast(msg: string) { setRegToast(msg); setTimeout(() => setRegToast(null), 3500) }
 
   const AVATAR_GRADIENTS = [
     'from-violet-500 to-purple-600', 'from-blue-500 to-blue-700',
@@ -921,86 +936,158 @@ export default function AdminSettings() {
     if (d < 2592000) return `${Math.floor(d / 86400)}d ago`
     return new Date(iso).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })
   }
+  function formatDate(iso: string) {
+    return new Date(iso).toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric' })
+  }
 
-  function buildContactRecord(
-    type: 'landlord' | 'tenant',
-    data: any,
-    enquiryCount: number,
-    propertyCount: number,
-  ): ContactRecord {
+  const loadRegData = useCallback(async () => {
+    setRegLoading(true)
+    const supabase = createClient()
+    const now = new Date()
+    const weekAgo = new Date(now.getTime() - 7 * 86400000).toISOString()
+
+    const [ll, tn] = await Promise.all([
+      supabase.from('landlords')
+        .select('id, user_id, full_name, email, whatsapp, phone, status, city, created_at, updated_at, avatar_url, admin_notes, provider')
+        .order('created_at', { ascending: false }),
+      supabase.from('tenants')
+        .select('id, user_id, full_name, email, phone, status, city, created_at, updated_at, avatar_url, admin_notes, provider')
+        .order('created_at', { ascending: false }),
+    ])
+
+    // Enrich with enquiry counts
+    const allIds = [...(ll.data ?? []).map((l: any) => ({ id: l.id, type: 'landlord' })),
+                     ...(tn.data ?? []).map((t: any) => ({ id: t.id, type: 'tenant' }))]
+    const enquiryCounts: Record<string, number> = {}
+    const propertyCounts: Record<string, number> = {}
+
+    if (allIds.length > 0) {
+      const llIds = (ll.data ?? []).map((l: any) => l.id)
+      const tnIds = (tn.data ?? []).map((t: any) => t.id)
+
+      const [enqs, props] = await Promise.all([
+        supabase.from('enquiries').select('id, tenant_id, landlord_id'),
+        supabase.from('properties').select('id, landlord_id').eq('status', 'available'),
+      ])
+
+      for (const e of (enqs.data ?? []) as any[]) {
+        if (e.tenant_id) enquiryCounts[e.tenant_id] = (enquiryCounts[e.tenant_id] || 0) + 1
+        if (e.landlord_id) enquiryCounts[e.landlord_id] = (enquiryCounts[e.landlord_id] || 0) + 1
+      }
+      for (const p of (props.data ?? []) as any[]) {
+        if (p.landlord_id) propertyCounts[p.landlord_id] = (propertyCounts[p.landlord_id] || 0) + 1
+      }
+    }
+
+    setRegLandlords((ll.data ?? []).map((l: any) => ({
+      ...l, _enquiryCount: enquiryCounts[l.id] || 0, _propertyCount: propertyCounts[l.id] || 0,
+    })))
+    setRegTenants((tn.data ?? []).map((t: any) => ({
+      ...t, _enquiryCount: enquiryCounts[t.id] || 0, _propertyCount: 0,
+    })))
+    setRegLoading(false)
+  }, [])
+
+  useEffect(() => {
+    if (active === 'registration') loadRegData()
+  }, [active, loadRegData])
+
+  function buildContactRecord(type: 'landlord' | 'tenant', data: any): ContactRecord {
     return {
-      type,
-      id: data.id,
-      userId: data.user_id,
+      type, id: data.id, userId: data.user_id,
       name: data.full_name ?? 'Unknown',
       initials: regInitials(data.full_name ?? 'U'),
       grad: regGrad(data.full_name ?? 'U'),
       email: data.email ?? null,
-      phone: data.whatsapp ?? data.phone ?? null,
+      phone: type === 'landlord' ? (data.whatsapp ?? data.phone ?? null) : (data.phone ?? null),
       status: data.status ?? 'active',
       joinedAgo: timeAgo(data.created_at),
       createdAt: data.created_at,
       updatedAt: data.updated_at,
-      enquiryCount,
-      propertyCount,
-      bio: data.bio ?? null,
+      enquiryCount: data._enquiryCount ?? 0,
+      propertyCount: data._propertyCount ?? 0,
+      bio: null,
       provider: data.provider ?? null,
+      city: data.city ?? null,
+      avatarUrl: data.avatar_url ?? null,
+      adminNotes: data.admin_notes ?? null,
     }
   }
 
   const allContacts: ContactRecord[] = [
-    ...regLandlords.map(l => buildContactRecord('landlord', l, 0, 0)),
-    ...regTenants.map(t => buildContactRecord('tenant', t, 0, 0)),
+    ...regLandlords.map(l => buildContactRecord('landlord', l)),
+    ...regTenants.map(t => buildContactRecord('tenant', t)),
   ]
 
   const q = regSearch.toLowerCase()
   const filteredReg = allContacts.filter(c => {
     if (regTab !== 'all' && c.type !== regTab) return false
+    if (regStatus !== 'all' && c.status !== regStatus) return false
     if (!q) return true
     return c.name.toLowerCase().includes(q) ||
       (c.email ?? '').toLowerCase().includes(q) ||
-      (c.phone ?? '').includes(q)
+      (c.phone ?? '').includes(q) ||
+      c.type.toLowerCase().includes(q) ||
+      (c.city ?? '').toLowerCase().includes(q)
   })
 
-  // ── Contact detail drawer state ───────────────────────────────────────────────
-  const [contactDetail, setContactDetail]   = useState<any | null>(null)
-  const [detailLoading, setDetailLoading]   = useState(false)
-  const [notes, setNotes]                   = useState('')
-  const [savingNotes, setSavingNotes]       = useState(false)
-  const [contactEnquiries, setContactEnquiries] = useState<any[]>([])
+  const totalCount   = allContacts.length
+  const landlordCount = regLandlords.length
+  const tenantCount  = regTenants.length
+  const newThisWeek  = allContacts.filter(c => c.createdAt > new Date(Date.now() - 7 * 86400000).toISOString()).length
 
+  // Open contact profile drawer
   const openContact = useCallback(async (contact: ContactRecord) => {
     setSelectedContact(contact)
     setDetailLoading(true)
-    setNotes('')
+    setContactDrawerTab('overview')
+    setNotes(contact.adminNotes ?? '')
     setContactEnquiries([])
+    setContactNotes([])
+    setContactComms([])
+    setContactProperties([])
     const supabase = createClient()
+    const table = contact.type === 'tenant' ? 'tenants' : 'landlords'
+
+    const fetches = [
+      supabase.from(table).select('*').eq('id', contact.id).single(),
+      supabase.from('contact_notes')
+        .select('*').eq('contact_id', contact.id).eq('contact_type', contact.type)
+        .order('created_at', { ascending: false }).limit(20),
+      supabase.from('contact_communications')
+        .select('*').eq('contact_id', contact.id).eq('contact_type', contact.type)
+        .order('created_at', { ascending: false }).limit(20),
+    ]
+
     if (contact.type === 'tenant') {
-      const [detailRes, enqRes] = await Promise.all([
-        supabase.from('tenants').select('*').eq('id', contact.id).single(),
+      fetches.push(
         supabase.from('enquiries')
           .select('*, properties(title, city)')
           .eq('tenant_id', contact.id)
-          .order('created_at', { ascending: false })
-          .limit(20),
-      ])
-      setContactDetail(detailRes.data ?? null)
-      setContactEnquiries(enqRes.data ?? [])
+          .order('created_at', { ascending: false }).limit(20),
+      )
     } else {
-      const [detailRes, enqRes, propRes] = await Promise.all([
-        supabase.from('landlords').select('*').eq('id', contact.id).single(),
+      fetches.push(
         supabase.from('enquiries')
           .select('*, properties(title, city), tenants(full_name)')
           .eq('landlord_id', contact.id)
-          .order('created_at', { ascending: false })
-          .limit(20),
-        supabase.from('properties').select('id, title, city, status, type, price').eq('landlord_id', contact.id).order('created_at', { ascending: false }),
-      ])
-      setContactDetail(detailRes.data ?? null)
-      setContactEnquiries(enqRes.data ?? [])
-      if (propRes.data) {
-        setContactDetail((prev: any) => prev ? { ...prev, _properties: propRes.data } : prev)
-      }
+          .order('created_at', { ascending: false }).limit(20),
+        supabase.from('properties')
+          .select('id, title, city, status, type, price, featured')
+          .eq('landlord_id', contact.id)
+          .order('created_at', { ascending: false }),
+      )
+    }
+
+    const results = await Promise.all(fetches)
+    setContactDetail(results[0].data ?? null)
+    setContactNotes(results[1].data ?? [])
+    setContactComms(results[2].data ?? [])
+    if (contact.type === 'tenant') {
+      setContactEnquiries(results[3]?.data ?? [])
+    } else {
+      setContactEnquiries(results[3]?.data ?? [])
+      setContactProperties(results[4]?.data ?? [])
     }
     setDetailLoading(false)
   }, [])
@@ -1010,11 +1097,178 @@ export default function AdminSettings() {
     setSavingNotes(true)
     const supabase = createClient()
     const table = selectedContact.type === 'tenant' ? 'tenants' : 'landlords'
-    await supabase.from(table).update({ admin_notes: notes }).eq('id', selectedContact.id)
+    const { error } = await supabase.from(table).update({ admin_notes: notes }).eq('id', selectedContact.id)
+    if (!error) {
+      // Also save to contact_notes table if the column is not null
+      if (notes.trim()) {
+        await supabase.from('contact_notes').insert({
+          contact_id: selectedContact.id,
+          contact_type: selectedContact.type,
+          content: notes.trim(),
+        })
+      }
+      showRegToast('Note saved.')
+    }
     setSavingNotes(false)
   }, [selectedContact, notes])
 
-  const closeContact = () => { setSelectedContact(null); setContactDetail(null); setContactEnquiries([]) }
+  const sendEmail = useCallback(async () => {
+    if (!selectedContact || !emailSubject.trim()) return
+    setSendingEmail(true)
+    const supabase = createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+
+    // Record the communication
+    await supabase.from('contact_communications').insert({
+      contact_id: selectedContact.id,
+      contact_type: selectedContact.type,
+      channel: 'email',
+      subject: emailSubject.trim(),
+      body: emailBody.trim(),
+      sent_by: user?.id,
+    })
+
+    // Send via Resend
+    const res = await fetch('/api/send-support-notification', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        event: 'admin_email',
+        adminEmail: selectedContact.email ?? 'noreply@livarex.com.ng',
+        subject: emailSubject.trim(),
+        body: emailBody.trim(),
+        contactName: selectedContact.name,
+      }),
+    })
+    setSendingEmail(false)
+    if (res.ok) {
+      setEmailSent(true)
+      setShowEmailComposer(false)
+      setEmailSubject(''); setEmailBody('')
+      showRegToast(`Email sent to ${selectedContact.name}.`)
+      // Refresh communications
+      const comms = await supabase.from('contact_communications')
+        .select('*').eq('contact_id', selectedContact.id).eq('contact_type', selectedContact.type)
+        .order('created_at', { ascending: false }).limit(20)
+      setContactComms(comms.data ?? [])
+    } else {
+      showRegToast('Failed to send email. Please try again.')
+    }
+  }, [selectedContact, emailSubject, emailBody])
+
+  const sendAdvert = useCallback(async () => {
+    if (!selectedContact || !selectedProperty) return
+    setSendingAdvert(true)
+    const supabase = createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+
+    // Record the communication
+    await supabase.from('contact_communications').insert({
+      contact_id: selectedContact.id,
+      contact_type: selectedContact.type,
+      channel: 'advert',
+      subject: selectedProperty.title,
+      body: `${selectedProperty.type === 'rent' ? 'For Rent' : 'For Sale'}: ${selectedProperty.title} in ${selectedProperty.city} — ₦${Number(selectedProperty.price).toLocaleString()}`,
+      property_id: selectedProperty.id,
+      sent_by: user?.id,
+    })
+
+    if (advertChannel === 'email' && selectedContact.email) {
+      await fetch('/api/send-support-notification', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          event: 'admin_email',
+          adminEmail: selectedContact.email,
+          subject: `Check out this Livarex listing: ${selectedProperty.title}`,
+          body: `${selectedProperty.title}\n${selectedProperty.city}\n₦${Number(selectedProperty.price).toLocaleString()}\n\nView online: https://livarex.com.ng/listings/${selectedProperty.id}`,
+          contactName: selectedContact.name,
+        }),
+      })
+    } else if (advertChannel === 'whatsapp' && selectedContact.phone) {
+      // Just open WhatsApp — no server call needed
+      const digits = (selectedContact.phone).replace(/\D/g, '')
+      const normalized = digits.startsWith('0') ? '234' + digits.slice(1) : digits
+      const msg = encodeURIComponent(`Hi ${selectedContact.name}, check out this listing on Livarex: ${selectedProperty.title} — ₦${Number(selectedProperty.price).toLocaleString()} https://livarex.com.ng/listings/${selectedProperty.id}`)
+      window.open(`https://wa.me/${normalized}?text=${msg}`, '_blank')
+    }
+
+    setSendingAdvert(false)
+    setAdvertSent(true)
+    setShowAdvertModal(false)
+    setSelectedProperty(null)
+    setAdvertChannel('email')
+    showRegToast(`Advert sent to ${selectedContact.name} via ${advertChannel}.`)
+
+    // Refresh communications
+    const comms = await supabase.from('contact_communications')
+      .select('*').eq('contact_id', selectedContact.id).eq('contact_type', selectedContact.type)
+      .order('created_at', { ascending: false }).limit(20)
+    setContactComms(comms.data ?? [])
+  }, [selectedContact, selectedProperty, advertChannel])
+
+  const closeContact = () => {
+    setSelectedContact(null); setContactDetail(null); setContactEnquiries([])
+    setContactNotes([]); setContactComms([]); setContactProperties([])
+    setShowEmailComposer(false); setShowAdvertModal(false)
+    setEmailSubject(''); setEmailBody(''); setSelectedProperty(null)
+  }
+
+  // Load properties for advert modal
+  useEffect(() => {
+    if (!showAdvertModal) return
+    const load = async () => {
+      const supabase = createClient()
+      const { data } = await supabase
+        .from('properties')
+        .select('id, title, city, price, type, status, featured')
+        .eq('status', 'available')
+        .order('created_at', { ascending: false })
+        .limit(50)
+      setAdvertProperties(data ?? [])
+    }
+    load()
+  }, [showAdvertModal])
+
+  const filteredAdvertProperties = advertProperties.filter((p: any) =>
+    !advertSearch || p.title.toLowerCase().includes(advertSearch.toLowerCase()) ||
+    (p.city ?? '').toLowerCase().includes(advertSearch.toLowerCase())
+  )
+
+  // Build timeline from communications + enquiries + notes
+  function buildTimeline(contact: ContactRecord) {
+    const events: { ts: string; icon: any; color: string; label: string; sub?: string }[] = []
+
+    // Registration
+    events.push({ ts: contact.createdAt, icon: UserPlus, color: 'bg-blue-50 text-blue-600 border-blue-100',
+      label: `Registered as ${contact.type}`, sub: formatDate(contact.createdAt) })
+
+    // Enquiries
+    for (const e of contactEnquiries) {
+      events.push({ ts: e.created_at, icon: MessageSquare, color: 'bg-amber-50 text-amber-600 border-amber-100',
+        label: `Enquiry: ${(e as any).properties?.title ?? 'Property'}`, sub: e.status })
+    }
+
+    // Communications
+    for (const c of contactComms) {
+      const icon = c.channel === 'email' ? Mail : c.channel === 'whatsapp' ? Phone : c.channel === 'advert' ? Building2 : MessageSquare
+      const color = c.channel === 'email' ? 'bg-violet-50 text-violet-600 border-violet-100'
+        : c.channel === 'whatsapp' ? 'bg-green-50 text-green-600 border-green-100'
+        : c.channel === 'advert' ? 'bg-blue-50 text-blue-600 border-blue-100'
+        : 'bg-slate-50 text-slate-600 border-slate-100'
+      events.push({ ts: c.created_at, icon, color,
+        label: `${c.channel === 'email' ? 'Email' : c.channel === 'whatsapp' ? 'WhatsApp' : c.channel === 'advert' ? 'Property advert' : 'Message'}: ${c.subject ?? c.body ?? ''}`.slice(0, 80),
+        sub: c.channel })
+    }
+
+    // Notes
+    for (const n of contactNotes) {
+      events.push({ ts: n.created_at, icon: FileText, color: 'bg-slate-50 text-slate-600 border-slate-100',
+        label: `Note: ${n.content?.slice(0, 60)}`, sub: 'Admin note' })
+    }
+
+    return events.sort((a, b) => new Date(b.ts).getTime() - new Date(a.ts).getTime())
+  }
 
   function downloadHistoryCsv() {
     const KYC_STATUS: Record<string, string> = {
@@ -2044,122 +2298,187 @@ export default function AdminSettings() {
                 </div>
               )}
 
-              {/* ─── REGISTRATION ─── */}
+              {/* ─── REGISTRATION / CONTACT HUB ─── */}
               {active === 'registration' && (
                 <div>
-                  <SectionTitle
-                    title="Registration"
-                    sub="Manage how users register and are recorded in the system. Click any contact to view their full profile, activity timeline, and communication history."
-                    icon={UserCheck}
-                  />
-
-                  {/* Search */}
-                  <div className="mb-4">
-                    <div className="relative">
-                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
-                      <input
-                        type="text"
-                        value={regSearch}
-                        onChange={e => setRegSearch(e.target.value)}
-                        placeholder="Search by name, email or phone…"
-                        className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/50 focus:bg-white transition-all"
+                  {/* Header */}
+                  <div className="flex items-start justify-between gap-4 mb-5">
+                    <div>
+                      <SectionTitle
+                        title="Registration"
+                        sub="Manage registered users and landlords, view their contact information, and communicate with them directly from Livarex."
+                        icon={UserCheck}
                       />
-                      {regSearch && (
-                        <button
-                          type="button"
-                          onClick={() => setRegSearch('')}
-                          className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
-                        >
-                          <X className="w-4 h-4" />
-                        </button>
-                      )}
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <div className="relative">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 pointer-events-none" />
+                        <input
+                          type="text"
+                          value={regSearch}
+                          onChange={e => setRegSearch(e.target.value)}
+                          placeholder="Search contacts…"
+                          className="w-48 pl-9 pr-4 py-2 rounded-xl border border-slate-200 bg-slate-50 text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/50 focus:bg-white transition-all"
+                        />
+                        {regSearch && (
+                          <button type="button" onClick={() => setRegSearch('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+                            <X className="w-3.5 h-3.5" />
+                          </button>
+                        )}
+                      </div>
                     </div>
                   </div>
 
-                  {/* Filter tabs */}
-                  <div className="flex gap-1.5 mb-4">
-                    {(['all', 'landlord', 'tenant'] as const).map(tab => (
-                      <button
-                        key={tab}
-                        type="button"
-                        onClick={() => setRegTab(tab)}
-                        className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
-                          regTab === tab
-                            ? 'bg-slate-900 text-white'
-                            : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                        }`}
-                      >
-                        {tab === 'all' ? 'All' : tab === 'landlord' ? 'Landlords' : 'Tenants'}
-                        <span className={`inline-flex h-4 min-w-[18px] px-1 rounded-md text-[10px] font-bold ${
-                          regTab === tab ? 'bg-white/20 text-white' : 'bg-white text-slate-500'
+                  {/* Summary stats */}
+                  <div className="grid grid-cols-4 gap-3 mb-5">
+                    {[
+                      { label: 'All', value: totalCount, active: regTab === 'all' && regStatus === 'all', on: () => { setRegTab('all'); setRegStatus('all') } },
+                      { label: 'Landlords', value: landlordCount, active: regTab === 'landlord', on: () => { setRegTab('landlord'); setRegStatus('all') } },
+                      { label: 'Tenants', value: tenantCount, active: regTab === 'tenant', on: () => { setRegTab('tenant'); setRegStatus('all') } },
+                      { label: 'New', value: newThisWeek, active: regStatus === 'new', on: () => setRegStatus(regStatus === 'new' ? 'all' : 'new'), highlight: true },
+                    ].map(s => (
+                      <button key={s.label} type="button" onClick={s.on}
+                        className={`rounded-xl border px-4 py-3 text-left transition hover:shadow-sm ${
+                          s.active
+                            ? 'bg-slate-900 border-slate-900 text-white shadow-sm'
+                            : 'bg-white border-slate-200 hover:border-slate-300'
                         }`}>
-                          {tab === 'all'
-                            ? regLandlords.length + regTenants.length
-                            : tab === 'landlord' ? regLandlords.length : regTenants.length}
-                        </span>
+                        <p className={`text-xl font-extrabold leading-tight ${s.active ? 'text-white' : s.highlight ? 'text-amber-600' : 'text-slate-900'}`}>
+                          {s.value}
+                        </p>
+                        <p className={`text-[10px] font-semibold uppercase tracking-wider mt-0.5 ${s.active ? 'text-white/70' : 'text-slate-400'}`}>
+                          {s.label}
+                        </p>
                       </button>
                     ))}
                   </div>
 
+                  {/* Filter row */}
+                  <div className="flex items-center gap-2 mb-4 flex-wrap">
+                    <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Status:</span>
+                    {['all', 'active', 'pending', 'not_submitted', 'suspended'].map(s => (
+                      <button key={s} type="button" onClick={() => setRegStatus(s)}
+                        className={`inline-flex items-center rounded-full px-3 py-1 text-[11px] font-semibold transition ${
+                          regStatus === s
+                            ? 'bg-slate-900 text-white'
+                            : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                        }`}>
+                        {s === 'all' ? 'All' : s === 'not_submitted' ? 'Not Submitted' : s.charAt(0).toUpperCase() + s.slice(1)}
+                      </button>
+                    ))}
+                    <span className="ml-2 text-[10px] text-slate-400">· {filteredReg.length} contact{filteredReg.length !== 1 ? 's' : ''}</span>
+                  </div>
+
+                  {/* Contact table */}
                   {regLoading ? (
-                    <div className="flex items-center justify-center py-16">
-                      <div className="animate-spin w-7 h-7 border-[3px] border-slate-200 border-t-slate-900 rounded-full" />
+                    <div className="flex items-center justify-center py-20">
+                      <div className="animate-spin w-8 h-8 border-[3px] border-slate-200 border-t-slate-900 rounded-full" />
                     </div>
                   ) : filteredReg.length === 0 ? (
-                    <div className="rounded-xl border border-dashed border-slate-200 p-10 text-center">
-                      <UserCheck className="w-8 h-8 text-slate-300 mx-auto mb-2" />
-                      <p className="text-sm font-semibold text-slate-600">No contacts found</p>
-                      <p className="text-xs text-slate-400 mt-1">Try adjusting your search or filter.</p>
+                    <div className="rounded-xl border border-dashed border-slate-200 p-12 text-center">
+                      <UserCheck className="w-10 h-10 text-slate-200 mx-auto mb-3" />
+                      <p className="text-sm font-bold text-slate-600 mb-1">No contacts found</p>
+                      <p className="text-xs text-slate-400">Try searching by name, email, phone number, or user type.</p>
                     </div>
                   ) : (
-                    <div className="space-y-2">
-                      {filteredReg.map(contact => (
-                        <button
-                          key={`${contact.type}-${contact.id}`}
-                          type="button"
-                          onClick={() => setSelectedContact(contact)}
-                          className="w-full flex items-center gap-3.5 rounded-xl border border-slate-200 bg-white px-4 py-3 text-left hover:border-slate-300 hover:shadow-sm transition-all"
-                        >
-                          {/* Avatar */}
-                          <div className={`w-9 h-9 rounded-lg bg-gradient-to-br ${contact.grad} flex items-center justify-center shrink-0`}>
-                            <span className="text-[11px] font-bold text-white">{contact.initials}</span>
-                          </div>
+                    <div className="rounded-xl border border-slate-200 overflow-hidden">
+                      {/* Table header */}
+                      <div className="hidden sm:grid grid-cols-[auto_1fr_auto_auto_auto_auto] gap-4 px-4 py-2.5 bg-slate-50 border-b border-slate-100">
+                        {['Contact', 'Email', 'Phone', 'Type', 'Activity', 'Actions'].map(h => (
+                          <p key={h} className="text-[10px] font-bold uppercase tracking-widest text-slate-400">{h}</p>
+                        ))}
+                      </div>
 
-                          {/* Info */}
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2">
-                              <p className="text-sm font-semibold text-slate-900 truncate">{contact.name}</p>
-                              <span className={`shrink-0 inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold ${
-                                contact.type === 'landlord'
-                                  ? 'bg-violet-50 text-violet-600 border border-violet-100'
-                                  : 'bg-blue-50 text-blue-600 border border-blue-100'
-                              }`}>
-                                {contact.type === 'landlord' ? 'Landlord' : 'Tenant'}
-                              </span>
-                              {contact.status && contact.status !== 'active' && (
-                                <span className="shrink-0 inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold bg-amber-50 text-amber-600 border border-amber-100">
-                                  {contact.status}
-                                </span>
+                      {/* Rows */}
+                      <div className="divide-y divide-slate-100">
+                        {filteredReg.map(contact => (
+                          <div key={`${contact.type}-${contact.id}`}
+                            className="flex items-center gap-3 px-4 py-3 hover:bg-slate-50/60 transition cursor-pointer group"
+                            onClick={() => openContact(contact)}>
+                            {/* Avatar */}
+                            <div className={`relative w-9 h-9 rounded-lg bg-gradient-to-br ${contact.grad} flex items-center justify-center shrink-0`}>
+                              {contact.avatarUrl ? (
+                                <img src={contact.avatarUrl} alt={contact.name} className="w-full h-full rounded-lg object-cover" />
+                              ) : (
+                                <span className="text-[11px] font-bold text-white">{contact.initials}</span>
                               )}
+                              <span className={`absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full border-2 border-white ${
+                                contact.status === 'active' ? 'bg-emerald-400' :
+                                contact.status === 'pending' || contact.status === 'not_submitted' ? 'bg-amber-400' :
+                                contact.status === 'suspended' ? 'bg-red-400' : 'bg-slate-300'
+                              }`} />
                             </div>
-                            <p className="text-[11px] text-slate-500 truncate mt-0.5">
-                              {contact.email || contact.phone || 'No contact details'}
-                              {contact.enquiryCount > 0 && (
-                                <span className="ml-2 text-slate-400">· {contact.enquiryCount} enquiry{contact.enquiryCount !== 1 ? 's' : ''}</span>
-                              )}
-                              {contact.propertyCount > 0 && (
-                                <span className="ml-2 text-slate-400">· {contact.propertyCount} listing{contact.propertyCount !== 1 ? 's' : ''}</span>
-                              )}
-                            </p>
-                          </div>
 
-                          {/* Time */}
-                          <div className="shrink-0 text-right hidden sm:block">
-                            <p className="text-[11px] text-slate-400">{contact.joinedAgo}</p>
-                            <ChevronRight className="w-3.5 h-3.5 text-slate-300 ml-auto mt-0.5" />
+                            {/* Name + badges */}
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-semibold text-slate-900 truncate">{contact.name}</p>
+                              <div className="flex items-center gap-1.5 mt-0.5">
+                                <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold ${
+                                  contact.type === 'landlord'
+                                    ? 'bg-violet-50 text-violet-600 border border-violet-100'
+                                    : 'bg-blue-50 text-blue-600 border border-blue-100'
+                                }`}>
+                                  {contact.type === 'landlord' ? 'Landlord' : 'Tenant'}
+                                </span>
+                                {contact.status !== 'active' && (
+                                  <span className="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold bg-amber-50 text-amber-600 border border-amber-100 capitalize">
+                                    {contact.status === 'not_submitted' ? 'Not Submitted' : contact.status}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+
+                            {/* Email */}
+                            <div className="hidden md:block min-w-0 flex-1">
+                              <p className="text-xs text-slate-500 truncate">{contact.email || '—'}</p>
+                            </div>
+
+                            {/* Phone */}
+                            <div className="hidden md:block min-w-0">
+                              <p className="text-xs text-slate-500">{contact.phone || '—'}</p>
+                            </div>
+
+                            {/* Type (mobile) */}
+                            <div className="sm:hidden">
+                              <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold ${
+                                contact.type === 'landlord' ? 'bg-violet-50 text-violet-600' : 'bg-blue-50 text-blue-600'
+                              }`}>{contact.type === 'landlord' ? 'LL' : 'TN'}</span>
+                            </div>
+
+                            {/* Activity */}
+                            <div className="hidden sm:block shrink-0 text-right">
+                              <p className="text-[11px] text-slate-400">{contact.joinedAgo}</p>
+                              <p className="text-[10px] text-slate-300 mt-0.5">
+                                {contact.enquiryCount > 0 ? `${contact.enquiryCount} enquiry${contact.enquiryCount !== 1 ? 's' : ''}` : ''}
+                              </p>
+                            </div>
+
+                            {/* Quick actions */}
+                            <div className="flex items-center gap-1 shrink-0" onClick={e => e.stopPropagation()}>
+                              {contact.email && (
+                                <a href={`mailto:${contact.email}`} title="Send email"
+                                  className="w-7 h-7 rounded-lg flex items-center justify-center text-slate-400 hover:text-violet-600 hover:bg-violet-50 transition">
+                                  <Mail className="w-3.5 h-3.5" />
+                                </a>
+                              )}
+                              {contact.phone && (
+                                <a href={`https://wa.me/${(contact.phone).replace(/\D/g, '').replace(/^0/, '234')}`} target="_blank" rel="noopener noreferrer"
+                                  title="Send WhatsApp"
+                                  className="w-7 h-7 rounded-lg flex items-center justify-center text-slate-400 hover:text-green-600 hover:bg-green-50 transition">
+                                  <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor">
+                                    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.027 6.988 2.898a9.825 9.825 0 012.893 6.793c-.001 5.45-4.436 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+                                  </svg>
+                                </a>
+                              )}
+                              <button type="button" onClick={() => openContact(contact)}
+                                title="View profile"
+                                className="w-7 h-7 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition">
+                                <ChevronRight className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
                           </div>
-                        </button>
-                      ))}
+                        ))}
+                      </div>
                     </div>
                   )}
                 </div>
@@ -2306,215 +2625,430 @@ export default function AdminSettings() {
             </div>
           </div>
 
-      {/* ── Contact detail drawer ── */}
+      {/* ── Contact profile drawer ── */}
       {selectedContact && (
         <>
           <div className="fixed inset-0 bg-black/30 backdrop-blur-sm z-40" onClick={closeContact} />
           <div className="fixed inset-y-0 right-0 z-50 w-full max-w-lg bg-white shadow-2xl flex flex-col overflow-hidden">
-            {/* Drawer header */}
-            <div className="flex items-center gap-3.5 px-5 py-4 border-b border-slate-100 shrink-0">
-              <div className={`w-11 h-11 rounded-xl bg-gradient-to-br ${selectedContact.grad} flex items-center justify-center shrink-0`}>
-                <span className="text-sm font-bold text-white">{selectedContact.initials}</span>
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                  <p className="font-bold text-gray-900 truncate">{selectedContact.name}</p>
-                  <span className={`shrink-0 inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold ${
-                    selectedContact.type === 'landlord'
-                      ? 'bg-violet-50 text-violet-600 border border-violet-100'
-                      : 'bg-blue-50 text-blue-600 border border-blue-100'
-                  }`}>
-                    {selectedContact.type === 'landlord' ? 'Landlord' : 'Tenant'}
-                  </span>
+
+            {/* Header */}
+            <div className="shrink-0 border-b border-slate-100">
+              <div className="flex items-center gap-3 px-5 py-4">
+                <div className={`relative w-12 h-12 rounded-xl bg-gradient-to-br ${selectedContact.grad} flex items-center justify-center shrink-0`}>
+                  {selectedContact.avatarUrl ? (
+                    <img src={selectedContact.avatarUrl} alt={selectedContact.name} className="w-full h-full rounded-xl object-cover" />
+                  ) : (
+                    <span className="text-sm font-bold text-white">{selectedContact.initials}</span>
+                  )}
+                  <span className={`absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-white ${
+                    selectedContact.status === 'active' ? 'bg-emerald-400' :
+                    selectedContact.status === 'pending' || selectedContact.status === 'not_submitted' ? 'bg-amber-400' :
+                    selectedContact.status === 'suspended' ? 'bg-red-400' : 'bg-slate-300'
+                  }`} />
                 </div>
-                <p className="text-xs text-gray-400 mt-0.5">
-                  Joined {selectedContact.joinedAgo}
-                </p>
+                <div className="flex-1 min-w-0">
+                  <p className="text-base font-extrabold text-slate-900 truncate">{selectedContact.name}</p>
+                  <div className="flex items-center gap-2 mt-0.5">
+                    <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold ${
+                      selectedContact.type === 'landlord'
+                        ? 'bg-violet-50 text-violet-600 border border-violet-100'
+                        : 'bg-blue-50 text-blue-600 border border-blue-100'
+                    }`}>
+                      {selectedContact.type === 'landlord' ? 'Landlord' : 'Tenant'}
+                    </span>
+                    {selectedContact.status !== 'active' && (
+                      <span className="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold bg-amber-50 text-amber-600 border border-amber-100 capitalize">
+                        {selectedContact.status === 'not_submitted' ? 'Not Submitted' : selectedContact.status}
+                      </span>
+                    )}
+                  </div>
+                </div>
+                <button onClick={closeContact} className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-slate-100 text-slate-400 shrink-0">
+                  <X className="w-4 h-4" />
+                </button>
               </div>
-              <button onClick={closeContact} className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-slate-100 text-gray-400 shrink-0">
+
+              {/* Action buttons */}
+              <div className="flex items-center gap-2 px-5 pb-4">
+                {selectedContact.email && (
+                  <button type="button" onClick={() => { setShowEmailComposer(true) }}
+                    className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-xl bg-violet-600 hover:bg-violet-700 text-white text-xs font-bold py-2.5 transition">
+                    <Mail className="w-3.5 h-3.5" /> Email
+                  </button>
+                )}
+                {selectedContact.phone && (
+                  <a href={`https://wa.me/${(selectedContact.phone).replace(/\D/g, '').replace(/^0/, '234')}`} target="_blank" rel="noopener noreferrer"
+                    className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-xl bg-green-600 hover:bg-green-700 text-white text-xs font-bold py-2.5 transition">
+                    <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.027 6.988 2.898a9.825 9.825 0 012.893 6.793c-.001 5.45-4.436 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+                    WhatsApp
+                  </a>
+                )}
+                <button type="button" onClick={() => { setShowAdvertModal(true) }}
+                  className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold py-2.5 transition">
+                  <Building2 className="w-3.5 h-3.5" /> Send Advert
+                </button>
+              </div>
+
+              {/* Tabs */}
+              <div className="flex border-t border-slate-100">
+                {(['overview', 'activity', 'notes'] as const).map(tab => (
+                  <button key={tab} type="button" onClick={() => setContactDrawerTab(tab)}
+                    className={`flex-1 py-2.5 text-xs font-semibold capitalize transition border-b-2 ${
+                      contactDrawerTab === tab
+                        ? 'border-slate-900 text-slate-900'
+                        : 'border-transparent text-slate-400 hover:text-slate-600'
+                    }`}>
+                    {tab === 'overview' ? 'Overview' : tab === 'activity' ? 'Activity' : 'Notes'}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Drawer body */}
+            <div className="flex-1 overflow-y-auto">
+
+              {/* ── Overview tab ── */}
+              {contactDrawerTab === 'overview' && (
+                <div>
+                  {/* Contact info */}
+                  <div className="px-5 py-4 border-b border-slate-100">
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-3">Contact Information</p>
+                    <div className="space-y-3">
+                      {selectedContact.email && (
+                        <div className="flex items-start gap-3">
+                          <div className="w-8 h-8 rounded-lg bg-slate-50 border border-slate-100 flex items-center justify-center shrink-0 mt-0.5">
+                            <Mail className="w-3.5 h-3.5 text-slate-400" />
+                          </div>
+                          <div className="min-w-0">
+                            <p className="text-[10px] text-slate-400 font-medium uppercase tracking-wider">Email</p>
+                            <a href={`mailto:${selectedContact.email}`} className="text-xs font-semibold text-blue-600 truncate block">{selectedContact.email}</a>
+                          </div>
+                        </div>
+                      )}
+                      {selectedContact.phone && (
+                        <div className="flex items-start gap-3">
+                          <div className="w-8 h-8 rounded-lg bg-slate-50 border border-slate-100 flex items-center justify-center shrink-0 mt-0.5">
+                            <Phone className="w-3.5 h-3.5 text-slate-400" />
+                          </div>
+                          <div className="min-w-0">
+                            <p className="text-[10px] text-slate-400 font-medium uppercase tracking-wider">Phone / WhatsApp</p>
+                            <a href={`tel:${selectedContact.phone}`} className="text-xs font-semibold text-slate-700 truncate block">{selectedContact.phone}</a>
+                          </div>
+                        </div>
+                      )}
+                      {selectedContact.city && (
+                        <div className="flex items-start gap-3">
+                          <div className="w-8 h-8 rounded-lg bg-slate-50 border border-slate-100 flex items-center justify-center shrink-0 mt-0.5">
+                            <MapPin className="w-3.5 h-3.5 text-slate-400" />
+                          </div>
+                          <div className="min-w-0">
+                            <p className="text-[10px] text-slate-400 font-medium uppercase tracking-wider">Location</p>
+                            <p className="text-xs font-semibold text-slate-700">{selectedContact.city}</p>
+                          </div>
+                        </div>
+                      )}
+                      <div className="flex items-start gap-3">
+                        <div className="w-8 h-8 rounded-lg bg-slate-50 border border-slate-100 flex items-center justify-center shrink-0 mt-0.5">
+                          <User className="w-3.5 h-3.5 text-slate-400" />
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-[10px] text-slate-400 font-medium uppercase tracking-wider">Account Type</p>
+                          <p className="text-xs font-semibold text-slate-700 capitalize">{selectedContact.type}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-start gap-3">
+                        <div className="w-8 h-8 rounded-lg bg-slate-50 border border-slate-100 flex items-center justify-center shrink-0 mt-0.5">
+                          <Clock className="w-3.5 h-3.5 text-slate-400" />
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-[10px] text-slate-400 font-medium uppercase tracking-wider">Registered</p>
+                          <p className="text-xs font-semibold text-slate-700">{formatDate(selectedContact.createdAt)}</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Stats */}
+                  <div className="grid grid-cols-3 divide-x divide-slate-100 border-b border-slate-100">
+                    {[
+                      { label: 'Enquiries', value: contactEnquiries.length },
+                      { label: 'Listings', value: contactProperties.length },
+                      { label: 'Status', value: (selectedContact.status || 'active').replace(/_/g, ' ') },
+                    ].map(s => (
+                      <div key={s.label} className="px-4 py-3 text-center">
+                        <p className="text-base font-extrabold text-slate-900 capitalize">{s.value}</p>
+                        <p className="text-[10px] text-slate-400 font-medium uppercase tracking-wider mt-0.5">{s.label}</p>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Listings (landlords only) */}
+                  {selectedContact.type === 'landlord' && contactProperties.length > 0 && (
+                    <div className="px-5 py-4 border-b border-slate-100">
+                      <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-3">Listings ({contactProperties.length})</p>
+                      <div className="space-y-2">
+                        {contactProperties.slice(0, 5).map((p: any) => (
+                          <div key={p.id} className="flex items-center gap-3 rounded-lg border border-slate-100 p-2.5">
+                            <div className="w-8 h-8 rounded-lg bg-slate-50 flex items-center justify-center shrink-0">
+                              <Building2 className="w-3.5 h-3.5 text-slate-400" />
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <p className="text-xs font-semibold text-slate-900 truncate">{p.title}</p>
+                              <p className="text-[10px] text-slate-400">{p.city} · ₦{Number(p.price).toLocaleString()}</p>
+                            </div>
+                            <span className={`shrink-0 inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold ${
+                              p.status === 'available' ? 'bg-emerald-50 text-emerald-600' : 'bg-slate-100 text-slate-500'
+                            }`}>{p.status}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Recent enquiries */}
+                  {contactEnquiries.length > 0 && (
+                    <div className="px-5 py-4">
+                      <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-3">Recent Enquiries ({contactEnquiries.length})</p>
+                      <div className="space-y-2">
+                        {contactEnquiries.slice(0, 5).map((e: any) => (
+                          <div key={e.id} className="rounded-lg border border-slate-100 p-3">
+                            <div className="flex items-start justify-between gap-2">
+                              <p className="text-xs font-semibold text-slate-900 truncate flex-1">{(e as any).properties?.title ?? 'Property'}</p>
+                              <span className={`shrink-0 inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold capitalize ${
+                                e.status === 'open' ? 'bg-amber-50 text-amber-600 border border-amber-100' :
+                                e.status === 'replied' ? 'bg-violet-50 text-violet-600 border border-violet-100' :
+                                'bg-slate-100 text-slate-500 border border-slate-200'
+                              }`}>{e.status}</span>
+                            </div>
+                            <p className="text-[11px] text-slate-500 mt-1 line-clamp-1">{e.message}</p>
+                            <p className="text-[10px] text-slate-400 mt-1.5">{timeAgo(e.created_at)}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* ── Activity tab ── */}
+              {contactDrawerTab === 'activity' && (
+                <div className="px-5 py-4">
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-4">Activity</p>
+                  {detailLoading ? (
+                    <div className="flex items-center justify-center py-10">
+                      <div className="animate-spin w-6 h-6 border-2 border-slate-200 border-t-slate-700 rounded-full" />
+                    </div>
+                  ) : (
+                    <div className="relative">
+                      <div className="absolute left-3.5 top-0 bottom-0 w-px bg-slate-100" />
+                      <div className="space-y-4">
+                        {buildTimeline(selectedContact).map((event, i) => {
+                          const Icon = event.icon
+                          return (
+                            <div key={i} className="flex items-start gap-3 relative">
+                              <div className={`relative z-10 w-7 h-7 rounded-lg border flex items-center justify-center shrink-0 ${event.color}`}>
+                                <Icon className="w-3 h-3" />
+                              </div>
+                              <div className="min-w-0 flex-1 pt-0.5">
+                                <p className="text-xs font-semibold text-slate-700 leading-snug">{event.label}</p>
+                                {event.sub && (
+                                  <p className="text-[11px] text-slate-400 mt-0.5 capitalize">{event.sub} · {timeAgo(event.ts)}</p>
+                                )}
+                              </div>
+                            </div>
+                          )
+                        })}
+                        {buildTimeline(selectedContact).length === 0 && (
+                          <p className="text-xs text-slate-400 italic pl-10">No activity recorded yet.</p>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* ── Notes tab ── */}
+              {contactDrawerTab === 'notes' && (
+                <div className="px-5 py-4">
+                  <div className="flex items-center justify-between mb-4">
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Internal Notes</p>
+                    <button type="button" onClick={saveNotes} disabled={savingNotes}
+                      className="inline-flex items-center gap-1.5 rounded-lg bg-slate-900 px-3 py-1.5 text-[11px] font-semibold text-white hover:bg-slate-700 disabled:opacity-50 transition">
+                      {savingNotes ? <><Loader2 className="w-3 h-3 animate-spin" /> Saving…</> : <><Save className="w-3 h-3" /> Save Note</>}
+                    </button>
+                  </div>
+
+                  {/* Note history */}
+                  {contactNotes.length > 0 && (
+                    <div className="mb-4 space-y-2">
+                      {contactNotes.map(n => (
+                        <div key={n.id} className="rounded-lg bg-slate-50 border border-slate-100 p-3">
+                          <p className="text-xs text-slate-700 leading-relaxed">{n.content}</p>
+                          <p className="text-[10px] text-slate-400 mt-1.5">{formatDate(n.created_at)}</p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Add note */}
+                  <textarea
+                    value={notes}
+                    onChange={e => setNotes(e.target.value)}
+                    placeholder="Add an internal note about this contact…"
+                    rows={4}
+                    className="w-full resize-none rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/50 focus:bg-white transition-all"
+                  />
+                  <p className="text-[10px] text-slate-400 mt-2">Notes are private — not visible to the contact.</p>
+                </div>
+              )}
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* ── Email composer modal ── */}
+      {showEmailComposer && selectedContact && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm px-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md border border-slate-200 overflow-hidden">
+            <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
+              <h3 className="text-sm font-extrabold text-slate-900">Send Email</h3>
+              <button type="button" onClick={() => { setShowEmailComposer(false); setEmailSubject(''); setEmailBody('') }}
+                className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-slate-100 text-slate-400">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <div className="px-5 py-4 space-y-4">
+              <div className="rounded-lg bg-slate-50 border border-slate-100 px-3 py-2.5">
+                <p className="text-[10px] text-slate-400 uppercase tracking-wider">To</p>
+                <p className="text-sm font-semibold text-slate-900">{selectedContact.name}</p>
+                <p className="text-xs text-slate-500">{selectedContact.email}</p>
+              </div>
+              <div>
+                <label className="block text-[10px] font-semibold uppercase tracking-wider text-slate-400 mb-1.5">Subject</label>
+                <input type="text" value={emailSubject} onChange={e => setEmailSubject(e.target.value)}
+                  placeholder="Enter subject…"
+                  className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/50 focus:bg-white transition-all" />
+              </div>
+              <div>
+                <label className="block text-[10px] font-semibold uppercase tracking-wider text-slate-400 mb-1.5">Message</label>
+                <textarea value={emailBody} onChange={e => setEmailBody(e.target.value)}
+                  placeholder="Write your message…"
+                  rows={6}
+                  className="w-full resize-none rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/50 focus:bg-white transition-all" />
+              </div>
+            </div>
+            <div className="flex gap-3 px-5 pb-5">
+              <button type="button" onClick={() => { setShowEmailComposer(false); setEmailSubject(''); setEmailBody('') }}
+                className="flex-1 px-4 py-2.5 rounded-xl border border-slate-200 text-xs font-semibold text-slate-600 hover:bg-slate-50 transition">
+                Cancel
+              </button>
+              <button type="button" onClick={sendEmail} disabled={sendingEmail || !emailSubject.trim()}
+                className="flex-1 px-4 py-2.5 rounded-xl bg-violet-600 hover:bg-violet-700 disabled:opacity-50 text-xs font-bold text-white transition">
+                {sendingEmail ? <><Loader2 className="w-3.5 h-3.5 animate-spin inline" /> Sending…</> : <><Send className="w-3.5 h-3.5 inline mr-1" /> Send Email</>}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Send Advert modal ── */}
+      {showAdvertModal && selectedContact && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm px-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg border border-slate-200 overflow-hidden max-h-[90vh] flex flex-col">
+            <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100 shrink-0">
+              <h3 className="text-sm font-extrabold text-slate-900">Send Property Advert</h3>
+              <button type="button" onClick={() => { setShowAdvertModal(false); setSelectedProperty(null); setAdvertSearch('') }}
+                className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-slate-100 text-slate-400">
                 <X className="w-4 h-4" />
               </button>
             </div>
 
-            {/* Stats row */}
-            <div className="grid grid-cols-3 divide-x divide-slate-100 border-b border-slate-100 shrink-0">
-              {[
-                { label: 'Enquiries', value: contactEnquiries.length },
-                { label: 'Status', value: selectedContact.status || 'active' },
-                { label: 'Provider', value: selectedContact.provider || 'email' },
-              ].map(s => (
-                <div key={s.label} className="px-3 py-3 text-center">
-                  <p className="text-sm font-extrabold text-gray-900 capitalize">{s.value}</p>
-                  <p className="text-[10px] text-gray-400 font-medium uppercase tracking-wider mt-0.5">{s.label}</p>
+            <div className="px-5 py-4 space-y-4 shrink-0 border-b border-slate-100">
+              {/* Search */}
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 pointer-events-none" />
+                <input type="text" value={advertSearch} onChange={e => setAdvertSearch(e.target.value)}
+                  placeholder="Search properties…"
+                  className="w-full pl-9 pr-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/50 focus:bg-white transition-all" />
+              </div>
+
+              {/* Selected property preview */}
+              {selectedProperty && (
+                <div className="rounded-xl border-2 border-blue-400 bg-blue-50 p-3">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0 flex-1">
+                      <p className="text-xs font-bold text-slate-900 truncate">{selectedProperty.title}</p>
+                      <p className="text-[11px] text-slate-500">{selectedProperty.city} · ₦{Number(selectedProperty.price).toLocaleString()}</p>
+                    </div>
+                    <button type="button" onClick={() => setSelectedProperty(null)}
+                      className="w-5 h-5 flex items-center justify-center rounded text-slate-400 hover:text-slate-600 shrink-0">
+                      <X className="w-3 h-3" />
+                    </button>
+                  </div>
                 </div>
-              ))}
+              )}
+
+              {/* Channel */}
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 mb-2">Send via</p>
+                <div className="flex gap-2">
+                  {(['email', 'whatsapp', 'message'] as const).map(ch => (
+                    <button key={ch} type="button" onClick={() => setAdvertChannel(ch)}
+                      className={`flex-1 inline-flex items-center justify-center gap-1.5 rounded-lg py-2 text-[11px] font-semibold border transition ${
+                        advertChannel === ch
+                          ? 'bg-blue-600 border-blue-600 text-white'
+                          : 'bg-white border-slate-200 text-slate-600 hover:border-slate-300'
+                      }`}>
+                      {ch === 'email' && <Mail className="w-3 h-3" />}
+                      {ch === 'whatsapp' && <svg className="w-3 h-3" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.027 6.988 2.898a9.825 9.825 0 012.893 6.793c-.001 5.45-4.436 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>}
+                      {ch === 'message' && <MessageSquare className="w-3 h-3" />}
+                      {ch.charAt(0).toUpperCase() + ch.slice(1)}
+                    </button>
+                  ))}
+                </div>
+              </div>
             </div>
 
-            {/* Scrollable content */}
-            <div className="flex-1 overflow-y-auto">
-
-              {/* Contact information */}
-              <div className="px-5 py-4 border-b border-slate-100">
-                <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400 mb-3">Contact information</p>
-                <div className="space-y-2.5">
-                  {selectedContact.email && (
-                    <div className="flex items-center gap-2.5">
-                      <div className="w-7 h-7 rounded-lg bg-slate-50 border border-slate-100 flex items-center justify-center shrink-0">
-                        <Mail className="w-3.5 h-3.5 text-slate-400" />
-                      </div>
-                      <div className="min-w-0">
-                        <p className="text-[10px] text-slate-400 font-medium">Email</p>
-                        <a href={`mailto:${selectedContact.email}`} className="text-xs font-semibold text-blue-600 truncate block">{selectedContact.email}</a>
-                      </div>
+            {/* Property list */}
+            <div className="flex-1 overflow-y-auto px-5 py-4 space-y-2 max-h-64">
+              {filteredAdvertProperties.length === 0 ? (
+                <p className="text-xs text-slate-400 text-center py-6">No properties found.</p>
+              ) : (
+                filteredAdvertProperties.map((p: any) => (
+                  <button key={p.id} type="button"
+                    onClick={() => setSelectedProperty(p)}
+                    className={`w-full flex items-center gap-3 rounded-xl border p-3 text-left transition ${
+                      selectedProperty?.id === p.id
+                        ? 'border-blue-400 bg-blue-50'
+                        : 'border-slate-100 hover:border-slate-200 hover:bg-slate-50'
+                    }`}>
+                    <div className="w-9 h-9 rounded-lg bg-slate-100 flex items-center justify-center shrink-0">
+                      <Building2 className="w-4 h-4 text-slate-400" />
                     </div>
-                  )}
-                  {selectedContact.phone && (
-                    <div className="flex items-center gap-2.5">
-                      <div className="w-7 h-7 rounded-lg bg-slate-50 border border-slate-100 flex items-center justify-center shrink-0">
-                        <Phone className="w-3.5 h-3.5 text-slate-400" />
-                      </div>
-                      <div className="min-w-0">
-                        <p className="text-[10px] text-slate-400 font-medium">Phone / WhatsApp</p>
-                        <a href={`tel:${selectedContact.phone}`} className="text-xs font-semibold text-slate-700 truncate block">{selectedContact.phone}</a>
-                      </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-xs font-semibold text-slate-900 truncate">{p.title}</p>
+                      <p className="text-[11px] text-slate-400">{p.city} · ₦{Number(p.price).toLocaleString()}</p>
                     </div>
-                  )}
-                  {contactDetail && (
-                    <>
-                      {contactDetail.bio && (
-                        <div className="flex items-start gap-2.5">
-                          <div className="w-7 h-7 rounded-lg bg-slate-50 border border-slate-100 flex items-center justify-center shrink-0 mt-0.5">
-                            <User className="w-3.5 h-3.5 text-slate-400" />
-                          </div>
-                          <div className="min-w-0">
-                            <p className="text-[10px] text-slate-400 font-medium">Bio</p>
-                            <p className="text-xs text-slate-600">{contactDetail.bio}</p>
-                          </div>
-                        </div>
-                      )}
-                      {selectedContact.type === 'tenant' && (
-                        <div className="flex items-start gap-2.5">
-                          <div className="w-7 h-7 rounded-lg bg-slate-50 border border-slate-100 flex items-center justify-center shrink-0 mt-0.5">
-                            <ShieldCheck className="w-3.5 h-3.5 text-slate-400" />
-                          </div>
-                          <div className="min-w-0">
-                            <p className="text-[10px] text-slate-400 font-medium">Sign-up method</p>
-                            <p className="text-xs font-semibold text-slate-700 capitalize">{selectedContact.provider || 'Email'}</p>
-                          </div>
-                        </div>
-                      )}
-                    </>
-                  )}
-                </div>
-              </div>
-
-              {/* Activity timeline */}
-              <div className="px-5 py-4 border-b border-slate-100">
-                <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400 mb-3">Activity timeline</p>
-                {detailLoading ? (
-                  <div className="flex items-center justify-center py-6">
-                    <div className="animate-spin w-5 h-5 border-2 border-slate-200 border-t-slate-700 rounded-full" />
-                  </div>
-                ) : (
-                  <div className="space-y-3">
-                    <TimelineItem
-                      icon={<UserPlus className="w-3 h-3" />}
-                      color="bg-blue-50 text-blue-600 border-blue-100"
-                      label={`Registered as ${selectedContact.type}`}
-                      time={timeAgo(selectedContact.createdAt)}
-                    />
-                    {contactDetail?.kyc_submitted_at && (
-                      <TimelineItem
-                        icon={<ShieldCheck className="w-3 h-3" />}
-                        color="bg-violet-50 text-violet-600 border-violet-100"
-                        label="KYC submitted"
-                        time={timeAgo(contactDetail.kyc_submitted_at)}
-                      />
-                    )}
-                    {contactEnquiries.slice(0, 3).map((e: any) => (
-                      <TimelineItem
-                        key={e.id}
-                        icon={<MessageSquare className="w-3 h-3" />}
-                        color="bg-amber-50 text-amber-600 border-amber-100"
-                        label={`Enquiry: ${(e.properties as any)?.title ?? 'Property'}`}
-                        time={timeAgo(e.created_at)}
-                      />
-                    ))}
-                    {contactEnquiries.length === 0 && (
-                      <p className="text-xs text-slate-400 italic">No enquiries yet.</p>
-                    )}
-                  </div>
-                )}
-              </div>
-
-              {/* Enquiries list */}
-              <div className="px-5 py-4 border-b border-slate-100">
-                <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400 mb-3">
-                  Enquiries ({contactEnquiries.length})
-                </p>
-                {detailLoading ? (
-                  <div className="flex items-center justify-center py-6">
-                    <div className="animate-spin w-5 h-5 border-2 border-slate-200 border-t-slate-700 rounded-full" />
-                  </div>
-                ) : contactEnquiries.length === 0 ? (
-                  <p className="text-xs text-slate-400 italic">No enquiries on record.</p>
-                ) : (
-                  <div className="space-y-2">
-                    {contactEnquiries.map((e: any) => {
-                      const ENQ_COLORS: Record<string, string> = {
-                        new: 'bg-blue-50 text-blue-700 border-blue-100',
-                        open: 'bg-amber-50 text-amber-700 border-amber-100',
-                        replied: 'bg-violet-50 text-violet-700 border-violet-100',
-                        closed: 'bg-slate-100 text-slate-600 border-slate-200',
-                      }
-                      return (
-                        <div key={e.id} className="rounded-lg border border-slate-100 p-3">
-                          <div className="flex items-start justify-between gap-2">
-                            <div className="min-w-0 flex-1">
-                              <p className="text-xs font-semibold text-slate-900 truncate">{(e.properties as any)?.title ?? 'Property'}</p>
-                              <p className="text-[11px] text-slate-500 mt-0.5 line-clamp-2">{e.message}</p>
-                            </div>
-                            <span className={`shrink-0 inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold border capitalize ${ENQ_COLORS[e.status] ?? ENQ_COLORS.new}`}>
-                              {e.status}
-                            </span>
-                          </div>
-                          <div className="flex items-center gap-3 mt-2">
-                            {(e.properties as any)?.city && (
-                              <span className="text-[10px] text-slate-400">{(e.properties as any).city}</span>
-                            )}
-                            <span className="text-[10px] text-slate-400">{timeAgo(e.created_at)}</span>
-                          </div>
-                        </div>
-                      )
-                    })}
-                  </div>
-                )}
-              </div>
-
-              {/* Admin notes */}
-              <div className="px-5 py-4">
-                <div className="flex items-center justify-between mb-2.5">
-                  <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">Admin notes</p>
-                  <button
-                    type="button"
-                    onClick={saveNotes}
-                    disabled={savingNotes}
-                    className="inline-flex items-center gap-1.5 rounded-lg bg-slate-900 px-3 py-1.5 text-[11px] font-semibold text-white hover:bg-slate-700 disabled:opacity-50 transition"
-                  >
-                    {savingNotes ? <><Loader2 className="w-3 h-3 animate-spin" /> Saving…</> : <><Save className="w-3 h-3" /> Save</>}
+                    <span className={`shrink-0 inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold ${
+                      p.status === 'available' ? 'bg-emerald-50 text-emerald-600' : 'bg-slate-100 text-slate-500'
+                    }`}>{p.status}</span>
                   </button>
-                </div>
-                <textarea
-                  value={notes}
-                  onChange={e => setNotes(e.target.value)}
-                  placeholder="Add private notes about this contact…"
-                  rows={4}
-                  className="w-full resize-none rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/50 focus:bg-white transition-all"
-                />
-              </div>
+                ))
+              )}
+            </div>
+
+            <div className="flex gap-3 px-5 py-4 border-t border-slate-100 shrink-0">
+              <button type="button" onClick={() => { setShowAdvertModal(false); setSelectedProperty(null) }}
+                className="flex-1 px-4 py-2.5 rounded-xl border border-slate-200 text-xs font-semibold text-slate-600 hover:bg-slate-50 transition">
+                Cancel
+              </button>
+              <button type="button" onClick={sendAdvert} disabled={sendingAdvert || !selectedProperty}
+                className="flex-1 px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-xs font-bold text-white transition">
+                {sendingAdvert ? <><Loader2 className="w-3.5 h-3.5 animate-spin inline" /> Sending…</> : <><Building2 className="w-3.5 h-3.5 inline mr-1" /> Send Advert</>}
+              </button>
             </div>
           </div>
-        </>
+        </div>
       )}
 
       {/* ── PIN gate modal ── */}

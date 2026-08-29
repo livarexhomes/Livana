@@ -1,7 +1,12 @@
 import { useState, useRef, useEffect } from 'react'
-import { Search, Bell, X, ShieldCheck } from 'lucide-react'
+import { Search, Bell, X, ShieldCheck, Wifi } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
+// ── Brand color constants ──────────────────────────────────────────────────────
+const BRAND   = '#C8102E'
+const BRAND_D = '#9B0C23'
+
+// ── Types ─────────────────────────────────────────────────────────────────────
 interface VettingHeaderProps {
   kycPendingCount: number
   listingsPendingCount: number
@@ -14,6 +19,7 @@ function getInitials(name: string) {
   return name.split(' ').slice(0, 2).map(w => w[0]).join('').toUpperCase()
 }
 
+// ── Component ─────────────────────────────────────────────────────────────────
 export default function VettingHeader({
   kycPendingCount,
   listingsPendingCount,
@@ -21,12 +27,12 @@ export default function VettingHeader({
   totalNotifications,
   adminName,
 }: VettingHeaderProps) {
-  const [query, setQuery] = useState('')
+  const [query, setQuery]           = useState('')
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false)
-  const [notifOpen, setNotifOpen] = useState(false)
-  const inputRef = useRef<HTMLInputElement>(null)
-  const notifRef = useRef<HTMLDivElement>(null)
-  const mobileSearchRef = useRef<HTMLDivElement>(null)
+  const [notifOpen, setNotifOpen]   = useState(false)
+  const inputRef          = useRef<HTMLInputElement>(null)
+  const notifRef          = useRef<HTMLDivElement>(null)
+  const mobileSearchRef   = useRef<HTMLDivElement>(null)
 
   const unread = totalNotifications ?? kycPendingCount + listingsPendingCount
 
@@ -47,9 +53,7 @@ export default function VettingHeader({
   }, [])
 
   useEffect(() => {
-    if (mobileSearchOpen) {
-      setTimeout(() => inputRef.current?.focus(), 50)
-    }
+    if (mobileSearchOpen) setTimeout(() => inputRef.current?.focus(), 50)
   }, [mobileSearchOpen])
 
   function handleChange(v: string) {
@@ -59,45 +63,73 @@ export default function VettingHeader({
 
   return (
     <header
-      className="sticky top-0 z-20 shrink-0 border-b border-[#d7e0d9]/90 bg-[#f7f9f5]/95 backdrop-blur supports-[backdrop-filter]:bg-[#f7f9f5]/80 dark:border-slate-800 dark:bg-slate-900/95 dark:supports-[backdrop-filter]:bg-slate-900/80"
+      className="shrink-0 border-b border-slate-200 bg-white shadow-sm shadow-slate-900/5"
       role="banner"
     >
-      <div className="flex min-h-[72px] items-center justify-between gap-3 px-4 py-3 sm:px-7">
-        {/* Left: title + subtitle */}
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2">
-            <div className="hidden h-8 w-8 items-center justify-center rounded-xl bg-[#dfece4] text-[#2f7560] sm:flex">
-              <ShieldCheck className="h-4 w-4" />
-            </div>
-            <div className="min-w-0">
-              <p className="ops-mono hidden text-[9px] font-bold uppercase tracking-[0.2em] text-[#9b6b18] sm:block">Operations / Trust</p>
-              <h1 className="truncate text-[19px] font-bold leading-tight tracking-[-0.02em] text-[#18352f] sm:text-[24px] dark:text-white">
-                Vetting desk
-              </h1>
-            </div>
+      <div className="flex min-h-[68px] items-center justify-between gap-3 px-4 py-3 sm:px-6">
+
+        {/* ── Left: brand mark + title ── */}
+        <div className="flex items-center gap-3.5 min-w-0">
+          {/* Brand icon */}
+          <div
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl shadow-sm"
+            style={{ background: `linear-gradient(135deg, ${BRAND} 0%, ${BRAND_D} 100%)` }}
+          >
+            <ShieldCheck className="h-5 w-5 text-white" strokeWidth={2} />
           </div>
-          <p className="mt-1 hidden truncate text-[12px] font-medium text-[#66766c] sm:block dark:text-slate-400">
-            Keep every identity and home on Livarex accountable.
-          </p>
+
+          {/* Text */}
+          <div className="min-w-0">
+            <div className="flex items-center gap-2">
+              <p
+                className="text-[11px] font-bold uppercase tracking-widest text-slate-400"
+              >
+                Operations
+              </p>
+              {/* Live pulse */}
+              <span className="flex items-center gap-1 rounded-full bg-emerald-50 px-1.5 py-0.5 text-[9px] font-bold text-emerald-600">
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                Live
+              </span>
+            </div>
+            <h1
+              className="truncate text-[20px] font-black tracking-tight text-slate-900 sm:text-[22px]"
+            >
+              Vetting Desk
+            </h1>
+          </div>
         </div>
 
-        {/* Right: live stats + search + bell + avatar */}
+        {/* ── Right: stats + search + bell + avatar ── */}
         <div className="flex shrink-0 items-center gap-2">
-          {/* Live stats: "24 Pending • 8 Listings" */}
-          <div className="hidden items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 sm:flex">
-            <span className="inline-flex items-center gap-1">
-              <span className="h-1.5 w-1.5 rounded-full bg-amber-400" />
-              {kycPendingCount} Pending
+
+          {/* Live stats chips */}
+          <div className="hidden items-center gap-1.5 rounded-2xl bg-slate-100 px-3.5 py-2 sm:flex">
+            <span className="flex items-center gap-1.5">
+              <span className="h-2 w-2 rounded-full bg-amber-400 animate-pulse" />
+              <span className="text-[12px] font-bold text-slate-700">
+                {kycPendingCount}
+              </span>
+              <span className="text-[11px] font-medium text-slate-400">KYC</span>
             </span>
-            <span className="text-slate-300 dark:text-slate-600">•</span>
-            <span className="inline-flex items-center gap-1">
-              <span className="h-1.5 w-1.5 rounded-full bg-violet-400" />
-              {listingsPendingCount} Listings
+            <span className="h-4 w-px bg-slate-300" />
+            <span className="flex items-center gap-1.5">
+              <span
+                className="h-2 w-2 rounded-full"
+                style={{ background: BRAND }}
+              />
+              <span className="text-[12px] font-bold text-slate-700">
+                {listingsPendingCount}
+              </span>
+              <span className="text-[11px] font-medium text-slate-400">Listings</span>
             </span>
           </div>
+
           {/* Desktop search */}
           <div className="relative hidden md:block">
-            <div className="flex h-11 items-center gap-2 rounded-xl border border-[#d7e0d9] bg-[#eef3ee] px-3 transition-colors focus-within:border-[#6d9b87] focus-within:bg-[#fbfcfa] focus-within:ring-2 focus-within:ring-[#c9d8cf] dark:border-slate-700 dark:bg-slate-800 dark:focus-within:border-blue-500 dark:focus-within:bg-slate-900 dark:focus-within:ring-blue-900/40">
+            <div
+              className="flex h-11 items-center gap-2.5 rounded-2xl border border-slate-200 bg-slate-50 px-3.5 transition-colors focus-within:border-slate-400 focus-within:bg-white focus-within:ring-2 focus-within:ring-slate-900/10"
+            >
               <Search className="h-3.5 w-3.5 shrink-0 text-slate-400" />
               <input
                 type="search"
@@ -105,13 +137,13 @@ export default function VettingHeader({
                 onChange={e => handleChange(e.target.value)}
                 placeholder="Search landlords…"
                 aria-label="Search vetting queue"
-                className="w-56 bg-transparent text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none dark:text-slate-100 dark:placeholder:text-slate-500"
+                className="w-52 bg-transparent text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none"
               />
               {query && (
                 <button
                   type="button"
                   onClick={() => handleChange('')}
-                  className="shrink-0 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                  className="shrink-0 text-slate-400 hover:text-slate-600"
                   aria-label="Clear search"
                 >
                   <X className="h-3.5 w-3.5" />
@@ -125,15 +157,15 @@ export default function VettingHeader({
             <button
               type="button"
               onClick={() => setMobileSearchOpen(o => !o)}
-              className="flex h-10 w-10 items-center justify-center rounded-xl border border-[#d7e0d9] bg-[#eef3ee] text-[#587067] transition-colors hover:bg-[#e3ece5] dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
+              className="flex h-10 w-10 items-center justify-center rounded-2xl border border-slate-200 bg-slate-50 text-slate-500 transition-colors hover:bg-slate-100"
               aria-label={mobileSearchOpen ? 'Close search' : 'Open search'}
               aria-expanded={mobileSearchOpen}
             >
               {mobileSearchOpen ? <X className="h-4 w-4" /> : <Search className="h-4 w-4" />}
             </button>
             {mobileSearchOpen && (
-              <div className="absolute right-0 top-full mt-2 w-[calc(100vw-2rem)] max-w-sm rounded-2xl border border-[#d7e0d9] bg-[#fbfcfa] p-2 shadow-xl dark:border-slate-700 dark:bg-slate-900">
-                <div className="flex h-11 items-center gap-2 rounded-xl border border-[#d7e0d9] bg-[#eef3ee] px-3 focus-within:border-[#6d9b87] focus-within:ring-2 focus-within:ring-[#c9d8cf] dark:border-slate-700 dark:bg-slate-800">
+              <div className="absolute right-0 top-full mt-2 w-[calc(100vw-2rem)] max-w-sm rounded-2xl border border-slate-200 bg-white p-2 shadow-xl shadow-slate-900/10">
+                <div className="flex h-11 items-center gap-2.5 rounded-xl border border-slate-200 bg-slate-50 px-3.5">
                   <Search className="h-3.5 w-3.5 shrink-0 text-slate-400" />
                   <input
                     ref={inputRef}
@@ -141,8 +173,7 @@ export default function VettingHeader({
                     value={query}
                     onChange={e => handleChange(e.target.value)}
                     placeholder="Search…"
-                    aria-label="Search vetting queue"
-                    className="w-full bg-transparent text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none dark:text-slate-100"
+                    className="w-full bg-transparent text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none"
                   />
                 </div>
               </div>
@@ -150,7 +181,10 @@ export default function VettingHeader({
           </div>
 
           {/* Admin avatar */}
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 text-[10px] font-bold text-white shadow-sm">
+          <div
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl text-[10px] font-black text-white shadow-sm"
+            style={{ background: `linear-gradient(135deg, ${BRAND} 0%, ${BRAND_D} 100%)` }}
+          >
             {adminName ? getInitials(adminName) : 'A'}
           </div>
 
@@ -160,39 +194,53 @@ export default function VettingHeader({
               type="button"
               onClick={() => setNotifOpen(o => !o)}
               className={cn(
-                'relative flex h-10 w-10 items-center justify-center rounded-xl border border-[#d7e0d9] bg-[#eef3ee] text-[#587067] transition-colors hover:bg-[#e3ece5] dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700',
-                notifOpen && 'bg-[#e3ece5] dark:bg-slate-700',
+                'relative flex h-10 w-10 items-center justify-center rounded-2xl border border-slate-200 bg-slate-50 text-slate-500 transition-colors hover:bg-slate-100',
+                notifOpen && 'bg-slate-100',
               )}
               aria-label={notifOpen ? 'Close notifications' : 'Open notifications'}
               aria-expanded={notifOpen}
             >
               <Bell className="h-4 w-4" />
               {unread > 0 && (
-                  <span className="absolute -right-1 -top-1 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-[#b67c25] px-1 text-[9px] font-black leading-none text-white ring-2 ring-[#f7f9f5] dark:ring-slate-900">
-                  {unread > 9 ? '9+' : unread}
+                <span
+                  className="absolute -right-1.5 -top-1.5 flex h-5 min-w-[20px] items-center justify-center rounded-full px-1.5 text-[9px] font-black text-white shadow-sm"
+                  style={{ background: BRAND }}
+                >
+                  {unread > 99 ? '99+' : unread}
                 </span>
               )}
             </button>
             {notifOpen && (
-              <div className="absolute right-0 top-full mt-2 w-72 overflow-hidden rounded-2xl border border-[#d7e0d9] bg-[#fbfcfa] shadow-xl shadow-[#18352f]/10 dark:border-slate-700 dark:bg-slate-900">
-                <div className="flex items-center justify-between border-b border-[#e7eee8] px-4 py-3 dark:border-slate-800">
-                  <h3 className="text-sm font-semibold text-slate-900 dark:text-white">
-                    Notifications
-                  </h3>
-                  <span className="rounded-full bg-[#f5ead2] px-2 py-0.5 text-[10px] font-bold text-[#8a641d] dark:bg-red-950/50 dark:text-red-300">
-                    {unread} new
-                  </span>
+              <div className="absolute right-0 top-full mt-2.5 w-80 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl shadow-slate-900/10">
+                <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3.5">
+                  <h3 className="text-sm font-bold text-slate-900">Notifications</h3>
+                  {unread > 0 && (
+                    <span
+                      className="rounded-full px-2 py-0.5 text-[10px] font-bold text-white"
+                      style={{ background: BRAND }}
+                    >
+                      {unread} new
+                    </span>
+                  )}
                 </div>
-                <div className="divide-y divide-[#edf2ed] dark:divide-slate-800">
+                <div className="divide-y divide-slate-50">
                   <NotifRow
+                    icon={<ShieldCheck className="h-3.5 w-3.5" />}
+                    iconBg="bg-slate-100 text-slate-600"
                     label="Identity checks"
                     sub={`${kycPendingCount} awaiting review`}
-                    tone="indigo"
+                    badge={kycPendingCount > 0 ? kycPendingCount : null}
                   />
                   <NotifRow
+                    icon={<svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                      <polyline points="9 22 9 12 15 12 15 22"/>
+                    </svg>}
+                    iconBg="bg-slate-100 text-slate-600"
                     label="Listing submissions"
                     sub={`${listingsPendingCount} pending approval`}
-                    tone="violet"
+                    badge={listingsPendingCount > 0 ? listingsPendingCount : null}
+                    brandColor={BRAND}
                   />
                 </div>
               </div>
@@ -204,19 +252,34 @@ export default function VettingHeader({
   )
 }
 
-function NotifRow({ label, sub, tone }: { label: string; sub: string; tone: 'indigo' | 'violet' }) {
-  const toneCls =
-    tone === 'indigo'
-      ? 'bg-[#dfece4] text-[#2f7560] dark:bg-indigo-950/60 dark:text-indigo-300'
-      : 'bg-[#dce9ed] text-[#315f6f] dark:bg-violet-950/60 dark:text-violet-300'
+function NotifRow({
+  icon, iconBg, label, sub, badge, brandColor
+}: {
+  icon: React.ReactNode
+  iconBg: string
+  label: string
+  sub: string
+  badge?: number | null
+  brandColor?: string
+}) {
   return (
-    <div className="flex items-start gap-3 px-4 py-3">
-      <div className={`mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-xl ${toneCls}`}>
-        <Bell className="h-3.5 w-3.5" />
+    <div className="flex items-start gap-3 px-4 py-3.5 hover:bg-slate-50 transition-colors">
+      <div className={cn('mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl', iconBg)}>
+        {icon}
       </div>
       <div className="min-w-0 flex-1">
-        <p className="truncate text-xs font-semibold text-slate-900 dark:text-white">{label}</p>
-        <p className="truncate text-[11px] text-slate-500 dark:text-slate-400">{sub}</p>
+        <div className="flex items-center justify-between gap-2">
+          <p className="truncate text-[13px] font-semibold text-slate-900">{label}</p>
+                  {(badge != null && badge > 0) && (
+            <span
+              className="shrink-0 rounded-full px-1.5 py-0.5 text-[10px] font-bold text-white"
+              style={{ background: brandColor ?? '#C8102E' }}
+            >
+              {badge}
+            </span>
+          )}
+        </div>
+        <p className="truncate text-[12px] text-slate-500">{sub}</p>
       </div>
     </div>
   )

@@ -1,15 +1,16 @@
-import { useRef, type ReactNode } from 'react'
-import { Loader2, Users, ListFilter } from 'lucide-react'
+import { useRef } from 'react'
+import { Loader2, Users } from 'lucide-react'
 import ApplicantCard from './ApplicantCard'
-import { MobileEmptyState } from '@/components/ui/mobile-admin'
 import type { VettingLandlord } from './mockData'
+
+const BRAND = '#C8102E'
 
 interface ApplicantListProps {
   landlords: VettingLandlord[]
   selectedId?: string
   onSelect: (landlord: VettingLandlord) => void
   loading?: boolean
-  toolbar?: ReactNode
+  toolbar?: React.ReactNode
   className?: string
 }
 
@@ -47,21 +48,18 @@ export default function ApplicantList({
 
   return (
     <div
-      className={
-        'flex h-full min-h-0 flex-col overflow-hidden rounded-[1.25rem] border border-[#d7e0d9] bg-[#fbfcfa] shadow-[0_5px_18px_rgba(24,53,47,0.05)] dark:border-slate-700 dark:bg-slate-900 ' +
-        (className ?? '')
-      }
+      className={`flex h-full min-h-0 flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm ${className ?? ''}`}
     >
+      {/* Toolbar area */}
       {toolbar && (
-        <div className="shrink-0 border-b border-[#e5ece6] p-3 pb-3 dark:border-slate-800">
-          <div className="mb-2 flex items-center gap-2 px-1">
-            <ListFilter className="h-3.5 w-3.5 text-[#6d9b87]" />
-            <span className="ops-mono text-[9px] font-bold uppercase tracking-[0.18em] text-[#728279]">Review queue</span>
-          </div>
+        <div className="shrink-0 border-b border-slate-100 p-3">
+          {/* Brand accent top line */}
+          <div className="h-0.5 rounded-full mb-3" style={{ background: `linear-gradient(90deg, ${BRAND}, ${BRAND}60)` }} />
           {toolbar}
         </div>
       )}
 
+      {/* List */}
       <div
         ref={containerRef}
         role="listbox"
@@ -73,15 +71,15 @@ export default function ApplicantList({
             <Loader2 className="h-5 w-5 animate-spin text-slate-400" />
           </div>
         ) : landlords.length === 0 ? (
-            <div className="py-12">
-            <MobileEmptyState
-              title="No applicants"
-              description="Try a different filter or search term."
-              icon={<Users className="h-5 w-5 text-slate-300" />}
-            />
+          <div className="flex flex-col items-center justify-center py-20 text-center px-4">
+            <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl border border-dashed border-slate-200">
+              <Users className="h-7 w-7 text-slate-300" />
+            </div>
+            <p className="text-sm font-bold text-slate-600">No applicants</p>
+            <p className="mt-1 text-xs text-slate-400">Try a different filter or search term.</p>
           </div>
         ) : (
-          <div className="divide-y divide-slate-100 dark:divide-slate-800">
+          <div className="divide-y divide-slate-50">
             {landlords.map((l, idx) => (
               <ApplicantCard
                 key={l.id}
