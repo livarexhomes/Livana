@@ -1801,56 +1801,53 @@ function SupportTab({ onOpenQueued, view = 'queue' }: { onOpenQueued: (id: strin
       {/* Ticket queue */}
       <div className={`flex flex-col border-r border-slate-200 bg-white w-full lg:w-[22rem] xl:w-[24rem] shrink-0 overflow-hidden ${selected ? 'hidden lg:flex' : 'flex'}`}>
         {/* Header */}
-        <div className="px-3.5 pt-3 pb-2.5 border-b border-slate-100">
-          <div className="flex items-baseline justify-between gap-2">
-            <div className="min-w-0">
-              <p className="text-[9px] uppercase tracking-[0.22em] text-slate-400 font-bold">Support queue</p>
-              <h2 className="mt-0.5 text-[15px] font-bold text-slate-950 leading-tight tracking-tight">Tickets</h2>
+        <div className="px-4 pt-4 pb-3 border-b border-slate-100">
+          <div className="flex items-center justify-between gap-3 mb-3">
+            <div>
+              <p className="text-[10px] uppercase tracking-[0.18em] text-slate-400 font-bold">Queue</p>
+              <h2 className="text-[15px] font-bold text-slate-950 leading-tight tracking-tight">{activeTickets.length} open tickets</h2>
             </div>
-            <div className="shrink-0 text-right flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => setShowArchivePanel(true)}
-                className="inline-flex items-center gap-1 h-7 px-2.5 rounded-lg text-[10px] font-semibold border border-slate-200 bg-white text-slate-600 hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700 transition-all"
-                title="Move tickets to History"
-              >
-                <Archive className="w-2.5 h-2.5" />
-                Move to History
-              </button>
-              <div className="text-right">
-                <p className="text-[9px] uppercase tracking-[0.18em] text-slate-400 font-bold">Total</p>
-                <p className="mt-0.5 text-[15px] font-bold text-slate-900 leading-tight tabular-nums">{activeTickets.length}</p>
-              </div>
-            </div>
+            <button
+              type="button"
+              onClick={() => setShowArchivePanel(true)}
+              className="inline-flex items-center gap-1.5 h-8 px-3 rounded-xl text-[11px] font-semibold border border-slate-200 bg-white text-slate-500 hover:border-slate-300 hover:bg-slate-50 hover:text-slate-800 transition-all shadow-sm"
+              title="Move tickets to History"
+            >
+              <Archive className="w-3 h-3" />
+              History
+            </button>
           </div>
 
           {/* Search */}
-          <div className="mt-2.5">
-            <div className="relative">
-              <input
-                type="text"
-                placeholder="Search tickets..."
-                value={searchQuery}
-                onChange={e => setSearchQuery(e.target.value)}
-                className="w-full pl-8 pr-3 py-1.75 rounded-lg border border-slate-200 bg-white text-sm text-slate-900 placeholder-slate-400 caret-slate-900 focus:outline-none focus:ring-2 focus:ring-primary/30"
-              />
-              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-300" />
-            </div>
+          <div className="relative mb-2.5">
+            <input
+              type="text"
+              placeholder="Search tickets..."
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+              className="w-full pl-9 pr-3 py-2 rounded-xl border border-slate-200 bg-slate-50/80 text-sm text-slate-900 placeholder-slate-400 caret-slate-900 focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary/40 focus:bg-white transition-all"
+            />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
           </div>
 
-          {/* One compact status filter keeps the queue calm and scannable. */}
-          <div className="mt-2.5">
-            <SmartSelect
-              value={filterStatus}
-              onValueChange={setFilterStatus}
-              label="Status"
-              triggerClassName="h-8 w-full justify-between rounded-lg px-2.5 text-xs sm:w-auto sm:min-w-[150px]"
-              options={(['all', 'open', 'in_progress', 'resolved', 'closed'] as const).map(key => ({
-                value: key,
-                label: `${key === 'all' ? 'All' : STATUS_META[key].label} — ${counts[key]}`,
-                color: key === 'open' ? 'amber' : key === 'in_progress' ? 'blue' : key === 'resolved' ? 'success' : key === 'closed' ? 'neutral' : undefined,
-              }))}
-            />
+          {/* Status filter pills */}
+          <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-hide -mx-1 px-1">
+            {(['all', 'open', 'in_progress', 'resolved', 'closed'] as const).map(key => (
+              <button
+                key={key}
+                onClick={() => setFilterStatus(key)}
+                className={`shrink-0 inline-flex items-center gap-1.5 h-7 px-2.5 rounded-lg text-[11px] font-semibold transition-all ${
+                  filterStatus === key
+                    ? 'bg-primary text-white shadow-sm shadow-primary/20'
+                    : 'bg-white border border-slate-200 text-slate-500 hover:border-slate-300 hover:bg-slate-50'
+                }`}
+              >
+                {key === 'all' ? 'All' : STATUS_META[key].label}
+                <span className={`inline-flex h-4 min-w-[16px] items-center justify-center rounded-full text-[10px] font-bold px-1 ${
+                  filterStatus === key ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-400'
+                }`}>{counts[key]}</span>
+              </button>
+            ))}
           </div>
         </div>
 
@@ -2445,47 +2442,47 @@ function InboxTab({ liveState, onOpenThreadChange, initialChatId, onInitialChatC
                 const assignedAgent = chatInq?.agent_id ? agents.find(a => a.id === chatInq.agent_id) : null
                 return (
                   <button key={`${item.type}:${item.id}`} onClick={() => setSelectedKey(`${item.type}:${item.id}`)}
-                    className={`relative w-full text-left rounded-xl px-3 py-2.5 transition-all flex items-start gap-3 ${
+                    className={`relative w-full text-left rounded-2xl px-3 py-3 transition-all flex items-start gap-3 ${
                       isActive
-                        ? 'bg-slate-100 shadow-[inset_0_0_0_1px_rgba(15,23,42,0.04)]'
+                        ? 'bg-primary/5 border border-primary/20 shadow-sm'
                         : isUnread
-                          ? 'bg-white border border-slate-200/70 shadow-sm hover:border-slate-300'
-                          : 'hover:bg-slate-50'
+                          ? 'bg-white border border-slate-200 shadow-sm hover:border-primary/30 hover:shadow-md'
+                          : 'bg-white/60 hover:bg-white border border-transparent hover:border-slate-200'
                     }`}>
                     {/* Unread left accent */}
-                    {isUnread && <span className="absolute left-0 top-2.5 bottom-2.5 w-[3px] rounded-r-full bg-sky-500" />}
+                    {isUnread && <span className="absolute left-0 top-3 bottom-3 w-[2.5px] rounded-r-full bg-primary" />}
                     {/* Avatar */}
-                    <div className={`w-9 h-9 rounded-full bg-gradient-to-br ${avatarGrad(item.name)} flex items-center justify-center shrink-0 text-[11px] font-semibold text-white`}>
+                    <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${avatarGrad(item.name)} flex items-center justify-center shrink-0 text-[11px] font-bold text-white shadow-sm`}>
                       {initialsOf(item.name)}
                     </div>
                     <div className="min-w-0 flex-1">
                       {/* Name + time */}
                       <div className="flex items-center justify-between gap-2">
-                        <p className={`truncate ${isUnread ? 'font-semibold text-[13.5px] text-slate-900' : 'font-medium text-[13px] text-slate-800'}`}>{item.name}</p>
-                        <span className={`shrink-0 text-[10.5px] tabular-nums ${isUnread ? 'font-medium text-slate-500' : 'text-slate-400'}`}>
+                        <p className={`truncate font-semibold text-[13px] ${isUnread ? 'text-slate-900' : 'text-slate-700'}`}>{item.name}</p>
+                        <span className={`shrink-0 text-[10.5px] tabular-nums ${isUnread ? 'text-primary font-semibold' : 'text-slate-400'}`}>
                           {formatDistanceToNow(new Date(item.created_at), { addSuffix: true })}
                         </span>
                       </div>
                       {/* Preview + badges */}
-                      <div className="mt-1 flex items-center gap-1.5 min-w-0">
+                      <div className="mt-1 flex items-center gap-2 min-w-0">
                         <p className={`text-[12px] truncate min-w-0 flex-1 ${isUnread ? 'text-slate-600' : 'text-slate-500'}`}>{item.subtitle}</p>
-                        <span className={`shrink-0 inline-flex items-center gap-1 text-[10.5px] font-medium ${s.color}`}>
+                        <span className={`shrink-0 inline-flex items-center gap-1 text-[10.5px] font-semibold ${s.color}`}>
                           <span className={`w-1.5 h-1.5 rounded-full ${s.dot}`} />{s.label}
                         </span>
                         {isChat && chatInq?.agent_status === 'queued' && (
-                          <span className="shrink-0 inline-flex items-center gap-1 text-[10.5px] font-medium text-amber-600">
-                            <Clock className="w-3 h-3" />Queued
+                          <span className="shrink-0 inline-flex items-center gap-1 text-[10.5px] font-semibold text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded-full">
+                            <Clock className="w-2.5 h-2.5" />Queued
                           </span>
                         )}
                         {isChat && assignedAgent && (
-                          <span className="shrink-0 inline-flex items-center gap-1 text-[10.5px] font-medium text-slate-400">
-                            <User className="w-3 h-3" />{assignedAgent.name.split(' ')[0]}
+                          <span className="shrink-0 text-[10.5px] font-medium text-slate-400">
+                            {assignedAgent.name.split(' ')[0]}
                           </span>
                         )}
                       </div>
-                      {/* Body preview (only when present) */}
+                      {/* Body preview */}
                       {item.body && (
-                        <p className={`text-[11.5px] mt-0.5 line-clamp-1 ${isUnread ? 'text-slate-500' : 'text-slate-400'}`}>{item.body}</p>
+                        <p className={`text-[11.5px] mt-1 line-clamp-1 ${isUnread ? 'text-slate-500 font-medium' : 'text-slate-400'}`}>{item.body}</p>
                       )}
                     </div>
                   </button>
@@ -2525,9 +2522,6 @@ function InboxTab({ liveState, onOpenThreadChange, initialChatId, onInitialChatC
               <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-slate-100 to-slate-50 border border-slate-200/60 flex items-center justify-center">
                 <MessageSquare className="w-7 h-7 text-slate-300" />
               </div>
-              <span className="absolute -right-1 -bottom-1 grid size-5 place-items-center rounded-full bg-white border border-slate-200 shadow-sm">
-                <span className="size-2 rounded-full bg-emerald-500" />
-              </span>
             </div>
             <p className="text-[15px] font-semibold text-slate-800">Select a conversation</p>
             <p className="text-[13px] text-slate-400 max-w-[260px] leading-relaxed mt-1">Choose an enquiry or chat from the list to view and reply.</p>
@@ -2949,33 +2943,58 @@ export default function AdminSupportPage() {
               <AdminHeader title="Support" subtitle={`${openCount} enquiries · ${chatOpenCount} chats · ${contactCount} contacts`} />
             </div>
 
-            {/* Compact support workspace header */}
-            <div className="shrink-0 border-b border-slate-200 bg-white px-3.5 py-2 md:px-5 md:py-2.5">
-              <div className="flex items-center justify-between gap-3">
+            {/* ── Sleek support workspace header ── */}
+            <div className="shrink-0 border-b border-slate-100 bg-white px-4 py-3 md:px-6">
+              <div className="flex items-center justify-between gap-4">
+                {/* Left — title */}
                 <div className="min-w-0">
-                  <div className="flex items-center gap-2">
-                    <h1 className="text-base font-bold tracking-tight text-slate-950">Support workspace</h1>
-                    <span className="hidden sm:inline text-[11px] text-slate-400 tabular-nums">{inboxCount} open</span>
+                  <div className="flex items-center gap-2.5">
+                    <div className="hidden sm:flex size-8 items-center justify-center rounded-xl bg-primary/10">
+                      <HeadphonesIcon className="w-4 h-4 text-primary" />
+                    </div>
+                    <div>
+                      <h1 className="text-base font-bold tracking-tight text-slate-950">Support Center</h1>
+                      <p className="hidden sm:block text-[11px] text-slate-400 mt-0.5">Keep customer conversations moving</p>
+                    </div>
+                    <span className="hidden sm:inline-flex items-center gap-1.5 ml-1 rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-[11px] font-semibold text-slate-500 tabular-nums">
+                      <span className="relative flex h-1.5 w-1.5">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-50" />
+                        <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-primary" />
+                      </span>
+                      {inboxCount} open
+                    </span>
                   </div>
-                  <p className="hidden sm:block mt-0.5 text-[11px] text-slate-400">Keep customer conversations moving</p>
                 </div>
-                <div className="flex items-center gap-2 shrink-0">
-                  <div className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-semibold ${effectiveSupportOnline ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-slate-200 bg-slate-50 text-slate-500'}`}>
+
+                {/* Right — status + controls */}
+                <div className="flex items-center gap-2.5 shrink-0">
+                  {/* Status badge */}
+                  <div className={`hidden sm:flex items-center gap-2 rounded-full border px-3 py-1.5 text-[11px] font-semibold transition-all ${
+                    effectiveSupportOnline
+                      ? 'border-emerald-200/70 bg-emerald-50/80 text-emerald-700'
+                      : supportOpen
+                        ? 'border-amber-200/70 bg-amber-50/80 text-amber-700'
+                        : 'border-slate-200 bg-slate-50 text-slate-500'
+                  }`}>
                     <span className={`size-1.5 rounded-full ${effectiveSupportOnline ? 'bg-emerald-500' : supportOpen ? 'bg-amber-400' : 'bg-slate-400'}`} />
-                    {effectiveSupportOnline ? 'Online' : supportOpen ? 'No agent' : 'Away'}
+                    {effectiveSupportOnline
+                      ? `Online · ${availableAgentCount} agent${availableAgentCount !== 1 ? 's' : ''}`
+                      : supportOpen ? 'No agent' : 'Support closed'}
                   </div>
+
+                  {/* Sound toggle */}
                   <button
                     onClick={() => { const next = !muted; setMuted(next); setSoundMuted(next) }}
-                    title={muted ? 'Unmute' : 'Mute'}
-                    className="grid size-8 place-items-center rounded-lg border border-slate-200 bg-white text-slate-500 hover:bg-slate-50 hover:text-slate-900 transition-colors"
+                    title={muted ? 'Unmute notifications' : 'Mute notifications'}
+                    className="grid size-8 place-items-center rounded-xl border border-slate-200 bg-white text-slate-400 hover:border-slate-300 hover:text-slate-700 transition-all hover:shadow-sm"
                   >
                     {muted ? <VolumeX className="w-3.5 h-3.5" /> : <Volume2 className="w-3.5 h-3.5" />}
                   </button>
                 </div>
               </div>
 
-              {/* Tab switcher — pills on desktop, dropdown on mobile */}
-              <div className="mt-1.5 sm:hidden">
+              {/* Tab switcher */}
+              <div className="mt-3 sm:hidden">
                 <select
                   value={tab}
                   onChange={e => setTab(e.target.value as 'support' | 'inbox' | 'history')}
@@ -2986,25 +3005,25 @@ export default function AdminSupportPage() {
                   <option value="history">History</option>
                 </select>
               </div>
-              <div className="mt-1.5 hidden sm:flex items-center gap-1.5 overflow-x-auto -mx-1 px-1 sm:overflow-visible sm:mx-0 sm:px-0">
+              <div className="mt-3 hidden sm:flex items-center gap-1.5">
                 {([
-                  { key: 'support', label: 'Support Queue', icon: HeadphonesIcon, count: supportOpenCount },
-                  { key: 'inbox',   label: 'Inbox',         icon: Inbox,          count: inboxCount },
-                  { key: 'history', label: 'History',        icon: Archive,        count: 0 },
+                  { key: 'support', label: 'Queue',      icon: HeadphonesIcon, count: supportOpenCount },
+                  { key: 'inbox',   label: 'Inbox',      icon: Inbox,          count: inboxCount },
+                  { key: 'history', label: 'History',    icon: Archive,        count: 0 },
                 ] as const).map(t => {
                   const Icon = t.icon
                   return (
                     <button key={t.key} type="button" onClick={() => setTab(t.key)}
-                      className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition-all ${
+                      className={`inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold transition-all duration-200 ${
                         tab === t.key
-                          ? 'bg-primary text-primary-foreground shadow-sm shadow-primary/20'
-                          : 'border border-border text-muted-foreground hover:bg-accent hover:text-accent-foreground'
+                          ? 'bg-primary text-white shadow-md shadow-primary/25'
+                          : 'border border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900'
                       }`}>
-                      <Icon className="w-3 h-3" />
+                      <Icon className="w-3.5 h-3.5" />
                       {t.label}
                       {t.count > 0 && (
-                        <span className={`inline-flex h-4 min-w-[16px] items-center justify-center rounded-full text-[10px] font-bold px-1 ${
-                          tab === t.key ? 'bg-primary-foreground/20 text-primary-foreground' : 'bg-muted text-muted-foreground'
+                        <span className={`inline-flex h-5 min-w-[20px] items-center justify-center rounded-full text-[11px] font-bold px-1.5 ${
+                          tab === t.key ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-500'
                         }`}>{t.count}</span>
                       )}
                     </button>
@@ -3014,7 +3033,7 @@ export default function AdminSupportPage() {
             </div>
 
           {/* Tab content */}
-          <div className="flex flex-1 min-h-0 overflow-hidden bg-slate-50/40">
+          <div className="flex flex-1 min-h-0 overflow-hidden">
             {tab === 'support' || tab === 'history' ? <SupportTab view={tab === 'history' ? 'history' : 'queue'} onOpenQueued={(id) => { setPendingChatId(id); setTab('inbox') }} /> : (
               <InboxTab liveState={liveState} onOpenThreadChange={handleOpenThreadChange} initialChatId={pendingChatId} onInitialChatConsumed={() => setPendingChatId(null)} />
             )}
