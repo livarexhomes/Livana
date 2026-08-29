@@ -194,8 +194,12 @@ function localApiMiddleware() {
 }
 
 // Direct middleware proxy for /api/chat → localhost:3001
-// Avoids http-proxy library quirks that break under Replit's TLS reverse-proxy
+// Gracefully falls back to a built-in reply when the bot server is unavailable.
 function chatApiMiddleware() {
+  const FALLBACK_REPLY = {
+    reply: "Hi! I can help you find verified rentals, explain the platform, or guide you through listing a property. Tell me what you need and I'll help from there.",
+    fallback: true,
+  };
   return {
     name: "chat-api-middleware",
     configureServer(server: any) {
@@ -211,20 +215,43 @@ function chatApiMiddleware() {
           const body = Buffer.concat(chunks);
           const forward = http.request(
             { hostname: "127.0.0.1", port: 3001, path: "/api/chat", method: "POST",
-              headers: { "Content-Type": "application/json", "Content-Length": body.length } },
+              headers: { "Content-Type": "application/json", "Content-Length": body.length },
+              timeout: 8000 },
             (upstream) => {
               const parts: Buffer[] = [];
               upstream.on("data", (c: Buffer) => parts.push(c));
               upstream.on("end", () => {
                 res.setHeader("Content-Type", "application/json");
-                res.writeHead(upstream.statusCode ?? 200);
-                res.end(Buffer.concat(parts));
+                const raw = Buffer.concat(parts).toString();
+                // If the bot server returns an error or "not configured", fall back gracefully
+                try {
+                  const data = JSON.parse(raw);
+                  const isError = data?.error || data?.message?.toLowerCase?.()?.includes("not configured");
+                  if (isError) {
+                    res.writeHead(200);
+                    res.end(JSON.stringify(FALLBACK_REPLY));
+                  } else {
+                    res.writeHead(upstream.statusCode ?? 200);
+                    res.end(raw);
+                  }
+                } catch {
+                  // Non-JSON response from upstream — fall back
+                  res.writeHead(200);
+                  res.end(JSON.stringify(FALLBACK_REPLY));
+                }
               });
             }
           );
+          forward.on("timeout", () => {
+            forward.destroy();
+            res.writeHead(200);
+            res.end(JSON.stringify(FALLBACK_REPLY));
+          });
           forward.on("error", (err: Error) => {
-            res.writeHead(502);
-            res.end(JSON.stringify({ error: `Bot unavailable: ${err.message}` }));
+            // Bot server not reachable — return built-in fallback instead of error
+            res.setHeader("Content-Type", "application/json");
+            res.writeHead(200);
+            res.end(JSON.stringify(FALLBACK_REPLY));
           });
           forward.end(body);
         });

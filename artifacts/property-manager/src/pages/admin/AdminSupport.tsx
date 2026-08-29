@@ -581,32 +581,31 @@ function AdminChatThread({
   }
 
   return (
-    <div className="flex flex-col h-full bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+    <div className="flex flex-col h-full bg-white overflow-hidden">
       {/* ── Header ────────────────────────────────────────────────────────── */}
-      <div className="flex items-start gap-x-3 gap-y-3 px-4 py-4 border-b border-gray-100 shrink-0 flex-wrap">
-        <button onClick={onBack} className="lg:hidden p-1.5 rounded-lg hover:bg-gray-100 text-gray-500 transition-colors">
+      <div className="flex items-center gap-3 px-4 py-3 border-b border-slate-100 shrink-0">
+        <button onClick={onBack} className="lg:hidden p-1.5 rounded-lg hover:bg-slate-100 text-slate-400 transition-colors shrink-0">
           <ChevronLeft className="w-4 h-4" />
         </button>
-        <div className={`w-9 h-9 rounded-xl bg-gradient-to-br flex items-center justify-center shrink-0 shadow-sm ${isLandlordTicket ? 'from-violet-500 to-purple-600' : 'from-blue-500 to-cyan-500'}`}>
-          <span className="text-sm font-bold text-white">{senderInitial}</span>
+        <div className={`w-8 h-8 rounded-xl bg-gradient-to-br flex items-center justify-center shrink-0 ${isLandlordTicket ? 'from-violet-500 to-purple-600' : 'from-primary to-blue-500'}`}>
+          <span className="text-[11px] font-black text-white">{senderInitial}</span>
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
-            <p className="font-bold text-gray-900 text-sm truncate">{ticket.subject}</p>
+            <p className="font-bold text-slate-900 text-[13px] truncate">{ticket.subject}</p>
             {ticket.ticket_no && (
               <span className="shrink-0 text-[10px] font-bold px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">{ticket.ticket_no}</span>
             )}
           </div>
-          <p className="text-xs text-gray-400 mt-0.5">
-            From <span className="font-semibold text-gray-600">{senderName}</span>
-            <span> · Created {formatDistanceToNow(new Date(ticket.created_at), { addSuffix: true })}</span>
-            <span> · Updated {formatDistanceToNow(new Date(ticket.updated_at), { addSuffix: true })}</span>
+          <p className="text-[11px] text-slate-400 mt-0.5">
+            <span className="font-medium text-slate-500">{senderName}</span>
+            <span className="mx-1.5">·</span>
+            <span className="text-slate-400">{formatDistanceToNow(new Date(ticket.updated_at), { addSuffix: true })}</span>
           </p>
         </div>
 
         {/* Actions */}
-        <div className="w-full flex items-center justify-end gap-1.5 pt-2.5 border-t border-slate-100 shrink-0 flex-wrap sm:pt-3">
-          {/* Status */}
+        <div className="flex items-center gap-2 shrink-0">
           <SmartSelect
             value={ticket.status}
             onValueChange={(v) => updateStatus(v as SupportTicket['status'])}
@@ -617,8 +616,6 @@ function AdminChatThread({
             }))}
             disabled={updatingStatus}
           />
-
-          {/* Priority */}
           <SmartSelect
             value={ticket.priority}
             onValueChange={(v) => updatePriority(v as SupportTicket['priority'])}
@@ -628,15 +625,13 @@ function AdminChatThread({
               color: pr === 'low' ? 'neutral' : pr === 'normal' ? 'blue' : pr === 'high' ? 'warning' : 'error',
             }))}
           />
-
-          {/* Contextual actions stay together so the conversation remains primary. */}
-          <div className="relative inline-flex">
+          <div className="relative">
             <button type="button" onClick={() => setShowMore(!showMore)}
               className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-1.5 rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 transition-colors">
               Actions <ChevronDownIcon className="w-3 h-3" />
             </button>
             {showMore && (
-              <div ref={moreRef} className="absolute right-0 mt-1 z-20 w-56 rounded-xl border border-slate-200 bg-white shadow-lg py-1 text-xs">
+              <div ref={moreRef} className="absolute right-0 mt-1 z-20 w-52 rounded-xl border border-slate-200 bg-white shadow-lg py-1 text-xs">
                 <div className="border-b border-slate-100 px-3 py-2">
                   <p className="mb-1.5 text-[10px] font-bold uppercase tracking-widest text-slate-400">Assign ticket</p>
                   <select value={assignedAgent?.id ?? ''} onChange={e => assignTo(e.target.value || null)} disabled={assigning}
@@ -647,25 +642,25 @@ function AdminChatThread({
                 </div>
                 {(ticket.status === 'resolved' || ticket.status === 'closed') && (
                   <button type="button" onClick={() => { updateStatus('open'); setShowMore(false) }} className="flex w-full items-center gap-2 px-3 py-2 text-left text-slate-700 hover:bg-slate-50">
-                    <RefreshCw className="w-3 h-3" /> Reopen ticket
+                    <RefreshCw className="w-3 h-3" /> Reopen
                   </button>
                 )}
                 {(ticket.status === 'open' || ticket.status === 'in_progress') && (
                   <>
                     <button type="button" onClick={() => { updateStatus('resolved'); setShowMore(false) }} className="flex w-full items-center gap-2 px-3 py-2 text-left text-emerald-700 hover:bg-emerald-50">
-                      <CheckCircle2 className="w-3 h-3" /> Resolve ticket
+                      <CheckCircle2 className="w-3 h-3" /> Resolve
                     </button>
-                    <button type="button" onClick={() => { updateStatus('closed'); setShowMore(false) }} className="flex w-full items-center gap-2 px-3 py-2 text-left text-slate-700 hover:bg-slate-50">
-                      <XCircle className="w-3 h-3" /> Close ticket
+                    <button type="button" onClick={() => { updateStatus('closed'); setShowMore(false) }} className="flex w-full items-center gap-2 px-3 py-2 text-left text-red-700 hover:bg-red-50">
+                      <XCircle className="w-3 h-3" /> Close
                     </button>
                   </>
                 )}
                 <button type="button" onClick={() => { onArchive(ticket.id); setShowMore(false) }}
-                  className={`flex items-center gap-2 w-full px-3 py-1.5 text-left hover:bg-gray-50 ${ticket.archived ? 'text-green-700' : 'text-slate-700'}`}>
+                  className={`flex items-center gap-2 w-full px-3 py-2 text-left hover:bg-slate-50 ${ticket.archived ? 'text-emerald-700' : 'text-slate-700'}`}>
                   {ticket.archived ? <><RefreshCw className="w-3 h-3" />Restore</> : <><Archive className="w-3 h-3" />Archive</>}
                 </button>
-                <button type="button" onClick={() => { navigator.clipboard?.writeText(ticket.ticket_no ?? ticket.id); setShowMore(false) }} className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-slate-700 hover:bg-slate-50">
-                  <MessageSquare className="w-3 h-3" /> Copy ticket reference
+                <button type="button" onClick={() => { navigator.clipboard?.writeText(ticket.ticket_no ?? ticket.id); setShowMore(false) }} className="flex w-full items-center gap-2 px-3 py-2 text-left text-slate-700 hover:bg-slate-50">
+                  <MessageSquare className="w-3 h-3" /> Copy reference
                 </button>
               </div>
             )}
@@ -761,7 +756,7 @@ function AdminChatThread({
                           </span>
                         </div>
                         {isAdmin && (
-                          <div className="w-7 h-7 rounded-full bg-gray-900 flex items-center justify-center shrink-0 shadow-sm">
+                          <div className="w-7 h-7 rounded-full bg-primary flex items-center justify-center shrink-0">
                             <HeadphonesIcon className="w-3.5 h-3.5 text-white" />
                           </div>
                         )}
@@ -1116,18 +1111,18 @@ function EnquiryDetail({ enquiry, onBack, onStatusChange }: {
                     </div>
                   )}
                   <div className={`max-w-[75%] flex flex-col gap-1 ${isAdmin ? 'items-end' : 'items-start'}`}>
-                    <div className={`px-4 py-2.5 rounded-2xl text-[13.5px] leading-relaxed ${isAdmin ? 'bg-slate-900 text-white rounded-br-md' : 'bg-slate-100 text-slate-800 rounded-bl-md'}`}>
+                    <div className={`px-4 py-2.5 rounded-2xl text-[13.5px] leading-relaxed ${isAdmin ? 'bg-primary text-white rounded-br-md' : 'bg-slate-100 text-slate-800 rounded-bl-md'}`}>
                       {reply.message}
                     </div>
                     <span className="text-[10.5px] text-slate-400 px-1">
                       {isAdmin ? 'You' : senderName} · {format(new Date(reply.created_at), 'h:mm a')}
                     </span>
                   </div>
-                  {isAdmin && (
-                    <div className="w-8 h-8 rounded-full bg-slate-900 flex items-center justify-center shrink-0">
-                      <HeadphonesIcon className="w-4 h-4 text-white" />
-                    </div>
-                  )}
+                        {isAdmin && (
+                          <div className="w-7 h-7 rounded-full bg-primary flex items-center justify-center shrink-0">
+                            <HeadphonesIcon className="w-3.5 h-3.5 text-white" />
+                          </div>
+                        )}
                 </div>
               )
             })}
@@ -1517,7 +1512,7 @@ function ChatRequestDetail({ inquiry, onBack, onMarkRead, onStatusChange, agents
                     <img src={msg.attachment_url} alt={msg.attachment_name ?? 'attachment'}
                       className="max-h-40 max-w-[220px] rounded-xl border border-slate-200 object-cover" />
                   )}
-                  <div className={`px-4 py-2.5 rounded-2xl text-[13.5px] leading-relaxed whitespace-pre-wrap ${isAdmin ? 'bg-slate-900 text-white rounded-br-md' : 'bg-slate-100 text-slate-800 rounded-bl-md'} ${msg.id.startsWith('opt-') ? 'opacity-60' : ''}`}>
+                  <div className={`px-4 py-2.5 rounded-2xl text-[13.5px] leading-relaxed whitespace-pre-wrap ${isAdmin ? 'bg-primary text-white rounded-br-md' : 'bg-slate-100 text-slate-800 rounded-bl-md'} ${msg.id.startsWith('opt-') ? 'opacity-60' : ''}`}>
                     {msg.body}
                   </div>
                   <span className="text-[10.5px] text-slate-400 px-1 flex items-center gap-1">
@@ -1529,11 +1524,11 @@ function ChatRequestDetail({ inquiry, onBack, onMarkRead, onStatusChange, agents
                     )}
                   </span>
                 </div>
-                {isAdmin && (
-                  <div className="w-8 h-8 rounded-full bg-slate-900 flex items-center justify-center shrink-0">
-                    <HeadphonesIcon className="w-4 h-4 text-white" />
-                  </div>
-                )}
+                        {isAdmin && (
+                          <div className="w-7 h-7 rounded-full bg-primary flex items-center justify-center shrink-0">
+                            <HeadphonesIcon className="w-3.5 h-3.5 text-white" />
+                          </div>
+                        )}
               </div>
             )
           })
@@ -1556,7 +1551,7 @@ function ChatRequestDetail({ inquiry, onBack, onMarkRead, onStatusChange, agents
               placeholder={`Reply to ${inquiry.name}… (Enter to send)`}
               className="flex-1 px-4 py-2.5 rounded-xl border border-slate-200 text-[13.5px] bg-white text-slate-900 placeholder-slate-400 caret-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-400 transition-all resize-none" />
             <button type="submit" disabled={!input.trim() || sending}
-              className="w-10 h-10 rounded-xl bg-slate-900 hover:bg-slate-800 disabled:opacity-40 text-white flex items-center justify-center transition-colors shrink-0">
+              className="w-10 h-10 rounded-xl bg-primary hover:bg-primary/90 disabled:opacity-40 text-white flex items-center justify-center transition-colors shrink-0">
               {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
             </button>
           </form>
