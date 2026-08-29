@@ -10,11 +10,16 @@ interface VettingHeaderProps {
   adminName?: string
 }
 
+function getInitials(name: string) {
+  return name.split(' ').slice(0, 2).map(w => w[0]).join('').toUpperCase()
+}
+
 export default function VettingHeader({
   kycPendingCount,
   listingsPendingCount,
   onSearch,
   totalNotifications,
+  adminName,
 }: VettingHeaderProps) {
   const [query, setQuery] = useState('')
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false)
@@ -146,7 +151,7 @@ export default function VettingHeader({
 
           {/* Admin avatar */}
           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 text-[10px] font-bold text-white shadow-sm">
-            {adminName ? getInitialsFromName(adminName) : 'A'}
+            {adminName ? getInitials(adminName) : 'A'}
           </div>
 
           {/* Notification bell */}
@@ -197,15 +202,6 @@ export default function VettingHeader({
       </div>
     </header>
   )
-}
-
-function getInitialsFromName(name: string): string {
-  return name
-    .split(/\s+/)
-    .slice(0, 2)
-    .map(w => w[0])
-    .join('')
-    .toUpperCase()
 }
 
 function NotifRow({ label, sub, tone }: { label: string; sub: string; tone: 'indigo' | 'violet' }) {
