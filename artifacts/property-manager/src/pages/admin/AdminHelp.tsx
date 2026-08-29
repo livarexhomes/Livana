@@ -64,7 +64,7 @@ export default function AdminHelp() {
   const [submitError, setSubmitError] = useState('')
 
   // Support contact details from Settings — single source of truth.
-  const [supportPhone, setSupportPhone] = useState('+234 800 548 2621')
+  const [supportPhone, setSupportPhone] = useState('+234 7061370742')
   const [supportEmail, setSupportEmail] = useState('support@livarex.com.ng')
 
   useEffect(() => {

@@ -29,7 +29,7 @@ export const DEFAULT_PLATFORM: PlatformSettings = {
   name: 'Livarex',
   tagline: "Nigeria's most trusted property platform",
   email: 'support@livarex.com.ng',
-  phone: '+234 800 548 2621',
+  phone: '+234 7061370742',
   address: '14 Bourdillon Road, Ikoyi, Lagos',
   currency: 'NGN',
   country: 'Nigeria',

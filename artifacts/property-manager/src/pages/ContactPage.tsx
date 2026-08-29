@@ -31,7 +31,7 @@ export default function ContactPage() {
     return () => { active = false }
   }, [])
 
-  const phone = platform?.phone || '+234 800 548 2621'
+  const phone = platform?.phone || '+234 7061370742'
   const email = platform?.email || 'support@livarex.com.ng'
 
   const channels = [

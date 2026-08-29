@@ -34,7 +34,7 @@ export default function LandlordEnquiries() {
   const [contactLoading, setContactLoading] = useState(false)
 
   // Admin contact details from Settings — single source of truth.
-  const [adminWhatsApp, setAdminWhatsApp] = useState('+234 800 548 2621')
+  const [adminWhatsApp, setAdminWhatsApp] = useState('+234 7061370742')
   const [adminEmail, setAdminEmail]       = useState('support@livarex.com.ng')
 
   useEffect(() => {
