@@ -7,6 +7,7 @@ interface VettingHeaderProps {
   listingsPendingCount: number
   onSearch?: (q: string) => void
   totalNotifications?: number
+  adminName?: string
 }
 
 export default function VettingHeader({
@@ -75,8 +76,20 @@ export default function VettingHeader({
           </p>
         </div>
 
-        {/* Right: search + bell */}
+        {/* Right: live stats + search + bell + avatar */}
         <div className="flex shrink-0 items-center gap-2">
+          {/* Live stats: "24 Pending • 8 Listings" */}
+          <div className="hidden items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 sm:flex">
+            <span className="inline-flex items-center gap-1">
+              <span className="h-1.5 w-1.5 rounded-full bg-amber-400" />
+              {kycPendingCount} Pending
+            </span>
+            <span className="text-slate-300 dark:text-slate-600">•</span>
+            <span className="inline-flex items-center gap-1">
+              <span className="h-1.5 w-1.5 rounded-full bg-violet-400" />
+              {listingsPendingCount} Listings
+            </span>
+          </div>
           {/* Desktop search */}
           <div className="relative hidden md:block">
             <div className="flex h-11 items-center gap-2 rounded-xl border border-[#d7e0d9] bg-[#eef3ee] px-3 transition-colors focus-within:border-[#6d9b87] focus-within:bg-[#fbfcfa] focus-within:ring-2 focus-within:ring-[#c9d8cf] dark:border-slate-700 dark:bg-slate-800 dark:focus-within:border-blue-500 dark:focus-within:bg-slate-900 dark:focus-within:ring-blue-900/40">
@@ -131,6 +144,11 @@ export default function VettingHeader({
             )}
           </div>
 
+          {/* Admin avatar */}
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 text-[10px] font-bold text-white shadow-sm">
+            {adminName ? getInitialsFromName(adminName) : 'A'}
+          </div>
+
           {/* Notification bell */}
           <div ref={notifRef} className="relative">
             <button
@@ -179,6 +197,15 @@ export default function VettingHeader({
       </div>
     </header>
   )
+}
+
+function getInitialsFromName(name: string): string {
+  return name
+    .split(/\s+/)
+    .slice(0, 2)
+    .map(w => w[0])
+    .join('')
+    .toUpperCase()
 }
 
 function NotifRow({ label, sub, tone }: { label: string; sub: string; tone: 'indigo' | 'violet' }) {

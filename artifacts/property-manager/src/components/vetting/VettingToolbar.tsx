@@ -39,8 +39,8 @@ export default function VettingToolbar({
   resultCount,
 }: VettingToolbarProps) {
   return (
-    <div className="flex flex-col gap-3 rounded-[1.15rem] border border-[#d7e0d9] bg-[#f7f9f5] p-3 shadow-[0_5px_16px_rgba(24,53,47,0.04)] dark:border-slate-700 dark:bg-slate-900 sm:flex-row sm:items-center sm:gap-3 sm:p-3">
-      <div className="flex flex-1 items-center gap-2 sm:max-w-xs">
+    <div className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm dark:border-slate-700 dark:bg-slate-900 sm:flex-row sm:items-center sm:gap-3 sm:p-3">
+      <div className="flex min-w-0 flex-1 items-center gap-2 sm:w-[clamp(7.5rem,34%,11rem)] sm:flex-none">
         <StatusFilter
           value={statusFilter}
           onChange={onStatusFilter}
@@ -48,7 +48,7 @@ export default function VettingToolbar({
         />
       </div>
 
-      <div className="flex h-11 flex-1 items-center gap-2 rounded-xl border border-[#d7e0d9] bg-[#eef3ee] px-3 transition-colors focus-within:border-[#6d9b87] focus-within:bg-[#fbfcfa] focus-within:ring-2 focus-within:ring-[#c9d8cf] dark:border-slate-700 dark:bg-slate-800 dark:focus-within:border-blue-500 dark:focus-within:bg-slate-900 dark:focus-within:ring-blue-900/40">
+      <div className="flex h-11 min-w-0 flex-1 items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 transition-colors focus-within:border-blue-400 focus-within:bg-white focus-within:ring-2 focus-within:ring-blue-100 dark:border-slate-700 dark:bg-slate-800 dark:focus-within:border-blue-500 dark:focus-within:bg-slate-900 dark:focus-within:ring-blue-900/40">
         <Search className="h-3.5 w-3.5 shrink-0 text-slate-400" />
         <input
           type="search"
@@ -72,7 +72,7 @@ export default function VettingToolbar({
 
       <SortDropdown value={sort} onChange={onSort} />
 
-      <p className="shrink-0 text-[11px] font-medium text-slate-400 sm:ml-1">
+      <p className="hidden shrink-0 text-[11px] font-medium text-slate-400 xl:block xl:ml-1">
         {resultCount} {resultCount === 1 ? 'result' : 'results'}
       </p>
     </div>
@@ -110,7 +110,7 @@ function StatusFilter({
   }, [])
 
   return (
-    <div ref={ref} className="relative w-full sm:w-44">
+    <div ref={ref} className="relative w-full">
       <button
         type="button"
         onClick={() => setOpen(o => !o)}
@@ -215,8 +215,8 @@ function SortDropdown({
         aria-expanded={open}
       >
         <ArrowUpDown className="h-3.5 w-3.5 text-slate-400" />
-        <span className="hidden sm:inline">{SORT_LABELS[value]}</span>
-        <span className="sm:hidden">Sort</span>
+        <span className="hidden xl:inline">{SORT_LABELS[value]}</span>
+        <span className="xl:hidden">Sort</span>
         <ChevronDown
           className={cn(
             'h-3.5 w-3.5 text-slate-400 transition-transform duration-200',

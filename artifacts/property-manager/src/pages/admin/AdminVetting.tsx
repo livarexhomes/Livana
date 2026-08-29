@@ -263,6 +263,7 @@ export default function AdminVetting() {
             listingsPendingCount={pendingListings.length}
             totalNotifications={totalPending}
             onSearch={setKycSearch}
+            adminName={displayName}
           />
 
           {/* Mobile: legacy stat grid (kept compact, fits below header) */}
