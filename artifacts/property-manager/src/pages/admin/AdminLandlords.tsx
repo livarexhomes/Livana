@@ -518,8 +518,8 @@ export default function AdminLandlords() {
 
           <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
 
-            <AdminHeader title="Clients"
-              subtitle={`${clients.length} clients · ${approved} approved`}
+            <AdminHeader title="Landlords"
+              subtitle={`${clients.length} landlords · ${approved} approved`}
               pendingCount={approved} />
 
             {/* ── Mobile: search + filters ── */}
@@ -553,8 +553,8 @@ export default function AdminLandlords() {
               <div className="rounded-2xl border border-slate-200 bg-white px-5 py-3.5 shadow-sm">
                 <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
                   <div>
-                    <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">Landlord management</p>
-                    <h2 className="mt-0.5 text-xl md:text-2xl font-extrabold text-slate-950">Clients</h2>
+                    <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">Property owners</p>
+                    <h2 className="mt-0.5 text-xl md:text-2xl font-extrabold text-slate-950">Landlords</h2>
                   </div>
                 </div>
 

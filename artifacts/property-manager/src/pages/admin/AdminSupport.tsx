@@ -2952,123 +2952,88 @@ export default function AdminSupportPage() {
               <AdminHeader title="Support" subtitle={`${totalActiveCount} active conversations`} />
             </div>
 
-            {/* ── Modern Support Workspace Header ── */}
-            <div className="shrink-0 bg-white border-b border-slate-200/80 shadow-sm">
-              {/* Top bar */}
-              <div className="px-4 pt-4 pb-0 md:px-6 md:pt-5 md:pb-0">
-                <div className="flex items-start justify-between gap-4">
+            {/* ── Compact Support Workspace Header ── */}
+            <div className="shrink-0 bg-white border-b border-slate-200/60">
+              <div className="px-4 py-2.5 md:px-5">
+                <div className="flex items-center justify-between">
                   {/* Title block */}
-                  <div className="flex items-center gap-3">
-                    <div className="hidden sm:flex size-11 items-center justify-center rounded-2xl bg-gradient-to-br from-primary to-blue-600 shadow-lg shadow-primary/20">
-                      <HeadphonesIcon className="w-5 h-5 text-white" />
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                      <HeadphonesIcon className="w-4 h-4 text-primary" />
                     </div>
                     <div>
-                      <h1 className="text-lg md:text-xl font-bold tracking-tight text-slate-950">Support Center</h1>
-                      <p className="text-xs text-slate-400 mt-0.5">Manage customer conversations</p>
+                      <h1 className="text-sm font-bold text-slate-900">Support Center</h1>
                     </div>
                   </div>
 
-                  {/* Status pill */}
-                  <div className={`flex items-center gap-2 rounded-full border px-3.5 py-2 text-xs font-semibold transition-all ${
-                    effectiveSupportOnline
-                      ? 'border-emerald-200/80 bg-gradient-to-r from-emerald-50/80 to-green-50/80 text-emerald-700'
-                      : supportOpen
-                        ? 'border-amber-200/80 bg-gradient-to-r from-amber-50/80 to-orange-50/80 text-amber-700'
-                        : 'border-slate-200 bg-slate-50 text-slate-500'
-                  }`}>
-                    <span className={`relative flex h-2 w-2`}>
-                      {effectiveSupportOnline && (
-                        <>
+                  {/* Right controls */}
+                  <div className="flex items-center gap-2">
+                    {/* Status pill */}
+                    <div className={`hidden sm:flex items-center gap-1.5 rounded-full border px-2.5 py-1.5 text-[11px] font-medium transition-all ${
+                      effectiveSupportOnline
+                        ? 'border-emerald-200/80 bg-emerald-50/80 text-emerald-700'
+                        : supportOpen
+                          ? 'border-amber-200/80 bg-amber-50/80 text-amber-700'
+                          : 'border-slate-200 bg-slate-50 text-slate-500'
+                    }`}>
+                      <span className={`relative flex h-1.5 w-1.5`}>
+                        {effectiveSupportOnline && (
                           <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-                          <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
-                        </>
-                      )}
-                      {!effectiveSupportOnline && supportOpen && (
-                        <span className="relative inline-flex h-2 w-2 rounded-full bg-amber-500" />
-                      )}
-                      {!effectiveSupportOnline && !supportOpen && (
-                        <span className="relative inline-flex h-2 w-2 rounded-full bg-slate-400" />
-                      )}
-                    </span>
-                    {effectiveSupportOnline
-                      ? `${availableAgentCount} agent${availableAgentCount !== 1 ? 's' : ''} online`
-                      : supportOpen ? 'No agents available' : 'Support closed'}
-                  </div>
-                </div>
+                        )}
+                        <span className={`relative inline-flex h-1.5 w-1.5 rounded-full ${
+                          effectiveSupportOnline ? 'bg-emerald-500' : supportOpen ? 'bg-amber-500' : 'bg-slate-400'
+                        }`} />
+                      </span>
+                      {effectiveSupportOnline
+                        ? `${availableAgentCount} online`
+                        : supportOpen ? 'No agents' : 'Closed'}
+                    </div>
 
-                {/* Stats row */}
-                <div className="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-                  <div className={`rounded-xl border px-3.5 py-3 transition-all ${totalActiveCount > 0 ? 'bg-gradient-to-br from-blue-50/50 to-indigo-50/50 border-blue-200/60' : 'bg-slate-50/80 border-slate-200/60'}`}>
-                    <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Active</p>
-                    <p className="text-2xl font-extrabold text-slate-900 mt-1 tabular-nums">{totalActiveCount}</p>
-                    <p className="text-[10px] text-slate-400 mt-0.5">conversations</p>
-                  </div>
-                  <div className="rounded-xl border bg-slate-50/80 border-slate-200/60 px-3.5 py-3">
-                    <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Resolved</p>
-                    <p className="text-2xl font-extrabold text-slate-900 mt-1 tabular-nums">{totalResolvedCount}</p>
-                    <p className="text-[10px] text-slate-400 mt-0.5">tickets closed</p>
-                  </div>
-                  <div className="rounded-xl border bg-slate-50/80 border-slate-200/60 px-3.5 py-3">
-                    <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Online</p>
-                    <p className="text-2xl font-extrabold text-emerald-600 mt-1 tabular-nums">{onlineAgentCount}</p>
-                    <p className="text-[10px] text-slate-400 mt-0.5">agents now</p>
-                  </div>
-                  <div className={`rounded-xl border px-3.5 py-3 transition-all ${supportOpen ? 'bg-emerald-50/50 border-emerald-200/60' : 'bg-slate-50/80 border-slate-200/60'}`}>
-                    <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Hours</p>
-                    <p className={`text-2xl font-extrabold mt-1 tabular-nums ${supportOpen ? 'text-emerald-600' : 'text-slate-400'}`}>
-                      {supportOpen ? 'Open' : 'Closed'}
-                    </p>
-                    <p className="text-[10px] text-slate-400 mt-0.5">support status</p>
+                    {/* Sound toggle */}
+                    <button
+                      onClick={() => { const next = !muted; setMuted(next); setSoundMuted(next) }}
+                      className={`size-8 rounded-lg border flex items-center justify-center transition-all ${
+                        muted 
+                          ? 'border-slate-200 bg-slate-50 text-slate-400' 
+                          : 'border-primary/20 bg-primary/5 text-primary'
+                      }`}
+                    >
+                      {muted ? <VolumeX className="w-3.5 h-3.5" /> : <Volume2 className="w-3.5 h-3.5" />}
+                    </button>
                   </div>
                 </div>
 
                 {/* Tab navigation */}
-                <div className="mt-4 -mb-px">
-                  <div className="flex items-center gap-1">
-                    {([
-                      { key: 'support', label: 'Queue',      icon: HeadphonesIcon, count: supportOpenCount },
-                      { key: 'inbox',   label: 'Inbox',      icon: Inbox,          count: inboxCount },
-                      { key: 'agents', label: 'Agents',     icon: Users,          count: 0 },
-                    ] as const).map(t => {
-                      const Icon = t.icon
-                      return (
-                        <button key={t.key} type="button" onClick={() => setTab(t.key)}
-                          className={`relative inline-flex items-center gap-2 rounded-t-xl px-4 py-2.5 text-sm font-semibold transition-all duration-200 ${
-                            tab === t.key
-                              ? 'bg-gradient-to-b from-white to-slate-50 text-primary border-t-2 border-x border-slate-200 -mb-px shadow-sm'
-                              : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50/80'
-                          }`}>
-                          <Icon className="w-4 h-4" />
-                          {t.label}
-                          {t.count > 0 && (
-                            <span className={`inline-flex h-5 min-w-[20px] items-center justify-center rounded-full text-[11px] font-bold px-1.5 ${
-                              tab === t.key ? 'bg-primary text-white' : 'bg-slate-100 text-slate-500'
-                            }`}>{t.count}</span>
-                          )}
-                        </button>
-                      )
-                    })}
-                    <div className="ml-auto flex items-center gap-2">
-                      {/* Sound toggle */}
-                      <button
-                        onClick={() => { const next = !muted; setMuted(next); setSoundMuted(next) }}
-                        title={muted ? 'Unmute notifications' : 'Mute notifications'}
-                        className={`size-9 rounded-xl border flex items-center justify-center transition-all ${
-                          muted 
-                            ? 'border-slate-200 bg-slate-50 text-slate-400 hover:border-slate-300 hover:text-slate-600' 
-                            : 'border-primary/20 bg-primary/5 text-primary hover:bg-primary/10'
-                        }`}
-                      >
-                        {muted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
+                <div className="mt-2 flex items-center gap-1 -mb-px">
+                  {([
+                    { key: 'support', label: 'Queue',      icon: HeadphonesIcon, count: supportOpenCount },
+                    { key: 'inbox',   label: 'Inbox',      icon: Inbox,          count: inboxCount },
+                    { key: 'agents', label: 'Agents',     icon: Users,          count: 0 },
+                  ] as const).map(t => {
+                    const Icon = t.icon
+                    return (
+                      <button key={t.key} type="button" onClick={() => setTab(t.key)}
+                        className={`relative inline-flex items-center gap-1.5 rounded-t-lg px-3 py-1.5 text-xs font-semibold transition-all duration-150 ${
+                          tab === t.key
+                            ? 'bg-white text-primary border-t border-x border-slate-200 -mb-px shadow-sm'
+                            : 'text-slate-500 hover:text-slate-700'
+                        }`}>
+                        <Icon className="w-3.5 h-3.5" />
+                        {t.label}
+                        {t.count > 0 && (
+                          <span className={`inline-flex h-4 min-w-[16px] items-center justify-center rounded-full text-[10px] font-bold px-1 ${
+                            tab === t.key ? 'bg-primary text-white' : 'bg-slate-100 text-slate-500'
+                          }`}>{t.count}</span>
+                        )}
                       </button>
-                    </div>
-                  </div>
+                    )
+                  })}
                 </div>
               </div>
             </div>
 
           {/* Tab content */}
-          <div className="flex flex-1 min-h-0 overflow-hidden bg-white border-t border-slate-200/80">
+          <div className="flex flex-1 min-h-0 overflow-hidden">
             {tab === 'support' ? (
               <SupportTab view="queue" onOpenQueued={(id) => { setPendingChatId(id); setTab('inbox') }} />
             ) : tab === 'agents' ? (

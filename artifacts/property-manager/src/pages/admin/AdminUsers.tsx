@@ -173,7 +173,7 @@ function ConfirmModal({ action, onConfirm, onCancel, loading }: {
 }) {
   const isDelete = action.type === 'delete'
   const isSuspend = action.type === 'suspend'
-  const title = isDelete ? 'Delete user' : isSuspend ? 'Suspend user' : 'Unsuspend user'
+  const title = isDelete ? 'Delete tenant' : isSuspend ? 'Suspend tenant' : 'Unsuspend tenant'
   const message = isDelete
     ? `This will permanently delete ${action.tenant.full_name} and all their data. This cannot be undone.`
     : isSuspend
@@ -325,7 +325,7 @@ export default function AdminUsers() {
       <div className="flex h-screen overflow-hidden bg-[#F4F6FB]">
         <AdminSidebar userEmail={user?.email} userName={displayName} />
         <div className="flex-1 flex flex-col min-w-0">
-          <AdminHeader title="Users" subtitle={`${tenants.length} registered tenants`} />
+          <AdminHeader title="Tenants" subtitle={`${tenants.length} registered tenants`} />
           <main className="flex-1 overflow-y-auto pb-20 md:pb-6">
 
             {/* ── Mobile: search + filters ── */}
@@ -349,15 +349,15 @@ export default function AdminUsers() {
               </MobileFilterBar>
             </div>
 
-            {/* ── Hero card (desktop only) ── */}
+              {/* ── Hero card (desktop only) ── */}
             <div className="hidden sm:block px-4 md:px-6 pt-3 pb-2">
-            <div className="rounded-2xl border border-slate-200 bg-white px-5 py-4 shadow-sm">
-              {/* <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">Platform users</p>
-                  <h2 className="mt-0.5 text-xl sm:text-2xl font-extrabold text-slate-950">Tenants &amp; Users</h2>
-                </div>
-                  <div className="grid grid-cols-2 gap-1.5 sm:flex sm:items-center sm:flex-wrap sm:gap-2 sm:shrink-0">
+              <div className="rounded-2xl border border-slate-200 bg-white px-5 py-4 shadow-sm">
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">Property seekers</p>
+                    <h2 className="mt-0.5 text-xl sm:text-2xl font-extrabold text-slate-950">Tenants</h2>
+                  </div>
+                  <div className="grid grid-cols-3 gap-1.5 sm:flex sm:items-center sm:flex-wrap sm:gap-2 sm:shrink-0">
                     {[
                       { label: 'Total',     value: tenants.length, color: 'text-slate-700'   },
                       { label: 'Active',    value: activeCount,    color: 'text-emerald-700' },
@@ -369,7 +369,7 @@ export default function AdminUsers() {
                       </div>
                     ))}
                   </div>
-                </div> */}
+                </div>
 
                 {/* Filter + Search */}
                 <div className="mt-2.5 flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between">
@@ -400,7 +400,7 @@ export default function AdminUsers() {
             {/* Count row */}
             <div className="flex items-center justify-between px-4 md:px-6 mb-2">
               <p className="text-xs text-slate-500">
-                <span className="font-bold text-slate-900">{filtered.length}</span> {filtered.length === 1 ? 'user' : 'users'}
+                <span className="font-bold text-slate-900">{filtered.length}</span> {filtered.length === 1 ? 'tenant' : 'tenants'}
                 {statusFilter !== 'all' && <span className="ml-1.5 text-[10px] font-bold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded-md">{statusFilter}</span>}
               </p>
               {totalEnquiries > 0 && (
@@ -421,12 +421,12 @@ export default function AdminUsers() {
                 <div className="w-11 h-11 bg-slate-50 rounded-xl flex items-center justify-center mb-2.5">
                   <UserX className="w-5 h-5 text-slate-300" />
                 </div>
-                <p className="font-bold text-slate-700 mb-0.5">No users yet</p>
+                <p className="font-bold text-slate-700 mb-0.5">No tenants yet</p>
                 <p className="text-sm text-slate-400">Tenants who register will appear here.</p>
               </div>
             ) : filtered.length === 0 ? (
               <div className="bg-white rounded-xl border border-dashed border-slate-200 p-6 sm:p-10 text-center">
-                <p className="font-semibold text-slate-600">No users match your search.</p>
+                <p className="font-semibold text-slate-600">No tenants match your search.</p>
               </div>
             ) : (
               <div className="space-y-1.5">
