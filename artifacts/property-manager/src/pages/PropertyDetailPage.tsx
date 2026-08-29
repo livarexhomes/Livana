@@ -988,7 +988,7 @@ export default function PropertyDetailPage() {
                     <ShieldCheck className="w-4 h-4 text-blue-600" />
                   </div>
                   <div>
-                    <p className="text-sm font-bold text-gray-900 mb-1">Livana Safety Tip</p>
+                    <p className="text-sm font-bold text-gray-900 mb-1">Livarex Safety Tip</p>
                     <p className="text-xs text-gray-500 leading-relaxed">Always inspect the property in person before making any payments. We never ask for money via the platform.</p>
                   </div>
                 </div>
@@ -996,7 +996,7 @@ export default function PropertyDetailPage() {
 
               {/* Verification process */}
               <div className="rounded-3xl border border-gray-100 bg-white p-5">
-                <p className="text-sm font-bold text-gray-900 mb-3">How Livana verifies landlords</p>
+                <p className="text-sm font-bold text-gray-900 mb-3">How Livarex verifies landlords</p>
                 <ol className="space-y-3 text-sm text-gray-600">
                   <li className="flex gap-2"><span className="text-blue-600">1.</span> Government ID check</li>
                   <li className="flex gap-2"><span className="text-blue-600">2.</span> Phone verification</li>

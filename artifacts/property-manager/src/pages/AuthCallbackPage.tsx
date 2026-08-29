@@ -64,16 +64,31 @@ export default function AuthCallbackPage() {
       if (landlordRedirect) { navigate(landlordRedirect); return }
 
       // ── Tenant flow ────────────────────────────────────────────────
-      // Upsert so that re-logins (especially Google OAuth) always keep
+      // Update-or-insert so that re-logins (especially Google OAuth) always keep
       // the tenant row in sync with the latest name, email, avatar and provider.
+      // Safe against missing UNIQUE constraint on user_id — uses UPDATE then INSERT.
       const provider = user.app_metadata?.provider ?? 'email'
-      await supabase.from('tenants').upsert({
-        user_id:    user.id,
-        full_name:  meta.full_name ?? meta.name ?? user.email?.split('@')[0] ?? 'User',
-        email:      user.email ?? null,
-        avatar_url: meta.avatar_url ?? meta.picture ?? null,
-        provider,
-      }, { onConflict: 'user_id', ignoreDuplicates: false })
+      const { error: updateError } = await supabase
+        .from('tenants')
+        .update({
+          full_name:  meta.full_name ?? meta.name ?? user.email?.split('@')[0] ?? 'User',
+          email:      user.email ?? null,
+          avatar_url: meta.avatar_url ?? meta.picture ?? null,
+          provider,
+        })
+        .eq('user_id', user.id)
+      if (updateError && updateError.code === 'PGRST116') {
+        // Row didn't exist — insert it.
+        await supabase.from('tenants').insert({
+          user_id:    user.id,
+          full_name:  meta.full_name ?? meta.name ?? user.email?.split('@')[0] ?? 'User',
+          email:      user.email ?? null,
+          avatar_url: meta.avatar_url ?? meta.picture ?? null,
+          provider,
+        })
+      } else if (updateError) {
+        console.error('Tenant upsert failed:', updateError)
+      }
       navigate(redirectTo)
     }
 

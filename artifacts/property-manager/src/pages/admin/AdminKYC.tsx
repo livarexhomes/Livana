@@ -629,7 +629,6 @@ function ReviewPanel({
                   </div>
           )}
         </div>
-
       </div>
     </div>
   )

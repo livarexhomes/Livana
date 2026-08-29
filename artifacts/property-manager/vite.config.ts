@@ -146,6 +146,9 @@ const apiHandlerFiles: Record<string, string> = {
   "verify-otp": "verify-otp.js",
   "verify-reset": "verify-reset.js",
   "whatsapp/notify-inspection": "whatsapp/notify-inspection.js",
+  "delete-user": "delete-user.js",
+  "notify-kyc-reset": "notify-kyc-reset.js",
+  "notify-admin-login": "notify-admin-login.js",
 };
 
 function readApiRoute(req: any): string {

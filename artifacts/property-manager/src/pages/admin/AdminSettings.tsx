@@ -6,7 +6,8 @@ import {
   FileText, DollarSign, Hash, Users, BarChart3,
   ArrowUpRight, AlertCircle, ShieldCheck, UserPlus,
   Eye, EyeOff, Send, TestTube, Trash2, Plus,
-  Key, Smartphone, Webhook, Loader2, Check, ChevronRight, X, FileDown, Clock,
+  Key, Smartphone, Webhook, Loader2, Check, ChevronRight, X, FileDown, Clock, UserCheck,
+  MessageSquare, Search,
 } from 'lucide-react'
 import AdminSidebar from '../../components/layout/AdminSidebar'
 import AdminHeader from '../../components/layout/AdminHeader'
@@ -28,6 +29,7 @@ const SECTIONS = [
   { id: 'security',      label: 'Security & PIN',  icon: Shield     },
   { id: 'history',       label: 'Audit History',   icon: FileText   },
   { id: 'agents',        label: 'Agents',           icon: Users      },
+  { id: 'registration', label: 'Registration',    icon: UserCheck  },
   { id: 'support_hours', label: 'Support Hours',    icon: Clock      },
   { id: 'listing',       label: 'Listing Rules',    icon: Globe      },
 ]
@@ -68,6 +70,25 @@ interface ListingSettings {
   agencyFeePercent: number
 }
 
+interface ContactRecord {
+  type: 'landlord' | 'tenant'
+  id: string
+  userId?: string
+  name: string
+  initials: string
+  grad: string
+  email: string | null
+  phone: string | null
+  status: string
+  joinedAgo: string
+  createdAt: string
+  updatedAt?: string
+  enquiryCount: number
+  propertyCount: number
+  bio?: string | null
+  provider?: string | null
+}
+
 interface EmailConfig {
   fromEmail: string
   fromName: string
@@ -76,6 +97,22 @@ interface EmailConfig {
 }
 
 // ── UI Components ────────────────────────────────────────────────────────────
+
+function TimelineItem({ icon, color, label, time }: {
+  icon: ReactNode; color: string; label: string; time: string
+}) {
+  return (
+    <div className="flex items-start gap-3">
+      <div className={`w-7 h-7 rounded-lg border flex items-center justify-center shrink-0 mt-0.5 ${color}`}>
+        {icon}
+      </div>
+      <div className="min-w-0 flex-1 pt-0.5">
+        <p className="text-xs font-semibold text-slate-700">{label}</p>
+        <p className="text-[11px] text-slate-400 mt-0.5">{time}</p>
+      </div>
+    </div>
+  )
+}
 
 function Toggle({ enabled, onChange, loading = false, disabled = false }: { enabled: boolean; onChange: () => void; loading?: boolean; disabled?: boolean }) {
   return (
@@ -475,7 +512,7 @@ function AgentSettingsSection({ currentUserId }: { currentUserId?: string }) {
 // ── Main Component ───────────────────────────────────────────────────────────
 
 // Sections that only the true admin can access
-const ADMIN_ONLY_SECTIONS = new Set(['email', 'security', 'history', 'agents'])
+const ADMIN_ONLY_SECTIONS = new Set(['email', 'security', 'history', 'agents', 'registration'])
 
 async function hashPin(pin: string): Promise<string> {
   const data = new TextEncoder().encode(`livarex-admin-pin:${pin}`)
@@ -628,9 +665,8 @@ export default function AdminSettings() {
 
   // Save settings function
   const saveSettings = useCallback(async (key: string, value: any) => {
-    setSaving(true)
     const supabase = createClient()
-    
+
     const { error } = await supabase
       .from('admin_settings')
       .upsert({
@@ -654,7 +690,6 @@ export default function AdminSettings() {
       invalidatePlatformSettings()
     }
 
-    setSaving(false)
     if (!error) {
       setSaved(true)
       setTimeout(() => setSaved(false), 2000)
@@ -837,6 +872,149 @@ export default function AdminSettings() {
   useEffect(() => {
     if (active === 'history') loadHistory()
   }, [active, loadHistory])
+
+  // ── Registration tab state ─────────────────────────────────────────────────────
+  const [regTab, setRegTab]         = useState<'all' | 'landlord' | 'tenant'>('all')
+  const [regSearch, setRegSearch]   = useState('')
+  const [regLandlords, setRegLandlords] = useState<any[]>([])
+  const [regTenants, setRegTenants] = useState<any[]>([])
+  const [regLoading, setRegLoading] = useState(false)
+  const [selectedContact, setSelectedContact] = useState<ContactRecord | null>(null)
+
+  const loadRegData = useCallback(async () => {
+    setRegLoading(true)
+    const supabase = createClient()
+    const [ll, tn] = await Promise.all([
+      supabase.from('landlords')
+        .select('id, user_id, full_name, email, whatsapp, phone, status, created_at, updated_at')
+        .order('created_at', { ascending: false }),
+      supabase.from('tenants')
+        .select('id, user_id, full_name, email, phone, status, created_at, provider')
+        .order('created_at', { ascending: false }),
+    ])
+    setRegLandlords(ll.data ?? [])
+    setRegTenants(tn.data ?? [])
+    setRegLoading(false)
+  }, [])
+
+  useEffect(() => {
+    if (active === 'registration') loadRegData()
+  }, [active, loadRegData])
+
+  const AVATAR_GRADIENTS = [
+    'from-violet-500 to-purple-600', 'from-blue-500 to-blue-700',
+    'from-emerald-400 to-teal-600',  'from-rose-400 to-pink-600',
+    'from-amber-400 to-orange-500',  'from-indigo-400 to-indigo-600',
+  ]
+  function regGrad(name: string) {
+    let h = 0; for (const c of name) h = (h * 31 + c.charCodeAt(0)) & 0xffff
+    return AVATAR_GRADIENTS[h % AVATAR_GRADIENTS.length]
+  }
+  function regInitials(name: string) {
+    return name.split(' ').slice(0, 2).map((w: string) => w[0]).join('').toUpperCase()
+  }
+  function timeAgo(iso: string) {
+    const d = Math.floor((Date.now() - new Date(iso).getTime()) / 1000)
+    if (d < 60) return 'just now'
+    if (d < 3600) return `${Math.floor(d / 60)}m ago`
+    if (d < 86400) return `${Math.floor(d / 3600)}h ago`
+    if (d < 2592000) return `${Math.floor(d / 86400)}d ago`
+    return new Date(iso).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })
+  }
+
+  function buildContactRecord(
+    type: 'landlord' | 'tenant',
+    data: any,
+    enquiryCount: number,
+    propertyCount: number,
+  ): ContactRecord {
+    return {
+      type,
+      id: data.id,
+      userId: data.user_id,
+      name: data.full_name ?? 'Unknown',
+      initials: regInitials(data.full_name ?? 'U'),
+      grad: regGrad(data.full_name ?? 'U'),
+      email: data.email ?? null,
+      phone: data.whatsapp ?? data.phone ?? null,
+      status: data.status ?? 'active',
+      joinedAgo: timeAgo(data.created_at),
+      createdAt: data.created_at,
+      updatedAt: data.updated_at,
+      enquiryCount,
+      propertyCount,
+      bio: data.bio ?? null,
+      provider: data.provider ?? null,
+    }
+  }
+
+  const allContacts: ContactRecord[] = [
+    ...regLandlords.map(l => buildContactRecord('landlord', l, 0, 0)),
+    ...regTenants.map(t => buildContactRecord('tenant', t, 0, 0)),
+  ]
+
+  const q = regSearch.toLowerCase()
+  const filteredReg = allContacts.filter(c => {
+    if (regTab !== 'all' && c.type !== regTab) return false
+    if (!q) return true
+    return c.name.toLowerCase().includes(q) ||
+      (c.email ?? '').toLowerCase().includes(q) ||
+      (c.phone ?? '').includes(q)
+  })
+
+  // ── Contact detail drawer state ───────────────────────────────────────────────
+  const [contactDetail, setContactDetail]   = useState<any | null>(null)
+  const [detailLoading, setDetailLoading]   = useState(false)
+  const [notes, setNotes]                   = useState('')
+  const [savingNotes, setSavingNotes]       = useState(false)
+  const [contactEnquiries, setContactEnquiries] = useState<any[]>([])
+
+  const openContact = useCallback(async (contact: ContactRecord) => {
+    setSelectedContact(contact)
+    setDetailLoading(true)
+    setNotes('')
+    setContactEnquiries([])
+    const supabase = createClient()
+    if (contact.type === 'tenant') {
+      const [detailRes, enqRes] = await Promise.all([
+        supabase.from('tenants').select('*').eq('id', contact.id).single(),
+        supabase.from('enquiries')
+          .select('*, properties(title, city)')
+          .eq('tenant_id', contact.id)
+          .order('created_at', { ascending: false })
+          .limit(20),
+      ])
+      setContactDetail(detailRes.data ?? null)
+      setContactEnquiries(enqRes.data ?? [])
+    } else {
+      const [detailRes, enqRes, propRes] = await Promise.all([
+        supabase.from('landlords').select('*').eq('id', contact.id).single(),
+        supabase.from('enquiries')
+          .select('*, properties(title, city), tenants(full_name)')
+          .eq('landlord_id', contact.id)
+          .order('created_at', { ascending: false })
+          .limit(20),
+        supabase.from('properties').select('id, title, city, status, type, price').eq('landlord_id', contact.id).order('created_at', { ascending: false }),
+      ])
+      setContactDetail(detailRes.data ?? null)
+      setContactEnquiries(enqRes.data ?? [])
+      if (propRes.data) {
+        setContactDetail((prev: any) => prev ? { ...prev, _properties: propRes.data } : prev)
+      }
+    }
+    setDetailLoading(false)
+  }, [])
+
+  const saveNotes = useCallback(async () => {
+    if (!selectedContact) return
+    setSavingNotes(true)
+    const supabase = createClient()
+    const table = selectedContact.type === 'tenant' ? 'tenants' : 'landlords'
+    await supabase.from(table).update({ admin_notes: notes }).eq('id', selectedContact.id)
+    setSavingNotes(false)
+  }, [selectedContact, notes])
+
+  const closeContact = () => { setSelectedContact(null); setContactDetail(null); setContactEnquiries([]) }
 
   function downloadHistoryCsv() {
     const KYC_STATUS: Record<string, string> = {
@@ -1866,6 +2044,127 @@ export default function AdminSettings() {
                 </div>
               )}
 
+              {/* ─── REGISTRATION ─── */}
+              {active === 'registration' && (
+                <div>
+                  <SectionTitle
+                    title="Registration"
+                    sub="Manage how users register and are recorded in the system. Click any contact to view their full profile, activity timeline, and communication history."
+                    icon={UserCheck}
+                  />
+
+                  {/* Search */}
+                  <div className="mb-4">
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+                      <input
+                        type="text"
+                        value={regSearch}
+                        onChange={e => setRegSearch(e.target.value)}
+                        placeholder="Search by name, email or phone…"
+                        className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/50 focus:bg-white transition-all"
+                      />
+                      {regSearch && (
+                        <button
+                          type="button"
+                          onClick={() => setRegSearch('')}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Filter tabs */}
+                  <div className="flex gap-1.5 mb-4">
+                    {(['all', 'landlord', 'tenant'] as const).map(tab => (
+                      <button
+                        key={tab}
+                        type="button"
+                        onClick={() => setRegTab(tab)}
+                        className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
+                          regTab === tab
+                            ? 'bg-slate-900 text-white'
+                            : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                        }`}
+                      >
+                        {tab === 'all' ? 'All' : tab === 'landlord' ? 'Landlords' : 'Tenants'}
+                        <span className={`inline-flex h-4 min-w-[18px] px-1 rounded-md text-[10px] font-bold ${
+                          regTab === tab ? 'bg-white/20 text-white' : 'bg-white text-slate-500'
+                        }`}>
+                          {tab === 'all'
+                            ? regLandlords.length + regTenants.length
+                            : tab === 'landlord' ? regLandlords.length : regTenants.length}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+
+                  {regLoading ? (
+                    <div className="flex items-center justify-center py-16">
+                      <div className="animate-spin w-7 h-7 border-[3px] border-slate-200 border-t-slate-900 rounded-full" />
+                    </div>
+                  ) : filteredReg.length === 0 ? (
+                    <div className="rounded-xl border border-dashed border-slate-200 p-10 text-center">
+                      <UserCheck className="w-8 h-8 text-slate-300 mx-auto mb-2" />
+                      <p className="text-sm font-semibold text-slate-600">No contacts found</p>
+                      <p className="text-xs text-slate-400 mt-1">Try adjusting your search or filter.</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      {filteredReg.map(contact => (
+                        <button
+                          key={`${contact.type}-${contact.id}`}
+                          type="button"
+                          onClick={() => setSelectedContact(contact)}
+                          className="w-full flex items-center gap-3.5 rounded-xl border border-slate-200 bg-white px-4 py-3 text-left hover:border-slate-300 hover:shadow-sm transition-all"
+                        >
+                          {/* Avatar */}
+                          <div className={`w-9 h-9 rounded-lg bg-gradient-to-br ${contact.grad} flex items-center justify-center shrink-0`}>
+                            <span className="text-[11px] font-bold text-white">{contact.initials}</span>
+                          </div>
+
+                          {/* Info */}
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2">
+                              <p className="text-sm font-semibold text-slate-900 truncate">{contact.name}</p>
+                              <span className={`shrink-0 inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold ${
+                                contact.type === 'landlord'
+                                  ? 'bg-violet-50 text-violet-600 border border-violet-100'
+                                  : 'bg-blue-50 text-blue-600 border border-blue-100'
+                              }`}>
+                                {contact.type === 'landlord' ? 'Landlord' : 'Tenant'}
+                              </span>
+                              {contact.status && contact.status !== 'active' && (
+                                <span className="shrink-0 inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold bg-amber-50 text-amber-600 border border-amber-100">
+                                  {contact.status}
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-[11px] text-slate-500 truncate mt-0.5">
+                              {contact.email || contact.phone || 'No contact details'}
+                              {contact.enquiryCount > 0 && (
+                                <span className="ml-2 text-slate-400">· {contact.enquiryCount} enquiry{contact.enquiryCount !== 1 ? 's' : ''}</span>
+                              )}
+                              {contact.propertyCount > 0 && (
+                                <span className="ml-2 text-slate-400">· {contact.propertyCount} listing{contact.propertyCount !== 1 ? 's' : ''}</span>
+                              )}
+                            </p>
+                          </div>
+
+                          {/* Time */}
+                          <div className="shrink-0 text-right hidden sm:block">
+                            <p className="text-[11px] text-slate-400">{contact.joinedAgo}</p>
+                            <ChevronRight className="w-3.5 h-3.5 text-slate-300 ml-auto mt-0.5" />
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
               {/* ─── LISTING RULES ─── */}
               {active === 'listing' && (
                 <div>
@@ -2006,6 +2305,218 @@ export default function AdminSettings() {
               )}
             </div>
           </div>
+
+      {/* ── Contact detail drawer ── */}
+      {selectedContact && (
+        <>
+          <div className="fixed inset-0 bg-black/30 backdrop-blur-sm z-40" onClick={closeContact} />
+          <div className="fixed inset-y-0 right-0 z-50 w-full max-w-lg bg-white shadow-2xl flex flex-col overflow-hidden">
+            {/* Drawer header */}
+            <div className="flex items-center gap-3.5 px-5 py-4 border-b border-slate-100 shrink-0">
+              <div className={`w-11 h-11 rounded-xl bg-gradient-to-br ${selectedContact.grad} flex items-center justify-center shrink-0`}>
+                <span className="text-sm font-bold text-white">{selectedContact.initials}</span>
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <p className="font-bold text-gray-900 truncate">{selectedContact.name}</p>
+                  <span className={`shrink-0 inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold ${
+                    selectedContact.type === 'landlord'
+                      ? 'bg-violet-50 text-violet-600 border border-violet-100'
+                      : 'bg-blue-50 text-blue-600 border border-blue-100'
+                  }`}>
+                    {selectedContact.type === 'landlord' ? 'Landlord' : 'Tenant'}
+                  </span>
+                </div>
+                <p className="text-xs text-gray-400 mt-0.5">
+                  Joined {selectedContact.joinedAgo}
+                </p>
+              </div>
+              <button onClick={closeContact} className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-slate-100 text-gray-400 shrink-0">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Stats row */}
+            <div className="grid grid-cols-3 divide-x divide-slate-100 border-b border-slate-100 shrink-0">
+              {[
+                { label: 'Enquiries', value: contactEnquiries.length },
+                { label: 'Status', value: selectedContact.status || 'active' },
+                { label: 'Provider', value: selectedContact.provider || 'email' },
+              ].map(s => (
+                <div key={s.label} className="px-3 py-3 text-center">
+                  <p className="text-sm font-extrabold text-gray-900 capitalize">{s.value}</p>
+                  <p className="text-[10px] text-gray-400 font-medium uppercase tracking-wider mt-0.5">{s.label}</p>
+                </div>
+              ))}
+            </div>
+
+            {/* Scrollable content */}
+            <div className="flex-1 overflow-y-auto">
+
+              {/* Contact information */}
+              <div className="px-5 py-4 border-b border-slate-100">
+                <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400 mb-3">Contact information</p>
+                <div className="space-y-2.5">
+                  {selectedContact.email && (
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-7 h-7 rounded-lg bg-slate-50 border border-slate-100 flex items-center justify-center shrink-0">
+                        <Mail className="w-3.5 h-3.5 text-slate-400" />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-[10px] text-slate-400 font-medium">Email</p>
+                        <a href={`mailto:${selectedContact.email}`} className="text-xs font-semibold text-blue-600 truncate block">{selectedContact.email}</a>
+                      </div>
+                    </div>
+                  )}
+                  {selectedContact.phone && (
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-7 h-7 rounded-lg bg-slate-50 border border-slate-100 flex items-center justify-center shrink-0">
+                        <Phone className="w-3.5 h-3.5 text-slate-400" />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-[10px] text-slate-400 font-medium">Phone / WhatsApp</p>
+                        <a href={`tel:${selectedContact.phone}`} className="text-xs font-semibold text-slate-700 truncate block">{selectedContact.phone}</a>
+                      </div>
+                    </div>
+                  )}
+                  {contactDetail && (
+                    <>
+                      {contactDetail.bio && (
+                        <div className="flex items-start gap-2.5">
+                          <div className="w-7 h-7 rounded-lg bg-slate-50 border border-slate-100 flex items-center justify-center shrink-0 mt-0.5">
+                            <User className="w-3.5 h-3.5 text-slate-400" />
+                          </div>
+                          <div className="min-w-0">
+                            <p className="text-[10px] text-slate-400 font-medium">Bio</p>
+                            <p className="text-xs text-slate-600">{contactDetail.bio}</p>
+                          </div>
+                        </div>
+                      )}
+                      {selectedContact.type === 'tenant' && (
+                        <div className="flex items-start gap-2.5">
+                          <div className="w-7 h-7 rounded-lg bg-slate-50 border border-slate-100 flex items-center justify-center shrink-0 mt-0.5">
+                            <ShieldCheck className="w-3.5 h-3.5 text-slate-400" />
+                          </div>
+                          <div className="min-w-0">
+                            <p className="text-[10px] text-slate-400 font-medium">Sign-up method</p>
+                            <p className="text-xs font-semibold text-slate-700 capitalize">{selectedContact.provider || 'Email'}</p>
+                          </div>
+                        </div>
+                      )}
+                    </>
+                  )}
+                </div>
+              </div>
+
+              {/* Activity timeline */}
+              <div className="px-5 py-4 border-b border-slate-100">
+                <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400 mb-3">Activity timeline</p>
+                {detailLoading ? (
+                  <div className="flex items-center justify-center py-6">
+                    <div className="animate-spin w-5 h-5 border-2 border-slate-200 border-t-slate-700 rounded-full" />
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    <TimelineItem
+                      icon={<UserPlus className="w-3 h-3" />}
+                      color="bg-blue-50 text-blue-600 border-blue-100"
+                      label={`Registered as ${selectedContact.type}`}
+                      time={timeAgo(selectedContact.createdAt)}
+                    />
+                    {contactDetail?.kyc_submitted_at && (
+                      <TimelineItem
+                        icon={<ShieldCheck className="w-3 h-3" />}
+                        color="bg-violet-50 text-violet-600 border-violet-100"
+                        label="KYC submitted"
+                        time={timeAgo(contactDetail.kyc_submitted_at)}
+                      />
+                    )}
+                    {contactEnquiries.slice(0, 3).map((e: any) => (
+                      <TimelineItem
+                        key={e.id}
+                        icon={<MessageSquare className="w-3 h-3" />}
+                        color="bg-amber-50 text-amber-600 border-amber-100"
+                        label={`Enquiry: ${(e.properties as any)?.title ?? 'Property'}`}
+                        time={timeAgo(e.created_at)}
+                      />
+                    ))}
+                    {contactEnquiries.length === 0 && (
+                      <p className="text-xs text-slate-400 italic">No enquiries yet.</p>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* Enquiries list */}
+              <div className="px-5 py-4 border-b border-slate-100">
+                <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400 mb-3">
+                  Enquiries ({contactEnquiries.length})
+                </p>
+                {detailLoading ? (
+                  <div className="flex items-center justify-center py-6">
+                    <div className="animate-spin w-5 h-5 border-2 border-slate-200 border-t-slate-700 rounded-full" />
+                  </div>
+                ) : contactEnquiries.length === 0 ? (
+                  <p className="text-xs text-slate-400 italic">No enquiries on record.</p>
+                ) : (
+                  <div className="space-y-2">
+                    {contactEnquiries.map((e: any) => {
+                      const ENQ_COLORS: Record<string, string> = {
+                        new: 'bg-blue-50 text-blue-700 border-blue-100',
+                        open: 'bg-amber-50 text-amber-700 border-amber-100',
+                        replied: 'bg-violet-50 text-violet-700 border-violet-100',
+                        closed: 'bg-slate-100 text-slate-600 border-slate-200',
+                      }
+                      return (
+                        <div key={e.id} className="rounded-lg border border-slate-100 p-3">
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="min-w-0 flex-1">
+                              <p className="text-xs font-semibold text-slate-900 truncate">{(e.properties as any)?.title ?? 'Property'}</p>
+                              <p className="text-[11px] text-slate-500 mt-0.5 line-clamp-2">{e.message}</p>
+                            </div>
+                            <span className={`shrink-0 inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold border capitalize ${ENQ_COLORS[e.status] ?? ENQ_COLORS.new}`}>
+                              {e.status}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-3 mt-2">
+                            {(e.properties as any)?.city && (
+                              <span className="text-[10px] text-slate-400">{(e.properties as any).city}</span>
+                            )}
+                            <span className="text-[10px] text-slate-400">{timeAgo(e.created_at)}</span>
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                )}
+              </div>
+
+              {/* Admin notes */}
+              <div className="px-5 py-4">
+                <div className="flex items-center justify-between mb-2.5">
+                  <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">Admin notes</p>
+                  <button
+                    type="button"
+                    onClick={saveNotes}
+                    disabled={savingNotes}
+                    className="inline-flex items-center gap-1.5 rounded-lg bg-slate-900 px-3 py-1.5 text-[11px] font-semibold text-white hover:bg-slate-700 disabled:opacity-50 transition"
+                  >
+                    {savingNotes ? <><Loader2 className="w-3 h-3 animate-spin" /> Saving…</> : <><Save className="w-3 h-3" /> Save</>}
+                  </button>
+                </div>
+                <textarea
+                  value={notes}
+                  onChange={e => setNotes(e.target.value)}
+                  placeholder="Add private notes about this contact…"
+                  rows={4}
+                  className="w-full resize-none rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/50 focus:bg-white transition-all"
+                />
+              </div>
+            </div>
+          </div>
+        </>
+      )}
+
       {/* ── PIN gate modal ── */}
       {showPinGate && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-4">
