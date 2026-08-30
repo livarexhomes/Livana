@@ -56,6 +56,7 @@ function formatDate(iso: string) {
 
 type DeleteConfirm = { userId: string; landlordId: string; name: string }
 type ResetConfirm = { userId: string; landlordId: string; name: string }
+type StatusConfirm = { landlordId: string; name: string; action: 'approve' | 'suspend' | 'reinstate' }
 
 // ── Reset confirmation modal ──────────────────────────────────────────────────
 
@@ -133,22 +134,71 @@ function ConfirmDeleteModal({ target, onConfirm, onCancel, loading }: {
   )
 }
 
+// ── Status confirmation modal (Approve / Suspend / Reinstate) ──────────────────
+
+function ConfirmStatusModal({ target, onConfirm, onCancel, loading }: {
+  target: StatusConfirm; onConfirm: () => void; onCancel: () => void; loading: boolean
+}) {
+  const isApprove = target.action === 'approve'
+  const isSuspend = target.action === 'suspend'
+  const isReinstate = target.action === 'reinstate'
+
+  const config = {
+    iconBg: isSuspend ? 'bg-orange-50' : 'bg-emerald-50',
+    iconColor: isSuspend ? 'text-orange-600' : 'text-emerald-600',
+    icon: isSuspend ? ShieldOff : CheckCircle,
+    title: isApprove ? 'Approve landlord' : isSuspend ? 'Suspend landlord' : 'Reinstate landlord',
+    description: isApprove
+      ? `This will approve <strong>${target.name}</strong>'s account. They will be marked as verified and active.`
+      : isSuspend
+      ? `This will suspend <strong>${target.name}</strong>'s account. They will be unable to log in or access their account.`
+      : `This will reinstate <strong>${target.name}</strong>'s account. They will be able to log in again.`,
+    buttonClass: isSuspend ? 'bg-orange-500 hover:bg-orange-600' : 'bg-emerald-600 hover:bg-emerald-700',
+    buttonLabel: isApprove ? 'Approve landlord' : isSuspend ? 'Suspend landlord' : 'Reinstate landlord',
+    loadingLabel: isApprove ? 'Approving…' : isSuspend ? 'Suspending…' : 'Reinstating…',
+  }
+
+  const Icon = config.icon
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
+      <div className="bg-white rounded-xl md:rounded-2xl shadow-2xl w-full max-w-sm p-6 border border-slate-200">
+        <div className={`w-11 h-11 rounded-xl ${config.iconBg} flex items-center justify-center mb-4`}>
+          <Icon className={`w-5 h-5 ${config.iconColor}`} />
+        </div>
+        <h3 className="text-[15px] font-extrabold text-slate-900 mb-1">{config.title}</h3>
+        <p
+          className="text-[13px] text-slate-500 mb-6 leading-relaxed"
+          dangerouslySetInnerHTML={{ __html: config.description }}
+        />
+        <div className="flex gap-2.5">
+          <button onClick={onCancel} disabled={loading}
+            className="flex-1 px-4 py-2.5 rounded-xl border border-slate-200 text-[13px] font-semibold text-slate-700 hover:bg-slate-50 transition-colors disabled:opacity-50">
+            Cancel
+          </button>
+          <button onClick={onConfirm} disabled={loading}
+            className={`flex-1 px-4 py-2.5 rounded-xl text-white text-[13px] font-semibold transition-colors disabled:opacity-50 flex items-center justify-center gap-1.5 ${config.buttonClass}`}>
+            {loading && <RefreshCw className="w-3.5 h-3.5 animate-spin" />}
+            {loading ? config.loadingLabel : config.buttonLabel}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // ── Per-row action menu ───────────────────────────────────────────────────────
 
-function ActionMenu({ l, processing, onStatus, onDelete, onReset, onClose }: {
+function ActionMenu({ l, processing, onRequestStatus, onDelete, onReset, onClose }: {
   l: any
   processing: string | null
-  onStatus: (id: string, status: string) => Promise<void>
+  onRequestStatus: (landlordId: string, name: string, action: 'approve' | 'suspend' | 'reinstate') => void
   onDelete: (userId: string, landlordId: string) => void
   onReset: (userId: string, landlordId: string, name: string) => void
   onClose: () => void
 }) {
   const ref = useRef<HTMLDivElement>(null)
   const busy = processing === l.id
-
-  function handleStatus(status: string) {
-    onStatus(l.id, status).then(() => onClose())
-  }
 
   return (
     <div ref={ref}
@@ -164,35 +214,35 @@ function ActionMenu({ l, processing, onStatus, onDelete, onReset, onClose }: {
         </Link>
       )}
       {(l.status === 'pending' || l.status === 'not_submitted') && (
-        <button type="button" disabled={busy} onClick={() => handleStatus('approved')}
+        <button type="button" disabled={busy} onClick={() => { onRequestStatus(l.id, l.full_name, 'approve'); onClose() }}
           className="w-full flex items-center gap-2.5 px-3.5 py-2 text-[12.5px] font-medium text-emerald-700 hover:bg-emerald-50 transition-colors disabled:opacity-40">
           <CheckCircle className="w-3.5 h-3.5" />
           Approve
         </button>
       )}
       {l.status === 'suspended' && (
-        <button type="button" disabled={busy} onClick={() => handleStatus('approved')}
+        <button type="button" disabled={busy} onClick={() => { onRequestStatus(l.id, l.full_name, 'reinstate'); onClose() }}
           className="w-full flex items-center gap-2.5 px-3.5 py-2 text-[12.5px] font-medium text-emerald-700 hover:bg-emerald-50 transition-colors disabled:opacity-40">
           <CheckCircle className="w-3.5 h-3.5" />
           Reinstate
         </button>
       )}
       {(l.status === 'approved' || l.status === 'pending') && (
-        <button type="button" disabled={busy} onClick={() => handleStatus('suspended')}
+        <button type="button" disabled={busy} onClick={() => { onRequestStatus(l.id, l.full_name, 'suspend'); onClose() }}
           className="w-full flex items-center gap-2.5 px-3.5 py-2 text-[12.5px] font-medium text-orange-700 hover:bg-orange-50 transition-colors disabled:opacity-40">
           <ShieldOff className="w-3.5 h-3.5" />
           Suspend
         </button>
       )}
       {l.status === 'rejected' && (
-        <button type="button" disabled={busy} onClick={() => onReset(l.user_id, l.id, l.full_name)}
+        <button type="button" disabled={busy} onClick={() => { onReset(l.user_id, l.id, l.full_name); onClose() }}
           className="w-full flex items-center gap-2.5 px-3.5 py-2 text-[12.5px] font-medium text-amber-700 hover:bg-amber-50 transition-colors disabled:opacity-40">
           <RotateCcw className="w-3.5 h-3.5" />
           Reset KYC
         </button>
       )}
       <div className="h-px bg-slate-100 mx-2 my-1" />
-      <button type="button" disabled={busy} onClick={() => onDelete(l.user_id, l.id)}
+      <button type="button" disabled={busy} onClick={() => { onDelete(l.user_id, l.id); onClose() }}
         className="w-full flex items-center gap-2.5 px-3.5 py-2 text-[12.5px] font-medium text-red-600 hover:bg-red-50 transition-colors disabled:opacity-40">
         <Trash2 className="w-3.5 h-3.5" />
         Delete landlord
@@ -203,12 +253,12 @@ function ActionMenu({ l, processing, onStatus, onDelete, onReset, onClose }: {
 
 // ── Landlord row ──────────────────────────────────────────────────────────────
 
-function LandlordRow({ l, processing, menuOpen, onMenuToggle, onStatus, onDelete, onReset }: {
+function LandlordRow({ l, processing, menuOpen, onMenuToggle, onRequestStatus, onDelete, onReset }: {
   l: any
   processing: string | null
   menuOpen: boolean
   onMenuToggle: () => void
-  onStatus: (id: string, status: string) => Promise<void>
+  onRequestStatus: (landlordId: string, name: string, action: 'approve' | 'suspend' | 'reinstate') => void
   onDelete: (userId: string, landlordId: string) => void
   onReset: (userId: string, landlordId: string, name: string) => void
 }) {
@@ -267,7 +317,7 @@ function LandlordRow({ l, processing, menuOpen, onMenuToggle, onStatus, onDelete
             : <MoreVertical className="h-3.5 w-3.5" />}
         </button>
         {menuOpen && (
-          <ActionMenu l={l} processing={processing} onStatus={onStatus} onDelete={onDelete} onReset={onReset} onClose={onMenuToggle} />
+          <ActionMenu l={l} processing={processing} onRequestStatus={onRequestStatus} onDelete={onDelete} onReset={onReset} onClose={onMenuToggle} />
         )}
       </div>
     </div>
@@ -276,12 +326,12 @@ function LandlordRow({ l, processing, menuOpen, onMenuToggle, onStatus, onDelete
 
 // ── Mobile card ────────────────────────────────────────────────────────────────
 
-function LandlordMobileCard({ l, processing, menuOpen, onMenuToggle, onStatus, onDelete, onReset }: {
+function LandlordMobileCard({ l, processing, menuOpen, onMenuToggle, onRequestStatus, onDelete, onReset }: {
   l: any
   processing: string | null
   menuOpen: boolean
   onMenuToggle: () => void
-  onStatus: (id: string, status: string) => Promise<void>
+  onRequestStatus: (landlordId: string, name: string, action: 'approve' | 'suspend' | 'reinstate') => void
   onDelete: (userId: string, landlordId: string) => void
   onReset: (userId: string, landlordId: string, name: string) => void
 }) {
@@ -340,7 +390,7 @@ function LandlordMobileCard({ l, processing, menuOpen, onMenuToggle, onStatus, o
               : <MoreVertical className="h-3.5 w-3.5" />}
           </button>
           {menuOpen && (
-            <ActionMenu l={l} processing={processing} onStatus={onStatus} onDelete={onDelete} onReset={onReset} onClose={onMenuToggle} />
+            <ActionMenu l={l} processing={processing} onRequestStatus={onRequestStatus} onDelete={onDelete} onReset={onReset} onClose={onMenuToggle} />
           )}
         </div>
       </div>
@@ -363,6 +413,8 @@ export default function AdminLandlords() {
   const [deleteLoading, setDeleteLoading] = useState(false)
   const [resetTarget, setResetTarget] = useState<ResetConfirm | null>(null)
   const [resetLoading, setResetLoading] = useState(false)
+  const [statusTarget, setStatusTarget] = useState<StatusConfirm | null>(null)
+  const [statusLoading, setStatusLoading] = useState(false)
   const [toast, setToast] = useState<string | null>(null)
   const [menuOpen, setMenuOpen] = useState<string | null>(null)
 
@@ -450,6 +502,42 @@ export default function AdminLandlords() {
 
   function handleReset(userId: string, landlordId: string, name: string) {
     setResetTarget({ userId, landlordId, name })
+  }
+
+  function handleStatusRequest(landlordId: string, name: string, action: 'approve' | 'suspend' | 'reinstate') {
+    setStatusTarget({ landlordId, name, action })
+  }
+
+  async function confirmStatus() {
+    if (!statusTarget) return
+    setStatusLoading(true)
+
+    const newStatus = statusTarget.action === 'suspend' ? 'suspended'
+      : statusTarget.action === 'reinstate' ? 'approved'
+      : 'approved'
+
+    const supabase = createClient()
+    const patch: any = { status: newStatus }
+    if (newStatus === 'approved') patch.is_verified = true
+
+    const { error } = await supabase
+      .from('landlords')
+      .update(patch)
+      .eq('id', statusTarget.landlordId)
+
+    if (error) {
+      showToast(`Failed: ${error.message}`)
+    } else {
+      setClients(cs => cs.map(c =>
+        c.id === statusTarget.landlordId ? { ...c, ...patch } : c
+      ))
+      const actionLabel = statusTarget.action === 'suspend' ? 'suspended'
+        : statusTarget.action === 'reinstate' ? 'reinstated' : 'approved'
+      showToast(`${statusTarget.name} has been ${actionLabel}.`)
+    }
+
+    setStatusLoading(false)
+    setStatusTarget(null)
   }
 
   async function confirmReset(reason: string) {
@@ -665,7 +753,7 @@ export default function AdminLandlords() {
                             processing={processing}
                             menuOpen={menuOpen === l.id}
                             onMenuToggle={() => setMenuOpen(menuOpen === l.id ? null : l.id)}
-                            onStatus={updateStatus}
+                            onRequestStatus={handleStatusRequest}
                             onDelete={handleDelete}
                             onReset={handleReset}
                           />
@@ -680,7 +768,7 @@ export default function AdminLandlords() {
                             processing={processing}
                             menuOpen={menuOpen === l.id}
                             onMenuToggle={() => setMenuOpen(menuOpen === l.id ? null : l.id)}
-                            onStatus={updateStatus}
+                            onRequestStatus={handleStatusRequest}
                             onDelete={handleDelete}
                             onReset={handleReset}
                           />
@@ -801,6 +889,15 @@ export default function AdminLandlords() {
             onConfirm={confirmReset}
             onCancel={() => setResetTarget(null)}
             loading={resetLoading}
+          />
+        )}
+
+        {statusTarget && (
+          <ConfirmStatusModal
+            target={statusTarget}
+            onConfirm={confirmStatus}
+            onCancel={() => setStatusTarget(null)}
+            loading={statusLoading}
           />
         )}
 
