@@ -154,9 +154,8 @@ function ActionMenu({ l, processing, onStatus, onDelete, onReset, onClose }: {
     return () => document.removeEventListener('mousedown', handleClick)
   }, [onClose])
 
-  async function handleStatus(status: string) {
-    await onStatus(l.id, status)
-    onClose()
+  function handleStatus(status: string) {
+    onStatus(l.id, status).then(() => onClose())
   }
 
   return (
@@ -193,14 +192,14 @@ function ActionMenu({ l, processing, onStatus, onDelete, onReset, onClose }: {
         </button>
       )}
       {l.status === 'rejected' && (
-        <button type="button" disabled={busy} onClick={() => { onReset(l.user_id, l.id, l.full_name); onClose() }}
+        <button type="button" disabled={busy} onClick={() => onReset(l.user_id, l.id, l.full_name)}
           className="w-full flex items-center gap-2.5 px-3.5 py-2 text-[12.5px] font-medium text-amber-700 hover:bg-amber-50 transition-colors disabled:opacity-40">
           <RotateCcw className="w-3.5 h-3.5" />
           Reset KYC
         </button>
       )}
       <div className="h-px bg-slate-100 mx-2 my-1" />
-      <button type="button" disabled={busy} onClick={() => { onDelete(l.user_id, l.id); onClose() }}
+      <button type="button" disabled={busy} onClick={() => onDelete(l.user_id, l.id)}
         className="w-full flex items-center gap-2.5 px-3.5 py-2 text-[12.5px] font-medium text-red-600 hover:bg-red-50 transition-colors disabled:opacity-40">
         <Trash2 className="w-3.5 h-3.5" />
         Delete landlord
