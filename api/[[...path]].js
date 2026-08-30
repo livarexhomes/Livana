@@ -15,6 +15,7 @@ const handlers = {
   'clear-all-chats': () => import('../server/api-handlers/clear-all-chats.js'),
   'delete-user': () => import('../server/api-handlers/delete-user.js'),
   'landlord-register': () => import('../server/api-handlers/landlord-register.js'),
+  'update-landlord-status': () => import('../server/api-handlers/update-landlord-status.js'),
   'manage-support-agent': () => import('../server/api-handlers/manage-support-agent.js'),
   'notify-admin-login': () => import('../server/api-handlers/notify-admin-login.js'),
   'notify-kyc-reset': () => import('../server/api-handlers/notify-kyc-reset.js'),

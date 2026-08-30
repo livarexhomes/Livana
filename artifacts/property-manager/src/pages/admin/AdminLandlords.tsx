@@ -419,9 +419,19 @@ export default function AdminLandlords() {
     const supabase = createClient()
     const patch: any = { status }
     if (status === 'approved') patch.is_verified = true
-    const { error } = await supabase.from('landlords').update(patch).eq('id', id)
-    if (error) {
-      showToast(`Failed to update status: ${error.message}`)
+
+    // Use server-side API to bypass RLS policies
+    const { data: { session } } = await supabase.auth.getSession()
+    const token = session?.access_token ?? ''
+    const resp = await fetch('/api/update-landlord-status', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ landlordId: id, status }),
+    })
+    const result = await resp.json().catch(() => ({}))
+
+    if (!resp.ok) {
+      showToast(`Failed to update status: ${result.error ?? 'Unknown error'}`)
     } else {
       setClients(cs => cs.map(c => (c.id === id ? { ...c, ...patch } : c)))
     }

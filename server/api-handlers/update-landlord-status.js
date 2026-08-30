@@ -4,7 +4,7 @@
  * Updates a landlord's status (suspend, approve, etc.) in the landlords table.
  * Uses the service-role key to bypass RLS policies.
  *
- * Body: { landlordId: string, status: string, isVerified?: boolean }
+ * Body: { landlordId: string, status: string }
  * Header: Authorization: Bearer <admin_access_token>
  */
 
@@ -70,10 +70,9 @@ export default async function handler(req, res) {
   if (!isAdmin) return sendJson(res, 403, { error: 'Admin access required' })
 
   // ── 2. Validate body ─────────────────────────────────────────────────────────
-  const body      = await parseJsonBody(req)
+  const body       = await parseJsonBody(req)
   const landlordId = (body?.landlordId ?? '').trim()
-  const status    = (body?.status ?? '').trim()
-  const isVerified = body?.isVerified === true
+  const status     = (body?.status ?? '').trim()
 
   if (!landlordId) return sendJson(res, 400, { error: 'landlordId is required' })
   if (!status) return sendJson(res, 400, { error: 'status is required' })
@@ -83,45 +82,30 @@ export default async function handler(req, res) {
     return sendJson(res, 400, { error: `Invalid status. Must be one of: ${validStatuses.join(', ')}` })
   }
 
-  // ── 3. Update landlord status in the landlords table ───────────────────────
-  const updateData = { status }
+  // ── 3. Update landlord status via Supabase REST API ─────────────────────────
+  // Using service-role key bypasses RLS
+  const updateData: Record<string, any> = { status }
   if (status === 'approved') {
     updateData.is_verified = true
   } else {
     updateData.is_verified = false
   }
 
-  const updateRes = await fetch(`${SUPABASE_URL}/auth/v1/admin/users`, {
+  const updateRes = await fetch(`${SUPABASE_URL}/rest/v1/landlords?id=eq.${landlordId}`, {
     method: 'PATCH',
     headers: {
       Authorization: `Bearer ${SERVICE_ROLE_KEY}`,
       apikey: SERVICE_ROLE_KEY,
       'Content-Type': 'application/json',
+      'Prefer': 'return=representation'
     },
-    body: JSON.stringify({
-      updateAttributes: updateData
-    })
-  }).catch(err => ({ ok: false, status: 500, json: () => Promise.resolve({ error: err.message }) }))
+    body: JSON.stringify(updateData)
+  })
 
-  // If the admin users endpoint doesn't work for landlords, try direct DB update
   if (!updateRes.ok) {
-    // Fallback: Use service role directly via the REST API
-    const dbUpdateRes = await fetch(`${SUPABASE_URL}/rest/v1/rpc/update_landlord_status`, {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${SERVICE_ROLE_KEY}`,
-        apikey: SERVICE_ROLE_KEY,
-        'Content-Type': 'application/json',
-        'Prefer': 'return=representation'
-      },
-      body: JSON.stringify({ p_landlord_id: landlordId, p_status: status, p_is_verified: status === 'approved' })
-    })
-
-    if (!dbUpdateRes.ok) {
-      const errData = await dbUpdateRes.json().catch(() => null)
-      console.error('[update-landlord-status] Update failed', dbUpdateRes.status, errData)
-      return sendJson(res, dbUpdateRes.status, { error: getErrorMessage(errData) || 'Failed to update landlord status' })
-    }
+    const errData = await updateRes.json().catch(() => null)
+    console.error('[update-landlord-status] Update failed:', updateRes.status, errData)
+    return sendJson(res, updateRes.status, { error: getErrorMessage(errData) || 'Failed to update landlord status' })
   }
 
   return sendJson(res, 200, { ok: true, landlordId, status })

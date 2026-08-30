@@ -149,6 +149,7 @@ const apiHandlerFiles: Record<string, string> = {
   "delete-user": "delete-user.js",
   "notify-kyc-reset": "notify-kyc-reset.js",
   "notify-admin-login": "notify-admin-login.js",
+  "update-landlord-status": "update-landlord-status.js",
 };
 
 function readApiRoute(req: any): string {
