@@ -419,8 +419,12 @@ export default function AdminLandlords() {
     const supabase = createClient()
     const patch: any = { status }
     if (status === 'approved') patch.is_verified = true
-    await supabase.from('landlords').update(patch).eq('id', id)
-    setClients(cs => cs.map(c => (c.id === id ? { ...c, ...patch } : c)))
+    const { error } = await supabase.from('landlords').update(patch).eq('id', id)
+    if (error) {
+      showToast(`Failed to update status: ${error.message}`)
+    } else {
+      setClients(cs => cs.map(c => (c.id === id ? { ...c, ...patch } : c)))
+    }
     setProcessing(null)
   }
 
@@ -487,7 +491,7 @@ export default function AdminLandlords() {
     })
     const result = await resp.json().catch(() => ({}))
     if (!resp.ok) {
-      showToast(`Failed to delete: ${result.error ?? resp.statusText}`)
+      showToast(`Failed to delete: ${result.error ?? (await resp.text())}`)
     } else {
       setClients(cs => cs.filter(c => c.id !== deleteTarget.landlordId))
       showToast(`${deleteTarget.name} permanently deleted.`)
