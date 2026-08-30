@@ -138,7 +138,7 @@ function ConfirmDeleteModal({ target, onConfirm, onCancel, loading }: {
 function ActionMenu({ l, processing, onStatus, onDelete, onReset, onClose }: {
   l: any
   processing: string | null
-  onStatus: (id: string, status: string) => void
+  onStatus: (id: string, status: string) => Promise<void>
   onDelete: (userId: string, landlordId: string) => void
   onReset: (userId: string, landlordId: string, name: string) => void
   onClose: () => void
@@ -154,6 +154,11 @@ function ActionMenu({ l, processing, onStatus, onDelete, onReset, onClose }: {
     return () => document.removeEventListener('mousedown', handleClick)
   }, [onClose])
 
+  async function handleStatus(status: string) {
+    await onStatus(l.id, status)
+    onClose()
+  }
+
   return (
     <div ref={ref}
       className="absolute right-0 top-full mt-1 z-30 w-44 rounded-xl border border-slate-200 bg-white shadow-[0_8px_32px_rgba(15,23,42,0.12)] overflow-hidden py-1">
@@ -167,21 +172,21 @@ function ActionMenu({ l, processing, onStatus, onDelete, onReset, onClose }: {
         </Link>
       )}
       {(l.status === 'pending' || l.status === 'not_submitted') && (
-        <button type="button" disabled={busy} onClick={() => { onStatus(l.id, 'approved'); onClose() }}
+        <button type="button" disabled={busy} onClick={() => handleStatus('approved')}
           className="w-full flex items-center gap-2.5 px-3.5 py-2 text-[12.5px] font-medium text-emerald-700 hover:bg-emerald-50 transition-colors disabled:opacity-40">
           <CheckCircle className="w-3.5 h-3.5" />
           Approve
         </button>
       )}
       {l.status === 'suspended' && (
-        <button type="button" disabled={busy} onClick={() => { onStatus(l.id, 'approved'); onClose() }}
+        <button type="button" disabled={busy} onClick={() => handleStatus('approved')}
           className="w-full flex items-center gap-2.5 px-3.5 py-2 text-[12.5px] font-medium text-emerald-700 hover:bg-emerald-50 transition-colors disabled:opacity-40">
           <CheckCircle className="w-3.5 h-3.5" />
           Reinstate
         </button>
       )}
       {(l.status === 'approved' || l.status === 'pending') && (
-        <button type="button" disabled={busy} onClick={() => { onStatus(l.id, 'suspended'); onClose() }}
+        <button type="button" disabled={busy} onClick={() => handleStatus('suspended')}
           className="w-full flex items-center gap-2.5 px-3.5 py-2 text-[12.5px] font-medium text-orange-700 hover:bg-orange-50 transition-colors disabled:opacity-40">
           <ShieldOff className="w-3.5 h-3.5" />
           Suspend
@@ -211,7 +216,7 @@ function LandlordRow({ l, processing, menuOpen, onMenuToggle, onStatus, onDelete
   processing: string | null
   menuOpen: boolean
   onMenuToggle: () => void
-  onStatus: (id: string, status: string) => void
+  onStatus: (id: string, status: string) => Promise<void>
   onDelete: (userId: string, landlordId: string) => void
   onReset: (userId: string, landlordId: string, name: string) => void
 }) {
@@ -284,7 +289,7 @@ function LandlordMobileCard({ l, processing, menuOpen, onMenuToggle, onStatus, o
   processing: string | null
   menuOpen: boolean
   onMenuToggle: () => void
-  onStatus: (id: string, status: string) => void
+  onStatus: (id: string, status: string) => Promise<void>
   onDelete: (userId: string, landlordId: string) => void
   onReset: (userId: string, landlordId: string, name: string) => void
 }) {
