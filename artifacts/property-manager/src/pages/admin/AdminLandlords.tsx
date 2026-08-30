@@ -146,21 +146,14 @@ function ActionMenu({ l, processing, onStatus, onDelete, onReset, onClose }: {
   const ref = useRef<HTMLDivElement>(null)
   const busy = processing === l.id
 
-  useEffect(() => {
-    function handleClick(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) onClose()
-    }
-    document.addEventListener('mousedown', handleClick)
-    return () => document.removeEventListener('mousedown', handleClick)
-  }, [onClose])
-
   function handleStatus(status: string) {
     onStatus(l.id, status).then(() => onClose())
   }
 
   return (
     <div ref={ref}
-      className="absolute right-0 top-full mt-1 z-30 w-44 rounded-xl border border-slate-200 bg-white shadow-[0_8px_32px_rgba(15,23,42,0.12)] overflow-hidden py-1">
+      className="absolute right-0 top-full mt-1 z-30 w-44 rounded-xl border border-slate-200 bg-white shadow-[0_8px_32px_rgba(15,23,42,0.12)] overflow-hidden py-1"
+      onMouseDown={(e) => e.stopPropagation()}>
       {l.status === 'pending' && (
         <Link href="/admin/kyc">
           <button type="button"
