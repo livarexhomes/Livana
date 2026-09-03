@@ -15,18 +15,20 @@ export default function Footer() {
           </div>
 
           <div>
+            <p className="mb-4 text-xs font-bold uppercase tracking-[0.16em] text-white">Explore</p>
             <ul className="space-y-4 text-sm">
               <li><Link href="/listings?type=rent" className="hover:text-white transition-colors">Rent</Link></li>
-              <li><Link href="/listings?type=buy" className="hover:text-white transition-colors">Buy</Link></li>
               <li><Link href="/listings?type=lease" className="hover:text-white transition-colors">Lease</Link></li>
-              <li><Link href="/listings?type=commercial" className="hover:text-white transition-colors">Commercial</Link></li>
+              <li><Link href="/listings" className="hover:text-white transition-colors">Listings</Link></li>
             </ul>
           </div>
 
           <div>
+            <p className="mb-4 text-xs font-bold uppercase tracking-[0.16em] text-white">Company</p>
             <ul className="space-y-4 text-sm">
               <li><Link href="/about" className="hover:text-white transition-colors">About</Link></li>
               <li><Link href="/contact" className="hover:text-white transition-colors">Contact</Link></li>
+              <li><Link href="/landlord/register" className="hover:text-white transition-colors">List Property</Link></li>
               <li><Link href="/privacy-policy" className="hover:text-white transition-colors">Privacy Policy</Link></li>
               <li><Link href="/terms" className="hover:text-white transition-colors">Terms &amp; Conditions</Link></li>
               <li><Link href="/subscription-agreement" className="hover:text-white transition-colors">Subscription Agreement</Link></li>

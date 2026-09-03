@@ -14,8 +14,8 @@ interface PropertyCardProps {
 
 const TYPE_CONFIG: Record<string, { label: string; cls: string }> = {
   sale:       { label: 'For Sale',   cls: 'bg-blue-600 text-white' },
-  rent:       { label: 'For Rent',   cls: 'bg-violet-600 text-white' },
-  lease:      { label: 'Lease',      cls: 'bg-emerald-600 text-white' },
+  rent:       { label: 'For Rent',   cls: 'bg-blue-600 text-white' },
+  lease:      { label: 'Lease',      cls: 'bg-sky-600 text-white' },
   commercial: { label: 'Commercial', cls: 'bg-slate-700 text-white' },
 }
 

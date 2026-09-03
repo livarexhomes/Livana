@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Link } from '@/lib/navigation'
-import { ArrowRight, ShieldCheck, Building2, Users, TrendingUp, Star, CheckCircle2, CheckCircle, MapPin, ChevronRight, Calendar, ChevronDown, Search, Send, Home, Sparkles, X } from 'lucide-react'
+import { ArrowRight, ShieldCheck, Building2, Users, CheckCircle2, CheckCircle, MapPin, Calendar, ChevronDown, Search, Send, Home, X } from 'lucide-react'
 
 const HERO_IMAGES = [
   { src: 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=1800&q=90', alt: 'Luxury apartment with pool' },
@@ -230,13 +230,6 @@ export default function HomePage() {
       },
     ],
   }
-  const trustBadges = [
-    { label: 'Verified landlords only' },
-    { label: 'Lagos & Ogun coverage' },
-    { label: 'Coordinated inspections' },
-    { label: '8 AM–6 PM support' },
-  ]
-
   return (
     <div className="min-h-screen flex flex-col bg-white">
       <SEO
@@ -250,7 +243,7 @@ export default function HomePage() {
       {/* ── HERO ── */}
       <section
         className="relative pt-[88px] pb-10 sm:pb-0"
-        style={{ minHeight: 'clamp(600px, 94vh, 980px)' }}
+        style={{ minHeight: 'clamp(560px, 78vh, 760px)' }}
       >
         {/* Full-bleed slideshow background */}
         <div className="absolute inset-0 overflow-hidden">
@@ -302,20 +295,13 @@ export default function HomePage() {
             </div>
 
             {/* Headline */}
-            <h1 className="text-4xl sm:text-6xl xl:text-7xl font-black leading-[1.05] tracking-tight text-white mb-5">
-              Nigeria's<br className="hidden sm:block" />{' '}Verified{' '}
-              <span className="relative inline-block">
-                <span className="relative z-10 text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-blue-300 to-indigo-400">
-                  Property
-                </span>
-              </span>
-              <br />
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-blue-300 to-indigo-400">Marketplace</span>
+            <h1 className="text-4xl sm:text-6xl xl:text-7xl font-black leading-[1.05] tracking-tight text-white mb-5 max-w-xl">
+              Find a home you can trust.
             </h1>
 
             {/* Subtitle */}
             <p className="text-base sm:text-lg text-white/70 mb-8 leading-relaxed max-w-lg font-light">
-              Find verified homes with a safe and transparent rental process. Every landlord is vetted, every listing is real.
+              Verified properties. Screened landlords. Safer inspections. A simpler way to find your next home.
             </p>
 
             {/* Mobile animated listing pill */}
@@ -685,14 +671,7 @@ export default function HomePage() {
             </div>
 
             {/* Trust badges row */}
-            <div className="flex flex-wrap items-center gap-3">
-              {trustBadges.map((badge) => (
-                <span key={badge.label} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/10 border border-white/15 text-white/80 text-xs font-semibold">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0" />
-                  {badge.label}
-                </span>
-              ))}
-            </div>
+            <p className="text-xs text-white/60">Serving renters across Lagos and Ogun.</p>
           </div>
 
 
@@ -704,10 +683,10 @@ export default function HomePage() {
         <div className="max-w-6xl mx-auto px-5 sm:px-8 py-10">
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
             {[
-              { icon: ShieldCheck, label: 'Verified Properties', desc: 'Every listing reviewed by Livarex' },
-              { icon: Building2, label: 'Secure Inspections', desc: 'Book viewings with our team' },
-              { icon: Users, label: 'Dedicated Support', desc: 'Livarex handles your request end-to-end' },
-              { icon: TrendingUp, label: 'Transparent Pricing', desc: 'Clear fees and no hidden charges' },
+              { icon: ShieldCheck, label: 'Verified Listings', desc: 'Every listing reviewed by Livarex' },
+              { icon: Users, label: 'Screened Landlords', desc: 'Identity checks before publishing' },
+              { icon: Building2, label: 'Inspection Support', desc: 'Request and coordinate viewings' },
+              { icon: CheckCircle2, label: 'Transparent Process', desc: 'Clear next steps from search to move-in' },
             ].map(({ icon: Icon, label, desc }) => (
               <div key={label} className="flex items-start gap-3 p-4">
                 <div className="w-11 h-11 rounded-xl bg-blue-50 flex items-center justify-center shrink-0">
@@ -735,40 +714,23 @@ export default function HomePage() {
                 <span className="text-blue-600 font-bold text-[11px] uppercase tracking-[0.15em]">Fresh Listings</span>
               </div>
               <h2 className="text-3xl md:text-[2.6rem] font-black text-gray-900 tracking-tight leading-[1.1]">
-                Newly Listed Properties
+                Newly listed homes
               </h2>
               <p className="text-gray-400 mt-2.5 text-sm font-medium">
-                Hand-picked from verified landlords across Nigeria.
+                Explore recently verified properties available on Livarex.
               </p>
             </div>
-            <button
-              onClick={() => {
-                if (isAuthenticated) {
-                  window.location.href = 'https://www.livarex.com.ng/listings?type=rent'
-                } else {
-                  window.location.href = '/login'
-                }
-              }}
+            <Link href="/listings?type=rent"
               className="group inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold whitespace-nowrap shrink-0 shadow-md shadow-blue-600/25 hover:shadow-lg hover:shadow-blue-600/30 transition-all active:scale-95"
             >
-              View all listings
+              View all properties
               <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform duration-200" />
-            </button>
+            </Link>
           </div>
 
           {/* Filter tabs */}
           <div className="flex gap-2 mb-10 overflow-x-auto no-scrollbar pb-1">
-            {(['Rent', 'Lease', 'Buy', 'Commercial'] as Tab[]).map(t => {
-              const comingSoon = t === 'Buy' || t === 'Commercial'
-              return comingSoon ? (
-                <span
-                  key={t}
-                  className="inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl text-sm font-semibold whitespace-nowrap bg-white text-gray-300 border border-gray-100 cursor-default select-none shrink-0"
-                >
-                  {t}
-                  <span className="text-[9px] font-black uppercase tracking-wider bg-gray-100 text-gray-300 px-1.5 py-0.5 rounded-md">Soon</span>
-                </span>
-              ) : (
+            {(['Rent', 'Lease'] as Tab[]).map(t => (
                 <button
                   key={t}
                   onClick={() => setActiveTab(t)}
@@ -779,8 +741,8 @@ export default function HomePage() {
                 >
                   {t}
                 </button>
-              )
-            })}
+              ))}
+            <span className="self-center text-xs text-gray-400 ml-1">Buying &amp; Commercial properties coming soon</span>
           </div>
 
           {loading ? (
@@ -945,8 +907,8 @@ export default function HomePage() {
           <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-10 gap-4">
             <div>
               <p className="text-blue-600 font-semibold text-sm uppercase tracking-widest mb-2">Top Locations</p>
-              <h2 className="text-3xl md:text-4xl font-extrabold text-gray-900 tracking-tight">Explore by City</h2>
-              <p className="text-gray-400 mt-2 text-sm">Nigeria's most sought-after real estate markets.</p>
+              <h2 className="text-3xl md:text-4xl font-extrabold text-gray-900 tracking-tight">Explore by location</h2>
+              <p className="text-gray-400 mt-2 text-sm">Discover verified homes in the markets we currently support.</p>
             </div>
             <Link href="/listings" className="shrink-0 text-sm font-semibold text-blue-600 hover:text-blue-700 flex items-center gap-1.5 transition-colors">
               View all listings <ArrowRight className="w-3.5 h-3.5" />
@@ -1053,8 +1015,35 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ── HOW IT WORKS: FLUID PREMIUM ── */}
-      <section className="relative bg-[#fcfcfd] py-24 md:py-32 overflow-hidden">
+      {/* ── WHY LIVAREX ── */}
+      <section className="bg-slate-950 py-16 md:py-20">
+        <div className="max-w-7xl mx-auto px-5 sm:px-8 grid gap-10 lg:grid-cols-[1fr_1.15fr] lg:items-center">
+          <div>
+            <p className="text-blue-400 text-xs font-bold uppercase tracking-[0.18em] mb-4">A clearer way to rent</p>
+            <h2 className="text-3xl md:text-5xl font-black leading-tight text-white">Renting shouldn&apos;t feel risky.</h2>
+            <p className="mt-5 max-w-xl text-sm md:text-base leading-relaxed text-slate-300">
+              Fake listings, unavailable properties and unclear processes waste renters&apos; time. Livarex helps create a safer property search by verifying listings and landlords before connecting renters.
+            </p>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
+              <p className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-4">Traditional property search</p>
+              <ul className="space-y-3 text-sm text-slate-300">
+                {['Unknown listing status', 'Unverified information', 'Unclear inspection process', 'Too many disconnected conversations'].map(item => <li key={item} className="flex gap-2"><span className="text-slate-500">−</span>{item}</li>)}
+              </ul>
+            </div>
+            <div className="rounded-2xl border border-blue-400/30 bg-blue-600/15 p-5">
+              <p className="text-xs font-bold uppercase tracking-widest text-blue-300 mb-4">With Livarex</p>
+              <ul className="space-y-3 text-sm text-white">
+                {['Reviewed listings', 'Screened landlords', 'Coordinated inspections', 'Clearer communication'].map(item => <li key={item} className="flex gap-2"><CheckCircle2 className="h-4 w-4 shrink-0 text-blue-300" />{item}</li>)}
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ── HOW IT WORKS ── */}
+      <section className="relative bg-[#fcfcfd] pt-24 pb-8 md:pt-32 md:pb-12 overflow-hidden">
         {/* ── Ambient Background Elements ── */}
         <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-slate-200 to-transparent" />
 
@@ -1083,8 +1072,8 @@ export default function HomePage() {
                 <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500">Security-First Process</span>
               </div>
               <h2 className="text-3xl sm:text-5xl md:text-6xl font-black text-slate-950 tracking-tight leading-[1.0] md:leading-[0.95]">
-                Your journey to <br />
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-slate-900 via-slate-500 to-slate-900">a new home.</span>
+                How Livarex <br />
+                <span className="text-slate-500">works.</span>
               </h2>
             </div>
 
@@ -1100,22 +1089,21 @@ export default function HomePage() {
           <div className="hidden lg:block relative h-px w-full bg-slate-100 mb-[-1px] z-0">
             <div
               className="absolute top-0 left-0 h-px transition-all duration-700 ease-in-out bg-gradient-to-r from-blue-600 to-indigo-500"
-              style={{ width: activeHiwStep !== null ? `${(activeHiwStep + 1) * 20}%` : '0%' }}
+              style={{ width: activeHiwStep !== null ? `${(activeHiwStep + 1) * 25}%` : '0%' }}
             />
           </div>
 
           {/* ── Step Grid ── */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 relative z-10">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 relative z-10">
             {([
-              { step: '01', Icon: Search, title: 'Browse\nVerified', desc: 'Manual review for every listing. ID-verified landlords only.' },
-              { step: '02', Icon: Send, title: 'Submit a\nRequest', desc: 'One-click viewing requests. We bridge the gap for you.' },
-              { step: '03', Icon: ShieldCheck, title: 'LIVAREX\nConfirms', desc: 'We audit the property status and confirm landlord availability.' },
-              { step: '04', Icon: Calendar, title: 'Inspection\nScheduled', desc: 'Professional coordination of physical or virtual tours.' },
-              { step: '05', Icon: Home, title: 'Move In\nSafely', desc: 'Contract support and keys in hand. Total peace of mind.' },
+              { step: '01', Icon: Search, title: 'Discover', desc: 'Browse available verified properties.' },
+              { step: '02', Icon: ShieldCheck, title: 'Verify', desc: 'Review clear property and landlord information.' },
+              { step: '03', Icon: Calendar, title: 'Inspect', desc: 'Request and coordinate your property inspection.' },
+              { step: '04', Icon: Home, title: 'Move In', desc: 'Complete the process with greater confidence.' },
             ] as const).map((item, i) => {
               const visible = visibleSteps.has(i)
               const isActive = activeHiwStep === i
-              const colors = ['#2563eb', '#7c3aed', '#0891b2', '#059669', '#d97706']
+              const colors = ['#2563eb', '#0891b2', '#059669', '#d97706']
 
               return (
                 <div
@@ -1186,18 +1174,7 @@ export default function HomePage() {
               <p className="text-slate-400 text-sm">Find your next verified home in Lagos or Ogun.</p>
             </div>
 
-            <div className="flex flex-col sm:flex-row items-center gap-4 relative z-10 w-full md:w-auto">
-              <div className="flex -space-x-3 mr-4">
-                {[1, 2, 3].map((i) => (
-                  <div key={i} className="w-10 h-10 rounded-full border-4 border-slate-950 bg-slate-800 flex items-center justify-center text-[10px] text-white font-bold">
-                    LD
-                  </div>
-                ))}
-                <div className="w-10 h-10 rounded-full border-4 border-slate-950 bg-blue-600 flex items-center justify-center text-[10px] text-white font-bold">
-                  +5k
-                </div>
-              </div>
-
+              <div className="flex flex-col sm:flex-row items-center gap-4 relative z-10 w-full md:w-auto">
               <Link
                 href="/listings"
                 className="group inline-flex items-center gap-2 px-8 py-4 bg-white text-slate-950 font-black rounded-2xl hover:bg-blue-50 transition-all duration-300 text-sm active:scale-95 shadow-xl shadow-blue-500/10"
@@ -1212,7 +1189,7 @@ export default function HomePage() {
 
 
       {/* ── CTA BANNER ── */}
-      <section className="py-20 md:py-28 px-5 sm:px-8 bg-gray-50">
+      <section className="py-8 md:py-12 px-5 sm:px-8 bg-gray-50">
         <div className="max-w-7xl mx-auto">
           <div className="relative overflow-hidden rounded-[2rem] bg-gray-950">
             <div className="relative z-10 p-6 sm:p-10 md:p-16 flex flex-col md:flex-row items-center justify-between gap-8 md:gap-10">
@@ -1222,10 +1199,10 @@ export default function HomePage() {
                   Verified Platform
                 </div>
                 <h2 className="text-3xl md:text-5xl font-extrabold text-white leading-tight mb-4 tracking-tight">
-                  Ready to find your<br />perfect home?
+                  Your next home<br />shouldn&apos;t be a gamble.
                 </h2>
                 <p className="text-gray-400 text-base leading-relaxed mb-8 max-w-md">
-                  Find your next verified home in Lagos or Ogun. Every landlord is screened, every listing reviewed — start your search today for free.
+                  Explore verified properties and find a place that fits your needs.
                 </p>
                 <ul className="space-y-2 mb-8">
                   {['Verified properties only', 'Transparent pricing', 'Secure inspection booking'].map(item => (
@@ -1236,18 +1213,12 @@ export default function HomePage() {
                   ))}
                 </ul>
                 <div className="flex flex-col sm:flex-row gap-3">
-                  <Link onClick={() => {
-                    if (isAuthenticated) {
-                      window.location.href = 'https://www.livarex.com.ng/listings?type=all'
-                    } else {
-                      window.location.href = '/login'
-                    }
-                  }} href="/listings" className="px-7 py-3.5 bg-blue-600 text-white font-bold rounded-2xl hover:bg-blue-700 transition-all text-center text-sm shadow-xl">
-                    Browse Listings
+                  <Link href="/listings" className="px-7 py-3.5 bg-blue-600 text-white font-bold rounded-2xl hover:bg-blue-700 transition-all text-center text-sm shadow-xl">
+                    Browse Verified Homes
                   </Link>
-                  {/* <Link href="/landlord/register" className="px-7 py-3.5 bg-white/10 border border-white/20 text-white font-semibold rounded-2xl hover:bg-white/15 transition-all text-center text-sm whitespace-nowrap">
-                    List Your Property Free
-                  </Link> */}
+                  <Link href="/landlord/register" className="px-7 py-3.5 bg-white/10 border border-white/20 text-white font-semibold rounded-2xl hover:bg-white/15 transition-all text-center text-sm whitespace-nowrap">
+                    List Your Property
+                  </Link>
                 </div>
               </div>
 
