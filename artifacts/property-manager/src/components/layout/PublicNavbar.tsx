@@ -81,7 +81,7 @@ export default function PublicNavbar() {
               <Link
                 key={href}
                 href={href!}
-                className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all ${
+                  className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-[15px] font-semibold transition-all ${
                   (isActive(href!) && href !== '/') || (href === '/' && location === '/')
                     ? 'bg-blue-600 text-white shadow-md'
                     : isTransparent
@@ -110,7 +110,7 @@ export default function PublicNavbar() {
             <>
               {user.isAdmin && (
                 <Link href="/admin" className={`text-sm font-medium px-4 py-2 rounded-lg transition-all ${
-                  isTransparent ? 'text-white/90 hover:text-white hover:bg-white/10' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                  isTransparent ? 'text-white hover:text-white hover:bg-white/15' : 'text-gray-700 hover:text-gray-950 hover:bg-gray-50'
                 }`}>
                   Admin
                 </Link>

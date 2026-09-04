@@ -85,7 +85,6 @@ export default function HomePage() {
   const [locationQuery, setLocationQuery] = useState('')
   const searchBarRef = useRef<HTMLDivElement>(null)
   const [allProjects, setAllProjects] = useState<Project[]>([])
-  const [visibleSteps, setVisibleSteps] = useState<Set<number>>(new Set())
   const [activeHiwStep, setActiveHiwStep] = useState<number | null>(null)
 
   useEffect(() => {
@@ -148,21 +147,6 @@ export default function HomePage() {
         setLoading(false)
       })
   }, [activeTab])
-
-  useEffect(() => {
-    const els = document.querySelectorAll('[data-hiw-index]')
-    const obs = new IntersectionObserver((entries) => {
-      entries.forEach(e => {
-        if (e.isIntersecting) {
-          const idx = Number((e.target as HTMLElement).dataset.hiwIndex)
-          setVisibleSteps(prev => new Set([...prev, idx]))
-          obs.unobserve(e.target)
-        }
-      })
-    }, { threshold: 0.15 })
-    els.forEach(el => obs.observe(el))
-    return () => obs.disconnect()
-  }, [])
 
   function handleSearch(e?: React.FormEvent) {
     if (e) e.preventDefault()
@@ -769,12 +753,12 @@ export default function HomePage() {
               ))}
             </div>
           ) : (
-            <div className="bg-white rounded-3xl border border-gray-100 py-24 text-center flex flex-col items-center shadow-sm">
-              <div className="w-16 h-16 rounded-2xl bg-gray-50 border border-gray-100 flex items-center justify-center mb-4">
-                <Building2 className="w-8 h-8 text-gray-300" strokeWidth={1.5} />
+            <div className="min-h-[190px] flex items-center justify-center bg-white rounded-3xl border border-gray-100 px-5 py-8 text-center shadow-sm">
+              <div className="flex flex-col items-center">
+                <Building2 className="w-7 h-7 text-gray-300 mb-3" strokeWidth={1.5} />
+                <h3 className="text-base font-bold text-gray-700">No properties yet</h3>
+                <p className="text-gray-500 mt-1 text-sm">New verified homes are being added.</p>
               </div>
-              <h3 className="text-base font-bold text-gray-700">No properties yet</h3>
-              <p className="text-gray-400 mt-1 text-sm max-w-xs">Check back soon — new listings are added regularly.</p>
             </div>
           )}
 
@@ -953,8 +937,8 @@ export default function HomePage() {
                 style={{ minHeight: '200px' }}
               >
                 <img
-                  src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&q=80"
-                  alt="Ogun State"
+                  src="/og/abeokuta.jpg"
+                  alt="Abeokuta, Ogun State"
                   className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 absolute inset-0"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
@@ -1043,7 +1027,7 @@ export default function HomePage() {
       </section>
 
       {/* ── HOW IT WORKS ── */}
-      <section className="relative bg-[#fcfcfd] pt-24 pb-8 md:pt-32 md:pb-12 overflow-hidden">
+      <section className="relative bg-[#fcfcfd] pt-16 pb-10 md:pt-20 md:pb-14 overflow-hidden">
         {/* ── Ambient Background Elements ── */}
         <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-slate-200 to-transparent" />
 
@@ -1065,7 +1049,7 @@ export default function HomePage() {
         <div className="relative max-w-7xl mx-auto px-5 sm:px-8">
 
           {/* ── Header ── */}
-          <div className="relative z-10 flex flex-col md:flex-row md:items-end justify-between gap-8 mb-20">
+          <div className="relative z-10 flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10">
             <div className="max-w-2xl">
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white border border-slate-100 shadow-sm mb-5">
                 <div className="w-2 h-2 rounded-full bg-blue-600 animate-pulse" />
@@ -1101,7 +1085,6 @@ export default function HomePage() {
               { step: '03', Icon: Calendar, title: 'Inspect', desc: 'Request and coordinate your property inspection.' },
               { step: '04', Icon: Home, title: 'Move In', desc: 'Complete the process with greater confidence.' },
             ] as const).map((item, i) => {
-              const visible = visibleSteps.has(i)
               const isActive = activeHiwStep === i
               const colors = ['#2563eb', '#0891b2', '#059669', '#d97706']
 
@@ -1112,20 +1095,16 @@ export default function HomePage() {
                   onMouseEnter={() => setActiveHiwStep(i)}
                   onMouseLeave={() => setActiveHiwStep(null)}
                   className="relative group cursor-default transition-all duration-500"
-                  style={{
-                    opacity: visible ? 1 : 0,
-                    transform: visible ? 'translateY(0)' : 'translateY(30px)',
-                    transition: `opacity 0.6s ease ${i * 0.1}s, transform 0.6s ease ${i * 0.1}s`,
-                  }}
+                    style={{ transitionDelay: `${i * 70}ms` }}
                 >
                   {/* Hover Background Effect */}
                   <div
                     className={`absolute inset-0 transition-all duration-500 rounded-3xl lg:rounded-none ${isActive ? 'bg-white shadow-[0_32px_64px_-16px_rgba(0,0,0,0.1)] z-20 scale-[1.05] lg:scale-110' : 'bg-transparent'}`}
                   />
 
-                  <div className="relative p-8 md:p-10 flex flex-col h-full z-30">
+                  <div className="relative p-5 md:p-7 flex flex-col h-full z-30">
                     {/* Step Label */}
-                    <div className="flex items-center justify-between mb-8">
+                    <div className="flex items-center justify-between mb-5">
                       <span className={`text-[10px] font-black tracking-widest transition-colors duration-300 ${isActive ? 'text-blue-600' : 'text-slate-300'}`}>
                         PHASE {item.step}
                       </span>
@@ -1134,7 +1113,7 @@ export default function HomePage() {
 
                     {/* Icon Circle */}
                     <div
-                      className={`w-14 h-14 rounded-2xl flex items-center justify-center mb-8 transition-all duration-500 ${isActive ? 'shadow-lg rotate-[10deg]' : 'bg-slate-50'}`}
+                      className={`w-12 h-12 rounded-2xl flex items-center justify-center mb-5 transition-all duration-500 ${isActive ? 'shadow-lg rotate-[10deg]' : 'bg-slate-50'}`}
                       style={{
                         backgroundColor: isActive ? colors[i] : '',
                         boxShadow: isActive ? `0 10px 25px -5px ${colors[i]}50` : ''
@@ -1162,26 +1141,6 @@ export default function HomePage() {
                 </div>
               )
             })}
-          </div>
-
-          {/* ── Footer ── */}
-          <div className="mt-20 flex flex-col md:flex-row items-center justify-between gap-10 p-8 md:p-12 rounded-[32px] bg-slate-950 relative overflow-hidden">
-            {/* Background Decor */}
-            <div className="absolute top-0 right-0 w-64 h-64 bg-blue-600/20 blur-[80px] -mr-32 -mt-32" />
-
-            <div className="relative z-10">
-              <h4 className="text-2xl font-bold text-white mb-2">Ready to start?</h4>
-              <p className="text-slate-400 text-sm">Find your next verified home in Lagos or Ogun.</p>
-            </div>
-
-              <div className="flex flex-col sm:flex-row items-center gap-4 relative z-10 w-full md:w-auto">
-              <Link
-                href="/listings"
-                className="group inline-flex items-center gap-2 px-8 py-4 bg-white text-slate-950 font-black rounded-2xl hover:bg-blue-50 transition-all duration-300 text-sm active:scale-95 shadow-xl shadow-blue-500/10"
-              >
-                Find My Home <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
-              </Link>
-            </div>
           </div>
 
         </div>
@@ -1222,10 +1181,10 @@ export default function HomePage() {
                 </div>
               </div>
 
-              <div className="hidden md:flex items-center shrink-0 bg-white/5 border border-white/10 rounded-2xl px-8 py-5">
+              <div className="hidden md:flex items-center shrink-0 bg-white/5 border border-white/10 rounded-2xl px-7 py-5">
                 <div className="text-center">
-                  <p className="font-extrabold text-white text-lg leading-snug">Now onboarding</p>
-                  <p className="text-xs text-white/50 mt-1">Verified landlords across Lagos & Ogun</p>
+                  <p className="text-xs font-bold uppercase tracking-widest text-blue-300">Currently available in</p>
+                  <p className="font-extrabold text-white text-lg leading-snug mt-1">Lagos <span className="text-white/40">•</span> Ogun</p>
                 </div>
               </div>
             </div>
@@ -1243,22 +1202,15 @@ export default function HomePage() {
               </div>
               <div>
                 <h3 className="text-xl font-extrabold text-gray-900">Own a property? List it free.</h3>
-                <p className="text-gray-500 text-sm mt-1 max-w-md">List your property and reach serious, pre-screened tenants with zero agent fees. Livarex handles all the coordination for you.</p>
-                <div className="flex flex-wrap gap-4 mt-3">
-                  {['No agent fees', 'Verified tenants only', 'Inspection scheduling included'].map(point => (
-                    <span key={point} className="flex items-center gap-1.5 text-xs font-semibold text-blue-700">
-                      <CheckCircle className="w-3.5 h-3.5" /> {point}
-                    </span>
-                  ))}
-                </div>
+                <p className="text-gray-500 text-sm mt-1 max-w-md">Reach prospective tenants while Livarex helps coordinate the process.</p>
               </div>
             </div>
             <div className="flex flex-col sm:flex-row gap-3 shrink-0">
               <Link href="/landlord/register" className="px-6 py-3 bg-blue-600 text-white font-bold rounded-2xl hover:bg-blue-700 transition-all text-sm text-center shadow-lg shadow-blue-600/20 whitespace-nowrap">
-                List Your Property Free
+                List Your Property <ArrowRight className="inline w-4 h-4 ml-1" />
               </Link>
               <Link href="/about" className="px-6 py-3 bg-white border border-gray-200 text-gray-700 font-semibold rounded-2xl hover:bg-gray-50 transition-all text-sm text-center whitespace-nowrap">
-                How it works for landlords
+                How it works
               </Link>
             </div>
           </div>

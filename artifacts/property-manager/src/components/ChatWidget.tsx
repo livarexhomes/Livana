@@ -760,33 +760,11 @@ export default function ChatWidget() {
           .cw-launcher,.cw-panel { animation:none !important; }
         }
         @media(max-width:640px) {
-          .cw-panel { left:0; right:0; bottom:0; width:100vw; border-radius:20px 20px 0 0; border-bottom:none; }
+          .cw-panel { left:0; right:0; bottom:12px; width:100vw; max-height:calc(100vh - 24px); border-radius:20px; border-bottom:1px solid rgb(226 232 240); }
           .cw-panel.closed { transform:translateY(100%); }
           .cw-toggle.open { display:none; }
         }
       `}</style>
-
-      {/* ── Launcher teaser (before first open) ──────────────────────────────── */}
-      {!open && !launcherDismissed && (
-        <button
-          onClick={() => { setLauncherDismissed(true); setOpen(true) }}
-          aria-label="Open Livarex support chat"
-          className="cw-launcher fixed bottom-20 right-5 z-[9998] flex items-center gap-3 rounded-2xl border border-slate-200/80 bg-white px-4 py-3 shadow-lg shadow-slate-900/10 hover:-translate-y-0.5 hover:shadow-xl transition-all duration-200 cursor-pointer"
-          style={{ animation:'cwPop 0.3s cubic-bezier(0.34,1.56,0.64,1) both' }}
-        >
-          <div className="relative shrink-0">
-            <div className="w-9 h-9 rounded-xl bg-primary flex items-center justify-center">
-              <MessageSquare size={15} className="text-white" />
-            </div>
-            <span className="absolute -top-0.5 -right-0.5 size-2.5 rounded-full bg-emerald-400 border-2 border-white" />
-          </div>
-          <div className="text-left">
-            <p className="text-[12px] font-bold text-slate-900 leading-tight">Hi there!</p>
-            <p className="text-[10.5px] text-slate-500 mt-0.5">Need help with your property?</p>
-          </div>
-          <X size={13} className="text-slate-400 shrink-0" />
-        </button>
-      )}
 
       {/* ── Chat panel ────────────────────────────────────────────────────────── */}
       <div className={`cw-panel fixed z-[9999] flex flex-col bg-white rounded-2xl border border-slate-200/60 shadow-2xl shadow-slate-900/15 transition-all duration-300 ease-out

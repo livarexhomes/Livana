@@ -16,7 +16,7 @@ export default function Footer() {
 
           <div>
             <p className="mb-4 text-xs font-bold uppercase tracking-[0.16em] text-white">Explore</p>
-            <ul className="space-y-4 text-sm">
+            <ul className="space-y-4 text-[15px] leading-relaxed">
               <li><Link href="/listings?type=rent" className="hover:text-white transition-colors">Rent</Link></li>
               <li><Link href="/listings?type=lease" className="hover:text-white transition-colors">Lease</Link></li>
               <li><Link href="/listings" className="hover:text-white transition-colors">Listings</Link></li>
@@ -25,7 +25,7 @@ export default function Footer() {
 
           <div>
             <p className="mb-4 text-xs font-bold uppercase tracking-[0.16em] text-white">Company</p>
-            <ul className="space-y-4 text-sm">
+            <ul className="space-y-4 text-[15px] leading-relaxed">
               <li><Link href="/about" className="hover:text-white transition-colors">About</Link></li>
               <li><Link href="/contact" className="hover:text-white transition-colors">Contact</Link></li>
               <li><Link href="/landlord/register" className="hover:text-white transition-colors">List Property</Link></li>
@@ -66,7 +66,7 @@ export default function Footer() {
         </div>
 
         <div className="mt-8 space-y-4">
-          <p className="text-sm text-gray-400 leading-relaxed">
+          <p className="text-[15px] text-gray-400 leading-relaxed">
             By using this site you agree to our{' '}
             <Link href="/terms" className="underline hover:text-white transition-colors">Terms of service</Link>,{' '}
             <Link href="/privacy-policy" className="underline hover:text-white transition-colors">Privacy policy</Link>,{' '}
@@ -74,7 +74,7 @@ export default function Footer() {
             and{' '}
             <Link href="/cookie-policy" className="underline hover:text-white transition-colors">Cookies</Link>.
           </p>
-          <p className="text-xs text-gray-500 leading-relaxed max-w-4xl">
+          <p className="text-sm text-gray-500 leading-relaxed max-w-4xl">
             Recommendations may use your activity to personalize results. Listings, availability and prices may change; restrictions may apply. Verification and inspections are informational only and not guarantees. LIVAREX is not a broker or party to transactions unless explicitly stated. External links are third-party; we're not responsible for their content. Payments are processed by third-party providers; review their terms/fees.
           </p>
         </div>
