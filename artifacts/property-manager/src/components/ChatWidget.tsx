@@ -1,11 +1,12 @@
 import { useState, useRef, useEffect, useCallback, type ReactNode } from 'react'
 import {
   X, Send, MessageSquare, Paperclip, ChevronDown, ChevronLeft, ChevronRight,
-  Loader2, Clock2, Smile, Home, CalendarCheck, Building2, Headset,
+  Loader2, Clock2, Smile, Home, CalendarCheck, Building2,
   MessageCircle, AlertCircle,
 } from 'lucide-react'
 import { useLocation, redirect } from '../lib/navigation'
-import { createClient, isSupabaseConfigured } from '../lib/supabase'
+import { createClient, getSupabaseImageUrl, isSupabaseConfigured } from '../lib/supabase'
+import { formatNaira } from '../lib/currency'
 import { getPlatformSettings, getNotificationSettings, phoneToWaLink } from '../lib/platform-settings'
 import { fetchSupportPresence, subscribeSupportPresence, type LiveSupportState, type SupportAgent } from '../lib/live-support'
 import { assignChatToAgent } from '../lib/support-assignment'
@@ -47,6 +48,15 @@ type LiveStatus =
   | 'guest-form'  // unauthenticated visitor needs contact info before ticket is created
   | 'error'       // ticket creation failed
 
+interface PropertyContext {
+  id: string
+  title: string
+  city: string
+  price: number
+  type: string
+  image: string | null
+}
+
 // ── Config ────────────────────────────────────────────────────────────────────
 
 const CHAT_API_URL = import.meta.env.VITE_CHAT_API_URL
@@ -56,11 +66,10 @@ const CHAT_API_URL = import.meta.env.VITE_CHAT_API_URL
 // ── Menu options ──────────────────────────────────────────────────────────────
 
 const MENU_OPTIONS = [
-  { icon: Home,          title: 'Find a property',  desc: 'Browse verified rentals nearby',  msg: 'Show me the best verified rentals in Lagos and Ogun.', live: false, whatsapp: false },
-  { icon: CalendarCheck, title: 'Book an inspection',desc: 'Schedule a viewing fast',          msg: 'I want to book a property inspection soon.',           live: false, whatsapp: false },
-  { icon: Building2,     title: 'List my property',  desc: 'Rent it out on Livarex',           msg: 'I want to list my property on Livarex.',              live: false, whatsapp: false },
-  { icon: Headset,       title: 'Chat with support', desc: 'Talk to a live agent',             msg: null, live: true,  whatsapp: false },
-  { icon: MessageCircle, title: 'WhatsApp us',       desc: 'Chat on WhatsApp instead',         msg: null, live: false, whatsapp: true  },
+  { icon: Home, title: 'Find a property', desc: 'Help me find a suitable home.', msg: 'Find a property for me. Please ask about my location, budget, property type, and bedrooms.' },
+  { icon: CalendarCheck, title: 'Book an inspection', desc: 'I want to inspect a property.', msg: 'I want to book a property inspection.' },
+  { icon: Building2, title: 'List my property', desc: 'I have a property to list.', msg: 'I want to list my property on Livarex.' },
+  { icon: MessageCircle, title: 'Something else', desc: 'I have another question.', msg: 'Tell us what you need help with.' },
 ]
 
 const MENU_CHIPS = [
@@ -135,6 +144,8 @@ export default function ChatWidget() {
 
   const [open, setOpen]                         = useState(false)
   const [view, setView]                         = useState<WidgetView>('home')
+  const [propertyContext, setPropertyContext]   = useState<PropertyContext | null>(null)
+  const [selectedIntent, setSelectedIntent]     = useState<string | null>(null)
 
   // ── AI bot state ─────────────────────────────────────────────────────────
   const [messages, setMessages]                 = useState<Message[]>([])
@@ -152,16 +163,22 @@ export default function ChatWidget() {
   const [, setHoursTick]                        = useState(0)
 
   useEffect(() => {
+    if (!open) return
     getSupportHours().then(h => { if (h) setSupportHours(h) }).catch(() => {})
     const t = setInterval(() => setHoursTick(n => n + 1), 60_000)
     return () => clearInterval(t)
-  }, [])
+  }, [open])
 
   useEffect(() => {
     getPlatformSettings().then(s => {
-      if (s.phone) setWaHref(phoneToWaLink(s.phone, 'Hello Livarex!'))
+      if (s.phone) {
+        const message = propertyContext
+          ? `Hi Livarex, I'm interested in ${propertyContext.title} in ${propertyContext.city}. I'd like more information about this property.`
+          : 'Hello Livarex!'
+        setWaHref(phoneToWaLink(s.phone, message))
+      }
     }).catch(() => {})
-  }, [])
+  }, [propertyContext])
 
   // ── Live-agent form fields ────────────────────────────────────────────────
   const [agentName, setAgentName]               = useState('')
@@ -179,12 +196,38 @@ export default function ChatWidget() {
   const [presenceReady, setPresenceReady]       = useState(false)
 
   useEffect(() => {
+    if (!open) return
     const unsub = subscribeSupportPresence(state => {
       setLiveState(state)
       setPresenceReady(true)
     })
     return unsub
-  }, [])
+  }, [open])
+
+  useEffect(() => {
+    if (!open || !isSupabaseConfigured()) return
+    const match = (location || '').match(/^\/listings\/([^/?#]+)/)
+    if (!match) { setPropertyContext(null); return }
+    let active = true
+    const supabase = createClient()
+    supabase.from('properties')
+      .select('id, title, city, price, type, property_images(storage_path, is_cover, sort_order)')
+      .eq('id', decodeURIComponent(match[1]))
+      .maybeSingle()
+      .then(({ data }) => {
+        if (!active) return
+        if (!data) { setPropertyContext(null); return }
+        const images = Array.isArray(data.property_images) ? data.property_images : []
+        const cover = images.slice().sort((a: any, b: any) =>
+          a.is_cover ? -1 : b.is_cover ? 1 : (a.sort_order ?? 0) - (b.sort_order ?? 0))[0]
+        setPropertyContext({
+          id: String(data.id), title: String(data.title ?? 'Property'), city: String(data.city ?? ''),
+          price: Number(data.price ?? 0), type: String(data.type ?? 'rent'),
+          image: cover?.storage_path ? getSupabaseImageUrl(cover.storage_path, 240) : null,
+        })
+      }, () => { if (active) setPropertyContext(null) })
+    return () => { active = false }
+  }, [open, location])
 
   // ── Live agent thread state ───────────────────────────────────────────────
   const [inquiryId, setInquiryId]               = useState<string | null>(null)
@@ -192,6 +235,7 @@ export default function ChatWidget() {
   const [agentThreadLoading, setAgentThreadLoading] = useState(false)
   const [agentInput, setAgentInput]             = useState('')
   const [agentSending, setAgentSending]         = useState(false)
+  const [failedAgentMessage, setFailedAgentMessage] = useState<string | null>(null)
   const [agentUnread, setAgentUnread]           = useState(false)
   const [agentTyping, setAgentTyping]           = useState(false)
   const [agentJoined, setAgentJoined]           = useState(false)
@@ -328,18 +372,21 @@ export default function ChatWidget() {
   }
 
   // ── Business hours + individual presence ──────────────────────────────────
-  const supportOpen    = supportHours ? isSupportOpen(supportHours) : true
+  const supportOpen    = supportHours ? isSupportOpen(supportHours) : false
   const agentAvailable = liveState.availableCount > 0
 
   const openWhatsApp = useCallback((note?: string) => {
     getPlatformSettings().then(s => {
-      const msg = note?.trim() || 'Hi, I\'d like to chat with Livarex support.'
+      const propertyNote = propertyContext
+        ? `Hi Livarex, I'm interested in ${propertyContext.title} in ${propertyContext.city}. I'd like more information about this property.`
+        : 'Hi, I\'d like to chat with Livarex support.'
+      const msg = note?.trim() || propertyNote
       window.open(phoneToWaLink(s.phone, msg), '_blank', 'noopener,noreferrer')
     }).catch(() => window.open('https://wa.me/2347061370742', '_blank'))
-  }, [])
+  }, [propertyContext])
 
   // ── goLive: show live view instantly, create ticket async ─────────────────
-  const goLive = useCallback(() => {
+  const goLive = useCallback((openingPrompt?: string) => {
     setView('live')
     setShowMenu(false)
 
@@ -388,13 +435,13 @@ export default function ChatWidget() {
       await connectLiveThread({
         name: effectiveName,
         email: effectiveEmail,
-        firstMessage: '',
+        firstMessage: openingPrompt ?? selectedIntent ?? '',
         agents: currentState.agents,
       })
     }
     run()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [inquiryId, supportOpen, liveState, presenceReady, chatQueued, agentName, agentEmail])
+  }, [inquiryId, supportOpen, liveState, presenceReady, chatQueued, agentName, agentEmail, selectedIntent])
 
   // ── connectLiveThread: creates the ticket and sets liveStatus ─────────────
   // IMPORTANT: No WhatsApp redirect on failure — errors are shown inline.
@@ -412,7 +459,10 @@ export default function ChatWidget() {
     if (!isSupabaseConfigured()) { setLiveStatus('error'); return }
     const supabase = createClient()
     const { data: { user } } = await supabase.auth.getUser().catch(() => ({ data: { user: null } }))
-    const note = firstMessage.trim() || `Hi, I'm ${name}. I'd like some help.`
+    const context = propertyContext
+      ? `\nProperty: ${propertyContext.title} in ${propertyContext.city} (${propertyContext.type}, ${formatNaira(propertyContext.price)}). Listing reference: ${propertyContext.id}.`
+      : ''
+    const note = `${firstMessage.trim() || `Hi, I'm ${name}. I'd like some help.`}${context}`
 
     const availableAgents = (agents ?? liveState.agents).filter(a => a.presence === 'online' && a.available)
     const assignment = assignChatToAgent(availableAgents)
@@ -504,7 +554,10 @@ export default function ChatWidget() {
   async function submitGuestForm(e: React.FormEvent) {
     e.preventDefault()
     const name = agentName.trim()
-    const note = agentNote.trim()
+    const context = propertyContext
+      ? `\nProperty: ${propertyContext.title} in ${propertyContext.city} (${propertyContext.type}, ${formatNaira(propertyContext.price)}). Listing reference: ${propertyContext.id}.`
+      : ''
+    const note = `${selectedIntent ? `${selectedIntent}\n` : ''}${agentNote.trim()}${context}`
     if (!name || !note || agentSubmitting) return
     setAgentSubmitting(true)
     try {
@@ -567,6 +620,7 @@ export default function ChatWidget() {
     const body = agentInput.trim()
     if ((!body && !pendingImg) || agentSending || !inquiryId) return
     setAgentSending(true)
+    setFailedAgentMessage(null)
     setAgentInput('')
     setShowEmoji(false)
     const optId   = `opt-${Date.now()}`
@@ -601,6 +655,7 @@ export default function ChatWidget() {
       // Remove optimistic row and restore input so user can retry
       setAgentThread(prev => prev.filter(m => m.id !== optId))
       setAgentInput(body)
+      setFailedAgentMessage(body || 'Image attachment')
     } finally {
       setAgentSending(false)
       if (pendingImg) { URL.revokeObjectURL(pendingImg.url); setPendingImg(null) }
@@ -657,9 +712,10 @@ export default function ChatWidget() {
       if (rawText) {
         try {
           const data = JSON.parse(rawText)
-          reply = data.reply || data.message || data.text || data.error || reply
+          reply = data.reply || data.message || data.text || reply
         } catch { reply = rawText.replace(/<[^>]+>/g, '').trim() || reply }
       }
+      if (!res.ok) throw new Error('Chat request failed')
       setMessages(m => [...m, { role: 'assistant', content: [{ type: 'text', text: reply }], time: Date.now() }])
       if (!open) setUnread(true)
       if (ESCALATION_KEYWORDS.some(kw => reply.toLowerCase().includes(kw))) {
@@ -695,13 +751,25 @@ export default function ChatWidget() {
     setShowMenu(false)
     const greeting: Message = {
       role: 'assistant',
-      content: [{ type: 'text', text: 'So, what are we doing today? 😀\n\nPlease type in your request or tap Menu for quick options.' }],
+      content: [{ type: 'text', text: 'How can we help you today?\n\nChoose an option below or type your question.' }],
       time: Date.now(),
     }
     const firstMessage = openingPrompt?.trim()
       ? [{ role: 'user' as const, content: [{ type: 'text' as const, text: openingPrompt.trim() }], time: Date.now() }]
       : []
     setMessages([greeting, ...firstMessage])
+  }
+
+  function chooseIntent(option: typeof MENU_OPTIONS[number]) {
+    setSelectedIntent(option.msg)
+    if (option.title === 'Book an inspection') {
+      goLive(option.msg)
+    } else if (option.title === 'List my property') {
+      setOpen(false)
+      redirect('/landlord/register')
+    } else {
+      startChat(option.msg)
+    }
   }
 
   function browseHelp() {
@@ -716,15 +784,16 @@ export default function ChatWidget() {
     if (liveState.availableCount > 0) {
       return { dot: 'bg-emerald-400', text: `Online · ${liveState.availableCount} agent${liveState.availableCount === 1 ? ' available' : 's available'}` }
     }
-    if (supportOpen) return { dot: 'bg-emerald-400', text: 'Online · reply within minutes' }
-    return { dot: 'bg-slate-400/80', text: 'Away · 8:00 AM – 6:00 PM WAT' }
+    if (supportHours && supportOpen) return { dot: 'bg-emerald-400', text: 'Online · typically replies as soon as possible' }
+    if (supportHours) return { dot: 'bg-slate-400/80', text: 'Typically replies as soon as possible' }
+    return { dot: 'bg-slate-400/80', text: 'Typically replies as soon as possible' }
   })()
 
   // Live header sub-title
   const liveHeaderSub = (() => {
     if (liveStatus === 'active')   return `Chatting with ${assignedAgent ?? 'Livarex Support'}`
-    if (liveStatus === 'queued')   return agentTicketNo ? `Ticket #${agentTicketNo} · queued` : 'Queued — agent joining soon'
-    if (liveStatus === 'offline')  return agentTicketNo ? `Ticket #${agentTicketNo} · offline message` : 'We\'ll reply when back online'
+    if (liveStatus === 'queued')   return 'We\'ll reply as soon as possible'
+    if (liveStatus === 'offline')  return 'We\'ll reply as soon as possible'
     if (liveStatus === 'connecting') return 'Connecting…'
     return 'Livarex Support'
   })()
@@ -786,16 +855,14 @@ export default function ChatWidget() {
           <div className="min-w-0 flex-1">
             <div className="text-[14px] font-bold text-white leading-tight truncate">
               {view === 'home' && 'Livarex Support'}
-              {view === 'bot'  && 'AI Assistant'}
+              {view === 'bot'  && 'Livarex Support'}
               {view === 'live' && (liveStatus === 'active' && assignedAgent ? assignedAgent : 'Livarex Support')}
             </div>
             <div className="mt-0.5 flex items-center gap-1.5 text-[11px] text-white/65 truncate">
               {view === 'home' && (
                 <><span className={`inline-block size-1.5 rounded-full ${presenceLine.dot}`} />{presenceLine.text}</>
               )}
-              {view === 'bot' && (
-                <span>Powered by Claude · ask anything</span>
-              )}
+              {view === 'bot' && <span>Here to help with your questions</span>}
               {view === 'live' && (
                 <><span className={`inline-block size-1.5 rounded-full ${
                   liveStatus === 'active' ? 'bg-emerald-400' :
@@ -822,6 +889,10 @@ export default function ChatWidget() {
             className="grid size-8 shrink-0 place-items-center rounded-xl text-white/70 hover:bg-white/10 transition-colors">
             <ChevronDown size={16} />
           </button>
+          <button onClick={() => setOpen(false)} aria-label="Close chat"
+            className="grid size-8 shrink-0 place-items-center rounded-xl text-white/70 hover:bg-white/10 transition-colors">
+            <X size={16} />
+          </button>
         </div>
 
         {/* ── Body ────────────────────────────────────────────────────────────── */}
@@ -830,80 +901,43 @@ export default function ChatWidget() {
         {view === 'home' && (
           <div className="flex-1 overflow-y-auto" style={{ animation:'cwFadeUp 0.35s ease both' }}>
 
-            {/* Hero — clean white section */}
-            <div className="px-5 pt-5 pb-4 bg-gradient-to-br from-primary to-blue-400">
-              <p className="text-[19px] font-extrabold text-white tracking-tight leading-tight">
-                Hi there! 👋
-              </p>
-              <p className="mt-1 text-[12px] text-white/70 leading-relaxed">
-                Ask our AI anything, or connect with a real agent.
-              </p>
-              <div className="flex items-center gap-2 mt-2.5 text-[10.5px] text-white/60">
-                <span className="relative flex size-1.5 shrink-0">
-                  <span className={`size-1.5 rounded-full ${liveState.availableCount > 0 || supportOpen ? 'bg-emerald-400 animate-pulse' : 'bg-slate-400'}`} />
-                </span>
-                {liveState.availableCount > 0
-                  ? `${liveState.availableCount} agent${liveState.availableCount === 1 ? '' : 's'} available now`
-                  : supportOpen
-                    ? 'Support online · reply within minutes'
-                    : 'Support hours 8 AM – 6 PM WAT'}
-              </div>
+            <div className="px-5 pt-6 pb-4">
+              <p className="text-[20px] font-extrabold text-slate-950 tracking-tight">Hi there 👋</p>
+              <p className="mt-1 text-[13px] text-slate-500">How can we help you today?</p>
             </div>
 
-            {/* Action cards */}
-            <div className="px-4 -mt-3 space-y-2 pb-4">
-              {/* AI Chat */}
-              <button onClick={() => startChat()}
-                className="w-full text-left bg-white rounded-2xl border border-slate-100 p-3.5 flex items-center gap-3 hover:shadow-md hover:-translate-y-px transition-all duration-200 cursor-pointer">
-                <div className="w-10 h-10 rounded-xl bg-blue-50 shrink-0 flex items-center justify-center">
-                  <MessageSquare className="w-[18px] h-[18px] text-primary" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="text-[12px] font-bold text-slate-900">Chat with Livarex AI</div>
-                  <div className="text-[10.5px] text-slate-500 mt-0.5">AI assistant · always available</div>
-                </div>
-                <ChevronRight className="w-3.5 h-3.5 text-slate-300 shrink-0" />
-              </button>
-
-              {/* Live agent */}
-              <button onClick={goLive}
-                className="w-full text-left bg-white rounded-2xl border border-slate-100 p-3.5 flex items-center gap-3 hover:shadow-md hover:-translate-y-px transition-all duration-200 cursor-pointer">
-                <div className="w-10 h-10 rounded-xl bg-emerald-50 shrink-0 flex items-center justify-center">
-                  <Headset className="w-[18px] h-[18px] text-emerald-600" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="text-[12px] font-bold text-slate-900">Talk to a real agent</div>
-                  <div className="flex items-center gap-1.5 text-[10.5px] text-slate-500 mt-0.5">
-                    <span className={`size-1.5 rounded-full shrink-0 ${agentAvailable ? 'bg-emerald-500' : 'bg-slate-300'}`} />
-                    {agentAvailable ? 'Ready to help now' : supportOpen ? 'Experiencing a short delay' : 'Leave a message'}
+            {propertyContext && (
+              <div className="mx-4 mb-3 rounded-xl border border-blue-100 bg-blue-50/60 p-3">
+                <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-blue-700">You're asking about</p>
+                <div className="mt-2 flex gap-2.5">
+                  {propertyContext.image && <img src={propertyContext.image} alt="" className="size-14 shrink-0 rounded-lg object-cover" />}
+                  <div className="min-w-0">
+                    <p className="truncate text-[12px] font-bold text-slate-900">{propertyContext.title}</p>
+                    <p className="mt-0.5 text-[11px] text-slate-500">{propertyContext.city}</p>
+                    <p className="mt-0.5 text-[11px] font-semibold text-blue-700">{formatNaira(propertyContext.price)} / {propertyContext.type === 'sale' ? 'sale' : 'year'}</p>
                   </div>
                 </div>
-                <ChevronRight className="w-3.5 h-3.5 text-slate-300 shrink-0" />
-              </button>
-            </div>
-
-            {/* Quick actions */}
-            <div className="px-5 pb-4">
-              <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-2">Quick actions</p>
-              <div className="flex flex-wrap gap-1.5">
-                {MENU_OPTIONS.filter(o => o.msg).map(o => (
-                  <button key={o.title}
-                    onClick={() => startChat(o.msg!)}
-                    className="px-2.5 py-1.5 text-[10.5px] font-semibold text-slate-600 bg-slate-100 rounded-full border border-slate-200/80 hover:bg-blue-50 hover:text-primary hover:border-blue-200 transition-all cursor-pointer">
-                    {o.title}
-                  </button>
-                ))}
-                <button
-                  onClick={() => openWhatsApp()}
-                  className="px-2.5 py-1.5 text-[10.5px] font-semibold text-emerald-700 bg-emerald-50 rounded-full border border-emerald-200 hover:bg-emerald-100 transition-all cursor-pointer">
-                  WhatsApp us
-                </button>
+                <div className="mt-3 flex gap-2">
+                  <button onClick={() => startChat(`I have a question about ${propertyContext.title} in ${propertyContext.city}.`)} className="flex-1 rounded-lg bg-white px-2 py-2 text-[11px] font-bold text-blue-700 shadow-sm">Ask a question</button>
+                  <button onClick={() => { setSelectedIntent('I want to book an inspection.'); goLive('I want to book an inspection.') }} className="flex-1 rounded-lg bg-primary px-2 py-2 text-[11px] font-bold text-white">Request inspection</button>
+                </div>
               </div>
+            )}
+
+            <div className="px-4 pb-4 space-y-1.5">
+              {MENU_OPTIONS.map(option => {
+                const Icon = option.icon
+                return <button key={option.title} onClick={() => chooseIntent(option)} className="flex w-full items-center gap-3 rounded-xl border border-slate-100 px-3 py-2.5 text-left transition-colors hover:border-blue-200 hover:bg-blue-50/50 focus-visible:outline-2 focus-visible:outline-primary">
+                  <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-blue-50 text-primary"><Icon size={16} /></span>
+                  <span className="min-w-0 flex-1"><span className="block text-[12px] font-bold text-slate-900">{option.title}</span><span className="block text-[11px] text-slate-500">{option.desc}</span></span>
+                  <ChevronRight size={15} className="shrink-0 text-slate-300" />
+                </button>
+              })}
             </div>
 
-            {/* Trust strip */}
-            <div className="px-5 pb-4 border-t border-slate-100 pt-3 flex items-center justify-center gap-2 text-[9.5px] text-slate-400 font-medium">
-              <span>Verified listings</span><span>·</span><span>Screened landlords</span><span>·</span><span>8 AM–6 PM support</span>
+            <div className="mx-4 mb-4 flex items-center justify-between rounded-xl border border-emerald-100 bg-emerald-50/60 px-3 py-2.5">
+              <span className="text-[11px] font-semibold text-slate-700">Prefer WhatsApp?</span>
+              <button onClick={() => openWhatsApp()} className="text-[11px] font-bold text-emerald-700 hover:underline">Continue on WhatsApp →</button>
             </div>
           </div>
         )}
@@ -921,7 +955,7 @@ export default function ChatWidget() {
                 className="px-3 py-1.5 text-[12px] font-bold bg-slate-100 text-slate-700 hover:bg-blue-50 hover:text-blue-700 rounded-full transition-colors">
                 Help
               </button>
-              <button onClick={goLive}
+              <button onClick={() => goLive()}
                 className="ml-auto flex items-center gap-1.5 px-3 py-1.5 text-[12px] font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 rounded-full transition-colors">
                 <span className={`size-1.5 rounded-full ${agentAvailable ? 'bg-emerald-500' : 'bg-slate-400'}`} />
                 Talk to agent
@@ -941,12 +975,7 @@ export default function ChatWidget() {
                       const Icon = opt.icon
                       return (
                         <button key={opt.title}
-                          onClick={() => {
-                            setShowMenu(false)
-                            if (opt.whatsapp) openWhatsApp()
-                            else if (opt.live) goLive()
-                            else sendMessage(opt.msg ?? '', null)
-                          }}
+                          onClick={() => { setShowMenu(false); chooseIntent(opt) }}
                           className="flex w-full items-center gap-3 px-4 py-2.5 text-left hover:bg-slate-50 transition-colors">
                           <span className="grid size-8 shrink-0 place-items-center rounded-xl bg-blue-50 text-blue-600">
                             <Icon size={15} />
@@ -1041,7 +1070,7 @@ export default function ChatWidget() {
             {liveStatus === 'queued' && (
               <div className="shrink-0 py-2.5 px-4 text-center bg-amber-50 border-b border-amber-100">
                 <div className="text-[12px] font-bold text-amber-800">
-                  ⏳ {agentTicketNo ? `Ticket #${agentTicketNo}` : 'Queued'} · An agent will respond shortly
+                  An agent will respond as soon as possible
                 </div>
                 <div className="text-[11px] text-amber-600 mt-0.5">You can type a message below while you wait</div>
               </div>
@@ -1050,7 +1079,7 @@ export default function ChatWidget() {
               <div className="shrink-0 py-2.5 px-4 text-center bg-slate-50 border-b border-slate-100">
                 <div className="flex items-center justify-center gap-1.5 text-[12px] font-semibold text-slate-700">
                   <Clock2 className="w-3.5 h-3.5 shrink-0" />
-                  {agentTicketNo ? `Ticket #${agentTicketNo} created` : 'Support is offline'}
+                  We're away right now
                 </div>
                 <div className="text-[11px] text-slate-500 mt-0.5">We'll reply when back online · 8 AM – 6 PM WAT</div>
               </div>
@@ -1059,7 +1088,7 @@ export default function ChatWidget() {
               <div className="shrink-0 flex items-center justify-center gap-2 py-2.5 px-4 text-center bg-red-50 border-b border-red-100">
                 <AlertCircle className="w-3.5 h-3.5 text-red-500 shrink-0" />
                 <span className="text-[12px] text-red-700 font-semibold">Connection failed.</span>
-                <button onClick={goLive} className="text-[12px] text-red-600 underline font-semibold">Try again</button>
+                <button onClick={() => goLive()} className="text-[12px] text-red-600 underline font-semibold">Try again</button>
               </div>
             )}
 
@@ -1162,6 +1191,13 @@ export default function ChatWidget() {
                       </div>
                     )
                   })
+                )}
+
+                {failedAgentMessage && (
+                  <div className="flex items-center justify-center gap-2 rounded-lg bg-red-50 px-3 py-2 text-[11px] text-red-700">
+                    <span>Message couldn't be sent.</span>
+                    <button onClick={() => { setAgentInput(failedAgentMessage); setFailedAgentMessage(null) }} className="font-bold underline">Retry</button>
+                  </div>
                 )}
 
                 {/* Agent typing indicator */}
@@ -1281,6 +1317,12 @@ export default function ChatWidget() {
       </div>
 
       {/* ── Toggle button ────────────────────────────────────────────────────── */}
+      {!open && (
+        <a href={waHref} target="_blank" rel="noopener noreferrer" aria-label="Continue on WhatsApp"
+          className="fixed bottom-6 right-[4.75rem] z-[9999] flex h-10 items-center gap-1.5 rounded-full border border-emerald-200 bg-white px-3 text-[11px] font-bold text-emerald-700 shadow-md transition-colors hover:bg-emerald-50">
+          WhatsApp
+        </a>
+      )}
       <button
         onClick={() => setOpen(o => !o)}
         aria-label={open ? 'Close Livarex chat' : 'Open Livarex chat'}
