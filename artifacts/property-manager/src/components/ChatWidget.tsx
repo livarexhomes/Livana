@@ -135,7 +135,6 @@ export default function ChatWidget() {
 
   const [open, setOpen]                         = useState(false)
   const [view, setView]                         = useState<WidgetView>('home')
-  const [launcherDismissed, setLauncherDismissed] = useState(false)
 
   // ── AI bot state ─────────────────────────────────────────────────────────
   const [messages, setMessages]                 = useState<Message[]>([])
@@ -341,7 +340,6 @@ export default function ChatWidget() {
 
   // ── goLive: show live view instantly, create ticket async ─────────────────
   const goLive = useCallback(() => {
-    setLauncherDismissed(true)
     setView('live')
     setShowMenu(false)
 
@@ -707,7 +705,6 @@ export default function ChatWidget() {
   }
 
   function browseHelp() {
-    setLauncherDismissed(true)
     setOpen(false)
     redirect('/contact')
   }
@@ -1285,7 +1282,7 @@ export default function ChatWidget() {
 
       {/* ── Toggle button ────────────────────────────────────────────────────── */}
       <button
-        onClick={() => { setLauncherDismissed(true); setOpen(o => !o) }}
+        onClick={() => setOpen(o => !o)}
         aria-label={open ? 'Close Livarex chat' : 'Open Livarex chat'}
         aria-expanded={open}
         className="fixed bottom-5 right-5 z-[9999] flex items-center justify-center size-14 rounded-full cursor-pointer
