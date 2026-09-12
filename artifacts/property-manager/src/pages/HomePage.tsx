@@ -1209,7 +1209,7 @@ export default function HomePage() {
               <Link href="/landlord/register" className="px-6 py-3 bg-blue-600 text-white font-bold rounded-2xl hover:bg-blue-700 transition-all text-sm text-center shadow-lg shadow-blue-600/20 whitespace-nowrap">
                 List Your Property <ArrowRight className="inline w-4 h-4 ml-1" />
               </Link>
-              <Link href="/about" className="px-6 py-3 bg-white border border-gray-200 text-gray-700 font-semibold rounded-2xl hover:bg-gray-50 transition-all text-sm text-center whitespace-nowrap">
+              <Link href="/about#how-it-works" className="px-6 py-3 bg-white border border-gray-200 text-gray-700 font-semibold rounded-2xl hover:bg-gray-50 transition-all text-sm text-center whitespace-nowrap">
                 How it works
               </Link>
             </div>
