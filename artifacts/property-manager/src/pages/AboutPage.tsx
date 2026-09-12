@@ -88,56 +88,67 @@ const verificationSteps = [
 
 const landlordSteps = [
   {
-    title: 'Sign Up & Verify Your Identity',
-    description:
-      'Create your LIVAREX landlord account for free. Every landlord starts with verification. We confirm who you are before your property can appear on LIVAREX.',
+    number: '01',
+    title: 'Identity Verified',
+    description: 'Create your account and complete landlord verification.',
+    icon: UserCheck,
   },
   {
-    title: 'Create Your Property Listing',
-    description:
-      'Add your property\'s details, photos, location, rent and available features.',
+    number: '02',
+    title: 'Create Your Listing',
+    description: 'Add photos, rent, location and property details.',
+    icon: FileText,
   },
   {
-    title: 'Property Review & Approval',
-    description:
-      'LIVAREX reviews the submitted property information and carries out the required verification checks before the listing goes live.',
+    number: '03',
+    title: 'LIVAREX Review',
+    description: 'Your listing goes through the required review process.',
+    icon: ShieldCheck,
   },
   {
-    title: 'Connect Directly With Tenants',
-    description:
-      'Your approved property becomes visible to prospective tenants who can contact you through LIVAREX.',
+    number: '04',
+    title: 'Meet Prospective Tenants',
+    description: 'Approved listings become visible to people searching.',
+    icon: Users,
   },
   {
+    number: '05',
     title: 'Complete the Rental',
-    description:
-      'You and the prospective tenant proceed directly, with LIVAREX providing the marketplace and transaction support where applicable.',
+    description: 'Proceed directly with the tenant, with LIVAREX support where applicable.',
+    icon: Home,
   },
 ]
 
 const benefits = [
   {
-    title: 'List for Free',
-    description: 'List your property on LIVAREX without an upfront listing fee.',
+    title: 'Free to Start',
+    description: 'List without an upfront listing fee.',
+    icon: CheckCircle2,
   },
   {
-    title: 'Reach Genuine Tenants',
-    description: 'Put your property in front of prospective tenants actively searching.',
+    title: 'Direct',
+    description: 'Speak with prospective tenants directly.',
+    icon: Users,
   },
   {
-    title: 'Verified Profile',
-    description: 'Build greater trust through your verified landlord profile.',
-  },
-  {
-    title: 'Direct Connection',
-    description: 'Connect directly with prospective tenants.',
+    title: 'Verified',
+    description: 'Build trust with your LIVAREX profile.',
+    icon: ShieldCheck,
   },
   {
     title: 'No Agent Commission',
-    description: 'Reduce unnecessary agent involvement and commission.',
+    description: 'Reduce unnecessary intermediary costs.',
+    icon: FileText,
   },
   {
-    title: 'Manage Your Property',
-    description: 'Stay in control of your property and rental process.',
+    title: 'Reach Active Seekers',
+    description: 'Get discovered by people actively searching.',
+    icon: MapPin,
+  },
+  {
+    title: 'Manage Your Way',
+    description: 'Keep control of your listing and rental process.',
+    icon: Building2,
   },
 ]
 
@@ -520,112 +531,185 @@ export default function AboutPage() {
             <div className="mx-auto max-w-3xl text-center">
               <p className="text-xs font-bold uppercase tracking-[0.2em] text-blue-600">FOR LANDLORDS</p>
               <h2 className="mt-4 text-3xl font-black tracking-[-0.04em] text-slate-950 md:text-4xl">
-                List Your Property in Five Simple Steps
-              </h2>
-            </div>
-
-            <div className="mt-12 grid gap-5 lg:grid-cols-5">
-              {landlordSteps.map((step, index) => (
-                <div key={step.title} className="rounded-[1.75rem] border border-slate-200 bg-white p-5 shadow-[0_8px_24px_-18px_rgba(15,23,42,0.35)]">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold uppercase tracking-[0.16em] text-blue-600">0{index + 1}</span>
-                    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-50 text-xs font-black text-blue-700">
-                      {index + 1}
-                    </div>
-                  </div>
-                  <h3 className="mt-5 text-lg font-extrabold text-slate-950">{step.title}</h3>
-                  <p className="mt-3 text-sm leading-relaxed text-slate-600">{step.description}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        <section className="bg-[#f7f9fc] py-16 md:py-20">
-          <div className="mx-auto max-w-7xl px-5 sm:px-8">
-            <div className="mx-auto max-w-3xl text-center">
-              <p className="text-xs font-bold uppercase tracking-[0.2em] text-blue-600">FOR LANDLORDS</p>
-              <h2 className="mt-4 text-3xl font-black tracking-[-0.04em] text-slate-950 md:text-4xl">
-                Your Property. Your Tenants. Your Control.
-              </h2>
-              <p className="mt-4 text-base leading-relaxed text-slate-600">Sign up free → Get verified → Start listing</p>
-            </div>
-
-            <div className="mt-10 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
-              {benefits.map((benefit) => (
-                <div key={benefit.title} className="rounded-[1.75rem] border border-slate-200 bg-white p-6 shadow-[0_10px_24px_-18px_rgba(15,23,42,0.35)]">
-                  <h3 className="text-xl font-extrabold text-slate-950">{benefit.title}</h3>
-                  <p className="mt-3 text-sm leading-relaxed text-slate-600">{benefit.description}</p>
-                </div>
-              ))}
-            </div>
-
-            <div className="mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row">
-              <Link
-                href="/landlord/register"
-                className="inline-flex items-center justify-center gap-2 rounded-2xl bg-blue-600 px-6 py-3.5 text-sm font-bold text-white shadow-lg shadow-blue-600/20 transition-all hover:bg-blue-500"
-              >
-                List Your Property — Free
-              </Link>
-              <button
-                type="button"
-                onClick={() => scrollToSection('verification')}
-                className="inline-flex items-center justify-center rounded-2xl border border-slate-200 bg-white px-6 py-3.5 text-sm font-semibold text-slate-700 transition-all hover:border-slate-300 hover:bg-slate-50"
-              >
-                Learn About Verification
-              </button>
-            </div>
-          </div>
-        </section>
-
-        <section className="py-16 md:py-20">
-          <div className="mx-auto max-w-6xl px-5 sm:px-8">
-            <div className="mx-auto max-w-3xl text-center">
-              <h2 className="text-3xl font-black tracking-[-0.04em] text-slate-950 md:text-4xl">
-                Verification Doesn't Stop After Approval.
+                From Sign-Up to Tenant — Five Simple Steps
               </h2>
               <p className="mt-4 text-base leading-relaxed text-slate-600">
-                LIVAREX may continue reviewing listings even after they go live.
+                Create your account, verify your identity, list your property and connect directly with prospective tenants.
               </p>
             </div>
 
-            <div className="mt-10 grid gap-5 md:grid-cols-2 xl:grid-cols-4">
-              {ongoingReviewItems.map((item) => (
-                <div key={item.title} className="rounded-[1.5rem] border border-slate-200 bg-white p-5 shadow-[0_10px_24px_-18px_rgba(15,23,42,0.35)]">
-                  <h3 className="text-lg font-extrabold text-slate-950">{item.title}</h3>
-                  <p className="mt-3 text-sm leading-relaxed text-slate-600">{item.description}</p>
+            <div className="mt-12 rounded-[2rem] border border-slate-200 bg-[#f8fafc] p-5 sm:p-6 lg:p-8">
+              <div className="relative hidden lg:block">
+                <div className="absolute left-10 right-10 top-7 h-px bg-slate-200" />
+                <div className="grid gap-4 lg:grid-cols-5">
+                  {landlordSteps.map((step) => {
+                    const Icon = step.icon
+
+                    return (
+                      <div key={step.title} className="relative">
+                        <div className="relative z-10 mx-auto flex h-12 w-12 items-center justify-center rounded-full border border-blue-200 bg-white text-sm font-black text-blue-700">
+                          {step.number}
+                        </div>
+
+                        <div className="mt-5 flex flex-col items-center text-center">
+                          <div className="mb-3 flex h-9 w-9 items-center justify-center rounded-xl bg-blue-50 text-blue-700">
+                            <Icon className="h-4 w-4" />
+                          </div>
+                          <h3 className="text-lg font-extrabold tracking-[-0.02em] text-slate-950">{step.title}</h3>
+                          <p className="mt-2 max-w-[18rem] text-sm leading-relaxed text-slate-600">{step.description}</p>
+                        </div>
+                      </div>
+                    )
+                  })}
                 </div>
-              ))}
+              </div>
+
+              <div className="space-y-4 lg:hidden">
+                {landlordSteps.map((step) => {
+                  const Icon = step.icon
+
+                  return (
+                    <div key={step.title} className="relative pl-10">
+                      <div className="absolute bottom-0 left-0 top-0 w-px bg-slate-200" />
+                      <div className="absolute left-[-0.15rem] top-5 h-3 w-3 rounded-full border border-blue-200 bg-blue-600" />
+
+                      <div className="rounded-[1.25rem] border border-slate-200 bg-white p-4">
+                        <div className="flex items-center gap-3">
+                          <div className="text-xs font-black uppercase tracking-[0.18em] text-blue-600">{step.number}</div>
+                          <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-blue-50 text-blue-700">
+                            <Icon className="h-4 w-4" />
+                          </div>
+                        </div>
+
+                        <h3 className="mt-3 text-base font-extrabold text-slate-950">{step.title}</h3>
+                        <p className="mt-2 text-sm leading-relaxed text-slate-600">{step.description}</p>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section className="border-y border-slate-200 bg-white py-16 md:py-20">
+          <div className="mx-auto max-w-7xl px-5 sm:px-8">
+            <div className="grid gap-10 lg:grid-cols-[0.95fr_1.05fr] lg:items-center">
+              <div className="max-w-xl">
+                <h2 className="text-3xl font-black tracking-[-0.04em] text-slate-950 md:text-4xl">
+                  More Control. Fewer Middlemen.
+                </h2>
+
+                <p className="mt-5 text-base leading-relaxed text-slate-600">
+                  List your property, build trust through verification and connect directly with prospective tenants.
+                </p>
+
+                <div className="mt-6 inline-flex flex-wrap items-center gap-2 text-sm font-medium text-slate-600">
+                  <span>Sign up free</span>
+                  <span className="text-slate-300">→</span>
+                  <span>Get verified</span>
+                  <span className="text-slate-300">→</span>
+                  <span>Start listing</span>
+                </div>
+
+                <div className="mt-8">
+                  <Link
+                    href="/landlord/register"
+                    className="inline-flex items-center justify-center gap-2 rounded-2xl bg-blue-600 px-6 py-3.5 text-sm font-bold text-white transition-all hover:bg-blue-500"
+                  >
+                    List Your Property
+                  </Link>
+                </div>
+              </div>
+
+              <div className="rounded-[2rem] border border-slate-200 bg-[#f8fafc] p-5 sm:p-6">
+                <div className="grid gap-x-8 gap-y-5 sm:grid-cols-2">
+                  {benefits.map((benefit) => {
+                    const Icon = benefit.icon
+
+                    return (
+                      <div key={benefit.title} className="flex items-start gap-3">
+                        <div className="mt-0.5 flex h-8 w-8 items-center justify-center rounded-xl bg-blue-50 text-blue-700">
+                          <Icon className="h-4 w-4" />
+                        </div>
+
+                        <div>
+                          <h3 className="text-xs font-extrabold uppercase tracking-[0.14em] text-slate-900">
+                            {benefit.title}
+                          </h3>
+                          <p className="mt-1 text-sm leading-relaxed text-slate-600">{benefit.description}</p>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section className="bg-[#f5f9ff] py-16 md:py-20">
+          <div className="mx-auto max-w-6xl px-5 sm:px-8">
+            <div className="rounded-[2rem] border border-slate-200 bg-white p-6 sm:p-8">
+              <div className="grid gap-8 lg:grid-cols-2 lg:items-start">
+                <div className="max-w-xl">
+                  <p className="text-xs font-bold uppercase tracking-[0.2em] text-blue-600">ONGOING REVIEW</p>
+                  <h2 className="mt-4 text-3xl font-black tracking-[-0.04em] text-slate-950 md:text-4xl">
+                    Trust Doesn't End When a Listing Goes Live.
+                  </h2>
+                  <p className="mt-4 text-base leading-relaxed text-slate-600">
+                    LIVAREX may continue reviewing listings after approval to help maintain accurate and reliable marketplace information.
+                  </p>
+                </div>
+
+                <div className="relative pl-6">
+                  <div className="absolute bottom-0 left-[0.6rem] top-0 w-px bg-slate-200" />
+
+                  <div className="space-y-5">
+                    {ongoingReviewItems.map((item, index) => (
+                      <div key={item.title} className="relative pl-6">
+                        <div className="absolute left-[-0.45rem] top-2 h-3 w-3 rounded-full bg-blue-600 ring-4 ring-white" />
+                        <div className="text-[11px] font-bold uppercase tracking-[0.16em] text-slate-400">
+                          {String(index + 1).padStart(2, '0')}
+                        </div>
+                        <h3 className="mt-2 text-lg font-extrabold text-slate-950">{item.title}</h3>
+                        <p className="mt-2 text-sm leading-relaxed text-slate-600">{item.description}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </section>
 
         <section className="bg-blue-600 py-16 md:py-20">
           <div className="mx-auto max-w-5xl px-5 text-center sm:px-8">
-            <h2 className="text-3xl font-black tracking-[-0.04em] text-white md:text-5xl">
-              Property Discovery Should Start With Trust.
+            <p className="text-xs font-bold uppercase tracking-[0.2em] text-blue-100">READY TO GET STARTED?</p>
+            <h2 className="mt-4 text-3xl font-black tracking-[-0.04em] text-white md:text-5xl">
+              List With Confidence. Rent With Greater Trust.
             </h2>
             <p className="mx-auto mt-5 max-w-2xl text-base leading-relaxed text-blue-100 md:text-lg">
-              Join a marketplace designed around verified listings and direct landlord-to-tenant connections.
+              Join a marketplace built around verification and direct landlord-to-tenant connections.
             </p>
 
             <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
               <Link
-                href="/listings?type=rent"
+                href="/landlord/register"
                 className="inline-flex items-center justify-center gap-2 rounded-2xl bg-white px-6 py-3.5 text-sm font-bold text-blue-700 shadow-lg shadow-blue-700/20 transition-all hover:bg-blue-50"
               >
-                Find a Property
+                List Your Property
               </Link>
               <Link
-                href="/landlord/register"
+                href="/listings?type=rent"
                 className="inline-flex items-center justify-center rounded-2xl border border-blue-300 bg-blue-500 px-6 py-3.5 text-sm font-semibold text-white transition-all hover:bg-blue-500/80"
               >
-                List Your Property
+                Browse Properties
               </Link>
             </div>
 
             <p className="mt-6 text-sm font-medium text-blue-100">
-              Verified listings • Direct landlord connections • No unnecessary agent fees
+              Verified listings · Direct connections · No unnecessary agent fees
             </p>
           </div>
         </section>
