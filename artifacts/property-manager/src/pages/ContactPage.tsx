@@ -1,57 +1,211 @@
-import { useState, useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { Link } from '@/lib/navigation'
-import { Mail, Phone, MapPin, MessageCircle, Globe, ArrowRight, CheckCircle, Clock, ChevronDown, Instagram, Twitter, Send } from 'lucide-react'
+import {
+  ArrowRight,
+  BriefcaseBusiness,
+  Building2,
+  CheckCircle,
+  ChevronDown,
+  House,
+  Mail,
+  MapPin,
+  MessageCircle,
+  Phone,
+  Send,
+  ShieldCheck,
+  Sparkles,
+  UserCheck,
+  Users,
+} from 'lucide-react'
 import PublicNavbar from '@/components/layout/PublicNavbar'
 import Footer from '@/components/layout/Footer'
 import SEO from '@/components/SEO'
 import { createClient, isSupabaseConfigured } from '@/lib/supabase'
-import { getPlatformSettings, getNotificationSettings, phoneToWaLink, phoneToTelLink, type PlatformSettings } from '@/lib/platform-settings'
+import {
+  getPlatformSettings,
+  getNotificationSettings,
+  phoneToWaLink,
+  phoneToTelLink,
+  type PlatformSettings,
+} from '@/lib/platform-settings'
+
+const enquiryCategories = [
+  {
+    id: 'property',
+    title: 'Property Enquiries',
+    description: 'Need help finding a property or have a question about a listing?',
+    action: 'Get Property Help',
+    icon: House,
+    role: 'Property enquiry',
+  },
+  {
+    id: 'landlord',
+    title: 'Landlord Support',
+    description: 'Questions about verification, listings, or managing your property?',
+    action: 'Landlord Help',
+    icon: Building2,
+    role: 'Landlord support',
+  },
+  {
+    id: 'account',
+    title: 'Account Support',
+    description: 'Need assistance with your LIVAREX account or platform experience?',
+    action: 'Get Support',
+    icon: UserCheck,
+    role: 'Account support',
+  },
+  {
+    id: 'general',
+    title: 'General Enquiries',
+    description: 'Partnerships, business enquiries, feedback, or anything else.',
+    action: 'Contact Us',
+    icon: BriefcaseBusiness,
+    role: 'General enquiry',
+  },
+]
+
+const helpLinks = [
+  {
+    label: 'How landlord verification works',
+    description: 'Learn how LIVAREX reviews landlords and listings.',
+    href: '/about',
+  },
+  {
+    label: 'Listing a property',
+    description: 'Start your landlord onboarding journey.',
+    href: '/landlord/register',
+  },
+  {
+    label: 'Finding a property',
+    description: 'Browse verified homes and apartments.',
+    href: '/listings',
+  },
+  {
+    label: 'Frequently asked questions',
+    description: 'Quick answers to common LIVAREX questions.',
+    href: '#faq-panel',
+  },
+]
 
 const faqs = [
-  { q: 'How do I contact a landlord?', a: 'Sign in to your tenant account, then use the "Request Inspection" or "WhatsApp" button on any listing. All messages go through Livarex — our team coordinates with the landlord and gets back to you.' },
-  { q: 'Are all landlords verified?', a: 'Yes. Every landlord goes through our review process before listings go live. Verified badges are only awarded to landlords we\'ve confirmed.' },
-  { q: 'How do I list my property?', a: 'Register as a landlord, submit your details for review, and once approved (usually within 24 hours), you can add listings from your dashboard.' },
-  { q: 'Is there a fee to use Livarex?', a: 'No — browsing is completely free for renters. Listing is also free for landlords.' },
-  { q: 'My landlord account was rejected — what now?', a: 'Use the contact form to reach out with your registered email. Our team will review and respond within 1–2 business days.' },
-  { q: 'Can I list commercial properties?', a: 'Yes. Livarex supports residential, commercial, and off-plan listings. Select the appropriate type when creating your listing.' },
+  {
+    q: 'How do I contact a landlord?',
+    a: 'Sign in to your tenant account and use the Request Inspection or WhatsApp option on any listing. LIVAREX helps coordinate the conversation and keeps the process secure.',
+  },
+  {
+    q: 'Are all landlords verified?',
+    a: 'Yes. Every landlord goes through LIVAREX review before listings can move forward. Verified badges are only awarded to profiles that have met the required checks.',
+  },
+  {
+    q: 'How do I list my property?',
+    a: 'Register as a landlord, submit your property details, and complete the review process from your dashboard. Once approved, your listing can go live.',
+  },
+  {
+    q: 'Can I list commercial properties?',
+    a: 'Yes. LIVAREX supports residential, commercial, and off-plan listing categories depending on the property and the information provided.',
+  },
 ]
 
 export default function ContactPage() {
   const [platform, setPlatform] = useState<PlatformSettings | null>(null)
-  const [form, setForm] = useState({ name: '', email: '', role: 'renter', subject: '', message: '' })
+  const [form, setForm] = useState({
+    name: '',
+    email: '',
+    role: 'Property enquiry',
+    subject: '',
+    message: '',
+  })
   const [loading, setLoading] = useState(false)
   const [success, setSuccess] = useState(false)
   const [error, setError] = useState('')
   const [openFaq, setOpenFaq] = useState<number | null>(null)
 
-  // Load the admin phone + email from Admin Settings — the single source of truth.
   useEffect(() => {
     let active = true
-    getPlatformSettings().then(s => { if (active) setPlatform(s) })
-    return () => { active = false }
+
+    getPlatformSettings().then((settings) => {
+      if (active) setPlatform(settings)
+    })
+
+    return () => {
+      active = false
+    }
   }, [])
 
   const phone = platform?.phone || '+234 7061370742'
   const email = platform?.email || 'support@livarex.com.ng'
+  const address = platform?.address?.trim()
 
   const channels = [
-    { icon: Mail,          label: 'Email',     value: email,                            href: `mailto:${email}`,                       note: 'Reply within 1–2 business days',   accent: 'bg-blue-600',    glow: 'shadow-blue-500/25'    },
-    { icon: MessageCircle, label: 'WhatsApp',  value: phone,                            href: phoneToWaLink(phone),                   note: 'Livarex support on WhatsApp',      accent: 'bg-[#25D366]',   glow: 'shadow-green-500/25'   },
-    { icon: Phone,         label: 'Phone',     value: phone,                            href: phoneToTelLink(phone),                  note: '8 AM – 6 PM WAT',                  accent: 'bg-emerald-600', glow: 'shadow-emerald-500/25' },
-    { icon: MapPin,        label: 'Office',    value: platform?.address || 'Joju, Sango Ota, Ogun State', href: `https://maps.google.com/?q=${encodeURIComponent(platform?.address || 'Joju Sango Ota Ogun State Nigeria')}`, note: 'Visit us', accent: 'bg-rose-600', glow: 'shadow-rose-500/25' },
+    {
+      icon: MessageCircle,
+      label: 'WhatsApp',
+      value: phone,
+      href: phoneToWaLink(phone),
+      note: 'Fast questions and property enquiries',
+      accent: 'bg-[#25D366]',
+      glow: 'shadow-green-500/25',
+      action: 'Message Us',
+      highlight: true,
+    },
+    {
+      icon: Mail,
+      label: 'Email',
+      value: email,
+      href: `mailto:${email}`,
+      note: 'General and business enquiries',
+      accent: 'bg-blue-600',
+      glow: 'shadow-blue-500/25',
+      action: 'Send Email',
+      highlight: false,
+    },
+    {
+      icon: Phone,
+      label: 'Phone',
+      value: phone,
+      href: phoneToTelLink(phone),
+      note: 'Speak with the LIVAREX team',
+      accent: 'bg-emerald-600',
+      glow: 'shadow-emerald-500/25',
+      action: 'Call Us',
+      highlight: false,
+    },
+    {
+      icon: MapPin,
+      label: 'Office',
+      value: address || 'Lagos, Nigeria',
+      href: address ? `https://maps.google.com/?q=${encodeURIComponent(address)}` : '#',
+      note: address ? 'Visit us in person' : 'Office details available in settings',
+      accent: 'bg-rose-600',
+      glow: 'shadow-rose-500/25',
+      action: address ? 'Get Directions' : 'Location',
+      highlight: false,
+    },
   ]
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    setLoading(true); setError('')
+    setLoading(true)
+    setError('')
+
     try {
+      const payload = {
+        ...form,
+        subject: form.subject.trim() || form.role,
+      }
+
       if (isSupabaseConfigured()) {
         const supabase = createClient()
-        const { error: err } = await supabase.from('contact_messages').insert(form)
+        const { error: err } = await supabase.from('contact_messages').insert({
+          name: payload.name,
+          email: payload.email,
+          role: payload.role,
+          subject: payload.subject,
+          message: payload.message,
+        })
+
         if (err) throw new Error(err.message)
 
-        // Fire the email side (admin notification + user confirmation).
-        // Best-effort — the row is already saved, so a failure here is non-fatal.
         const notif = await getNotificationSettings()
         fetch('/api/send-support-notification', {
           method: 'POST',
@@ -59,280 +213,454 @@ export default function ContactPage() {
           body: JSON.stringify({
             event: 'contact',
             adminEmail: notif.adminEmail,
-            userName: form.name,
-            userEmail: form.email,
-            subject: form.subject,
-            message: form.message,
+            userName: payload.name,
+            userEmail: payload.email,
+            subject: payload.subject,
+            message: payload.message,
             channel: 'Contact form',
           }),
-        }).catch(() => { /* non-fatal */ })
+        }).catch(() => {
+          // Non-fatal best-effort notification.
+        })
       }
+
       setSuccess(true)
+      setForm({ name: '', email: '', role: 'Property enquiry', subject: '', message: '' })
     } catch (err: any) {
-      setError(err.message || 'Something went wrong. Please email us directly.')
+      setError(err.message || 'Something went wrong. Please try again or email us directly.')
+    } finally {
+      setLoading(false)
     }
-    setLoading(false)
   }
 
-  const field = 'w-full px-4 py-3.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all bg-white placeholder-gray-400 text-gray-900'
+  const field =
+    'w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3.5 text-sm text-slate-900 transition-all placeholder:text-slate-400 focus:border-blue-400 focus:bg-white focus:outline-none focus:ring-4 focus:ring-blue-100'
 
   return (
-    <div className="min-h-screen flex flex-col bg-white">
+    <div className="min-h-screen bg-white text-slate-900">
       <SEO
-        title="Contact Livarex — Get Help with Your Property Search"
-        description="Reach the Livarex team by email, WhatsApp or phone. We're available 8 AM–6 PM WAT and reply within 1–2 business days."
+        title="Contact LIVAREX — Get Help with Your Property Search"
+        description="Reach the LIVAREX team by email, WhatsApp or phone. Our team is here to help with property enquiries, landlord support, and general questions."
         url="/contact"
       />
+
       <PublicNavbar />
 
-      {/* ── HERO ── */}
-      <section className="relative bg-gray-950 pt-32 pb-28 overflow-hidden">
-        <div className="absolute inset-0 opacity-[0.035]" style={{ backgroundImage: 'radial-gradient(circle at 1px 1px, white 1px, transparent 0)', backgroundSize: '36px 36px' }} />
-        <div className="absolute -top-40 right-0 w-[700px] h-[700px] bg-blue-600/10 rounded-full blur-[120px] pointer-events-none" />
-        <div className="absolute bottom-0 -left-20 w-[400px] h-[400px] bg-emerald-600/6 rounded-full blur-[100px] pointer-events-none" />
+      <main>
+        <section className="relative overflow-hidden bg-slate-950 pt-24 pb-20 text-white sm:pt-28 lg:pt-32">
+          <div className="absolute inset-0 opacity-[0.06]" style={{ backgroundImage: 'radial-gradient(circle at 1px 1px, rgba(255,255,255,0.9) 1px, transparent 0)', backgroundSize: '34px 34px' }} />
+          <div className="absolute -left-16 top-20 h-80 w-80 rounded-full bg-blue-600/20 blur-3xl" />
+          <div className="absolute right-0 top-0 h-[34rem] w-[34rem] rounded-full bg-sky-500/10 blur-3xl" />
 
-        <div className="relative z-10 max-w-6xl mx-auto px-5 sm:px-8">
-          <div className="grid lg:grid-cols-2 gap-20 items-center">
+          <div className="relative mx-auto max-w-7xl px-5 sm:px-8">
+            <div className="grid items-center gap-12 lg:grid-cols-[1.05fr_0.95fr]">
+              <div>
+                <p className="mb-5 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.2em] text-blue-300">
+                  <span className="h-2 w-2 rounded-full bg-blue-400" />
+                  Contact LIVAREX
+                </p>
 
-            {/* Left */}
-            <div>
-              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/5 border border-white/10 text-blue-400 text-xs font-bold uppercase tracking-widest mb-7">
-                <span className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse" />
-                Get in Touch
+                <h1 className="max-w-xl text-4xl font-black leading-[1.02] tracking-[-0.06em] text-white sm:text-5xl lg:text-6xl">
+                  Let’s Help You Move Forward.
+                </h1>
+
+                <p className="mt-6 max-w-xl text-base leading-relaxed text-slate-300 md:text-lg">
+                  Whether you’re searching for a home, listing a property, or need help with your LIVAREX account, our team is here to point you in the right direction.
+                </p>
+
+                <div className="mt-6 inline-flex items-center gap-2 rounded-full border border-blue-400/20 bg-blue-500/10 px-3 py-1.5 text-sm text-blue-100">
+                  <Sparkles className="h-4 w-4 text-blue-300" />
+                  Property support. Landlord assistance. General enquiries.
+                </div>
+
+                <div className="mt-8 flex flex-wrap gap-3">
+                  <a
+                    href="#contact-form"
+                    className="inline-flex items-center justify-center gap-2 rounded-2xl bg-blue-600 px-6 py-3.5 text-sm font-bold text-white shadow-lg shadow-blue-600/20 transition-all hover:bg-blue-500"
+                  >
+                    Send a Message
+                    <ArrowRight className="h-4 w-4" />
+                  </a>
+                  <a
+                    href={phoneToTelLink(phone)}
+                    className="inline-flex items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-6 py-3.5 text-sm font-semibold text-white transition-all hover:bg-white/10"
+                  >
+                    <Phone className="h-4 w-4" />
+                    Call Us
+                  </a>
+                </div>
               </div>
-              <h1 className="text-5xl sm:text-6xl font-extrabold text-white leading-[1.05] tracking-tight mb-6">
-                Let's talk about<br />
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-violet-400">your property goals.</span>
-              </h1>
-              <p className="text-gray-400 text-lg leading-relaxed mb-10">
-                Whether you're searching for a home, looking to list your property, or just have questions — we're ready to help.
-              </p>
-              <div className="flex flex-wrap gap-3">
-                <a href="#contact-form" className="inline-flex items-center gap-2 px-6 py-3.5 bg-blue-600 hover:bg-blue-500 text-white text-sm font-bold rounded-xl transition-all shadow-xl shadow-blue-600/25">
-                  Send a Message <ArrowRight className="w-4 h-4" />
-                </a>
-                <a href={phoneToTelLink(phone)} className="inline-flex items-center gap-2 px-6 py-3.5 bg-white/6 hover:bg-white/10 text-white text-sm font-semibold rounded-xl transition-all border border-white/10">
-                  <Phone className="w-4 h-4" /> Call Us
-                </a>
-              </div>
 
-              <div className="grid grid-cols-2 gap-4 mt-10 pt-10 border-t border-white/8">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center">
-                    <CheckCircle className="w-4.5 h-4.5 text-emerald-400" />
+              <div className="relative">
+                <div className="grid gap-4 md:grid-cols-[1.25fr_0.75fr]">
+                  <div className="overflow-hidden rounded-[1.75rem] border border-white/10 bg-white/5 p-3 shadow-[0_26px_80px_-28px_rgba(14,116,144,0.75)]">
+                    <img
+                      src="https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&w=1200&q=80"
+                      alt="Modern residential property exterior"
+                      className="h-[22rem] w-full rounded-[1.2rem] object-cover sm:h-[27rem]"
+                    />
                   </div>
-                  <div>
-                    <p className="text-sm font-bold text-white">Live Support</p>
-                    <p className="text-xs text-gray-500">8 AM – 6 PM WAT</p>
+
+                  <div className="space-y-4">
+                    <div className="overflow-hidden rounded-[1.5rem] border border-white/10 bg-white/5 p-3">
+                      <img
+                        src="https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?auto=format&fit=crop&w=900&q=80"
+                        alt="Modern apartment interior"
+                        className="h-36 w-full rounded-[1rem] object-cover sm:h-44"
+                      />
+                    </div>
+
+                    <div className="overflow-hidden rounded-[1.5rem] border border-white/10 bg-white/5 p-3">
+                      <img
+                        src="https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=900&q=80"
+                        alt="Dark-skinned African property professional smiling"
+                        className="h-36 w-full rounded-[1rem] object-cover sm:h-44"
+                      />
+                    </div>
                   </div>
                 </div>
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center">
-                    <Clock className="w-4.5 h-4.5 text-blue-400" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-bold text-white">Fast Response</p>
-                    <p className="text-xs text-gray-500">1–2 business days</p>
-                  </div>
+
+                <div className="absolute bottom-5 left-5 rounded-2xl border border-white/10 bg-slate-950/80 px-4 py-3 shadow-xl shadow-slate-950/20 backdrop-blur-sm">
+                  <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-blue-300">Property Support</p>
+                  <p className="mt-1 text-sm font-semibold text-white">Here when you need us.</p>
                 </div>
               </div>
             </div>
+          </div>
+        </section>
 
-            {/* Right — channel cards */}
-            <div className="grid grid-cols-2 gap-4">
-              {channels.map(ch => {
-                const Icon = ch.icon
+        <section className="border-b border-slate-200 bg-white py-20">
+          <div className="mx-auto max-w-7xl px-5 sm:px-8">
+            <div className="mx-auto max-w-2xl text-center">
+              <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-blue-600">How Can We Help?</p>
+              <h2 className="mt-4 text-3xl font-black tracking-[-0.05em] text-slate-950 sm:text-4xl">
+                Choose the option that best matches your enquiry.
+              </h2>
+            </div>
+
+            <div className="mt-12 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+              {enquiryCategories.map((category) => {
+                const Icon = category.icon
+
                 return (
-                  <a key={ch.label} href={ch.href}
-                    target={ch.href.startsWith('http') ? '_blank' : undefined}
-                    rel="noopener noreferrer"
-                    className="group bg-white/5 border border-white/8 hover:bg-white/8 hover:border-white/15 rounded-2xl p-6 transition-all duration-300 hover:-translate-y-1"
+                  <button
+                    key={category.id}
+                    type="button"
+                    onClick={() => {
+                      setForm((current) => ({ ...current, role: category.role }))
+                      document.getElementById('contact-form')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+                    }}
+                    className="group rounded-[1.5rem] border border-slate-200 bg-slate-50 p-5 text-left transition-all duration-200 hover:-translate-y-1 hover:border-blue-200 hover:bg-white hover:shadow-[0_18px_40px_-22px_rgba(37,99,235,0.45)]"
                   >
-                    <div className={`w-12 h-12 rounded-xl ${ch.accent} flex items-center justify-center mb-5 shadow-lg ${ch.glow} group-hover:scale-110 transition-transform duration-300`}>
-                      <Icon className="w-5 h-5 text-white" />
+                    <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-blue-100 bg-blue-50 text-blue-600 transition-all group-hover:bg-blue-600 group-hover:text-white">
+                      <Icon className="h-5 w-5" />
                     </div>
-                    <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">{ch.label}</p>
-                    <p className="text-sm font-semibold text-white leading-snug mb-1">{ch.value}</p>
-                    <p className="text-xs text-gray-600">{ch.note}</p>
-                    <div className="flex items-center gap-1 text-xs font-semibold text-blue-400 mt-4 opacity-0 group-hover:opacity-100 transition-opacity">
-                      Contact <ArrowRight className="w-3 h-3" />
+
+                    <h3 className="mt-5 text-lg font-extrabold text-slate-950">{category.title}</h3>
+                    <p className="mt-2 text-sm leading-relaxed text-slate-600">{category.description}</p>
+
+                    <div className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-blue-600">
+                      {category.action}
+                      <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
                     </div>
-                  </a>
+                  </button>
                 )
               })}
             </div>
           </div>
-        </div>
-      </section>
+        </section>
 
-      {/* ── FORM + FAQ ── */}
-      <section id="contact-form" className="bg-[#F8F8F6] py-24">
-        <div className="max-w-6xl mx-auto px-5 sm:px-8">
-          <div className="grid lg:grid-cols-[1fr_380px] gap-10">
+        <section id="contact-form" className="bg-[#f7f7f5] py-20">
+          <div className="mx-auto max-w-7xl px-5 sm:px-8">
+            <div className="grid gap-8 lg:grid-cols-[1.1fr_0.9fr]">
+              <div className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-[0_24px_60px_-36px_rgba(15,23,42,0.34)] sm:p-8 lg:p-10">
+                <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-blue-600">Send a Message</p>
+                <h2 className="mt-3 text-3xl font-black tracking-[-0.05em] text-slate-950 sm:text-4xl">
+                  Tell Us What You Need.
+                </h2>
+                <p className="mt-3 max-w-xl text-base text-slate-600">
+                  Share a few details and the LIVAREX team can direct your enquiry appropriately.
+                </p>
 
-            {/* Form */}
-            <div>
-              <div className="mb-8">
-                <p className="text-xs font-bold uppercase tracking-widest text-blue-600 mb-3">Direct message</p>
-                <h2 className="text-3xl font-extrabold text-gray-900 tracking-tight">Send us a message</h2>
-                <p className="text-gray-400 mt-2 text-sm">We read every message and reply within 1–2 business days.</p>
-              </div>
-
-              {success ? (
-                <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-14 flex flex-col items-center text-center gap-5">
-                  <div className="w-16 h-16 rounded-2xl bg-blue-600 flex items-center justify-center shadow-xl shadow-blue-600/25">
-                    <CheckCircle className="w-8 h-8 text-white" />
+                {success ? (
+                  <div className="mt-8 rounded-[1.5rem] border border-emerald-200 bg-emerald-50 p-6 text-center sm:p-10">
+                    <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-emerald-600 shadow-lg shadow-emerald-600/20">
+                      <CheckCircle className="h-8 w-8 text-white" />
+                    </div>
+                    <h3 className="mt-5 text-2xl font-black text-slate-950">Message Sent.</h3>
+                    <p className="mt-2 text-sm text-slate-600">
+                      Thanks, {form.name || 'there'}. Your message has been received and the LIVAREX team will review it.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => setSuccess(false)}
+                      className="mt-6 inline-flex items-center justify-center rounded-2xl border border-emerald-200 bg-white px-4 py-2.5 text-sm font-semibold text-emerald-700 transition-all hover:bg-emerald-100"
+                    >
+                      Send another message
+                    </button>
                   </div>
-                  <div>
-                    <p className="font-extrabold text-gray-900 text-xl">Message sent!</p>
-                    <p className="text-gray-400 mt-2 text-sm max-w-xs">We'll reply to <span className="text-gray-700 font-semibold">{form.email}</span> within 1–2 business days.</p>
-                  </div>
-                  <button onClick={() => { setSuccess(false); setForm({ name: '', email: '', role: 'renter', subject: '', message: '' }) }}
-                    className="px-5 py-2.5 bg-blue-50 hover:bg-blue-100 text-blue-600 text-sm font-semibold rounded-xl transition-all">
-                    Send another message
-                  </button>
-                </div>
-              ) : (
-                <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-8 sm:p-10">
-                  {error && (
-                    <div className="mb-5 px-4 py-3.5 bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl">{error}</div>
-                  )}
-                  <form onSubmit={handleSubmit} className="space-y-5">
-                    <div className="grid sm:grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Full Name *</label>
-                        <input type="text" required value={form.name}
-                          onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
-                          placeholder="Adebayo Okafor" className={field} />
+                ) : (
+                  <form onSubmit={handleSubmit} className="mt-8 space-y-5">
+                    {error && (
+                      <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                        {error}
                       </div>
+                    )}
+
+                    <div className="grid gap-5 sm:grid-cols-2">
                       <div>
-                        <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Email Address *</label>
-                        <input type="email" required value={form.email}
-                          onChange={e => setForm(f => ({ ...f, email: e.target.value }))}
-                          placeholder="you@example.com" className={field} />
+                        <label className="mb-2 block text-[11px] font-bold uppercase tracking-[0.16em] text-slate-500">
+                          Full Name *
+                        </label>
+                        <input
+                          required
+                          type="text"
+                          value={form.name}
+                          onChange={(e) => setForm((current) => ({ ...current, name: e.target.value }))}
+                          placeholder="Adebayo Okafor"
+                          className={field}
+                        />
+                      </div>
+
+                      <div>
+                        <label className="mb-2 block text-[11px] font-bold uppercase tracking-[0.16em] text-slate-500">
+                          Email Address *
+                        </label>
+                        <input
+                          required
+                          type="email"
+                          value={form.email}
+                          onChange={(e) => setForm((current) => ({ ...current, email: e.target.value }))}
+                          placeholder="you@example.com"
+                          className={field}
+                        />
                       </div>
                     </div>
-                    <div className="grid sm:grid-cols-2 gap-4">
+
+                    <div className="grid gap-5 sm:grid-cols-2">
                       <div>
-                        <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">I am a…</label>
-                        <select value={form.role} onChange={e => setForm(f => ({ ...f, role: e.target.value }))} className={field}>
-                          <option value="renter">Renter looking for a property</option>
-                          <option value="landlord">Landlord wanting to list</option>
-                          <option value="developer">Property developer</option>
-                          <option value="other">Other / General enquiry</option>
+                        <label className="mb-2 block text-[11px] font-bold uppercase tracking-[0.16em] text-slate-500">
+                          I’m contacting LIVAREX about *
+                        </label>
+                        <select
+                          value={form.role}
+                          onChange={(e) => setForm((current) => ({ ...current, role: e.target.value }))}
+                          className={field}
+                        >
+                          <option value="Property enquiry">Property enquiry</option>
+                          <option value="Landlord support">Landlord support</option>
+                          <option value="Listing verification">Listing verification</option>
+                          <option value="Account support">Account support</option>
+                          <option value="Partnership / business">Partnership / business</option>
+                          <option value="General enquiry">General enquiry</option>
                         </select>
                       </div>
-                      <div>
-                        <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Subject *</label>
-                        <input type="text" required value={form.subject}
-                          onChange={e => setForm(f => ({ ...f, subject: e.target.value }))}
-                          placeholder="How can we help?" className={field} />
-                      </div>
-                    </div>
-                    <div>
-                      <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Message *</label>
-                      <textarea required rows={5} value={form.message}
-                        onChange={e => setForm(f => ({ ...f, message: e.target.value }))}
-                        placeholder="Tell us as much as you can — we want to give you the best possible answer…"
-                        className={`${field} resize-none`} />
-                    </div>
-                    <div className="flex items-center gap-4 pt-1">
-                      <button type="submit" disabled={loading}
-                        className="flex-1 py-4 bg-gray-900 hover:bg-gray-800 disabled:opacity-50 text-white text-sm font-bold rounded-xl transition-all flex items-center justify-center gap-2 shadow-lg shadow-gray-900/20">
-                        {loading
-                          ? <><span className="w-4 h-4 rounded-full border-2 border-white/30 border-t-white animate-spin" />Sending…</>
-                          : <><Send className="w-4 h-4" />Send Message</>
-                        }
-                      </button>
-                      <div className="flex items-center gap-1.5 text-xs text-gray-400 shrink-0">
-                        <Clock className="w-3.5 h-3.5" /> 1–2 business days
-                      </div>
-                    </div>
-                  </form>
-                </div>
-              )}
 
-              {/* Socials */}
-              <div className="mt-6 flex items-center gap-3">
-                <p className="text-xs text-gray-400 font-medium">Follow us:</p>
-                {[
-                  { Icon: Instagram, href: 'https://instagram.com/livarex.ng', label: 'Instagram' },
-                  { Icon: Twitter,   href: 'https://twitter.com/livarex_ng',   label: 'X'         },
-                ].map(({ Icon, href, label }) => (
-                  <a key={label} href={href} target="_blank" rel="noopener noreferrer" aria-label={label}
-                    className="w-9 h-9 rounded-xl bg-white border border-gray-200 flex items-center justify-center text-gray-400 hover:text-blue-600 hover:border-blue-200 hover:shadow-sm transition-all">
-                    <Icon className="w-4 h-4" />
-                  </a>
+                      <div>
+                        <label className="mb-2 block text-[11px] font-bold uppercase tracking-[0.16em] text-slate-500">
+                          Property / Listing Reference
+                        </label>
+                        <input
+                          type="text"
+                          value={form.subject}
+                          onChange={(e) => setForm((current) => ({ ...current, subject: e.target.value }))}
+                          placeholder="Optional — listing ID, address or reference"
+                          className={field}
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="mb-2 block text-[11px] font-bold uppercase tracking-[0.16em] text-slate-500">
+                        Message *
+                      </label>
+                      <textarea
+                        required
+                        rows={6}
+                        value={form.message}
+                        onChange={(e) => setForm((current) => ({ ...current, message: e.target.value }))}
+                        placeholder="Tell us as much as you can so we can point you in the right direction."
+                        className={`${field} resize-none`}
+                      />
+                    </div>
+
+                    <button
+                      type="submit"
+                      disabled={loading}
+                      className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-950 px-5 py-4 text-sm font-bold text-white transition-all hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      {loading ? (
+                        <>
+                          <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+                          Sending...
+                        </>
+                      ) : (
+                        <>
+                          <Send className="h-4 w-4" />
+                          Send Message
+                        </>
+                      )}
+                    </button>
+                  </form>
+                )}
+              </div>
+
+              <aside className="space-y-6">
+                <div className="overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-[0_24px_60px_-36px_rgba(15,23,42,0.34)]">
+                  <img
+                    src="https://images.unsplash.com/photo-1556157382-97eda2d62296?auto=format&fit=crop&w=1200&q=80"
+                    alt="Dark-skinned African property professional in a modern home setting"
+                    className="h-60 w-full object-cover"
+                  />
+
+                  <div className="p-6">
+                    <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-blue-600">Direct Contact</p>
+                    <h3 className="mt-3 text-2xl font-black tracking-[-0.05em] text-slate-950">
+                      Prefer to reach us directly?
+                    </h3>
+
+                    <div className="mt-6 space-y-3">
+                      {channels.map((channel) => {
+                        const Icon = channel.icon
+
+                        return (
+                          <a
+                            key={channel.label}
+                            href={channel.href}
+                            target={channel.href.startsWith('http') ? '_blank' : undefined}
+                            rel={channel.href.startsWith('http') ? 'noopener noreferrer' : undefined}
+                            className={`group flex items-center gap-3 rounded-2xl border p-3 transition-all hover:border-blue-200 hover:bg-blue-50/50 ${channel.highlight ? 'border-green-200 bg-green-50/60' : 'border-slate-200 bg-slate-50'}`}
+                          >
+                            <div className={`flex h-11 w-11 items-center justify-center rounded-xl ${channel.accent} text-white shadow-lg ${channel.glow}`}>
+                              <Icon className="h-4 w-4" />
+                            </div>
+
+                            <div className="min-w-0 flex-1">
+                              <div className="flex items-center justify-between gap-3">
+                                <p className="text-sm font-bold text-slate-900">{channel.label}</p>
+                                <span className="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-500">
+                                  {channel.action}
+                                </span>
+                              </div>
+                              <p className="mt-1 text-sm text-slate-600">{channel.note}</p>
+                              <p className="mt-1 truncate text-sm font-semibold text-slate-900">{channel.value}</p>
+                            </div>
+
+                            <ArrowRight className="h-4 w-4 shrink-0 text-slate-400 transition-transform group-hover:translate-x-1 group-hover:text-blue-600" />
+                          </a>
+                        )
+                      })}
+                    </div>
+
+                    {address && (
+                      <div className="mt-6 rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                        <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-slate-500">Office</p>
+                        <p className="mt-2 text-sm font-semibold text-slate-900">{address}</p>
+                        <a
+                          href={`https://maps.google.com/?q=${encodeURIComponent(address)}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="mt-3 inline-flex items-center gap-2 text-sm font-semibold text-blue-600"
+                        >
+                          Get directions
+                          <ArrowRight className="h-4 w-4" />
+                        </a>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </aside>
+            </div>
+          </div>
+        </section>
+
+        <section id="faq-panel" className="border-t border-slate-200 bg-white py-20">
+          <div className="mx-auto max-w-7xl px-5 sm:px-8">
+            <div className="mx-auto max-w-3xl text-center">
+              <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-blue-600">Quick Help</p>
+              <h2 className="mt-3 text-3xl font-black tracking-[-0.05em] text-slate-950 sm:text-4xl">
+                You May Find Your Answer Here.
+              </h2>
+            </div>
+
+            <div className="mt-10 grid gap-4 lg:grid-cols-2 xl:grid-cols-4">
+              {helpLinks.map((link) => (
+                <div key={link.label} className="rounded-[1.5rem] border border-slate-200 bg-slate-50 p-5 transition-all hover:border-blue-200 hover:bg-white hover:shadow-[0_18px_40px_-22px_rgba(37,99,235,0.45)]">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
+                    <ShieldCheck className="h-4 w-4" />
+                  </div>
+                  {link.href.startsWith('#') ? (
+                    <a href={link.href} className="mt-4 block text-base font-extrabold text-slate-950">
+                      {link.label}
+                    </a>
+                  ) : (
+                    <Link href={link.href} className="mt-4 block text-base font-extrabold text-slate-950">
+                      {link.label}
+                    </Link>
+                  )}
+                  <p className="mt-2 text-sm leading-relaxed text-slate-600">{link.description}</p>
+                </div>
+              ))}
+            </div>
+
+            <div className="mt-12 rounded-[2rem] border border-slate-200 bg-slate-50 p-6 sm:p-8">
+              <div className="space-y-3">
+                {faqs.map((faq, index) => (
+                  <div key={faq.q} className="rounded-2xl border border-slate-200 bg-white">
+                    <button
+                      type="button"
+                      onClick={() => setOpenFaq(openFaq === index ? null : index)}
+                      className="flex w-full items-center justify-between gap-4 px-4 py-4 text-left sm:px-5"
+                    >
+                      <span className="text-sm font-semibold text-slate-900 sm:text-base">{faq.q}</span>
+                      <ChevronDown
+                        className={`h-4 w-4 shrink-0 text-slate-400 transition-transform ${openFaq === index ? 'rotate-180' : ''}`}
+                      />
+                    </button>
+
+                    {openFaq === index && (
+                      <div className="border-t border-slate-100 px-4 py-4 text-sm leading-relaxed text-slate-600 sm:px-5">
+                        {faq.a}
+                      </div>
+                    )}
+                  </div>
                 ))}
               </div>
             </div>
+          </div>
+        </section>
 
-            {/* Sidebar */}
-            <div className="space-y-4">
-              {/* FAQ */}
+        <section className="bg-blue-600 py-16 text-white">
+          <div className="mx-auto max-w-7xl px-5 sm:px-8">
+            <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
               <div>
-                <h2 className="text-lg font-extrabold text-gray-900 tracking-tight mb-4">Common questions</h2>
-                <div className="space-y-2">
-                  {faqs.map((faq, i) => (
-                    <div key={faq.q} className="bg-white rounded-2xl border border-gray-100 overflow-hidden hover:border-blue-100 transition-all shadow-sm">
-                      <button
-                        onClick={() => setOpenFaq(openFaq === i ? null : i)}
-                        className="w-full flex items-center justify-between gap-3 px-5 py-4 text-sm font-semibold text-gray-900 text-left"
-                      >
-                        {faq.q}
-                        <ChevronDown className={`w-4 h-4 text-gray-400 shrink-0 transition-transform duration-200 ${openFaq === i ? 'rotate-180' : ''}`} />
-                      </button>
-                      {openFaq === i && (
-                        <div className="px-5 pb-4 text-sm text-gray-500 leading-relaxed border-t border-gray-50 pt-3">
-                          {faq.a}
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
+                <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-blue-100">Need Help?</p>
+                <h2 className="mt-3 text-3xl font-black tracking-[-0.05em] text-white sm:text-4xl">
+                  Whatever Your Property Journey, Start Here.
+                </h2>
+                <p className="mt-3 max-w-2xl text-base text-blue-100">
+                  Find a property, list your home, or speak with LIVAREX when you need assistance.
+                </p>
               </div>
 
-              {/* Quick links */}
-              <div className="bg-gray-950 rounded-2xl p-6 text-white">
-                <h3 className="font-bold text-xs mb-4 text-white/50 uppercase tracking-widest">Quick Links</h3>
-                <div className="space-y-0.5">
-                  {[
-                    { label: 'Browse all listings',    href: '/listings' },
-                    { label: 'Register as a landlord', href: '/landlord/register' },
-                    { label: 'About Livarex',          href: '/about'    },
-                    { label: 'My account',             href: '/user'     },
-                    { label: 'Terms of Service',       href: '/terms'    },
-                    { label: 'Privacy Policy',         href: '/privacy-policy' },
-                  ].map(link => (
-                    <Link key={link.href} href={link.href}
-                      className="flex items-center justify-between text-sm text-white/50 hover:text-white py-2.5 transition-colors group border-b border-white/5 last:border-0">
-                      {link.label}
-                      <ArrowRight className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity" />
-                    </Link>
-                  ))}
-                </div>
-              </div>
-
-              {/* Office hours */}
-              <div className="bg-blue-600 rounded-2xl p-6 text-white">
-                <div className="flex items-center gap-2 mb-4">
-                  <Clock className="w-4 h-4 text-blue-200" />
-                  <h3 className="font-bold text-sm">Office Hours</h3>
-                </div>
-                <div className="space-y-2.5 text-sm text-blue-100">
-                  {[['Monday – Friday', '8 AM – 6 PM'], ['Saturday', '8 AM – 6 PM'], ['Sunday', '8 AM – 6 PM']].map(([day, hours]) => (
-                    <div key={day} className="flex justify-between items-center">
-                      <span>{day}</span>
-                      <span className="font-bold text-white text-xs px-2.5 py-1 bg-white/15 rounded-full">{hours}</span>
-                    </div>
-                  ))}
-                </div>
-                <p className="text-xs text-blue-200/70 mt-4">All times in West Africa Time (WAT)</p>
+              <div className="flex flex-wrap gap-3">
+                <Link
+                  href="/listings"
+                  className="inline-flex items-center justify-center gap-2 rounded-2xl bg-white px-6 py-3.5 text-sm font-bold text-blue-700 transition-all hover:bg-blue-50"
+                >
+                  Browse Properties
+                </Link>
+                <Link
+                  href="/landlord/register"
+                  className="inline-flex items-center justify-center gap-2 rounded-2xl border border-white/30 bg-blue-500 px-6 py-3.5 text-sm font-bold text-white transition-all hover:bg-blue-500/80"
+                >
+                  List Your Property
+                </Link>
               </div>
             </div>
           </div>
-        </div>
-      </section>
+        </section>
+      </main>
 
       <Footer />
     </div>
