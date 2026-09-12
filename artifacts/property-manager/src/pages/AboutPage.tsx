@@ -35,6 +35,10 @@ const verificationSteps = [
     checklist: ['Full legal name', 'Phone number', 'Government-issued identification such as NIN or driver\'s licence', 'Other information reasonably required to establish identity'],
     status: 'Identity Check Complete',
     badgeClass: 'bg-blue-50 text-blue-700 border-blue-200',
+    image:
+      'https://images.unsplash.com/photo-1556157382-97eda2d62296?auto=format&fit=crop&w=1200&q=80',
+    overlayTitle: 'Profile Verified',
+    overlayText: 'Identity and account details are confirmed before listing.',
   },
   {
     id: 'ownership',
@@ -45,8 +49,12 @@ const verificationSteps = [
     extraText:
       'Depending on the property and circumstances, LIVAREX may review relevant property, ownership or authorization documents before approving the listing.',
     checklist: ['Ownership / authority documentation', 'Property information', 'Listing details', 'Submitted images'],
-    status: 'Documents Reviewed → Information Validated → Proceed',
+    status: 'Ownership Review In Progress',
     badgeClass: 'bg-violet-50 text-violet-700 border-violet-200',
+    image:
+      'https://images.unsplash.com/photo-1554224155-6726b3ff858f?auto=format&fit=crop&w=1200&q=80',
+    overlayTitle: 'Document Review',
+    overlayText: 'Property ownership and listing details are checked for accuracy.',
   },
   {
     id: 'property',
@@ -57,8 +65,12 @@ const verificationSteps = [
     extraText:
       'We confirm that the property exists at the stated location and reasonably matches the listing information provided.',
     checklist: ['The property exists at the stated location', 'The property reasonably matches the listing', 'The property is available for rent', 'Images and descriptions reasonably represent the property'],
-    status: 'Property Check Applied',
+    status: 'Property Checked',
     badgeClass: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+    image:
+      'https://images.unsplash.com/photo-1494526585095-c41746248156?auto=format&fit=crop&w=1200&q=80',
+    overlayTitle: 'Property Verified',
+    overlayText: 'The listing is checked against the real property at the stated location.',
   },
   {
     id: 'cross-check',
@@ -69,8 +81,12 @@ const verificationSteps = [
     extraText:
       'If significant inconsistencies are identified, the listing may be placed on hold until the issue is resolved.',
     checklist: ['Landlord information', 'LIVAREX review', 'Cross-check', 'Match or further review'],
-    status: 'Cross-Check in Progress',
+    status: 'Cross-Check Review',
     badgeClass: 'bg-amber-50 text-amber-700 border-amber-200',
+    image:
+      'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?auto=format&fit=crop&w=1200&q=80',
+    overlayTitle: 'Data Cross-Checked',
+    overlayText: 'Details are compared and inconsistencies are flagged early.',
   },
   {
     id: 'approval',
@@ -81,8 +97,12 @@ const verificationSteps = [
     extraText:
       'A Verified badge communicates that the listing has passed LIVAREX\'s defined verification checks.',
     checklist: ['Verification completed', 'Approved listing status', 'Verified badge enabled', 'Ongoing monitoring'],
-    status: 'LIVAREX VERIFIED',
+    status: 'Approved',
     badgeClass: 'bg-blue-600 text-white border-blue-600',
+    image:
+      'https://images.unsplash.com/photo-1560518883-ce09059eeffa?auto=format&fit=crop&w=1200&q=80',
+    overlayTitle: 'LIVAREX Verified',
+    overlayText: 'Approved listings can be presented with added confidence and trust.',
   },
 ]
 
@@ -304,27 +324,102 @@ export default function AboutPage() {
         </section>
 
         <section className="bg-[#f7f9fc] py-16 md:py-20">
-          <div className="mx-auto max-w-6xl px-5 sm:px-8">
+          <div className="mx-auto max-w-7xl px-5 sm:px-8">
+            <div className="grid items-center gap-10 lg:grid-cols-[0.95fr_1.05fr]">
+              <div>
+                <p className="text-xs font-bold uppercase tracking-[0.2em] text-blue-600">TRUST & VERIFICATION</p>
+                <h2 className="mt-4 text-3xl font-black tracking-[-0.04em] text-slate-950 md:text-5xl">
+                  We verify before we connect.
+                </h2>
+                <p className="mt-4 text-xl font-medium text-slate-700 md:text-2xl">
+                  Renting shouldn't begin with uncertainty.
+                </p>
+                <p className="mt-5 max-w-xl text-base leading-relaxed text-slate-600">
+                  LIVAREX introduces verification before landlords and properties are presented to prospective tenants.
+                </p>
+
+                <div className="mt-8 space-y-4">
+                  {[
+                    { title: 'Verified Identity', sentence: 'We confirm who the landlord is before a listing can move forward.', icon: UserCheck },
+                    { title: 'Reviewed Properties', sentence: 'Every listing is checked for consistency, quality and marketplace readiness.', icon: ShieldCheck },
+                    { title: 'Direct Connections', sentence: 'Prospective tenants can connect directly with approved landlords.', icon: Users },
+                  ].map(({ title, sentence, icon: Icon }) => (
+                    <div key={title} className="flex items-start gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3">
+                      <div className="mt-0.5 flex h-9 w-9 items-center justify-center rounded-xl bg-blue-50 text-blue-700">
+                        <Icon className="h-4 w-4" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-extrabold text-slate-950">{title}</p>
+                        <p className="mt-1 text-sm leading-relaxed text-slate-600">{sentence}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="relative">
+                <div className="overflow-hidden rounded-[2rem] border border-slate-200 bg-white p-2 shadow-[0_24px_60px_-32px_rgba(15,23,42,0.32)]">
+                  <div className="relative overflow-hidden rounded-[1.5rem] border border-slate-200 bg-slate-100">
+                    <img
+                      src="https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?auto=format&fit=crop&w=1200&q=80"
+                      alt="Modern residential apartment exterior"
+                      className="h-[28rem] w-full object-cover sm:h-[34rem]"
+                    />
+
+                    <div className="absolute inset-x-4 bottom-4 rounded-[1.5rem] border border-white/60 bg-white/90 p-4 backdrop-blur-sm">
+                      <div className="flex items-center justify-between gap-3">
+                        <div>
+                          <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500">Verified Listing</p>
+                          <p className="mt-1 text-base font-extrabold text-slate-950">Modern 2 Bedroom Apartment</p>
+                        </div>
+                        <div className="inline-flex items-center gap-2 rounded-full bg-blue-600 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-white">
+                          <ShieldCheck className="h-3 w-3" />
+                          Verified
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="absolute left-5 top-5 rounded-2xl border border-blue-200 bg-white/90 px-3 py-2 backdrop-blur-sm">
+                      <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-blue-700">Identity Verified</p>
+                    </div>
+
+                    <div className="absolute right-5 top-5 rounded-2xl border border-emerald-200 bg-emerald-50/90 px-3 py-2 backdrop-blur-sm">
+                      <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-emerald-700">Property Reviewed</p>
+                    </div>
+
+                    <div className="absolute bottom-24 right-5 rounded-2xl border border-slate-200 bg-white/90 px-3 py-2 backdrop-blur-sm">
+                      <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-slate-700">Approved Listing</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section className="py-16 md:py-20">
+          <div className="mx-auto max-w-7xl px-5 sm:px-8">
             <div className="mx-auto max-w-3xl text-center">
-              <p className="text-xs font-bold uppercase tracking-[0.2em] text-blue-600">We verify before we connect.</p>
+              <p className="text-xs font-bold uppercase tracking-[0.2em] text-blue-600">TRUST PILLARS</p>
               <h2 className="mt-4 text-3xl font-black tracking-[-0.04em] text-slate-950 md:text-4xl">
-                Renting shouldn't begin with uncertainty.
+                A better way to build trust in property listings.
               </h2>
-              <p className="mt-4 text-base leading-relaxed text-slate-600">
-                LIVAREX introduces verification before landlords and properties are presented to prospective tenants.
-              </p>
             </div>
 
             <div className="mt-10 grid gap-5 md:grid-cols-3">
               {trustCards.map(({ title, description, icon: Icon }) => (
                 <div
                   key={title}
-                  className="rounded-[1.75rem] border border-slate-200 bg-white p-6 shadow-[0_10px_24px_-18px_rgba(15,23,42,0.25)] transition-transform duration-200 hover:-translate-y-1"
+                  className="rounded-[1.75rem] border border-slate-200 bg-[#f8fafc] p-5 transition-all duration-200 hover:-translate-y-1 hover:border-blue-200"
                 >
-                  <div className="mb-5 inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-50 text-blue-600">
-                    <Icon className="h-5 w-5" />
+                  <div className="flex items-center justify-between">
+                    <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-blue-50 text-blue-700">
+                      <Icon className="h-5 w-5" />
+                    </div>
+                    <div className="h-10 w-16 rounded-full bg-gradient-to-r from-blue-100 to-slate-100" />
                   </div>
-                  <h3 className="text-xl font-extrabold text-slate-950">{title}</h3>
+
+                  <h3 className="mt-5 text-xl font-extrabold text-slate-950">{title}</h3>
                   <p className="mt-3 text-sm leading-relaxed text-slate-600">{description}</p>
                 </div>
               ))}
@@ -332,7 +427,7 @@ export default function AboutPage() {
           </div>
         </section>
 
-        <section id="verification" className="py-16 md:py-20">
+        <section id="verification" className="bg-[#f8fafc] py-16 md:py-20">
           <div className="mx-auto max-w-7xl px-5 sm:px-8">
             <div className="mx-auto max-w-3xl text-center">
               <p className="text-xs font-bold uppercase tracking-[0.2em] text-blue-600">LIVAREX VERIFICATION</p>
@@ -381,148 +476,114 @@ export default function AboutPage() {
                 role="tabpanel"
                 id={`verification-panel-${currentStep.id}`}
                 aria-labelledby={`verification-tab-${currentStep.id}`}
-                className="rounded-[2rem] border border-slate-200 bg-[#f7f9fc] p-6 shadow-[0_14px_34px_-28px_rgba(15,23,42,0.35)] sm:p-8"
+                className="overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-[0_14px_34px_-28px_rgba(15,23,42,0.35)]"
               >
-                <div className="flex flex-wrap items-center justify-between gap-3">
-                  <div>
-                    <p className="text-xs font-bold uppercase tracking-[0.16em] text-slate-400">{currentStep.number}</p>
-                    <h3 className="mt-2 text-2xl font-black tracking-[-0.03em] text-slate-950 md:text-3xl">
-                      {currentStep.title}
-                    </h3>
+                <div className="grid lg:grid-cols-[1.15fr_0.85fr]">
+                  <div className="relative border-b border-slate-200 bg-slate-100 lg:border-b-0 lg:border-r">
+                    <img
+                      src={currentStep.image}
+                      alt={currentStep.title}
+                      className="h-72 w-full object-cover sm:h-80 lg:h-full"
+                    />
+
+                    <div className={`absolute left-4 top-4 inline-flex items-center rounded-full border px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.16em] ${currentStep.badgeClass}`}>
+                      {currentStep.status}
+                    </div>
+
+                    <div className="absolute bottom-4 left-4 right-4 rounded-[1.25rem] border border-white/70 bg-white/90 p-3 backdrop-blur-sm">
+                      <div className="flex items-center gap-2 text-sm font-extrabold text-slate-950">
+                        <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+                        {currentStep.overlayTitle}
+                      </div>
+                      <p className="mt-1 text-xs leading-relaxed text-slate-600">{currentStep.overlayText}</p>
+                    </div>
                   </div>
 
-                  <div className={`inline-flex items-center rounded-full border px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.12em] ${currentStep.badgeClass}`}>
-                    {currentStep.status}
+                  <div className="p-6 sm:p-8">
+                    <div className="flex items-center justify-between gap-4">
+                      <div>
+                        <p className="text-xs font-bold uppercase tracking-[0.16em] text-slate-400">{currentStep.number}</p>
+                        <h3 className="mt-2 text-2xl font-black tracking-[-0.03em] text-slate-950 md:text-3xl">
+                          {currentStep.title}
+                        </h3>
+                      </div>
+                    </div>
+
+                    <p className="mt-5 text-base leading-relaxed text-slate-600">{currentStep.description}</p>
+                    {currentStep.extraText && (
+                      <p className="mt-3 text-sm leading-relaxed text-slate-500">{currentStep.extraText}</p>
+                    )}
+
+                    <ul className="mt-8 grid gap-3 sm:grid-cols-2">
+                      {currentStep.checklist.map((item) => (
+                        <li key={item} className="flex items-start gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-700">
+                          <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" />
+                          <span>{item}</span>
+                        </li>
+                      ))}
+                    </ul>
                   </div>
                 </div>
-
-                <p className="mt-5 text-base leading-relaxed text-slate-600">{currentStep.description}</p>
-                {currentStep.extraText && (
-                  <p className="mt-3 text-sm leading-relaxed text-slate-500">{currentStep.extraText}</p>
-                )}
-
-                {currentStep.id === 'identity' && (
-                  <div className="mt-8 rounded-2xl border border-blue-200 bg-blue-50 p-4 text-sm font-semibold text-blue-700">
-                    Identity Check Complete
-                  </div>
-                )}
-
-                {currentStep.id === 'ownership' && (
-                  <div className="mt-8">
-                    <div className="grid gap-3 sm:grid-cols-3">
-                      {['Documents Reviewed', 'Information Validated', 'Proceed'].map((label, index) => (
-                        <div
-                          key={label}
-                          className={`rounded-2xl border p-4 text-center text-sm font-bold ${
-                            index === 0
-                              ? 'border-violet-200 bg-violet-50 text-violet-700'
-                              : index === 1
-                                ? 'border-slate-200 bg-white text-slate-700'
-                                : 'border-emerald-200 bg-emerald-50 text-emerald-700'
-                          }`}
-                        >
-                          {label}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {currentStep.id === 'property' && (
-                  <div className="mt-8 grid gap-6 md:grid-cols-[1.05fr_0.95fr]">
-                    <div className="overflow-hidden rounded-[1.5rem] border border-slate-200 bg-white">
-                      <img
-                        src="https://images.unsplash.com/photo-1494526585095-c41746248156?w=1200&q=80"
-                        alt="Property verification review"
-                        className="h-56 w-full object-cover"
-                      />
-                    </div>
-
-                    <div className="flex items-center justify-center rounded-[1.5rem] border border-dashed border-blue-200 bg-blue-50 p-6">
-                      <div className="text-center">
-                        <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-white shadow-sm">
-                          <MapPin className="h-6 w-6 text-blue-600" />
-                        </div>
-                        <p className="mt-4 text-sm font-bold uppercase tracking-[0.14em] text-blue-700">Property Verified</p>
-                        <p className="mt-2 text-sm leading-relaxed text-slate-600">
-                          LIVAREX can confirm the property exists at the stated location and is reasonably represented in the listing.
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {currentStep.id === 'cross-check' && (
-                  <div className="mt-8 grid gap-4 md:grid-cols-5">
-                    {['Landlord Information', 'LIVAREX Review', 'Cross-Check', 'Match', 'Further Review'].map((label, index) => (
-                      <div
-                        key={label}
-                        className={`rounded-2xl border p-4 text-center text-xs font-bold uppercase tracking-[0.12em] ${
-                          index === 0
-                            ? 'border-slate-200 bg-white text-slate-700'
-                            : index === 1
-                              ? 'border-blue-200 bg-blue-50 text-blue-700'
-                              : index === 2
-                                ? 'border-violet-200 bg-violet-50 text-violet-700'
-                                : index === 3
-                                  ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
-                                  : 'border-amber-200 bg-amber-50 text-amber-700'
-                        }`}
-                      >
-                        {label}
-                      </div>
-                    ))}
-                  </div>
-                )}
-
-                {currentStep.id === 'approval' && (
-                  <div className="mt-8 rounded-[1.75rem] border border-slate-200 bg-white p-6">
-                    <div className="flex flex-col items-center text-center">
-                      <div className="inline-flex items-center rounded-full bg-blue-600 px-4 py-2 text-[11px] font-bold uppercase tracking-[0.16em] text-white">
-                        LIVAREX VERIFIED
-                      </div>
-                      <p className="mt-5 max-w-xl text-base leading-relaxed text-slate-600">
-                        A Verified badge communicates that the listing has passed LIVAREX's defined verification checks.
-                      </p>
-                      <div className="mt-5 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm leading-relaxed text-amber-800">
-                        Verification improves transparency but does not constitute an absolute guarantee of a landlord, property or transaction.
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                <ul className="mt-8 grid gap-3 sm:grid-cols-2">
-                  {currentStep.checklist.map((item) => (
-                    <li key={item} className="flex items-start gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700">
-                      <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" />
-                      <span>{item}</span>
-                    </li>
-                  ))}
-                </ul>
               </div>
             </div>
           </div>
         </section>
 
         <section className="bg-[#eff6ff] py-16 md:py-20">
-          <div className="mx-auto max-w-4xl px-5 text-center sm:px-8">
-            <p className="text-xs font-bold uppercase tracking-[0.2em] text-blue-600">WHAT VERIFIED MEANS</p>
-            <h2 className="mt-4 text-3xl font-black tracking-[-0.04em] text-slate-950 md:text-4xl">
-              What Does 'Verified' Mean?
-            </h2>
+          <div className="mx-auto max-w-7xl px-5 sm:px-8">
+            <div className="grid items-center gap-8 lg:grid-cols-[1.05fr_0.95fr] lg:items-center">
+              <div className="rounded-[2rem] border border-slate-200 bg-white p-6 sm:p-8">
+                <div className="flex items-center justify-between gap-4">
+                  <p className="text-xs font-bold uppercase tracking-[0.2em] text-blue-600">WHAT VERIFIED MEANS</p>
+                  <div className="inline-flex items-center rounded-full bg-blue-600 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-white">
+                    LIVAREX VERIFIED
+                  </div>
+                </div>
 
-            <div className="mt-8 flex justify-center">
-              <div className="inline-flex items-center rounded-full bg-blue-600 px-5 py-2.5 text-xs font-bold uppercase tracking-[0.16em] text-white shadow-lg shadow-blue-600/20">
-                LIVAREX VERIFIED
+                <h2 className="mt-5 text-3xl font-black tracking-[-0.04em] text-slate-950 md:text-4xl">
+                  What Does 'Verified' Mean?
+                </h2>
+
+                <p className="mt-4 text-base leading-relaxed text-slate-600">
+                  A Verified badge means the landlord or listing has successfully completed LIVAREX's defined verification checks.
+                </p>
+
+                <p className="mt-3 text-sm leading-relaxed text-slate-500">
+                  Verification increases transparency but should not be interpreted as an absolute guarantee of a landlord, property or transaction.
+                </p>
+              </div>
+
+              <div className="relative overflow-hidden rounded-[2rem] border border-slate-200 bg-white p-3 shadow-[0_24px_60px_-32px_rgba(15,23,42,0.32)]">
+                <div className="relative overflow-hidden rounded-[1.5rem] border border-slate-200 bg-slate-100">
+                  <img
+                    src="https://images.unsplash.com/photo-1568605114967-8130f3a36994?auto=format&fit=crop&w=1200&q=80"
+                    alt="Premium verified property listing card"
+                    className="h-[22rem] w-full object-cover sm:h-[26rem]"
+                  />
+
+                  <div className="absolute inset-x-4 top-4 flex items-center justify-between gap-2">
+                    <div className="rounded-full border border-white/80 bg-white/90 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.16em] text-blue-700 backdrop-blur-sm">
+                      Verified
+                    </div>
+                    <div className="rounded-full border border-slate-200 bg-white/90 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.16em] text-slate-700 backdrop-blur-sm">
+                      Approved Landlord
+                    </div>
+                  </div>
+
+                  <div className="absolute inset-x-4 bottom-4 rounded-[1.5rem] border border-white/70 bg-white/90 p-4 backdrop-blur-sm">
+                    <div className="flex items-center justify-between gap-3">
+                      <div>
+                        <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500">Property Profile</p>
+                        <p className="mt-1 text-base font-extrabold text-slate-950">Premium Apartment Listing</p>
+                      </div>
+                      <div className="rounded-full bg-emerald-50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-emerald-700">
+                        Trusted
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
-
-            <p className="mt-6 text-base leading-relaxed text-slate-600">
-              A Verified badge means the landlord or listing has successfully completed LIVAREX's defined verification checks.
-            </p>
-            <p className="mt-3 text-sm leading-relaxed text-slate-500">
-              Verification increases transparency but should not be interpreted as an absolute guarantee of a landlord, property or transaction.
-            </p>
           </div>
         </section>
 
