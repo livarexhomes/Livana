@@ -493,6 +493,10 @@ export default function PublicNavbar() {
             </div>
 
             <div className="hidden md:flex items-center justify-end gap-2">
+<a href="/contact" className="inline-flex items-center rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 transition-all hover:border-slate-300 hover:bg-slate-50">
+                    Contact
+                  </a>
+
               {user ? (
                 <Link href={user.isAdmin ? '/admin' : user.isLandlord ? '/landlord/profile' : '/user'} className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-gray-700 transition-all hover:border-slate-300 hover:bg-slate-50">
                   <UserCircle2 className="h-4 w-4" />
