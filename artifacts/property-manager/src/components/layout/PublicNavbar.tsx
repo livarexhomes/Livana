@@ -1,6 +1,6 @@
 
 import { useState, useEffect, useRef } from 'react'
-import { Building2, Search, UserCircle2, Menu } from 'lucide-react'
+import { Building2, Search, UserCircle2, Menu, MapPin, BedDouble, BadgeDollarSign, ChevronDown, X } from 'lucide-react'
 import { Link, useLocation } from '@/lib/navigation'
 import type { User } from '@supabase/supabase-js'
 import { createClient, isSupabaseConfigured } from '@/lib/supabase'
@@ -22,6 +22,30 @@ const searchSuggestions = [
   ...Object.entries(POPULAR_AREAS).flatMap(([state, areas]) => [state, ...areas]),
 ]
 
+const PROPERTY_TYPE_OPTIONS = [
+  'Apartment',
+  'Flat',
+  'House',
+  'Self Contained',
+  'Duplex',
+  'Bungalow',
+  'Studio Apartment',
+  'Terrace',
+  'Maisonette',
+  'Penthouse',
+  'Office',
+  'Shop',
+  'Land',
+]
+
+const BEDROOM_OPTIONS = [
+  { value: '', label: 'Any' },
+  { value: '1', label: '1 Bedroom' },
+  { value: '2', label: '2 Bedrooms' },
+  { value: '3', label: '3 Bedrooms' },
+  { value: '4', label: '4+ Bedrooms' },
+]
+
 export default function PublicNavbar() {
   const [location, navigate] = useLocation()
   const [user, setUser] = useState<{ email?: string; isAdmin?: boolean; isLandlord?: boolean } | null>(null)
@@ -29,7 +53,12 @@ export default function PublicNavbar() {
   const [scrolled, setScrolled] = useState(false)
   const [searchOpen, setSearchOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
+  const [propertyType, setPropertyType] = useState('')
+  const [bedrooms, setBedrooms] = useState('')
+  const [priceMin, setPriceMin] = useState('')
+  const [priceMax, setPriceMax] = useState('')
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false)
+  const [openPanel, setOpenPanel] = useState<'location' | 'type' | 'beds' | 'price' | null>(null)
   const searchRef = useRef<HTMLDivElement | null>(null)
 
   useEffect(() => {
@@ -85,28 +114,36 @@ export default function PublicNavbar() {
   const isHomePage = location === '/'
   const isTransparent = isHomePage && !scrolled
 
-  const getSearchRoute = (query: string) => {
-    const trimmed = query.trim()
-    if (!trimmed) {
-      return '/listings'
+  const buildSearchUrl = (locationOverride?: string) => {
+    const params = new URLSearchParams()
+    const trimmedLocation = (locationOverride ?? searchQuery).trim()
+
+    if (trimmedLocation) {
+      const normalized = trimmedLocation.toLowerCase()
+      const stateMatch = NIGERIAN_STATES.find((state) => state.toLowerCase() === normalized || state.toLowerCase().includes(normalized))
+
+      if (stateMatch) {
+        params.set('city', stateMatch)
+      } else {
+        const areaMatch = Object.entries(POPULAR_AREAS)
+          .flatMap(([state, areas]) => areas.map((area) => ({ state, area })))
+          .find(({ area }) => area.toLowerCase() === normalized || area.toLowerCase().includes(normalized))
+
+        if (areaMatch) {
+          params.set('city', areaMatch.state)
+          params.set('area', areaMatch.area)
+        } else {
+          params.set('area', trimmedLocation)
+        }
+      }
     }
 
-    const normalized = trimmed.toLowerCase()
+    if (propertyType) params.set('property_type', propertyType)
+    if (bedrooms) params.set('beds', bedrooms)
+    if (priceMin) params.set('price_min', priceMin)
+    if (priceMax) params.set('price_max', priceMax)
 
-    const stateMatch = NIGERIAN_STATES.find((state) => state.toLowerCase() === normalized)
-    if (stateMatch) {
-      return `/listings?city=${encodeURIComponent(stateMatch)}`
-    }
-
-    const areaMatch = Object.entries(POPULAR_AREAS)
-      .flatMap(([state, areas]) => areas.map((area) => ({ state, area })))
-      .find(({ area }) => area.toLowerCase() === normalized || area.toLowerCase().includes(normalized))
-
-    if (areaMatch) {
-      return `/listings?city=${encodeURIComponent(areaMatch.state)}&area=${encodeURIComponent(areaMatch.area)}`
-    }
-
-    return `/listings?area=${encodeURIComponent(trimmed)}`
+    return `/listings${params.size ? `?${params.toString()}` : ''}`
   }
 
   const filteredSuggestions = searchQuery.trim()
@@ -114,18 +151,28 @@ export default function PublicNavbar() {
     : searchSuggestions.slice(0, 7)
 
   const submitSearch = () => {
-    const target = getSearchRoute(searchQuery)
     setSearchOpen(false)
+    setOpenPanel(null)
     setMobileSearchOpen(false)
-    navigate(target)
+    navigate(buildSearchUrl())
   }
 
   const selectSuggestion = (suggestion: string) => {
     setSearchQuery(suggestion)
     setSearchOpen(false)
+    setOpenPanel(null)
     setMobileSearchOpen(false)
-    navigate(getSearchRoute(suggestion))
+    navigate(buildSearchUrl(suggestion))
   }
+
+  const togglePanel = (panel: 'location' | 'type' | 'beds' | 'price') => {
+    setOpenPanel((current) => current === panel ? null : panel)
+  }
+
+  const locationValue = searchQuery.trim() || 'Location'
+  const propertyTypeLabel = propertyType || 'Property Type'
+  const bedroomsLabel = bedrooms ? `${bedrooms}+ Bedrooms` : 'Bedrooms'
+  const priceRangeLabel = priceMin || priceMax ? [priceMin ? `₦${Number(priceMin).toLocaleString()}` : 'Any', priceMax ? `₦${Number(priceMax).toLocaleString()}` : 'Any'].join(' – ') : 'Price Range'
 
   return (
     <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
@@ -259,78 +306,186 @@ export default function PublicNavbar() {
             </div>
           </div>
         ) : (
-          <div className="flex items-center justify-between gap-3" style={{ height: '68px' }}>
+          <div className="flex items-center justify-between gap-4 py-2" style={{ minHeight: '72px' }}>
             <Link href="/" className="flex items-center shrink-0">
               <img src="/livarex-logo.png" alt="LIVAREX" className="h-11 w-auto" />
             </Link>
 
             <div className="hidden md:flex flex-1 items-center justify-center">
-              <div ref={searchRef} className="relative w-full max-w-2xl">
-                <div
-                  className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white px-3.5 py-2.5 shadow-sm transition-all hover:border-slate-300"
-                >
-                  <Search className="h-4 w-4 text-slate-400" />
-                  <input
-                    type="text"
-                    value={searchQuery}
-                    onFocus={() => setSearchOpen(true)}
-                    onChange={(event) => {
-                      setSearchQuery(event.target.value)
-                      setSearchOpen(true)
-                    }}
-                    onKeyDown={(event) => {
-                      if (event.key === 'Enter') {
-                        event.preventDefault()
-                        submitSearch()
-                      }
-                    }}
-                    placeholder="Search by location, estate, city or property type"
-                    className="w-full bg-transparent text-sm text-slate-700 placeholder:text-slate-400 focus:outline-none"
+              <div ref={searchRef} className="relative w-full max-w-[980px]">
+                <div className="flex items-center overflow-hidden rounded-full border border-slate-200 bg-white shadow-[0_10px_30px_rgba(15,23,42,0.08)] ring-1 ring-slate-100">
+                  <button
+                    type="button"
+                    onClick={() => togglePanel('location')}
+                    className="flex min-w-0 flex-1 items-center gap-2.5 border-r border-slate-200 px-4 py-3 text-left transition-colors hover:bg-slate-50"
+                  >
+                    <MapPin className="h-4 w-4 shrink-0 text-blue-600" />
+                    <span className={`truncate text-sm font-medium ${searchQuery.trim() ? 'text-slate-900' : 'text-slate-500'}`}>
+                      {locationValue}
+                    </span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => togglePanel('type')}
+                    className="flex min-w-0 items-center gap-2.5 border-r border-slate-200 px-4 py-3 text-left transition-colors hover:bg-slate-50"
+                  >
+                    <Building2 className="h-4 w-4 shrink-0 text-blue-600" />
+                    <span className={`whitespace-nowrap text-sm font-medium ${propertyType ? 'text-slate-900' : 'text-slate-500'}`}>
+                      {propertyTypeLabel}
+                    </span>
+                    <ChevronDown className="h-4 w-4 text-slate-400" />
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => togglePanel('beds')}
+                    className="flex min-w-0 items-center gap-2.5 border-r border-slate-200 px-4 py-3 text-left transition-colors hover:bg-slate-50"
+                  >
+                    <BedDouble className="h-4 w-4 shrink-0 text-blue-600" />
+                    <span className={`whitespace-nowrap text-sm font-medium ${bedrooms ? 'text-slate-900' : 'text-slate-500'}`}>
+                      {bedroomsLabel}
+                    </span>
+                    <ChevronDown className="h-4 w-4 text-slate-400" />
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => togglePanel('price')}
+                    className="flex min-w-0 items-center gap-2.5 px-4 py-3 text-left transition-colors hover:bg-slate-50"
+                  >
+                    <BadgeDollarSign className="h-4 w-4 shrink-0 text-blue-600" />
+                    <span className={`whitespace-nowrap text-sm font-medium ${priceMin || priceMax ? 'text-slate-900' : 'text-slate-500'}`}>
+                      {priceRangeLabel}
+                    </span>
+                    <ChevronDown className="h-4 w-4 text-slate-400" />
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={submitSearch}
+                    className="ml-2 mr-2 flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-blue-600 text-white shadow-sm shadow-blue-600/30 transition-all hover:bg-blue-700"
                     aria-label="Search properties"
-                  />
+                  >
+                    <Search className="h-4 w-4" />
+                  </button>
                 </div>
 
-                {searchOpen && (
-                  <div className="absolute left-0 right-0 top-[calc(100%+10px)] rounded-2xl border border-slate-200 bg-white p-3 shadow-[0_22px_50px_-28px_rgba(15,23,42,0.45)]">
-                    <div className="flex flex-wrap gap-2">
-                      <button
-                        type="button"
-                        onClick={() => navigate('/listings?type=rent')}
-                        className="rounded-full border border-blue-200 bg-blue-50 px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.14em] text-blue-700"
-                      >
-                        Rent
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => navigate('/listings?type=lease')}
-                        className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.14em] text-slate-600"
-                      >
-                        Lease
-                      </button>
+                {openPanel === 'location' && (
+                  <div className="absolute left-0 right-0 top-[calc(100%+12px)] rounded-3xl border border-slate-200 bg-white p-3 shadow-[0_18px_50px_rgba(15,23,42,0.12)]">
+                    <div className="flex items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2">
+                      <Search className="h-4 w-4 text-slate-400" />
+                      <input
+                        type="text"
+                        value={searchQuery}
+                        onChange={(event) => {
+                          setSearchQuery(event.target.value)
+                          setSearchOpen(true)
+                        }}
+                        onKeyDown={(event) => {
+                          if (event.key === 'Enter') {
+                            event.preventDefault()
+                            submitSearch()
+                          }
+                        }}
+                        placeholder="Search city, area or estate"
+                        className="w-full bg-transparent text-sm text-slate-700 placeholder:text-slate-400 focus:outline-none"
+                        aria-label="Search location"
+                      />
                     </div>
 
-                    <div className="mt-4">
-                      <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400">Popular locations</p>
-                      <div className="mt-2 grid grid-cols-2 gap-2">
-                        {filteredSuggestions.map((suggestion) => (
-                          <button
-                            key={suggestion}
-                            type="button"
-                            onClick={() => selectSuggestion(suggestion)}
-                            className="rounded-xl border border-slate-200 bg-slate-50 px-2.5 py-2 text-left text-sm font-medium text-slate-600 transition-colors hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700"
-                          >
-                            {suggestion}
-                          </button>
-                        ))}
+                    <div className="mt-3 grid grid-cols-2 gap-2">
+                      {filteredSuggestions.map((suggestion) => (
+                        <button
+                          key={suggestion}
+                          type="button"
+                          onClick={() => selectSuggestion(suggestion)}
+                          className="rounded-xl border border-slate-200 bg-slate-50 px-2.5 py-2 text-left text-sm font-medium text-slate-600 transition-colors hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700"
+                        >
+                          {suggestion}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {openPanel === 'type' && (
+                  <div className="absolute left-1/2 top-[calc(100%+12px)] w-[320px] -translate-x-1/2 rounded-3xl border border-slate-200 bg-white p-3 shadow-[0_18px_50px_rgba(15,23,42,0.12)]">
+                    <p className="px-1 text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400">Property type</p>
+                    <div className="mt-2 space-y-1">
+                      <button
+                        type="button"
+                        onClick={() => { setPropertyType(''); setOpenPanel(null) }}
+                        className={`w-full rounded-xl px-3 py-2 text-left text-sm font-medium transition-colors ${!propertyType ? 'bg-blue-600 text-white' : 'text-slate-700 hover:bg-slate-50'}`}
+                      >
+                        Any
+                      </button>
+                      {PROPERTY_TYPE_OPTIONS.map((option) => (
+                        <button
+                          key={option}
+                          type="button"
+                          onClick={() => { setPropertyType(option); setOpenPanel(null) }}
+                          className={`w-full rounded-xl px-3 py-2 text-left text-sm font-medium transition-colors ${propertyType === option ? 'bg-blue-600 text-white' : 'text-slate-700 hover:bg-slate-50'}`}
+                        >
+                          {option}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {openPanel === 'beds' && (
+                  <div className="absolute left-1/2 top-[calc(100%+12px)] w-[260px] -translate-x-1/2 rounded-3xl border border-slate-200 bg-white p-3 shadow-[0_18px_50px_rgba(15,23,42,0.12)]">
+                    <p className="px-1 text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400">Bedrooms</p>
+                    <div className="mt-2 grid grid-cols-2 gap-2">
+                      {BEDROOM_OPTIONS.map((option) => (
+                        <button
+                          key={option.value || 'any'}
+                          type="button"
+                          onClick={() => { setBedrooms(option.value); setOpenPanel(null) }}
+                          className={`rounded-xl px-3 py-2 text-sm font-medium transition-colors ${bedrooms === option.value ? 'bg-blue-600 text-white' : 'border border-slate-200 bg-slate-50 text-slate-700 hover:border-slate-300 hover:bg-slate-100'}`}
+                        >
+                          {option.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {openPanel === 'price' && (
+                  <div className="absolute right-0 top-[calc(100%+12px)] w-[320px] rounded-3xl border border-slate-200 bg-white p-4 shadow-[0_18px_50px_rgba(15,23,42,0.12)]">
+                    <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400">Price range</p>
+                    <div className="mt-3 grid grid-cols-2 gap-2">
+                      <div>
+                        <label className="mb-1 block text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400">Min</label>
+                        <input
+                          type="number"
+                          min="0"
+                          value={priceMin}
+                          onChange={(event) => setPriceMin(event.target.value)}
+                          placeholder="500000"
+                          className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-blue-300 focus:bg-white focus:outline-none"
+                        />
+                      </div>
+                      <div>
+                        <label className="mb-1 block text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400">Max</label>
+                        <input
+                          type="number"
+                          min="0"
+                          value={priceMax}
+                          onChange={(event) => setPriceMax(event.target.value)}
+                          placeholder="5000000"
+                          className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-blue-300 focus:bg-white focus:outline-none"
+                        />
                       </div>
                     </div>
 
                     <button
                       type="button"
-                      onClick={submitSearch}
+                      onClick={() => setOpenPanel(null)}
                       className="mt-4 inline-flex w-full items-center justify-center rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-blue-700"
                     >
-                      Search properties
+                      Apply
                     </button>
                   </div>
                 )}
@@ -338,16 +493,6 @@ export default function PublicNavbar() {
             </div>
 
             <div className="hidden md:flex items-center justify-end gap-2">
-              <Link href="/listings?type=rent" className={`inline-flex items-center rounded-full px-4 py-2 text-sm font-semibold transition-all ${
-                isActive('/listings?type=rent') ? 'bg-blue-600 text-white shadow-md' : 'text-gray-700 hover:bg-gray-50'
-              }`}>
-                Rent
-              </Link>
-
-              <Link href="/landlord/register" className="inline-flex items-center justify-center rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:bg-blue-700">
-                List Property
-              </Link>
-
               {user ? (
                 <Link href={user.isAdmin ? '/admin' : user.isLandlord ? '/landlord/profile' : '/user'} className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-gray-700 transition-all hover:border-slate-300 hover:bg-slate-50">
                   <UserCircle2 className="h-4 w-4" />
@@ -358,16 +503,20 @@ export default function PublicNavbar() {
                   Sign In
                 </Link>
               )}
+
+              <Link href="/landlord/register" className="inline-flex items-center justify-center rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:bg-blue-700">
+                List Property
+              </Link>
             </div>
 
             <div className="flex items-center gap-2 md:hidden">
               <button
                 type="button"
                 onClick={() => setMobileSearchOpen((open) => !open)}
-                className="p-2 rounded-xl text-gray-700 hover:bg-gray-100"
+                className="rounded-full border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 shadow-sm transition-all hover:border-slate-300"
                 aria-label="Search properties"
               >
-                <Search className="h-4 w-4" />
+                Search Properties
               </button>
 
               <button
@@ -383,36 +532,94 @@ export default function PublicNavbar() {
       </div>
 
       {mobileSearchOpen && (
-        <div className="md:hidden border-t border-gray-100 bg-white px-4 py-3 shadow-sm">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(event) => setSearchQuery(event.target.value)}
-              onKeyDown={(event) => {
-                if (event.key === 'Enter') {
-                  event.preventDefault()
-                  submitSearch()
-                }
-              }}
-              placeholder="Search properties or locations"
-              className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2.5 pl-9 pr-3 text-sm text-slate-700 placeholder:text-slate-400 focus:border-blue-300 focus:bg-white focus:outline-none"
-              aria-label="Search properties"
-            />
-          </div>
+        <div className="md:hidden border-t border-gray-100 bg-white px-4 py-4 shadow-sm">
+          <div className="space-y-3">
+            <div className="relative">
+              <MapPin className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-blue-600" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(event) => setSearchQuery(event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter') {
+                    event.preventDefault()
+                    submitSearch()
+                  }
+                }}
+                placeholder="Location"
+                className="w-full rounded-2xl border border-slate-200 bg-slate-50 py-2.5 pl-9 pr-3 text-sm text-slate-700 placeholder:text-slate-400 focus:border-blue-300 focus:bg-white focus:outline-none"
+                aria-label="Search location"
+              />
+            </div>
 
-          <div className="mt-3 grid grid-cols-2 gap-2">
-            {filteredSuggestions.slice(0, 6).map((suggestion) => (
-              <button
-                key={suggestion}
-                type="button"
-                onClick={() => selectSuggestion(suggestion)}
-                className="rounded-xl border border-slate-200 bg-slate-50 px-2 py-2 text-left text-xs font-medium text-slate-600"
-              >
-                {suggestion}
-              </button>
-            ))}
+            <div className="rounded-2xl border border-slate-200 bg-slate-50 p-2.5">
+              <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.12em] text-slate-400">Property type</p>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={() => setPropertyType('')}
+                  className={`rounded-full px-3 py-1.5 text-xs font-medium ${!propertyType ? 'bg-blue-600 text-white' : 'bg-white text-slate-600'}`}
+                >
+                  Any
+                </button>
+                {PROPERTY_TYPE_OPTIONS.map((option) => (
+                  <button
+                    key={option}
+                    type="button"
+                    onClick={() => setPropertyType(option)}
+                    className={`rounded-full px-3 py-1.5 text-xs font-medium ${propertyType === option ? 'bg-blue-600 text-white' : 'bg-white text-slate-600'}`}
+                  >
+                    {option}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="rounded-2xl border border-slate-200 bg-slate-50 p-2.5">
+              <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.12em] text-slate-400">Bedrooms</p>
+              <div className="flex flex-wrap gap-2">
+                {BEDROOM_OPTIONS.map((option) => (
+                  <button
+                    key={option.value || 'any'}
+                    type="button"
+                    onClick={() => setBedrooms(option.value)}
+                    className={`rounded-full px-3 py-1.5 text-xs font-medium ${bedrooms === option.value ? 'bg-blue-600 text-white' : 'bg-white text-slate-600'}`}
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="rounded-2xl border border-slate-200 bg-slate-50 p-2.5">
+              <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.12em] text-slate-400">Price range</p>
+              <div className="grid grid-cols-2 gap-2">
+                <input
+                  type="number"
+                  min="0"
+                  value={priceMin}
+                  onChange={(event) => setPriceMin(event.target.value)}
+                  placeholder="Min"
+                  className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-blue-300 focus:outline-none"
+                />
+                <input
+                  type="number"
+                  min="0"
+                  value={priceMax}
+                  onChange={(event) => setPriceMax(event.target.value)}
+                  placeholder="Max"
+                  className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-blue-300 focus:outline-none"
+                />
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={submitSearch}
+              className="inline-flex w-full items-center justify-center rounded-2xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-blue-700"
+            >
+              Search Properties
+            </button>
           </div>
         </div>
       )}

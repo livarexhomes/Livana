@@ -27,13 +27,14 @@ export default function ListingsPage() {
   const params = new URLSearchParams(search)
   const [, navigate] = useLocation()
 
-  const [typeFilter,      setTypeFilter]      = useState(params.get('type')      ?? '')
-  const [stateFilter,     setStateFilter]     = useState(params.get('city')      ?? params.get('state') ?? '')
-  const [areaFilter,      setAreaFilter]      = useState(params.get('area')      ?? '')
-  const [minPrice,        setMinPrice]        = useState(params.get('price_min') ?? '')
-  const [maxPrice,        setMaxPrice]        = useState(params.get('price_max') ?? '')
-  const [bedsFilter,      setBedsFilter]      = useState(params.get('beds')      ?? '')
-  const [bathsFilter,     setBathsFilter]     = useState(params.get('baths')     ?? '')
+  const [typeFilter,      setTypeFilter]      = useState(params.get('type')          ?? '')
+  const [propertyType,    setPropertyType]    = useState(params.get('property_type') ?? '')
+  const [stateFilter,     setStateFilter]     = useState(params.get('city')          ?? params.get('state') ?? '')
+  const [areaFilter,      setAreaFilter]      = useState(params.get('area')          ?? '')
+  const [minPrice,        setMinPrice]        = useState(params.get('price_min')     ?? '')
+  const [maxPrice,        setMaxPrice]        = useState(params.get('price_max')     ?? '')
+  const [bedsFilter,      setBedsFilter]      = useState(params.get('beds')          ?? '')
+  const [bathsFilter,     setBathsFilter]     = useState(params.get('baths')         ?? '')
   const [furnishedFilter, setFurnishedFilter] = useState('')
   const [sortBy,          setSortBy]          = useState('newest')
   const [mapVisible,      setMapVisible]      = useState(true)
@@ -71,7 +72,7 @@ export default function ListingsPage() {
     })
   }, [])
 
-  useEffect(() => { fetchProperties() }, [typeFilter, stateFilter, areaFilter, minPrice, maxPrice, bedsFilter, bathsFilter, furnishedFilter])
+  useEffect(() => { fetchProperties() }, [typeFilter, propertyType, stateFilter, areaFilter, minPrice, maxPrice, bedsFilter, bathsFilter, furnishedFilter])
 
   async function fetchProperties() {
     if (!isSupabaseConfigured()) { setLoading(false); return }
@@ -86,6 +87,7 @@ export default function ListingsPage() {
       .limit(50)
 
     if (typeFilter)         query = query.eq('type', typeFilter)
+    if (propertyType)       query = query.eq('property_type', propertyType)
     if (stateFilter)        query = (query as any).ilike('city', `%${stateFilter}%`)
     if (areaFilter)         query = (query as any).ilike('address', `%${areaFilter}%`)
     if (minPrice)           query = query.gte('price', Number(minPrice))
@@ -100,7 +102,7 @@ export default function ListingsPage() {
   }
 
   function clearFilters() {
-    setTypeFilter(''); setStateFilter(''); setAreaFilter('')
+    setTypeFilter(''); setPropertyType(''); setStateFilter(''); setAreaFilter('')
     setMinPrice(''); setMaxPrice(''); setBedsFilter('')
     setBathsFilter(''); setFurnishedFilter('')
   }
@@ -116,7 +118,7 @@ export default function ListingsPage() {
     setTimeout(() => setHoveredId(null), 2000)
   }
 
-  const hasFilters = typeFilter || stateFilter || areaFilter || minPrice || maxPrice || bedsFilter || bathsFilter || furnishedFilter !== ''
+  const hasFilters = typeFilter || propertyType || stateFilter || areaFilter || minPrice || maxPrice || bedsFilter || bathsFilter || furnishedFilter !== ''
 
   const sorted = [...properties].sort((a, b) => {
     if (sortBy === 'price_asc')  return Number(a.price) - Number(b.price)
@@ -126,6 +128,7 @@ export default function ListingsPage() {
 
   const locationLabel = [stateFilter, areaFilter].filter(Boolean).join(', ') || 'Any Location'
   const typeLabel     = TYPE_TABS.find(t => t.value === typeFilter)?.label ?? 'Any'
+  const propertyTypeLabel = propertyType || 'Any'
   const seoTypeLabel  = typeLabel === 'Any' ? 'verified' : typeLabel.toLowerCase()
   const bedsLabel     = bedsFilter ? `${bedsFilter}+ Beds` : 'Beds / Baths'
   const priceLabel    = (minPrice || maxPrice)
@@ -138,7 +141,7 @@ export default function ListingsPage() {
   const pageUrl = `/listings${search}`
   const pageImage = getLocationImage(areaFilter) ?? getLocationImage(stateFilter)
 
-  const activeCount = [typeFilter, stateFilter || areaFilter, minPrice || maxPrice, bedsFilter].filter(Boolean).length
+  const activeCount = [typeFilter, propertyType, stateFilter || areaFilter, minPrice || maxPrice, bedsFilter].filter(Boolean).length
 
   return (
     <>
