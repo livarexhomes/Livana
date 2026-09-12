@@ -48,6 +48,9 @@ export default function PublicNavbar() {
     { href: '/contact', label: 'Contact', comingSoon: false },
   ]
 
+  const liveNavLinks = navLinks.filter(({ comingSoon }) => !comingSoon)
+  const visibleDesktopNavLinks = scrolled ? liveNavLinks : navLinks
+
   const isHomePage = location === '/'
   // Transparent mode: only on homepage before the user has scrolled
   const isTransparent = isHomePage && !scrolled
@@ -66,7 +69,7 @@ export default function PublicNavbar() {
 
         {/* Desktop nav links */}
         <div className="hidden md:flex items-center justify-center gap-0.5">
-          {navLinks.map(({ href, label, comingSoon }) => (
+          {visibleDesktopNavLinks.map(({ href, label, comingSoon }) => (
             comingSoon ? (
               <span key={label}
                 className={`px-4 py-2 rounded-lg text-sm font-medium cursor-default select-none flex items-center gap-1.5 ${
