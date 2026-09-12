@@ -52,7 +52,7 @@ const verificationSteps = [
     status: 'Ownership Review In Progress',
     badgeClass: 'bg-violet-50 text-violet-700 border-violet-200',
     image:
-      'https://img.magnific.com/premium-photo/photo-cheerful-man-realtor-man-realtor-house-man-realtor-suit-man-realtor_474717-131571.jpg?w=900',
+      'https://img.magnific.com/premium-photo/smiling-realtor-stands-front-beautiful-blue-house_14117-741147.jpg',
     overlayTitle: 'Document Review',
     overlayText: 'Property ownership and listing details are checked for accuracy.',
   },
