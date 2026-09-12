@@ -37,6 +37,8 @@ const enquiryCategories = [
     action: 'Get Property Help',
     icon: House,
     role: 'Property enquiry',
+    image:
+      'https://images.unsplash.com/photo-1568605114967-8130f3a36994?auto=format&fit=crop&w=1200&q=80',
   },
   {
     id: 'landlord',
@@ -45,6 +47,8 @@ const enquiryCategories = [
     action: 'Landlord Help',
     icon: Building2,
     role: 'Landlord support',
+    image:
+      'https://images.unsplash.com/photo-1460317442991-0ec209397118?auto=format&fit=crop&w=1200&q=80',
   },
   {
     id: 'account',
@@ -53,6 +57,8 @@ const enquiryCategories = [
     action: 'Get Support',
     icon: UserCheck,
     role: 'Account support',
+    image:
+      'https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?auto=format&fit=crop&w=1200&q=80',
   },
   {
     id: 'general',
@@ -61,6 +67,8 @@ const enquiryCategories = [
     action: 'Contact Us',
     icon: BriefcaseBusiness,
     role: 'General enquiry',
+    image:
+      'https://images.unsplash.com/photo-1523217582562-09d0def993a6?auto=format&fit=crop&w=1200&q=80',
   },
 ]
 
@@ -69,21 +77,25 @@ const helpLinks = [
     label: 'How landlord verification works',
     description: 'Learn how LIVAREX reviews landlords and listings.',
     href: '/about',
+    icon: ShieldCheck,
   },
   {
     label: 'Listing a property',
     description: 'Start your landlord onboarding journey.',
     href: '/landlord/register',
+    icon: Building2,
   },
   {
     label: 'Finding a property',
     description: 'Browse verified homes and apartments.',
     href: '/listings',
+    icon: House,
   },
   {
     label: 'Frequently asked questions',
     description: 'Quick answers to common LIVAREX questions.',
     href: '#faq-panel',
+    icon: MessageCircle,
   },
 ]
 
@@ -312,8 +324,8 @@ export default function ContactPage() {
 
                     <div className="overflow-hidden rounded-[1.5rem] border border-white/10 bg-white/5 p-3">
                       <img
-                        src="https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=900&q=80"
-                        alt="Dark-skinned African property professional smiling"
+                        src="https://images.unsplash.com/photo-1494526585095-c41746248156?auto=format&fit=crop&w=900&q=80"
+                        alt="Premium residential property exterior with terrace view"
                         className="h-36 w-full rounded-[1rem] object-cover sm:h-44"
                       />
                     </div>
@@ -350,18 +362,29 @@ export default function ContactPage() {
                       setForm((current) => ({ ...current, role: category.role }))
                       document.getElementById('contact-form')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
                     }}
-                    className="group rounded-[1.5rem] border border-slate-200 bg-slate-50 p-5 text-left transition-all duration-200 hover:-translate-y-1 hover:border-blue-200 hover:bg-white hover:shadow-[0_18px_40px_-22px_rgba(37,99,235,0.45)]"
+                    className="group overflow-hidden rounded-[1.75rem] border border-slate-200 bg-white text-left transition-all duration-200 hover:-translate-y-1 hover:border-blue-200 hover:shadow-[0_26px_60px_-30px_rgba(14,116,144,0.35)]"
                   >
-                    <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-blue-100 bg-blue-50 text-blue-600 transition-all group-hover:bg-blue-600 group-hover:text-white">
-                      <Icon className="h-5 w-5" />
+                    <div className="relative h-32 overflow-hidden border-b border-slate-200">
+                      <img
+                        src={category.image}
+                        alt={category.title}
+                        className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-slate-950/45 via-slate-900/10 to-transparent" />
+
+                      <div className="absolute left-4 top-4 flex h-10 w-10 items-center justify-center rounded-2xl border border-white/40 bg-white/80 text-blue-700 shadow-sm backdrop-blur-sm">
+                        <Icon className="h-4 w-4" />
+                      </div>
                     </div>
 
-                    <h3 className="mt-5 text-lg font-extrabold text-slate-950">{category.title}</h3>
-                    <p className="mt-2 text-sm leading-relaxed text-slate-600">{category.description}</p>
+                    <div className="p-5">
+                      <h3 className="text-lg font-extrabold text-slate-950">{category.title}</h3>
+                      <p className="mt-2 text-sm leading-relaxed text-slate-600">{category.description}</p>
 
-                    <div className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-blue-600">
-                      {category.action}
-                      <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+                      <div className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-blue-600">
+                        {category.action}
+                        <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+                      </div>
                     </div>
                   </button>
                 )
@@ -508,8 +531,8 @@ export default function ContactPage() {
               <aside className="space-y-6">
                 <div className="overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-[0_24px_60px_-36px_rgba(15,23,42,0.34)]">
                   <img
-                    src="https://images.unsplash.com/photo-1556157382-97eda2d62296?auto=format&fit=crop&w=1200&q=80"
-                    alt="Dark-skinned African property professional in a modern home setting"
+                    src="https://images.unsplash.com/photo-1484154218962-a197022b5858?auto=format&fit=crop&w=1200&q=80"
+                    alt="Modern apartment interior with clean lighting"
                     className="h-60 w-full object-cover"
                   />
 
@@ -551,22 +574,6 @@ export default function ContactPage() {
                         )
                       })}
                     </div>
-
-                    {address && (
-                      <div className="mt-6 rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                        <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-slate-500">Office</p>
-                        <p className="mt-2 text-sm font-semibold text-slate-900">{address}</p>
-                        <a
-                          href={`https://maps.google.com/?q=${encodeURIComponent(address)}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="mt-3 inline-flex items-center gap-2 text-sm font-semibold text-blue-600"
-                        >
-                          Get directions
-                          <ArrowRight className="h-4 w-4" />
-                        </a>
-                      </div>
-                    )}
                   </div>
                 </div>
               </aside>
@@ -574,7 +581,53 @@ export default function ContactPage() {
           </div>
         </section>
 
-        <section id="faq-panel" className="border-t border-slate-200 bg-white py-20">
+        <section className="bg-white py-2">
+          <div className="mx-auto max-w-7xl px-5 sm:px-8">
+            <div className="overflow-hidden rounded-[2rem] border border-slate-200 bg-slate-50">
+              <div className="grid gap-0 md:grid-cols-[1.05fr_0.95fr]">
+                <div className="relative overflow-hidden h-full min-h-[280px]">
+                  <img
+                    src="https://images.unsplash.com/photo-1460317442991-0ec209397118?auto=format&fit=crop&w=1200&q=80"
+                    alt="Elegant residential compound exterior"
+                    className="h-full w-full object-cover"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-r from-slate-950/60 to-slate-900/10" />
+                </div>
+
+                <div className="flex flex-col justify-center p-6 sm:p-8 lg:p-10">
+                  <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-blue-600">Visit LIVAREX</p>
+                  <h3 className="mt-3 text-3xl font-black tracking-[-0.05em] text-slate-950">
+                    Visit Our Office
+                  </h3>
+
+                  <div className="mt-6 space-y-4">
+                    <div className="flex items-start gap-3 rounded-2xl border border-slate-200 bg-white p-4">
+                      <div className="mt-0.5 flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
+                        <MapPin className="h-4 w-4" />
+                      </div>
+                      <div>
+                        <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-slate-500">Location</p>
+                        <p className="mt-1 text-base font-semibold text-slate-900">{address || '14 Bourdillon Road, Ikoyi, Lagos'}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <a
+                    href={`https://maps.google.com/?q=${encodeURIComponent(address || '14 Bourdillon Road, Ikoyi, Lagos')}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="mt-6 inline-flex w-fit items-center gap-2 rounded-2xl bg-blue-600 px-5 py-3 text-sm font-bold text-white transition-all hover:bg-blue-500"
+                  >
+                    Get Directions
+                    <ArrowRight className="h-4 w-4" />
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section className="border-t border-slate-200 bg-white py-20">
           <div className="mx-auto max-w-7xl px-5 sm:px-8">
             <div className="mx-auto max-w-3xl text-center">
               <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-blue-600">Quick Help</p>
@@ -584,47 +637,73 @@ export default function ContactPage() {
             </div>
 
             <div className="mt-10 grid gap-4 lg:grid-cols-2 xl:grid-cols-4">
-              {helpLinks.map((link) => (
-                <div key={link.label} className="rounded-[1.5rem] border border-slate-200 bg-slate-50 p-5 transition-all hover:border-blue-200 hover:bg-white hover:shadow-[0_18px_40px_-22px_rgba(37,99,235,0.45)]">
+              {helpLinks.map(({ href, icon: Icon, label, description }) => (
+                <div
+                  key={label}
+                  className="rounded-[1.5rem] border border-slate-200 bg-slate-50 p-5 transition-all hover:border-blue-200 hover:bg-white hover:shadow-[0_18px_40px_-22px_rgba(37,99,235,0.45)]"
+                >
                   <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
-                    <ShieldCheck className="h-4 w-4" />
+                    <Icon className="h-4 w-4" />
                   </div>
-                  {link.href.startsWith('#') ? (
-                    <a href={link.href} className="mt-4 block text-base font-extrabold text-slate-950">
-                      {link.label}
+
+                  {href.startsWith('#') ? (
+                    <a href={href} className="mt-4 block text-base font-extrabold text-slate-950">
+                      {label}
                     </a>
                   ) : (
-                    <Link href={link.href} className="mt-4 block text-base font-extrabold text-slate-950">
-                      {link.label}
+                    <Link href={href} className="mt-4 block text-base font-extrabold text-slate-950">
+                      {label}
                     </Link>
                   )}
-                  <p className="mt-2 text-sm leading-relaxed text-slate-600">{link.description}</p>
+
+                  <p className="mt-2 text-sm leading-relaxed text-slate-600">{description}</p>
                 </div>
               ))}
             </div>
+          </div>
+        </section>
 
-            <div className="mt-12 rounded-[2rem] border border-slate-200 bg-slate-50 p-6 sm:p-8">
-              <div className="space-y-3">
-                {faqs.map((faq, index) => (
-                  <div key={faq.q} className="rounded-2xl border border-slate-200 bg-white">
-                    <button
-                      type="button"
-                      onClick={() => setOpenFaq(openFaq === index ? null : index)}
-                      className="flex w-full items-center justify-between gap-4 px-4 py-4 text-left sm:px-5"
-                    >
-                      <span className="text-sm font-semibold text-slate-900 sm:text-base">{faq.q}</span>
-                      <ChevronDown
-                        className={`h-4 w-4 shrink-0 text-slate-400 transition-transform ${openFaq === index ? 'rotate-180' : ''}`}
-                      />
-                    </button>
+        <section id="faq-panel" className="border-t border-slate-200 bg-[#f7f7f5] py-20">
+          <div className="mx-auto max-w-7xl px-5 sm:px-8">
+            <div className="mx-auto max-w-3xl text-center">
+              <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-blue-600">FAQs</p>
+              <h2 className="mt-3 text-3xl font-black tracking-[-0.05em] text-slate-950 sm:text-4xl">
+                Frequently Asked Questions
+              </h2>
+            </div>
 
-                    {openFaq === index && (
-                      <div className="border-t border-slate-100 px-4 py-4 text-sm leading-relaxed text-slate-600 sm:px-5">
-                        {faq.a}
-                      </div>
-                    )}
-                  </div>
-                ))}
+            <div className="mt-10 grid gap-8 lg:grid-cols-[1.1fr_0.9fr]">
+              <div className="rounded-[2rem] border border-slate-200 bg-white p-4 sm:p-6">
+                <div className="space-y-3">
+                  {faqs.map((faq, index) => (
+                    <div key={faq.q} className="rounded-2xl border border-slate-200 bg-slate-50">
+                      <button
+                        type="button"
+                        onClick={() => setOpenFaq(openFaq === index ? null : index)}
+                        className="flex w-full items-center justify-between gap-4 px-4 py-4 text-left sm:px-5"
+                      >
+                        <span className="text-sm font-semibold text-slate-900 sm:text-base">{faq.q}</span>
+                        <ChevronDown
+                          className={`h-4 w-4 shrink-0 text-slate-400 transition-transform ${openFaq === index ? 'rotate-180' : ''}`}
+                        />
+                      </button>
+
+                      {openFaq === index && (
+                        <div className="border-t border-slate-200 px-4 py-4 text-sm leading-relaxed text-slate-600 sm:px-5">
+                          {faq.a}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-[0_24px_60px_-36px_rgba(15,23,42,0.34)]">
+                <img
+                  src="https://images.unsplash.com/photo-1523217582562-09d0def993a6?auto=format&fit=crop&w=1200&q=80"
+                  alt="Modern residential building exterior"
+                  className="h-full min-h-[320px] w-full object-cover"
+                />
               </div>
             </div>
           </div>
