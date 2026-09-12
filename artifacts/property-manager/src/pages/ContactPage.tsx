@@ -5,16 +5,17 @@ import {
   BriefcaseBusiness,
   Building2,
   CheckCircle,
+  ChevronDown,
   House,
   Mail,
   MapPin,
   MessageCircle,
-  Minus,
   Phone,
-  Plus,
   Send,
   ShieldCheck,
+  Sparkles,
   UserCheck,
+  Users,
 } from 'lucide-react'
 import PublicNavbar from '@/components/layout/PublicNavbar'
 import Footer from '@/components/layout/Footer'
@@ -122,7 +123,6 @@ export default function ContactPage() {
   const [form, setForm] = useState({
     name: '',
     email: '',
-    phone: '',
     role: 'Property enquiry',
     subject: '',
     message: '',
@@ -201,9 +201,10 @@ export default function ContactPage() {
     setError('')
 
     try {
-      const { phone: _phone, ...payload } = form
-
-      payload.subject = payload.subject.trim() || payload.role
+      const payload = {
+        ...form,
+        subject: form.subject.trim() || form.role,
+      }
 
       if (isSupabaseConfigured()) {
         const supabase = createClient()
@@ -236,7 +237,7 @@ export default function ContactPage() {
       }
 
       setSuccess(true)
-      setForm({ name: '', email: '', phone: '', role: 'Property enquiry', subject: '', message: '' })
+      setForm({ name: '', email: '', role: 'Property enquiry', subject: '', message: '' })
     } catch (err: any) {
       setError(err.message || 'Something went wrong. Please try again or email us directly.')
     } finally {
@@ -342,14 +343,11 @@ export default function ContactPage() {
             <div className="mx-auto max-w-2xl text-center">
               <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-blue-600">Start With What You Need</p>
               <h2 className="mt-4 text-3xl font-black tracking-[-0.05em] text-slate-950 sm:text-4xl">
-                How Can We Help?
+                Choose the path that best matches your enquiry.
               </h2>
-              <p className="mt-4 text-base leading-relaxed text-slate-600">
-                Choose the option that best matches your enquiry.
-              </p>
             </div>
 
-            <div className="mt-12 grid gap-4 md:grid-cols-2">
+            <div className="mt-12 space-y-4">
               {enquiryCategories.map((category) => {
                 const Icon = category.icon
 
@@ -361,24 +359,39 @@ export default function ContactPage() {
                       setForm((current) => ({ ...current, role: category.role }))
                       document.getElementById('contact-form')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
                     }}
-                    className="group block w-full rounded-[1.5rem] border border-slate-200 bg-slate-50 p-5 text-left transition-all duration-200 hover:border-blue-200 hover:bg-white"
+                    className="group block w-full overflow-hidden rounded-[1.75rem] border border-slate-200 bg-slate-50 text-left transition-all duration-200 hover:border-blue-200 hover:bg-white hover:shadow-[0_26px_60px_-30px_rgba(14,116,144,0.35)]"
                   >
-                    <div className="flex items-start justify-between gap-4">
+                    <div className="grid gap-4 p-4 sm:p-6 lg:grid-cols-[auto_1fr_auto_auto] lg:items-center">
                       <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-blue-100 bg-blue-50 text-blue-700">
                         <Icon className="h-5 w-5" />
                       </div>
 
-                      <div className="flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700 transition-all group-hover:border-blue-200 group-hover:text-blue-600">
-                        <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+                      <div>
+                        <h3 className="text-xl font-extrabold text-slate-950">{category.title}</h3>
+                        <p className="mt-1 text-sm leading-relaxed text-slate-600">{category.description}</p>
+                      </div>
+
+                      <div className="hidden lg:block">
+                        <p className="text-sm font-semibold text-blue-600">{category.action}</p>
+                      </div>
+
+                      <div className="flex items-center justify-between gap-4 lg:justify-end">
+                        <p className="text-sm font-semibold text-blue-600 lg:hidden">{category.action}</p>
+                        <div className="flex h-11 w-11 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700 transition-all group-hover:border-blue-200 group-hover:text-blue-600">
+                          <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+                        </div>
                       </div>
                     </div>
 
-                    <h3 className="mt-5 text-xl font-extrabold text-slate-950">{category.title}</h3>
-                    <p className="mt-2 text-sm leading-relaxed text-slate-600">{category.description}</p>
-
-                    <div className="mt-5 flex items-center gap-2 text-sm font-semibold text-blue-600">
-                      {category.action}
-                      <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+                    <div className="border-t border-slate-200 bg-slate-100/60 px-4 py-3 sm:px-6">
+                      <div className="flex items-center gap-4">
+                        <div className="h-12 w-20 overflow-hidden rounded-xl border border-slate-200 bg-white">
+                          <img src={category.image} alt={category.title} className="h-full w-full object-cover" />
+                        </div>
+                        <div className="flex-1 text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500">
+                          Livarex property focus
+                        </div>
+                      </div>
                     </div>
                   </button>
                 )
@@ -387,32 +400,25 @@ export default function ContactPage() {
           </div>
         </section>
 
-        <section className="border-b border-slate-200 bg-white py-4">
-          <div className="mx-auto max-w-7xl px-5 sm:px-8">
-            <div className="overflow-hidden rounded-[2rem] border border-slate-200 bg-slate-100">
-              <img
-                src="https://images.unsplash.com/photo-1460317442991-0ec209397118?auto=format&fit=crop&w=1400&q=80"
-                alt="Contemporary property architecture"
-                className="h-32 w-full object-cover sm:h-40"
-              />
-            </div>
-          </div>
-        </section>
-
         <section id="contact-form" className="bg-[#f7f7f5] py-20">
           <div className="mx-auto max-w-7xl px-5 sm:px-8">
-            <div className="grid gap-8 lg:grid-cols-[1.05fr_0.95fr] lg:items-start">
-              <div className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-[0_24px_60px_-36px_rgba(15,23,42,0.34)] sm:p-8 lg:p-10">
-                <div className="mb-8">
-                  <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-blue-600">Contact Form</p>
-                  <h2 className="mt-3 text-3xl font-black tracking-[-0.05em] text-slate-950 sm:text-4xl">
-                    Tell Us What You Need.
-                  </h2>
-                  <p className="mt-4 max-w-lg text-base leading-relaxed text-slate-600">
-                    Share a few details and our team will direct your enquiry appropriately.
-                  </p>
-                </div>
+            <div className="grid gap-8 lg:grid-cols-[0.8fr_1.2fr] lg:items-start">
+              <div className="pt-3">
+                <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-blue-600">Send a Message</p>
+                <h2 className="mt-3 text-3xl font-black tracking-[-0.05em] text-slate-950 sm:text-4xl">
+                  Tell Us What You Need.
+                </h2>
 
+                <p className="mt-4 max-w-lg text-base leading-relaxed text-slate-600">
+                  Share a few details and LIVAREX will direct your enquiry to the right place.
+                </p>
+
+                <p className="mt-6 text-sm text-slate-500">
+                  Clear details help us respond more effectively.
+                </p>
+              </div>
+
+              <div className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-[0_24px_60px_-36px_rgba(15,23,42,0.34)] sm:p-8 lg:p-10">
                 {success ? (
                   <div className="rounded-[1.5rem] border border-emerald-200 bg-emerald-50 p-6 text-center sm:p-10">
                     <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-emerald-600 shadow-lg shadow-emerald-600/20">
@@ -471,19 +477,6 @@ export default function ContactPage() {
                     <div className="grid gap-5 sm:grid-cols-2">
                       <div>
                         <label className="mb-2 block text-[11px] font-bold uppercase tracking-[0.16em] text-slate-500">
-                          Phone Number
-                        </label>
-                        <input
-                          type="tel"
-                          value={form.phone}
-                          onChange={(e) => setForm((current) => ({ ...current, phone: e.target.value }))}
-                          placeholder="Optional"
-                          className={field}
-                        />
-                      </div>
-
-                      <div>
-                        <label className="mb-2 block text-[11px] font-bold uppercase tracking-[0.16em] text-slate-500">
                           Enquiry Type
                         </label>
                         <select
@@ -493,24 +486,25 @@ export default function ContactPage() {
                         >
                           <option value="Property enquiry">Property enquiry</option>
                           <option value="Landlord support">Landlord support</option>
+                          <option value="Listing verification">Listing verification</option>
                           <option value="Account support">Account support</option>
-                          <option value="General enquiry">General enquiry</option>
                           <option value="Partnership / business">Partnership / business</option>
+                          <option value="General enquiry">General enquiry</option>
                         </select>
                       </div>
-                    </div>
 
-                    <div>
-                      <label className="mb-2 block text-[11px] font-bold uppercase tracking-[0.16em] text-slate-500">
-                        Property / Listing Reference
-                      </label>
-                      <input
-                        type="text"
-                        value={form.subject}
-                        onChange={(e) => setForm((current) => ({ ...current, subject: e.target.value }))}
-                        placeholder="Optional — listing ID, address or reference"
-                        className={field}
-                      />
+                      <div>
+                        <label className="mb-2 block text-[11px] font-bold uppercase tracking-[0.16em] text-slate-500">
+                          Property / Listing Reference
+                        </label>
+                        <input
+                          type="text"
+                          value={form.subject}
+                          onChange={(e) => setForm((current) => ({ ...current, subject: e.target.value }))}
+                          placeholder="Optional — listing ID, address or reference"
+                          className={field}
+                        />
+                      </div>
                     </div>
 
                     <div>
@@ -540,63 +534,50 @@ export default function ContactPage() {
                       ) : (
                         <>
                           <Send className="h-4 w-4" />
-                          Send Message
+                          Send Enquiry
                         </>
                       )}
                     </button>
                   </form>
                 )}
               </div>
+            </div>
+          </div>
+        </section>
 
-              <div className="space-y-6">
-                <div className="overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-[0_24px_60px_-36px_rgba(15,23,42,0.34)]">
-                  <img
-                    src="https://images.unsplash.com/photo-1523217582562-09d0def993a6?auto=format&fit=crop&w=1200&q=80"
-                    alt="Contemporary property exterior"
-                    className="h-64 w-full object-cover sm:h-80"
-                  />
-                </div>
+        <section className="bg-white py-6 sm:py-8">
+          <div className="mx-auto max-w-7xl px-5 sm:px-8">
+            <div className="overflow-hidden rounded-[2rem] border border-slate-200 bg-slate-50">
+              <div className="grid gap-0 md:grid-cols-4">
+                {channels.map((channel) => {
+                  const Icon = channel.icon
 
-                <div className="rounded-[2rem] border border-slate-200 bg-white p-5 sm:p-6">
-                  <h3 className="text-2xl font-black tracking-[-0.04em] text-slate-950">
-                    Prefer to Reach Us Directly?
-                  </h3>
+                  return (
+                    <a
+                      key={channel.label}
+                      href={channel.href}
+                      target={channel.href.startsWith('http') ? '_blank' : undefined}
+                      rel={channel.href.startsWith('http') ? 'noopener noreferrer' : undefined}
+                      className={`group relative p-5 text-left transition-all hover:bg-white ${channel.highlight ? 'bg-green-50/70' : 'bg-slate-50'} ${channel.label === 'Office' ? '' : 'border-r border-slate-200'}`}
+                    >
+                      <div className="flex items-center justify-between gap-3">
+                        <div className={`flex h-10 w-10 items-center justify-center rounded-xl ${channel.accent} text-white shadow-lg ${channel.glow}`}>
+                          <Icon className="h-4 w-4" />
+                        </div>
+                        <span className="text-[10px] font-bold uppercase tracking-[0.16em] text-slate-500">{channel.action}</span>
+                      </div>
 
-                  <div className="mt-6 space-y-3">
-                    {channels.map((channel) => {
-                      const Icon = channel.icon
+                      <p className="mt-4 text-sm font-bold text-slate-900">{channel.label}</p>
+                      <p className="mt-2 text-sm text-slate-600">{channel.note}</p>
+                      <p className="mt-3 text-sm font-semibold text-slate-900">{channel.value}</p>
 
-                      return (
-                        <a
-                          key={channel.label}
-                          href={channel.href}
-                          target={channel.href.startsWith('http') ? '_blank' : undefined}
-                          rel={channel.href.startsWith('http') ? 'noopener noreferrer' : undefined}
-                          className={`group flex items-start gap-4 rounded-2xl border p-4 text-left transition-all ${channel.highlight ? 'border-blue-200 bg-blue-50/70' : 'border-slate-200 bg-slate-50 hover:border-blue-200 hover:bg-white'}`}
-                        >
-                          <div className={`mt-0.5 flex h-10 w-10 items-center justify-center rounded-xl ${channel.highlight ? 'bg-[#25D366] text-white' : 'bg-slate-200 text-slate-700'}`}>
-                            <Icon className="h-4 w-4" />
-                          </div>
-
-                          <div className="flex-1">
-                            <div className="flex items-center justify-between gap-3">
-                              <p className="text-sm font-bold text-slate-900">{channel.label}</p>
-                              <span className="text-[10px] font-bold uppercase tracking-[0.16em] text-slate-500">{channel.action}</span>
-                            </div>
-
-                            <p className="mt-2 text-base font-semibold text-slate-900">{channel.value}</p>
-                            <p className="mt-1 text-sm text-slate-600">{channel.note}</p>
-
-                            <div className="mt-3 inline-flex items-center gap-2 text-sm font-semibold text-blue-600">
-                              {channel.action}
-                              <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
-                            </div>
-                          </div>
-                        </a>
-                      )
-                    })}
-                  </div>
-                </div>
+                      <div className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-blue-600">
+                        {channel.label === 'WhatsApp' ? 'Message Us' : channel.label === 'Email' ? 'Send Email' : channel.label === 'Phone' ? 'Call Us' : 'Get Directions'}
+                        <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+                      </div>
+                    </a>
+                  )
+                })}
               </div>
             </div>
           </div>
@@ -650,48 +631,48 @@ export default function ContactPage() {
 
         <section className="border-t border-slate-200 bg-white py-20">
           <div className="mx-auto max-w-7xl px-5 sm:px-8">
-            <div className="mx-auto max-w-3xl text-center">
-              <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-blue-600">Quick Help</p>
-              <h2 className="mt-4 text-3xl font-black tracking-[-0.05em] text-slate-950 sm:text-4xl">
-                Quick Help
-              </h2>
-              <p className="mt-4 text-base leading-relaxed text-slate-600">
-                You may find your answer here.
-              </p>
-            </div>
+            <div className="grid gap-10 lg:grid-cols-[0.85fr_1.15fr] lg:items-center">
+              <div>
+                <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-blue-600">Quick Help</p>
+                <h2 className="mt-4 text-3xl font-black tracking-[-0.05em] text-slate-950 sm:text-4xl">
+                  Find Answers Before You Reach Out.
+                </h2>
+                <p className="mt-4 max-w-lg text-base leading-relaxed text-slate-600">
+                  Some of the most common questions already have straightforward answers.
+                </p>
+              </div>
 
-            <div className="mt-10 overflow-hidden rounded-[2rem] border border-slate-200 bg-slate-50">
-              <div className="grid gap-0 md:grid-cols-2 xl:grid-cols-4">
+              <div className="space-y-4">
                 {helpLinks.map(({ href, icon: Icon, label, description }, index) => (
-                  <div
-                    key={label}
-                    className={`group flex min-h-[240px] flex-col justify-between border-slate-200 p-5 transition-all hover:bg-white ${index !== helpLinks.length - 1 ? 'border-b border-slate-200 md:border-b-0 md:border-r' : ''}`}
-                  >
-                    <div>
-                      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
-                        <span className="text-xs font-bold">0{index + 1}</span>
+                  <div key={label} className="border-b border-slate-200 pb-4 last:border-b-0 last:pb-0">
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                      <div className="flex gap-4">
+                        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
+                          <span className="text-xs font-bold">0{index + 1}</span>
+                        </div>
+
+                        <div>
+                          <div className="flex items-center gap-2 text-slate-500">
+                            <Icon className="h-4 w-4 text-blue-600" />
+                            <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-500">Resource</p>
+                          </div>
+                          <h3 className="mt-2 text-xl font-extrabold text-slate-950">{label}</h3>
+                          <p className="mt-1 text-sm leading-relaxed text-slate-600">{description}</p>
+                        </div>
                       </div>
 
-                      <div className="mt-4 flex items-center gap-2 text-slate-500">
-                        <Icon className="h-4 w-4 text-blue-600" />
-                        <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-500">Resource</p>
-                      </div>
-
-                      <h3 className="mt-4 text-xl font-extrabold text-slate-950">{label}</h3>
-                      <p className="mt-2 text-sm leading-relaxed text-slate-600">{description}</p>
+                      {href.startsWith('#') ? (
+                        <a href={href} className="inline-flex items-center gap-2 text-sm font-semibold text-blue-600">
+                          View FAQs
+                          <ArrowRight className="h-4 w-4" />
+                        </a>
+                      ) : (
+                        <Link href={href} className="inline-flex items-center gap-2 text-sm font-semibold text-blue-600">
+                          Learn More
+                          <ArrowRight className="h-4 w-4" />
+                        </Link>
+                      )}
                     </div>
-
-                    {href.startsWith('#') ? (
-                      <a href={href} className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-blue-600">
-                        View FAQs
-                        <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
-                      </a>
-                    ) : (
-                      <Link href={href} className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-blue-600">
-                        Learn More
-                        <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
-                      </Link>
-                    )}
                   </div>
                 ))}
               </div>
@@ -709,6 +690,14 @@ export default function ContactPage() {
             </div>
 
             <div className="mt-10 grid gap-8 lg:grid-cols-[1.05fr_0.95fr] lg:items-center">
+              <div className="overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-[0_24px_60px_-36px_rgba(15,23,42,0.34)]">
+                <img
+                  src="https://images.unsplash.com/photo-1523217582562-09d0def993a6?auto=format&fit=crop&w=1200&q=80"
+                  alt="Modern residential building exterior"
+                  className="h-full min-h-[320px] w-full object-cover"
+                />
+              </div>
+
               <div className="rounded-[2rem] border border-slate-200 bg-white p-4 sm:p-6">
                 <div className="space-y-3">
                   {faqs.map((faq, index) => (
@@ -719,9 +708,9 @@ export default function ContactPage() {
                         className="flex w-full items-center justify-between gap-4 py-2 text-left"
                       >
                         <span className="text-base font-semibold text-slate-900">{faq.q}</span>
-                        <div className="flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 bg-slate-50 text-slate-500">
-                          {openFaq === index ? <Minus className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
-                        </div>
+                        <ChevronDown
+                          className={`h-4 w-4 shrink-0 text-slate-400 transition-transform ${openFaq === index ? 'rotate-180' : ''}`}
+                        />
                       </button>
 
                       {openFaq === index && (
@@ -730,14 +719,6 @@ export default function ContactPage() {
                     </div>
                   ))}
                 </div>
-              </div>
-
-              <div className="overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-[0_24px_60px_-36px_rgba(15,23,42,0.34)]">
-                <img
-                  src="https://images.unsplash.com/photo-1494526585095-c41746248156?auto=format&fit=crop&w=1200&q=80"
-                  alt="Modern residential balcony exterior"
-                  className="h-full min-h-[320px] w-full object-cover"
-                />
               </div>
             </div>
           </div>
@@ -751,32 +732,32 @@ export default function ContactPage() {
               className="h-full w-full object-cover opacity-30"
             />
           </div>
-          <div className="absolute inset-0 bg-gradient-to-r from-[#0b1f3a]/90 via-[#0b1f3a]/80 to-[#0b1f3a]/70" />
+          <div className="absolute inset-0 bg-slate-950/75" />
 
           <div className="relative mx-auto max-w-7xl px-5 sm:px-8">
             <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
               <div>
                 <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-blue-200">Need More Help?</p>
                 <h2 className="mt-3 text-3xl font-black tracking-[-0.05em] text-white sm:text-4xl">
-                  Let’s Get You Moving.
+                  Start the Conversation.
                 </h2>
                 <p className="mt-3 max-w-2xl text-base text-slate-200">
-                  Find a property, list your home, or speak with LIVAREX when you need support.
+                  Whether you’re finding a home or listing one, LIVAREX is here to help you move forward.
                 </p>
               </div>
 
               <div className="flex flex-wrap gap-3">
-                <Link
-                  href="/listings"
+                <a
+                  href="#contact-form"
                   className="inline-flex items-center justify-center gap-2 rounded-2xl bg-blue-600 px-6 py-3.5 text-sm font-bold text-white transition-all hover:bg-blue-500"
                 >
-                  Browse Properties
-                </Link>
+                  Send a Message
+                </a>
                 <Link
-                  href="/landlord/register"
+                  href="/listings"
                   className="inline-flex items-center justify-center gap-2 rounded-2xl border border-white/30 bg-white/5 px-6 py-3.5 text-sm font-bold text-white transition-all hover:bg-white/10"
                 >
-                  List Your Property
+                  Browse Properties
                 </Link>
               </div>
             </div>
