@@ -226,55 +226,6 @@ export default function PublicNavbar() {
               ))}
             </div>
 
-            <div className="hidden md:flex items-center justify-end gap-2">
-              {user ? (
-                <>
-                  {user.isAdmin && (
-                    <Link href="/admin" className={`text-sm font-medium px-4 py-2 rounded-lg transition-all ${
-                      isTransparent ? 'text-white hover:text-white hover:bg-white/15' : 'text-gray-700 hover:text-gray-950 hover:bg-gray-50'
-                    }`}>
-                      Admin
-                    </Link>
-                  )}
-                  {user.isLandlord && (
-                    <Link href="/landlord" className={`text-sm font-medium px-4 py-2 rounded-lg transition-all ${
-                      isTransparent ? 'text-white/90 hover:text-white hover:bg-white/10' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
-                    }`}>
-                      Dashboard
-                    </Link>
-                  )}
-                  <Link href={user.isAdmin ? '/admin' : user.isLandlord ? '/landlord/profile' : '/user'} className={`text-sm font-medium px-4 py-2 rounded-lg transition-all ${
-                    isTransparent ? 'text-white/90 hover:text-white hover:bg-white/10' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
-                  }`}>
-                    My Account
-                  </Link>
-                  <button
-                    onClick={async () => {
-                      const supabase = createClient()
-                      await supabase.auth.signOut()
-                      setUser(null)
-                      window.location.href = '/'
-                    }}
-                    className={`text-sm font-medium px-4 py-2 rounded-lg transition-all ${
-                      isTransparent ? 'text-red-300 hover:text-red-200 hover:bg-white/10' : 'text-red-500 hover:text-red-600 hover:bg-red-50'
-                    }`}
-                  >
-                    Logout
-                  </button>
-                </>
-              ) : (
-                <>
-                  <Link href="/landlord/register" className={`text-sm font-medium px-4 py-2 rounded-lg transition-all ${
-                    isTransparent ? 'text-white/90 hover:text-white hover:bg-white/10' : 'text-gray-700 hover:text-gray-900 hover:bg-gray-50'
-                  }`}>
-                    List your Property
-                  </Link>
-                  <Link href="/login" className="text-sm font-semibold bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl transition-all shadow-lg shadow-blue-600/25 hover:shadow-blue-600/40">
-                    Sign In
-                  </Link>
-                </>
-              )}
-            </div>
 
             <div className="flex items-center gap-2 md:hidden">
               <button
