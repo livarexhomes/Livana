@@ -427,138 +427,175 @@ export default function AboutPage() {
           </div>
         </section>
 
-        <section id="verification" className="bg-[#f8fafc] py-16 md:py-20">
-          <div className="mx-auto max-w-7xl px-5 sm:px-8">
-            <div className="mx-auto max-w-3xl text-center">
-              <p className="text-xs font-bold uppercase tracking-[0.2em] text-blue-600">LIVAREX VERIFICATION</p>
-              <h2 className="mt-4 text-3xl font-black tracking-[-0.04em] text-slate-950 md:text-4xl">
+        <section id="verification" className="relative overflow-hidden bg-[#f6f9fc] py-16 md:py-20 lg:py-24">
+          <div className="absolute inset-x-0 top-0 h-px bg-slate-200" />
+          <div className="absolute left-0 top-24 h-64 w-64 rounded-full bg-blue-100/70 blur-3xl" />
+          <div className="absolute right-0 top-8 h-72 w-72 rounded-full bg-sky-100/80 blur-3xl" />
+
+          <div className="relative mx-auto max-w-7xl px-5 sm:px-8">
+            <div className="mx-auto max-w-4xl text-center">
+              <p className="text-xs font-bold uppercase tracking-[0.24em] text-blue-600">LIVAREX VERIFICATION</p>
+              <h2 className="mt-4 text-4xl font-black tracking-[-0.06em] text-slate-950 md:text-5xl lg:text-[3.4rem]">
                 How LIVAREX Verifies Landlords & Properties
               </h2>
-              <p className="mt-4 text-base leading-relaxed text-slate-600">
+              <p className="mt-4 text-base leading-relaxed text-slate-600 md:text-lg">
                 Every landlord and property goes through defined verification steps before approval.
               </p>
             </div>
 
-            <div className="mt-12 grid gap-8 lg:grid-cols-[280px_minmax(0,1fr)]">
+            <div className="mt-10 border-b border-slate-200 pb-3">
               <div
                 role="tablist"
                 aria-label="Verification steps"
                 onKeyDown={handleStepKeyDown}
-                className="flex flex-col gap-3"
+                className="flex gap-2 overflow-x-auto pb-1"
               >
-                {verificationSteps.map((step, index) => (
-                  <button
-                    key={step.id}
-                    id={`verification-tab-${step.id}`}
-                    type="button"
-                    role="tab"
-                    aria-selected={activeStep === index}
-                    aria-controls={`verification-panel-${step.id}`}
-                    onClick={() => setActiveStep(index)}
-                    className={`flex items-start gap-3 rounded-2xl border px-4 py-3 text-left transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2 ${
-                      activeStep === index
-                        ? 'border-blue-200 bg-blue-50 shadow-[0_10px_24px_-18px_rgba(37,99,235,0.8)]'
-                        : 'border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50'
-                    }`}
-                  >
-                    <span className={`mt-0.5 inline-flex h-9 w-9 items-center justify-center rounded-xl text-xs font-black ${activeStep === index ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-700'}`}>
-                      {step.number}
-                    </span>
-                    <span>
-                      <span className="block text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400">Step</span>
-                      <span className="mt-1 block text-sm font-bold text-slate-900">{step.title}</span>
-                    </span>
-                  </button>
-                ))}
+                {verificationSteps.map((step, index) => {
+                  const label = step.id === 'cross-check'
+                    ? 'Cross-Check'
+                    : step.id === 'ownership'
+                      ? 'Ownership'
+                      : step.id === 'property'
+                        ? 'Property'
+                        : step.id === 'approval'
+                          ? 'Approval'
+                          : 'Identity'
+
+                  return (
+                    <button
+                      key={step.id}
+                      id={`verification-tab-${step.id}`}
+                      type="button"
+                      role="tab"
+                      aria-selected={activeStep === index}
+                      aria-controls={`verification-panel-${step.id}`}
+                      onClick={() => setActiveStep(index)}
+                      className={`group relative shrink-0 rounded-full border px-3 py-2 text-left transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2 ${
+                        activeStep === index
+                          ? 'border-blue-200 bg-blue-50 text-slate-950'
+                          : 'border-transparent bg-transparent text-slate-500 hover:border-slate-200 hover:bg-white'
+                      }`}
+                    >
+                      <span className="flex items-center gap-2">
+                        <span className={`inline-flex h-8 w-8 items-center justify-center rounded-full text-[10px] font-black ${activeStep === index ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-700'}`}>
+                          {step.number}
+                        </span>
+                        <span className="text-[11px] font-bold uppercase tracking-[0.14em]">{label}</span>
+                      </span>
+
+                      {activeStep === index && (
+                        <span className="absolute inset-x-0 -bottom-3 h-px bg-blue-600" />
+                      )}
+                    </button>
+                  )
+                })}
               </div>
+            </div>
 
-              <div
-                role="tabpanel"
-                id={`verification-panel-${currentStep.id}`}
-                aria-labelledby={`verification-tab-${currentStep.id}`}
-                className="overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-[0_18px_38px_-28px_rgba(15,23,42,0.45)]"
-              >
-                <div className="grid lg:grid-cols-[1.1fr_0.9fr]">
-                  <div className="relative overflow-hidden border-b border-slate-200 bg-slate-100 lg:border-b-0 lg:border-r">
-                    <img
-                      src={currentStep.image}
-                      alt={currentStep.title}
-                      className="h-72 w-full object-cover sm:h-80 lg:h-full lg:min-h-[460px]"
-                    />
+            <div
+              role="tabpanel"
+              id={`verification-panel-${currentStep.id}`}
+              aria-labelledby={`verification-tab-${currentStep.id}`}
+              className="relative mt-10 overflow-hidden rounded-[2rem] border border-slate-200 bg-white"
+            >
+              <div className="grid lg:grid-cols-[1.15fr_0.85fr]">
+                <div className="relative min-h-[420px] overflow-hidden border-b border-slate-200 bg-slate-100 lg:min-h-[540px] lg:border-b-0 lg:border-r">
+                  <img
+                    src={currentStep.image}
+                    alt={currentStep.title}
+                    className="h-full w-full object-cover object-center"
+                  />
 
-                    <div className="absolute inset-0 bg-gradient-to-t from-slate-950/30 via-slate-950/5 to-transparent" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-slate-950/35 via-slate-950/5 to-transparent" />
 
-                    <div className={`absolute left-4 top-4 inline-flex items-center rounded-full border px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.16em] ${currentStep.badgeClass}`}>
-                      {currentStep.status}
-                    </div>
-
-                    <div className="absolute left-4 right-4 bottom-4 grid gap-2 sm:grid-cols-2">
-                      <div className="rounded-[1.1rem] border border-white/70 bg-white/90 p-3 backdrop-blur-sm">
-                        <div className="flex items-center gap-2 text-sm font-extrabold text-slate-950">
-                          <CheckCircle2 className="h-4 w-4 text-emerald-600" />
-                          {currentStep.overlayTitle}
-                        </div>
-                        <p className="mt-1 text-[11px] leading-relaxed text-slate-600">{currentStep.overlayText}</p>
-                      </div>
-
-                      <div className="rounded-[1.1rem] border border-blue-100 bg-blue-50/90 p-3 backdrop-blur-sm">
-                        <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-blue-700">Trusted Landlord</p>
-                        <p className="mt-2 text-sm font-bold text-slate-900">Account reviewed by LIVAREX</p>
-                      </div>
-                    </div>
+                  <div className="absolute left-5 top-5 rounded-full border border-white/80 bg-white/85 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.18em] text-blue-700 backdrop-blur-sm">
+                    <span className="inline-flex items-center gap-2">
+                      <CheckCircle2 className="h-3.5 w-3.5" />
+                      {currentStep.overlayTitle}
+                    </span>
                   </div>
 
-                  <div className="p-6 sm:p-8">
-                    <div className="flex items-center justify-between gap-3">
-                      <div>
-                        <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400">{currentStep.number}</p>
-                        <h3 className="mt-2 text-2xl font-black tracking-[-0.03em] text-slate-950 md:text-3xl">
-                          {currentStep.title}
-                        </h3>
-                      </div>
-                      <div className="inline-flex items-center gap-2 rounded-full border border-blue-200 bg-blue-50 px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-[0.16em] text-blue-700">
-                        <ShieldCheck className="h-3.5 w-3.5" />
-                        Profile Verified
-                      </div>
-                    </div>
+                  <div className="absolute left-5 right-5 bottom-5 max-w-xs rounded-[1.15rem] border border-white/70 bg-white/90 p-3 backdrop-blur-sm">
+                    <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500">Identity and account details confirmed.</p>
+                  </div>
+                </div>
 
-                    <div className="mt-6 rounded-[1.5rem] border border-blue-100 bg-gradient-to-br from-blue-50 via-white to-sky-50 p-4">
-                      <div className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.16em] text-blue-700">
-                        <span className="inline-flex h-2 w-2 rounded-full bg-blue-600" />
-                        Identity Check Complete
-                      </div>
-                      <p className="mt-3 text-sm leading-relaxed text-slate-600">
-                        Identity and account details are confirmed before listing.
-                      </p>
-                    </div>
+                <div className="relative p-6 sm:p-8 lg:p-10">
+                  <div className="absolute right-5 top-5 text-[90px] font-black leading-none tracking-[-0.08em] text-blue-50 lg:right-8 lg:text-[120px]">
+                    {currentStep.number}
+                  </div>
 
-                    <p className="mt-6 text-base leading-relaxed text-slate-600">{currentStep.description}</p>
+                  <div className="relative">
+                    <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-400">Verification Step</p>
+                    <h3 className="mt-4 text-3xl font-black tracking-[-0.05em] text-slate-950 md:text-4xl">
+                      {currentStep.title}
+                    </h3>
+
+                    <p className="mt-5 text-base leading-relaxed text-slate-600 md:text-lg">
+                      Every landlord begins with identity verification before a property can proceed to listing review.
+                    </p>
+
+                    <p className="mt-4 text-base leading-relaxed text-slate-600">
+                      {currentStep.description}
+                    </p>
+
                     {currentStep.extraText && (
-                      <p className="mt-3 text-sm leading-relaxed text-slate-500">{currentStep.extraText}</p>
+                      <p className="mt-3 text-sm leading-relaxed text-slate-500 md:text-[15px]">
+                        {currentStep.extraText}
+                      </p>
                     )}
 
                     <div className="mt-8 rounded-[1.5rem] border border-slate-200 bg-slate-50 p-4">
-                      <div className="flex items-center justify-between gap-3">
-                        <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-slate-500">Checklist</p>
-                        <div className="rounded-full border border-emerald-200 bg-emerald-50 px-2 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-emerald-700">
-                          Required
+                      <div className="flex items-center justify-between gap-4 border-b border-slate-200 pb-3">
+                        <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-slate-500">Identity Details</p>
+                        <div className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-2 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-emerald-700">
+                          <span className="inline-flex h-1.5 w-1.5 rounded-full bg-emerald-600" />
+                          Verified
                         </div>
                       </div>
 
-                      <ul className="mt-4 grid gap-3 sm:grid-cols-2">
+                      <div className="mt-4 space-y-2">
                         {currentStep.checklist.map((item) => (
-                          <li key={item} className="flex items-start gap-3 rounded-2xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700">
-                            <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" />
-                            <span>{item}</span>
-                          </li>
+                          <div
+                            key={item}
+                            className="flex items-center justify-between gap-3 border-b border-slate-200 pb-2.5 last:border-b-0 last:pb-0"
+                          >
+                            <div className="flex items-center gap-3">
+                              <span className="inline-flex h-2.5 w-2.5 rounded-full bg-blue-600" />
+                              <span className="text-sm font-medium text-slate-700">{item}</span>
+                            </div>
+                            <span className="text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400">Confirmed</span>
+                          </div>
                         ))}
-                      </ul>
+                      </div>
                     </div>
 
-                    <div className="mt-6 rounded-2xl border border-slate-200 bg-white p-3">
-                      <p className="text-xs font-bold uppercase tracking-[0.16em] text-slate-500">Verification helps establish accountability before a listing becomes visible.</p>
-                    </div>
+                    {currentStep.id === 'identity' && (
+                      <div className="mt-8 overflow-hidden rounded-[1.4rem] border border-slate-200 bg-slate-100">
+                        <img
+                          src={currentStep.image}
+                          alt="Professional landlord reviewing identity details"
+                          className="h-40 w-full object-cover object-center"
+                        />
+                        <div className="border-t border-slate-200 bg-white px-4 py-3">
+                          <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-slate-500">Verification before visibility.</p>
+                        </div>
+                      </div>
+                    )}
                   </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-8 rounded-[1.5rem] border border-slate-200 bg-white/90 px-4 py-4 sm:px-5">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <p className="text-base font-medium text-slate-700">
+                  We verify identity before we connect landlords with prospective tenants.
+                </p>
+
+                <div className="inline-flex items-center gap-2 self-start rounded-full border border-blue-200 bg-blue-50 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.18em] text-blue-700 sm:self-auto">
+                  <ShieldCheck className="h-3.5 w-3.5" />
+                  LIVAREX Verified
                 </div>
               </div>
             </div>
