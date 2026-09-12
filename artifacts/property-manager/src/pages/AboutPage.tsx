@@ -653,15 +653,16 @@ export default function AboutPage() {
           </div>
         </section>
 
-        <section className="border-y border-slate-200 bg-white py-16 md:py-20">
-          <div className="mx-auto max-w-7xl px-5 sm:px-8">
+        <section className="border-y border-slate-200 bg-white py-16 md:py-20 lg:py-24">
+          <div className="mx-auto max-w-[1280px] px-5 sm:px-8">
             <div className="grid gap-10 lg:grid-cols-[0.95fr_1.05fr] lg:items-center">
               <div className="max-w-xl">
-                <h2 className="text-3xl font-black tracking-[-0.04em] text-slate-950 md:text-4xl">
+                <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-blue-600">FOR LANDLORDS</p>
+                <h2 className="mt-4 text-4xl font-black tracking-[-0.05em] text-slate-950 md:text-5xl">
                   More Control. Fewer Middlemen.
                 </h2>
 
-                <p className="mt-5 text-base leading-relaxed text-slate-600">
+                <p className="mt-5 text-base leading-relaxed text-slate-600 md:text-lg">
                   List your property, build trust through verification and connect directly with prospective tenants.
                 </p>
 
@@ -681,59 +682,152 @@ export default function AboutPage() {
                     List Your Property
                   </Link>
                 </div>
-              </div>
 
-              <div className="rounded-[2rem] border border-slate-200 bg-[#f8fafc] p-5 sm:p-6">
-                <div className="grid gap-x-8 gap-y-5 sm:grid-cols-2">
+                <div className="mt-10 grid gap-3 sm:grid-cols-2">
                   {benefits.map((benefit) => {
                     const Icon = benefit.icon
 
                     return (
-                      <div key={benefit.title} className="flex items-start gap-3">
-                        <div className="mt-0.5 flex h-8 w-8 items-center justify-center rounded-xl bg-blue-50 text-blue-700">
-                          <Icon className="h-4 w-4" />
-                        </div>
+                      <div key={benefit.title} className="rounded-2xl border border-slate-200 bg-slate-50 px-3 py-3 transition-colors hover:border-blue-200 hover:bg-blue-50/40">
+                        <div className="flex items-start gap-3">
+                          <div className="mt-0.5 flex h-8 w-8 items-center justify-center rounded-xl bg-white text-blue-700 ring-1 ring-slate-200">
+                            <Icon className="h-4 w-4" />
+                          </div>
 
-                        <div>
-                          <h3 className="text-xs font-extrabold uppercase tracking-[0.14em] text-slate-900">
-                            {benefit.title}
-                          </h3>
-                          <p className="mt-1 text-sm leading-relaxed text-slate-600">{benefit.description}</p>
+                          <div>
+                            <h3 className="text-sm font-extrabold uppercase tracking-[0.14em] text-slate-900">
+                              {benefit.title}
+                            </h3>
+                            <p className="mt-1 text-sm leading-relaxed text-slate-600">{benefit.description}</p>
+                          </div>
                         </div>
                       </div>
                     )
                   })}
                 </div>
               </div>
+
+              <div className="relative">
+                <div className="overflow-hidden rounded-[2rem] border border-slate-200 bg-slate-100 p-2 shadow-[0_30px_80px_-40px_rgba(15,23,42,0.4)]">
+                  <div className="relative overflow-hidden rounded-[1.5rem] border border-slate-200 bg-slate-100">
+                    <img
+                      src="https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?auto=format&fit=crop&w=1200&q=80"
+                      alt="Modern residential property"
+                      className="h-[22rem] w-full object-cover sm:h-[26rem] lg:h-[30rem]"
+                    />
+
+                    <div className="absolute inset-0 bg-gradient-to-t from-slate-950/35 via-slate-950/5 to-transparent" />
+
+                    <div className="absolute left-5 top-5 rounded-xl border border-white/80 bg-white/90 px-3 py-2 backdrop-blur-sm">
+                      <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-blue-700">Verified Landlord</p>
+                    </div>
+
+                    <div className="absolute right-5 top-5 rounded-xl border border-emerald-200 bg-emerald-50/90 px-3 py-2 backdrop-blur-sm">
+                      <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-emerald-700">Property Approved</p>
+                    </div>
+
+                    <div className="absolute bottom-5 left-5 rounded-xl border border-white/80 bg-white/90 px-3 py-2 backdrop-blur-sm">
+                      <div className="flex items-center gap-2 text-sm font-extrabold text-slate-950">
+                        <span className="inline-flex h-2.5 w-2.5 rounded-full bg-emerald-500" />
+                        Direct Tenant Connection
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="mt-2 grid grid-cols-2 gap-2">
+                    <div className="overflow-hidden rounded-[1.25rem] border border-slate-200 bg-white">
+                      <img
+                        src="https://images.unsplash.com/photo-1494526585095-c41746248156?auto=format&fit=crop&w=900&q=80"
+                        alt="Modern interior apartment"
+                        className="h-28 w-full object-cover"
+                      />
+                    </div>
+                    <div className="overflow-hidden rounded-[1.25rem] border border-slate-200 bg-white">
+                      <img
+                        src="https://images.unsplash.com/photo-1556157382-97eda2d62296?auto=format&fit=crop&w=900&q=80"
+                        alt="Landlord reviewing property details"
+                        className="h-28 w-full object-cover"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </section>
 
-        <section className="bg-[#f5f9ff] py-16 md:py-20">
-          <div className="mx-auto max-w-6xl px-5 sm:px-8">
-            <div className="rounded-[2rem] border border-slate-200 bg-white p-6 sm:p-8">
-              <div className="grid gap-8 lg:grid-cols-2 lg:items-start">
-                <div className="max-w-xl">
-                  <p className="text-xs font-bold uppercase tracking-[0.2em] text-blue-600">ONGOING REVIEW</p>
-                  <h2 className="mt-4 text-3xl font-black tracking-[-0.04em] text-slate-950 md:text-4xl">
-                    Trust Doesn't End When a Listing Goes Live.
-                  </h2>
-                  <p className="mt-4 text-base leading-relaxed text-slate-600">
-                    LIVAREX may continue reviewing listings after approval to help maintain accurate and reliable marketplace information.
-                  </p>
+        <section className="bg-[#f5f9ff] py-16 md:py-20 lg:py-24">
+          <div className="mx-auto max-w-[1280px] px-5 sm:px-8">
+            <div className="grid gap-10 lg:grid-cols-[1.05fr_0.95fr] lg:items-center">
+              <div className="relative">
+                <div className="relative overflow-hidden rounded-[2rem] border border-slate-200 bg-white p-2 shadow-[0_30px_80px_-40px_rgba(15,23,42,0.4)]">
+                  <div className="relative overflow-hidden rounded-[1.5rem] border border-slate-200 bg-slate-100">
+                    <img
+                      src="https://images.unsplash.com/photo-1568605114967-8130f3a36994?auto=format&fit=crop&w=1200&q=80"
+                      alt="Landlord and tenant reviewing a property"
+                      className="h-[22rem] w-full object-cover sm:h-[26rem] lg:h-[30rem]"
+                    />
+
+                    <div className="absolute inset-0 bg-gradient-to-t from-slate-950/55 via-slate-950/10 to-transparent" />
+
+                    <div className="absolute left-4 top-4 rounded-xl border border-white/80 bg-white/90 px-3 py-2 backdrop-blur-sm">
+                      <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-blue-700">Property Review</p>
+                    </div>
+
+                    <div className="absolute right-4 top-4 rounded-xl border border-slate-200 bg-white/90 px-3 py-2 backdrop-blur-sm">
+                      <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-slate-700">Trust & Safety</p>
+                    </div>
+
+                    <div className="absolute inset-x-4 bottom-4 rounded-[1.25rem] border border-white/70 bg-white/90 p-3 backdrop-blur-sm">
+                      <div className="flex items-center justify-between gap-3">
+                        <div>
+                          <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500">Listing Monitoring</p>
+                          <p className="mt-1 text-base font-extrabold text-slate-950">Live review and quality checks</p>
+                        </div>
+                        <div className="inline-flex items-center rounded-full bg-blue-50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-blue-700">
+                          Active
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
 
-                <div className="relative pl-6">
+                <div className="absolute -bottom-4 left-5 w-[42%] overflow-hidden rounded-[1.25rem] border border-slate-200 bg-white p-1 shadow-[0_20px_60px_-40px_rgba(15,23,42,0.45)]">
+                  <img
+                    src="https://images.unsplash.com/photo-1554224155-6726b3ff858f?auto=format&fit=crop&w=900&q=80"
+                    alt="Property inspection scene"
+                    className="h-24 w-full rounded-[0.85rem] object-cover"
+                  />
+                </div>
+
+                <div className="absolute -right-2 top-10 w-[38%] overflow-hidden rounded-[1.25rem] border border-slate-200 bg-white p-1 shadow-[0_20px_60px_-40px_rgba(15,23,42,0.45)]">
+                  <img
+                    src="https://images.unsplash.com/photo-1556157382-97eda2d62296?auto=format&fit=crop&w=900&q=80"
+                    alt="Document review scene"
+                    className="h-24 w-full rounded-[0.85rem] object-cover"
+                  />
+                </div>
+              </div>
+
+              <div className="max-w-xl">
+                <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-blue-600">ONGOING REVIEW</p>
+                <h2 className="mt-4 text-4xl font-black tracking-[-0.05em] text-slate-950 md:text-5xl">
+                  Trust Doesn't End When a Listing Goes Live.
+                </h2>
+                <p className="mt-5 text-base leading-relaxed text-slate-600 md:text-lg">
+                  LIVAREX may continue reviewing listings after approval to help maintain accurate and reliable marketplace information.
+                </p>
+
+                <div className="mt-8 relative pl-6">
                   <div className="absolute bottom-0 left-[0.6rem] top-0 w-px bg-slate-200" />
 
-                  <div className="space-y-5">
+                  <div className="space-y-6">
                     {ongoingReviewItems.map((item, index) => (
-                      <div key={item.title} className="relative pl-6">
-                        <div className="absolute left-[-0.45rem] top-2 h-3 w-3 rounded-full bg-blue-600 ring-4 ring-white" />
-                        <div className="text-[11px] font-bold uppercase tracking-[0.16em] text-slate-400">
+                      <div key={item.title} className="relative pl-7">
+                        <div className="absolute left-[-0.15rem] top-1.5 flex h-8 w-8 items-center justify-center rounded-full border border-stone-200 bg-white text-[11px] font-black text-blue-700 ring-4 ring-[#f5f9ff]">
                           {String(index + 1).padStart(2, '0')}
                         </div>
-                        <h3 className="mt-2 text-lg font-extrabold text-slate-950">{item.title}</h3>
+                        <h3 className="text-lg font-extrabold text-slate-950">{item.title}</h3>
                         <p className="mt-2 text-sm leading-relaxed text-slate-600">{item.description}</p>
                       </div>
                     ))}
@@ -744,10 +838,17 @@ export default function AboutPage() {
           </div>
         </section>
 
-        <section className="bg-blue-600 py-16 md:py-20">
-          <div className="mx-auto max-w-5xl px-5 text-center sm:px-8">
-            <p className="text-xs font-bold uppercase tracking-[0.2em] text-blue-100">READY TO GET STARTED?</p>
-            <h2 className="mt-4 text-3xl font-black tracking-[-0.04em] text-white md:text-5xl">
+        <section className="relative overflow-hidden bg-blue-600 py-16 md:py-20 lg:py-24">
+          <img
+            src="https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&w=1400&q=80"
+            alt="Modern residential apartment exterior at dusk"
+            className="absolute inset-0 h-full w-full object-cover opacity-20"
+          />
+          <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(15,60,140,0.90),rgba(30,64,175,0.72),rgba(37,99,235,0.82))]" />
+
+          <div className="relative mx-auto max-w-[1280px] px-5 text-center sm:px-8">
+            <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-blue-100">READY TO GET STARTED?</p>
+            <h2 className="mt-4 text-4xl font-black tracking-[-0.05em] text-white md:text-5xl lg:text-6xl">
               List With Confidence. Rent With Greater Trust.
             </h2>
             <p className="mx-auto mt-5 max-w-2xl text-base leading-relaxed text-blue-100 md:text-lg">
@@ -757,21 +858,26 @@ export default function AboutPage() {
             <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
               <Link
                 href="/landlord/register"
-                className="inline-flex items-center justify-center gap-2 rounded-2xl bg-white px-6 py-3.5 text-sm font-bold text-blue-700 shadow-lg shadow-blue-700/20 transition-all hover:bg-blue-50"
+                className="inline-flex items-center justify-center gap-2 rounded-2xl bg-white px-6 py-3.5 text-sm font-bold text-blue-700 shadow-lg shadow-blue-900/20 transition-all hover:bg-blue-50"
               >
                 List Your Property
               </Link>
               <Link
                 href="/listings?type=rent"
-                className="inline-flex items-center justify-center rounded-2xl border border-blue-300 bg-blue-500 px-6 py-3.5 text-sm font-semibold text-white transition-all hover:bg-blue-500/80"
+                className="inline-flex items-center justify-center rounded-2xl border border-blue-300 bg-transparent px-6 py-3.5 text-sm font-semibold text-white transition-all hover:bg-white/5"
               >
                 Browse Properties
               </Link>
             </div>
 
-            <p className="mt-6 text-sm font-medium text-blue-100">
-              Verified listings · Direct connections · No unnecessary agent fees
-            </p>
+            <div className="mt-8 flex flex-wrap items-center justify-center gap-3 text-sm font-medium text-blue-100">
+              {["Verified listings", "Direct connections", "No unnecessary agent fees"].map((item) => (
+                <div key={item} className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/5 px-3 py-1.5">
+                  <CheckCircle2 className="h-4 w-4 text-white" />
+                  <span>{item}</span>
+                </div>
+              ))}
+            </div>
           </div>
         </section>
       </main>
