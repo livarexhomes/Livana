@@ -11,7 +11,7 @@ const faqs = [
   { q: 'How do I contact a landlord?', a: 'Sign in to your tenant account, then use the "Request Inspection" or "WhatsApp" button on any listing. All messages go through Livarex — our team coordinates with the landlord and gets back to you.' },
   { q: 'Are all landlords verified?', a: 'Yes. Every landlord goes through our review process before listings go live. Verified badges are only awarded to landlords we\'ve confirmed.' },
   { q: 'How do I list my property?', a: 'Register as a landlord, submit your details for review, and once approved (usually within 24 hours), you can add listings from your dashboard.' },
-  { q: 'Is there a fee to use Livarex?', a: 'No — browsing is completely free for renters. Listing is also free for landlords. We will never charge agent fees.' },
+  { q: 'Is there a fee to use Livarex?', a: 'No — browsing is completely free for renters. Listing is also free for landlords.' },
   { q: 'My landlord account was rejected — what now?', a: 'Use the contact form to reach out with your registered email. Our team will review and respond within 1–2 business days.' },
   { q: 'Can I list commercial properties?', a: 'Yes. Livarex supports residential, commercial, and off-plan listings. Select the appropriate type when creating your listing.' },
 ]

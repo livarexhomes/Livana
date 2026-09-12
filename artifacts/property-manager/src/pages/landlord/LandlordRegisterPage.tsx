@@ -144,7 +144,11 @@ export default function LandlordRegisterPage() {
             "Listed my duplex on Monday, had 5 serious enquiries by Wednesday. The platform is professional and tenants trust it."
           </p>
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-full bg-blue-600 flex items-center justify-center text-white text-xs font-bold shrink-0">KA</div>
+            <img
+              src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=200&q=80"
+              alt="Kunle A."
+              className="w-9 h-9 rounded-full object-cover shrink-0 ring-2 ring-blue-500/60"
+            />
             <div>
               <p className="text-sm font-semibold text-white">Kunle A.</p>
               <p className="text-xs text-gray-500">Landlord · Abuja</p>
@@ -152,7 +156,7 @@ export default function LandlordRegisterPage() {
           </div>
         </div>
         <div className="relative z-10 space-y-3">
-          {['No agent commissions — ever', 'Direct tenant contact via WhatsApp', 'Admin-verified for trust & safety', 'Reach Lagos, Abuja, PH and beyond'].map(item => (
+          {[ 'Direct tenant contact via WhatsApp', 'Admin-verified for trust & safety', 'Reach Lagos, Abuja, PH and beyond'].map(item => (
             <div key={item} className="flex items-center gap-3">
               <CheckCircle2 className="w-4 h-4 text-blue-500 shrink-0" />
               <span className="text-sm text-gray-400">{item}</span>
