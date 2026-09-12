@@ -36,7 +36,7 @@ const verificationSteps = [
     status: 'Identity Check Complete',
     badgeClass: 'bg-blue-50 text-blue-700 border-blue-200',
     image:
-      'https://img.magnific.com/premium-photo/confidentagent-guidingdreamhome-professionalism_882186-26698.jpg',
+      'https://img.magnific.com/premium-photo/smiling-realtor-stands-front-beautiful-blue-house_14117-741147.jpg',
     overlayTitle: 'Profile Verified',
     overlayText: 'Identity and account details are confirmed before listing.',
   },
@@ -455,17 +455,17 @@ export default function AboutPage() {
                     aria-selected={activeStep === index}
                     aria-controls={`verification-panel-${step.id}`}
                     onClick={() => setActiveStep(index)}
-                    className={`flex items-start gap-3 rounded-2xl border px-4 py-3 text-left transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2 ${
+                    className={`flex items-start gap-3 rounded-2xl border px-4 py-3 text-left transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2 ${
                       activeStep === index
                         ? 'border-blue-200 bg-blue-50 shadow-[0_10px_24px_-18px_rgba(37,99,235,0.8)]'
                         : 'border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50'
                     }`}
                   >
-                    <span className="mt-0.5 inline-flex h-9 w-9 items-center justify-center rounded-xl bg-slate-900 text-xs font-black text-white">
+                    <span className={`mt-0.5 inline-flex h-9 w-9 items-center justify-center rounded-xl text-xs font-black ${activeStep === index ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-700'}`}>
                       {step.number}
                     </span>
                     <span>
-                      <span className="block text-xs font-bold uppercase tracking-[0.14em] text-slate-400">Step</span>
+                      <span className="block text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400">Step</span>
                       <span className="mt-1 block text-sm font-bold text-slate-900">{step.title}</span>
                     </span>
                   </button>
@@ -476,52 +476,88 @@ export default function AboutPage() {
                 role="tabpanel"
                 id={`verification-panel-${currentStep.id}`}
                 aria-labelledby={`verification-tab-${currentStep.id}`}
-                className="overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-[0_14px_34px_-28px_rgba(15,23,42,0.35)]"
+                className="overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-[0_18px_38px_-28px_rgba(15,23,42,0.45)]"
               >
-                <div className="grid lg:grid-cols-[1.15fr_0.85fr]">
-                  <div className="relative border-b border-slate-200 bg-slate-100 lg:border-b-0 lg:border-r">
+                <div className="grid lg:grid-cols-[1.1fr_0.9fr]">
+                  <div className="relative overflow-hidden border-b border-slate-200 bg-slate-100 lg:border-b-0 lg:border-r">
                     <img
                       src={currentStep.image}
                       alt={currentStep.title}
-                      className="h-72 w-full object-cover sm:h-80 lg:h-full"
+                      className="h-72 w-full object-cover sm:h-80 lg:h-full lg:min-h-[460px]"
                     />
+
+                    <div className="absolute inset-0 bg-gradient-to-t from-slate-950/30 via-slate-950/5 to-transparent" />
 
                     <div className={`absolute left-4 top-4 inline-flex items-center rounded-full border px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.16em] ${currentStep.badgeClass}`}>
                       {currentStep.status}
                     </div>
 
-                    <div className="absolute bottom-4 left-4 right-4 rounded-[1.25rem] border border-white/70 bg-white/90 p-3 backdrop-blur-sm">
-                      <div className="flex items-center gap-2 text-sm font-extrabold text-slate-950">
-                        <CheckCircle2 className="h-4 w-4 text-emerald-600" />
-                        {currentStep.overlayTitle}
+                    <div className="absolute left-4 right-4 bottom-4 grid gap-2 sm:grid-cols-2">
+                      <div className="rounded-[1.1rem] border border-white/70 bg-white/90 p-3 backdrop-blur-sm">
+                        <div className="flex items-center gap-2 text-sm font-extrabold text-slate-950">
+                          <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+                          {currentStep.overlayTitle}
+                        </div>
+                        <p className="mt-1 text-[11px] leading-relaxed text-slate-600">{currentStep.overlayText}</p>
                       </div>
-                      <p className="mt-1 text-xs leading-relaxed text-slate-600">{currentStep.overlayText}</p>
+
+                      <div className="rounded-[1.1rem] border border-blue-100 bg-blue-50/90 p-3 backdrop-blur-sm">
+                        <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-blue-700">Trusted Landlord</p>
+                        <p className="mt-2 text-sm font-bold text-slate-900">Account reviewed by LIVAREX</p>
+                      </div>
                     </div>
                   </div>
 
                   <div className="p-6 sm:p-8">
-                    <div className="flex items-center justify-between gap-4">
+                    <div className="flex items-center justify-between gap-3">
                       <div>
-                        <p className="text-xs font-bold uppercase tracking-[0.16em] text-slate-400">{currentStep.number}</p>
+                        <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400">{currentStep.number}</p>
                         <h3 className="mt-2 text-2xl font-black tracking-[-0.03em] text-slate-950 md:text-3xl">
                           {currentStep.title}
                         </h3>
                       </div>
+                      <div className="inline-flex items-center gap-2 rounded-full border border-blue-200 bg-blue-50 px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-[0.16em] text-blue-700">
+                        <ShieldCheck className="h-3.5 w-3.5" />
+                        Profile Verified
+                      </div>
                     </div>
 
-                    <p className="mt-5 text-base leading-relaxed text-slate-600">{currentStep.description}</p>
+                    <div className="mt-6 rounded-[1.5rem] border border-blue-100 bg-gradient-to-br from-blue-50 via-white to-sky-50 p-4">
+                      <div className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.16em] text-blue-700">
+                        <span className="inline-flex h-2 w-2 rounded-full bg-blue-600" />
+                        Identity Check Complete
+                      </div>
+                      <p className="mt-3 text-sm leading-relaxed text-slate-600">
+                        Identity and account details are confirmed before listing.
+                      </p>
+                    </div>
+
+                    <p className="mt-6 text-base leading-relaxed text-slate-600">{currentStep.description}</p>
                     {currentStep.extraText && (
                       <p className="mt-3 text-sm leading-relaxed text-slate-500">{currentStep.extraText}</p>
                     )}
 
-                    <ul className="mt-8 grid gap-3 sm:grid-cols-2">
-                      {currentStep.checklist.map((item) => (
-                        <li key={item} className="flex items-start gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-700">
-                          <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" />
-                          <span>{item}</span>
-                        </li>
-                      ))}
-                    </ul>
+                    <div className="mt-8 rounded-[1.5rem] border border-slate-200 bg-slate-50 p-4">
+                      <div className="flex items-center justify-between gap-3">
+                        <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-slate-500">Checklist</p>
+                        <div className="rounded-full border border-emerald-200 bg-emerald-50 px-2 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-emerald-700">
+                          Required
+                        </div>
+                      </div>
+
+                      <ul className="mt-4 grid gap-3 sm:grid-cols-2">
+                        {currentStep.checklist.map((item) => (
+                          <li key={item} className="flex items-start gap-3 rounded-2xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700">
+                            <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" />
+                            <span>{item}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+
+                    <div className="mt-6 rounded-2xl border border-slate-200 bg-white p-3">
+                      <p className="text-xs font-bold uppercase tracking-[0.16em] text-slate-500">Verification helps establish accountability before a listing becomes visible.</p>
+                    </div>
                   </div>
                 </div>
               </div>
