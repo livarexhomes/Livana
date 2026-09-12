@@ -36,7 +36,7 @@ const verificationSteps = [
     status: 'Identity Check Complete',
     badgeClass: 'bg-blue-50 text-blue-700 border-blue-200',
     image:
-      '/homes.img1.png',
+      'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=1200&q=80',
     overlayTitle: 'Profile Verified',
     overlayText: 'Identity and account details are confirmed before listing.',
   },
