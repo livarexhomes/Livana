@@ -52,7 +52,7 @@ const verificationSteps = [
     status: 'Ownership Review In Progress',
     badgeClass: 'bg-violet-50 text-violet-700 border-violet-200',
     image:
-      'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=1200&q=80',
+      'https://img.magnific.com/premium-photo/photo-cheerful-man-realtor-man-realtor-house-man-realtor-suit-man-realtor_474717-131571.jpg?w=900',
     overlayTitle: 'Document Review',
     overlayText: 'Property ownership and listing details are checked for accuracy.',
   },
@@ -737,15 +737,15 @@ export default function AboutPage() {
                   <div className="mt-2 grid grid-cols-2 gap-2">
                     <div className="overflow-hidden rounded-[1.25rem] border border-slate-200 bg-white">
                       <img
-                        src="https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=900&q=80"
-                        alt="Dark-skinned African tenant reviewing a property"
+                        src="https://d101qgvxw5fp3p.cloudfront.net/site/99009331/assets/uploads/pageuploads/20191121093252-FemaleAgentSmilesOverHerShoulderWithBuyersInBackground.jpg"
+                        alt="African female realtor smiling with buyers in a modern property setting"
                         className="h-28 w-full object-cover"
                       />
                     </div>
                     <div className="overflow-hidden rounded-[1.25rem] border border-slate-200 bg-white">
                       <img
-                        src="https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=900&q=80"
-                        alt="Dark-skinned African property advisor reviewing documents"
+                        src="https://img.magnific.com/premium-photo/smiling-realtor-stands-front-beautiful-blue-house_14117-741147.jpg"
+                        alt="African male realtor standing in front of a modern home"
                         className="h-28 w-full object-cover"
                       />
                     </div>
@@ -794,16 +794,16 @@ export default function AboutPage() {
 
                 <div className="absolute -bottom-4 left-5 w-[42%] overflow-hidden rounded-[1.25rem] border border-slate-200 bg-white p-1 shadow-[0_20px_60px_-40px_rgba(15,23,42,0.45)]">
                   <img
-                    src="https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=900&q=80"
-                    alt="Dark-skinned African male property reviewer in a modern real-estate context"
+                    src="https://img.magnific.com/premium-photo/confidentagent-guidingdreamhome-professionalism_882186-26698.jpg"
+                    alt="African male realtor guiding a home buying discussion"
                     className="h-24 w-full rounded-[0.85rem] object-cover"
                   />
                 </div>
 
                 <div className="absolute -right-2 top-10 w-[38%] overflow-hidden rounded-[1.25rem] border border-slate-200 bg-white p-1 shadow-[0_20px_60px_-40px_rgba(15,23,42,0.45)]">
                   <img
-                    src="https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=900&q=80"
-                    alt="Dark-skinned African female property advisor reviewing documents"
+                    src="https://d101qgvxw5fp3p.cloudfront.net/site/99009331/assets/uploads/pageuploads/20191121093252-FemaleAgentSmilesOverHerShoulderWithBuyersInBackground.jpg"
+                    alt="African female realtor smiling with buyers in a modern property setting"
                     className="h-24 w-full rounded-[0.85rem] object-cover"
                   />
                 </div>
