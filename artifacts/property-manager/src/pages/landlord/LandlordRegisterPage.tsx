@@ -145,7 +145,7 @@ export default function LandlordRegisterPage() {
           </p>
           <div className="flex items-center gap-3">
             <img
-              src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=200&q=80"
+              src="https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=200&q=80"
               alt="Kunle A."
               className="w-9 h-9 rounded-full object-cover shrink-0 ring-2 ring-blue-500/60"
             />
