@@ -36,7 +36,7 @@ const verificationSteps = [
     status: 'Identity Check Complete',
     badgeClass: 'bg-blue-50 text-blue-700 border-blue-200',
     image:
-      'https://www.magnific.com/free-ai-image/medium-shot-man-city-lifestyle_94955644.htm#fromView=search&page=1&position=42&uuid=736551e7-92e3-4b59-b066-ae998c39265d&track=ais_hybrid&query=realtors',
+      'https://img.magnific.com/premium-photo/confidentagent-guidingdreamhome-professionalism_882186-26698.jpg',
     overlayTitle: 'Profile Verified',
     overlayText: 'Identity and account details are confirmed before listing.',
   },
