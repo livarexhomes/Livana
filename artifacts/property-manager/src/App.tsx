@@ -4,6 +4,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { lazy, Suspense, useEffect } from "react";
 import ChatWidget from "@/components/ChatWidget";
+import WhatsAppWidget from "@/components/WhatsAppWidget";
 import { ThemeProvider, useTheme } from "@/lib/theme";
 import { slugToLocationLabel } from "@/lib/locationSlug";
 
@@ -162,6 +163,9 @@ function Router() {
   );
 }
 
+const LIVAREX_CHAT_ENABLED = import.meta.env.VITE_LIVAREX_CHAT_ENABLED === 'true'
+const WHATSAPP_WIDGET_ENABLED = import.meta.env.VITE_WHATSAPP_WIDGET_ENABLED === 'true'
+
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
@@ -172,7 +176,8 @@ function App() {
           </ThemeProvider>
         </WouterRouter>
         <Toaster />
-        <ChatWidget />
+        {LIVAREX_CHAT_ENABLED && <ChatWidget />}
+        {WHATSAPP_WIDGET_ENABLED && <WhatsAppWidget />}
       </TooltipProvider>
     </QueryClientProvider>
   );

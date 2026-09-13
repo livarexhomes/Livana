@@ -4,7 +4,6 @@ import {
   Loader2, Clock2, Smile, Home, CalendarCheck, Building2,
   MessageCircle, AlertCircle,
 } from 'lucide-react'
-import WhatsAppConcierge from './chat/WhatsAppConcierge'
 import { useLocation, redirect } from '../lib/navigation'
 import { createClient, getSupabaseImageUrl, isSupabaseConfigured } from '../lib/supabase'
 import { formatNaira } from '../lib/currency'
@@ -76,6 +75,7 @@ interface ConciergeFormState {
 // ── Config ────────────────────────────────────────────────────────────────────
 
 const AI_CHAT_ENABLED = import.meta.env.VITE_AI_CHAT_ENABLED === 'true'
+const LIVAREX_CHAT_ENABLED = import.meta.env.VITE_LIVAREX_CHAT_ENABLED === 'true'
 
 const CHAT_API_URL = import.meta.env.VITE_CHAT_API_URL
   ? `${import.meta.env.VITE_CHAT_API_URL}/api/chat`
@@ -958,8 +958,8 @@ export default function ChatWidget() {
   const path = (location || '').split('?')[0]
   if (path.startsWith('/admin') || path.startsWith('/landlord') || path.startsWith('/user') || path.startsWith('/dashboard')) return null
 
-  if (!AI_CHAT_ENABLED) {
-    return <WhatsAppConcierge />
+  if (!LIVAREX_CHAT_ENABLED) {
+    return null
   }
 
   // ── Render ────────────────────────────────────────────────────────────────
