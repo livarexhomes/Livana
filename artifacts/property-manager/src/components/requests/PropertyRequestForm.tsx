@@ -117,11 +117,6 @@ function formatCurrency(value: string) {
   }).format(Number(value))
 }
 
-function formatCompact(value: string, suffix: string) {
-  if (!value) return '—'
-  return `${value} ${suffix}`
-}
-
 export default function PropertyRequestForm({ initialValues, editingRequest, onSuccess, onCancelEdit }: PropertyRequestFormProps) {
   const [values, setValues] = useState<PropertyRequestFormValues>({ ...defaultValues, ...initialValues })
   const [errors, setErrors] = useState<Record<string, string>>({})
@@ -135,6 +130,7 @@ export default function PropertyRequestForm({ initialValues, editingRequest, onS
   const stateOptions = useMemo(() => ['Lagos', 'Ogun', 'Abuja', 'Rivers', 'Enugu', 'Kaduna', 'Kano'], [])
 
   const showCustomPropertyType = values.property_type === 'Other' || (!!values.property_type && !PROPERTY_TYPE_OPTIONS.includes(values.property_type))
+  const selectedPropertyType = PROPERTY_TYPE_OPTIONS.includes(values.property_type) ? values.property_type : 'Other'
 
   const alternativeAreas = useMemo(() => {
     return values.alternative_areas
@@ -142,43 +138,6 @@ export default function PropertyRequestForm({ initialValues, editingRequest, onS
       .map(area => area.trim())
       .filter(Boolean)
   }, [values.alternative_areas])
-
-  const summary = useMemo(() => {
-    const location = [values.preferred_area, values.state].filter(Boolean).join(', ')
-    const budgetRange = [values.min_budget, values.max_budget].some(Boolean)
-      ? `${formatCurrency(values.min_budget)} — ${formatCurrency(values.max_budget)}`
-      : 'Budget not selected yet'
-
-    return {
-      purpose: values.purpose || 'What are you looking for?',
-      propertyType: values.property_type || 'Property type not selected yet',
-      location: location || 'Location not selected yet',
-      budgetRange,
-      bedrooms: values.bedrooms ? formatCompact(values.bedrooms, 'Bedrooms') : 'Bedrooms not selected yet',
-      bathrooms: values.bathrooms ? formatCompact(values.bathrooms, 'Bathrooms') : 'Bathrooms not selected yet',
-      moveIn: values.move_in_timeline || 'Move-in timeline not selected yet',
-      features: values.features.length ? values.features.join(' · ') : 'Must-haves not selected yet',
-      alternativeAreas: alternativeAreas.length ? alternativeAreas.join(' · ') : 'Also consider not selected yet',
-    }
-  }, [alternativeAreas, values])
-
-  const completion = useMemo(() => {
-    const checklist = [
-      values.purpose,
-      values.property_type,
-      values.state,
-      values.preferred_area,
-      values.min_budget,
-      values.max_budget,
-      values.bedrooms,
-      values.bathrooms,
-      values.furnishing,
-      values.move_in_timeline,
-    ]
-
-    const completeCount = checklist.filter(value => Boolean(value) && value !== 'Any' && value !== 'Flexible').length
-    return Math.min(100, Math.round((completeCount / checklist.length) * 100))
-  }, [values])
 
   function updateField<K extends keyof PropertyRequestFormValues>(field: K, value: PropertyRequestFormValues[K]) {
     setValues(prev => ({ ...prev, [field]: value }))
@@ -332,503 +291,344 @@ export default function PropertyRequestForm({ initialValues, editingRequest, onS
   }
 
   return (
-    <div className="rounded-[28px] border border-slate-200 bg-[linear-gradient(180deg,#F8FAFF_0%,#F7F9FC_100%)] p-4 shadow-[0_20px_60px_rgba(15,23,42,0.06)] md:p-6 lg:p-7">
-      <div className="mb-6 flex flex-col gap-3 border-b border-slate-200 pb-5 md:flex-row md:items-end md:justify-between">
-        <div>
-          <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-blue-600">Livarex Property Concierge</p>
-          <h1 className="mt-2 text-2xl font-black tracking-[-0.04em] text-slate-900 md:text-[2rem]">Find what feels right.</h1>
-          <p className="mt-2 max-w-2xl text-sm text-slate-600 md:text-base">
-            Tell us what you&apos;re looking for and Livarex will help you find properties that match your lifestyle.
-          </p>
-        </div>
-
-        {editingRequest && onCancelEdit && (
-          <button
-            type="button"
-            onClick={onCancelEdit}
-            className="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-600 transition hover:border-slate-300 hover:bg-slate-50"
-          >
-            Cancel edit
-          </button>
-        )}
-      </div>
-
+    <div className="mx-auto max-w-4xl">
       <form id="property-request-form" onSubmit={handleSubmit} className="space-y-6">
         {errors.form && (
-          <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700">{errors.form}</div>
+          <div className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm font-medium text-red-700">
+            {errors.form}
+          </div>
         )}
 
-        <div className="grid gap-6 xl:grid-cols-[minmax(0,1.8fr)_minmax(280px,0.9fr)]">
-          <div className="space-y-6">
-            <section className="space-y-4 rounded-3xl border border-slate-200 bg-white p-4 md:p-5">
-              <div>
-                <h2 className="text-xl font-bold text-slate-900">What are you looking for?</h2>
-                <p className="mt-1 text-sm text-slate-500">Choose how you want to move.</p>
+        <section className="space-y-4 border-b border-slate-200 pb-5">
+          <div>
+            <h2 className="text-lg font-bold text-slate-900">What are you looking for?</h2>
+            <p className="mt-1 text-sm text-slate-500">Choose how you want to move.</p>
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-3">
+            {PURPOSE_OPTIONS.map(({ value, title, description, icon: Icon }) => {
+              const selected = values.purpose === value
+
+              return (
+                <button
+                  key={value}
+                  type="button"
+                  onClick={() => updateField('purpose', value)}
+                  className={`group min-h-[110px] rounded-2xl border p-3 text-left transition-all duration-200 ${
+                    selected
+                      ? 'border-blue-600 bg-blue-600 text-white shadow-[0_14px_30px_rgba(37,99,235,0.22)]'
+                      : 'border-slate-200 bg-slate-50 text-slate-700 hover:border-slate-300 hover:bg-white'
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <span className={`inline-flex h-9 w-9 items-center justify-center rounded-xl ${selected ? 'bg-white/15 text-white' : 'bg-white text-blue-600'}`}>
+                      <Icon className="h-4 w-4" />
+                    </span>
+                    {selected && <Check className="h-4 w-4 text-white" />}
+                  </div>
+
+                  <div className="mt-4">
+                    <p className="text-base font-bold">{title}</p>
+                    <p className={`mt-1 text-sm ${selected ? 'text-blue-50' : 'text-slate-500'}`}>{description}</p>
+                  </div>
+                </button>
+              )
+            })}
+          </div>
+
+          {errors.purpose && <p className="text-sm text-red-500">{errors.purpose}</p>}
+
+          <div className="space-y-2 pt-1">
+            <label className="block text-sm font-semibold text-slate-700">Property Type</label>
+            <select
+              value={selectedPropertyType}
+              onChange={e => updateField('property_type', e.target.value)}
+              className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-800 outline-none transition focus:border-blue-500 focus:bg-white"
+            >
+              {PROPERTY_TYPE_OPTIONS.map(option => (
+                <option key={option} value={option}>{option}</option>
+              ))}
+            </select>
+            {errors.property_type && <p className="text-sm text-red-500">{errors.property_type}</p>}
+          </div>
+
+          {showCustomPropertyType && (
+            <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-3">
+              <label className="mb-1.5 block text-sm font-semibold text-slate-700">Custom property type</label>
+              <input
+                value={values.property_type === 'Other' ? '' : values.property_type}
+                onChange={e => updateField('property_type', e.target.value)}
+                placeholder="Townhouse, duplex villa..."
+                className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-800 outline-none transition focus:border-blue-500"
+              />
+            </div>
+          )}
+        </section>
+
+        <section className="space-y-4 border-b border-slate-200 pb-5">
+          <div>
+            <h2 className="text-lg font-bold text-slate-900">Where?</h2>
+            <p className="mt-1 text-sm text-slate-500">Tell us the locations you have in mind.</p>
+          </div>
+
+          <div className="grid gap-4 md:grid-cols-2">
+            <div className="space-y-2">
+              <label className="block text-sm font-semibold text-slate-700">State</label>
+              <select
+                value={values.state}
+                onChange={e => updateField('state', e.target.value)}
+                className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-800 outline-none transition focus:border-blue-500 focus:bg-white"
+              >
+                <option value="">Select state</option>
+                {stateOptions.map(option => (
+                  <option key={option} value={option}>{option}</option>
+                ))}
+              </select>
+              {errors.state && <p className="text-sm text-red-500">{errors.state}</p>}
+            </div>
+
+            <div className="space-y-2">
+              <label className="block text-sm font-semibold text-slate-700">Preferred Area</label>
+              <input
+                value={values.preferred_area}
+                onChange={e => updateField('preferred_area', e.target.value)}
+                placeholder="Lekki"
+                className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-800 outline-none transition focus:border-blue-500 focus:bg-white"
+              />
+              {errors.preferred_area && <p className="text-sm text-red-500">{errors.preferred_area}</p>}
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <div className="flex items-center justify-between gap-3">
+              <label className="block text-sm font-semibold text-slate-700">Alternative Areas</label>
+              <span className="text-xs font-medium text-slate-400">Optional</span>
+            </div>
+
+            <div className="rounded-2xl border border-slate-200 bg-slate-50 p-3">
+              <div className="mb-2 flex flex-wrap gap-2">
+                {alternativeAreas.map(area => (
+                  <button
+                    key={area}
+                    type="button"
+                    onClick={() => {
+                      const updated = values.alternative_areas
+                        .split(',')
+                        .map(item => item.trim())
+                        .filter(item => item && item !== area)
+                        .join(', ')
+
+                      updateField('alternative_areas', updated)
+                    }}
+                    className="inline-flex items-center gap-2 rounded-full border border-blue-200 bg-blue-50 px-2.5 py-1.5 text-xs font-semibold text-blue-700"
+                  >
+                    {area}
+                    <span className="text-blue-500">×</span>
+                  </button>
+                ))}
               </div>
 
-              <div className="grid gap-3 md:grid-cols-3">
-                {PURPOSE_OPTIONS.map(({ value, title, description, icon: Icon }) => {
-                  const selected = values.purpose === value
+              <input
+                value={values.alternative_areas}
+                onChange={e => updateField('alternative_areas', e.target.value)}
+                placeholder="Ajah, Ikoyi, Victoria Island"
+                className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 outline-none transition focus:border-blue-500"
+              />
+            </div>
+          </div>
+        </section>
 
-                  return (
-                    <button
-                      key={value}
-                      type="button"
-                      onClick={() => updateField('purpose', value)}
-                      className={`group rounded-2xl border p-4 text-left transition-all duration-200 ${
-                        selected
-                          ? 'border-blue-600 bg-blue-600 text-white shadow-[0_14px_30px_rgba(37,99,235,0.22)]'
-                          : 'border-slate-200 bg-slate-50 text-slate-700 hover:border-slate-300 hover:bg-white'
-                      }`}
-                    >
-                      <div className="flex items-center justify-between">
-                        <span className={`inline-flex h-10 w-10 items-center justify-center rounded-xl ${selected ? 'bg-white/15 text-white' : 'bg-white text-blue-600'}`}>
-                          <Icon className="h-4 w-4" />
-                        </span>
-                        {selected && <Check className="h-4 w-4 text-white" />}
-                      </div>
+        <section className="space-y-4 border-b border-slate-200 pb-5">
+          <div>
+            <h2 className="text-lg font-bold text-slate-900">Budget</h2>
+            <p className="mt-1 text-sm text-slate-500">Enter the range you're comfortable with.</p>
+          </div>
 
-                      <div className="mt-4">
-                        <p className="text-base font-bold">{title}</p>
-                        <p className={`mt-1 text-sm ${selected ? 'text-blue-50' : 'text-slate-500'}`}>{description}</p>
-                      </div>
-                    </button>
-                  )
-                })}
-              </div>
-              {errors.purpose && <p className="text-sm text-red-500">{errors.purpose}</p>}
-            </section>
+          <div className="grid gap-4 md:grid-cols-2">
+            <div className="space-y-2">
+              <label className="block text-sm font-semibold text-slate-700">Minimum Budget</label>
+              <MoneyInput
+                value={values.min_budget}
+                onChange={value => updateField('min_budget', value)}
+                placeholder="200,000"
+                className="rounded-2xl border border-slate-200 bg-slate-50"
+              />
+              {errors.min_budget && <p className="text-sm text-red-500">{errors.min_budget}</p>}
+            </div>
 
-            <section className="space-y-4 rounded-3xl border border-slate-200 bg-white p-4 md:p-5">
-              <div>
-                <h2 className="text-xl font-bold text-slate-900">What kind of place feels right?</h2>
-                <p className="mt-1 text-sm text-slate-500">Select the style you&apos;re after.</p>
-              </div>
+            <div className="space-y-2">
+              <label className="block text-sm font-semibold text-slate-700">Maximum Budget</label>
+              <MoneyInput
+                value={values.max_budget}
+                onChange={value => updateField('max_budget', value)}
+                placeholder="3,000,000"
+                className="rounded-2xl border border-slate-200 bg-slate-50"
+              />
+              {errors.max_budget && <p className="text-sm text-red-500">{errors.max_budget}</p>}
+            </div>
+          </div>
+        </section>
 
-              <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-                {PROPERTY_TYPE_OPTIONS.map(option => {
-                  const selected = values.property_type === option
+        <section className="space-y-4 border-b border-slate-200 pb-5">
+          <div>
+            <h2 className="text-lg font-bold text-slate-900">Property Details</h2>
+            <p className="mt-1 text-sm text-slate-500">Choose the layout and feel that suits your day-to-day life.</p>
+          </div>
 
+          <div className="grid gap-4 md:grid-cols-2">
+            <div className="space-y-2">
+              <label className="block text-sm font-semibold text-slate-700">Bedrooms</label>
+              <div className="flex flex-wrap gap-2">
+                {['Studio', '1', '2', '3', '4', '5+'].map(option => {
+                  const selected = values.bedrooms === option
                   return (
                     <button
                       key={option}
                       type="button"
-                      onClick={() => updateField('property_type', option)}
-                      className={`rounded-2xl border px-3 py-3 text-left text-sm font-semibold transition-all duration-200 ${
+                      onClick={() => updateField('bedrooms', option)}
+                      className={`rounded-full border px-3 py-2 text-sm font-semibold transition ${
                         selected
-                          ? 'border-blue-600 bg-blue-50 text-blue-700 shadow-[0_10px_25px_rgba(37,99,235,0.08)]'
-                          : 'border-slate-200 bg-slate-50 text-slate-600 hover:border-slate-300 hover:bg-white'
+                          ? 'border-blue-600 bg-blue-600 text-white'
+                          : 'border-slate-200 bg-slate-50 text-slate-600 hover:border-slate-300'
                       }`}
                     >
-                      <span className="flex items-center justify-between gap-2">
-                        <span>{option}</span>
-                        {selected && <Check className="h-4 w-4 text-blue-700" />}
-                      </span>
+                      {option}
                     </button>
                   )
                 })}
               </div>
+            </div>
 
-              {showCustomPropertyType && (
-                <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-3">
-                  <label className="mb-1.5 block text-sm font-semibold text-slate-700">Custom property type</label>
-                  <input
-                    value={values.property_type === 'Other' ? '' : values.property_type}
-                    onChange={e => updateField('property_type', e.target.value)}
-                    placeholder="Townhouse, duplex villa..."
-                    className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-800 outline-none transition focus:border-blue-500"
-                  />
-                </div>
-              )}
-
-              {errors.property_type && <p className="text-sm text-red-500">{errors.property_type}</p>}
-            </section>
-
-            <section className="space-y-4 rounded-3xl border border-slate-200 bg-white p-4 md:p-5">
-              <div>
-                <h2 className="text-xl font-bold text-slate-900">Where would you like to live?</h2>
-                <p className="mt-1 text-sm text-slate-500">Tell us the locations you have in mind.</p>
-              </div>
-
-              <div className="grid gap-4 md:grid-cols-2">
-                <div>
-                  <label className="mb-1.5 block text-sm font-semibold text-slate-700">State</label>
-                  <select
-                    value={values.state}
-                    onChange={e => updateField('state', e.target.value)}
-                    className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-800 outline-none transition focus:border-blue-500 focus:bg-white"
-                  >
-                    <option value="">Select state</option>
-                    {stateOptions.map(option => (
-                      <option key={option} value={option}>{option}</option>
-                    ))}
-                  </select>
-                  {errors.state && <p className="mt-1 text-sm text-red-500">{errors.state}</p>}
-                </div>
-
-                <div>
-                  <label className="mb-1.5 block text-sm font-semibold text-slate-700">Preferred area</label>
-                  <input
-                    value={values.preferred_area}
-                    onChange={e => updateField('preferred_area', e.target.value)}
-                    placeholder="Lekki"
-                    className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-800 outline-none transition focus:border-blue-500 focus:bg-white"
-                  />
-                  {errors.preferred_area && <p className="mt-1 text-sm text-red-500">{errors.preferred_area}</p>}
-                </div>
-              </div>
-
-              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-3">
-                <div className="mb-2 flex items-center justify-between gap-3">
-                  <label className="text-sm font-semibold text-slate-700">Also consider</label>
-                  <span className="text-xs font-medium text-slate-400">Optional</span>
-                </div>
-
-                <div className="flex flex-wrap gap-2">
-                  {alternativeAreas.map(area => (
-                    <button
-                      key={area}
-                      type="button"
-                      onClick={() => {
-                        const updated = values.alternative_areas
-                          .split(',')
-                          .map(item => item.trim())
-                          .filter(item => item && item !== area)
-                          .join(', ')
-
-                        updateField('alternative_areas', updated)
-                      }}
-                      className="inline-flex items-center gap-2 rounded-full border border-blue-200 bg-blue-50 px-2.5 py-1.5 text-xs font-semibold text-blue-700"
-                    >
-                      {area}
-                      <span className="text-blue-500">×</span>
-                    </button>
-                  ))}
-
-                  <div className="flex-1 min-w-[160px]">
-                    <input
-                      value={values.alternative_areas}
-                      onChange={e => updateField('alternative_areas', e.target.value)}
-                      placeholder="Ajah, Chevron, Yaba"
-                      className="w-full rounded-full border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 outline-none transition focus:border-blue-500"
-                    />
-                  </div>
-                </div>
-              </div>
-            </section>
-
-            <section className="space-y-4 rounded-3xl border border-slate-200 bg-white p-4 md:p-5">
-              <div>
-                <h2 className="text-xl font-bold text-slate-900">What&apos;s comfortable for you?</h2>
-                <p className="mt-1 text-sm text-slate-500">Set your preferred budget range.</p>
-              </div>
-
-              <div className="grid gap-4 md:grid-cols-2">
-                <div className="space-y-2">
-                  <label className="text-sm font-semibold text-slate-700">Minimum budget</label>
-                  <MoneyInput
-                    value={values.min_budget}
-                    onChange={value => updateField('min_budget', value)}
-                    placeholder="200,000"
-                    className="rounded-2xl border border-slate-200 bg-slate-50"
-                  />
-                  {errors.min_budget && <p className="text-sm text-red-500">{errors.min_budget}</p>}
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-sm font-semibold text-slate-700">Maximum budget</label>
-                  <MoneyInput
-                    value={values.max_budget}
-                    onChange={value => updateField('max_budget', value)}
-                    placeholder="3,000,000"
-                    className="rounded-2xl border border-slate-200 bg-slate-50"
-                  />
-                  {errors.max_budget && <p className="text-sm text-red-500">{errors.max_budget}</p>}
-                </div>
-              </div>
-
-              {(values.min_budget || values.max_budget) && (
-                <div className="rounded-2xl border border-blue-100 bg-blue-50 p-3">
-                  <div className="flex items-center justify-between gap-3 text-xs font-semibold uppercase tracking-[0.12em] text-blue-700">
-                    <span>Budget range</span>
-                    <span>{formatCurrency(values.min_budget)} • {formatCurrency(values.max_budget)}</span>
-                  </div>
-                  <div className="mt-3 h-2 rounded-full bg-blue-100">
-                    <div className="h-2 rounded-full bg-blue-600" style={{ width: `${Math.min(100, Math.max(20, completion))}%` }} />
-                  </div>
-                </div>
-              )}
-            </section>
-
-            <section className="space-y-4 rounded-3xl border border-slate-200 bg-white p-4 md:p-5">
-              <div>
-                <h2 className="text-xl font-bold text-slate-900">How much space do you need?</h2>
-                <p className="mt-1 text-sm text-slate-500">Choose the layout that suits your day-to-day life.</p>
-              </div>
-
-              <div className="grid gap-4 md:grid-cols-2">
-                <div className="space-y-2">
-                  <label className="text-sm font-semibold text-slate-700">Bedrooms</label>
-                  <div className="flex flex-wrap gap-2">
-                    {['Studio', '1', '2', '3', '4', '5+'].map(option => {
-                      const selected = values.bedrooms === option
-                      return (
-                        <button
-                          key={option}
-                          type="button"
-                          onClick={() => updateField('bedrooms', option)}
-                          className={`rounded-full border px-3 py-2 text-sm font-semibold transition ${
-                            selected
-                              ? 'border-blue-600 bg-blue-600 text-white'
-                              : 'border-slate-200 bg-slate-50 text-slate-600 hover:border-slate-300'
-                          }`}
-                        >
-                          {option}
-                        </button>
-                      )
-                    })}
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-sm font-semibold text-slate-700">Bathrooms</label>
-                  <div className="flex flex-wrap gap-2">
-                    {['Any', '1', '2', '3', '4+'].map(option => {
-                      const selected = values.bathrooms === option
-                      return (
-                        <button
-                          key={option}
-                          type="button"
-                          onClick={() => updateField('bathrooms', option)}
-                          className={`rounded-full border px-3 py-2 text-sm font-semibold transition ${
-                            selected
-                              ? 'border-blue-600 bg-blue-600 text-white'
-                              : 'border-slate-200 bg-slate-50 text-slate-600 hover:border-slate-300'
-                          }`}
-                        >
-                          {option}
-                        </button>
-                      )
-                    })}
-                  </div>
-                </div>
-              </div>
-            </section>
-
-            <section className="space-y-4 rounded-3xl border border-slate-200 bg-white p-4 md:p-5">
-              <div>
-                <h2 className="text-xl font-bold text-slate-900">How should it feel?</h2>
-                <p className="mt-1 text-sm text-slate-500">Refine the home experience you prefer.</p>
-              </div>
-
-              <div className="grid gap-4 md:grid-cols-2">
-                <div className="space-y-2">
-                  <label className="text-sm font-semibold text-slate-700">Furnishing</label>
-                  <div className="grid grid-cols-2 gap-2">
-                    {FURNISHING_OPTIONS.map(option => {
-                      const selected = values.furnishing === option
-                      return (
-                        <button
-                          key={option}
-                          type="button"
-                          onClick={() => updateField('furnishing', option)}
-                          className={`rounded-2xl border px-3 py-2.5 text-sm font-semibold transition ${
-                            selected ? 'border-blue-600 bg-blue-600 text-white' : 'border-slate-200 bg-slate-50 text-slate-600 hover:border-slate-300'
-                          }`}
-                        >
-                          {option}
-                        </button>
-                      )
-                    })}
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-sm font-semibold text-slate-700">Move-in timeline</label>
-                  <div className="grid grid-cols-2 gap-2">
-                    {MOVE_IN_OPTIONS.map(option => {
-                      const selected = values.move_in_timeline === option
-                      return (
-                        <button
-                          key={option}
-                          type="button"
-                          onClick={() => updateField('move_in_timeline', option)}
-                          className={`rounded-2xl border px-3 py-2.5 text-sm font-semibold transition ${
-                            selected ? 'border-blue-600 bg-blue-600 text-white' : 'border-slate-200 bg-slate-50 text-slate-600 hover:border-slate-300'
-                          }`}
-                        >
-                          {option}
-                        </button>
-                      )
-                    })}
-                  </div>
-                </div>
-              </div>
-            </section>
-
-            <section className="space-y-4 rounded-3xl border border-slate-200 bg-white p-4 md:p-5">
-              <div>
-                <h2 className="text-xl font-bold text-slate-900">What matters most?</h2>
-                <p className="mt-1 text-sm text-slate-500">Select anything you consider essential.</p>
-              </div>
-
-              <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
-                {FEATURE_OPTIONS.map(({ label, icon: Icon }) => {
-                  const selected = values.features.includes(label)
-
+            <div className="space-y-2">
+              <label className="block text-sm font-semibold text-slate-700">Bathrooms</label>
+              <div className="flex flex-wrap gap-2">
+                {['Any', '1', '2', '3', '4+'].map(option => {
+                  const selected = values.bathrooms === option
                   return (
                     <button
-                      key={label}
+                      key={option}
                       type="button"
-                      onClick={() => toggleFeature(label)}
-                      className={`flex items-center justify-between gap-3 rounded-2xl border px-3 py-3 text-left text-sm font-semibold transition-all duration-200 ${
+                      onClick={() => updateField('bathrooms', option)}
+                      className={`rounded-full border px-3 py-2 text-sm font-semibold transition ${
                         selected
-                          ? 'border-blue-600 bg-blue-50 text-blue-700 shadow-[0_10px_22px_rgba(37,99,235,0.08)]'
-                          : 'border-slate-200 bg-slate-50 text-slate-600 hover:border-slate-300 hover:bg-white'
+                          ? 'border-blue-600 bg-blue-600 text-white'
+                          : 'border-slate-200 bg-slate-50 text-slate-600 hover:border-slate-300'
                       }`}
                     >
-                      <span className="flex items-center gap-2">
-                        <span className={`inline-flex h-7 w-7 items-center justify-center rounded-xl ${selected ? 'bg-blue-600 text-white' : 'bg-white text-slate-500'}`}>
-                          <Icon className="h-3.5 w-3.5" />
-                        </span>
-                        <span>{label}</span>
-                      </span>
-                      {selected && <Check className="h-4 w-4 text-blue-700" />}
+                      {option}
                     </button>
                   )
                 })}
               </div>
-            </section>
+            </div>
 
-            <section className="space-y-4 rounded-3xl border border-slate-200 bg-white p-4 md:p-5">
-              <div>
-                <h2 className="text-xl font-bold text-slate-900">Anything else we should know?</h2>
-                <p className="mt-1 text-sm text-slate-500">Share anything that would help us understand your ideal home.</p>
+            <div className="space-y-2">
+              <label className="block text-sm font-semibold text-slate-700">Furnishing</label>
+              <div className="grid grid-cols-2 gap-2">
+                {FURNISHING_OPTIONS.map(option => {
+                  const selected = values.furnishing === option
+                  return (
+                    <button
+                      key={option}
+                      type="button"
+                      onClick={() => updateField('furnishing', option)}
+                      className={`rounded-2xl border px-3 py-2.5 text-sm font-semibold transition ${
+                        selected ? 'border-blue-600 bg-blue-600 text-white' : 'border-slate-200 bg-slate-50 text-slate-600 hover:border-slate-300'
+                      }`}
+                    >
+                      {option}
+                    </button>
+                  )
+                })}
               </div>
+            </div>
 
-              <textarea
-                value={values.notes}
-                onChange={e => updateField('notes', e.target.value)}
-                rows={4}
-                placeholder="Quiet estate, good access roads, natural light, close to work…"
-                className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-3 py-3 text-sm text-slate-800 outline-none transition focus:border-blue-500 focus:bg-white"
-              />
-            </section>
-
-            <div className="flex flex-col gap-3 border-t border-slate-200 pt-4 md:flex-row md:items-center md:justify-between">
-              <div className="text-sm text-slate-500">Your request can be updated while our team is reviewing it.</div>
-              <button
-                type="submit"
-                disabled={submitting}
-                className="inline-flex items-center justify-center rounded-2xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white shadow-[0_16px_30px_rgba(37,99,235,0.25)] transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-blue-300"
-              >
-                {submitting ? 'Submitting your request…' : 'Submit Property Request'}
-              </button>
+            <div className="space-y-2">
+              <label className="block text-sm font-semibold text-slate-700">Move-in Timeline</label>
+              <div className="grid grid-cols-2 gap-2">
+                {MOVE_IN_OPTIONS.map(option => {
+                  const selected = values.move_in_timeline === option
+                  return (
+                    <button
+                      key={option}
+                      type="button"
+                      onClick={() => updateField('move_in_timeline', option)}
+                      className={`rounded-2xl border px-3 py-2.5 text-sm font-semibold transition ${
+                        selected ? 'border-blue-600 bg-blue-600 text-white' : 'border-slate-200 bg-slate-50 text-slate-600 hover:border-slate-300'
+                      }`}
+                    >
+                      {option}
+                    </button>
+                  )
+                })}
+              </div>
             </div>
           </div>
+        </section>
 
-          <aside className="xl:sticky xl:top-24 xl:h-fit">
-            <div className="rounded-[26px] border border-slate-200 bg-white p-4 shadow-[0_18px_45px_rgba(15,23,42,0.06)] md:p-5">
-              <div className="flex items-center justify-between gap-3">
-                <div>
-                  <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">Your Request</p>
-                  <h3 className="mt-2 text-xl font-black text-slate-900">Live summary</h3>
-                </div>
-                <span className="inline-flex items-center rounded-full bg-blue-50 px-2 py-1 text-[10px] font-bold uppercase tracking-[0.12em] text-blue-700">
-                  {completion}%
-                </span>
-              </div>
+        <section className="space-y-4 border-b border-slate-200 pb-5">
+          <div>
+            <h2 className="text-lg font-bold text-slate-900">Must-haves</h2>
+            <p className="mt-1 text-sm text-slate-500">Select the essentials that matter most.</p>
+          </div>
 
-              <div className="mt-4">
-                <div className="mb-2 flex items-center justify-between text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400">
-                  <span>Request completeness</span>
-                  <span>{completion}%</span>
-                </div>
-                <div className="h-2 rounded-full bg-slate-100">
-                  <div className="h-2 rounded-full bg-blue-600 transition-all duration-200" style={{ width: `${completion}%` }} />
-                </div>
-              </div>
+          <div className="flex flex-wrap gap-2">
+            {FEATURE_OPTIONS.map(({ label, icon: Icon }) => {
+              const selected = values.features.includes(label)
 
-              <div className="mt-5 space-y-4">
-                <div className="rounded-2xl border border-slate-200 bg-slate-50 p-3">
-                  <div className="flex items-center gap-2 text-slate-500">
-                    <KeyRound className="h-4 w-4 text-blue-600" />
-                    <span className="text-xs font-semibold uppercase tracking-[0.12em]">Purpose</span>
-                  </div>
-                  <p className="mt-2 text-base font-bold text-slate-900">{summary.purpose}</p>
-                </div>
+              return (
+                <button
+                  key={label}
+                  type="button"
+                  onClick={() => toggleFeature(label)}
+                  className={`inline-flex items-center gap-2 rounded-full border px-3 py-2 text-sm font-semibold transition ${
+                    selected
+                      ? 'border-blue-600 bg-blue-50 text-blue-700 shadow-[0_10px_22px_rgba(37,99,235,0.08)]'
+                      : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50'
+                  }`}
+                >
+                  <span className={`inline-flex h-6 w-6 items-center justify-center rounded-full ${selected ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-500'}`}>
+                    <Icon className="h-3.5 w-3.5" />
+                  </span>
+                  {label}
+                </button>
+              )
+            })}
+          </div>
+        </section>
 
-                <div className="rounded-2xl border border-slate-200 bg-slate-50 p-3">
-                  <div className="flex items-center gap-2 text-slate-500">
-                    <Building2 className="h-4 w-4 text-blue-600" />
-                    <span className="text-xs font-semibold uppercase tracking-[0.12em]">Property type</span>
-                  </div>
-                  <p className="mt-2 text-base font-bold text-slate-900">{summary.propertyType}</p>
-                </div>
+        <section className="space-y-2">
+          <div>
+            <h2 className="text-lg font-bold text-slate-900">Additional Notes</h2>
+            <p className="mt-1 text-sm text-slate-500">Anything else we should know about the kind of property you're looking for?</p>
+          </div>
 
-                <div className="rounded-2xl border border-slate-200 bg-slate-50 p-3">
-                  <div className="flex items-center gap-2 text-slate-500">
-                    <MapPin className="h-4 w-4 text-blue-600" />
-                    <span className="text-xs font-semibold uppercase tracking-[0.12em]">Location</span>
-                  </div>
-                  <p className="mt-2 text-base font-bold text-slate-900">{summary.location}</p>
-                  <p className="mt-1 text-xs text-slate-500">{summary.alternativeAreas}</p>
-                </div>
+          <textarea
+            value={values.notes}
+            onChange={e => updateField('notes', e.target.value)}
+            rows={4}
+            placeholder="Anything else we should know about the kind of property you're looking for?"
+            className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-3 py-3 text-sm text-slate-800 outline-none transition focus:border-blue-500 focus:bg-white"
+          />
+        </section>
 
-                <div className="rounded-2xl border border-slate-200 bg-slate-50 p-3">
-                  <div className="flex items-center gap-2 text-slate-500">
-                    <Wallet className="h-4 w-4 text-blue-600" />
-                    <span className="text-xs font-semibold uppercase tracking-[0.12em]">Budget</span>
-                  </div>
-                  <p className="mt-2 text-base font-bold text-slate-900">{summary.budgetRange}</p>
-                </div>
+        <div className="flex flex-col-reverse gap-3 border-t border-slate-200 pt-5 sm:flex-row sm:items-center sm:justify-between">
+          <button
+            type="button"
+            onClick={onCancelEdit}
+            className="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-600 transition hover:border-slate-300 hover:bg-slate-50"
+          >
+            {editingRequest ? 'Cancel Editing' : 'Cancel'}
+          </button>
 
-                <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
-                  <div className="rounded-2xl border border-slate-200 bg-slate-50 p-3">
-                    <div className="flex items-center gap-2 text-slate-500">
-                      <BedDouble className="h-4 w-4 text-blue-600" />
-                      <span className="text-xs font-semibold uppercase tracking-[0.12em]">Bedrooms</span>
-                    </div>
-                    <p className="mt-2 text-sm font-bold text-slate-900">{summary.bedrooms}</p>
-                  </div>
-
-                  <div className="rounded-2xl border border-slate-200 bg-slate-50 p-3">
-                    <div className="flex items-center gap-2 text-slate-500">
-                      <Bath className="h-4 w-4 text-blue-600" />
-                      <span className="text-xs font-semibold uppercase tracking-[0.12em]">Bathrooms</span>
-                    </div>
-                    <p className="mt-2 text-sm font-bold text-slate-900">{summary.bathrooms}</p>
-                  </div>
-                </div>
-
-                <div className="rounded-2xl border border-slate-200 bg-slate-50 p-3">
-                  <div className="flex items-center gap-2 text-slate-500">
-                    <CalendarRange className="h-4 w-4 text-blue-600" />
-                    <span className="text-xs font-semibold uppercase tracking-[0.12em]">Move-in</span>
-                  </div>
-                  <p className="mt-2 text-base font-bold text-slate-900">{summary.moveIn}</p>
-                </div>
-
-                <div className="rounded-2xl border border-slate-200 bg-slate-50 p-3">
-                  <div className="flex items-center gap-2 text-slate-500">
-                    <Sparkles className="h-4 w-4 text-blue-600" />
-                    <span className="text-xs font-semibold uppercase tracking-[0.12em]">Must-haves</span>
-                  </div>
-                  <p className="mt-2 text-sm font-bold text-slate-900">{summary.features}</p>
-                </div>
-              </div>
-
-              <button
-                type="submit"
-                form="property-request-form"
-                disabled={submitting}
-                className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white shadow-[0_16px_30px_rgba(37,99,235,0.25)] transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-blue-300"
-              >
-                {submitting ? 'Submitting your request…' : 'Submit Property Request'}
-                <ChevronRight className="h-4 w-4" />
-              </button>
-            </div>
-          </aside>
+          <button
+            type="submit"
+            disabled={submitting}
+            className="inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white shadow-[0_16px_30px_rgba(37,99,235,0.25)] transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-blue-300"
+          >
+            {submitting ? (editingRequest ? 'Updating your request…' : 'Submitting your request…') : (editingRequest ? 'Update Request' : 'Submit Property Request')}
+            <ChevronRight className="h-4 w-4" />
+          </button>
         </div>
       </form>
     </div>

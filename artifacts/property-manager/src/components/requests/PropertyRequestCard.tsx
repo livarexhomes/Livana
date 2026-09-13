@@ -44,8 +44,8 @@ export default function PropertyRequestCard({ request, selected = false, onSelec
     <button
       type="button"
       onClick={() => onSelect(request)}
-      className={`w-full text-left rounded-2xl border bg-white p-4 shadow-sm transition-all duration-200 hover:border-blue-200 hover:shadow-md ${
-        selected ? 'border-blue-300 bg-blue-50/40 shadow-sm' : 'border-gray-100'
+      className={`w-full text-left rounded-2xl border bg-white p-3.5 shadow-sm transition-all duration-200 hover:border-blue-200 hover:shadow-md ${
+        selected ? 'border-blue-300 bg-blue-50/40 shadow-sm' : 'border-slate-200'
       }`}
     >
       <div className="flex items-start justify-between gap-3">
@@ -59,41 +59,28 @@ export default function PropertyRequestCard({ request, selected = false, onSelec
         </span>
       </div>
 
-      <div className="mt-3 grid gap-2 sm:grid-cols-2 text-xs text-gray-600">
-        <div className="flex items-start gap-2">
-          <MapPin className="mt-0.5 h-3.5 w-3.5 text-gray-400" />
-          <div className="min-w-0">
-            <p className="font-semibold text-gray-400 uppercase tracking-[0.12em]">Location</p>
-            <p className="mt-0.5 truncate text-gray-700">{request.preferred_area}, {request.state}</p>
-          </div>
+      <div className="mt-3 space-y-2 text-sm text-gray-600">
+        <div className="flex items-center gap-2">
+          <MapPin className="h-3.5 w-3.5 text-gray-400" />
+          <span className="truncate">{request.preferred_area}, {request.state}</span>
         </div>
 
-        <div>
-          <p className="font-semibold text-gray-400 uppercase tracking-[0.12em]">Budget</p>
-          <p className="mt-0.5 text-gray-700">
+        <div className="flex items-center justify-between gap-3">
+          <span className="font-medium text-gray-500">Budget</span>
+          <span className="text-gray-700">
             {formatCurrency(request.min_budget)} – {formatCurrency(request.max_budget)}
-          </p>
-        </div>
-
-        <div>
-          <p className="font-semibold text-gray-400 uppercase tracking-[0.12em]">Bedrooms</p>
-          <p className="mt-0.5 text-gray-700">{request.bedrooms ?? 'Any'}{request.bedrooms ? '+' : ''}</p>
-        </div>
-
-        <div>
-          <p className="font-semibold text-gray-400 uppercase tracking-[0.12em]">Updated</p>
-          <p className="mt-0.5 text-gray-700">{updatedAgo}</p>
+          </span>
         </div>
       </div>
 
-      <div className="mt-4 flex items-center justify-between border-t border-gray-100 pt-3">
-        <div className="flex items-center gap-2 text-[11px] text-gray-500">
+      <div className="mt-3 flex items-center justify-between border-t border-slate-100 pt-3 text-[11px]">
+        <div className="flex items-center gap-2 text-slate-500">
           <Sparkles className="h-3.5 w-3.5 text-blue-500" />
-          <span>Created {new Date(request.created_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</span>
+          <span>Updated {updatedAgo}</span>
         </div>
 
-        <span className="inline-flex items-center gap-1 text-xs font-semibold text-blue-600">
-          View Details
+        <span className="inline-flex items-center gap-1 font-semibold text-blue-600">
+          View
           <ArrowUpRight className="h-3.5 w-3.5" />
         </span>
       </div>
