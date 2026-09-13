@@ -522,15 +522,15 @@ export default function PropertyRequestForm({ initialValues, editingRequest, onS
               </div>
             </section>
 
-            <section className="space-y-4 rounded-3xl border border-slate-200 bg-white p-4 shadow-sm md:p-6">
-              <div>
-                <h2 className="text-lg font-bold text-slate-900">Property Details</h2>
-                <p className="mt-1 text-sm text-slate-500">Choose the layout and feel that suits your day-to-day life.</p>
+            <section className="space-y-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_1px_0_rgba(15,23,42,0.02)] md:p-4">
+              <div className="space-y-1">
+                <h2 className="text-base font-bold text-slate-900">Property Details</h2>
+                <p className="text-sm text-slate-500">Choose the setup that works for you.</p>
               </div>
 
               <div className="grid gap-4 md:grid-cols-2">
                 <div className="space-y-2">
-                  <label className="block text-sm font-semibold text-slate-700">Bedrooms</label>
+                  <label className="block text-[13px] font-semibold text-slate-700">Bedrooms</label>
                   <div className="flex flex-wrap gap-2">
                     {['Studio', '1', '2', '3', '4', '5+'].map(option => {
                       const selected = values.bedrooms === option
@@ -540,9 +540,9 @@ export default function PropertyRequestForm({ initialValues, editingRequest, onS
                           type="button"
                           aria-pressed={selected}
                           onClick={() => updateField('bedrooms', option)}
-                          className={`rounded-xl border px-3 py-2 text-sm font-semibold transition ${
+                          className={`min-h-[40px] rounded-xl border px-3 py-1.5 text-sm font-semibold transition-colors ${
                             selected
-                              ? 'border-blue-600 bg-blue-600 text-white shadow-[0_8px_18px_rgba(37,99,235,0.16)]'
+                              ? 'border-blue-600 bg-blue-600 text-white'
                               : 'border-slate-200 bg-slate-50 text-slate-600 hover:border-slate-300 hover:bg-white'
                           }`}
                         >
@@ -554,7 +554,7 @@ export default function PropertyRequestForm({ initialValues, editingRequest, onS
                 </div>
 
                 <div className="space-y-2">
-                  <label className="block text-sm font-semibold text-slate-700">Bathrooms</label>
+                  <label className="block text-[13px] font-semibold text-slate-700">Bathrooms</label>
                   <div className="flex flex-wrap gap-2">
                     {['Any', '1', '2', '3', '4+'].map(option => {
                       const selected = values.bathrooms === option
@@ -564,9 +564,9 @@ export default function PropertyRequestForm({ initialValues, editingRequest, onS
                           type="button"
                           aria-pressed={selected}
                           onClick={() => updateField('bathrooms', option)}
-                          className={`rounded-xl border px-3 py-2 text-sm font-semibold transition ${
+                          className={`min-h-[40px] rounded-xl border px-3 py-1.5 text-sm font-semibold transition-colors ${
                             selected
-                              ? 'border-blue-600 bg-blue-600 text-white shadow-[0_8px_18px_rgba(37,99,235,0.16)]'
+                              ? 'border-blue-600 bg-blue-600 text-white'
                               : 'border-slate-200 bg-slate-50 text-slate-600 hover:border-slate-300 hover:bg-white'
                           }`}
                         >
@@ -577,9 +577,9 @@ export default function PropertyRequestForm({ initialValues, editingRequest, onS
                   </div>
                 </div>
 
-                <div className="space-y-2">
-                  <label className="block text-sm font-semibold text-slate-700">Furnishing</label>
-                  <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                <div className="space-y-2 md:col-span-2">
+                  <label className="block text-[13px] font-semibold text-slate-700">Furnishing</label>
+                  <div className="flex flex-wrap gap-1 rounded-xl border border-slate-200 bg-slate-50 p-1">
                     {FURNISHING_OPTIONS.map(option => {
                       const selected = values.furnishing === option
                       return (
@@ -588,8 +588,10 @@ export default function PropertyRequestForm({ initialValues, editingRequest, onS
                           type="button"
                           aria-pressed={selected}
                           onClick={() => updateField('furnishing', option)}
-                          className={`rounded-xl border px-3 py-2.5 text-sm font-semibold transition ${
-                            selected ? 'border-blue-600 bg-blue-600 text-white shadow-[0_8px_18px_rgba(37,99,235,0.16)]' : 'border-slate-200 bg-slate-50 text-slate-600 hover:border-slate-300 hover:bg-white'
+                          className={`min-h-[40px] flex-1 rounded-lg border px-3 py-1.5 text-sm font-semibold transition-colors ${
+                            selected
+                              ? 'border-blue-600 bg-blue-600 text-white'
+                              : 'border-transparent bg-transparent text-slate-600 hover:bg-white'
                           }`}
                         >
                           {option}
@@ -599,9 +601,9 @@ export default function PropertyRequestForm({ initialValues, editingRequest, onS
                   </div>
                 </div>
 
-                <div className="space-y-2">
-                  <label className="block text-sm font-semibold text-slate-700">Move-in Timeline</label>
-                  <div className="grid gap-2 sm:grid-cols-2">
+                <div className="space-y-2 md:col-span-2">
+                  <label className="block text-[13px] font-semibold text-slate-700">Move-in Timeline</label>
+                  <div className="flex flex-wrap gap-2">
                     {MOVE_IN_OPTIONS.map(option => {
                       const selected = values.move_in_timeline === option
                       return (
@@ -610,8 +612,10 @@ export default function PropertyRequestForm({ initialValues, editingRequest, onS
                           type="button"
                           aria-pressed={selected}
                           onClick={() => updateField('move_in_timeline', option)}
-                          className={`rounded-xl border px-3 py-2.5 text-sm font-semibold transition ${
-                            selected ? 'border-blue-600 bg-blue-600 text-white shadow-[0_8px_18px_rgba(37,99,235,0.16)]' : 'border-slate-200 bg-slate-50 text-slate-600 hover:border-slate-300 hover:bg-white'
+                          className={`min-h-[40px] rounded-xl border px-3 py-1.5 text-sm font-semibold transition-colors ${
+                            selected
+                              ? 'border-blue-600 bg-blue-600 text-white'
+                              : 'border-slate-200 bg-slate-50 text-slate-600 hover:border-slate-300 hover:bg-white'
                           }`}
                         >
                           {option}
