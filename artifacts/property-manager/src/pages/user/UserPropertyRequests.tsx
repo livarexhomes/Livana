@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { Plus, Sparkles } from 'lucide-react'
+import { Sparkles } from 'lucide-react'
 import { useLocation, useSearchParams } from '@/lib/navigation'
 import AuthGuard from '@/components/auth/AuthGuard'
 import PropertyRequestCard from '@/components/requests/PropertyRequestCard'
@@ -40,7 +40,6 @@ export default function UserPropertyRequestsPage() {
   const [loading, setLoading] = useState(true)
   const [tenantId, setTenantId] = useState<string | null>(null)
   const [editingRequestId, setEditingRequestId] = useState<string | null>(null)
-  const [showForm, setShowForm] = useState(false)
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
 
   const loadRequests = useCallback(async (currentTenantId: string | null) => {
@@ -212,7 +211,6 @@ export default function UserPropertyRequestsPage() {
 
     setSelectedRequestId(request.id)
     setEditingRequestId(null)
-    setShowForm(false)
     setSuccessMessage('Your property request has been submitted. Our team will begin reviewing it.')
     navigate('/user/requests')
   }
@@ -220,7 +218,6 @@ export default function UserPropertyRequestsPage() {
   function handleEditRequest(request: PropertyRequest) {
     setEditingRequestId(request.id)
     setSelectedRequestId(request.id)
-    setShowForm(true)
     setSuccessMessage(null)
   }
 
@@ -229,7 +226,6 @@ export default function UserPropertyRequestsPage() {
   }
 
   function closeForm() {
-    setShowForm(false)
     setEditingRequestId(null)
     setSuccessMessage(null)
   }
@@ -237,27 +233,14 @@ export default function UserPropertyRequestsPage() {
   return (
     <AuthGuard require="tenant">
       <UserLayout title="Property Requests">
-        <div className="mx-auto max-w-5xl px-4 py-5 md:px-6 lg:px-8">
+        <div className="mx-auto max-w-7xl px-4 py-5 md:px-6 lg:px-8">
           <header className="flex flex-col gap-3 border-b border-slate-200 pb-4 md:flex-row md:items-center md:justify-between">
             <div>
               <h1 className="text-2xl font-black tracking-tight text-gray-900">Property Requests</h1>
               <p className="mt-1 text-sm text-gray-500">
-                Tell us what you're looking for and we'll help you find matching properties.
+                Fill in what you need and track every update as LIVAREX helps you find the right property.
               </p>
             </div>
-
-            <button
-              type="button"
-              onClick={() => {
-                setEditingRequestId(null)
-                setShowForm(true)
-                setSuccessMessage(null)
-              }}
-              className="inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-[0_14px_30px_rgba(37,99,235,0.22)] transition hover:bg-blue-700"
-            >
-              <Plus className="h-4 w-4" />
-              Create Property Request
-            </button>
           </header>
 
           {successMessage && (
@@ -266,33 +249,14 @@ export default function UserPropertyRequestsPage() {
             </div>
           )}
 
-          {showForm && (
-            <div className="mt-5 rounded-3xl border border-slate-200 bg-white p-4 shadow-sm md:p-6 lg:p-8">
-              <div className="mb-5 flex items-center justify-between gap-3">
-                <div>
-                  <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-blue-600">Property Request</p>
-                  <h2 className="mt-1 text-xl font-black text-slate-900">
-                    {editingRequest ? 'Edit Property Request' : 'Create Property Request'}
-                  </h2>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={closeForm}
-                  className="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-semibold text-slate-600 transition hover:bg-slate-100"
-                >
-                  {editingRequest ? 'Cancel Editing' : 'Cancel'}
-                </button>
-              </div>
-
-              <PropertyRequestForm
-                initialValues={editingRequest ? getFormValuesFromRequest(editingRequest) : initialFormValues}
-                editingRequest={editingRequest}
-                onSuccess={handleFormSuccess}
-                onCancelEdit={closeForm}
-              />
-            </div>
-          )}
+          <div className="mt-6">
+            <PropertyRequestForm
+              initialValues={editingRequest ? getFormValuesFromRequest(editingRequest) : initialFormValues}
+              editingRequest={editingRequest}
+              onSuccess={handleFormSuccess}
+              onCancelEdit={closeForm}
+            />
+          </div>
 
           {loading ? (
             <div className="mt-6 space-y-3">
@@ -301,26 +265,24 @@ export default function UserPropertyRequestsPage() {
               ))}
             </div>
           ) : requests.length > 0 ? (
-            <section className="mt-6">
+            <section className="mt-8 border-t border-slate-200 pt-6">
               <div className="mb-3 flex items-center justify-between gap-3">
-                <h2 className="text-lg font-extrabold text-gray-900">My Requests</h2>
+                <h2 className="text-lg font-extrabold text-gray-900">Previous Requests</h2>
                 <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-600">
                   {requests.length}
                 </span>
               </div>
 
-              <div className="space-y-3">
-                {summaryCards.length > 0 && (
-                  <div className="grid gap-2 sm:grid-cols-3">
-                    {summaryCards.map(card => (
-                      <div key={card.label} className="rounded-2xl border border-slate-200 bg-white px-3 py-3 shadow-sm">
-                        <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400">{card.label}</p>
-                        <p className="mt-1 text-xl font-extrabold text-slate-900">{card.value}</p>
-                      </div>
-                    ))}
+              <div className="mb-4 grid gap-2 sm:grid-cols-3">
+                {summaryCards.map(card => (
+                  <div key={card.label} className="rounded-2xl border border-slate-200 bg-white px-3 py-3 shadow-sm">
+                    <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400">{card.label}</p>
+                    <p className="mt-1 text-xl font-extrabold text-slate-900">{card.value}</p>
                   </div>
-                )}
+                ))}
+              </div>
 
+              <div className="space-y-3">
                 {requests.map(request => {
                   const expanded = selectedRequestId === request.id
 
@@ -361,18 +323,6 @@ export default function UserPropertyRequestsPage() {
               <p className="mx-auto mt-2 max-w-md text-sm text-slate-500">
                 Tell us what you're looking for and LIVAREX can start helping you find suitable properties.
               </p>
-              <button
-                type="button"
-                onClick={() => {
-                  setEditingRequestId(null)
-                  setShowForm(true)
-                  setSuccessMessage(null)
-                }}
-                className="mt-5 inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-[0_14px_30px_rgba(37,99,235,0.22)] transition hover:bg-blue-700"
-              >
-                <Plus className="h-4 w-4" />
-                Create Property Request
-              </button>
             </div>
           )}
         </div>
