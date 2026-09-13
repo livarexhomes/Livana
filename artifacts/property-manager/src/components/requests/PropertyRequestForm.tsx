@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import {
   Bath,
   BedDouble,
@@ -11,6 +11,7 @@ import {
   Home,
   KeyRound,
   MapPin,
+  Search,
   ShieldCheck,
   Sparkles,
   Wallet,
@@ -122,6 +123,177 @@ function formatCurrency(value: string) {
 function formatOptionalValue(value: string | null | undefined, fallback = 'Not selected yet') {
   if (value === null || value === undefined || value === '') return fallback
   return value
+}
+
+type CustomSelectFieldProps = {
+  label: string
+  value: string
+  onChange: (value: string) => void
+  options: string[]
+  placeholder: string
+  icon?: React.ComponentType<{ className?: string }>
+  error?: string
+  searchable?: boolean
+  disabled?: boolean
+}
+
+function CustomSelectField({
+  label,
+  value,
+  onChange,
+  options,
+  placeholder,
+  icon: Icon,
+  error,
+  searchable = false,
+  disabled = false,
+}: CustomSelectFieldProps) {
+  const [isOpen, setIsOpen] = useState(false)
+  const [searchTerm, setSearchTerm] = useState('')
+  const containerRef = useRef<HTMLDivElement | null>(null)
+  const searchInputRef = useRef<HTMLInputElement | null>(null)
+
+  const filteredOptions = useMemo(() => {
+    if (!searchable) return options
+
+    const normalizedSearch = searchTerm.trim().toLowerCase()
+    if (!normalizedSearch) return options
+
+    return options.filter(option => option.toLowerCase().includes(normalizedSearch))
+  }, [options, searchable, searchTerm])
+
+  useEffect(() => {
+    if (!isOpen) {
+      setSearchTerm('')
+      return
+    }
+
+    if (searchable) {
+      requestAnimationFrame(() => searchInputRef.current?.focus())
+    }
+  }, [isOpen, searchable])
+
+  useEffect(() => {
+    const handlePointerDown = (event: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+        setIsOpen(false)
+      }
+    }
+
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setIsOpen(false)
+    }
+
+    document.addEventListener('mousedown', handlePointerDown)
+    document.addEventListener('keydown', handleEscape)
+
+    return () => {
+      document.removeEventListener('mousedown', handlePointerDown)
+      document.removeEventListener('keydown', handleEscape)
+    }
+  }, [])
+
+  return (
+    <div ref={containerRef} className="relative">
+      <button
+        type="button"
+        disabled={disabled}
+        aria-haspopup="listbox"
+        aria-expanded={isOpen}
+        aria-controls={`${label}-dropdown-panel`}
+        onClick={() => setIsOpen(previous => !previous)}
+        onKeyDown={event => {
+          if (['Enter', ' ', 'ArrowDown', 'ArrowUp'].includes(event.key)) {
+            event.preventDefault()
+            setIsOpen(true)
+          }
+        }}
+        className={`group flex h-[50px] w-full items-center gap-3 rounded-xl border bg-slate-50 px-3.5 text-left transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-200 focus:ring-offset-0 ${
+          error
+            ? 'border-red-300 bg-red-50'
+            : isOpen
+              ? 'border-blue-500 bg-white ring-2 ring-blue-100'
+              : 'border-slate-200 hover:border-slate-300 hover:bg-white'
+        } ${disabled ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'}`}
+      >
+        {Icon && (
+          <span className={`flex h-7 w-7 items-center justify-center rounded-md transition-colors ${value ? 'bg-blue-50 text-blue-600' : 'bg-slate-100 text-slate-500'}`}>
+            <Icon className="h-3.5 w-3.5" />
+          </span>
+        )}
+
+        <span className={`flex-1 truncate text-sm ${value ? 'font-semibold text-slate-800' : 'font-medium text-slate-400'}`}>
+          {value || placeholder}
+        </span>
+
+        <ChevronDown className={`h-4 w-4 text-slate-400 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
+      </button>
+
+      {error && <p className="mt-2 text-sm text-red-500">{error}</p>}
+
+      {isOpen && (
+        <div
+          id={`${label}-dropdown-panel`}
+          role="listbox"
+          aria-label={label}
+          className="fixed inset-x-3 bottom-3 z-50 rounded-2xl border border-slate-200 bg-white p-2 shadow-[0_22px_50px_rgba(15,23,42,0.16)] sm:absolute sm:inset-auto sm:left-0 sm:right-0 sm:top-[calc(100%+8px)] sm:bottom-auto sm:max-h-[22rem] sm:min-w-full sm:p-2.5"
+        >
+          {searchable && (
+            <div className="mb-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
+              <div className="flex items-center gap-2">
+                <Search className="h-4 w-4 text-slate-400" />
+                <input
+                  ref={searchInputRef}
+                  value={searchTerm}
+                  onChange={event => setSearchTerm(event.target.value)}
+                  placeholder={`Search ${label.toLowerCase()}...`}
+                  className="w-full border-0 bg-transparent text-sm text-slate-700 placeholder:text-slate-400 focus:outline-none"
+                />
+              </div>
+            </div>
+          )}
+
+          <div className="max-h-[16rem] space-y-1 overflow-y-auto sm:max-h-[18rem]">
+            {filteredOptions.length > 0 ? (
+              filteredOptions.map(option => {
+                const isSelected = option === value
+
+                return (
+                  <button
+                    key={option}
+                    type="button"
+                    role="option"
+                    aria-selected={isSelected}
+                    onClick={() => {
+                      onChange(option)
+                      setIsOpen(false)
+                    }}
+                    className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm transition-colors ${
+                      isSelected
+                        ? 'bg-blue-50 text-blue-700'
+                        : 'text-slate-700 hover:bg-slate-50'
+                    }`}
+                  >
+                    {Icon && (
+                      <span className={`flex h-6 w-6 items-center justify-center rounded-md ${isSelected ? 'bg-blue-100 text-blue-600' : 'bg-slate-100 text-slate-500'}`}>
+                        <Icon className="h-3.5 w-3.5" />
+                      </span>
+                    )}
+
+                    <span className="flex-1 truncate">{option}</span>
+
+                    {isSelected && <Check className="h-4 w-4 text-blue-600" />}
+                  </button>
+                )
+              })
+            ) : (
+              <div className="px-3 py-6 text-center text-sm text-slate-500">No results found.</div>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  )
 }
 
 export default function PropertyRequestForm({ initialValues, editingRequest, onSuccess, onCancelEdit }: PropertyRequestFormProps) {
@@ -390,16 +562,16 @@ export default function PropertyRequestForm({ initialValues, editingRequest, onS
 
               <div className="space-y-2">
                 <label className="block text-sm font-semibold text-slate-700">Property Type</label>
-                <select
+                <CustomSelectField
+                  label="Property Type"
                   value={selectedPropertyType}
-                  onChange={e => updateField('property_type', e.target.value)}
-                  className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-800 outline-none transition focus:border-blue-500 focus:bg-white"
-                >
-                  {PROPERTY_TYPE_OPTIONS.map(option => (
-                    <option key={option} value={option}>{option}</option>
-                  ))}
-                </select>
-                {errors.property_type && <p className="text-sm text-red-500">{errors.property_type}</p>}
+                  onChange={value => updateField('property_type', value)}
+                  options={PROPERTY_TYPE_OPTIONS}
+                  placeholder="Select property type"
+                  icon={Building2}
+                  error={errors.property_type}
+                  searchable
+                />
               </div>
 
               {showCustomPropertyType && (
@@ -424,20 +596,16 @@ export default function PropertyRequestForm({ initialValues, editingRequest, onS
               <div className="grid gap-4 md:grid-cols-2">
                 <div className="space-y-2">
                   <label className="block text-sm font-semibold text-slate-700">State</label>
-                  <div className="relative">
-                    <select
-                      value={values.state}
-                      onChange={e => updateField('state', e.target.value)}
-                      className="w-full appearance-none rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2.5 pr-10 text-sm text-slate-800 outline-none transition focus:border-blue-500 focus:bg-white"
-                    >
-                      <option value="">Select state</option>
-                      {stateOptions.map(option => (
-                        <option key={option} value={option}>{option}</option>
-                      ))}
-                    </select>
-                    <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-                  </div>
-                  {errors.state && <p className="text-sm text-red-500">{errors.state}</p>}
+                  <CustomSelectField
+                    label="State"
+                    value={values.state}
+                    onChange={value => updateField('state', value)}
+                    options={stateOptions}
+                    placeholder="Select state"
+                    icon={MapPin}
+                    error={errors.state}
+                    searchable
+                  />
                 </div>
 
                 <div className="space-y-2">
