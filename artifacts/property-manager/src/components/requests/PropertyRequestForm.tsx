@@ -6,6 +6,7 @@ import {
   CalendarRange,
   CarFront,
   Check,
+  ChevronDown,
   ChevronRight,
   Home,
   KeyRound,
@@ -134,7 +135,7 @@ export default function PropertyRequestForm({ initialValues, editingRequest, onS
     setErrors({})
   }, [initialValues, editingRequest])
 
-  const stateOptions = useMemo(() => ['Lagos', 'Ogun', 'Abuja', 'Rivers', 'Enugu', 'Kaduna', 'Kano'], [])
+  const stateOptions = useMemo(() => ['Lagos', 'Ogun'], [])
 
   const showCustomPropertyType = values.property_type === 'Other' || (!!values.property_type && !PROPERTY_TYPE_OPTIONS.includes(values.property_type))
   const selectedPropertyType = PROPERTY_TYPE_OPTIONS.includes(values.property_type) ? values.property_type : 'Other'
@@ -423,16 +424,19 @@ export default function PropertyRequestForm({ initialValues, editingRequest, onS
               <div className="grid gap-4 md:grid-cols-2">
                 <div className="space-y-2">
                   <label className="block text-sm font-semibold text-slate-700">State</label>
-                  <select
-                    value={values.state}
-                    onChange={e => updateField('state', e.target.value)}
-                    className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-800 outline-none transition focus:border-blue-500 focus:bg-white"
-                  >
-                    <option value="">Select state</option>
-                    {stateOptions.map(option => (
-                      <option key={option} value={option}>{option}</option>
-                    ))}
-                  </select>
+                  <div className="relative">
+                    <select
+                      value={values.state}
+                      onChange={e => updateField('state', e.target.value)}
+                      className="w-full appearance-none rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2.5 pr-10 text-sm text-slate-800 outline-none transition focus:border-blue-500 focus:bg-white"
+                    >
+                      <option value="">Select state</option>
+                      {stateOptions.map(option => (
+                        <option key={option} value={option}>{option}</option>
+                      ))}
+                    </select>
+                    <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                  </div>
                   {errors.state && <p className="text-sm text-red-500">{errors.state}</p>}
                 </div>
 
@@ -534,11 +538,12 @@ export default function PropertyRequestForm({ initialValues, editingRequest, onS
                         <button
                           key={option}
                           type="button"
+                          aria-pressed={selected}
                           onClick={() => updateField('bedrooms', option)}
-                          className={`rounded-full border px-3 py-2 text-sm font-semibold transition ${
+                          className={`rounded-xl border px-3 py-2 text-sm font-semibold transition ${
                             selected
-                              ? 'border-blue-600 bg-blue-600 text-white'
-                              : 'border-slate-200 bg-slate-50 text-slate-600 hover:border-slate-300'
+                              ? 'border-blue-600 bg-blue-600 text-white shadow-[0_8px_18px_rgba(37,99,235,0.16)]'
+                              : 'border-slate-200 bg-slate-50 text-slate-600 hover:border-slate-300 hover:bg-white'
                           }`}
                         >
                           {option}
@@ -557,11 +562,12 @@ export default function PropertyRequestForm({ initialValues, editingRequest, onS
                         <button
                           key={option}
                           type="button"
+                          aria-pressed={selected}
                           onClick={() => updateField('bathrooms', option)}
-                          className={`rounded-full border px-3 py-2 text-sm font-semibold transition ${
+                          className={`rounded-xl border px-3 py-2 text-sm font-semibold transition ${
                             selected
-                              ? 'border-blue-600 bg-blue-600 text-white'
-                              : 'border-slate-200 bg-slate-50 text-slate-600 hover:border-slate-300'
+                              ? 'border-blue-600 bg-blue-600 text-white shadow-[0_8px_18px_rgba(37,99,235,0.16)]'
+                              : 'border-slate-200 bg-slate-50 text-slate-600 hover:border-slate-300 hover:bg-white'
                           }`}
                         >
                           {option}
@@ -573,16 +579,17 @@ export default function PropertyRequestForm({ initialValues, editingRequest, onS
 
                 <div className="space-y-2">
                   <label className="block text-sm font-semibold text-slate-700">Furnishing</label>
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
                     {FURNISHING_OPTIONS.map(option => {
                       const selected = values.furnishing === option
                       return (
                         <button
                           key={option}
                           type="button"
+                          aria-pressed={selected}
                           onClick={() => updateField('furnishing', option)}
-                          className={`rounded-2xl border px-3 py-2.5 text-sm font-semibold transition ${
-                            selected ? 'border-blue-600 bg-blue-600 text-white' : 'border-slate-200 bg-slate-50 text-slate-600 hover:border-slate-300'
+                          className={`rounded-xl border px-3 py-2.5 text-sm font-semibold transition ${
+                            selected ? 'border-blue-600 bg-blue-600 text-white shadow-[0_8px_18px_rgba(37,99,235,0.16)]' : 'border-slate-200 bg-slate-50 text-slate-600 hover:border-slate-300 hover:bg-white'
                           }`}
                         >
                           {option}
@@ -594,16 +601,17 @@ export default function PropertyRequestForm({ initialValues, editingRequest, onS
 
                 <div className="space-y-2">
                   <label className="block text-sm font-semibold text-slate-700">Move-in Timeline</label>
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="grid gap-2 sm:grid-cols-2">
                     {MOVE_IN_OPTIONS.map(option => {
                       const selected = values.move_in_timeline === option
                       return (
                         <button
                           key={option}
                           type="button"
+                          aria-pressed={selected}
                           onClick={() => updateField('move_in_timeline', option)}
-                          className={`rounded-2xl border px-3 py-2.5 text-sm font-semibold transition ${
-                            selected ? 'border-blue-600 bg-blue-600 text-white' : 'border-slate-200 bg-slate-50 text-slate-600 hover:border-slate-300'
+                          className={`rounded-xl border px-3 py-2.5 text-sm font-semibold transition ${
+                            selected ? 'border-blue-600 bg-blue-600 text-white shadow-[0_8px_18px_rgba(37,99,235,0.16)]' : 'border-slate-200 bg-slate-50 text-slate-600 hover:border-slate-300 hover:bg-white'
                           }`}
                         >
                           {option}
