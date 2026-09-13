@@ -1,11 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { Sparkles } from 'lucide-react'
+import { ArrowUpRight, Sparkles } from 'lucide-react'
 import { useLocation, useSearchParams } from '@/lib/navigation'
 import AuthGuard from '@/components/auth/AuthGuard'
-import PropertyRequestCard from '@/components/requests/PropertyRequestCard'
-import PropertyRequestDetail from '@/components/requests/PropertyRequestDetail'
 import PropertyRequestForm from '@/components/requests/PropertyRequestForm'
-import MatchedProperties from '@/components/requests/MatchedProperties'
 import { createClient } from '@/lib/supabase'
 import { UserLayout } from './UserDashboard'
 import type { PropertyRequest, PropertyRequestMatchWithProperty } from '@/types'
@@ -36,7 +33,6 @@ export default function UserPropertyRequestsPage() {
   const [, navigate] = useLocation()
   const searchParams = useSearchParams()
   const [requests, setRequests] = useState<RequestWithRelations[]>([])
-  const [selectedRequestId, setSelectedRequestId] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [tenantId, setTenantId] = useState<string | null>(null)
   const [editingRequestId, setEditingRequestId] = useState<string | null>(null)
@@ -59,7 +55,6 @@ export default function UserPropertyRequestsPage() {
 
     const rows = (data ?? []) as RequestWithRelations[]
     setRequests(rows)
-    setSelectedRequestId(prev => prev ?? rows[0]?.id ?? null)
   }, [])
 
   useEffect(() => {
@@ -161,7 +156,6 @@ export default function UserPropertyRequestsPage() {
     }
   }, [tenantId, loadRequests])
 
-  const selectedRequest = requests.find(request => request.id === selectedRequestId) ?? null
   const editingRequest = requests.find(request => request.id === editingRequestId) ?? null
 
   const summaryCards = useMemo(() => {
@@ -209,7 +203,6 @@ export default function UserPropertyRequestsPage() {
       return [{ ...request, property_request_matches: [] }, ...prev]
     })
 
-    setSelectedRequestId(request.id)
     setEditingRequestId(null)
     setSuccessMessage('Your property request has been submitted. Our team will begin reviewing it.')
     navigate('/user/requests')
@@ -217,12 +210,11 @@ export default function UserPropertyRequestsPage() {
 
   function handleEditRequest(request: PropertyRequest) {
     setEditingRequestId(request.id)
-    setSelectedRequestId(request.id)
     setSuccessMessage(null)
   }
 
-  function handleSelectRequest(request: PropertyRequest) {
-    setSelectedRequestId(request.id)
+  function handleViewRequest(request: PropertyRequest) {
+    navigate(`/user/requests/${request.id}`)
   }
 
   function closeForm() {
@@ -267,51 +259,77 @@ export default function UserPropertyRequestsPage() {
           ) : requests.length > 0 ? (
             <section className="mt-8 border-t border-slate-200 pt-6">
               <div className="mb-3 flex items-center justify-between gap-3">
-                <h2 className="text-lg font-extrabold text-gray-900">Previous Requests</h2>
-                <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-600">
-                  {requests.length}
-                </span>
+                <h2 className="text-lg font-extrabold text-gray-900">Your Requests</h2>
+                <div className="inline-flex items-center gap-3 text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-500">
+                  <span>{summaryCards[0].value} Active</span>
+                  <span className="text-slate-300">·</span>
+                  <span>{summaryCards[1].value} Matched</span>
+                  <span className="text-slate-300">·</span>
+                  <span>{summaryCards[2].value} Completed</span>
+                </div>
               </div>
 
-              <div className="mb-4 grid gap-2 sm:grid-cols-3">
-                {summaryCards.map(card => (
-                  <div key={card.label} className="rounded-2xl border border-slate-200 bg-white px-3 py-3 shadow-sm">
-                    <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400">{card.label}</p>
-                    <p className="mt-1 text-xl font-extrabold text-slate-900">{card.value}</p>
-                  </div>
-                ))}
-              </div>
+              <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
+                <div className="hidden grid-cols-[1.4fr_1fr_0.9fr_0.7fr_0.5fr] gap-3 border-b border-slate-200 bg-slate-50 px-4 py-3 text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400 md:grid">
+                  <span>Property</span>
+                  <span>Location</span>
+                  <span>Budget</span>
+                  <span>Status</span>
+                  <span className="text-right">Updated</span>
+                </div>
 
-              <div className="space-y-3">
-                {requests.map(request => {
-                  const expanded = selectedRequestId === request.id
+                <div className="divide-y divide-slate-200">
+                  {requests.map(request => {
+                    const updatedAt = new Date(request.updated_at).toLocaleDateString('en-NG', {
+                      month: 'short',
+                      day: 'numeric',
+                    })
 
-                  return (
-                    <div key={request.id} className="rounded-2xl border border-slate-200 bg-white shadow-sm">
-                      <PropertyRequestCard
-                        request={request}
-                        selected={expanded}
-                        onSelect={handleSelectRequest}
-                      />
-
-                      {expanded && (
-                        <div className="border-t border-slate-200 bg-slate-50/40 px-3 py-4 md:px-4">
-                          <div className="space-y-4">
-                            <PropertyRequestDetail
-                              request={request}
-                              onEdit={handleEditRequest}
-                            />
-
-                            <MatchedProperties
-                              matches={request.property_request_matches ?? []}
-                              isAuthenticated
-                            />
-                          </div>
+                    return (
+                      <button
+                        key={request.id}
+                        type="button"
+                        onClick={() => handleViewRequest(request)}
+                        className="group flex w-full flex-col gap-2 px-4 py-3 text-left transition hover:bg-slate-50 md:grid md:grid-cols-[1.4fr_1fr_0.9fr_0.7fr_0.5fr] md:items-center md:gap-3"
+                      >
+                        <div className="min-w-0">
+                          <p className="truncate text-sm font-semibold text-slate-900">
+                            {request.property_type} · {request.purpose}
+                          </p>
                         </div>
-                      )}
-                    </div>
-                  )
-                })}
+
+                        <div className="min-w-0 text-sm text-slate-500 md:truncate">
+                          {request.preferred_area}, {request.state}
+                        </div>
+
+                        <div className="text-sm font-medium text-slate-600">
+                          ₦{new Intl.NumberFormat('en-NG', { maximumFractionDigits: 0 }).format(request.min_budget)}–₦{new Intl.NumberFormat('en-NG', { maximumFractionDigits: 0 }).format(request.max_budget)}
+                        </div>
+
+                        <div>
+                          <span className={`inline-flex rounded-full px-2 py-1 text-[10px] font-semibold ${
+                            request.status === 'matched'
+                              ? 'bg-emerald-50 text-emerald-700'
+                              : request.status === 'inspection'
+                                ? 'bg-violet-50 text-violet-700'
+                                : request.status === 'completed'
+                                  ? 'bg-green-50 text-green-700'
+                                  : request.status === 'reviewing'
+                                    ? 'bg-amber-50 text-amber-700'
+                                    : 'bg-blue-50 text-blue-700'
+                          }`}>
+                            {request.status}
+                          </span>
+                        </div>
+
+                        <div className="flex items-center justify-between gap-3 md:justify-end">
+                          <span className="text-xs text-slate-500">{updatedAt}</span>
+                          <ArrowUpRight className="h-4 w-4 text-slate-400 transition group-hover:text-blue-600" />
+                        </div>
+                      </button>
+                    )
+                  })}
+                </div>
               </div>
             </section>
           ) : (

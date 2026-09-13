@@ -169,6 +169,25 @@ export default function PropertyRequestForm({ initialValues, editingRequest, onS
     [values],
   )
 
+  const requestCompleteness = useMemo(() => {
+    const checks = [
+      values.purpose,
+      values.property_type,
+      values.state,
+      values.preferred_area,
+      values.min_budget,
+      values.max_budget,
+      values.bedrooms || values.bathrooms || values.furnishing || values.move_in_timeline,
+    ]
+
+    const completed = checks.filter(value => {
+      if (typeof value === 'string') return value.trim().length > 0
+      return Boolean(value)
+    }).length
+
+    return Math.min(100, Math.round((completed / checks.length) * 100))
+  }, [values])
+
   function updateField<K extends keyof PropertyRequestFormValues>(field: K, value: PropertyRequestFormValues[K]) {
     setValues(prev => ({ ...prev, [field]: value }))
     setErrors(prev => ({ ...prev, [field]: '' }))
@@ -337,32 +356,24 @@ export default function PropertyRequestForm({ initialValues, editingRequest, onS
                 <p className="mt-1 text-sm text-slate-500">Choose how you want to move.</p>
               </div>
 
-              <div className="grid gap-3 sm:grid-cols-3">
-                {PURPOSE_OPTIONS.map(({ value, title, description, icon: Icon }) => {
+              <div className="inline-flex w-full items-center rounded-2xl border border-slate-200 bg-slate-50 p-1 sm:w-auto">
+                {PURPOSE_OPTIONS.map(({ value, title, icon: Icon }) => {
                   const selected = values.purpose === value
 
                   return (
                     <button
                       key={value}
                       type="button"
+                      aria-pressed={selected}
                       onClick={() => updateField('purpose', value)}
-                      className={`group min-h-[110px] rounded-2xl border p-3 text-left transition-all duration-200 ${
+                      className={`inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold transition ${
                         selected
-                          ? 'border-blue-600 bg-blue-600 text-white shadow-[0_14px_30px_rgba(37,99,235,0.22)]'
-                          : 'border-slate-200 bg-slate-50 text-slate-700 hover:border-slate-300 hover:bg-white'
+                          ? 'bg-blue-600 text-white shadow-[0_8px_20px_rgba(37,99,235,0.2)]'
+                          : 'text-slate-600 hover:text-slate-900'
                       }`}
                     >
-                      <div className="flex items-center justify-between">
-                        <span className={`inline-flex h-9 w-9 items-center justify-center rounded-xl ${selected ? 'bg-white/15 text-white' : 'bg-white text-blue-600'}`}>
-                          <Icon className="h-4 w-4" />
-                        </span>
-                        {selected && <Check className="h-4 w-4 text-white" />}
-                      </div>
-
-                      <div className="mt-4">
-                        <p className="text-base font-bold">{title}</p>
-                        <p className={`mt-1 text-sm ${selected ? 'text-blue-50' : 'text-slate-500'}`}>{description}</p>
-                      </div>
+                      <Icon className="h-4 w-4" />
+                      {title}
                     </button>
                   )
                 })}
@@ -672,19 +683,22 @@ export default function PropertyRequestForm({ initialValues, editingRequest, onS
               </div>
             ) : (
               <div className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm lg:sticky lg:top-24 lg:p-5">
-                <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-blue-600">Live Preview</p>
+                <div className="flex items-center justify-between gap-2 border-b border-slate-200 pb-3">
+                  <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-blue-600">Your Request</p>
+                  <span className="text-[10px] font-semibold text-slate-500">{requestCompleteness}% complete</span>
+                </div>
 
-                <div className="mt-3 space-y-2.5">
+                <div className="mt-3 space-y-0">
                   {summaryItems.map(item => (
-                    <div key={item.label} className="rounded-2xl border border-slate-100 bg-slate-50 px-3 py-2">
-                      <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400">{item.label}</p>
-                      <p className="mt-1 text-sm font-semibold text-slate-700">{item.value}</p>
+                    <div key={item.label} className="flex items-start justify-between gap-3 border-b border-slate-100 py-2.5 last:border-b-0">
+                      <span className="text-xs font-medium text-slate-400">{item.label}</span>
+                      <span className="max-w-[60%] text-right text-sm font-semibold text-slate-700">{item.value}</span>
                     </div>
                   ))}
                 </div>
 
-                <div className="mt-4 rounded-2xl border border-slate-100 bg-slate-50 px-3 py-2">
-                  <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400">Selected Features</p>
+                <div className="mt-4 border-t border-slate-200 pt-3">
+                  <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400">Must-haves</p>
                   <div className="mt-2 flex flex-wrap gap-2">
                     {values.features.length > 0 ? (
                       values.features.map(feature => (
