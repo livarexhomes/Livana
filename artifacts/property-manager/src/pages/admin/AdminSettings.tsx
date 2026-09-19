@@ -125,7 +125,7 @@ function Toggle({ enabled, onChange, loading = false, disabled = false }: { enab
       aria-checked={enabled}
       disabled={loading || disabled}
       onClick={e => { e.stopPropagation(); onChange() }}
-      className={`relative w-11 h-6 rounded-full transition-colors duration-200 shrink-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 disabled:opacity-50 ${
+      className={`focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:ring-offset-2 relative w-11 h-6 rounded-full transition-colors duration-200 shrink-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 disabled:opacity-50 ${
         enabled ? 'bg-blue-600' : 'bg-gray-300'
       }`}
     >
@@ -159,8 +159,8 @@ function FieldInput({
 
   return (
     <div>
-      <label className="block text-[10px] font-bold tracking-[0.14em] text-gray-400 uppercase mb-1.5">{label}</label>
-      <div className={`flex items-center gap-2.5 border rounded-lg px-3 py-2.5 bg-white transition-all ${
+      <label className="block text-xs font-semibold text-slate-600 mb-2">{label}</label>
+      <div className={`flex min-h-11 items-center gap-3 border rounded-xl px-3.5 py-3 bg-white transition-colors ${
         error ? 'border-red-300 ring-2 ring-red-100' :
         focused ? 'border-blue-500 ring-2 ring-blue-500/15' : 'border-gray-200 hover:border-gray-300'
       } ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}>
@@ -173,13 +173,13 @@ function FieldInput({
           onBlur={() => setFocused(false)}
           disabled={disabled}
           placeholder={placeholder}
-          className={`flex-1 text-sm text-gray-800 placeholder:text-gray-300 focus:outline-none bg-transparent ${mono ? 'font-mono' : ''}`}
+          className={`focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:ring-offset-2 min-w-0 flex-1 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none bg-transparent ${mono ? 'font-mono' : ''}`}
         />
         {isPassword && (
           <button
             type="button"
             onClick={() => setShowPassword(!showPassword)}
-            className="p-1 hover:bg-gray-100 rounded transition-colors"
+            className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:ring-offset-2 p-1 hover:bg-gray-100 rounded transition-colors"
           >
             {showPassword ? <EyeOff className="w-3.5 h-3.5 text-gray-400" /> : <Eye className="w-3.5 h-3.5 text-gray-400" />}
           </button>
@@ -207,7 +207,7 @@ function ToggleRow({
       className={`flex items-center justify-between gap-4 px-4 py-3.5 rounded-xl border cursor-pointer transition-all duration-150 ${
         disabled ? 'bg-gray-50/60 border-gray-200 opacity-70 cursor-not-allowed'
         : enabled
-          ? 'bg-blue-50/40 border-blue-100'
+          ? 'bg-white border-blue-200 shadow-[inset_3px_0_0_#3b82f6]'
           : 'bg-white border-gray-200 hover:border-gray-300 hover:bg-gray-50'
       }`}
       onClick={!loading && !disabled ? onChange : undefined}
@@ -234,7 +234,7 @@ function ToggleRow({
               }`}>{tag}</span>
             )}
           </div>
-          <p className="text-xs text-gray-400 mt-0.5 truncate">{desc}</p>
+          <p className="text-xs text-slate-500 mt-1 leading-5 whitespace-normal">{desc}</p>
         </div>
       </div>
       <div className="flex items-center gap-1.5 shrink-0">
@@ -247,16 +247,16 @@ function ToggleRow({
 
 function SectionTitle({ title, sub, action, icon: Icon }: { title: string; sub: string; action?: ReactNode; icon?: ElementType }) {
   return (
-    <div className="mb-6 flex items-start justify-between gap-4">
+    <div className="mb-7 flex flex-wrap items-start justify-between gap-4 border-b border-slate-100 pb-6">
       <div className="flex items-start gap-3 min-w-0">
         {Icon && (
-          <div className="w-9 h-9 rounded-xl bg-white border border-slate-200 shadow-sm flex items-center justify-center shrink-0">
+          <div className="w-10 h-10 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center shrink-0">
             <Icon className="w-4 h-4 text-slate-500" strokeWidth={1.8} />
           </div>
         )}
         <div className="min-w-0">
-          <h2 className="text-base md:text-lg font-extrabold text-gray-900 tracking-tight">{title}</h2>
-          <p className="text-xs text-gray-400 mt-0.5">{sub}</p>
+          <h2 className="text-lg md:text-xl font-semibold text-slate-950 tracking-[-0.025em]">{title}</h2>
+          <p className="text-xs text-slate-500 mt-1 leading-5">{sub}</p>
         </div>
       </div>
       {action}
@@ -400,24 +400,24 @@ function AgentSettingsSection({ currentUserId }: { currentUserId?: string }) {
       />
 
       {/* Add / invite form */}
-      <div className="bg-white border border-gray-200 rounded-xl p-5">
+      <div className="bg-white border border-slate-200 rounded-2xl p-5 sm:p-6">
         <div className="flex items-center gap-2.5 mb-1">
           <div className="w-7 h-7 rounded-lg bg-gray-100 flex items-center justify-center">
             <UserPlus className="w-3.5 h-3.5 text-gray-400" strokeWidth={1.8} />
           </div>
           <div>
             <p className="text-sm font-semibold text-gray-900">Add a support agent</p>
-            <p className="text-xs text-gray-400">Create a new account or invite an existing user</p>
+            <p className="text-xs text-slate-500">Create a new account or invite an existing user</p>
           </div>
         </div>
 
         <div className="mt-4 inline-flex items-center gap-1 p-1 rounded-xl bg-gray-100">
           <button onClick={() => setMode('create')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${mode === 'create' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
+            className={`focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:ring-offset-2 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${mode === 'create' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
             Create account
           </button>
           <button onClick={() => setMode('invite')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${mode === 'invite' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
+            className={`focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:ring-offset-2 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${mode === 'invite' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
             Invite existing user
           </button>
         </div>
@@ -438,21 +438,21 @@ function AgentSettingsSection({ currentUserId }: { currentUserId?: string }) {
 
         <div className="mt-4 flex items-center gap-3">
           <button onClick={addAgent} disabled={adding || !newEmail.trim() || (mode === 'create' && !newPassword.trim())}
-            className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 disabled:opacity-40 text-white text-sm font-semibold transition-colors">
+            className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:ring-offset-2 inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 disabled:opacity-40 text-white text-sm font-semibold transition-colors">
             {adding ? <Loader2 className="w-4 h-4 animate-spin" /> : <UserPlus className="w-4 h-4" />} {mode === 'create' ? 'Create account' : 'Send invite'}
           </button>
-          <p className="text-xs text-gray-400">Agents can log in at /admin and handle support chats.</p>
+          <p className="text-xs text-slate-500">Agents can log in at /admin and handle support chats.</p>
         </div>
       </div>
 
       {/* Roster */}
-      <div className="mt-4 bg-white border border-gray-200 rounded-xl overflow-hidden">
+      <div className="mt-4 bg-white border border-slate-200 rounded-2xl overflow-hidden">
         <div className="px-5 py-3.5 border-b border-gray-100 flex items-center justify-between">
           <p className="text-sm font-semibold text-gray-900">Agent roster</p>
           <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400">{agents.length} total</span>
         </div>
         {loading ? (
-          <div className="px-5 py-8 text-center text-xs text-gray-400">Loading agents…</div>
+          <div className="px-5 py-8 text-center text-xs text-slate-500">Loading agents…</div>
         ) : agents.length === 0 ? (
           <div className="px-5 py-10 text-center">
             <ShieldCheck className="w-8 h-8 text-gray-200 mx-auto mb-2" />
@@ -480,7 +480,7 @@ function AgentSettingsSection({ currentUserId }: { currentUserId?: string }) {
                         </span>
                       )}
                     </div>
-                    <p className="text-xs text-gray-400 mt-0.5 truncate">{agent.email}</p>
+                    <p className="text-xs text-slate-500 mt-1 leading-5 whitespace-normal">{agent.email}</p>
                   </div>
                   <div className="flex items-center gap-1.5 shrink-0">
                     {isAdminRow ? (
@@ -490,13 +490,13 @@ function AgentSettingsSection({ currentUserId }: { currentUserId?: string }) {
                     ) : (
                       <>
                         <button onClick={() => toggleActive(agent)}
-                          className={`inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-1.5 rounded-lg transition-colors ${
+                          className={`focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:ring-offset-2 inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-1.5 rounded-lg transition-colors ${
                             agent.active ? 'bg-gray-100 text-gray-600 hover:bg-gray-200' : 'bg-green-50 text-green-700 hover:bg-green-100'
                           }`}>
                           {agent.active ? 'Deactivate' : 'Activate'}
                         </button>
                         <button onClick={() => removeAgent(agent)} title="Remove agent"
-                          className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-1.5 rounded-lg border border-gray-200 bg-white text-gray-500 hover:text-red-600 hover:border-red-200 transition-colors">
+                          className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:ring-offset-2 inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-1.5 rounded-lg border border-gray-200 bg-white text-gray-500 hover:text-red-600 hover:border-red-200 transition-colors">
                           <Trash2 className="w-3 h-3" /> Remove
                         </button>
                       </>
@@ -1406,7 +1406,7 @@ export default function AdminSettings() {
     return (
       <AuthGuard require="admin">
         <MobileSidebarProvider>
-          <div className="flex h-screen overflow-hidden bg-[#F4F6FB]">
+          <div className="flex h-screen h-[100dvh] overflow-hidden bg-white">
             <AdminSidebar userEmail={user?.email} userName={displayName} />
             <div className="flex-1 flex items-center justify-center">
               <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
@@ -1420,19 +1420,19 @@ export default function AdminSettings() {
   return (
     <AuthGuard require="admin">
       <MobileSidebarProvider>
-        <div className="flex h-screen overflow-hidden bg-[#F4F6FB]">
+        <div className="flex h-screen h-[100dvh] overflow-hidden bg-white">
           <AdminSidebar userEmail={user?.email} userName={displayName} />
 
-          <div className="flex-1 flex flex-col min-w-0 p-2 md:p-4">
+          <div className="flex-1 flex flex-col min-w-0 min-h-0 p-3 md:p-6">
             <div className="md:hidden">
               <AdminHeader title="Settings" subtitle="Admin configuration" />
             </div>
 
             {/* ── Page header (desktop only — AdminHeader covers mobile) ── */}
-            <header className="shrink-0 hidden md:flex items-start justify-between gap-4 pl-0">
+            <header className="shrink-0 hidden md:flex items-center justify-between gap-5 pb-2">
               <div className="min-w-0">
-                <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">Admin configuration</p>
-                <h2 className="mt-1 text-xl md:text-2xl font-extrabold text-slate-950 tracking-tight">Settings</h2>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-blue-600">Admin configuration</p>
+                <h2 className="mt-1 text-2xl font-semibold text-slate-950 tracking-[-0.035em]">Settings</h2>
                 <p className="mt-0.5 hidden sm:block text-xs md:text-sm text-slate-500">Manage your platform's configuration, security, and support.</p>
               </div>
               {/* Desktop: Save Changes in the header (bottom bar on mobile) */}
@@ -1447,7 +1447,7 @@ export default function AdminSettings() {
                     type="button"
                     onClick={handleSave}
                     disabled={saving}
-                    className={`inline-flex items-center gap-1.5 px-4 py-2.5 text-xs font-bold rounded-xl transition-all duration-200 ${
+                    className={`focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:ring-offset-2 inline-flex items-center gap-1.5 px-4 py-2.5 text-xs font-bold rounded-xl transition-all duration-200 ${
                       saving ? 'bg-slate-300 text-white cursor-not-allowed' : 'bg-primary hover:bg-primary/90 active:scale-95 text-primary-foreground shadow-sm'
                     }`}
                   >
@@ -1462,7 +1462,7 @@ export default function AdminSettings() {
             </header>
 
             {/* ── Settings card ── */}
-            <div className="mt-2 md:mt-3 flex-1 min-h-0 bg-white border border-slate-200/80 rounded-2xl shadow-sm overflow-hidden flex flex-col">
+            <div className="mt-3 md:mt-5 flex-1 min-h-0 bg-white border border-slate-200 rounded-2xl overflow-hidden flex flex-col">
               {/* Mobile: horizontal scrollable chips */}
               <div className="lg:hidden shrink-0 border-b border-slate-100">
                 <div className="flex items-center gap-1.5 px-3 py-2.5 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
@@ -1475,8 +1475,8 @@ export default function AdminSettings() {
                         key={s.id}
                         type="button"
                         onClick={() => handleTabChange(s.id)}
-                        className={`inline-flex items-center gap-1.5 rounded-full px-3.5 py-2 text-xs font-semibold whitespace-nowrap shrink-0 transition-all active:scale-95 ${
-                          isActive ? 'bg-primary text-white shadow-sm shadow-primary/20' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                        className={`focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:ring-offset-2 inline-flex items-center gap-1.5 rounded-full px-3.5 py-2 text-xs font-semibold whitespace-nowrap shrink-0 transition-all active:scale-95 ${
+                          isActive ? 'bg-blue-600 text-white shadow-sm shadow-blue-600/15 shadow-primary/20' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                         }`}
                       >
                         <Icon className="w-3.5 h-3.5" strokeWidth={1.8} />
@@ -1490,8 +1490,8 @@ export default function AdminSettings() {
 
               <div className="flex-1 flex min-h-0">
                 {/* Desktop: nav rail */}
-                <aside className="hidden lg:flex flex-col w-60 xl:w-64 shrink-0 border-r border-slate-100 bg-slate-50/70 overflow-y-auto">
-                  <nav className="p-3.5 space-y-5">
+                <aside className="hidden lg:flex flex-col w-52 xl:w-60 shrink-0 border-r border-slate-200/70 bg-white overflow-y-auto">
+                  <nav className="p-4 space-y-7">
                      <div>
                        <p className="px-2 mb-1.5 text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400">General</p>
                        <div className="space-y-0.5">
@@ -1503,8 +1503,8 @@ export default function AdminSettings() {
                                key={s.id}
                                type="button"
                                onClick={() => handleTabChange(s.id)}
-                               className={`group flex items-center justify-between w-full px-3 py-2 rounded-lg text-[13px] font-semibold transition-all ${
-                                 isActive ? 'bg-primary text-white shadow-sm' : 'text-slate-600 hover:bg-slate-200/70 hover:text-slate-900'
+                               className={`focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:ring-offset-2 group flex items-center justify-between w-full min-h-11 px-3 py-2.5 rounded-xl text-[13px] font-medium transition-colors ${
+                                 isActive ? 'bg-blue-600 text-white shadow-sm shadow-blue-600/15' : 'text-slate-600 hover:bg-blue-50/60 hover:text-blue-700'
                                }`}
                              >
                                <span className="flex items-center gap-2.5 min-w-0">
@@ -1533,8 +1533,8 @@ export default function AdminSettings() {
                                  key={s.id}
                                  type="button"
                                  onClick={() => handleTabChange(s.id)}
-                                 className={`group flex items-center justify-between w-full px-3 py-2 rounded-lg text-[13px] font-semibold transition-all ${
-                                   isActive ? 'bg-primary text-white shadow-sm' : 'text-slate-600 hover:bg-slate-200/70 hover:text-slate-900'
+                                 className={`focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:ring-offset-2 group flex items-center justify-between w-full min-h-11 px-3 py-2.5 rounded-xl text-[13px] font-medium transition-colors ${
+                                   isActive ? 'bg-blue-600 text-white shadow-sm shadow-blue-600/15' : 'text-slate-600 hover:bg-blue-50/60 hover:text-blue-700'
                                  }`}
                                >
                                 <span className="flex items-center gap-2.5 min-w-0">
@@ -1556,8 +1556,8 @@ export default function AdminSettings() {
                 </aside>
 
                 {/* ── Content ── */}
-                <main ref={mainRef} className="flex-1 min-w-0 overflow-y-auto">
-                  <div className="max-w-3xl mx-auto px-4 md:px-8 py-5 md:py-7 pb-8">
+                <main ref={mainRef} className="flex-1 min-w-0 min-h-0 overflow-y-auto overscroll-contain bg-white">
+                  <div className="max-w-4xl mx-auto px-5 md:px-8 xl:px-10 py-6 md:py-8 pb-12">
 
               {/* ─── PLATFORM ─── */}
               {active === 'platform' && (
@@ -1567,7 +1567,7 @@ export default function AdminSettings() {
                     sub="Public-facing details about your real estate platform."
                     icon={Building2}
                   />
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-5 gap-y-5">
                     <FieldInput 
                       label="Platform Name" 
                       value={platform.name} 
@@ -1669,7 +1669,7 @@ export default function AdminSettings() {
                           mono
                           placeholder="admin@livarex.com.ng"
                         />
-                        <p className="text-xs text-gray-400 mt-2">
+                        <p className="text-xs text-slate-500 mt-2">
                           All admin notifications will be sent to this email address.
                         </p>
                       </div>
@@ -1717,14 +1717,14 @@ export default function AdminSettings() {
                             <span className="text-sm font-semibold text-gray-900">Weekly Summary Report</span>
                             <span className="text-[9px] font-bold tracking-widest uppercase px-1.5 py-0.5 rounded bg-blue-100 text-blue-700">csv</span>
                           </div>
-                          <p className="text-xs text-gray-400 mt-0.5">Download platform statistics for the last 7 days (CSV — opens in Excel)</p>
+                          <p className="text-xs text-slate-500 mt-1 leading-5">Download platform statistics for the last 7 days (CSV — opens in Excel)</p>
                         </div>
                       </div>
                       <button
                         type="button"
                         onClick={handleDownloadReport}
                         disabled={reportLoading}
-                        className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white text-xs font-bold rounded-lg transition-colors shrink-0"
+                        className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:ring-offset-2 inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white text-xs font-bold rounded-lg transition-colors shrink-0"
                       >
                         {reportLoading ? (
                           <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Generating…</>
@@ -1790,7 +1790,7 @@ export default function AdminSettings() {
                       tag={emailConfig.enabled ? 'live' : 'off'}
                     />
 
-                    <div className="bg-white border border-gray-200 rounded-xl p-5 space-y-4">
+                    <div className="bg-white border border-slate-200 rounded-2xl p-5 sm:p-6 space-y-4">
                       <FieldInput
                         label="Resend API Key"
                         value={emailConfig.resendApiKey}
@@ -1800,7 +1800,7 @@ export default function AdminSettings() {
                         mono
                         placeholder="re_xxxxxxxxxxxx"
                       />
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-5 gap-y-5">
                         <FieldInput
                           label="From Email"
                           value={emailConfig.fromEmail}
@@ -1828,13 +1828,13 @@ export default function AdminSettings() {
                           </div>
                           <div>
                             <p className="text-sm font-semibold text-gray-900">Test Configuration</p>
-                            <p className="text-xs text-gray-400">Send a test email to verify your setup</p>
+                            <p className="text-xs text-slate-500">Send a test email to verify your setup</p>
                           </div>
                         </div>
                         <button
                           onClick={handleTestEmail}
                           disabled={testEmailLoading || !emailConfig.resendApiKey || !notifications.adminEmail}
-                          className="inline-flex items-center gap-1.5 px-3 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white text-xs font-semibold rounded-lg transition-colors"
+                          className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:ring-offset-2 inline-flex items-center gap-1.5 px-3 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white text-xs font-semibold rounded-lg transition-colors"
                         >
                           {testEmailLoading ? (
                             <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Sending…</>
@@ -1921,14 +1921,14 @@ export default function AdminSettings() {
                   </div>
 
                   {/* Session Timeout */}
-                  <div className="mt-4 bg-white border border-gray-200 rounded-xl p-5">
+                  <div className="mt-4 bg-white border border-slate-200 rounded-2xl p-5 sm:p-6">
                     <div className="flex items-center gap-2.5 mb-4">
                       <div className="w-7 h-7 rounded-lg bg-blue-50 flex items-center justify-center">
                         <Timer className="w-3.5 h-3.5 text-blue-600" strokeWidth={1.8} />
                       </div>
                       <div>
                         <p className="text-sm font-semibold text-gray-900">Session Timeout</p>
-                        <p className="text-xs text-gray-400">
+                        <p className="text-xs text-slate-500">
                           Auto-logout after inactivity. Set to 0 to disable.
                         </p>
                       </div>
@@ -1942,16 +1942,16 @@ export default function AdminSettings() {
                         value={security.sessionTimeout}
                         onChange={e => setSecurity(s => ({ ...s, sessionTimeout: Number(e.target.value) }))}
                         style={{ accentColor: '#2563eb' }}
-                        className="flex-1 h-1.5 rounded-full cursor-pointer"
+                        className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:ring-offset-2 flex-1 h-1.5 rounded-full cursor-pointer"
                       />
                       <div className="flex items-center gap-2">
                         <input
                           type="number" min={0} max={120}
                           value={security.sessionTimeout}
                           onChange={e => setSecurity(s => ({ ...s, sessionTimeout: Math.min(120, Math.max(0, Number(e.target.value))) }))}
-                          className="w-14 border border-gray-200 rounded-lg px-2 py-1.5 text-sm font-mono font-bold text-gray-900 text-center focus:outline-none focus:ring-2 focus:ring-blue-500/40 bg-white"
+                          className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:ring-offset-2 w-14 border border-gray-200 rounded-lg px-2 py-1.5 text-sm font-mono font-bold text-gray-900 text-center focus:outline-none focus:ring-2 focus:ring-blue-500/40 bg-white"
                         />
-                        <span className="text-xs text-gray-400">min</span>
+                        <span className="text-xs text-slate-500">min</span>
                       </div>
                     </div>
                     {security.sessionTimeout > 0 && (
@@ -1963,14 +1963,14 @@ export default function AdminSettings() {
 
                   {/* ── Admin PIN setup ── */}
                   <Divider />
-                  <div className="bg-white border border-gray-200 rounded-xl p-5">
+                  <div className="bg-white border border-slate-200 rounded-2xl p-5 sm:p-6">
                     <div className="flex items-center gap-3 mb-4">
                       <div className="w-8 h-8 rounded-lg bg-indigo-50 flex items-center justify-center">
                         <Key className="w-4 h-4 text-indigo-600" />
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-semibold text-gray-900">Admin PIN</p>
-                        <p className="text-xs text-gray-400">Protects sensitive settings (Email, Security, Agents) from support staff access.</p>
+                        <p className="text-xs text-slate-500">Protects sensitive settings (Email, Security, Agents) from support staff access.</p>
                       </div>
                       <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase ${adminPinHash ? 'bg-green-50 text-green-700' : 'bg-gray-100 text-gray-400'}`}>
                         {adminPinHash ? 'Active' : 'Not set'}
@@ -1980,13 +1980,13 @@ export default function AdminSettings() {
                     {!showPinSetup ? (
                       <div className="flex items-center gap-2">
                         <button onClick={() => { setShowPinSetup(true); setNewPin(''); setConfirmPin(''); setPinSetupMsg(null) }}
-                          className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold transition-colors">
+                          className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:ring-offset-2 inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold transition-colors">
                           <Key className="w-3 h-3" />
                           {adminPinHash ? 'Change PIN' : 'Set PIN'}
                         </button>
                         {adminPinHash && (
                           <button onClick={clearPin} disabled={savingPin}
-                            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg border border-red-200 bg-white text-red-600 hover:bg-red-50 text-xs font-semibold transition-colors disabled:opacity-50">
+                            className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:ring-offset-2 inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg border border-red-200 bg-white text-red-600 hover:bg-red-50 text-xs font-semibold transition-colors disabled:opacity-50">
                             <X className="w-3 h-3" /> Remove PIN
                           </button>
                         )}
@@ -2004,12 +2004,12 @@ export default function AdminSettings() {
                         )}
                         <div className="flex items-center gap-2">
                           <button onClick={saveNewPin} disabled={savingPin || !newPin || !confirmPin}
-                            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-primary hover:bg-primary/90 disabled:opacity-40 text-primary-foreground text-xs font-semibold transition-colors">
+                            className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:ring-offset-2 inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-primary hover:bg-primary/90 disabled:opacity-40 text-primary-foreground text-xs font-semibold transition-colors">
                             {savingPin ? <Loader2 className="w-3 h-3 animate-spin" /> : <Check className="w-3 h-3" />}
                             Save PIN
                           </button>
                           <button onClick={() => setShowPinSetup(false)}
-                            className="px-3.5 py-2 rounded-lg border border-gray-200 text-xs font-semibold text-gray-600 hover:bg-gray-50 transition-colors">
+                            className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:ring-offset-2 px-3.5 py-2 rounded-lg border border-gray-200 text-xs font-semibold text-gray-600 hover:bg-gray-50 transition-colors">
                             Cancel
                           </button>
                         </div>
@@ -2043,7 +2043,7 @@ export default function AdminSettings() {
                     icon={FileText}
                     action={
                       <button onClick={downloadHistoryCsv} disabled={historyLoading}
-                        className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-semibold transition-colors disabled:opacity-50">
+                        className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:ring-offset-2 inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-semibold transition-colors disabled:opacity-50">
                         <FileDown className="w-3.5 h-3.5" /> Export CSV
                       </button>
                     }
@@ -2057,7 +2057,7 @@ export default function AdminSettings() {
                       { id: 'settings', label: 'Settings Changes',   count: settingsHistory.length },
                     ] as const).map(t => (
                       <button key={t.id} type="button" onClick={() => setHistoryTab(t.id)}
-                        className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 ${
+                        className={`focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:ring-offset-2 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 ${
                           historyTab === t.id ? 'bg-primary text-primary-foreground shadow-sm' : 'text-blue-700 hover:text-blue-900 hover:bg-blue-100'
                         }`}>
                         {t.label}
@@ -2074,7 +2074,7 @@ export default function AdminSettings() {
                       <span className="text-sm">Loading audit records…</span>
                     </div>
                   ) : historyTab === 'kyc' ? (
-                    <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+                    <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden">
                       <div className="px-5 py-3 border-b border-gray-100 flex items-center justify-between">
                         <p className="text-sm font-semibold text-gray-900">KYC Decisions</p>
                         <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400">{kycHistory.length} records</span>
@@ -2124,7 +2124,7 @@ export default function AdminSettings() {
                       )}
                     </div>
                   ) : historyTab === 'listings' ? (
-                    <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+                    <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden">
                       <div className="px-5 py-3 border-b border-gray-100 flex items-center justify-between">
                         <p className="text-sm font-semibold text-gray-900">Listing Approvals</p>
                         <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400">{listingHistory.length} records</span>
@@ -2169,7 +2169,7 @@ export default function AdminSettings() {
                       )}
                     </div>
                   ) : (
-                    <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+                    <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden">
                       <div className="px-5 py-3 border-b border-gray-100 flex items-center justify-between">
                         <p className="text-sm font-semibold text-gray-900">Settings Changes</p>
                         <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400">{settingsHistory.length} records</span>
@@ -2315,7 +2315,7 @@ export default function AdminSettings() {
                                   }
                                   setSupportHours(h => ({ ...h, days }))
                                 }}
-                                className={`relative w-11 h-6 rounded-full transition-all duration-200 shrink-0 ${
+                                className={`focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:ring-offset-2 relative w-11 h-6 rounded-full transition-all duration-200 shrink-0 ${
                                   isEnabled ? 'bg-primary' : 'bg-slate-200'
                                 }`}
                               >
@@ -2338,7 +2338,7 @@ export default function AdminSettings() {
                                         days[i] = { ...days[i], open: e.target.value }
                                         setSupportHours(h => ({ ...h, days }))
                                       }}
-                                      className="w-full bg-slate-50/80 border border-slate-200 rounded-xl px-3 py-2.5 text-sm font-mono font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/40 transition-all"
+                                      className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:ring-offset-2 w-full bg-slate-50/80 border border-slate-200 rounded-xl px-3 py-2.5 text-sm font-mono font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/40 transition-all"
                                     />
                                   </div>
                                   <span className="text-slate-400 font-bold text-sm">–</span>
@@ -2351,7 +2351,7 @@ export default function AdminSettings() {
                                         days[i] = { ...days[i], close: e.target.value }
                                         setSupportHours(h => ({ ...h, days }))
                                       }}
-                                      className="w-full bg-slate-50/80 border border-slate-200 rounded-xl px-3 py-2.5 text-sm font-mono font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/40 transition-all"
+                                      className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:ring-offset-2 w-full bg-slate-50/80 border border-slate-200 rounded-xl px-3 py-2.5 text-sm font-mono font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/40 transition-all"
                                     />
                                   </div>
                                 </div>
@@ -2419,7 +2419,7 @@ export default function AdminSettings() {
                         })) as SupportHours['days']
                         setSupportHours({ ...supportHours, days: newDays })
                       }}
-                      className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white border border-slate-200 hover:border-primary/40 hover:bg-primary/5 text-slate-600 hover:text-primary text-xs font-semibold transition-all"
+                      className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:ring-offset-2 inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white border border-slate-200 hover:border-primary/40 hover:bg-primary/5 text-slate-600 hover:text-primary text-xs font-semibold transition-all"
                     >
                       <span className="w-4 h-4 rounded border border-current flex items-center justify-center opacity-60">
                         <span className="w-2 h-2 bg-current rounded-sm" />
@@ -2435,7 +2435,7 @@ export default function AdminSettings() {
                         })) as SupportHours['days']
                         setSupportHours({ ...supportHours, days: newDays })
                       }}
-                      className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white border border-slate-200 hover:border-primary/40 hover:bg-primary/5 text-slate-600 hover:text-primary text-xs font-semibold transition-all"
+                      className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:ring-offset-2 inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white border border-slate-200 hover:border-primary/40 hover:bg-primary/5 text-slate-600 hover:text-primary text-xs font-semibold transition-all"
                     >
                       <span className="w-4 h-4 rounded border border-current flex items-center justify-center opacity-60">
                         <span className="w-2 h-2 bg-current rounded-full" />
@@ -2451,7 +2451,7 @@ export default function AdminSettings() {
                         })) as SupportHours['days']
                         setSupportHours({ ...supportHours, days: newDays })
                       }}
-                      className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white border border-slate-200 hover:border-amber-400 hover:bg-amber-50 text-slate-600 hover:text-amber-600 text-xs font-semibold transition-all"
+                      className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:ring-offset-2 inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white border border-slate-200 hover:border-amber-400 hover:bg-amber-50 text-slate-600 hover:text-amber-600 text-xs font-semibold transition-all"
                     >
                       <span className="w-4 h-4 rounded border border-current flex items-center justify-center opacity-60">
                         <span className="w-2 h-0.5 bg-current" />
@@ -2500,10 +2500,10 @@ export default function AdminSettings() {
                           value={regSearch}
                           onChange={e => setRegSearch(e.target.value)}
                           placeholder="Search contacts…"
-                          className="w-full pl-9 pr-3 py-2 rounded-xl border border-slate-200 bg-slate-50 text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary/40 focus:bg-white transition-all"
+                          className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:ring-offset-2 w-full pl-9 pr-3 py-2 rounded-xl border border-slate-200 bg-slate-50 text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary/40 focus:bg-white transition-all"
                         />
                         {regSearch && (
-                          <button type="button" onClick={() => setRegSearch('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+                          <button type="button" onClick={() => setRegSearch('')} className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:ring-offset-2 absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
                             <X className="w-3.5 h-3.5" />
                           </button>
                         )}
@@ -2517,7 +2517,7 @@ export default function AdminSettings() {
                           { label: 'Tenants', tab: 'tenant', count: tenantCount },
                         ].map(f => (
                           <button key={f.tab} type="button" onClick={() => { setRegTab(f.tab as any); setRegStatus('all') }}
-                            className={`shrink-0 inline-flex items-center gap-1.5 h-7 px-2.5 rounded-lg text-[11px] font-semibold transition ${
+                            className={`focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:ring-offset-2 shrink-0 inline-flex items-center gap-1.5 h-7 px-2.5 rounded-lg text-[11px] font-semibold transition ${
                               regTab === f.tab ? 'bg-primary text-white' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
                             }`}>
                             {f.label}
@@ -2547,7 +2547,7 @@ export default function AdminSettings() {
                             const isActive = selectedContact?.id === contact.id && selectedContact?.type === contact.type
                             return (
                               <button key={`${contact.type}-${contact.id}`} onClick={() => openContact(contact)}
-                                className={`w-full text-left rounded-2xl px-3 py-2.5 transition-all flex items-start gap-3 ${
+                                className={`focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:ring-offset-2 w-full text-left rounded-2xl px-3 py-2.5 transition-all flex items-start gap-3 ${
                                   isActive
                                     ? 'bg-primary/8 border border-primary/20'
                                     : 'hover:bg-slate-50 border border-transparent'
@@ -2634,7 +2634,7 @@ export default function AdminSettings() {
                               {selectedContact.email && (
                                 <button type="button" onClick={() => setShowEmailComposer(true)}
                                   title="Send email"
-                                  className="inline-flex items-center gap-1.5 h-8 px-3 rounded-xl bg-slate-100 hover:bg-violet-50 hover:text-violet-600 text-slate-500 text-[11px] font-semibold transition">
+                                  className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:ring-offset-2 inline-flex items-center gap-1.5 h-8 px-3 rounded-xl bg-slate-100 hover:bg-violet-50 hover:text-violet-600 text-slate-500 text-[11px] font-semibold transition">
                                   <Mail className="w-3 h-3" /> Email
                                 </button>
                               )}
@@ -2648,12 +2648,12 @@ export default function AdminSettings() {
                               )}
                               <button type="button" onClick={() => setShowAdvertModal(true)}
                                 title="Send property advert"
-                                className="inline-flex items-center gap-1.5 h-8 px-3 rounded-xl bg-slate-100 hover:bg-primary/10 hover:text-primary text-slate-500 text-[11px] font-semibold transition">
+                                className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:ring-offset-2 inline-flex items-center gap-1.5 h-8 px-3 rounded-xl bg-slate-100 hover:bg-primary/10 hover:text-primary text-slate-500 text-[11px] font-semibold transition">
                                 <Building2 className="w-3 h-3" /> Advert
                               </button>
                               <button type="button" onClick={() => { setSelectedContact(null) }}
                                 title="Close"
-                                className="inline-flex items-center justify-center w-8 h-8 rounded-xl hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition">
+                                className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:ring-offset-2 inline-flex items-center justify-center w-8 h-8 rounded-xl hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition">
                                 <X className="w-4 h-4" />
                               </button>
                             </div>
@@ -2734,11 +2734,11 @@ export default function AdminSettings() {
                               onChange={e => setNotes(e.target.value)}
                               placeholder="Add a note about this contact…"
                               rows={1}
-                              className="flex-1 resize-none rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary/40 focus:bg-white transition-all"
+                              className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:ring-offset-2 flex-1 resize-none rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary/40 focus:bg-white transition-all"
                               onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); saveNotes() } }}
                             />
                             <button type="button" onClick={saveNotes} disabled={savingNotes || !notes.trim()}
-                              className="shrink-0 inline-flex items-center gap-1.5 h-9 px-3 rounded-xl bg-primary hover:bg-primary/90 disabled:opacity-40 text-white text-[11px] font-semibold transition">
+                              className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:ring-offset-2 shrink-0 inline-flex items-center gap-1.5 h-9 px-3 rounded-xl bg-primary hover:bg-primary/90 disabled:opacity-40 text-white text-[11px] font-semibold transition">
                               {savingNotes ? <Loader2 className="w-3 h-3 animate-spin" /> : <Save className="w-3 h-3" />}
                               Save
                             </button>
@@ -2800,14 +2800,14 @@ export default function AdminSettings() {
                   </div>
 
                   {/* Max per landlord */}
-                  <div className="mt-4 bg-white border border-gray-200 rounded-xl p-5">
+                  <div className="mt-4 bg-white border border-slate-200 rounded-2xl p-5 sm:p-6">
                     <div className="flex items-center gap-2.5 mb-4">
                       <div className="w-7 h-7 rounded-lg bg-gray-100 flex items-center justify-center">
                         <Hash className="w-3.5 h-3.5 text-gray-400" strokeWidth={1.8} />
                       </div>
                       <div>
                         <p className="text-sm font-semibold text-gray-900">Max Listings Per Landlord</p>
-                        <p className="text-xs text-gray-400">Cap on simultaneous active listings</p>
+                        <p className="text-xs text-slate-500">Cap on simultaneous active listings</p>
                       </div>
                     </div>
                     <div className="flex items-center gap-4">
@@ -2816,29 +2816,29 @@ export default function AdminSettings() {
                         value={listing.maxPerLandlord}
                         onChange={e => setListing(l => ({ ...l, maxPerLandlord: Number(e.target.value) }))}
                         style={{ accentColor: '#2563eb' }}
-                        className="flex-1 h-1.5 rounded-full"
+                        className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:ring-offset-2 flex-1 h-1.5 rounded-full"
                       />
                       <div className="flex items-center gap-2">
                         <input
                           type="number" min={1} max={100}
                           value={listing.maxPerLandlord}
                           onChange={e => setListing(l => ({ ...l, maxPerLandlord: Number(e.target.value) }))}
-                          className="w-14 border border-gray-200 rounded-lg px-2 py-1.5 text-sm font-mono font-bold text-gray-900 text-center focus:outline-none focus:ring-2 focus:ring-blue-500/40 bg-white"
+                          className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:ring-offset-2 w-14 border border-gray-200 rounded-lg px-2 py-1.5 text-sm font-mono font-bold text-gray-900 text-center focus:outline-none focus:ring-2 focus:ring-blue-500/40 bg-white"
                         />
-                        <span className="text-xs text-gray-400">max</span>
+                        <span className="text-xs text-slate-500">max</span>
                       </div>
                     </div>
                   </div>
 
                   {/* Agency fee percentage */}
-                  <div className="mt-4 bg-white border border-gray-200 rounded-xl p-5">
+                  <div className="mt-4 bg-white border border-slate-200 rounded-2xl p-5 sm:p-6">
                     <div className="flex items-center gap-2.5 mb-4">
                       <div className="w-7 h-7 rounded-lg bg-gray-100 flex items-center justify-center">
                         <DollarSign className="w-3.5 h-3.5 text-gray-400" strokeWidth={1.8} />
                       </div>
                       <div>
                         <p className="text-sm font-semibold text-gray-900">Agency Fee Percentage</p>
-                        <p className="text-xs text-gray-400">Applied automatically to every listing's Agency Fee</p>
+                        <p className="text-xs text-slate-500">Applied automatically to every listing's Agency Fee</p>
                       </div>
                     </div>
                     <div className="flex items-center gap-4">
@@ -2849,10 +2849,10 @@ export default function AdminSettings() {
                           const v = Number(e.target.value)
                           setListing(l => ({ ...l, agencyFeePercent: Number.isFinite(v) ? v : 0 }))
                         }}
-                        className="w-24 border border-gray-200 rounded-lg px-3 py-2 text-sm font-mono font-bold text-gray-900 text-center focus:outline-none focus:ring-2 focus:ring-blue-500/40 bg-white"
+                        className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:ring-offset-2 w-24 border border-gray-200 rounded-lg px-3 py-2 text-sm font-mono font-bold text-gray-900 text-center focus:outline-none focus:ring-2 focus:ring-blue-500/40 bg-white"
                       />
                       <span className="text-sm font-semibold text-gray-500">%</span>
-                      <p className="text-xs text-gray-400">
+                      <p className="text-xs text-slate-500">
                         This is the single source of truth — Agency Fee is always calculated as rent × this percentage.
                       </p>
                     </div>
@@ -2884,8 +2884,8 @@ export default function AdminSettings() {
                       type="button"
                       onClick={handleSave}
                       disabled={saving}
-                      className={`flex-1 inline-flex items-center justify-center gap-2 py-3 text-sm font-bold rounded-xl transition-all duration-200 ${
-                        saving ? 'bg-slate-300 text-white cursor-not-allowed' : 'bg-slate-950 hover:bg-slate-800 active:scale-[0.98] text-white shadow-lg shadow-slate-950/10'
+                      className={`focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:ring-offset-2 flex-1 inline-flex items-center justify-center gap-2 py-3 text-sm font-bold rounded-xl transition-all duration-200 ${
+                        saving ? 'bg-slate-300 text-white cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700 text-white shadow-sm shadow-blue-600/15'
                       }`}
                     >
                       {saving ? (
@@ -2903,11 +2903,11 @@ export default function AdminSettings() {
       {/* ── Email composer modal ── */}
       {showEmailComposer && selectedContact && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm px-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md border border-slate-200 overflow-hidden">
+          <div className="bg-white text-slate-900 rounded-2xl shadow-2xl w-full max-w-md max-h-[90dvh] border border-slate-200 overflow-y-auto">
             <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
               <h3 className="text-sm font-extrabold text-slate-900">Send Email</h3>
               <button type="button" onClick={() => { setShowEmailComposer(false); setEmailSubject(''); setEmailBody('') }}
-                className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-slate-100 text-slate-400">
+                className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:ring-offset-2 w-7 h-7 flex items-center justify-center rounded-lg hover:bg-slate-100 text-slate-400">
                 <X className="w-4 h-4" />
               </button>
             </div>
@@ -2921,23 +2921,23 @@ export default function AdminSettings() {
                 <label className="block text-[10px] font-semibold uppercase tracking-wider text-slate-400 mb-1.5">Subject</label>
                 <input type="text" value={emailSubject} onChange={e => setEmailSubject(e.target.value)}
                   placeholder="Enter subject…"
-                  className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/50 focus:bg-white transition-all" />
+                  className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:ring-offset-2 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/50 focus:bg-white transition-all" />
               </div>
               <div>
                 <label className="block text-[10px] font-semibold uppercase tracking-wider text-slate-400 mb-1.5">Message</label>
                 <textarea value={emailBody} onChange={e => setEmailBody(e.target.value)}
                   placeholder="Write your message…"
                   rows={6}
-                  className="w-full resize-none rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/50 focus:bg-white transition-all" />
+                  className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:ring-offset-2 w-full resize-none rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/50 focus:bg-white transition-all" />
               </div>
             </div>
             <div className="flex gap-3 px-5 pb-5">
               <button type="button" onClick={() => { setShowEmailComposer(false); setEmailSubject(''); setEmailBody('') }}
-                className="flex-1 px-4 py-2.5 rounded-xl border border-slate-200 text-xs font-semibold text-slate-600 hover:bg-slate-50 transition">
+                className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:ring-offset-2 flex-1 px-4 py-2.5 rounded-xl border border-slate-200 text-xs font-semibold text-slate-600 hover:bg-slate-50 transition">
                 Cancel
               </button>
               <button type="button" onClick={sendEmail} disabled={sendingEmail || !emailSubject.trim()}
-                className="flex-1 px-4 py-2.5 rounded-xl bg-violet-600 hover:bg-violet-700 disabled:opacity-50 text-xs font-bold text-white transition">
+                className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:ring-offset-2 flex-1 px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-xs font-bold text-white transition">
                 {sendingEmail ? <><Loader2 className="w-3.5 h-3.5 animate-spin inline" /> Sending…</> : <><Send className="w-3.5 h-3.5 inline mr-1" /> Send Email</>}
               </button>
             </div>
@@ -2952,7 +2952,7 @@ export default function AdminSettings() {
             <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100 shrink-0">
               <h3 className="text-sm font-extrabold text-slate-900">Send Property Advert</h3>
               <button type="button" onClick={() => { setShowAdvertModal(false); setSelectedProperty(null); setAdvertSearch('') }}
-                className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-slate-100 text-slate-400">
+                className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:ring-offset-2 w-7 h-7 flex items-center justify-center rounded-lg hover:bg-slate-100 text-slate-400">
                 <X className="w-4 h-4" />
               </button>
             </div>
@@ -2963,7 +2963,7 @@ export default function AdminSettings() {
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 pointer-events-none" />
                 <input type="text" value={advertSearch} onChange={e => setAdvertSearch(e.target.value)}
                   placeholder="Search properties…"
-                  className="w-full pl-9 pr-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/50 focus:bg-white transition-all" />
+                  className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:ring-offset-2 w-full pl-9 pr-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/50 focus:bg-white transition-all" />
               </div>
 
               {/* Selected property preview */}
@@ -2975,7 +2975,7 @@ export default function AdminSettings() {
                       <p className="text-[11px] text-slate-500">{selectedProperty.city} · ₦{Number(selectedProperty.price).toLocaleString()}</p>
                     </div>
                     <button type="button" onClick={() => setSelectedProperty(null)}
-                      className="w-5 h-5 flex items-center justify-center rounded text-slate-400 hover:text-slate-600 shrink-0">
+                      className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:ring-offset-2 w-5 h-5 flex items-center justify-center rounded text-slate-400 hover:text-slate-600 shrink-0">
                       <X className="w-3 h-3" />
                     </button>
                   </div>
@@ -2988,7 +2988,7 @@ export default function AdminSettings() {
                 <div className="flex gap-2">
                   {(['email', 'whatsapp', 'message'] as const).map(ch => (
                     <button key={ch} type="button" onClick={() => setAdvertChannel(ch)}
-                      className={`flex-1 inline-flex items-center justify-center gap-1.5 rounded-lg py-2 text-[11px] font-semibold border transition ${
+                      className={`focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:ring-offset-2 flex-1 inline-flex items-center justify-center gap-1.5 rounded-lg py-2 text-[11px] font-semibold border transition ${
                         advertChannel === ch
                           ? 'bg-blue-600 border-blue-600 text-white'
                           : 'bg-white border-slate-200 text-slate-600 hover:border-slate-300'
@@ -3011,7 +3011,7 @@ export default function AdminSettings() {
                 filteredAdvertProperties.map((p: any) => (
                   <button key={p.id} type="button"
                     onClick={() => setSelectedProperty(p)}
-                    className={`w-full flex items-center gap-3 rounded-xl border p-3 text-left transition ${
+                    className={`focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:ring-offset-2 w-full flex items-center gap-3 rounded-xl border p-3 text-left transition ${
                       selectedProperty?.id === p.id
                         ? 'border-blue-400 bg-blue-50'
                         : 'border-slate-100 hover:border-slate-200 hover:bg-slate-50'
@@ -3033,11 +3033,11 @@ export default function AdminSettings() {
 
             <div className="flex gap-3 px-5 py-4 border-t border-slate-100 shrink-0">
               <button type="button" onClick={() => { setShowAdvertModal(false); setSelectedProperty(null) }}
-                className="flex-1 px-4 py-2.5 rounded-xl border border-slate-200 text-xs font-semibold text-slate-600 hover:bg-slate-50 transition">
+                className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:ring-offset-2 flex-1 px-4 py-2.5 rounded-xl border border-slate-200 text-xs font-semibold text-slate-600 hover:bg-slate-50 transition">
                 Cancel
               </button>
               <button type="button" onClick={sendAdvert} disabled={sendingAdvert || !selectedProperty}
-                className="flex-1 px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-xs font-bold text-white transition">
+                className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:ring-offset-2 flex-1 px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-xs font-bold text-white transition">
                 {sendingAdvert ? <><Loader2 className="w-3.5 h-3.5 animate-spin inline" /> Sending…</> : <><Building2 className="w-3.5 h-3.5 inline mr-1" /> Send Advert</>}
               </button>
             </div>
@@ -3048,7 +3048,7 @@ export default function AdminSettings() {
       {/* ── PIN gate modal ── */}
       {showPinGate && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-xs p-6 border border-gray-200">
+          <div className="bg-white text-slate-900 rounded-2xl shadow-2xl w-full max-w-sm max-h-[90dvh] overflow-y-auto p-7 border border-slate-200">
             <div className="w-11 h-11 rounded-xl bg-blue-50 flex items-center justify-center mb-4">
               <Lock className="w-5 h-5 text-blue-600" />
             </div>
@@ -3063,16 +3063,16 @@ export default function AdminSettings() {
               onKeyDown={e => e.key === 'Enter' && submitPin()}
               autoFocus
               placeholder="••••"
-              className="w-full border border-gray-200 rounded-xl px-4 py-3 text-center text-lg font-mono tracking-[0.4em] focus:outline-none focus:ring-2 focus:ring-blue-500/30 mb-2"
+              className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:ring-offset-2 w-full border border-gray-200 rounded-xl px-4 py-3 text-center text-lg font-mono tracking-[0.4em] focus:outline-none focus:ring-2 focus:ring-blue-500/30 mb-2"
             />
             {pinError && <p className="text-xs text-red-600 text-center mb-3">{pinError}</p>}
             <div className="flex gap-2.5 mt-4">
               <button onClick={() => { setShowPinGate(false); setPendingTab(null) }}
-                className="flex-1 px-4 py-2.5 rounded-xl border border-gray-200 text-[13px] font-semibold text-gray-700 hover:bg-gray-50 transition-colors">
+                className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:ring-offset-2 flex-1 px-4 py-2.5 rounded-xl border border-gray-200 text-[13px] font-semibold text-gray-700 hover:bg-gray-50 transition-colors">
                 Cancel
               </button>
               <button onClick={submitPin}
-                className="flex-1 px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-[13px] font-semibold transition-colors">
+                className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:ring-offset-2 flex-1 px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-[13px] font-semibold transition-colors">
                 Verify
               </button>
             </div>
