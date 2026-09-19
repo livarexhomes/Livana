@@ -160,7 +160,7 @@ function FieldInput({
   return (
     <div>
       <label className="block text-xs font-semibold text-slate-600 mb-2">{label}</label>
-      <div className={`flex min-h-11 items-center gap-3 border rounded-xl px-3.5 py-3 bg-white transition-colors ${
+      <div className={`flex min-h-12 items-center gap-3 border rounded-xl px-4 py-3.5 bg-white transition-colors ${
         error ? 'border-red-300 ring-2 ring-red-100' :
         focused ? 'border-blue-500 ring-2 ring-blue-500/15' : 'border-gray-200 hover:border-gray-300'
       } ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}>
@@ -204,10 +204,10 @@ function ToggleRow({
 }) {
   return (
     <div
-      className={`flex items-center justify-between gap-4 px-4 py-3.5 rounded-xl border cursor-pointer transition-all duration-150 ${
+      className={`flex items-start sm:items-center justify-between gap-4 px-5 py-5 rounded-2xl border cursor-pointer transition-colors duration-150 ${
         disabled ? 'bg-gray-50/60 border-gray-200 opacity-70 cursor-not-allowed'
         : enabled
-          ? 'bg-white border-blue-200 shadow-[inset_3px_0_0_#3b82f6]'
+          ? 'bg-white border-blue-200 shadow-[inset_3px_0_0_#3b82f6,0_2px_8px_#0f172a04]'
           : 'bg-white border-gray-200 hover:border-gray-300 hover:bg-gray-50'
       }`}
       onClick={!loading && !disabled ? onChange : undefined}
@@ -247,15 +247,15 @@ function ToggleRow({
 
 function SectionTitle({ title, sub, action, icon: Icon }: { title: string; sub: string; action?: ReactNode; icon?: ElementType }) {
   return (
-    <div className="mb-7 flex flex-wrap items-start justify-between gap-4 border-b border-slate-100 pb-6">
+    <div className="mb-8 flex flex-wrap items-start justify-between gap-4 border-b border-slate-200/70 pb-7">
       <div className="flex items-start gap-3 min-w-0">
         {Icon && (
-          <div className="w-10 h-10 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center shrink-0">
+          <div className="w-12 h-12 rounded-2xl bg-blue-50 border border-blue-100 flex items-center justify-center shrink-0">
             <Icon className="w-4 h-4 text-slate-500" strokeWidth={1.8} />
           </div>
         )}
         <div className="min-w-0">
-          <h2 className="text-lg md:text-xl font-semibold text-slate-950 tracking-[-0.025em]">{title}</h2>
+          <h2 className="text-xl md:text-2xl font-semibold text-slate-950 tracking-[-0.035em]">{title}</h2>
           <p className="text-xs text-slate-500 mt-1 leading-5">{sub}</p>
         </div>
       </div>
@@ -265,7 +265,7 @@ function SectionTitle({ title, sub, action, icon: Icon }: { title: string; sub: 
 }
 
 function Divider() {
-  return <div className="h-px bg-gray-100 my-6" />
+  return <div className="h-px bg-slate-200/70 my-8" />
 }
 
 function StatusBadge({ status, text }: { status: 'success' | 'error' | 'warning' | 'neutral'; text: string }) {
@@ -1423,13 +1423,13 @@ export default function AdminSettings() {
         <div className="flex h-screen h-[100dvh] overflow-hidden bg-white">
           <AdminSidebar userEmail={user?.email} userName={displayName} />
 
-          <div className="flex-1 flex flex-col min-w-0 min-h-0 p-3 md:p-6">
+          <div className="flex-1 flex flex-col min-w-0 min-h-0">
             <div className="md:hidden">
               <AdminHeader title="Settings" subtitle="Admin configuration" />
             </div>
 
             {/* ── Page header (desktop only — AdminHeader covers mobile) ── */}
-            <header className="shrink-0 hidden md:flex items-center justify-between gap-5 pb-2">
+            <header className="shrink-0 hidden md:flex items-center justify-between gap-5 border-b border-slate-200/70 bg-white px-7 py-5">
               <div className="min-w-0">
                 <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-blue-600">Admin configuration</p>
                 <h2 className="mt-1 text-2xl font-semibold text-slate-950 tracking-[-0.035em]">Settings</h2>
@@ -1462,7 +1462,7 @@ export default function AdminSettings() {
             </header>
 
             {/* ── Settings card ── */}
-            <div className="mt-3 md:mt-5 flex-1 min-h-0 bg-white border border-slate-200 rounded-2xl overflow-hidden flex flex-col">
+            <div className="flex-1 min-h-0 bg-white overflow-hidden flex flex-col">
               {/* Mobile: horizontal scrollable chips */}
               <div className="lg:hidden shrink-0 border-b border-slate-100">
                 <div className="flex items-center gap-1.5 px-3 py-2.5 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
@@ -1476,7 +1476,7 @@ export default function AdminSettings() {
                         type="button"
                         onClick={() => handleTabChange(s.id)}
                         className={`focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:ring-offset-2 inline-flex items-center gap-1.5 rounded-full px-3.5 py-2 text-xs font-semibold whitespace-nowrap shrink-0 transition-all active:scale-95 ${
-                          isActive ? 'bg-blue-600 text-white shadow-sm shadow-blue-600/15 shadow-primary/20' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                          isActive ? 'bg-blue-50 text-blue-700 ring-1 ring-inset ring-blue-200/70 shadow-primary/20' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                         }`}
                       >
                         <Icon className="w-3.5 h-3.5" strokeWidth={1.8} />
@@ -1490,8 +1490,8 @@ export default function AdminSettings() {
 
               <div className="flex-1 flex min-h-0">
                 {/* Desktop: nav rail */}
-                <aside className="hidden lg:flex flex-col w-52 xl:w-60 shrink-0 border-r border-slate-200/70 bg-white overflow-y-auto">
-                  <nav className="p-4 space-y-7">
+                <aside className="hidden lg:flex flex-col w-48 xl:w-56 shrink-0 border-r border-slate-200/70 bg-white overflow-y-auto">
+                  <nav className="px-3 py-6 space-y-8">
                      <div>
                        <p className="px-2 mb-1.5 text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400">General</p>
                        <div className="space-y-0.5">
@@ -1504,14 +1504,14 @@ export default function AdminSettings() {
                                type="button"
                                onClick={() => handleTabChange(s.id)}
                                className={`focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:ring-offset-2 group flex items-center justify-between w-full min-h-11 px-3 py-2.5 rounded-xl text-[13px] font-medium transition-colors ${
-                                 isActive ? 'bg-blue-600 text-white shadow-sm shadow-blue-600/15' : 'text-slate-600 hover:bg-blue-50/60 hover:text-blue-700'
+                                 isActive ? 'bg-blue-50 text-blue-700 ring-1 ring-inset ring-blue-200/70' : 'text-slate-600 hover:bg-blue-50/60 hover:text-blue-700'
                                }`}
                              >
                                <span className="flex items-center gap-2.5 min-w-0">
-                                 <Icon className={`w-4 h-4 shrink-0 transition-colors ${isActive ? 'text-white' : 'text-slate-400 group-hover:text-slate-600'}`} strokeWidth={1.8} />
+                                 <Icon className={`w-4 h-4 shrink-0 transition-colors ${isActive ? 'text-blue-600' : 'text-slate-400 group-hover:text-slate-600'}`} strokeWidth={1.8} />
                                  <span className="truncate">{s.label}</span>
                                </span>
-                               <ChevronRight className={`w-3.5 h-3.5 shrink-0 transition-colors ${isActive ? 'text-white/60' : 'text-slate-300 group-hover:text-slate-400'}`} />
+                               <ChevronRight className={`w-3.5 h-3.5 shrink-0 transition-colors ${isActive ? 'text-blue-500' : 'text-slate-300 group-hover:text-slate-400'}`} />
                              </button>
                            )
                          })}
@@ -1534,17 +1534,17 @@ export default function AdminSettings() {
                                  type="button"
                                  onClick={() => handleTabChange(s.id)}
                                  className={`focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:ring-offset-2 group flex items-center justify-between w-full min-h-11 px-3 py-2.5 rounded-xl text-[13px] font-medium transition-colors ${
-                                   isActive ? 'bg-blue-600 text-white shadow-sm shadow-blue-600/15' : 'text-slate-600 hover:bg-blue-50/60 hover:text-blue-700'
+                                   isActive ? 'bg-blue-50 text-blue-700 ring-1 ring-inset ring-blue-200/70' : 'text-slate-600 hover:bg-blue-50/60 hover:text-blue-700'
                                  }`}
                                >
                                 <span className="flex items-center gap-2.5 min-w-0">
-                                  <Icon className={`w-4 h-4 shrink-0 transition-colors ${isActive ? 'text-white' : 'text-slate-400 group-hover:text-slate-600'}`} strokeWidth={1.8} />
+                                  <Icon className={`w-4 h-4 shrink-0 transition-colors ${isActive ? 'text-blue-600' : 'text-slate-400 group-hover:text-slate-600'}`} strokeWidth={1.8} />
                                   <span className="truncate">{s.label}</span>
                                 </span>
                                 {locked ? (
                                   <Lock className="w-3 h-3 shrink-0 text-amber-500" />
                                 ) : (
-                                  <ChevronRight className={`w-3.5 h-3.5 shrink-0 transition-colors ${isActive ? 'text-white/60' : 'text-slate-300 group-hover:text-slate-400'}`} />
+                                  <ChevronRight className={`w-3.5 h-3.5 shrink-0 transition-colors ${isActive ? 'text-blue-500' : 'text-slate-300 group-hover:text-slate-400'}`} />
                                 )}
                               </button>
                             )
@@ -1557,7 +1557,7 @@ export default function AdminSettings() {
 
                 {/* ── Content ── */}
                 <main ref={mainRef} className="flex-1 min-w-0 min-h-0 overflow-y-auto overscroll-contain bg-white">
-                  <div className="max-w-4xl mx-auto px-5 md:px-8 xl:px-10 py-6 md:py-8 pb-12">
+                  <div className="max-w-[1000px] mx-auto px-5 md:px-8 xl:px-12 py-7 md:py-10 pb-14">
 
               {/* ─── PLATFORM ─── */}
               {active === 'platform' && (
@@ -1567,7 +1567,7 @@ export default function AdminSettings() {
                     sub="Public-facing details about your real estate platform."
                     icon={Building2}
                   />
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-5 gap-y-5">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-6">
                     <FieldInput 
                       label="Platform Name" 
                       value={platform.name} 
@@ -1682,7 +1682,7 @@ export default function AdminSettings() {
                     </div>
                   </div>
 
-                  <div className="space-y-2">
+                  <div className="space-y-3">
                     <ToggleRow
                       label="New Landlord Registration" 
                       desc="Get notified when a new landlord completes sign-up"
@@ -1800,7 +1800,7 @@ export default function AdminSettings() {
                         mono
                         placeholder="re_xxxxxxxxxxxx"
                       />
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-5 gap-y-5">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-6">
                         <FieldInput
                           label="From Email"
                           value={emailConfig.fromEmail}
@@ -1892,7 +1892,7 @@ export default function AdminSettings() {
                     sub="Manage authentication, session control, and access restrictions."
                     icon={Shield}
                   />
-                  <div className="space-y-2">
+                  <div className="space-y-3">
                     <ToggleRow
                       label="Two-Factor Authentication"
                       desc="Require 2FA for all admin accounts"
@@ -2767,7 +2767,7 @@ export default function AdminSettings() {
                     sub="Control publishing constraints and requirements for landlord listings."
                     icon={Globe}
                   />
-                  <div className="space-y-2">
+                  <div className="space-y-3">
                     <ToggleRow
                       label="Auto-approve Listings"
                       desc="Bypass admin review and publish immediately"
@@ -2873,7 +2873,7 @@ export default function AdminSettings() {
 
               {/* ── Mobile save bar ── */}
               {SAVEABLE_SECTIONS.has(active) && (
-                <div className="md:hidden shrink-0 border-t border-slate-100 bg-white px-4 py-3">
+                <div className="md:hidden shrink-0 border-t border-slate-200 bg-white px-4 py-3 pb-[max(12px,env(safe-area-inset-bottom))]">
                   <div className="flex items-center gap-3">
                     {saved && (
                       <span className="flex items-center gap-1.5 text-xs font-semibold text-emerald-600 shrink-0">
@@ -3004,7 +3004,7 @@ export default function AdminSettings() {
             </div>
 
             {/* Property list */}
-            <div className="flex-1 overflow-y-auto px-5 py-4 space-y-2 max-h-64">
+            <div className="flex-1 overflow-y-auto px-5 py-4 space-y-3 max-h-64">
               {filteredAdvertProperties.length === 0 ? (
                 <p className="text-xs text-slate-400 text-center py-6">No properties found.</p>
               ) : (
