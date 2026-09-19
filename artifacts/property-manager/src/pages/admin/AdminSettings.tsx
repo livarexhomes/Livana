@@ -158,7 +158,7 @@ function FieldInput({
   const inputType = isPassword ? (showPassword ? 'text' : 'password') : type
 
   return (
-    <div>
+    <div className="lv-setting-field">
       <label className="block text-xs font-semibold text-slate-600 mb-2">{label}</label>
       <div className={`flex min-h-11 items-center gap-3 border rounded-lg px-3 py-2.5 bg-white transition-colors ${
         error ? 'border-red-300 ring-2 ring-red-100' :
@@ -204,7 +204,7 @@ function ToggleRow({
 }) {
   return (
     <div
-      className={`flex items-start sm:items-center justify-between gap-4 px-5 py-4 rounded-xl border cursor-pointer transition-colors duration-150 ${
+      className={`lv-setting-toggle flex items-start sm:items-center justify-between gap-4 px-5 py-4 rounded-xl border cursor-pointer transition-colors duration-150 ${
         disabled ? 'bg-gray-50/60 border-gray-200 opacity-70 cursor-not-allowed'
         : enabled
           ? 'bg-white border-slate-200 hover:border-blue-200'
@@ -247,7 +247,7 @@ function ToggleRow({
 
 function SectionTitle({ title, sub, action, icon: Icon }: { title: string; sub: string; action?: ReactNode; icon?: ElementType }) {
   return (
-    <div className="mb-7 flex flex-wrap items-start justify-between gap-4 pb-1">
+    <div className="lv-settings-section mb-7 flex flex-wrap items-start justify-between gap-4 pb-1">
       <div className="flex items-start gap-3 min-w-0">
         {Icon && (
           <div className="w-10 h-10 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center shrink-0">
@@ -1406,8 +1406,9 @@ export default function AdminSettings() {
     return (
       <AuthGuard require="admin">
         <MobileSidebarProvider>
-          <div className="flex h-screen h-[100dvh] overflow-hidden bg-white">
-            <AdminSidebar userEmail={user?.email} userName={displayName} />
+          <div className="lv-settings flex h-screen h-[100dvh] overflow-hidden bg-white">
+            <style>{settingsDesign}</style>
+          <AdminSidebar userEmail={user?.email} userName={displayName} />
             <div className="flex-1 flex items-center justify-center">
               <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
             </div>
@@ -1420,7 +1421,8 @@ export default function AdminSettings() {
   return (
     <AuthGuard require="admin">
       <MobileSidebarProvider>
-        <div className="flex h-screen h-[100dvh] overflow-hidden bg-white">
+        <div className="lv-settings flex h-screen h-[100dvh] overflow-hidden bg-white">
+          <style>{settingsDesign}</style>
           <AdminSidebar userEmail={user?.email} userName={displayName} />
 
           <div className="flex-1 flex flex-col min-w-0 min-h-0">
@@ -1429,7 +1431,7 @@ export default function AdminSettings() {
             </div>
 
             {/* ── Page header (desktop only — AdminHeader covers mobile) ── */}
-            <header className="shrink-0 hidden md:flex items-center justify-between gap-5 border-b border-slate-200/70 bg-white px-7 py-5">
+            <header className="lv-settings-header shrink-0 hidden md:flex items-center justify-between gap-5 border-b border-slate-200/70 bg-white px-7 py-5">
               <div className="min-w-0">
                 <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-blue-600">Admin configuration</p>
                 <h2 className="mt-1 text-2xl font-semibold text-slate-950 tracking-[-0.035em]">Settings</h2>
@@ -1490,7 +1492,7 @@ export default function AdminSettings() {
 
               <div className="flex-1 flex min-h-0">
                 {/* Desktop: nav rail */}
-                <aside className="hidden lg:flex flex-col w-48 xl:w-56 shrink-0 border-r border-slate-200/70 bg-white overflow-y-auto">
+                <aside className="lv-settings-rail hidden lg:flex flex-col w-48 xl:w-56 shrink-0 border-r border-slate-200/70 bg-white overflow-y-auto">
                   <nav className="px-3 py-6 space-y-8">
                      <div>
                        <p className="px-2 mb-1.5 text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400">General</p>
@@ -1557,7 +1559,7 @@ export default function AdminSettings() {
 
                 {/* ── Content ── */}
                 <main ref={mainRef} className="flex-1 min-w-0 min-h-0 overflow-y-auto overscroll-contain bg-white">
-                  <div className="max-w-[1100px] mx-auto px-5 md:px-8 xl:px-12 py-6 md:py-8 pb-14">
+                  <div className="lv-settings-content max-w-[1100px] mx-auto px-5 md:px-8 xl:px-12 py-6 md:py-8 pb-14">
 
               {/* ─── PLATFORM ─── */}
               {active === 'platform' && (
@@ -1567,7 +1569,7 @@ export default function AdminSettings() {
                     sub="Public-facing details about your real estate platform."
                     icon={Building2}
                   />
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-5 rounded-2xl border border-slate-200 bg-white p-5 sm:p-6 shadow-[0_1px_3px_#0f172a04]">
+                  <div className="lv-settings-field-table grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-5 rounded-2xl border border-slate-200 bg-white p-5 sm:p-6 shadow-[0_1px_3px_#0f172a04]">
                     <FieldInput 
                       label="Platform Name" 
                       value={platform.name} 
@@ -1800,7 +1802,7 @@ export default function AdminSettings() {
                         mono
                         placeholder="re_xxxxxxxxxxxx"
                       />
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-5 rounded-2xl border border-slate-200 bg-white p-5 sm:p-6 shadow-[0_1px_3px_#0f172a04]">
+                      <div className="lv-settings-field-table grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-5 rounded-2xl border border-slate-200 bg-white p-5 sm:p-6 shadow-[0_1px_3px_#0f172a04]">
                         <FieldInput
                           label="From Email"
                           value={emailConfig.fromEmail}
@@ -3084,3 +3086,56 @@ export default function AdminSettings() {
     </AuthGuard>
   )
 }
+
+
+// Scoped presentation only; no settings data or actions are modified.
+const settingsDesign = `
+.lv-settings{color:#172033;color-scheme:light}
+.lv-settings-header{min-height:108px;padding:22px 34px;background:#fff}
+.lv-settings-header h2{font-size:27px;letter-spacing:-.055em;font-weight:650}
+.lv-settings-header>div:first-child>p:first-child{font-size:9px;letter-spacing:.16em;color:#64748b}
+.lv-settings-header button{min-height:40px;padding:10px 18px;border-radius:10px;font-weight:600;box-shadow:0 3px 8px #2563eb20}
+.lv-settings-rail{width:220px;background:#fff;border-right:1px solid #edf0f5;padding:12px 10px}
+.lv-settings-rail nav{padding:12px 0}
+.lv-settings-rail nav>div{padding-bottom:22px;border-bottom:1px solid #edf0f5}
+.lv-settings-rail nav>div:last-child{border-bottom:0}
+.lv-settings-rail nav p{padding:0 14px;margin-bottom:12px;font-size:9px;letter-spacing:.14em;color:#8993a3}
+.lv-settings-rail nav button{min-height:42px;margin:4px 0;padding:10px 14px;border-radius:9px;font-size:12px;letter-spacing:-.01em;box-shadow:none}
+.lv-settings-rail nav button:has(.text-blue-600){background:#edf4ff;color:#1d4ed8;box-shadow:inset 0 0 0 1px #dbeafe}
+.lv-settings-content{max-width:1120px;padding:36px 40px 64px}
+.lv-settings-section{position:relative;padding:0 0 25px;margin-bottom:26px;border-bottom:1px solid #e7ebf1}
+.lv-settings-section>div:first-child{gap:16px;align-items:center}
+.lv-settings-section>div:first-child>div:first-child:has(svg){width:46px;height:46px;border-radius:14px;background:#fff;border:1px solid #e2e8f0;box-shadow:0 2px 3px #0f172a04}
+.lv-settings-section svg{color:#2563eb;width:20px;height:20px}
+.lv-settings-section h2{font-size:23px;font-weight:600;letter-spacing:-.045em;line-height:1.3}
+.lv-settings-section p{font-size:12px;line-height:1.8;color:#6b778a;max-width:520px;margin-top:6px}
+.lv-settings-field-table{display:block;padding:0 24px;border:1px solid #e2e8f0;border-radius:14px;box-shadow:0 2px 5px #0f172a03;overflow:hidden}
+.lv-settings-field-table>.lv-setting-field,.lv-settings-field-table>div:has(>.lv-setting-field){border-bottom:1px solid #edf0f5}
+.lv-settings-field-table>div:last-child{border-bottom:0}
+.lv-settings-field-table .lv-setting-field{display:grid;grid-template-columns:minmax(120px,.75fr) minmax(0,1.65fr);gap:8px 28px;align-items:center;padding:19px 0}
+.lv-setting-field>label{font-size:12px;font-weight:550;color:#475569;letter-spacing:0;margin:0 0 8px}
+.lv-settings-field-table .lv-setting-field>label{margin:0}
+.lv-setting-field>div{border-radius:9px;min-height:42px;background:#fff;border-color:#dfe5ed;box-shadow:0 1px 2px #0f172a03}
+.lv-setting-field>div:focus-within{border-color:#3b82f6;box-shadow:0 0 0 3px #eff6ff}
+.lv-setting-field input{font-size:13px;min-width:0;box-shadow:none!important}
+.lv-setting-field input:focus-visible{outline:none;box-shadow:none}
+.lv-setting-field>p{grid-column:2}
+.lv-setting-toggle{min-height:86px;padding:20px;border-radius:12px;border-color:#e4e9f0;background:#fff;box-shadow:0 1px 2px #0f172a02}
+.lv-setting-toggle>div:first-child{gap:14px}
+.lv-setting-toggle>div:first-child>div:first-child:has(svg){background:#f7f9fc;border:1px solid #edf0f5;color:#526176;border-radius:10px}
+.lv-setting-toggle:has(button[aria-checked=true])>div:first-child>div:first-child:has(svg){background:#eff6ff;border-color:#dbeafe;color:#2563eb}
+.lv-setting-toggle p{font-size:12px;line-height:1.7;max-width:560px}
+.lv-setting-toggle>div:last-child>svg{display:none}
+.lv-settings-content [role=switch]{box-shadow:inset 0 0 0 1px #0f172a08}
+.lv-settings-content select{min-height:40px;border-radius:9px;background-color:#fff;color:#334155}
+.lv-settings-content table{font-size:12px}
+.lv-settings-content thead{background:#f8fafc;color:#64748b}
+.lv-settings-content th{font-weight:600;letter-spacing:.015em}
+.lv-settings-content td{border-color:#edf0f5}
+.lv-settings-content [role=alert]{border-radius:10px}
+.lv-settings .fixed>div.bg-white{background:#fff;color:#0f172a;border:1px solid #e2e8f0;border-radius:18px;box-shadow:0 28px 90px #0f172a30}
+.lv-settings .overflow-y-auto{scrollbar-width:thin;scrollbar-color:#cbd5e1 transparent}
+@media(min-width:1440px){.lv-settings-content{padding-left:56px;padding-right:56px}.lv-settings-rail{width:236px}}
+@media(max-width:1100px){.lv-settings-content{padding:28px 24px 48px}.lv-settings-field-table .lv-setting-field{gap:8px 18px;grid-template-columns:minmax(100px,.7fr) minmax(0,1.5fr)}}
+@media(max-width:639px){.lv-settings-content{padding:24px 16px 40px}.lv-settings-section h2{font-size:21px}.lv-settings-section>div:first-child{align-items:flex-start;gap:12px}.lv-settings-field-table{padding:0 16px}.lv-settings-field-table .lv-setting-field{grid-template-columns:minmax(0,1fr);gap:10px;padding:16px 0}.lv-setting-field>p{grid-column:1}.lv-setting-field input{font-size:16px}.lv-setting-toggle{padding:16px;gap:12px}.lv-setting-toggle>div:first-child{align-items:flex-start}.lv-settings-header{padding:20px}}
+`
