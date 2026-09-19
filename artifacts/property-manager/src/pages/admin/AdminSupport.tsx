@@ -182,7 +182,7 @@ class ConversationErrorBoundary extends React.Component<{ children: React.ReactN
           <p className="text-sm font-medium text-gray-600 mb-2">Unable to load this conversation.</p>
           <p className="text-xs text-gray-400 mb-3">The conversation panel encountered an error.</p>
           <button onClick={() => { this.setState({ hasError: false }) }}
-            className="text-xs font-semibold text-blue-600 hover:text-blue-800 underline">
+            className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:ring-offset-2 text-xs font-semibold text-blue-600 hover:text-blue-800 underline">
             Reload conversation
           </button>
         </div>
@@ -240,24 +240,24 @@ function ArchivePanel({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/35 px-4 py-6 backdrop-blur-sm">
-      <div className="w-full max-w-lg overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl">
+      <div className="w-full max-w-lg max-h-[calc(100dvh-3rem)] overflow-y-auto rounded-2xl border border-slate-200 bg-white shadow-2xl">
         <div className="flex items-start justify-between border-b border-slate-100 px-5 py-4">
           <div>
             <div className="flex items-center gap-2"><Archive className="h-4 w-4 text-primary" /><h2 className="text-base font-bold text-slate-950">Archive / Move to History</h2></div>
             <p className="mt-1 max-w-md text-xs leading-relaxed text-slate-500">Select the tickets you want to move to history. Archived tickets are removed from your active workspace but are never deleted.</p>
           </div>
-          <button type="button" onClick={onClose} className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700"><X className="h-4 w-4" /></button>
+          <button type="button" onClick={onClose} className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:ring-offset-2 rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700"><X className="h-4 w-4" /></button>
         </div>
         <div className="space-y-4 px-5 py-4">
           <div className="rounded-xl border border-blue-100 bg-blue-50/60 px-3 py-2.5 text-xs leading-relaxed text-blue-800">Archived tickets remain accessible in History and can be restored at any time. No conversation data will be permanently deleted.</div>
           <div>
-            <div className="mb-2 flex items-center justify-between"><p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Select ticket types</p><button type="button" onClick={selectAll} className="text-xs font-semibold text-primary hover:underline">{types.length === typeOptions.length ? 'Clear all' : 'Select all'}</button></div>
+            <div className="mb-2 flex items-center justify-between"><p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Select ticket types</p><button type="button" onClick={selectAll} className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:ring-offset-2 text-xs font-semibold text-primary hover:underline">{types.length === typeOptions.length ? 'Clear all' : 'Select all'}</button></div>
             <div className="grid gap-2 sm:grid-cols-2">
               {typeOptions.map(option => {
                 const selected = types.includes(option.value)
                 const Icon = STATUS_META[option.value].icon
                 return <label key={option.value} className={`flex cursor-pointer items-start gap-2.5 rounded-xl border px-3 py-2.5 transition-colors ${selected ? 'border-primary/30 bg-primary/5' : 'border-slate-200 hover:bg-slate-50'}`}>
-                  <input type="checkbox" checked={selected} onChange={() => toggleType(option.value)} className="mt-0.5 accent-primary" />
+                  <input type="checkbox" checked={selected} onChange={() => toggleType(option.value)} className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:ring-offset-2 mt-0.5 accent-primary" />
                   <Icon className={`mt-0.5 h-3.5 w-3.5 ${STATUS_META[option.value].color}`} />
                   <span><span className="block text-xs font-semibold text-slate-800">{option.label}</span><span className="mt-0.5 block text-[10px] leading-snug text-slate-400">{option.description}</span></span>
                 </label>
@@ -265,13 +265,13 @@ function ArchivePanel({
             </div>
           </div>
           <div className="grid gap-3 sm:grid-cols-2">
-            <label className="block"><span className="mb-1.5 block text-[10px] font-bold uppercase tracking-widest text-slate-400">Older than</span><select value={olderThan} onChange={e => setOlderThan(e.target.value)} className="h-9 w-full rounded-lg border border-slate-200 bg-white px-3 text-xs font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/25"><option value="all">Any age</option><option value="7">7 days</option><option value="14">14 days</option><option value="30">30 days</option><option value="60">60 days</option><option value="90">90 days</option></select></label>
-            <label className="block"><span className="mb-1.5 block text-[10px] font-bold uppercase tracking-widest text-slate-400">Channel</span><select value={channel} onChange={e => setChannel(e.target.value)} className="h-9 w-full rounded-lg border border-slate-200 bg-white px-3 text-xs font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/25"><option value="all">All Channels</option><option value="tenant">Tenant</option><option value="landlord">Landlord</option><option value="other">Other</option></select></label>
+            <label className="block"><span className="mb-1.5 block text-[10px] font-bold uppercase tracking-widest text-slate-400">Older than</span><select value={olderThan} onChange={e => setOlderThan(e.target.value)} className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:ring-offset-2 h-9 w-full rounded-lg border border-slate-200 bg-white px-3 text-xs font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/25"><option value="all">Any age</option><option value="7">7 days</option><option value="14">14 days</option><option value="30">30 days</option><option value="60">60 days</option><option value="90">90 days</option></select></label>
+            <label className="block"><span className="mb-1.5 block text-[10px] font-bold uppercase tracking-widest text-slate-400">Channel</span><select value={channel} onChange={e => setChannel(e.target.value)} className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:ring-offset-2 h-9 w-full rounded-lg border border-slate-200 bg-white px-3 text-xs font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/25"><option value="all">All Channels</option><option value="tenant">Tenant</option><option value="landlord">Landlord</option><option value="other">Other</option></select></label>
           </div>
-          <label className="flex items-center gap-2 rounded-lg border border-emerald-100 bg-emerald-50/60 px-3 py-2.5 text-xs text-emerald-800"><input type="checkbox" checked readOnly className="accent-emerald-600" /><span><span className="block font-semibold">Keep in History (Don't Delete)</span><span className="text-[11px] text-emerald-700/80">Archived tickets will be moved to History, not deleted.</span></span></label>
+          <label className="flex items-center gap-2 rounded-lg border border-emerald-100 bg-emerald-50/60 px-3 py-2.5 text-xs text-emerald-800"><input type="checkbox" checked readOnly className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:ring-offset-2 accent-emerald-600" /><span><span className="block font-semibold">Keep in History (Don't Delete)</span><span className="text-[11px] text-emerald-700/80">Archived tickets will be moved to History, not deleted.</span></span></label>
           <p className="text-xs text-slate-500"><span className="font-bold text-slate-900">{matching.length}</span> ticket{matching.length === 1 ? '' : 's'} match these filters.</p>
         </div>
-        <div className="flex justify-end gap-2 border-t border-slate-100 bg-slate-50/50 px-5 py-3"><button type="button" onClick={onClose} className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-50">Cancel</button><button type="button" disabled={!matching.length || saving} onClick={submit} className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-40"><Archive className="h-3.5 w-3.5" />{saving ? 'Moving…' : 'Move to History'}</button></div>
+        <div className="flex justify-end gap-2 border-t border-slate-100 bg-slate-50/50 px-5 py-3"><button type="button" onClick={onClose} className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:ring-offset-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-50">Cancel</button><button type="button" disabled={!matching.length || saving} onClick={submit} className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:ring-offset-2 inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-40"><Archive className="h-3.5 w-3.5" />{saving ? 'Moving…' : 'Move to History'}</button></div>
       </div>
     </div>
   )
@@ -584,7 +584,7 @@ function AdminChatThread({
     <div className="flex flex-col h-full bg-white overflow-hidden">
       {/* ── Header ────────────────────────────────────────────────────────── */}
       <div className="flex items-center gap-3 px-4 py-3 border-b border-slate-100 shrink-0">
-        <button onClick={onBack} className="lg:hidden p-1.5 rounded-lg hover:bg-slate-100 text-slate-400 transition-colors shrink-0">
+        <button onClick={onBack} className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:ring-offset-2 lg:hidden p-1.5 rounded-lg hover:bg-slate-100 text-slate-400 transition-colors shrink-0">
           <ChevronLeft className="w-4 h-4" />
         </button>
         <div className={`w-8 h-8 rounded-xl bg-gradient-to-br flex items-center justify-center shrink-0 ${isLandlordTicket ? 'from-violet-500 to-purple-600' : 'from-primary to-blue-500'}`}>
@@ -627,7 +627,7 @@ function AdminChatThread({
           />
           <div className="relative">
             <button type="button" onClick={() => setShowMore(!showMore)}
-              className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-1.5 rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 transition-colors">
+              className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:ring-offset-2 inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-1.5 rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 transition-colors">
               Actions <ChevronDownIcon className="w-3 h-3" />
             </button>
             {showMore && (
@@ -635,31 +635,31 @@ function AdminChatThread({
                 <div className="border-b border-slate-100 px-3 py-2">
                   <p className="mb-1.5 text-[10px] font-bold uppercase tracking-widest text-slate-400">Assign ticket</p>
                   <select value={assignedAgent?.id ?? ''} onChange={e => assignTo(e.target.value || null)} disabled={assigning}
-                    className="w-full rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-xs text-slate-700 focus:outline-none">
+                    className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:ring-offset-2 w-full rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-xs text-slate-700 focus:outline-none">
                     <option value="">Unassigned</option>
                     {availableAgents.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
                   </select>
                 </div>
                 {(ticket.status === 'resolved' || ticket.status === 'closed') && (
-                  <button type="button" onClick={() => { updateStatus('open'); setShowMore(false) }} className="flex w-full items-center gap-2 px-3 py-2 text-left text-slate-700 hover:bg-slate-50">
+                  <button type="button" onClick={() => { updateStatus('open'); setShowMore(false) }} className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:ring-offset-2 flex w-full items-center gap-2 px-3 py-2 text-left text-slate-700 hover:bg-slate-50">
                     <RefreshCw className="w-3 h-3" /> Reopen
                   </button>
                 )}
                 {(ticket.status === 'open' || ticket.status === 'in_progress') && (
                   <>
-                    <button type="button" onClick={() => { updateStatus('resolved'); setShowMore(false) }} className="flex w-full items-center gap-2 px-3 py-2 text-left text-emerald-700 hover:bg-emerald-50">
+                    <button type="button" onClick={() => { updateStatus('resolved'); setShowMore(false) }} className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:ring-offset-2 flex w-full items-center gap-2 px-3 py-2 text-left text-emerald-700 hover:bg-emerald-50">
                       <CheckCircle2 className="w-3 h-3" /> Resolve
                     </button>
-                    <button type="button" onClick={() => { updateStatus('closed'); setShowMore(false) }} className="flex w-full items-center gap-2 px-3 py-2 text-left text-red-700 hover:bg-red-50">
+                    <button type="button" onClick={() => { updateStatus('closed'); setShowMore(false) }} className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:ring-offset-2 flex w-full items-center gap-2 px-3 py-2 text-left text-red-700 hover:bg-red-50">
                       <XCircle className="w-3 h-3" /> Close
                     </button>
                   </>
                 )}
                 <button type="button" onClick={() => { onArchive(ticket.id); setShowMore(false) }}
-                  className={`flex items-center gap-2 w-full px-3 py-2 text-left hover:bg-slate-50 ${ticket.archived ? 'text-emerald-700' : 'text-slate-700'}`}>
+                  className={`focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:ring-offset-2 flex items-center gap-2 w-full px-3 py-2 text-left hover:bg-slate-50 ${ticket.archived ? 'text-emerald-700' : 'text-slate-700'}`}>
                   {ticket.archived ? <><RefreshCw className="w-3 h-3" />Restore</> : <><Archive className="w-3 h-3" />Archive</>}
                 </button>
-                <button type="button" onClick={() => { navigator.clipboard?.writeText(ticket.ticket_no ?? ticket.id); setShowMore(false) }} className="flex w-full items-center gap-2 px-3 py-2 text-left text-slate-700 hover:bg-slate-50">
+                <button type="button" onClick={() => { navigator.clipboard?.writeText(ticket.ticket_no ?? ticket.id); setShowMore(false) }} className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:ring-offset-2 flex w-full items-center gap-2 px-3 py-2 text-left text-slate-700 hover:bg-slate-50">
                   <MessageSquare className="w-3 h-3" /> Copy reference
                 </button>
               </div>
@@ -672,7 +672,7 @@ function AdminChatThread({
       <div className="flex flex-1 min-h-0">
         {/* Conversation column */}
         <div className="flex-1 flex flex-col min-w-0">
-          <div ref={scrollRef} className="flex-1 overflow-y-auto px-3 py-3 sm:px-4 sm:py-3 space-y-2">
+          <div ref={scrollRef} className="flex-1 min-h-0 overflow-y-auto overscroll-contain bg-slate-50/60 px-4 py-5 sm:px-6 space-y-4">
             {loading ? (
               <div className="flex flex-col items-center justify-center h-full gap-3 py-8">
                 <Loader2 className="w-6 h-6 animate-spin text-gray-300" />
@@ -701,7 +701,7 @@ function AdminChatThread({
                         setMessages(deduped); setLoading(false)
                       })
                   }}
-                  className="text-xs font-semibold text-blue-600 hover:text-blue-800 underline"
+                  className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:ring-offset-2 text-xs font-semibold text-blue-600 hover:text-blue-800 underline"
                 >
                   Try again
                 </button>
@@ -738,7 +738,7 @@ function AdminChatThread({
                             <span className="text-xs font-bold text-white">{senderInitial}</span>
                           </div>
                         )}
-                        <div className={`max-w-[75%] flex flex-col gap-1 ${isAdmin ? 'items-end' : 'items-start'}`}>
+                        <div className={`min-w-0 max-w-[88%] sm:max-w-[78%] break-words [overflow-wrap:anywhere] flex flex-col gap-1 ${isAdmin ? 'items-end' : 'items-start'}`}>
                           {msg.attachment_url && (
                             <img src={msg.attachment_url} alt={msg.attachment_name ?? 'attachment'}
                               className="max-h-40 max-w-[220px] rounded-xl border border-gray-200 object-cover" />
@@ -789,10 +789,10 @@ function AdminChatThread({
           {/* Composer */}
           {!isClosed ? (
             <form onSubmit={sendReply} className="px-3 py-2.5 sm:px-4 sm:py-3 border-t border-gray-100 flex items-end gap-2 shrink-0">
-              <input ref={fileInputRef} type="file" multiple accept="image/*" className="hidden"
+              <input ref={fileInputRef} type="file" multiple accept="image/*" className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:ring-offset-2 hidden"
                 onChange={e => setAttachments(prev => [...prev, ...Array.from(e.target.files ?? [])])} />
               <button type="button" onClick={() => fileInputRef.current?.click()} title="Attach image"
-                className="w-10 h-10 rounded-xl border border-gray-200 text-gray-400 hover:text-gray-600 hover:border-gray-300 flex items-center justify-center transition-colors shrink-0">
+                className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:ring-offset-2 w-10 h-10 rounded-xl border border-gray-200 text-gray-400 hover:text-gray-600 hover:border-gray-300 flex items-center justify-center transition-colors shrink-0">
                 <Paperclip className="w-4 h-4" />
               </button>
               {attachments.length > 0 && (
@@ -801,9 +801,9 @@ function AdminChatThread({
               <textarea rows={1} value={input} onChange={e => handleComposerChange(e.target.value)}
                 onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendReply(e as any) } }}
                 placeholder={`Reply to ${isLandlordTicket ? 'landlord' : 'tenant'}… (Enter to send)`}
-                className="flex-1 px-4 py-2.5 rounded-xl border border-gray-200 text-sm bg-gray-50 text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-gray-900 transition-all resize-none" />
+                className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:ring-offset-2 min-w-0 flex-1 px-4 py-3 rounded-xl border border-gray-200 text-sm bg-gray-50 text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/25 transition-all resize-none" />
               <button type="submit" disabled={(!input.trim() && attachments.length === 0) || sending}
-                className="w-10 h-10 rounded-xl bg-primary hover:bg-primary/90 disabled:opacity-40 text-primary-foreground flex items-center justify-center transition-all shrink-0">
+                className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:ring-offset-2 w-10 h-10 rounded-xl bg-primary hover:bg-primary/90 disabled:opacity-40 text-primary-foreground flex items-center justify-center transition-all shrink-0">
                 {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
               </button>
             </form>
@@ -816,7 +816,7 @@ function AdminChatThread({
         </div>
 
         {/* Right context panel */}
-        <div className="w-64 shrink-0 border-l border-gray-100 hidden xl:flex flex-col overflow-y-auto bg-gray-50/50">
+        <div className="w-60 shrink-0 border-l border-slate-200/70 hidden xl:flex flex-col overflow-y-auto bg-gray-50/50">
           {/* Customer */}
           <div className="px-4 py-3 border-b border-gray-100">
             <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-2">Customer</p>
@@ -1025,7 +1025,7 @@ function EnquiryDetail({ enquiry, onBack, onStatusChange }: {
     <div className="flex flex-col h-full bg-white overflow-hidden">
       {/* Header */}
       <div className="flex items-start gap-x-3 gap-y-3 px-5 py-4 border-b border-slate-100 shrink-0 flex-wrap">
-        <button onClick={onBack} className="lg:hidden p-1.5 -ml-1.5 rounded-lg hover:bg-slate-100 text-slate-500 transition-colors">
+        <button onClick={onBack} className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:ring-offset-2 lg:hidden p-1.5 -ml-1.5 rounded-lg hover:bg-slate-100 text-slate-500 transition-colors">
           <ChevronLeft className="w-4 h-4" />
         </button>
         <div className={`w-10 h-10 rounded-full bg-gradient-to-br ${avatarGrad(tenantName)} flex items-center justify-center shrink-0 text-[13px] font-semibold text-white`}>
@@ -1058,7 +1058,7 @@ function EnquiryDetail({ enquiry, onBack, onStatusChange }: {
       </div>
 
       {/* Body - Chat Thread */}
-      <div className="flex-1 overflow-y-auto px-6 py-5 space-y-3">
+      <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain bg-slate-50/60 px-4 py-5 sm:px-6 space-y-4">
         {loading ? (
           <div className="flex items-center justify-center h-full">
             <Loader2 className="w-6 h-6 animate-spin text-slate-200" />
@@ -1087,7 +1087,7 @@ function EnquiryDetail({ enquiry, onBack, onStatusChange }: {
               <div className={`w-8 h-8 rounded-full bg-gradient-to-br ${avatarGrad(tenantName)} flex items-center justify-center shrink-0 text-[11px] font-semibold text-white`}>
                 <span>{tenantInitial}</span>
               </div>
-              <div className="max-w-[75%] flex flex-col gap-1 items-start">
+              <div className="min-w-0 max-w-[88%] sm:max-w-[78%] break-words [overflow-wrap:anywhere] flex flex-col gap-1 items-start">
                 <div className="px-4 py-2.5 rounded-2xl rounded-bl-md text-[13.5px] leading-relaxed bg-slate-100 text-slate-800">
                   {enquiry.message}
                 </div>
@@ -1110,7 +1110,7 @@ function EnquiryDetail({ enquiry, onBack, onStatusChange }: {
                       <span>L</span>
                     </div>
                   )}
-                  <div className={`max-w-[75%] flex flex-col gap-1 ${isAdmin ? 'items-end' : 'items-start'}`}>
+                  <div className={`min-w-0 max-w-[88%] sm:max-w-[78%] break-words [overflow-wrap:anywhere] flex flex-col gap-1 ${isAdmin ? 'items-end' : 'items-start'}`}>
                     <div className={`px-4 py-2.5 rounded-2xl text-[13.5px] leading-relaxed ${isAdmin ? 'bg-primary text-white rounded-br-md' : 'bg-slate-100 text-slate-800 rounded-bl-md'}`}>
                       {reply.message}
                     </div>
@@ -1148,10 +1148,10 @@ function EnquiryDetail({ enquiry, onBack, onStatusChange }: {
             onChange={e => setInput(e.target.value)}
             onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendReply(e as any) } }}
             placeholder="Type your reply… (Enter to send)"
-            className="flex-1 px-4 py-2.5 rounded-xl border border-slate-200 text-[13.5px] bg-white text-slate-900 placeholder-slate-400 caret-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-slate-400 transition-all resize-none" 
+            className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:ring-offset-2 min-w-0 flex-1 px-4 py-3 rounded-xl border border-slate-200 text-[13.5px] bg-white text-slate-900 placeholder-slate-400 caret-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/25 transition-all resize-none" 
           />
           <button type="submit" disabled={!input.trim() || sending}
-            className="w-10 h-10 rounded-xl bg-slate-900 hover:bg-slate-800 disabled:opacity-40 text-white flex items-center justify-center transition-colors shrink-0">
+            className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:ring-offset-2 w-11 h-11 rounded-xl bg-blue-600 hover:bg-blue-700 disabled:opacity-40 text-white flex items-center justify-center transition-colors shrink-0">
             {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
           </button>
         </form>
@@ -1357,7 +1357,7 @@ function ChatRequestDetail({ inquiry, onBack, onMarkRead, onStatusChange, agents
     <div className="flex flex-col h-full bg-white overflow-hidden">
       {/* Header */}
       <div className="flex items-center gap-2.5 px-3.5 py-2.5 sm:gap-3 sm:px-5 sm:py-3.5 border-b border-slate-100 shrink-0">
-          <button onClick={onBack} className="lg:hidden p-1.5 -ml-1.5 rounded-lg hover:bg-slate-100 text-slate-500 transition-colors shrink-0">
+          <button onClick={onBack} className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:ring-offset-2 lg:hidden p-1.5 -ml-1.5 rounded-lg hover:bg-slate-100 text-slate-500 transition-colors shrink-0">
           <ChevronLeft className="w-4 h-4" />
         </button>
           <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gradient-to-br ${avatarGrad(inquiry.name)} flex items-center justify-center shrink-0 text-[12px] sm:text-[13px] font-semibold text-white`}>
@@ -1404,7 +1404,7 @@ function ChatRequestDetail({ inquiry, onBack, onMarkRead, onStatusChange, agents
           <button
             onClick={() => setShowClearConfirm(true)}
             title="Clear chat history"
-            className="grid size-8 sm:size-9 place-items-center rounded-lg border border-slate-200 bg-white text-slate-400 hover:text-red-500 hover:border-red-200 transition-colors"
+            className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:ring-offset-2 grid size-8 sm:size-9 place-items-center rounded-lg border border-slate-200 bg-white text-slate-400 hover:text-red-500 hover:border-red-200 transition-colors"
           >
             <Trash2 className="w-4 h-4" />
           </button>
@@ -1426,11 +1426,11 @@ function ChatRequestDetail({ inquiry, onBack, onMarkRead, onStatusChange, agents
             </div>
             <div className="flex gap-2 justify-end">
               <button onClick={() => setShowClearConfirm(false)} disabled={clearing}
-                className="px-4 py-2 rounded-lg border border-slate-200 text-[13px] font-medium text-slate-700 hover:bg-slate-50 transition-colors disabled:opacity-50">
+                className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:ring-offset-2 px-4 py-2 rounded-lg border border-slate-200 text-[13px] font-medium text-slate-700 hover:bg-slate-50 transition-colors disabled:opacity-50">
                 Cancel
               </button>
               <button onClick={clearChat} disabled={clearing}
-                className="px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700 disabled:opacity-50 text-[13px] font-medium text-white transition-colors flex items-center gap-1.5">
+                className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:ring-offset-2 px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700 disabled:opacity-50 text-[13px] font-medium text-white transition-colors flex items-center gap-1.5">
                 {clearing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
                 Clear messages
               </button>
@@ -1449,7 +1449,7 @@ function ChatRequestDetail({ inquiry, onBack, onMarkRead, onStatusChange, agents
           {inquiry.agent_status !== 'assigned' && (
             <button onClick={() => doClaim(liveState.onlineAgents[0]?.id ?? agents[0]?.id ?? '')}
               disabled={assigning || agents.length === 0}
-              className="inline-flex items-center gap-1.5 text-[11.5px] font-medium px-2.5 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 disabled:opacity-40 text-white transition-colors">
+              className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:ring-offset-2 inline-flex items-center gap-1.5 text-[11.5px] font-medium px-2.5 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 disabled:opacity-40 text-white transition-colors">
               {assigning ? <Loader2 className="w-3 h-3 animate-spin" /> : <User className="w-3 h-3" />}
               Assign to me
             </button>
@@ -1458,7 +1458,7 @@ function ChatRequestDetail({ inquiry, onBack, onMarkRead, onStatusChange, agents
             value={assignedAgent?.id ?? ''}
             onChange={e => e.target.value ? doClaim(e.target.value) : doUnassign()}
             disabled={assigning || agents.length === 0}
-            className="appearance-none pl-2.5 pr-6 py-1.5 rounded-lg border border-slate-200 text-[11.5px] font-medium bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-slate-400 cursor-pointer disabled:opacity-40 hover:border-slate-300 transition-colors">
+            className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:ring-offset-2 appearance-none pl-2.5 pr-6 py-1.5 rounded-lg border border-slate-200 text-[11.5px] font-medium bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/25 cursor-pointer disabled:opacity-40 hover:border-slate-300 transition-colors">
             <option value="">Reassign…</option>
             {agents.filter(a => a.active).map(a => (
               <option key={a.id} value={a.id}>{a.name}{a.available ? '' : ' (unavailable)'}</option>
@@ -1468,7 +1468,7 @@ function ChatRequestDetail({ inquiry, onBack, onMarkRead, onStatusChange, agents
           {inquiry.agent_status === 'assigned' && (
             <button onClick={doUnassign} disabled={assigning}
               title="Unassign"
-              className="inline-flex items-center gap-1.5 text-[11.5px] font-medium px-2.5 py-1.5 rounded-lg border border-slate-200 bg-white text-slate-500 hover:text-red-600 hover:border-red-200 transition-colors">
+              className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:ring-offset-2 inline-flex items-center gap-1.5 text-[11.5px] font-medium px-2.5 py-1.5 rounded-lg border border-slate-200 bg-white text-slate-500 hover:text-red-600 hover:border-red-200 transition-colors">
               Unassign
             </button>
           )}
@@ -1476,13 +1476,13 @@ function ChatRequestDetail({ inquiry, onBack, onMarkRead, onStatusChange, agents
       </div>
 
       {/* Body — chat thread */}
-      <div className="flex-1 overflow-y-auto px-3 py-4 sm:px-6 sm:py-5 space-y-3">
+      <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain bg-slate-50/60 px-4 py-5 sm:px-6 space-y-4">
         {/* Original visitor message */}
         <div className="flex items-end gap-2.5 justify-start">
           <div className={`w-8 h-8 rounded-full bg-gradient-to-br ${avatarGrad(inquiry.name)} flex items-center justify-center shrink-0 text-[11px] font-semibold text-white`}>
             <span>{inquiry.name[0]?.toUpperCase() ?? 'U'}</span>
           </div>
-          <div className="max-w-[75%] flex flex-col gap-1 items-start">
+          <div className="min-w-0 max-w-[88%] sm:max-w-[78%] break-words [overflow-wrap:anywhere] flex flex-col gap-1 items-start">
             <div className="px-4 py-2.5 rounded-2xl rounded-bl-md text-[13.5px] leading-relaxed bg-slate-100 text-slate-800">
               {inquiry.note}
             </div>
@@ -1507,7 +1507,7 @@ function ChatRequestDetail({ inquiry, onBack, onMarkRead, onStatusChange, agents
                     <span>{inquiry.name[0]?.toUpperCase() ?? 'U'}</span>
                   </div>
                 )}
-                <div className={`max-w-[75%] flex flex-col gap-1 ${isAdmin ? 'items-end' : 'items-start'}`}>
+                <div className={`min-w-0 max-w-[88%] sm:max-w-[78%] break-words [overflow-wrap:anywhere] flex flex-col gap-1 ${isAdmin ? 'items-end' : 'items-start'}`}>
                   {msg.attachment_url && (
                     <img src={msg.attachment_url} alt={msg.attachment_name ?? 'attachment'}
                       className="max-h-40 max-w-[220px] rounded-xl border border-slate-200 object-cover" />
@@ -1549,9 +1549,9 @@ function ChatRequestDetail({ inquiry, onBack, onMarkRead, onStatusChange, agents
             <textarea rows={1} value={input} onChange={e => { setInput(e.target.value); broadcastTyping() }}
               onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendReply(e as any) } }}
               placeholder={`Reply to ${inquiry.name}… (Enter to send)`}
-              className="flex-1 px-4 py-2.5 rounded-xl border border-slate-200 text-[13.5px] bg-white text-slate-900 placeholder-slate-400 caret-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-400 transition-all resize-none" />
+              className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:ring-offset-2 min-w-0 flex-1 px-4 py-3 rounded-xl border border-slate-200 text-[13.5px] bg-white text-slate-900 placeholder-slate-400 caret-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/25 transition-all resize-none" />
             <button type="submit" disabled={!input.trim() || sending}
-              className="w-10 h-10 rounded-xl bg-primary hover:bg-primary/90 disabled:opacity-40 text-white flex items-center justify-center transition-colors shrink-0">
+              className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:ring-offset-2 w-10 h-10 rounded-xl bg-primary hover:bg-primary/90 disabled:opacity-40 text-white flex items-center justify-center transition-colors shrink-0">
               {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
             </button>
           </form>
@@ -1792,9 +1792,9 @@ function SupportTab({ onOpenQueued, view = 'queue' }: { onOpenQueued: (id: strin
     <div className="flex flex-1 min-h-0 overflow-hidden">
 
       {/* Ticket queue */}
-      <div className={`flex flex-col border-r border-slate-100 bg-white/60 backdrop-blur-sm w-full lg:w-[22rem] xl:w-[24rem] shrink-0 overflow-hidden ${selected ? 'hidden lg:flex' : 'flex'}`}>
+      <div className={`flex flex-col border-r border-slate-100 bg-white w-full lg:w-[20rem] xl:w-[22rem] shrink-0 overflow-hidden ${selected ? 'hidden lg:flex' : 'flex'}`}>
         {/* Header */}
-        <div className="px-4 pt-4 pb-3 border-b border-slate-100/80 bg-white/80 backdrop-blur-sm">
+        <div className="px-4 pt-5 pb-4 border-b border-slate-200/70 bg-white">
           <div className="flex items-center justify-between gap-3 mb-3">
             <div className="flex items-center gap-2">
               <div className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center">
@@ -1808,7 +1808,7 @@ function SupportTab({ onOpenQueued, view = 'queue' }: { onOpenQueued: (id: strin
             <button
               type="button"
               onClick={() => setShowArchivePanel(true)}
-              className="inline-flex items-center gap-1.5 h-7 px-2.5 rounded-lg text-[11px] font-medium border border-slate-200 bg-white text-slate-500 hover:border-slate-300 hover:bg-slate-50 hover:text-slate-700 transition-all"
+              className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:ring-offset-2 inline-flex items-center gap-1.5 h-7 px-2.5 rounded-lg text-[11px] font-medium border border-slate-200 bg-white text-slate-500 hover:border-slate-300 hover:bg-slate-50 hover:text-slate-700 transition-all"
               title="Move tickets to History"
             >
               <Archive className="w-3 h-3" />
@@ -1823,7 +1823,7 @@ function SupportTab({ onOpenQueued, view = 'queue' }: { onOpenQueued: (id: strin
               placeholder="Search tickets..."
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-3 py-2 rounded-xl border border-slate-200/80 bg-white text-sm text-slate-900 placeholder-slate-400 caret-slate-900 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/30 focus:bg-white transition-all shadow-sm"
+              className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:ring-offset-2 w-full pl-9 pr-3 py-2 rounded-xl border border-slate-200/80 bg-white text-sm text-slate-900 placeholder-slate-400 caret-slate-900 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/30 focus:bg-white transition-all shadow-sm"
             />
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
           </div>
@@ -1834,7 +1834,7 @@ function SupportTab({ onOpenQueued, view = 'queue' }: { onOpenQueued: (id: strin
               <button
                 key={key}
                 onClick={() => setFilterStatus(key)}
-                className={`shrink-0 inline-flex items-center gap-1.5 h-6 px-2.5 rounded-lg text-[11px] font-semibold transition-all ${
+                className={`focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:ring-offset-2 shrink-0 inline-flex items-center gap-1.5 h-8 px-3 rounded-lg text-[11px] font-semibold transition-all ${
                   filterStatus === key
                     ? 'bg-primary text-white shadow-sm'
                     : 'bg-white border border-slate-200 text-slate-500 hover:border-slate-300 hover:bg-slate-50'
@@ -1865,7 +1865,7 @@ function SupportTab({ onOpenQueued, view = 'queue' }: { onOpenQueued: (id: strin
                 </p>
                 <button
                   onClick={() => setNewTicketIds([])}
-                  className="ml-auto text-[10px] text-blue-500 hover:text-blue-700 font-semibold"
+                  className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:ring-offset-2 ml-auto text-[10px] text-blue-500 hover:text-blue-700 font-semibold"
                 >
                   Dismiss
                 </button>
@@ -1883,7 +1883,7 @@ function SupportTab({ onOpenQueued, view = 'queue' }: { onOpenQueued: (id: strin
                         setSelectedId(ticket.id)
                         setNewTicketIds(prev => prev.filter(id => id !== ticket.id))
                       }}
-                      className="w-full text-left rounded-lg border border-blue-200/50 bg-white hover:bg-blue-50/80 px-2.5 py-2 transition-all"
+                      className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:ring-offset-2 w-full text-left rounded-lg border border-blue-200/50 bg-white hover:bg-blue-50/80 px-2.5 py-2 transition-all"
                     >
                       <div className="flex items-center gap-2">
                         <span className="shrink-0 text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-blue-600 text-white uppercase tracking-wide">New</span>
@@ -1906,7 +1906,7 @@ function SupportTab({ onOpenQueued, view = 'queue' }: { onOpenQueued: (id: strin
         })()}
 
         {/* Ticket list */}
-        <div className="flex-1 overflow-y-auto p-2 space-y-1 bg-white/40">
+        <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain p-3 space-y-2 bg-slate-50/60">
           {loading ? (
             <div className="space-y-1 p-1">
               {Array.from({ length: 5 }).map((_, i) => (
@@ -1937,11 +1937,11 @@ function SupportTab({ onOpenQueued, view = 'queue' }: { onOpenQueued: (id: strin
                     setSelectedId(ticket.id)
                     setNewTicketIds(prev => prev.filter(id => id !== ticket.id))
                    }}
-                     className={`w-full text-left rounded-xl border transition-all ${
+                     className={`focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:ring-offset-2 w-full text-left rounded-xl border transition-all ${
                        isActive
-                         ? 'border-primary/30 bg-gradient-to-br from-primary/5 to-blue-50/50 ring-1 ring-primary/10 shadow-sm'
+                         ? 'border-blue-300 bg-blue-50 ring-1 ring-blue-200 shadow-sm'
                          : isNew
-                           ? 'border-blue-300/60 bg-gradient-to-br from-blue-50/40 to-indigo-50/40 hover:border-blue-300'
+                           ? 'border-blue-200 bg-white hover:border-blue-300 hover:bg-blue-50/40'
                            : 'border-slate-200/70 bg-white hover:border-slate-300/80 hover:shadow-sm'
                      }`}>
                      <div className="p-2.5">
@@ -2012,7 +2012,7 @@ function ContactDetail({ contact, onBack }: {
     <div className="flex flex-col h-full bg-white overflow-hidden">
       {/* Header */}
       <div className="flex items-center gap-3 px-5 py-3.5 border-b border-slate-100 shrink-0">
-        <button onClick={onBack} className="lg:hidden p-1.5 -ml-1.5 rounded-lg hover:bg-slate-100 text-slate-500 transition-colors">
+        <button onClick={onBack} className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:ring-offset-2 lg:hidden p-1.5 -ml-1.5 rounded-lg hover:bg-slate-100 text-slate-500 transition-colors">
           <ChevronLeft className="w-4 h-4" />
         </button>
         <div className={`w-10 h-10 rounded-full bg-gradient-to-br ${avatarGrad(contact.name)} flex items-center justify-center shrink-0 text-[13px] font-semibold text-white`}>
@@ -2278,7 +2278,7 @@ function InboxTab({ liveState, onOpenThreadChange, initialChatId, onInitialChatC
   }
 
   return (
-    <div className="flex flex-1 overflow-hidden lg:gap-0.5">
+    <div className="flex flex-1 min-h-0 overflow-hidden">
       {/* ── Clear-all confirmation dialog ─────────────────────────────────────── */}
       {showClearAllConfirm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
@@ -2296,11 +2296,11 @@ function InboxTab({ liveState, onOpenThreadChange, initialChatId, onInitialChatC
             </div>
             <div className="flex gap-2 justify-end">
               <button onClick={() => setShowClearAllConfirm(false)} disabled={clearingAll}
-                className="px-4 py-2 rounded-lg border border-slate-200 text-[13px] font-medium text-slate-700 hover:bg-slate-50 transition-colors disabled:opacity-50">
+                className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:ring-offset-2 px-4 py-2 rounded-lg border border-slate-200 text-[13px] font-medium text-slate-700 hover:bg-slate-50 transition-colors disabled:opacity-50">
                 Cancel
               </button>
               <button onClick={clearAllChats} disabled={clearingAll}
-                className="px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700 disabled:opacity-50 text-[13px] font-medium text-white transition-colors flex items-center gap-1.5">
+                className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:ring-offset-2 px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700 disabled:opacity-50 text-[13px] font-medium text-white transition-colors flex items-center gap-1.5">
                 {clearingAll ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
                 Clear all
               </button>
@@ -2310,8 +2310,8 @@ function InboxTab({ liveState, onOpenThreadChange, initialChatId, onInitialChatC
       )}
 
       {/* Inbox queue */}
-      <div className={`flex flex-col bg-white/60 backdrop-blur-sm w-full lg:w-[22rem] xl:w-[24rem] shrink-0 overflow-hidden border-r border-slate-100/80 ${selected ? 'hidden lg:flex' : 'flex'}`}>
-        <div className="px-4 pt-4 pb-3 border-b border-slate-100/80 bg-white/80 backdrop-blur-sm">
+      <div className={`flex flex-col bg-white w-full lg:w-[20rem] xl:w-[22rem] shrink-0 overflow-hidden border-r border-slate-100/80 ${selected ? 'hidden lg:flex' : 'flex'}`}>
+        <div className="px-4 pt-5 pb-4 border-b border-slate-200/70 bg-white">
           <div className="flex items-center justify-between gap-2 mb-3">
             <div className="flex items-center gap-2">
               <div className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center">
@@ -2326,7 +2326,7 @@ function InboxTab({ liveState, onOpenThreadChange, initialChatId, onInitialChatC
             <button
               onClick={() => setShowClearAllConfirm(true)}
               title="Clear all chat conversations"
-              className="inline-flex items-center gap-1 h-7 px-2.5 rounded-lg border border-slate-200 bg-white text-[11px] font-medium text-slate-500 hover:text-red-600 hover:border-red-200 transition-colors"
+              className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:ring-offset-2 inline-flex items-center gap-1 h-7 px-2.5 rounded-lg border border-slate-200 bg-white text-[11px] font-medium text-slate-500 hover:text-red-600 hover:border-red-200 transition-colors"
             >
               <Trash2 className="w-3 h-3" />
             </button>
@@ -2339,10 +2339,10 @@ function InboxTab({ liveState, onOpenThreadChange, initialChatId, onInitialChatC
               value={search}
               onChange={e => setSearch(e.target.value)}
               placeholder="Search conversations…"
-              className="w-full pl-9 pr-3 py-2 rounded-xl border border-slate-200/80 bg-white text-[12.5px] text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/30 transition-all shadow-sm"
+              className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:ring-offset-2 w-full pl-9 pr-3 py-2 rounded-xl border border-slate-200/80 bg-white text-[12.5px] text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/30 transition-all shadow-sm"
             />
             {search && (
-              <button onClick={() => setSearch('')} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+              <button onClick={() => setSearch('')} className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:ring-offset-2 absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
                 <X className="w-3.5 h-3.5" />
               </button>
             )}
@@ -2354,7 +2354,7 @@ function InboxTab({ liveState, onOpenThreadChange, initialChatId, onInitialChatC
               const active = filterType === key
               return (
                 <button key={key} onClick={() => setFilterType(key)}
-                  className={`shrink-0 inline-flex items-center gap-1.5 h-6 px-2.5 rounded-lg text-[11px] font-semibold transition-all ${
+                  className={`focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:ring-offset-2 shrink-0 inline-flex items-center gap-1.5 h-8 px-3 rounded-lg text-[11px] font-semibold transition-all ${
                     active
                       ? 'bg-primary text-white shadow-sm'
                       : 'bg-white border border-slate-200 text-slate-500 hover:border-slate-300 hover:bg-slate-50'
@@ -2370,7 +2370,7 @@ function InboxTab({ liveState, onOpenThreadChange, initialChatId, onInitialChatC
         </div>
 
         {/* Message list */}
-        <div className="flex-1 overflow-y-auto p-2 space-y-0.5 bg-white/40">
+        <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain p-3 space-y-2 bg-slate-50/60">
           {loading ? (
             <div className="space-y-1 p-1">
               {Array.from({ length: 5 }).map((_, i) => (
@@ -2403,12 +2403,12 @@ function InboxTab({ liveState, onOpenThreadChange, initialChatId, onInitialChatC
                 const typeColor = typeColors[item.type]
                 return (
                   <button key={`${item.type}:${item.id}`} onClick={() => setSelectedKey(`${item.type}:${item.id}`)}
-                    className={`relative w-full text-left rounded-xl px-3 py-3 transition-all flex items-start gap-3 ${
+                    className={`focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:ring-offset-2 relative w-full text-left rounded-xl px-3 py-3 transition-all flex items-start gap-3 ${
                       isActive
-                        ? 'bg-gradient-to-br from-primary/5 to-blue-50/50 border border-primary/20 shadow-sm'
+                        ? 'bg-blue-50 border border-blue-300 ring-1 ring-blue-200 shadow-sm'
                         : isUnread
-                          ? 'bg-white border border-slate-200/80 shadow-sm hover:border-primary/30 hover:shadow-md'
-                          : 'bg-white/60 hover:bg-white border border-transparent hover:border-slate-200'
+                          ? 'bg-white border border-slate-200 shadow-sm hover:border-blue-200 hover:bg-blue-50/30'
+                          : 'bg-white hover:bg-slate-50 border border-slate-200/70 hover:border-slate-300'
                     }`}>
                     {/* Unread left accent */}
                     {isUnread && <span className="absolute left-0 top-3 bottom-3 w-[3px] rounded-r-full bg-gradient-to-b from-primary to-blue-500" />}
@@ -2516,11 +2516,11 @@ function ConfirmAgentDelete({ agent, onConfirm, onCancel, loading }: {
         </p>
         <div className="flex gap-3">
           <button onClick={onCancel} disabled={loading}
-            className="flex-1 px-4 py-2.5 rounded-2xl border border-gray-200 text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50">
+            className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:ring-offset-2 min-w-0 flex-1 px-4 py-3 rounded-2xl border border-gray-200 text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50">
             Cancel
           </button>
           <button onClick={onConfirm} disabled={loading}
-            className="flex-1 px-4 py-2.5 rounded-2xl text-sm font-semibold bg-red-600 hover:bg-red-700 text-white transition-colors disabled:opacity-50">
+            className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:ring-offset-2 min-w-0 flex-1 px-4 py-3 rounded-2xl text-sm font-semibold bg-red-600 hover:bg-red-700 text-white transition-colors disabled:opacity-50">
             {loading ? 'Deleting…' : 'Delete permanently'}
           </button>
         </div>
@@ -2774,7 +2774,7 @@ function AgentsTab({ agents, setAgents, liveState }: {
                         <button 
                           onClick={() => toggleAvailable(agent)} 
                           disabled={isBusy}
-                          className={`inline-flex items-center gap-1 text-[11px] font-semibold px-3 py-1.5 rounded-lg transition-colors ${
+                          className={`focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:ring-offset-2 inline-flex items-center gap-1 text-[11px] font-semibold px-3 py-1.5 rounded-lg transition-colors ${
                             agent.available 
                               ? 'bg-amber-50 text-amber-700 hover:bg-amber-100' 
                               : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
@@ -2785,14 +2785,14 @@ function AgentsTab({ agents, setAgents, liveState }: {
                         <button 
                           onClick={() => resetPassword(agent)} 
                           disabled={isBusy} 
-                          className="inline-flex items-center gap-1 text-[11px] font-semibold px-3 py-1.5 rounded-lg border border-slate-200 bg-white text-slate-600 hover:text-blue-700 hover:border-blue-200 disabled:opacity-40 transition-colors"
+                          className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:ring-offset-2 inline-flex items-center gap-1 text-[11px] font-semibold px-3 py-1.5 rounded-lg border border-slate-200 bg-white text-slate-600 hover:text-blue-700 hover:border-blue-200 disabled:opacity-40 transition-colors"
                         >
                           {isBusy ? <Loader2 className="w-3 h-3 animate-spin" /> : <KeyRound className="w-3 h-3" />} Reset
                         </button>
                         <button 
                           onClick={() => toggleActive(agent)} 
                           disabled={isBusy}
-                          className={`inline-flex items-center gap-1 text-[11px] font-semibold px-3 py-1.5 rounded-lg transition-colors ${
+                          className={`focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:ring-offset-2 inline-flex items-center gap-1 text-[11px] font-semibold px-3 py-1.5 rounded-lg transition-colors ${
                             agent.active 
                               ? 'bg-slate-100 text-slate-600 hover:bg-slate-200' 
                               : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
@@ -2803,7 +2803,7 @@ function AgentsTab({ agents, setAgents, liveState }: {
                         <button 
                           onClick={() => setDeleteTarget(agent)} 
                           disabled={busyId === agent.id} 
-                          className="inline-flex items-center gap-1 text-[11px] font-semibold px-3 py-1.5 rounded-lg border border-slate-200 bg-white text-slate-500 hover:text-red-600 hover:border-red-200 disabled:opacity-40 transition-colors"
+                          className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:ring-offset-2 inline-flex items-center gap-1 text-[11px] font-semibold px-3 py-1.5 rounded-lg border border-slate-200 bg-white text-slate-500 hover:text-red-600 hover:border-red-200 disabled:opacity-40 transition-colors"
                         >
                           <Trash2 className="w-3 h-3" />
                         </button>
@@ -2944,7 +2944,7 @@ export default function AdminSupportPage() {
   return (
     <AuthGuard require="admin">
       <MobileSidebarProvider>
-        <div className="flex h-screen overflow-hidden bg-gradient-to-br from-slate-50 to-slate-100/50">
+        <div className="flex h-screen h-[100dvh] overflow-hidden bg-[#f5f7fb]">
           <AdminSidebar userEmail={user?.email} userName={displayName} />
 
           <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
@@ -2953,8 +2953,8 @@ export default function AdminSupportPage() {
             </div>
 
             {/* ── Compact Support Workspace Header ── */}
-            <div className="shrink-0 bg-white border-b border-slate-200/60">
-              <div className="px-4 py-2.5 md:px-5">
+            <div className="shrink-0 bg-white border-b border-slate-200/80">
+              <div className="px-4 py-3 md:px-6">
                 <div className="flex items-center justify-between">
                   {/* Title block */}
                   <div className="flex items-center gap-2.5">
@@ -2962,7 +2962,7 @@ export default function AdminSupportPage() {
                       <HeadphonesIcon className="w-4 h-4 text-primary" />
                     </div>
                     <div>
-                      <h1 className="text-sm font-bold text-slate-900">Support Center</h1>
+                      <h1 className="text-sm font-semibold tracking-tight text-slate-900">Support Center</h1>
                     </div>
                   </div>
 
@@ -2992,7 +2992,7 @@ export default function AdminSupportPage() {
                     {/* Sound toggle */}
                     <button
                       onClick={() => { const next = !muted; setMuted(next); setSoundMuted(next) }}
-                      className={`size-8 rounded-lg border flex items-center justify-center transition-all ${
+                      className={`focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:ring-offset-2 size-9 rounded-xl border flex items-center justify-center transition-all ${
                         muted 
                           ? 'border-slate-200 bg-slate-50 text-slate-400' 
                           : 'border-primary/20 bg-primary/5 text-primary'
@@ -3004,7 +3004,7 @@ export default function AdminSupportPage() {
                 </div>
 
                 {/* Tab navigation */}
-                <div className="mt-2 flex items-center gap-1 -mb-px">
+                <div className="mt-3 flex w-fit max-w-full items-center gap-1 overflow-x-auto rounded-xl border border-slate-200/70 bg-slate-100/70 p-1">
                   {([
                     { key: 'support', label: 'Queue',      icon: HeadphonesIcon, count: supportOpenCount },
                     { key: 'inbox',   label: 'Inbox',      icon: Inbox,          count: inboxCount },
@@ -3013,9 +3013,9 @@ export default function AdminSupportPage() {
                     const Icon = t.icon
                     return (
                       <button key={t.key} type="button" onClick={() => setTab(t.key)}
-                        className={`relative inline-flex items-center gap-1.5 rounded-t-lg px-3 py-1.5 text-xs font-semibold transition-all duration-150 ${
+                        className={`focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:ring-offset-2 relative shrink-0 inline-flex min-h-9 items-center gap-2 rounded-lg px-4 py-2 text-xs font-semibold transition-colors duration-150 ${
                           tab === t.key
-                            ? 'bg-white text-primary border-t border-x border-slate-200 -mb-px shadow-sm'
+                            ? 'bg-white text-blue-700 ring-1 ring-slate-200/70 shadow-sm'
                             : 'text-slate-500 hover:text-slate-700'
                         }`}>
                         <Icon className="w-3.5 h-3.5" />
