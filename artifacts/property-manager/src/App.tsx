@@ -21,6 +21,7 @@ const TermsPage = lazy(() => import("@/pages/TermsPage"));
 const PrivacyPage = lazy(() => import("@/pages/PrivacyPage"));
 const CookiePolicyPage = lazy(() => import("@/pages/CookiePolicyPage"));
 const HowWeVerifyPage = lazy(() => import("@/pages/HowWeVerifyPage"));
+const LandlordVerifyPage = lazy(() => import("@/pages/Landlordverify"));
 
 const LandlordRegisterPage = lazy(() => import("@/pages/landlord/LandlordRegisterPage"));
 const LandlordDashboard = lazy(() => import("@/pages/landlord/LandlordDashboard"));
@@ -112,6 +113,7 @@ function Router() {
           }}
         </Route>
         <Route path="/how-we-verify" component={HowWeVerifyPage} />
+        <Route path="/landlord/verify" component={LandlordVerifyPage} />
         <Route path="/login" component={LoginPage} />
         <Route path="/register" component={RegisterPage} />
         <Route path="/reset-password" component={ResetPasswordPage} />

@@ -1,4 +1,5 @@
 
+import * as React from 'react'
 import { useState, useEffect, useRef } from 'react'
 import { Building2, Search, UserCircle2, Menu, MapPin, BedDouble, BadgeDollarSign, ChevronDown, X } from 'lucide-react'
 import { Link, useLocation } from '@/lib/navigation'
@@ -51,7 +52,6 @@ export default function PublicNavbar() {
   const [user, setUser] = useState<{ email?: string; isAdmin?: boolean; isLandlord?: boolean } | null>(null)
   const [menuOpen, setMenuOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
-  const [searchOpen, setSearchOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [propertyType, setPropertyType] = useState('')
   const [bedrooms, setBedrooms] = useState('')
@@ -63,14 +63,15 @@ export default function PublicNavbar() {
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 20)
-    window.addEventListener('scroll', handleScroll)
+    handleScroll()
+    window.addEventListener('scroll', handleScroll, { passive: true })
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
-        setSearchOpen(false)
+        setOpenPanel(null)
       }
     }
 
@@ -96,6 +97,12 @@ export default function PublicNavbar() {
     })
     return () => subscription.unsubscribe()
   }, [])
+
+  useEffect(() => {
+    setMenuOpen(false)
+    setMobileSearchOpen(false)
+    setOpenPanel(null)
+  }, [location])
 
   const isActive = (path: string) => {
     const cleanPath = path.split('?')[0]
@@ -151,7 +158,6 @@ export default function PublicNavbar() {
     : searchSuggestions.slice(0, 7)
 
   const submitSearch = () => {
-    setSearchOpen(false)
     setOpenPanel(null)
     setMobileSearchOpen(false)
     navigate(buildSearchUrl())
@@ -159,7 +165,6 @@ export default function PublicNavbar() {
 
   const selectSuggestion = (suggestion: string) => {
     setSearchQuery(suggestion)
-    setSearchOpen(false)
     setOpenPanel(null)
     setMobileSearchOpen(false)
     navigate(buildSearchUrl(suggestion))
@@ -175,23 +180,32 @@ export default function PublicNavbar() {
   const priceRangeLabel = priceMin || priceMax ? [priceMin ? `₦${Number(priceMin).toLocaleString()}` : 'Any', priceMax ? `₦${Number(priceMax).toLocaleString()}` : 'Any'].join(' – ') : 'Price Range'
 
   return (
-    <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
+    <nav aria-label="Main navigation" onKeyDown={(event) => {
+      if (event.key === 'Escape') {
+        if (openPanel) {
+          searchRef.current?.querySelector<HTMLButtonElement>('button[aria-expanded="true"]')?.focus()
+        }
+        setOpenPanel(null)
+        setMenuOpen(false)
+        setMobileSearchOpen(false)
+      }
+    }} className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
       isTransparent
         ? 'bg-transparent border-b border-transparent'
         : 'bg-white/95 nav-blur border-b border-gray-100 shadow-sm'
     }`}>
-      <div className="max-w-7xl mx-auto px-5 sm:px-8">
+      <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8">
         {!scrolled ? (
           <div className="flex items-center justify-between" style={{ height: '72px' }}>
             <Link href="/" className="flex items-center shrink-0">
               <img src="/livarex-logo.png" alt="LIVAREX" className="h-14 w-auto" />
             </Link>
 
-            <div className="hidden md:flex flex-1 min-w-0 items-center justify-center gap-0.5 px-4">
+            <div className="hidden lg:flex flex-1 min-w-0 items-center justify-center gap-0.5 px-2 xl:px-4">
               {navLinks.map(({ href, label, comingSoon }) => (
                 comingSoon ? (
                   <span key={label}
-                    className={`px-4 py-2 rounded-lg text-sm font-medium cursor-default select-none flex items-center gap-1.5 ${
+                    className={`px-2 xl:px-4 py-2 rounded-lg text-sm font-medium cursor-default select-none flex items-center gap-1.5 ${
                       isTransparent ? 'text-white/40' : 'text-gray-300'
                     }`}>
                     {label}
@@ -226,7 +240,7 @@ export default function PublicNavbar() {
               ))}
             </div>
 
-            <div className="hidden md:flex items-center justify-end gap-2">
+            <div className="hidden lg:flex shrink-0 items-center justify-end gap-2 whitespace-nowrap">
               {user ? (
                 <>
                   {user.isAdmin && (
@@ -276,10 +290,11 @@ export default function PublicNavbar() {
               )}
             </div>
 
-            <div className="flex items-center gap-2 md:hidden">
+            <div className="flex items-center gap-2 lg:hidden">
               <button
                 type="button"
-                onClick={() => setMobileSearchOpen((open) => !open)}
+                onClick={() => { setMobileSearchOpen((open) => !open); setMenuOpen(false) }}
+                aria-expanded={mobileSearchOpen}
                 className={`p-2 rounded-xl transition-all ${
                   isTransparent ? 'text-white hover:bg-white/10' : 'text-gray-700 hover:bg-gray-100'
                 }`}
@@ -298,26 +313,31 @@ export default function PublicNavbar() {
                 className={`p-2.5 rounded-xl transition-all ${
                   isTransparent ? 'text-white hover:bg-white/10' : 'text-gray-700 hover:bg-gray-100'
                 }`}
-                onClick={() => setMenuOpen(!menuOpen)}
+                onClick={() => { setMenuOpen(!menuOpen); setMobileSearchOpen(false) }}
+                aria-expanded={menuOpen}
                 aria-label="Toggle menu"
               >
-                <Menu className="w-5 h-5" />
+                {menuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
               </button>
             </div>
           </div>
         ) : (
-          <div className="flex items-center justify-between gap-4 py-2" style={{ minHeight: '72px' }}>
+          <div className="flex items-center justify-between gap-2 xl:gap-4 py-2" style={{ minHeight: '72px' }}>
             <Link href="/" className="flex items-center shrink-0">
               <img src="/livarex-logo.png" alt="LIVAREX" className="h-11 w-auto" />
             </Link>
 
-            <div className="hidden md:flex flex-1 items-center justify-center">
-              <div ref={searchRef} className="relative w-full max-w-[980px]">
-                <div className="flex items-center overflow-hidden rounded-full border border-slate-200 bg-white shadow-[0_10px_30px_rgba(15,23,42,0.08)] ring-1 ring-slate-100">
+            <div className="hidden lg:flex min-w-0 flex-1 items-center justify-center">
+              <div ref={searchRef} className="relative min-w-0 w-full max-w-[820px]">
+                <div className="grid min-w-0 items-center rounded-full border border-slate-200 bg-white shadow-[0_10px_30px_rgba(15,23,42,0.08)] ring-1 ring-slate-100"
+                  style={{ gridTemplateColumns: "minmax(0,1fr) minmax(0,1.2fr) minmax(0,1fr) minmax(0,1.2fr) 52px" }}>
                   <button
                     type="button"
                     onClick={() => togglePanel('location')}
-                    className="flex min-w-0 flex-1 items-center gap-2.5 border-r border-slate-200 px-4 py-3 text-left transition-colors hover:bg-slate-50"
+                    aria-expanded={openPanel === 'location'}
+                    aria-label={locationValue}
+                    title={locationValue}
+                    className="flex min-w-0 flex-1 items-center gap-2 border-r border-slate-200 px-3 py-3.5 text-left transition-colors hover:bg-slate-50"
                   >
                     <MapPin className="h-4 w-4 shrink-0 text-blue-600" />
                     <span className={`truncate text-sm font-medium ${searchQuery.trim() ? 'text-slate-900' : 'text-slate-500'}`}>
@@ -328,43 +348,52 @@ export default function PublicNavbar() {
                   <button
                     type="button"
                     onClick={() => togglePanel('type')}
-                    className="flex min-w-0 items-center gap-2.5 border-r border-slate-200 px-4 py-3 text-left transition-colors hover:bg-slate-50"
+                    aria-expanded={openPanel === 'type'}
+                    aria-label={propertyTypeLabel}
+                    title={propertyTypeLabel}
+                    className="flex min-w-0 items-center gap-2 border-r border-slate-200 px-3 py-3.5 text-left transition-colors hover:bg-slate-50"
                   >
                     <Building2 className="h-4 w-4 shrink-0 text-blue-600" />
-                    <span className={`whitespace-nowrap text-sm font-medium ${propertyType ? 'text-slate-900' : 'text-slate-500'}`}>
+                    <span className={`min-w-0 truncate text-sm font-medium ${propertyType ? 'text-slate-900' : 'text-slate-500'}`}>
                       {propertyTypeLabel}
                     </span>
-                    <ChevronDown className="h-4 w-4 text-slate-400" />
+                    <ChevronDown className="h-4 w-4 shrink-0 text-slate-400" />
                   </button>
 
                   <button
                     type="button"
                     onClick={() => togglePanel('beds')}
-                    className="flex min-w-0 items-center gap-2.5 border-r border-slate-200 px-4 py-3 text-left transition-colors hover:bg-slate-50"
+                    aria-expanded={openPanel === 'beds'}
+                    aria-label={bedroomsLabel}
+                    title={bedroomsLabel}
+                    className="flex min-w-0 items-center gap-2 border-r border-slate-200 px-3 py-3.5 text-left transition-colors hover:bg-slate-50"
                   >
                     <BedDouble className="h-4 w-4 shrink-0 text-blue-600" />
-                    <span className={`whitespace-nowrap text-sm font-medium ${bedrooms ? 'text-slate-900' : 'text-slate-500'}`}>
+                    <span className={`min-w-0 truncate text-sm font-medium ${bedrooms ? 'text-slate-900' : 'text-slate-500'}`}>
                       {bedroomsLabel}
                     </span>
-                    <ChevronDown className="h-4 w-4 text-slate-400" />
+                    <ChevronDown className="h-4 w-4 shrink-0 text-slate-400" />
                   </button>
 
                   <button
                     type="button"
                     onClick={() => togglePanel('price')}
-                    className="flex min-w-0 items-center gap-2.5 px-4 py-3 text-left transition-colors hover:bg-slate-50"
+                    aria-expanded={openPanel === 'price'}
+                    aria-label={priceRangeLabel}
+                    title={priceRangeLabel}
+                    className="flex min-w-0 items-center gap-2 px-3 py-3.5 text-left transition-colors hover:bg-slate-50"
                   >
                     <BadgeDollarSign className="h-4 w-4 shrink-0 text-blue-600" />
-                    <span className={`whitespace-nowrap text-sm font-medium ${priceMin || priceMax ? 'text-slate-900' : 'text-slate-500'}`}>
+                    <span className={`min-w-0 truncate text-sm font-medium ${priceMin || priceMax ? 'text-slate-900' : 'text-slate-500'}`}>
                       {priceRangeLabel}
                     </span>
-                    <ChevronDown className="h-4 w-4 text-slate-400" />
+                    <ChevronDown className="h-4 w-4 shrink-0 text-slate-400" />
                   </button>
 
                   <button
                     type="button"
                     onClick={submitSearch}
-                    className="ml-2 mr-2 flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-blue-600 text-white shadow-sm shadow-blue-600/30 transition-all hover:bg-blue-700"
+                    className="mx-1 flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-blue-600 text-white shadow-sm shadow-blue-600/30 transition-all hover:bg-blue-700"
                     aria-label="Search properties"
                   >
                     <Search className="h-4 w-4" />
@@ -380,7 +409,6 @@ export default function PublicNavbar() {
                         value={searchQuery}
                         onChange={(event) => {
                           setSearchQuery(event.target.value)
-                          setSearchOpen(true)
                         }}
                         onKeyDown={(event) => {
                           if (event.key === 'Enter') {
@@ -492,7 +520,7 @@ export default function PublicNavbar() {
               </div>
             </div>
 
-            <div className="hidden md:flex items-center justify-end gap-2">
+            <div className="hidden lg:flex shrink-0 items-center justify-end gap-2 whitespace-nowrap">
 <a href="/contact" className="inline-flex items-center rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 transition-all hover:border-slate-300 hover:bg-slate-50">
                     Contact
                   </a>
@@ -513,10 +541,11 @@ export default function PublicNavbar() {
               </Link>
             </div>
 
-            <div className="flex items-center gap-2 md:hidden">
+            <div className="flex items-center gap-2 lg:hidden">
               <button
                 type="button"
-                onClick={() => setMobileSearchOpen((open) => !open)}
+                onClick={() => { setMobileSearchOpen((open) => !open); setMenuOpen(false) }}
+                aria-expanded={mobileSearchOpen}
                 className="rounded-full border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 shadow-sm transition-all hover:border-slate-300"
                 aria-label="Search properties"
               >
@@ -525,10 +554,11 @@ export default function PublicNavbar() {
 
               <button
                 className="p-2.5 rounded-xl text-gray-700 hover:bg-gray-100"
-                onClick={() => setMenuOpen(!menuOpen)}
+                onClick={() => { setMenuOpen(!menuOpen); setMobileSearchOpen(false) }}
+                aria-expanded={menuOpen}
                 aria-label="Toggle menu"
               >
-                <Menu className="w-5 h-5" />
+                {menuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
               </button>
             </div>
           </div>
@@ -536,7 +566,7 @@ export default function PublicNavbar() {
       </div>
 
       {mobileSearchOpen && (
-        <div className="md:hidden border-t border-gray-100 bg-white px-4 py-4 shadow-sm">
+        <div className="max-h-[calc(100dvh-72px)] overflow-y-auto overscroll-contain lg:hidden border-t border-gray-100 bg-white px-4 py-4 shadow-sm">
           <div className="space-y-3">
             <div className="relative">
               <MapPin className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-blue-600" />
@@ -604,7 +634,7 @@ export default function PublicNavbar() {
                   value={priceMin}
                   onChange={(event) => setPriceMin(event.target.value)}
                   placeholder="Min"
-                  className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-blue-300 focus:outline-none"
+                  className="min-w-0 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-blue-300 focus:outline-none"
                 />
                 <input
                   type="number"
@@ -612,7 +642,7 @@ export default function PublicNavbar() {
                   value={priceMax}
                   onChange={(event) => setPriceMax(event.target.value)}
                   placeholder="Max"
-                  className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-blue-300 focus:outline-none"
+                  className="min-w-0 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-blue-300 focus:outline-none"
                 />
               </div>
             </div>
@@ -629,7 +659,7 @@ export default function PublicNavbar() {
       )}
 
       {menuOpen && (
-        <div className="md:hidden border-t border-gray-100 bg-white/98 nav-blur px-5 py-4 space-y-1 shadow-xl">
+        <div className="max-h-[calc(100dvh-72px)] overflow-y-auto overscroll-contain lg:hidden border-t border-gray-100 bg-white/98 nav-blur px-5 py-4 space-y-1 shadow-xl">
           {navLinks.map(({ href, label, comingSoon }) => (
             comingSoon ? (
               <span key={label}

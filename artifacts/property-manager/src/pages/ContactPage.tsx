@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import * as React from 'react'
 import { Link } from '@/lib/navigation'
 import {
   ArrowRight,
@@ -14,6 +14,8 @@ import {
   Plus,
   Send,
   ShieldCheck,
+  ArrowUpRight,
+  ChevronDown,
   Sparkles,
   UserCheck,
 } from 'lucide-react'
@@ -119,24 +121,28 @@ const faqs = [
 ]
 
 export default function ContactPage() {
-  const [platform, setPlatform] = useState<PlatformSettings | null>(null)
-  const [form, setForm] = useState({
+  const [platform, setPlatform] = React.useState<PlatformSettings | null>(null)
+  const [form, setForm] = React.useState({
     name: '',
     email: '',
     role: 'Property enquiry',
     subject: '',
     message: '',
   })
-  const [loading, setLoading] = useState(false)
-  const [success, setSuccess] = useState(false)
-  const [error, setError] = useState('')
-  const [openFaq, setOpenFaq] = useState<number | null>(null)
+  const [loading, setLoading] = React.useState(false)
+  const [success, setSuccess] = React.useState(false)
+  const [error, setError] = React.useState('')
+  const submitting = React.useRef(false)
+  const [sentName, setSentName] = React.useState('')
+  const [openFaq, setOpenFaq] = React.useState<number | null>(null)
 
-  useEffect(() => {
+  React.useEffect(() => {
     let active = true
 
     getPlatformSettings().then((settings) => {
       if (active) setPlatform(settings)
+    }).catch(() => {
+      // Keep the existing public contact fallbacks if settings cannot load.
     })
 
     return () => {
@@ -146,7 +152,7 @@ export default function ContactPage() {
 
   const phone = platform?.phone || '+234 7061370742'
   const email = platform?.email || 'support@livarex.com.ng'
-  const address = platform?.address?.trim()
+  const address = platform?.address?.trim() || '14 Bourdillon Road, Ikoyi, Lagos'
 
   const channels = [
     {
@@ -155,8 +161,8 @@ export default function ContactPage() {
       value: phone,
       href: phoneToWaLink(phone),
       note: 'Fast questions and property enquiries',
-      accent: 'bg-[#25D366]',
-      glow: 'shadow-green-500/25',
+      accent: 'bg-blue-600',
+      glow: 'shadow-blue-500/10',
       action: 'Message Us',
       highlight: true,
     },
@@ -177,76 +183,80 @@ export default function ContactPage() {
       value: phone,
       href: phoneToTelLink(phone),
       note: 'Speak with the LIVAREX team',
-      accent: 'bg-emerald-600',
-      glow: 'shadow-emerald-500/25',
+      accent: 'bg-blue-600',
+      glow: 'shadow-blue-500/10',
       action: 'Call Us',
       highlight: false,
     },
-    {
-      icon: MapPin,
-      label: 'Office',
-      value: address || 'Lagos, Nigeria',
-      href: address ? `https://maps.google.com/?q=${encodeURIComponent(address)}` : '#',
-      note: address ? 'Visit us in person' : 'Office details available in settings',
-      accent: 'bg-rose-600',
-      glow: 'shadow-rose-500/25',
-      action: address ? 'Get Directions' : 'Location',
-      highlight: false,
-    },
+
   ]
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault()
-    setLoading(true)
+  function chooseCategory(role: string) {
+    if (submitting.current) return
+    setSuccess(false)
     setError('')
+    setForm(current => ({ ...current, role }))
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    document.getElementById('contact-form')?.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'start' })
+    window.requestAnimationFrame(() => document.getElementById('contact-name')?.focus({ preventScroll: true }))
+  }
 
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault()
+    if (submitting.current) return
+    setError('')
+    const payload = {
+      name: form.name.trim(),
+      email: form.email.trim(),
+      role: form.role,
+      subject: form.subject.trim() || form.role,
+      message: form.message.trim(),
+    }
+    if (!payload.name || !payload.email || !payload.message) {
+      setError('Please enter your name, email address and message.')
+      return
+    }
+    if (!isSupabaseConfigured()) {
+      setError('The contact form is temporarily unavailable. Please reach us by email, WhatsApp or phone.')
+      return
+    }
+    submitting.current = true
+    setLoading(true)
     try {
-      const payload = {
-        ...form,
-        subject: form.subject.trim() || form.role,
-      }
+      const supabase = createClient()
+      const { error: insertError } = await supabase.from('contact_messages').insert(payload)
+      if (insertError) throw insertError
 
-      if (isSupabaseConfigured()) {
-        const supabase = createClient()
-        const { error: err } = await supabase.from('contact_messages').insert({
-          name: payload.name,
-          email: payload.email,
-          role: payload.role,
-          subject: payload.subject,
-          message: payload.message,
-        })
-
-        if (err) throw new Error(err.message)
-
-        const notif = await getNotificationSettings()
-        fetch('/api/send-support-notification', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            event: 'contact',
-            adminEmail: notif.adminEmail,
-            userName: payload.name,
-            userEmail: payload.email,
-            subject: payload.subject,
-            message: payload.message,
-            channel: 'Contact form',
-          }),
-        }).catch(() => {
-          // Non-fatal best-effort notification.
-        })
-      }
-
+      // Receipt depends on the saved message, not the best-effort email notification.
+      setSentName(payload.name)
       setSuccess(true)
       setForm({ name: '', email: '', role: 'Property enquiry', subject: '', message: '' })
-    } catch (err: any) {
-      setError(err.message || 'Something went wrong. Please try again or email us directly.')
+      void (async () => {
+        try {
+          const notif = await getNotificationSettings()
+          await fetch('/api/send-support-notification', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              event: 'contact', adminEmail: notif.adminEmail,
+              userName: payload.name, userEmail: payload.email,
+              subject: payload.subject, message: payload.message, channel: 'Contact form',
+            }),
+          })
+        } catch {
+          // The message is already saved; notification failure must not invite a duplicate submission.
+        }
+      })()
+    } catch {
+      setError('We could not confirm that your message was received. Your details are still here. Please try again or contact us directly.')
     } finally {
+      submitting.current = false
       setLoading(false)
     }
   }
 
   const field =
-    'w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3.5 text-sm text-slate-900 transition-all placeholder:text-slate-400 focus:border-blue-400 focus:bg-white focus:outline-none focus:ring-4 focus:ring-blue-100'
+    'w-full rounded-xl border border-slate-200 bg-white px-4 py-3.5 text-sm text-slate-900 transition-all placeholder:text-slate-400 focus:border-blue-400 focus:bg-white focus:outline-none focus:ring-4 focus:ring-blue-100'
 
   return (
     <div className="min-h-screen bg-white text-slate-900">
@@ -258,7 +268,12 @@ export default function ContactPage() {
 
       <PublicNavbar />
 
-      <main>
+      <style>{`
+        .lv-contact section[id] { scroll-margin-top: 100px; }
+        .lv-contact a:focus-visible, .lv-contact button:focus-visible { outline: 3px solid #2563eb; outline-offset: 4px; }
+        @media(prefers-reduced-motion:reduce) { .lv-contact * { transition:none!important; animation:none!important; scroll-behavior:auto!important; } }
+      `}</style>
+      <main className="lv-contact">
         <section className="relative overflow-hidden bg-slate-950 pt-24 pb-20 text-white sm:pt-28 lg:pt-32">
           <div className="absolute inset-0 opacity-[0.06]" style={{ backgroundImage: 'radial-gradient(circle at 1px 1px, rgba(255,255,255,0.9) 1px, transparent 0)', backgroundSize: '34px 34px' }} />
           <div className="absolute -left-16 top-20 h-80 w-80 rounded-full bg-blue-600/20 blur-3xl" />
@@ -341,79 +356,35 @@ export default function ContactPage() {
           </div>
         </section>
 
-        <section className="border-b border-slate-200 bg-white py-20">
+        {/* <section className="border-b border-slate-100 bg-white py-10 md:py-14" aria-labelledby="enquiry-title">
           <div className="mx-auto max-w-7xl px-5 sm:px-8">
-            <div className="mx-auto max-w-2xl text-center">
-              <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-blue-600">How Can We Help?</p>
-              <h2 className="mt-4 text-3xl font-black tracking-[-0.05em] text-slate-950 sm:text-4xl">
-                Choose the option that best matches your enquiry.
-              </h2>
-            </div>
-
-            <div className="mt-12 grid gap-4 md:grid-cols-2">
-              {enquiryCategories.map((category) => {
-                const Icon = category.icon
-
-                return (
-                  <button
-                    key={category.id}
-                    type="button"
-                    onClick={() => {
-                      setForm((current) => ({ ...current, role: category.role }))
-                      document.getElementById('contact-form')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-                    }}
-                    className="group overflow-hidden rounded-[1.5rem] border border-slate-200 bg-slate-50 text-left transition-all duration-200 hover:-translate-y-1 hover:border-blue-200 hover:bg-white hover:shadow-[0_18px_40px_-22px_rgba(37,99,235,0.45)]"
-                  >
-                    <div className="p-5">
-                      <div className="flex items-center justify-between gap-4">
-                        <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-blue-100 bg-blue-50 text-blue-600 transition-all group-hover:bg-blue-600 group-hover:text-white">
-                          <Icon className="h-5 w-5" />
-                        </div>
-
-                        <div className="flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700 transition-all group-hover:border-blue-200 group-hover:text-blue-600">
-                          <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
-                        </div>
-                      </div>
-
-                      <h3 className="mt-5 text-lg font-extrabold text-slate-950">{category.title}</h3>
-                      <p className="mt-2 text-sm leading-relaxed text-slate-600">{category.description}</p>
-
-                      <div className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-blue-600">
-                        {category.action}
-                        <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
-                      </div>
-                    </div>
-
-                    <div className="border-t border-slate-200 bg-slate-100/60">
-                      <img src={category.image} alt={category.title} className="h-24 w-full object-cover" />
-                    </div>
-                  </button>
-                )
-              })}
+            <div className="mb-6 flex flex-wrap items-end justify-between gap-4"><div><p className="text-[11px] font-bold uppercase tracking-[0.18em] text-blue-600">How Can We Help?</p><h2 id="enquiry-title" className="mt-3 text-2xl font-semibold tracking-tight text-slate-950 sm:text-3xl">Start with what brings you here.</h2></div><p className="text-sm text-slate-500">Choose your enquiry type.</p></div>
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              {enquiryCategories.map(({ id, title, role, icon: Icon }) => <button key={id} type="button" disabled={loading} aria-pressed={form.role === role} onClick={() => chooseCategory(role)} className={`flex min-h-20 items-center gap-3 rounded-xl border px-4 py-4 text-left transition-colors disabled:opacity-60 ${form.role === role ? 'border-blue-600 bg-blue-600 text-white shadow-lg shadow-blue-600/10' : 'border-slate-200 bg-white text-slate-700 hover:border-blue-300 hover:bg-blue-50'}`}><Icon className="h-5 w-5 shrink-0" aria-hidden="true" /><span className="flex-1 text-sm font-semibold">{title}</span><ArrowUpRight className="h-4 w-4 shrink-0" aria-hidden="true" /></button>)}
             </div>
           </div>
-        </section>
+        </section> */}
 
-        <section id="contact-form" className="bg-[#f7f7f5] py-20">
+        <section id="contact-form" className="border-y border-slate-100 bg-[#f5f8fd] py-14 md:py-20">
           <div className="mx-auto max-w-7xl px-5 sm:px-8">
-            <div className="grid gap-8 lg:grid-cols-[1.1fr_0.9fr]">
-              <div className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-[0_24px_60px_-36px_rgba(15,23,42,0.34)] sm:p-8 lg:p-10">
+            <div className="grid overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-[0_24px_70px_-45px_rgba(15,23,42,0.3)] lg:grid-cols-[0.8fr_1.2fr]">
+              <div className="min-w-0 p-6 sm:p-8 lg:col-start-2 lg:row-start-1 lg:p-10">
                 <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-blue-600">Send a Message</p>
-                <h2 className="mt-3 text-3xl font-black tracking-[-0.05em] text-slate-950 sm:text-4xl">
+                <h2 className="mt-3 text-3xl font-semibold tracking-[-0.05em] text-slate-950 sm:text-4xl">
                   Tell Us What You Need.
                 </h2>
-                <p className="mt-3 max-w-xl text-base text-slate-600">
+                <p className="mt-3 max-w-xl text-sm leading-7 text-slate-600">
                   Share a few details and the LIVAREX team can direct your enquiry appropriately.
                 </p>
 
                 {success ? (
-                  <div className="mt-8 rounded-[1.5rem] border border-emerald-200 bg-emerald-50 p-6 text-center sm:p-10">
-                    <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-emerald-600 shadow-lg shadow-emerald-600/20">
+                  <div role="status" aria-live="polite" className="mt-8 rounded-[1.5rem] border border-emerald-200 bg-emerald-50 p-6 text-center sm:p-10">
+                    <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-blue-600 shadow-lg shadow-emerald-600/20">
                       <CheckCircle className="h-8 w-8 text-white" />
                     </div>
-                    <h3 className="mt-5 text-2xl font-black text-slate-950">Message Sent.</h3>
+                    <h3 className="mt-5 text-2xl font-semibold text-slate-950">Message Sent.</h3>
                     <p className="mt-2 text-sm text-slate-600">
-                      Thanks, {form.name || 'there'}. Your message has been received and the LIVAREX team will review it.
+                      Thanks, {sentName || 'there'}. Your message has been received and the LIVAREX team will review it.
                     </p>
                     <button
                       type="button"
@@ -424,22 +395,22 @@ export default function ContactPage() {
                     </button>
                   </div>
                 ) : (
-                  <form onSubmit={handleSubmit} className="mt-8 space-y-5">
+                  <form onSubmit={handleSubmit} className="mt-8 space-y-6" aria-busy={loading}>
                     {error && (
-                      <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                      <div role="alert" className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
                         {error}
                       </div>
                     )}
 
                     <div className="grid gap-5 sm:grid-cols-2">
                       <div>
-                        <label className="mb-2 block text-[11px] font-bold uppercase tracking-[0.16em] text-slate-500">
+                        <label htmlFor="contact-name" className="mb-2 block text-sm font-medium text-slate-700">
                           Full Name *
                         </label>
                         <input
                           required
                           type="text"
-                          value={form.name}
+                          id="contact-name" name="name" disabled={loading} autoComplete="name" value={form.name}
                           onChange={(e) => setForm((current) => ({ ...current, name: e.target.value }))}
                           placeholder="Adebayo Okafor"
                           className={field}
@@ -447,13 +418,13 @@ export default function ContactPage() {
                       </div>
 
                       <div>
-                        <label className="mb-2 block text-[11px] font-bold uppercase tracking-[0.16em] text-slate-500">
+                        <label htmlFor="contact-email" className="mb-2 block text-sm font-medium text-slate-700">
                           Email Address *
                         </label>
                         <input
                           required
                           type="email"
-                          value={form.email}
+                          id="contact-email" name="email" disabled={loading} autoComplete="email" value={form.email}
                           onChange={(e) => setForm((current) => ({ ...current, email: e.target.value }))}
                           placeholder="you@example.com"
                           className={field}
@@ -463,13 +434,13 @@ export default function ContactPage() {
 
                     <div className="grid gap-5 sm:grid-cols-2">
                       <div>
-                        <label className="mb-2 block text-[11px] font-bold uppercase tracking-[0.16em] text-slate-500">
+                        <label htmlFor="contact-role" className="mb-2 block text-sm font-medium text-slate-700">
                           I’m contacting LIVAREX about *
                         </label>
-                        <select
-                          value={form.role}
+                        <div className="relative"><select
+                          id="contact-role" name="role" disabled={loading} value={form.role}
                           onChange={(e) => setForm((current) => ({ ...current, role: e.target.value }))}
-                          className={field}
+                          className={`${field} appearance-none pr-10`}
                         >
                           <option value="Property enquiry">Property enquiry</option>
                           <option value="Landlord support">Landlord support</option>
@@ -477,16 +448,16 @@ export default function ContactPage() {
                           <option value="Account support">Account support</option>
                           <option value="Partnership / business">Partnership / business</option>
                           <option value="General enquiry">General enquiry</option>
-                        </select>
+                        </select><ChevronDown className="pointer-events-none absolute right-4 top-4 h-4 w-4 text-slate-500" aria-hidden="true" /></div>
                       </div>
 
                       <div>
-                        <label className="mb-2 block text-[11px] font-bold uppercase tracking-[0.16em] text-slate-500">
+                        <label htmlFor="contact-subject" className="mb-2 block text-sm font-medium text-slate-700">
                           Property / Listing Reference
                         </label>
                         <input
                           type="text"
-                          value={form.subject}
+                          id="contact-subject" name="subject" disabled={loading} value={form.subject}
                           onChange={(e) => setForm((current) => ({ ...current, subject: e.target.value }))}
                           placeholder="Optional — listing ID, address or reference"
                           className={field}
@@ -495,23 +466,23 @@ export default function ContactPage() {
                     </div>
 
                     <div>
-                      <label className="mb-2 block text-[11px] font-bold uppercase tracking-[0.16em] text-slate-500">
+                      <label htmlFor="contact-message" className="mb-2 block text-sm font-medium text-slate-700">
                         Message *
                       </label>
                       <textarea
                         required
                         rows={6}
-                        value={form.message}
+                        id="contact-message" name="message" disabled={loading} value={form.message}
                         onChange={(e) => setForm((current) => ({ ...current, message: e.target.value }))}
                         placeholder="Tell us as much as you can so we can point you in the right direction."
-                        className={`${field} resize-none`}
+                        maxLength={5000} className={`${field} min-h-40 resize-y`}
                       />
                     </div>
 
                     <button
                       type="submit"
                       disabled={loading}
-                      className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-950 px-5 py-4 text-sm font-bold text-white transition-all hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
+                      className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-blue-600 px-5 py-4 text-sm font-bold text-white transition-all hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
                     >
                       {loading ? (
                         <>
@@ -529,209 +500,62 @@ export default function ContactPage() {
                 )}
               </div>
 
-              <aside className="space-y-6">
-                <div className="overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-[0_24px_60px_-36px_rgba(15,23,42,0.34)]">
-                  <div className="relative h-60 overflow-hidden">
-                    <img
-                      src="https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&w=1200&q=80"
-                      alt="Modern residential property exterior"
-                      className="h-full w-full object-cover"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-slate-950/55 to-slate-900/10" />
-                    <div className="absolute left-4 top-4 rounded-full border border-white/20 bg-slate-950/60 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.18em] text-blue-200 backdrop-blur-sm">
-                      Need help? Reach us directly.
-                    </div>
-                  </div>
-
-                  <div className="p-6">
-                    <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-blue-600">Direct Contact</p>
-                    <h3 className="mt-3 text-2xl font-black tracking-[-0.05em] text-slate-950">
-                      Prefer to reach us directly?
-                    </h3>
-
-                    <div className="mt-6 space-y-3">
-                      {channels.map((channel) => {
-                        const Icon = channel.icon
-
-                        return (
-                          <a
-                            key={channel.label}
-                            href={channel.href}
-                            target={channel.href.startsWith('http') ? '_blank' : undefined}
-                            rel={channel.href.startsWith('http') ? 'noopener noreferrer' : undefined}
-                            className={`group flex items-center gap-3 rounded-2xl border p-3 transition-all hover:border-blue-200 hover:bg-blue-50/50 ${channel.highlight ? 'border-green-200 bg-green-50/60' : 'border-slate-200 bg-slate-50'}`}
-                          >
-                            <div className={`flex h-11 w-11 items-center justify-center rounded-xl ${channel.accent} text-white shadow-lg ${channel.glow}`}>
-                              <Icon className="h-4 w-4" />
-                            </div>
-
-                            <div className="min-w-0 flex-1">
-                              <div className="flex items-center justify-between gap-3">
-                                <p className="text-sm font-bold text-slate-900">{channel.label}</p>
-                                <span className="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-500">
-                                  {channel.action}
-                                </span>
-                              </div>
-                              <p className="mt-1 text-sm text-slate-600">{channel.note}</p>
-                              <p className="mt-1 truncate text-sm font-semibold text-slate-900">{channel.value}</p>
-                            </div>
-
-                            <ArrowRight className="h-4 w-4 shrink-0 text-slate-400 transition-transform group-hover:translate-x-1 group-hover:text-blue-600" />
-                          </a>
-                        )
-                      })}
-                    </div>
-
-                    {address && (
-                      <div className="mt-6 rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                        <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-slate-500">Office</p>
-                        <p className="mt-2 text-sm font-semibold text-slate-900">{address}</p>
-                        <a
-                          href={`https://maps.google.com/?q=${encodeURIComponent(address)}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="mt-3 inline-flex items-center gap-2 text-sm font-semibold text-blue-600"
-                        >
-                          Get directions
-                          <ArrowRight className="h-4 w-4" />
-                        </a>
-                      </div>
-                    )}
+              <aside className="relative flex min-w-0 flex-col overflow-hidden bg-[#123d93] p-6 text-white sm:p-8 lg:col-start-1 lg:row-start-1 lg:p-9">
+                <div className="pointer-events-none absolute -bottom-24 -left-24 h-80 w-80 rounded-full border-[36px] border-white/5" aria-hidden="true" />
+                <div className="relative">
+                  <span className="inline-flex h-12 w-12 items-center justify-center rounded-2xl border border-white/20 bg-white/10"><MessageCircle className="h-6 w-6" aria-hidden="true" /></span>
+                  <p className="mt-7 text-[11px] font-bold uppercase tracking-[0.18em] text-blue-200">Direct Contact</p>
+                  <h3 className="mt-3 text-3xl font-semibold leading-tight tracking-[-0.04em]">A conversation.<br />A clearer next step.</h3>
+                  <p className="mt-4 max-w-xs text-sm leading-7 text-blue-100">Prefer to reach us directly? Choose the channel that works for you.</p>
+                  <div className="mt-8 divide-y divide-white/15">
+                    {channels.map(({label,value,href,note,icon:Icon}) => <a key={label} href={href} target={href.startsWith('http') ? '_blank' : undefined} rel={href.startsWith('http') ? 'noopener noreferrer' : undefined} className="group flex items-start gap-3 py-5"><span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/10 transition-colors group-hover:bg-white/20"><Icon className="h-4 w-4" aria-hidden="true" /></span><span className="min-w-0 flex-1"><span className="block text-xs font-medium text-blue-200">{label}</span><span className="mt-1 block break-words text-sm font-semibold text-white">{value}</span><span className="mt-1 block text-xs leading-5 text-blue-100">{note}</span></span><ArrowUpRight className="mt-1 h-4 w-4 shrink-0 text-blue-200" aria-hidden="true" /></a>)}
                   </div>
                 </div>
+                <div className="relative mt-auto border-t border-white/15 pt-6"><p className="text-xs font-semibold text-white">Property enquiries. Landlord support. Account help.</p><p className="mt-2 text-xs leading-6 text-blue-100">Share your listing reference when you have one to help us understand your enquiry.</p></div>
               </aside>
             </div>
           </div>
         </section>
 
-        <section className="bg-white py-2">
+        <section className="bg-white py-14 md:py-20" aria-labelledby="office-title">
           <div className="mx-auto max-w-7xl px-5 sm:px-8">
-            <div className="overflow-hidden rounded-[2rem] border border-slate-200 bg-slate-50">
-              <div className="grid gap-0 md:grid-cols-[1.05fr_0.95fr]">
-                <div className="relative h-full min-h-[280px] overflow-hidden">
-                  <img
-                    src="https://images.unsplash.com/photo-1460317442991-0ec209397118?auto=format&fit=crop&w=1200&q=80"
-                    alt="Elegant residential compound exterior"
-                    className="h-full w-full object-cover"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-r from-slate-950/60 to-slate-900/10" />
-                </div>
-
-                <div className="flex flex-col justify-center p-6 sm:p-8 lg:p-10">
-                  <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-blue-600">Visit LIVAREX</p>
-                  <h3 className="mt-3 text-3xl font-black tracking-[-0.05em] text-slate-950">
-                    Visit LIVAREX
-                  </h3>
-
-                  <div className="mt-6 space-y-4">
-                    <div className="flex items-start gap-3 rounded-2xl border border-slate-200 bg-white p-4">
-                      <div className="mt-0.5 flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
-                        <MapPin className="h-4 w-4" />
-                      </div>
-                      <div>
-                        <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-slate-500">Location</p>
-                        <p className="mt-1 text-base font-semibold text-slate-900">{address || '14 Bourdillon Road, Ikoyi, Lagos'}</p>
-                      </div>
-                    </div>
-                  </div>
-
-                  <a
-                    href={`https://maps.google.com/?q=${encodeURIComponent(address || '14 Bourdillon Road, Ikoyi, Lagos')}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="mt-6 inline-flex w-fit items-center gap-2 rounded-2xl bg-blue-600 px-5 py-3 text-sm font-bold text-white transition-all hover:bg-blue-500"
-                  >
-                    Get Directions
-                    <ArrowRight className="h-4 w-4" />
-                  </a>
-                </div>
+            <div className="relative overflow-hidden rounded-[24px] bg-slate-100">
+              <img src="https://images.unsplash.com/photo-1460317442991-0ec209397118?auto=format&fit=crop&w=1400&q=80" alt="Residential architecture" loading="lazy" className="h-64 w-full object-cover md:absolute md:inset-0 md:h-full" />
+              <div className="pointer-events-none absolute inset-0 hidden bg-gradient-to-r from-slate-950/10 via-slate-950/10 to-slate-950/40 md:block" />
+              <div className="relative p-4 md:flex md:min-h-[420px] md:items-center md:justify-end md:p-8 lg:p-10">
+                <div className="rounded-2xl border border-slate-100 bg-white p-6 shadow-xl shadow-slate-950/5 md:w-[420px] sm:p-8"><span className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-50 text-blue-600"><MapPin className="h-5 w-5" aria-hidden="true" /></span><p className="mt-6 text-[11px] font-bold uppercase tracking-[0.18em] text-blue-600">Our Location</p><h2 id="office-title" className="mt-3 text-3xl font-semibold tracking-[-0.04em] text-slate-950">Visit LIVAREX</h2><p className="mt-4 text-base leading-7 text-slate-600">{address}</p><a href={`https://maps.google.com/?q=${encodeURIComponent(address)}`} target="_blank" rel="noopener noreferrer" className="mt-6 inline-flex min-h-12 w-full items-center justify-between gap-3 rounded-xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-blue-700">Get Directions<ArrowUpRight className="h-4 w-4" aria-hidden="true" /></a></div>
               </div>
             </div>
           </div>
         </section>
 
-        <section className="border-t border-slate-200 bg-white py-20">
+        <section className="border-t border-slate-200 bg-white py-12 md:py-16">
           <div className="mx-auto max-w-7xl px-5 sm:px-8">
             <div className="mx-auto max-w-3xl text-center">
               <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-blue-600">Quick Help</p>
-              <h2 className="mt-3 text-3xl font-black tracking-[-0.05em] text-slate-950 sm:text-4xl">
+              <h2 className="mt-3 text-3xl font-semibold tracking-[-0.05em] text-slate-950 sm:text-4xl">
                 You May Find Your Answer Here.
               </h2>
             </div>
 
             <div className="mt-10 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-              {helpLinks.map(({ href, icon: Icon, label, description }) => (
-                <div
-                  key={label}
-                  className="group flex h-full flex-col justify-between rounded-[1.5rem] border border-slate-200 bg-slate-50 p-5 transition-all hover:border-blue-200 hover:bg-white hover:shadow-[0_18px_40px_-22px_rgba(37,99,235,0.45)]"
-                >
-                  <div>
-                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
-                      <Icon className="h-4 w-4" />
-                    </div>
-
-                    {href.startsWith('#') ? (
-                      <a href={href} className="mt-4 block text-base font-extrabold text-slate-950">
-                        {label}
-                      </a>
-                    ) : (
-                      <Link href={href} className="mt-4 block text-base font-extrabold text-slate-950">
-                        {label}
-                      </Link>
-                    )}
-                    <p className="mt-2 text-sm leading-relaxed text-slate-600">{description}</p>
-                  </div>
-
-                  <div className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-blue-600">
-                    Learn more
-                    <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
-                  </div>
-                </div>
-              ))}
+              {helpLinks.map(({ href, icon: Icon, label, description }) => {
+                const content = <><span className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 text-blue-600"><Icon className="h-4 w-4" aria-hidden="true" /></span><h3 className="mt-4 text-base font-semibold text-slate-950">{label}</h3><p className="mt-2 text-sm leading-6 text-slate-600">{description}</p><span className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-blue-600">Learn more <ArrowRight className="h-4 w-4" aria-hidden="true" /></span></>
+                const card = 'block rounded-2xl border border-slate-200 bg-white p-5 transition-colors hover:border-blue-200 hover:bg-blue-50/30'
+                return href.startsWith('#') ? <a key={label} href={href} className={card}>{content}</a> : <Link key={label} href={href} className={card}>{content}</Link>
+              })}
             </div>
           </div>
         </section>
 
-        <section id="faq-panel" className="border-t border-slate-200 bg-[#f7f7f5] py-20">
-          <div className="mx-auto max-w-7xl px-5 sm:px-8">
-            <div className="mx-auto max-w-3xl text-center">
-              <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-blue-600">Questions We Hear Often</p>
-              <h2 className="mt-3 text-3xl font-black tracking-[-0.05em] text-slate-950 sm:text-4xl">
-                Frequently Asked Questions
-              </h2>
-            </div>
-
-            <div className="mt-10 grid gap-8 lg:grid-cols-[1.05fr_0.95fr] lg:items-center">
-              <div className="rounded-[2rem] border border-slate-200 bg-white p-4 sm:p-6">
-                <div className="space-y-3">
-                  {faqs.map((faq, index) => (
-                    <div key={faq.q} className="border-b border-slate-200 pb-3 last:border-b-0 last:pb-0">
-                      <button
-                        type="button"
-                        onClick={() => setOpenFaq(openFaq === index ? null : index)}
-                        className="flex w-full items-center justify-between gap-4 py-2 text-left"
-                      >
-                        <span className="text-base font-semibold text-slate-900">{faq.q}</span>
-                        <div className="flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 bg-slate-50 text-slate-500">
-                          {openFaq === index ? <Minus className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
-                        </div>
-                      </button>
-
-                      {openFaq === index && (
-                        <div className="pt-3 text-sm leading-relaxed text-slate-600">{faq.a}</div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div className="overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-[0_24px_60px_-36px_rgba(15,23,42,0.34)]">
-                <img
-                  src="https://images.unsplash.com/photo-1494526585095-c41746248156?auto=format&fit=crop&w=1200&q=80"
-                  alt="Modern residential balcony exterior"
-                  className="h-full min-h-[320px] w-full object-cover"
-                />
-              </div>
+        <section id="faq-panel" className="border-t border-slate-100 bg-[#f7f9fc] py-14 md:py-20" aria-labelledby="faq-title">
+          <div className="mx-auto grid max-w-7xl gap-8 px-5 sm:px-8 lg:grid-cols-[0.75fr_1.25fr] lg:gap-16">
+            <div><p className="text-[11px] font-bold uppercase tracking-[0.18em] text-blue-600">Questions We Hear Often</p><h2 id="faq-title" className="mt-4 text-3xl font-semibold leading-tight tracking-[-0.04em] text-slate-950 sm:text-4xl">Frequently Asked<br />Questions</h2><p className="mt-5 max-w-sm text-sm leading-7 text-slate-600">A few answers to help you take the next step.</p><a href="#contact-form" className="mt-5 inline-flex min-h-11 items-center gap-2 rounded-md text-sm font-semibold text-blue-600">Still have a question?<ArrowRight className="h-4 w-4" aria-hidden="true" /></a></div>
+            <div className="rounded-[20px] border border-slate-200 bg-white px-5 sm:px-7">
+              {faqs.map((faq, index) => <div key={faq.q} className="border-b border-slate-100 last:border-0">
+                <button type="button" id={`contact-faq-trigger-${index}`} aria-expanded={openFaq === index} aria-controls={`contact-faq-${index}`} onClick={() => setOpenFaq(openFaq === index ? null : index)} className="flex min-h-20 w-full items-center justify-between gap-4 py-5 text-left"><span className="text-sm font-semibold leading-6 text-slate-900 sm:text-base">{faq.q}</span><span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${openFaq === index ? 'bg-blue-600 text-white' : 'bg-blue-50 text-blue-600'}`}>{openFaq === index ? <Minus className="h-4 w-4" aria-hidden="true" /> : <Plus className="h-4 w-4" aria-hidden="true" />}</span></button>
+                <div id={`contact-faq-${index}`} role="region" aria-labelledby={`contact-faq-trigger-${index}`} hidden={openFaq !== index} className="max-w-xl pb-6 pr-6 text-sm leading-7 text-slate-600">{faq.a}</div>
+              </div>)}
             </div>
           </div>
         </section>
