@@ -1057,24 +1057,29 @@ export default function AdminProperties() {
 
       {/* ── Add Listing Modal ── */}
       {addOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-0 md:p-4 bg-black/60">
-          <div className="bg-white rounded-none md:rounded-3xl shadow-2xl w-full h-full md:max-w-2xl md:max-h-[90vh] flex flex-col">
+        <div className="lv-listing-overlay fixed inset-0 z-50 flex items-center justify-center">
+          <div className="lv-listing-modal">
 
+            <style>{listingModalStyles}</style>
             {/* ── Header ── */}
-            <div className="flex items-center justify-between px-4 py-3 sm:px-6 sm:py-5 border-b border-gray-100 shrink-0">
-              <div>
+            <div className="lv-listing-header">
+              <div className="lv-listing-heading">
+                <span className="lv-listing-icon" aria-hidden="true"><Building2 className="w-6 h-6" /></span>
+                <div>
                 <h2 className="text-lg font-extrabold text-gray-900">Add New Listing</h2>
                 <p className="text-xs text-gray-400 mt-0.5">Create a property listing on behalf of a landlord</p>
+                </div>
               </div>
               <button type="button" onClick={() => { setAddOpen(false); setAddForm(emptyAdd) }}
-                className="w-8 h-8 flex items-center justify-center rounded-xl text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors">
+                aria-label="Close add listing" className="lv-listing-close">
                 <X className="w-4 h-4" />
               </button>
             </div>
 
             {/* ── Scrollable body ── */}
-            <div className="flex-1 overflow-y-auto px-4 py-4 sm:px-6 sm:py-5 space-y-4">
+            <div className="lv-listing-body">
 
+              <section className="lv-listing-section">
               {/* Landlord */}
               <div>
                 <label className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1.5 block">
@@ -1099,6 +1104,8 @@ export default function AdminProperties() {
                   className="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
               </div>
 
+              </section>
+              <section className="lv-listing-section">
               {/* Address */}
               <div>
                 <label className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1.5 block">Location / Address *</label>
@@ -1130,6 +1137,8 @@ export default function AdminProperties() {
                 </div>
               </div>
 
+              </section>
+              <section className="lv-listing-section">
               {/* Listing Type + Property Type */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
@@ -1151,6 +1160,8 @@ export default function AdminProperties() {
                 </div>
               </div>
 
+              </section>
+              <section className="lv-listing-section">
               {/* Rent + Status */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
@@ -1213,6 +1224,8 @@ export default function AdminProperties() {
                 </div>
               </div>
 
+              </section>
+              <section className="lv-listing-section">
               {/* Bedrooms + Bathrooms */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
@@ -1270,6 +1283,7 @@ export default function AdminProperties() {
                 </div>
               </div>
 
+              </section>
               {/* Location */}
               <div className="rounded-3xl border border-dashed border-gray-200 bg-slate-50 p-4">
                 <LocationField
@@ -1303,9 +1317,9 @@ export default function AdminProperties() {
                           {i === coverIdx && (
                             <div className="absolute top-1.5 left-1.5 px-1.5 py-0.5 bg-blue-600 rounded-md text-[9px] font-black text-white uppercase tracking-wide">Cover</div>
                           )}
-                          <button type="button"
+                          <button type="button" aria-label="Remove photo"
                             onClick={e => { e.stopPropagation(); removeNewImage(i) }}
-                            className="absolute top-1 right-1 w-6 h-6 bg-white/90 hover:bg-red-500 hover:text-white rounded-lg flex items-center justify-center text-gray-700 transition-colors opacity-0 group-hover:opacity-100">
+                            className="absolute top-1 right-1 w-6 h-6 bg-white/90 hover:bg-red-500 hover:text-white rounded-lg flex items-center justify-center text-gray-700 transition-colors opacity-100">
                             <X className="w-3 h-3" />
                           </button>
                         </div>
@@ -1332,7 +1346,7 @@ export default function AdminProperties() {
             </div> {/* ← end scrollable body */}
 
             {/* ── Footer ── */}
-            <div className="flex items-center justify-end gap-3 px-4 py-3 sm:px-6 sm:py-4 border-t border-gray-100 bg-gray-50 md:rounded-b-3xl shrink-0">
+            <div className="lv-listing-footer">
               <button type="button" onClick={() => { setAddOpen(false); setAddForm(emptyAdd) }}
                 className="px-4 py-2 text-sm font-semibold text-gray-600 hover:text-gray-800 transition-colors">
                 Cancel
@@ -1351,3 +1365,49 @@ export default function AdminProperties() {
     </AuthGuard >
   )
 }
+
+const listingModalStyles = `
+.lv-listing-overlay{padding:24px;background:rgb(15 23 42 / .48);backdrop-filter:blur(5px)}
+.lv-listing-modal{display:flex;flex-direction:column;width:100%;max-width:860px;max-height:calc(100vh - 48px);max-height:calc(100dvh - 48px);min-height:0;overflow:hidden;border:1px solid #e2e8f0;border-radius:24px;background:#fff!important;color:#0f172a;color-scheme:light;box-shadow:0 28px 90px #0f172a40}
+.lv-listing-modal *{box-sizing:border-box}
+.lv-listing-header{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:24px 28px;border-bottom:1px solid #e8edf4;flex-shrink:0}
+.lv-listing-heading{display:flex;align-items:center;gap:14px;min-width:0}
+.lv-listing-icon{display:grid;place-items:center;width:48px;height:48px;border-radius:15px;flex-shrink:0;color:#2563eb;background:#eff6ff;border:1px solid #dbeafe}
+.lv-listing-heading h2{font-size:22px;line-height:1.3;letter-spacing:-.035em;color:#0f172a}
+.lv-listing-heading p{color:#64748b;font-size:13px;line-height:1.5;margin-top:5px}
+.lv-listing-close{display:grid;place-items:center;flex-shrink:0;width:44px;height:44px;border:1px solid #e2e8f0;border-radius:12px;color:#64748b;background:white}
+.lv-listing-close:hover{background:#f1f5f9;color:#0f172a}
+.lv-listing-body{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin;scrollbar-color:#cbd5e1 #fff;padding:24px 28px;display:flex;flex-direction:column;gap:20px}
+.lv-listing-section{display:flex;flex-direction:column;gap:20px;padding:22px;border:1px solid #e2e8f0;border-radius:18px;background:#fff;box-shadow:0 2px 4px #0f172a03}
+.lv-listing-section:first-child{border-top:3px solid #2563eb}
+.lv-listing-modal label{color:#475569;font-size:12px;font-weight:650;text-transform:none;letter-spacing:.01em;line-height:1.5;margin-bottom:8px}
+.lv-listing-body input:not([type=file]):not([type=checkbox]):not([type=radio]),.lv-listing-body select,.lv-listing-body textarea{color:#0f172a!important;background-color:#fff!important;border:1px solid #cbd5e1;border-radius:11px;min-height:46px;font-size:14px;line-height:1.5;width:100%;max-width:100%;padding:11px 13px;box-shadow:0 1px 2px #0f172a04;transition:border-color .15s,box-shadow .15s}
+.lv-listing-body input::placeholder,.lv-listing-body textarea::placeholder{color:#77869a!important;opacity:1!important}
+.lv-listing-body select{padding-right:36px}
+.lv-listing-body select option{background:white;color:#0f172a}
+.lv-listing-body input:focus,.lv-listing-body select:focus,.lv-listing-body textarea:focus{outline:none;border-color:#2563eb;box-shadow:0 0 0 3px #2563eb1f}
+.lv-listing-body textarea{min-height:120px;resize:vertical}
+.lv-listing-body .grid>div{min-width:0}
+.lv-listing-body .text-gray-400{color:#64748b}
+.lv-listing-body button{min-height:40px}
+.lv-listing-body button.border-dashed{background:#f8fbff;color:#2563eb;border-color:#b8cff4}
+.lv-listing-footer{display:flex;align-items:center;justify-content:flex-end;gap:12px;flex-shrink:0;padding:18px 28px;border-top:1px solid #e2e8f0;background:#fff;box-shadow:0 -4px 18px #0f172a04}
+.lv-listing-footer button{min-height:46px;justify-content:center;border-radius:12px}
+.lv-listing-footer button:first-child{border:1px solid #cbd5e1;background:white;padding:10px 22px;color:#475569}
+.lv-listing-footer button:last-child{padding:11px 24px;background:#2563eb;color:white;box-shadow:0 4px 10px #2563eb26}
+.lv-listing-footer button:last-child:hover{background:#1d4ed8}
+.lv-listing-modal button:focus-visible,.lv-listing-modal a:focus-visible{outline:2px solid #2563eb;outline-offset:3px}
+@media(max-width:639px){
+.lv-listing-overlay{padding:0}
+.lv-listing-modal{height:100vh;height:100dvh;max-height:100vh;max-height:100dvh;border:0;border-radius:0}
+.lv-listing-header{padding:16px;padding-top:max(16px,env(safe-area-inset-top));gap:8px}
+.lv-listing-heading{gap:10px}.lv-listing-icon{width:40px;height:40px;border-radius:12px}
+.lv-listing-heading h2{font-size:18px}.lv-listing-heading p{font-size:12px}
+.lv-listing-body{padding:16px;gap:16px}.lv-listing-section{padding:16px;gap:18px;border-radius:14px}
+.lv-listing-body input:not([type=file]):not([type=checkbox]):not([type=radio]),.lv-listing-body select,.lv-listing-body textarea{font-size:16px}
+.lv-listing-footer{padding:12px 16px;padding-bottom:max(12px,env(safe-area-inset-bottom));gap:10px}
+.lv-listing-footer button:first-child{padding:10px 16px}
+.lv-listing-footer button:last-child{flex:1;padding:11px 12px}
+}
+@media(prefers-reduced-motion:reduce){.lv-listing-modal *{transition:none!important}}
+`
