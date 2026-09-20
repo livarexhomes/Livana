@@ -11,12 +11,11 @@ import { NIGERIAN_STATES, POPULAR_AREAS } from '@/lib/nigerianStates'
 const searchSuggestions = [
   'Lagos',
   'Lekki',
-  'Abuja',
+  'Ogun',
   'Maitama',
   'Ikeja',
   'Victoria Island',
   'Ikoyi',
-  'Gwarinpa',
   'Yaba',
   'Ajah',
   ...NIGERIAN_STATES,
