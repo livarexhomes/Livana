@@ -90,173 +90,113 @@ export default function PropertyCard({ property: p, saved: initialSaved = false,
   }
 
   return (
-    <Link href={`/listings/${p.id}`} className="block group outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded-3xl">
-      <article className="bg-white rounded-3xl overflow-hidden border border-gray-100/80 shadow-sm hover:shadow-2xl hover:shadow-gray-200/70 hover:-translate-y-1.5 transition-all duration-300 ease-out">
-
-        {/* IMAGE */}
-        <div className="relative h-56 bg-gray-100 overflow-hidden">
+    <article className="group relative flex h-full min-w-0 flex-col rounded-2xl border border-slate-200 bg-white p-2 text-slate-900 shadow-sm transition-shadow duration-300 hover:shadow-lg hover:shadow-slate-200/60 motion-reduce:transition-none">
+      {/* Separate links and buttons keep save/report actions accessible. */}
+      <div className="relative isolate aspect-[4/3] overflow-hidden rounded-xl bg-slate-100">
+        <Link href={`/listings/${p.id}`} aria-label={p.title}
+          className="absolute inset-0 block focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-4 focus-visible:outline-blue-600">
           {coverUrl ? (
-            <img
-              src={coverUrl}
-              alt={p.title}
-              loading="lazy"
-              decoding="async"
-              className="w-full h-full object-cover group-hover:scale-[1.06] transition-transform duration-700 ease-out"
-            />
+            <img src={coverUrl} alt={p.title} loading="lazy" decoding="async"
+              className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.035] motion-reduce:transform-none motion-reduce:transition-none" />
           ) : (
-            <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 gap-2">
-              <div className="w-12 h-12 rounded-2xl bg-white shadow-sm flex items-center justify-center">
-                <Building2 className="w-6 h-6 text-gray-300" strokeWidth={1.5} />
-              </div>
-              <span className="text-[11px] font-medium text-gray-300">No photo</span>
+            <div className="flex h-full flex-col items-center justify-center gap-3 bg-slate-50">
+              <span className="flex h-14 w-14 items-center justify-center rounded-2xl border border-slate-200 bg-white">
+                <Building2 className="h-7 w-7 text-slate-400" strokeWidth={1.5} />
+              </span>
+              <span className="text-xs font-medium text-slate-500">No photo</span>
             </div>
           )}
+        </Link>
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-slate-950/35 via-transparent to-slate-950/10" />
+        <span className={`pointer-events-none absolute left-3 top-3 inline-flex rounded-lg px-3 py-1.5 text-[11px] font-bold shadow-sm ${cfg.cls}`}>
+          {cfg.label}
+        </span>
+        <button type="button" onClick={handleSave} disabled={saving}
+          aria-label={saved ? 'Unsave property' : 'Save property'} aria-pressed={saved} aria-busy={saving}
+          className={`absolute right-3 top-3 flex h-11 w-11 items-center justify-center rounded-full border border-white/80 shadow-sm transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 disabled:cursor-wait disabled:opacity-60 ${saved ? 'bg-rose-50 text-rose-600' : 'bg-white text-slate-600 hover:bg-rose-50 hover:text-rose-600'}`}>
+          <Heart className={`h-[18px] w-[18px] ${saved ? 'fill-current' : ''}`} strokeWidth={1.8} />
+        </button>
+        {p.landlords?.is_verified && (
+          <span className="pointer-events-none absolute bottom-3 left-3 inline-flex items-center gap-1.5 rounded-lg bg-white px-2.5 py-1.5 text-[11px] font-semibold text-emerald-700 shadow-sm">
+            <ShieldCheck className="h-3.5 w-3.5" /> Verified
+          </span>
+        )}
+      </div>
 
-          {/* Gradient scrim */}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/65 via-black/5 to-transparent" />
-
-          {/* Type badge — top left */}
-          <div className="absolute top-3.5 left-3.5">
-            <span className={`inline-flex items-center px-2.5 py-1 rounded-xl text-[10px] font-black uppercase tracking-wider shadow-lg ${cfg.cls}`}>
-              {cfg.label}
-            </span>
-          </div>
-
-          {/* Save button — top right */}
-          <button
-            onClick={handleSave}
-            disabled={saving}
-            aria-label={saved ? 'Unsave property' : 'Save property'}
-            className={`absolute top-3.5 right-3.5 w-8 h-8 rounded-xl flex items-center justify-center shadow-lg transition-all duration-200 active:scale-90 ${
-              saved
-                ? 'bg-rose-500 text-white shadow-rose-500/40'
-                : 'bg-white/90 backdrop-blur-sm text-gray-400 hover:text-rose-500 hover:bg-white'
-            }`}
-          >
-            <Heart className={`w-3.5 h-3.5 ${saved ? 'fill-current' : ''}`} />
-          </button>
-
-          {/* Bottom overlay: verified + price */}
-          <div className="absolute bottom-0 left-0 right-0 px-4 pb-4 flex items-end justify-between gap-2">
-            <div className="flex flex-col gap-1">
-              {p.landlords?.is_verified && (
-                <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-white/95 backdrop-blur-sm text-emerald-600 text-[10px] font-bold rounded-lg shadow-sm w-fit">
-                  <ShieldCheck className="w-3 h-3" /> Verified
-                </span>
-              )}
-              <span className="inline-flex items-center gap-1.5 px-2 py-0.5 bg-black/30 backdrop-blur-sm text-white/80 text-[10px] font-semibold rounded-lg w-fit">
-                <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${statusDot}`} />
-                {statusLabel}
-              </span>
-            </div>
-            <span className="text-white font-black text-[22px] leading-none tracking-tight drop-shadow-lg shrink-0">
-              {formatPrice(Number(p.price))}
-            </span>
-          </div>
+      <div className="flex min-w-0 flex-1 flex-col px-3 pb-2 pt-4 sm:px-4">
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
+          <p className="min-w-0 break-words text-[23px] font-extrabold leading-tight tracking-tight text-blue-700">
+            {formatPrice(Number(p.price))}
+          </p>
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-100 bg-slate-50 px-2 py-1 text-[10px] font-semibold text-slate-600">
+            <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${statusDot}`} />
+            {availableNow ? 'Available now' : statusLabel}
+          </span>
         </div>
-
-        {/* BODY */}
-        <div className="p-4">
-          <h3 className="font-bold text-gray-900 text-[15px] leading-snug line-clamp-1 mb-1 group-hover:text-blue-600 transition-colors duration-200">
+        <h3 className="text-base font-bold leading-snug tracking-[-0.015em] text-slate-900">
+          <Link href={`/listings/${p.id}`} className="line-clamp-2 rounded-sm hover:text-blue-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-600">
             {p.title}
-          </h3>
-          <div className="flex flex-wrap items-center gap-2 text-gray-400 text-xs mb-4">
-            <div className="inline-flex items-center gap-1">
-              <MapPin className="w-3 h-3 shrink-0 text-blue-400" />
-              <span className="truncate">{p.city}</span>
-            </div>
-            <span className="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2 py-1 text-[10px] uppercase tracking-[0.18em] text-gray-500">
-              {availableNow ? 'Available now' : statusLabel}
-            </span>
-            <span className="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2 py-1 text-[10px] uppercase tracking-[0.18em] text-gray-500">
-              {listedLabel}
-            </span>
-          </div>
-
-          {/* Report */}
-          <div className="relative mb-2">
-            {reported ? (
-              <p className="text-[11px] text-emerald-600 font-semibold flex items-center gap-1">
-                ✓ Report received — we'll review within 24 hours
-              </p>
-            ) : reportOpen ? (
-              <div
-                className="bg-white border border-gray-200 rounded-2xl shadow-lg p-3 z-20"
-                onClick={e => e.preventDefault()}
-              >
-                <div className="flex items-center justify-between mb-2">
-                  <p className="text-xs font-bold text-gray-700">Why are you reporting?</p>
-                  <button
-                    onClick={e => { e.preventDefault(); e.stopPropagation(); setReportOpen(false) }}
-                    className="w-5 h-5 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-400"
-                  >
-                    <X className="w-3 h-3" />
-                  </button>
-                </div>
-                <div className="flex flex-col gap-1">
-                  {REPORT_REASONS.map(r => (
-                    <button
-                      key={r}
-                      onClick={e => handleReport(e, r)}
-                      className="text-left text-xs text-gray-600 hover:text-red-600 hover:bg-red-50 px-2.5 py-1.5 rounded-lg transition-colors font-medium"
-                    >
-                      {r}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            ) : (
-              <button
-                onClick={e => { e.preventDefault(); e.stopPropagation(); setReportOpen(true) }}
-                className="inline-flex items-center gap-1 text-[11px] text-gray-300 hover:text-red-400 transition-colors font-medium"
-              >
-                <Flag className="w-3 h-3" /> Report listing
-              </button>
-            )}
-          </div>
-
-          {/* Stats row */}
-          <div className="flex items-center gap-3 pt-3 border-t border-gray-50">
-            <div className="flex items-center gap-1.5">
-              <div className="w-6 h-6 rounded-lg bg-gray-50 flex items-center justify-center shrink-0">
-                <BedDouble className="w-3 h-3 text-gray-400" strokeWidth={1.5} />
-              </div>
-              <span className="text-xs font-bold text-gray-700">{p.bedrooms}</span>
-              <span className="text-xs text-gray-400">bed{p.bedrooms !== 1 ? 's' : ''}</span>
-            </div>
-
-            <span className="w-px h-3 bg-gray-100" />
-
-            <div className="flex items-center gap-1.5">
-              <div className="w-6 h-6 rounded-lg bg-gray-50 flex items-center justify-center shrink-0">
-                <Bath className="w-3 h-3 text-gray-400" strokeWidth={1.5} />
-              </div>
-              <span className="text-xs font-bold text-gray-700">{p.bathrooms}</span>
-              <span className="text-xs text-gray-400">bath</span>
-            </div>
-
-            {p.area_sqft && (
-              <>
-                <span className="w-px h-3 bg-gray-100" />
-                <div className="flex items-center gap-1.5">
-                  <div className="w-6 h-6 rounded-lg bg-gray-50 flex items-center justify-center shrink-0">
-                    <Maximize2 className="w-3 h-3 text-gray-400" strokeWidth={1.5} />
-                  </div>
-                  <span className="text-xs text-gray-500 font-medium">{p.area_sqft.toLocaleString()} sqft</span>
-                </div>
-              </>
-            )}
-
-            {/* Arrow CTA */}
-            <div className="ml-auto w-7 h-7 rounded-xl bg-gray-50 group-hover:bg-gray-900 flex items-center justify-center transition-all duration-300 shrink-0">
-              <svg className="w-3.5 h-3.5 text-gray-400 group-hover:text-white transition-colors duration-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M7 17L17 7M17 7H7M17 7v10" />
-              </svg>
-            </div>
-          </div>
+          </Link>
+        </h3>
+        <div className="mb-4 mt-2 flex min-w-0 items-center gap-1.5 text-xs text-slate-500">
+          <MapPin className="h-3.5 w-3.5 shrink-0 text-slate-400" />
+          <span className="truncate">{p.city}</span>
         </div>
 
-      </article>
-    </Link>
+        <div className="mt-auto flex flex-wrap items-center gap-x-4 gap-y-3 border-y border-slate-100 py-3.5">
+          <span className="inline-flex items-center gap-1.5 text-xs text-slate-600">
+            <BedDouble className="h-4 w-4 text-slate-400" strokeWidth={1.7} />
+            <strong className="font-semibold text-slate-800">{p.bedrooms}</strong> bed{p.bedrooms !== 1 ? 's' : ''}
+          </span>
+          <span className="inline-flex items-center gap-1.5 text-xs text-slate-600">
+            <Bath className="h-4 w-4 text-slate-400" strokeWidth={1.7} />
+            <strong className="font-semibold text-slate-800">{p.bathrooms}</strong> bath
+          </span>
+          {p.area_sqft && (
+            <span className="inline-flex items-center gap-1.5 text-xs text-slate-600">
+              <Maximize2 className="h-4 w-4 text-slate-400" strokeWidth={1.7} />
+              {p.area_sqft.toLocaleString()} sqft
+            </span>
+          )}
+        </div>
+
+        <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 pt-1">
+          <span className="text-[11px] text-slate-500">{listedLabel}</span>
+          {!reported && !reportOpen && (
+            <button type="button"
+              onClick={e => { e.preventDefault(); e.stopPropagation(); setReportOpen(true) }}
+              className="inline-flex min-h-[44px] items-center gap-1.5 rounded-lg text-[11px] font-medium text-slate-500 transition-colors hover:text-red-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-600">
+              <Flag className="h-3 w-3" /> Report listing
+            </button>
+          )}
+        </div>
+
+        {reported ? (
+          <p role="status" className="mt-2 rounded-xl border border-emerald-100 bg-emerald-50 px-3 py-2.5 text-xs font-medium leading-relaxed text-emerald-700">
+            ✓ Report received — we'll review within 24 hours
+          </p>
+        ) : reportOpen ? (
+          <div className="mt-2 rounded-xl border border-slate-200 bg-slate-50 p-3"
+            onKeyDown={e => { if (e.key === 'Escape') { e.stopPropagation(); setReportOpen(false) } }}>
+            <div className="mb-1 flex items-center justify-between gap-2">
+              <p className="text-xs font-bold text-slate-800">Why are you reporting?</p>
+              <button type="button" aria-label="Close report"
+                onClick={e => { e.preventDefault(); e.stopPropagation(); setReportOpen(false) }}
+                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg text-slate-500 hover:bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-600">
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            <div className="flex flex-col gap-1">
+              {REPORT_REASONS.map(r => (
+                <button type="button" key={r} onClick={e => handleReport(e, r)}
+                  className="min-h-[44px] rounded-lg px-3 py-2 text-left text-xs font-medium text-slate-600 transition-colors hover:bg-white hover:text-red-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-600">
+                  {r}
+                </button>
+              ))}
+            </div>
+          </div>
+        ) : null}
+      </div>
+    </article>
   )
 }

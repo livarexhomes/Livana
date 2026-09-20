@@ -256,10 +256,11 @@ export default function AdminVetting() {
   return (
     <AuthGuard require="admin">
       <MobileSidebarProvider>
-        <div className="vetting-page flex h-screen overflow-hidden bg-slate-50 text-slate-900">
+        <div className="vetting-page lv-vetting flex h-screen overflow-hidden bg-white text-slate-900">
+        <style>{vettingStyles}</style>
         <AdminSidebar userEmail={user?.email} userName={displayName} />
 
-        <div className="flex flex-1 min-w-0 flex-col overflow-hidden">
+        <div className="lv-vetting-content flex flex-1 min-w-0 flex-col overflow-hidden">
           <VettingHeader
             kycPendingCount={kycCounts.pending}
             listingsPendingCount={pendingListings.length}
@@ -279,7 +280,7 @@ export default function AdminVetting() {
           </div>
 
           {/* Status filter dropdown + tab switcher */}
-          <div className="hidden sm:flex items-center justify-between px-6 py-2.5 bg-white border-b border-slate-100 shrink-0">
+          <div className="hidden sm:flex flex-wrap items-center justify-between gap-3 px-5 py-4 bg-white border-b border-slate-200 shrink-0">
             <StatusFilterDropdown
               value={kycStatusFilter}
               onChange={setKycStatusFilter}
@@ -310,9 +311,9 @@ export default function AdminVetting() {
               data-testid="vetting-grid"
             >
               {/* LEFT: landlord queue — independently scrollable */}
-              <div className="w-80 xl:w-[22rem] shrink-0 overflow-y-auto border-r border-slate-200 bg-white hidden md:flex md:flex-col">
+              <div className="w-72 xl:w-[21rem] shrink-0 min-h-0 overflow-hidden border-r border-slate-200 bg-white hidden md:flex md:flex-col">
                 {/* Toolbar without status pills on desktop (pills already in header dropdown) */}
-                <div className="px-3 pt-3 pb-0 border-b border-slate-100">
+                <div className="px-4 pt-4 pb-2 border-b border-slate-100 shrink-0">
                   <VettingToolbar
                     search={kycSearch}
                     onSearch={setKycSearch}
@@ -335,7 +336,7 @@ export default function AdminVetting() {
               </div>
 
               {/* RIGHT: review workspace — sticky, independently scrollable */}
-              <div className="flex-1 min-w-0 min-h-0 overflow-y-auto">
+              <div className="flex-1 min-w-0 min-h-0 overflow-y-auto bg-white">
                 {/* Mobile: back button when no landlord selected */}
                 {selectedLandlord && (
                   <div className="md:hidden px-4 pt-3">
@@ -345,9 +346,9 @@ export default function AdminVetting() {
                     </button>
                   </div>
                 )}
-                <div className="px-4 pb-6 pt-3 sm:px-6 md:pt-4">
+                <div className="px-4 pb-6 pt-4 sm:px-6 md:pt-6">
                   {/* Mobile: compact queue header */}
-                  <div className="sm:hidden mb-4">
+                  <div className="md:hidden mb-4">
                     <div className="flex items-center justify-between mb-3">
                       <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Landlord queue</p>
                       <span className="text-[11px] font-semibold text-slate-500">{kycFiltered.length}</span>
@@ -364,6 +365,16 @@ export default function AdminVetting() {
                       hideFiltersOnDesktop={true}
                     />
                   </div>
+                  <div className="md:hidden">
+                    <ApplicantList
+                      landlords={kycFiltered}
+                      selectedId={selectedLandlord?.id}
+                      onSelect={selectLandlord}
+                      loading={kycLoading}
+                      className="min-h-0 rounded-2xl border border-slate-200 shadow-none"
+                    />
+                  </div>
+                  <div className="hidden md:block">
                   <ReviewWorkspace
                     landlord={selectedLandlord}
                     kycDocs={kycDocs}
@@ -374,11 +385,12 @@ export default function AdminVetting() {
                     onClose={clearKycSelection}
                     onUpdateStatus={updateKycStatus}
                   />
+                  </div>
                 </div>
               </div>
             </div>
           ) : (
-            <div className="flex-1 min-h-0 overflow-hidden px-4 pb-6 sm:px-6 sm:pt-4">
+            <div className="flex flex-col flex-1 min-h-0 overflow-hidden p-4 sm:p-6">
               <ListingsTab
                 listings={pendingListings}
                 loading={listingsLoading}
@@ -425,8 +437,8 @@ function ListingsTab({
   onReject:  (id: string) => Promise<void>
 }) {
   return (
-    <div className="flex flex-1 min-h-0 overflow-hidden flex-col rounded-2xl border border-slate-200 bg-white shadow-sm">
-      <div className="shrink-0 flex items-center justify-between gap-4 border-b border-slate-100 bg-slate-50 px-4 py-3 sm:px-6 sm:py-5">
+    <div className="flex flex-1 min-h-0 overflow-hidden flex-col rounded-2xl border border-slate-200 bg-white">
+      <div className="shrink-0 flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 bg-white px-4 py-4 sm:px-6 sm:py-5">
         <div>
           <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Property review</p>
           <h3 className="mt-1 text-base font-bold tracking-tight text-slate-900">
@@ -458,7 +470,7 @@ function ListingsTab({
             <p className="mt-1 text-xs text-slate-400">No listing submissions waiting for review.</p>
           </div>
         ) : (
-          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+          <div className="grid gap-5 md:grid-cols-2 2xl:grid-cols-3">
             {listings.map((listing: any) => (
               <ListingCard
                 key={listing.id}
@@ -496,8 +508,8 @@ function ListingCard({
   const landlordName = listing.landlords?.full_name ?? 'Unknown landlord'
 
   return (
-      <div className="flex flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md dark:border-slate-700 dark:bg-slate-900">
-      <div className="relative h-32 overflow-hidden bg-slate-100 sm:h-44">
+      <div className="lv-vetting-card flex min-w-0 flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white p-2 shadow-sm transition-shadow hover:shadow-lg hover:shadow-slate-200/50">
+      <div className="relative aspect-[16/10] overflow-hidden rounded-xl bg-slate-100">
         {coverUrl ? (
           <img src={coverUrl} alt={listing.title} className="w-full h-full object-cover" />
         ) : (
@@ -519,30 +531,30 @@ function ListingCard({
         </div>
       </div>
 
-      <div className="flex-1 p-4">
-         <h4 className="text-sm font-bold text-slate-900 line-clamp-2 leading-snug">{listing.title}</h4>
+      <div className="flex-1 px-3 py-4">
+         <h4 className="text-base font-bold text-slate-900 line-clamp-2 leading-snug tracking-tight">{listing.title}</h4>
 
         <div className="mt-2 space-y-1.5">
           <div className="flex items-center gap-1.5 text-[12px] text-slate-500">
             <MapPin className="w-3 h-3 shrink-0 text-slate-400" />
             <span className="truncate">{listing.address}{listing.city ? `, ${listing.city}` : ''}</span>
           </div>
-          <div className="flex items-center gap-3 text-[12px] text-slate-500">
+          <div className="flex flex-wrap items-center gap-3 text-xs text-slate-500">
             <span className="flex items-center gap-1"><BedDouble className="w-3 h-3 text-slate-400" />{listing.bedrooms} bed</span>
             <span className="flex items-center gap-1"><Bath className="w-3 h-3 text-slate-400" />{listing.bathrooms} bath</span>
             {listing.area_sqft && <span className="flex items-center gap-1"><MapPin className="w-3 h-3 text-slate-400" />{listing.area_sqft} sqft</span>}
           </div>
         </div>
 
-        <div className="mt-3 flex items-center justify-between">
-           <p className="text-lg font-black text-slate-900">{fmtNaira(listing.price)}</p>
+        <div className="mt-4 flex flex-wrap items-center justify-between gap-2 border-t border-slate-100 pt-3">
+           <p className="text-xl font-extrabold tracking-tight text-blue-700 break-words">{fmtNaira(listing.price)}</p>
           <div className="text-[11px] text-slate-400 flex items-center gap-1">
             <DollarSign className="w-3 h-3" />
             {listing.type === 'rent' ? '/yr' : 'outright'}
           </div>
         </div>
 
-         <div className="mt-3 flex items-center gap-2 rounded-2xl border border-slate-100 bg-slate-50 px-3 py-2.5">
+         <div className="mt-4 flex flex-wrap items-center gap-2 rounded-xl border border-slate-100 bg-slate-50 px-3 py-3">
           <div className={`w-7 h-7 rounded-full bg-gradient-to-br ${avatarGrad(landlordName)} flex items-center justify-center shrink-0 text-[9px] font-bold text-white`}>
             {getInitials(landlordName)}
           </div>
@@ -556,7 +568,7 @@ function ListingCard({
         </div>
       </div>
 
-      <div className="shrink-0 px-4 pb-4">
+      <div className="shrink-0 px-3 pb-3">
         {isConfirming ? (
            <div className="rounded-2xl border border-slate-200 bg-slate-50 p-3">
             <p className="text-xs font-semibold text-slate-700 mb-2.5 text-center">
@@ -584,13 +596,13 @@ function ListingCard({
             <button
               onClick={() => setConfirm({ id: listing.id, action: 'approve' })}
               disabled={busy}
-               className="flex-1 flex items-center justify-center gap-1.5 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white py-2.5 text-xs font-bold transition-colors disabled:opacity-60 shadow-sm">
+               className="flex-1 flex items-center justify-center gap-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white py-2.5 text-xs font-bold transition-colors disabled:opacity-60 shadow-sm">
               <CheckCircle className="w-3.5 h-3.5" /> Approve
             </button>
             <button
               onClick={() => setConfirm({ id: listing.id, action: 'reject' })}
               disabled={busy}
-               className="flex-1 flex items-center justify-center gap-1.5 rounded-2xl border border-red-200 bg-red-50 hover:bg-red-100 text-red-700 py-2.5 text-xs font-bold transition-colors disabled:opacity-60">
+               className="flex-1 flex items-center justify-center gap-1.5 rounded-xl border border-red-200 bg-white hover:bg-red-50 text-red-700 py-2.5 text-xs font-bold transition-colors disabled:opacity-60">
               <Trash2 className="w-3.5 h-3.5" /> Reject
             </button>
           </div>
@@ -599,3 +611,18 @@ function ListingCard({
     </div>
   )
 }
+
+const vettingStyles = `
+.lv-vetting{height:100vh;height:100dvh;color-scheme:light}
+.lv-vetting-content{background:#fff}
+.lv-vetting-content input,.lv-vetting-content select,.lv-vetting-content textarea{color:#0f172a;background-color:#fff;border-color:#cbd5e1;border-radius:10px;min-height:42px}
+.lv-vetting-content input::placeholder,.lv-vetting-content textarea::placeholder{color:#64748b;opacity:1}
+.lv-vetting-content input:focus,.lv-vetting-content select:focus,.lv-vetting-content textarea:focus{outline:2px solid #2563eb;outline-offset:2px}
+.lv-vetting-content button:focus-visible{outline:2px solid #2563eb;outline-offset:3px}
+.lv-vetting-content .text-slate-400{color:#64748b}
+.lv-vetting-content [data-testid="vetting-grid"]{isolation:isolate}
+.lv-vetting-content .overflow-y-auto{overscroll-behavior:contain;scrollbar-width:thin;scrollbar-color:#cbd5e1 #fff}
+.lv-vetting-card button{min-height:44px}
+@media(max-width:767px){.lv-vetting-content input,.lv-vetting-content select,.lv-vetting-content textarea{font-size:16px}.lv-vetting-content{padding-bottom:env(safe-area-inset-bottom)}}
+@media(prefers-reduced-motion:reduce){.lv-vetting-content *{transition:none!important;animation:none!important}}
+`

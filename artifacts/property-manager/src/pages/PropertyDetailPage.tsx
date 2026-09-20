@@ -302,7 +302,7 @@ export default function PropertyDetailPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#F8F8F6] flex flex-col">
+      <div className="min-h-screen bg-white flex flex-col">
         <PublicNavbar />
         <div className="flex-1 flex items-center justify-center">
           <div className="flex flex-col items-center gap-4">
@@ -316,7 +316,7 @@ export default function PropertyDetailPage() {
 
   if (notFound || !property) {
     return (
-      <div className="min-h-screen bg-[#F8F8F6] flex flex-col">
+      <div className="min-h-screen bg-white flex flex-col">
         <PublicNavbar />
         <div className="flex-1 flex flex-col items-center justify-center text-center px-4 pt-24">
           <div className="w-20 h-20 rounded-3xl bg-gray-100 flex items-center justify-center mx-auto mb-6">
@@ -378,7 +378,8 @@ export default function PropertyDetailPage() {
   } : undefined
 
   return (
-    <div className="min-h-screen bg-[#F8F8F6] selection:bg-blue-100 selection:text-blue-900">
+    <div className="lv-property-detail min-h-screen bg-white selection:bg-blue-100 selection:text-blue-900">
+      <style>{propertyDetailStyles}</style>
       {property && (
         <SEO
           title={`${property.title} — ${TYPE_LABEL[property.type]} in ${property.city ?? 'Nigeria'}`}
@@ -394,10 +395,10 @@ export default function PropertyDetailPage() {
       <PublicNavbar />
 
       {/* ── GALLERY ── */}
-      <section className="pt-[80px]">
+      <section className="lv-detail-gallery">
         <div className="relative">
           {/* Main image */}
-          <div className="relative w-full aspect-[4/3] max-h-[460px] md:aspect-auto md:h-[70vh] md:max-h-none overflow-hidden bg-gray-100">
+          <div className="lv-detail-hero relative w-full overflow-hidden bg-slate-100">
             <AnimatePresence mode="wait">
               {images[activeImg] ? (
                 <motion.img
@@ -431,17 +432,17 @@ export default function PropertyDetailPage() {
             <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-transparent pointer-events-none" />
 
             {/* Top controls */}
-            <div className="absolute top-6 left-6 right-6 z-10 flex items-center justify-between">
+            <div className="absolute top-3 left-3 right-3 sm:top-5 sm:left-5 sm:right-5 z-10 flex items-center justify-between">
               <button
                 onClick={() => navigate('/listings')}
-                className="flex items-center gap-2 px-4 py-2.5 bg-white/10 backdrop-blur-md border border-white/20 text-white rounded-2xl text-sm font-semibold hover:bg-white/20 transition-all active:scale-95"
+                className="flex items-center gap-2 px-4 py-2.5 bg-white border border-slate-200 text-slate-700 rounded-xl text-sm font-semibold hover:bg-blue-50 transition-all active:scale-95"
               >
                 <ArrowLeft className="w-4 h-4" /> Back
               </button>
               <div className="flex gap-2">
                 <button
                   onClick={handleShare}
-                  className="p-2.5 bg-white/10 backdrop-blur-md border border-white/20 text-white rounded-2xl hover:bg-white/20 transition-all active:scale-95"
+                  className="p-2.5 bg-white border border-slate-200 text-slate-700 rounded-xl hover:bg-blue-50 transition-all active:scale-95"
                 >
                   <Share2 className="w-4 h-4" />
                 </button>
@@ -480,7 +481,7 @@ export default function PropertyDetailPage() {
                     key={img.id}
                     onClick={() => setActiveImg(i)}
                     className={`relative shrink-0 w-16 h-12 md:w-20 md:h-14 rounded-xl overflow-hidden transition-all ${
-                      activeImg === i ? 'ring-2 ring-gray-900 ring-offset-1' : 'opacity-50 hover:opacity-80'
+                      activeImg === i ? 'ring-2 ring-blue-600 ring-offset-2' : 'opacity-50 hover:opacity-80'
                     }`}
                   >
                     <img src={getSupabaseImageUrl(img.storage_path)} className="w-full h-full object-cover" alt={img.alt_text || property.title} />
@@ -494,7 +495,7 @@ export default function PropertyDetailPage() {
 
       {/* ── TITLE BLOCK — below hero in white space ── */}
       <div className="bg-white border-b border-gray-100">
-        <div className="max-w-7xl mx-auto px-4 md:px-6 py-6 md:py-8">
+        <div className="max-w-7xl mx-auto px-5 sm:px-8 py-7 md:py-9">
           {/* Badges — only the availability badge (rent/sale) is shown to the
               public. Featured / Verified Landlord exist internally but are not
               displayed on the property details page. */}
@@ -523,8 +524,8 @@ export default function PropertyDetailPage() {
       </div>
 
       {/* ── MAIN CONTENT ── */}
-      <main className="max-w-7xl mx-auto px-4 md:px-6 py-6 md:py-10 pb-32 lg:pb-12">
-        <div className="grid lg:grid-cols-[1fr_400px] gap-6 lg:gap-10 xl:gap-14">
+      <main className="max-w-7xl mx-auto px-5 sm:px-8 py-7 md:py-10 pb-12">
+        <div className="grid lg:grid-cols-[minmax(0,1fr)_340px] xl:grid-cols-[minmax(0,1fr)_380px] gap-7 lg:gap-9 xl:gap-12">
 
           {/* LEFT COLUMN */}
           <motion.div
@@ -534,7 +535,7 @@ export default function PropertyDetailPage() {
             className="space-y-8 min-w-0"
           >
             {/* Stats row */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-[repeat(auto-fit,minmax(110px,1fr))] gap-3">
               {[
                 { icon: BedDouble, value: property.bedrooms,   label: 'Bedrooms',  suffix: '' },
                 { icon: Bath,      value: property.bathrooms,  label: 'Bathrooms', suffix: '' },
@@ -545,7 +546,7 @@ export default function PropertyDetailPage() {
               ].map(({ icon: Icon, value, label }) => (
                 <div
                   key={label}
-                  className="group bg-white rounded-2xl border border-gray-100 p-5 hover:border-gray-200 hover:shadow-md transition-all duration-200"
+                  className="group bg-white rounded-2xl border border-slate-200 p-4 sm:p-5 transition-colors duration-200 hover:border-blue-200"
                 >
                   <div className="w-9 h-9 rounded-xl bg-gray-50 group-hover:bg-blue-50 flex items-center justify-center mb-3 transition-colors">
                     <Icon className="w-4.5 h-4.5 text-gray-400 group-hover:text-blue-600 transition-colors" strokeWidth={1.5} />
@@ -556,9 +557,9 @@ export default function PropertyDetailPage() {
               ))}
             </div>
             {/* Tabs */}
-            <div className="bg-white rounded-3xl border border-gray-100 overflow-hidden">
+            <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden">
               {/* Tab bar */}
-              <div className="flex border-b border-gray-100">
+              <div className="flex border-b border-slate-200 bg-slate-50/60">
                 {([
                   { id: 'overview',  label: 'Overview' },
                   { id: 'amenities', label: 'Amenities' },
@@ -568,14 +569,14 @@ export default function PropertyDetailPage() {
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id)}
                     className={`relative flex-1 py-4 text-sm font-bold transition-colors ${
-                      activeTab === tab.id ? 'text-gray-900' : 'text-gray-400 hover:text-gray-600'
+                      activeTab === tab.id ? 'text-blue-700 bg-white' : 'text-slate-500 hover:text-blue-600'
                     }`}
                   >
                     {tab.label}
                     {activeTab === tab.id && (
                       <motion.div
                         layoutId="tab-line"
-                        className="absolute bottom-0 left-4 right-4 h-[2px] bg-gray-900 rounded-full"
+                        className="absolute bottom-0 left-4 right-4 h-[3px] bg-blue-600 rounded-full"
                       />
                     )}
                   </button>
@@ -583,7 +584,7 @@ export default function PropertyDetailPage() {
               </div>
 
               {/* Tab content */}
-              <div className="p-6 md:p-8">
+              <div className="p-5 sm:p-7">
                 <AnimatePresence mode="wait">
 
                   {activeTab === 'overview' && (
@@ -599,7 +600,7 @@ export default function PropertyDetailPage() {
                         <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2 mb-3">
                           About this property <Info className="w-4 h-4 text-gray-300" />
                         </h2>
-                        <p className="text-gray-500 leading-[1.8] text-[15px] whitespace-pre-line">
+                        <p className="text-slate-600 leading-[1.9] text-[15px] whitespace-pre-line break-words">
                           {property.description || 'No description provided for this listing.'}
                         </p>
                       </div>
@@ -631,7 +632,7 @@ export default function PropertyDetailPage() {
                     >
                       <h2 className="text-lg font-bold text-gray-900">What this place offers</h2>
                       {property.amenities && property.amenities.length > 0 ? (
-                        <div className="grid grid-cols-2 md:grid-cols-3 gap-2.5">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
                           {AMENITIES.filter(a => property.amenities?.includes(a.label)).map((amenity, i) => (
                             <motion.div
                               key={amenity.label}
@@ -695,18 +696,18 @@ export default function PropertyDetailPage() {
           </motion.div>
 
           {/* RIGHT SIDEBAR */}
-          <aside>
-            <div className="sticky top-24 space-y-4">
+          <aside id="property-contact" className="min-w-0 scroll-mt-24">
+            <div className="space-y-5">
 
               {/* Price + CTA card — hidden on mobile (sticky bar handles it) */}
-              <div className="hidden lg:block bg-white rounded-3xl border border-gray-100 shadow-xl shadow-gray-100/80 overflow-hidden">
+              <div className="lv-detail-booking bg-white rounded-2xl border border-slate-200 shadow-xl shadow-slate-200/40 overflow-hidden">
                 {/* Price header */}
-                <div className="px-7 pt-7 pb-5 border-b border-gray-50">
+                <div className="px-5 sm:px-6 pt-6 pb-5 border-b border-slate-100">
                   <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">
                     {TYPE_LABEL[property.type]}
                   </p>
-                  <div className="flex items-baseline gap-1.5">
-                    <span className="text-3xl font-black text-gray-900 tracking-tight">
+                  <div className="flex flex-wrap items-baseline gap-1.5">
+                    <span className="text-3xl font-extrabold text-blue-700 tracking-tight break-words">
                       {formatNaira(property.price)}
                     </span>
                     {property.type === 'rent' && (
@@ -717,7 +718,7 @@ export default function PropertyDetailPage() {
 
                 {/* Total Payable breakdown */}
                 {breakdown && (
-                  <div className="px-7 py-4 border-b border-gray-50 bg-blue-50/40">
+                  <div className="px-5 sm:px-6 py-5 border-b border-blue-100 bg-blue-50/40">
                     <div className="flex items-center gap-2 mb-3">
                       <ReceiptText className="w-4 h-4 text-blue-600" />
                       <p className="text-xs font-bold text-gray-900 uppercase tracking-widest">What you'll pay</p>
@@ -1084,7 +1085,7 @@ export default function PropertyDetailPage() {
             {/* Thumbnails */}
             {images.length > 1 && (
               <div
-                className="flex items-center gap-2 justify-center px-4 py-4 overflow-x-auto shrink-0"
+                className="flex items-center gap-2 px-4 py-4 overflow-x-auto shrink-0"
                 onClick={e => e.stopPropagation()}
               >
                 {images.map((img, i) => (
@@ -1111,7 +1112,7 @@ export default function PropertyDetailPage() {
       </AnimatePresence>
 
       {/* Mobile sticky bar */}
-      <div className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-xl border-t border-gray-100 px-4 py-3 flex items-center justify-between gap-4">
+      <div className="lv-detail-mobilebar lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-slate-200 px-4 py-3 flex flex-wrap items-center justify-between gap-3">
         <div>
           <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Price</p>
           <p className="text-xl font-black text-gray-900 tracking-tight">{formatNaira(property.price)}</p>
@@ -1137,7 +1138,7 @@ export default function PropertyDetailPage() {
                 window.scrollTo({ top: 0, behavior: 'smooth' })
               }
             }}
-            className="px-6 py-3 bg-emerald-600 text-white rounded-2xl font-bold text-sm hover:bg-emerald-700 transition-colors active:scale-95 shadow-lg shadow-emerald-600/20"
+            className="px-4 py-3 bg-blue-600 text-white rounded-xl font-bold text-sm hover:bg-blue-700 transition-colors active:scale-95 shadow-sm"
           >
             <Phone className="w-4 h-4 inline mr-2" />
             {userRole === 'guest' ? 'Sign in to Contact' : 'Contact'}
@@ -1149,3 +1150,23 @@ export default function PropertyDetailPage() {
     </div>
   )
 }
+
+const propertyDetailStyles = `
+.lv-property-detail{color:#0f172a;color-scheme:light}
+.lv-detail-gallery{max-width:1280px;margin:0 auto;padding:100px 32px 0}
+.lv-detail-hero{height:clamp(300px,48vw,560px);border-radius:24px}
+.lv-property-detail main .text-gray-400{color:#64748b}
+.lv-property-detail main button{min-height:44px}
+.lv-property-detail main textarea{color:#0f172a;background:#fff;border-color:#cbd5e1;font-size:16px}
+.lv-property-detail main textarea::placeholder{color:#64748b;opacity:1}
+.lv-property-detail main textarea:focus{border-color:#2563eb;box-shadow:0 0 0 3px #2563eb1f}
+.lv-detail-booking{border-top:3px solid #2563eb}
+.lv-detail-booking .justify-between{gap:12px;flex-wrap:wrap}
+.lv-property-detail button:focus-visible,.lv-property-detail a:focus-visible{outline:2px solid #2563eb;outline-offset:3px}
+.lv-detail-mobilebar{padding-bottom:max(12px,env(safe-area-inset-bottom));box-shadow:0 -4px 24px #0f172a08}
+.lv-detail-mobilebar>div:first-child{min-width:0}
+.lv-detail-mobilebar>div:first-child p:last-child{font-size:clamp(16px,4.5vw,20px);overflow-wrap:anywhere}
+@media(max-width:1023px){.lv-property-detail{padding-bottom:calc(120px + env(safe-area-inset-bottom))}}
+@media(max-width:639px){.lv-detail-gallery{padding:88px 12px 0}.lv-detail-hero{height:320px;border-radius:18px}}
+@media(prefers-reduced-motion:reduce){.lv-property-detail *{animation:none!important;transition:none!important}}
+`
