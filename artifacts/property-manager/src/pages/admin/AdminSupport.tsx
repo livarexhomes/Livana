@@ -1829,24 +1829,21 @@ function SupportTab({ onOpenQueued, view = 'queue' }: { onOpenQueued: (id: strin
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
           </div>
 
-          {/* Status filter pills */}
-          <div className="flex flex-wrap items-center gap-1.5">
-            {(['all', 'open', 'in_progress', 'resolved', 'closed'] as const).map(key => (
-              <button
-                key={key}
-                onClick={() => setFilterStatus(key)}
-                className={`focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:ring-offset-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:ring-offset-2 shrink-0 inline-flex items-center gap-1.5 h-8 px-3 rounded-lg text-[11px] font-semibold transition-all ${
-                  filterStatus === key
-                    ? 'bg-primary text-white shadow-sm'
-                    : 'bg-white border border-slate-200 text-slate-500 hover:border-slate-300 hover:bg-slate-50'
-                }`}
-              >
-                {key === 'all' ? 'All' : STATUS_META[key].label}
-                <span className={`inline-flex h-4 min-w-[16px] items-center justify-center rounded-full text-[10px] font-bold px-1 ${
-                  filterStatus === key ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-400'
-                }`}>{counts[key]}</span>
-              </button>
-            ))}
+          {/* Status dropdown */}
+          <div className="relative">
+            <select
+              aria-label="Filter tickets by status"
+              value={filterStatus}
+              onChange={event => setFilterStatus(event.target.value as typeof filterStatus)}
+              className="h-11 w-full appearance-none rounded-xl border border-slate-200 bg-white pl-3.5 pr-10 text-sm font-medium text-slate-700 shadow-sm transition-colors hover:border-blue-300 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/15"
+            >
+              {(['all', 'open', 'in_progress', 'resolved', 'closed'] as const).map(key => (
+                <option key={key} value={key}>
+                  {key === 'all' ? 'All' : STATUS_META[key].label} ({counts[key]})
+                </option>
+              ))}
+            </select>
+            <ChevronDownIcon aria-hidden="true" className="pointer-events-none absolute right-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
           </div>
         </div>
 

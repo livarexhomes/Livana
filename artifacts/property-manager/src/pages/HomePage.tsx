@@ -936,7 +936,7 @@ export default function HomePage() {
       </section>
 
       {/* ── WHY LIVAREX ── */}
-      <section className="lv-why bg-slate-950 py-16 md:py-20">
+      <section className="bg-slate-950 py-16 md:py-20">
         <div className="max-w-7xl mx-auto px-5 sm:px-8 grid gap-10 lg:grid-cols-[1fr_1.15fr] lg:items-center">
           <div>
             <p className="text-blue-400 text-xs font-bold uppercase tracking-[0.18em] mb-4">A clearer way to rent</p>
@@ -945,7 +945,7 @@ export default function HomePage() {
               Fake listings, unavailable properties and unclear processes waste renters&apos; time. Livarex helps create a safer property search by verifying listings and landlords before connecting renters.
             </p>
           </div>
-          <div className="lv-comparison grid gap-0 sm:grid-cols-2">
+          <div className="grid gap-3 sm:grid-cols-2">
             <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
               <p className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-4">Traditional property search</p>
               <ul className="space-y-3 text-sm text-slate-300">
@@ -963,7 +963,7 @@ export default function HomePage() {
       </section>
 
       {/* ── HOW IT WORKS ── */}
-      <section className="lv-process-section relative bg-[#fcfcfd] pt-16 pb-10 md:pt-20 md:pb-14 overflow-hidden">
+      <section className="lv-process-section relative bg-[#fcfcfd] pt-16 pb-20 md:pt-20 md:pb-14 overflow-hidden">
         {/* ── Ambient Background Elements ── */}
         <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-slate-200 to-transparent" />
 
