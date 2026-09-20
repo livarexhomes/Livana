@@ -106,13 +106,13 @@ export default function AboutPage() {
       `}</style>
       <main className="livarex-about">
         {/* WHO WE ARE */}
-        <section className="relative overflow-hidden bg-white pt-[88px]" aria-labelledby="about-title">
+        <section className="relative overflow-hidden bg-white pt-[55px]" aria-labelledby="about-title">
           <div className="pointer-events-none absolute right-0 top-0 h-[500px] w-[500px] rounded-full bg-blue-50 blur-3xl" aria-hidden="true" />
           <div className={`${container} relative py-12 md:py-16 lg:py-20`}>
             <div className="grid items-center gap-10 lg:grid-cols-[1.05fr_0.95fr] lg:gap-16">
               <div>
                 <div className="inline-flex items-center gap-2 rounded-full border border-blue-100 bg-blue-50 px-3 py-2 text-xs font-semibold text-blue-700">
-                  <span className="h-1.5 w-1.5 rounded-full bg-blue-600" aria-hidden="true" /> About LIVAREX
+                  <span className="h-3.5 w-3.5 rounded-full bg-blue-600" aria-hidden="true" /> About LIVAREX
                 </div>
                 <h1 id="about-title" className="mt-6 max-w-2xl text-[42px] font-semibold leading-[1.06] tracking-[-0.055em] sm:text-5xl lg:text-[64px]">
                   A place to live.<br />A connection<br /><span className="text-blue-600">you can build on.</span>
