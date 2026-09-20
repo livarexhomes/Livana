@@ -7,6 +7,7 @@ import ChatWidget from "@/components/ChatWidget";
 import WhatsAppWidget from "@/components/WhatsAppWidget";
 import { ThemeProvider, useTheme } from "@/lib/theme";
 import { slugToLocationLabel } from "@/lib/locationSlug";
+import LivarexLoader from "@/components/LivarexLoader";
 
 const HomePage = lazy(() => import("@/pages/HomePage"));
 const ListingsPage = lazy(() => import("@/pages/ListingsPage"));
@@ -69,11 +70,7 @@ function NotFound() {
 }
 
 function Loading() {
-  return (
-    <div className="min-h-screen w-full flex items-center justify-center">
-      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
-    </div>
-  );
+  return <LivarexLoader />;
 }
 
 const queryClient = new QueryClient();
