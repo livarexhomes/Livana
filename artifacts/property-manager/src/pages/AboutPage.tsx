@@ -5,43 +5,7 @@ import PublicNavbar from '@/components/layout/PublicNavbar'
 import Footer from '@/components/layout/Footer'
 import SEO from '@/components/SEO'
 
-const verificationSteps = [
-  {
-    id: 'signup',
-    number: '01',
-    title: 'Sign up & verify your identity',
-    description:
-      'Create your LIVAREX landlord account for free, every landlord starts with verification. We confirm who you are before your property can appear on LIVAREX.',
-  },
-  {
-    id: 'listing',
-    number: '02',
-    title: 'Create your property listing',
-    description:
-      "Add your property's details, photos, location, rent and available features.",
-  },
-  {
-    id: 'review',
-    number: '03',
-    title: 'Property review & approval',
-    description:
-      'LIVAREX reviews the submitted property information and verifies the listing before it goes live.',
-  },
-  {
-    id: 'connect',
-    number: '04',
-    title: 'Connect directly with tenants',
-    description:
-      'Your approved property is shown to prospective tenants, who can contact you through LIVAREX.',
-  },
-  {
-    id: 'rental',
-    number: '05',
-    title: 'Complete the rental',
-    description:
-      'You and the tenant proceed directly, with LIVAREX providing the platform and transaction support where applicable.',
-  },
-]
+
 
 const ongoingReviewItems = [
   {
@@ -202,15 +166,7 @@ export default function AboutPage() {
           </div>
         </section>
 
-        {/* ONE PROCESS SECTION; NO TABS OR DUPLICATE IDS */}
-        <section id="how-it-works" className="py-16 md:py-20" aria-labelledby="process-title">
-          <div className={container}>
-            <div className="flex flex-col justify-between gap-5 md:flex-row md:items-end"><div><SectionLabel>From signup to rental</SectionLabel><h2 id="process-title" className={`${heading} mt-4`}>How It Works</h2></div><p className={`${bodyCopy} max-w-sm`}>A defined process for landlords, with verification before a property goes live.</p></div>
-            <ol className="mt-8 divide-y divide-slate-100 border-y border-slate-200">
-              {verificationSteps.map(step => <li key={step.id} className="grid gap-3 py-6 sm:grid-cols-[50px_1fr] sm:gap-5 lg:grid-cols-[50px_0.8fr_1.2fr]"><span className="flex h-10 w-10 items-center justify-center rounded-full border border-blue-100 bg-blue-50 text-xs font-bold text-blue-600">{step.number}</span><h3 className="text-lg font-semibold leading-7 tracking-tight sm:pt-1">{step.title}</h3><p className={`${bodyCopy} sm:col-start-2 lg:col-start-auto`}>{step.description}</p></li>)}
-            </ol>
-          </div>
-        </section>
+        
 
         {/* ONGOING ACCOUNTABILITY */}
         <section className="border-t border-slate-100 bg-slate-50 py-16 md:py-20" aria-labelledby="review-title">

@@ -22,6 +22,52 @@ const benefits = [
     "No agent commission",
     "Manage your property your way"
 ]
+const verificationSteps = [
+    {
+        id: 'signup',
+        number: '01',
+        title: 'Sign up & verify your identity',
+        description:
+            'Create your LIVAREX landlord account for free, every landlord starts with verification. We confirm who you are before your property can appear on LIVAREX.',
+    },
+    {
+        id: 'listing',
+        number: '02',
+        title: 'Create your property listing',
+        description:
+            "Add your property's details, photos, location, rent and available features.",
+    },
+    {
+        id: 'review',
+        number: '03',
+        title: 'Property review & approval',
+        description:
+            'LIVAREX reviews the submitted property information and verifies the listing before it goes live.',
+    },
+    {
+        id: 'connect',
+        number: '04',
+        title: 'Connect directly with tenants',
+        description:
+            'Your approved property is shown to prospective tenants, who can contact you through LIVAREX.',
+    },
+    {
+        id: 'rental',
+        number: '05',
+        title: 'Complete the rental',
+        description:
+            'You and the tenant proceed directly, with LIVAREX providing the platform and transaction support where applicable.',
+    },
+]
+
+const landlordVerificationProcess = [
+  { title: "Account Registration", badge: "Required", description: "Landlords create a verified account with a valid email address and Nigerian phone number. OTP verification confirms the phone immediately.", icon: Users },
+  { title: "Government ID Submission", badge: "Required", description: "Every landlord must upload a clear photo of one government-issued ID: NIN slip, international passport, driver's license, or voter's card.", icon: ShieldCheck },
+  { title: "Manual Document Review", badge: "24–48 hrs", description: "Our verification team reviews every submission within 24–48 hours. We cross-check the ID details, confirm identity, and check against our fraud database.", icon: SearchCheck },
+  { title: "Property Ownership Confirmation", badge: "Per listing", description: "For each listing, we review proof of ownership or legal authority to let (title deed, C of O, allocation letter, or estate agent authority). Landlords listing without proof are declined.", icon: HousePlus },
+  { title: "Verified Badge Awarded", badge: "Ongoing", description: "Approved landlords receive the ✅ Verified badge on their profile and all their listings. This badge tells tenants: \"This person is real, their identity is confirmed, and their property claim has been checked.\"", icon: BadgeCheck },
+]
+
 const benefitIcons = [HousePlus, Users, BadgeCheck, Handshake, CircleDollarSign, SlidersHorizontal]
 
 const faqs = [
@@ -31,8 +77,18 @@ const faqs = [
     { q: 'Do I still make the final rental decision?', a: 'Yes. You remain involved in the final rental process and make your own property decisions. LIVAREX provides platform support where applicable.' },
 ]
 
+const container = 'mx-auto max-w-7xl px-5 sm:px-8'
+const eyebrow = 'text-[10px] font-bold uppercase tracking-[0.15em] leading-relaxed text-blue-600'
+const heading = 'text-3xl font-semibold leading-tight tracking-tight text-slate-900 md:text-4xl'
+const bodyCopy = 'text-sm leading-7 text-slate-600 md:text-base'
+
+
 function StartLink({ children = 'List your property', light = false }: { children?: React.ReactNode; light?: boolean }) {
     return <Link href="/landlord/register" className={`lv-button ${light ? 'lv-button-white' : 'lv-button-primary'}`}>{children}<ArrowUpRight size={18} aria-hidden="true" /></Link>
+}
+
+function SectionLabel({ children }: { children: React.ReactNode }) {
+    return <p className={eyebrow}>{children}</p>
 }
 
 function ProcessGuide() {
@@ -78,7 +134,7 @@ export default function LandlordVerify() {
                     </figure>
                 </div>
             </section>
-            <div className="lv-principles"><div className="lv-container lv-principles-grid"><p>Less friction.<br /><strong>More ownership.</strong></p><span><HousePlus aria-hidden="true" />No upfront listing fee</span><span><ShieldCheck aria-hidden="true" />Verification before publication</span><span><MessageSquare aria-hidden="true" />Direct conversations</span></div></div>
+            <div className="lv-principles"><div className="lv-container lv-principles-grid"><p>Less friction.<br /><strong>More ownership.</strong></p><span><HousePlus aria-hidden="true" />Zero listing fee</span><span><ShieldCheck aria-hidden="true" />Verification before publication</span><span><MessageSquare aria-hidden="true" />Direct conversations</span></div></div>
             <section id="how-it-works" className="lv-section lv-container" aria-labelledby="lv-process-title">
                 <div className="lv-section-heading"><h2 id="lv-process-title">How It Works</h2></div>
                 <ProcessGuide />
@@ -87,36 +143,36 @@ export default function LandlordVerify() {
                 <div className="lv-container lv-section">
                     <div className="lv-value-heading">
                         <h2 id="lv-benefits-title">Why list with <span>LIVAREX?</span></h2>
-                        <div className="lv-value-onboarding" aria-label="Sign up for free, then get verified">
-                            <span><span className="lv-value-dot">01</span>Sign up for free</span>
-                            <ArrowRight size={16} aria-hidden="true" />
-                            <span><span className="lv-value-dot">02</span>Get verified</span>
-                        </div>
                     </div>
-                    <ul className="lv-value-grid">
-                        {benefits.map((title, index) => {
-                            const Icon = benefitIcons[index]
-                            return (
-                                <li key={title} className={`lv-value-card ${index === 0 ? 'lv-value-featured' : ''} ${index === 5 ? 'lv-value-wide' : ''}`}>
-                                    <div className="lv-value-top">
-                                        <span className="lv-value-icon"><Icon size={24} strokeWidth={1.6} aria-hidden="true" /></span>
-                                        <span className="lv-value-count" aria-hidden="true">0{index + 1}</span>
-                                    </div>
-                                    {index === 0 && <div className="lv-value-price" aria-hidden="true">₦0</div>}
-                                    <div className="lv-value-copy">
+                    <ol className="lv-verification-list">
+                        {landlordVerificationProcess.map(({ title, badge, description, icon: Icon }, index) => (
+                            <li key={title} className="lv-verification-step">
+                                <span className="lv-verification-number">{index + 1}</span>
+                                <div className="lv-verification-card">
+                                    <div className="lv-verification-step-heading">
+                                        <span className="lv-verification-icon"><Icon size={22} aria-hidden="true" /></span>
                                         <h3>{title}</h3>
-                                        {index === 0 ? <StartLink light>Sign up for free</StartLink> : <span className="lv-value-tick"><Check size={15} aria-hidden="true" /></span>}
+                                        <span className="lv-verification-badge">{badge}</span>
                                     </div>
-                                    {index === 5 && <div className="lv-value-sliders" aria-hidden="true"><i /><i /><i /></div>}
-                                </li>
-                            )
-                        })}
-                    </ul>
+                                    <p>{description}</p>
+                                </div>
+                            </li>
+                        ))}
+                    </ol>
                 </div>
             </section>
-            <section className="lv-container lv-section lv-control" aria-labelledby="lv-control-title"><div><span className="lv-eyebrow">CLARITY AT EVERY STAGE</span><h2 id="lv-control-title">A clear path.<br /><span>No guessing what’s next.</span></h2><p className="lv-body-copy">From identity verification to an approved listing, each stage has a purpose. You stay involved in the decisions that matter.</p><a className="lv-text-link" href="#how-it-works">Explore the listing process<ArrowRight size={17} aria-hidden="true" /></a></div><div className="lv-timeline-card"><div className="lv-timeline-heading"><span className="lv-icon"><Building2 size={21} aria-hidden="true" /></span><div><h3>Your listing journey</h3><p>An example of the path to publication</p></div></div><ol>{[{title:'Identity verification', text:'Establish your landlord profile', icon: ShieldCheck}, {title:'Property submission', text:'Share the details that tenants need', icon: HousePlus}, {title:'LIVAREX review', text:'Complete the required approval process', icon: SearchCheck}, {title:'Ready to be discovered', text:'Approved listings become visible to tenants', icon: Users}].map(({title,text,icon:Icon},index)=><li key={title}><span className="lv-timeline-icon"><Icon size={19} aria-hidden="true" /></span><div><h4>{title}</h4><p>{text}</p></div><span className="lv-caption">0{index+1}</span></li>)}</ol></div></section>
-            <section className="lv-container lv-faq-section" aria-labelledby="lv-faq-title"><div><span className="lv-eyebrow">A LITTLE MORE CLARITY</span><h2 id="lv-faq-title">Before you<br /><span>get started.</span></h2></div><div className="lv-faq-list">{faqs.map(({q,a})=><details key={q}><summary>{q}<ChevronDown size={19} aria-hidden="true" /></summary><p>{a}</p></details>)}</div></section>
-            <section className="lv-container lv-cta-wrap" aria-labelledby="lv-cta-title"><div className="lv-cta"><div><span className="lv-eyebrow">YOUR PROPERTY. YOUR POSSIBILITIES.</span><h2 id="lv-cta-title">Your next tenant starts<br />with your first listing.</h2><p>Take the first step. We’ll guide you through the process.</p></div><div className="lv-cta-action"><StartLink light /><span>No upfront listing fee.</span></div></div></section>
+            <section className="lv-container lv-section lv-control" aria-labelledby="lv-control-title"><div><span className="lv-eyebrow">CLARITY AT EVERY STAGE</span><h2 id="lv-control-title">A clear path.<br /><span>No guessing what’s next.</span></h2><p className="lv-body-copy">From identity verification to an approved listing, each stage has a purpose. You stay involved in the decisions that matter.</p><a className="lv-text-link" href="#how-it-works">Explore the listing process<ArrowRight size={17} aria-hidden="true" /></a></div><div className="lv-timeline-card"><div className="lv-timeline-heading"><span className="lv-icon"><Building2 size={21} aria-hidden="true" /></span><div><h3>Your listing journey</h3><p>An example of the path to publication</p></div></div><ol>{[{ title: 'Identity verification', text: 'Establish your landlord profile', icon: ShieldCheck }, { title: 'Property submission', text: 'Share the details that tenants need', icon: HousePlus }, { title: 'LIVAREX review', text: 'Complete the required approval process', icon: SearchCheck }, { title: 'Ready to be discovered', text: 'Approved listings become visible to tenants', icon: Users }].map(({ title, text, icon: Icon }, index) => <li key={title}><span className="lv-timeline-icon"><Icon size={19} aria-hidden="true" /></span><div><h4>{title}</h4><p>{text}</p></div><span className="lv-caption">0{index + 1}</span></li>)}</ol></div></section>
+            {/* ONE PROCESS SECTION; NO TABS OR DUPLICATE IDS ooo*/}
+            {/* <section id="signup-to-rental" className="py-16 md:py-20" aria-labelledby="process-title">
+                <div className={container}>
+                    <div className="flex flex-col justify-between gap-5 md:flex-row md:items-end"><div><SectionLabel>From signup to rental</SectionLabel><h2 id="process-title" className={`${heading} mt-4`}>How It Works</h2></div><p className={`${bodyCopy} max-w-sm`}>A defined process for landlords, with verification before a property goes live.</p></div>
+                    <ol className="mt-8 divide-y divide-slate-100 border-y border-slate-200">
+                        {verificationSteps.map(step => <li key={step.id} className="grid gap-3 py-6 sm:grid-cols-[50px_1fr] sm:gap-5 lg:grid-cols-[50px_0.8fr_1.2fr]"><span className="flex h-10 w-10 items-center justify-center rounded-full border border-blue-100 bg-blue-50 text-xs font-bold text-blue-600">{step.number}</span><h3 className="text-lg font-semibold leading-7 tracking-tight sm:pt-1">{step.title}</h3><p className={`${bodyCopy} sm:col-start-2 lg:col-start-auto`}>{step.description}</p></li>)}
+                    </ol>
+                </div>
+            </section> */}
+            <section className="lv-container lv-faq-section" aria-labelledby="lv-faq-title"><div><span className="lv-eyebrow">A LITTLE MORE CLARITY</span><h2 id="lv-faq-title">Before you<br /><span>get started.</span></h2></div><div className="lv-faq-list">{faqs.map(({ q, a }) => <details key={q}><summary>{q}<ChevronDown size={19} aria-hidden="true" /></summary><p>{a}</p></details>)}</div></section>
+            <section className="lv-container lv-cta-wrap" aria-labelledby="lv-cta-title"><div className="lv-cta"><div><span className="lv-eyebrow">YOUR PROPERTY. YOUR POSSIBILITIES.</span><h2 id="lv-cta-title">Your next tenant starts<br />with your first listing.</h2><p>Take the first step. We’ll guide you through the process.</p></div><div className="lv-cta-action"><StartLink light /><span>Zero listing fee.</span></div></div></section>
         </main>
         <Footer />
     </div>
@@ -182,4 +238,37 @@ const styles = `
 .lv-value-sliders i:nth-child(2):after{left:65%}.lv-value-sliders i:nth-child(3):after{left:40%}
 @media(max-width:1023px){.lv-value-heading{align-items:flex-start;flex-direction:column;gap:20px}.lv-value-grid{grid-template-columns:1fr 1fr}.lv-value-featured{grid-row:span 2}.lv-value-wide{grid-column:1/-1}.lv-value-card{padding:23px}.lv-value-copy h3{font-size:16px}.lv-value-featured h3{font-size:29px}}
 @media(max-width:600px){.lv-value-grid{grid-template-columns:1fr;gap:12px}.lv-value-featured{grid-row:auto;min-height:350px}.lv-value-wide{grid-column:auto}.lv-value-price{font-size:86px;padding-block:24px}.lv-value-featured h3{max-width:none}.lv-value-card:not(.lv-value-featured){display:flex;align-items:center;gap:16px;min-height:110px;padding:21px}.lv-value-card:not(.lv-value-featured) .lv-value-top{margin:0}.lv-value-card:not(.lv-value-featured) .lv-value-count{display:none}.lv-value-card:not(.lv-value-featured) .lv-value-copy{flex:1}.lv-value-copy h3{font-size:15px}.lv-value-sliders{display:none}.lv-value-onboarding{gap:10px;font-size:11px}.lv-value-wide .lv-value-tick{display:grid}}
+
+
+
+.lv-verification-list{list-style:none;padding:0;margin:0;display:grid;grid-template-columns:minmax(0,1.05fr) repeat(2,minmax(0,1fr));gap:20px}
+.lv-verification-step{position:relative;min-width:0;overflow:hidden;border:1px solid #e0e7f1;border-radius:22px;padding:28px;background:#fff;box-shadow:0 3px 7px #18305403;transition:border-color .2s,box-shadow .2s}
+.lv-verification-step:hover{border-color:#b9cef1;box-shadow:0 12px 32px -20px #1d4ed83b}
+.lv-verification-number{position:absolute;right:26px;top:30px;font-size:12px;font-weight:650;color:#72849e;font-variant-numeric:tabular-nums}
+.lv-verification-card{position:relative}
+.lv-verification-step-heading{display:grid;grid-template-columns:minmax(0,1fr);justify-items:start;gap:13px}
+.lv-verification-icon{display:grid;place-items:center;width:48px;height:48px;border:1px solid #e0eafe;border-radius:15px;background:linear-gradient(145deg,#fff,#eef4ff);color:#2563eb;margin-bottom:15px;box-shadow:0 3px 6px #2563eb06}
+.lv-verification-step-heading h3{font-size:20px;font-weight:650;line-height:1.35;letter-spacing:-.03em;max-width:250px}
+.lv-verification-badge{display:inline-flex;align-items:center;gap:6px;border:1px solid #e3e9f2;border-radius:7px;padding:5px 9px;background:#f8fafc;color:#52637a;font-size:10px;font-weight:650;line-height:1.5}
+.lv-verification-badge:before{content:'';width:5px;height:5px;border-radius:50%;background:#7b91b3}
+.lv-verification-card p{font-size:13px;line-height:1.85;color:#607087;margin-top:16px}
+.lv-verification-step:first-child{grid-row:span 2;padding:34px;background:linear-gradient(155deg,#2864e8 0%,#1f50c0 60%,#163d98 100%);border-color:#285bce;color:white;display:flex;flex-direction:column;box-shadow:0 14px 34px -22px #1746b488}
+.lv-verification-step:first-child:before{content:'';position:absolute;width:370px;height:370px;border:1px solid #ffffff17;border-radius:50%;right:-180px;bottom:-130px;box-shadow:0 0 0 38px #ffffff04,0 0 0 76px #ffffff04;pointer-events:none}
+.lv-verification-step:first-child:after{content:'';position:absolute;left:34px;bottom:38px;width:104px;height:104px;border:1px solid #ffffff30;border-radius:24px;transform:rotate(-9deg);background:linear-gradient(135deg,#ffffff14,#ffffff03);box-shadow:10px 10px 0 -1px #ffffff07;pointer-events:none}
+.lv-verification-step:first-child .lv-verification-card{z-index:1;padding-bottom:155px}
+.lv-verification-step:first-child .lv-verification-number{font-size:112px;line-height:1;letter-spacing:-.07em;color:#ffffff18;top:auto;bottom:22px;right:28px}
+.lv-verification-step:first-child .lv-verification-icon{background:#ffffff12;border-color:#ffffff30;color:white;width:58px;height:58px;margin-bottom:35px;box-shadow:inset 0 1px 0 #ffffff20}
+.lv-verification-step:first-child h3{font-size:clamp(28px,2.6vw,36px);line-height:1.12;letter-spacing:-.045em}
+.lv-verification-step:first-child .lv-verification-badge{background:#ffffff10;border-color:#ffffff30;color:#f0f5ff;margin-top:4px}
+.lv-verification-step:first-child .lv-verification-badge:before{background:#b8d6ff}
+.lv-verification-step:first-child p{color:#e1eaff;font-size:15px;line-height:1.9;margin-top:23px}
+.lv-verification-step:nth-child(3) .lv-verification-badge{color:#936026;background:#fffbeb;border-color:#f5e5bb}
+.lv-verification-step:nth-child(3) .lv-verification-badge:before{background:#d89e39}
+.lv-verification-step:last-child{background:linear-gradient(135deg,#f4f8ff,#fff);border-color:#ccdcf7}
+.lv-verification-step:last-child .lv-verification-icon{color:#1d4ed8;border-color:#cdddf9;background:#eaf2ff}
+.lv-verification-step:last-child .lv-verification-badge{color:#237358;background:#f0faf5;border-color:#d4ecdf}
+.lv-verification-step:last-child .lv-verification-badge:before{background:#359a73}
+@media(max-width:1023px){.lv-verification-list{grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}.lv-verification-step{padding:25px}.lv-verification-step:first-child{grid-row:span 2;padding:28px}.lv-verification-step:last-child{grid-column:1/-1}.lv-verification-step:last-child .lv-verification-card{display:grid;grid-template-columns:minmax(0,.7fr) minmax(0,1.3fr);gap:28px;align-items:center}.lv-verification-step:last-child p{margin-top:0}}
+@media(max-width:600px){.lv-verification-list{grid-template-columns:1fr;gap:14px}.lv-verification-step{padding:24px;border-radius:18px}.lv-verification-step:first-child{grid-row:auto;padding:26px}.lv-verification-step:first-child .lv-verification-card{padding-bottom:65px}.lv-verification-step:first-child .lv-verification-icon{margin-bottom:12px}.lv-verification-step:first-child h3{font-size:30px;max-width:none}.lv-verification-step:first-child:after{width:48px;height:48px;bottom:24px;left:26px;border-radius:12px}.lv-verification-step:first-child .lv-verification-number{font-size:78px;bottom:15px}.lv-verification-step:last-child{grid-column:auto}.lv-verification-step:last-child .lv-verification-card{display:block}.lv-verification-step:last-child p{margin-top:16px}.lv-verification-icon{margin-bottom:9px}.lv-verification-card p{font-size:14px}}
+@media(prefers-reduced-motion:reduce){.lv-verification-step{transition:none}}
 `

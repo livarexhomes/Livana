@@ -49,6 +49,7 @@ const AdminActivity = lazy(() => import("@/pages/admin/AdminActivity"));
 const AdminSettings = lazy(() => import("@/pages/admin/AdminSettings"));
 const AdminSupport = lazy(() => import("@/pages/admin/AdminSupport"));
 const AdminHelp = lazy(() => import("@/pages/admin/AdminHelp"));
+const FAQPage = lazy(() => import("@/pages/faq"));
 
 const UserDashboard = lazy(() => import("@/pages/user/UserDashboard"));
 const UserProfile = lazy(() => import("@/pages/user/UserProfile"));
@@ -117,9 +118,11 @@ function Router() {
         <Route path="/auth/callback" component={AuthCallbackPage} />
         <Route path="/about" component={AboutPage} />
         <Route path="/contact" component={ContactPage} />
+        <Route path="/faq" component={FAQPage} />
         <Route path="/terms" component={TermsPage} />
         <Route path="/privacy-policy" component={PrivacyPage} />
         <Route path="/cookie-policy" component={CookiePolicyPage} />
+        
 
         <Route path="/landlord/register" component={LandlordRegisterPage} />
         <Route path="/landlord" component={LandlordDashboard} />
