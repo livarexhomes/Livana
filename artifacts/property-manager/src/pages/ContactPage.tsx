@@ -322,7 +322,7 @@ export default function ContactPage() {
                 <div className="grid gap-4 md:grid-cols-[1.25fr_0.75fr]">
                   <div className="overflow-hidden rounded-[1.75rem] border border-white/10 bg-white/5 p-3 shadow-[0_26px_80px_-28px_rgba(14,116,144,0.75)]">
                     <img
-                      src="https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&w=1200&q=80"
+                      src="/support.png"
                       alt="Modern residential property exterior"
                       className="h-[22rem] w-full rounded-[1.2rem] object-cover sm:h-[27rem]"
                     />
@@ -508,7 +508,7 @@ export default function ContactPage() {
                   <h3 className="mt-3 text-3xl font-semibold leading-tight tracking-[-0.04em]">A conversation.<br />A clearer next step.</h3>
                   <p className="mt-4 max-w-xs text-sm leading-7 text-blue-100">Prefer to reach us directly? Choose the channel that works for you.</p>
                   <div className="mt-8 divide-y divide-white/15">
-                    {channels.map(({label,value,href,note,icon:Icon}) => <a key={label} href={href} target={href.startsWith('http') ? '_blank' : undefined} rel={href.startsWith('http') ? 'noopener noreferrer' : undefined} className="group flex items-start gap-3 py-5"><span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/10 transition-colors group-hover:bg-white/20"><Icon className="h-4 w-4" aria-hidden="true" /></span><span className="min-w-0 flex-1"><span className="block text-xs font-medium text-blue-200">{label}</span><span className="mt-1 block break-words text-sm font-semibold text-white">{value}</span><span className="mt-1 block text-xs leading-5 text-blue-100">{note}</span></span><ArrowUpRight className="mt-1 h-4 w-4 shrink-0 text-blue-200" aria-hidden="true" /></a>)}
+                    {channels.map(({ label, value, href, note, icon: Icon }) => <a key={label} href={href} target={href.startsWith('http') ? '_blank' : undefined} rel={href.startsWith('http') ? 'noopener noreferrer' : undefined} className="group flex items-start gap-3 py-5"><span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/10 transition-colors group-hover:bg-white/20"><Icon className="h-4 w-4" aria-hidden="true" /></span><span className="min-w-0 flex-1"><span className="block text-xs font-medium text-blue-200">{label}</span><span className="mt-1 block break-words text-sm font-semibold text-white">{value}</span><span className="mt-1 block text-xs leading-5 text-blue-100">{note}</span></span><ArrowUpRight className="mt-1 h-4 w-4 shrink-0 text-blue-200" aria-hidden="true" /></a>)}
                   </div>
                 </div>
                 <div className="relative mt-auto border-t border-white/15 pt-6"><p className="text-xs font-semibold text-white">Property enquiries. Landlord support. Account help.</p><p className="mt-2 text-xs leading-6 text-blue-100">Share your listing reference when you have one to help us understand your enquiry.</p></div>

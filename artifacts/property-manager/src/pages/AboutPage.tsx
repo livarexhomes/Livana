@@ -94,7 +94,7 @@ export default function AboutPage() {
               </div>
               <figure className="relative min-w-0 pb-7">
                 <div className="overflow-hidden rounded-[24px] bg-slate-100">
-                  <img src="https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?auto=format&fit=crop&w=1200&q=80" alt="Bright apartment interior with a living area and natural light" width={800} height={900} fetchPriority="high" className="h-[360px] w-full object-cover sm:h-[460px] lg:h-[500px]" />
+                  <img src="/abouthero.png" alt="Bright apartment interior with a living area and natural light" width={800} height={900} fetchPriority="high" className="h-[360px] w-full object-cover sm:h-[460px] lg:h-[500px]" />
                 </div>
                 <figcaption className="relative mx-4 -mt-14 flex items-center gap-4 rounded-2xl border border-slate-100 bg-white p-5 shadow-[0_16px_40px_-20px_rgba(15,23,42,0.25)] sm:mx-6">
                   <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-600"><Home className="h-6 w-6" aria-hidden="true" /></span>

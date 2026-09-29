@@ -6,7 +6,7 @@ import Footer from '@/components/layout/Footer'
 import SEO from '@/components/SEO'
 
 // Drop-in replacement for pages/Landlordverify.tsx. No additional packages required.
-const propertyImage = 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&w=1400&q=80'
+const propertyImage = "/landlordver.png"
 const steps = [
     { title: "Sign up & verify your identity", description: "Create your LIVAREX landlord account for free, every landlord starts with verification. We confirm who you are before your property can appear on LIVAREX.", icon: ShieldCheck },
     { title: "Create your property listing", description: "Add your property's details, photos, location, rent and available features.", icon: HousePlus },
