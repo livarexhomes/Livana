@@ -825,6 +825,17 @@ function AdminChatThread({
             {customer?.email && <p className="text-[11px] text-slate-500 mt-0.5 truncate">{customer.email}</p>}
             {customer?.phone && <p className="text-[11px] text-slate-500 truncate">{customer.phone}</p>}
             {!customer?.email && !customer?.phone && <p className="text-[11px] text-slate-400">No contact details</p>}
+            {/* Reply via email - opens Gmail in new tab */}
+            {customer?.email && (
+              <a
+                href={`https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(customer.email)}&su=${encodeURIComponent(`Re: ${ticket.subject || 'Your support ticket'}`)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-center gap-1.5 mt-3 py-2 rounded-lg bg-slate-900 hover:bg-slate-800 text-white text-[12px] font-medium transition-colors"
+              >
+                <Mail className="w-3.5 h-3.5" /> Reply via Email
+              </a>
+            )}
           </div>
 
           {/* Property context (auto-attached) */}
