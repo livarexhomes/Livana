@@ -165,8 +165,7 @@ export default function LandlordVerify() {
             <section id="verification-process" className="lv-verification-process-section" aria-labelledby="lv-verification-title">
                 <div className="lv-container">
                     <div className="lv-verification-intro">
-                        <span className="lv-verification-eyebrow">VERIFICATION PROCESS</span>
-                        <h2 id="lv-verification-title">How LIVAREX Verifies Landlords</h2>
+                        <h2 id="lv-verification-title">How LIVAREX <span>Verifies Landlords</span></h2>
                         <p>Trust is our product. Every landlord on LIVAREX goes through a manual identity and property verification process before their listings go live.</p>
                     </div>
                     <div className="lv-verification-grid">
@@ -258,11 +257,12 @@ const styles = `
 .lv-verification-process-section{padding:80px 0;background:linear-gradient(180deg,#f7f9fc 0%,#ffffff 100%);border-block:1px solid #edf0f5;position:relative;overflow:hidden}
 .lv-verification-process-section:before{content:'';position:absolute;top:-200px;right:-200px;width:500px;height:500px;background:radial-gradient(circle,#dbeafe 0%,transparent 70%);opacity:.5;pointer-events:none}
 .lv-verification-process-section:after{content:'';position:absolute;bottom:-200px;left:-200px;width:500px;height:500px;background:radial-gradient(circle,#e0e7ff 0%,transparent 70%);opacity:.4;pointer-events:none}
-.lv-verification-intro{text-align:center;max-width:680px;margin:0 auto 56px;position:relative;z-index:1}
+.lv-verification-intro{text-align:left;max-width:560px;margin:0 0 48px;position:relative;z-index:1}
 .lv-verification-eyebrow{display:inline-flex;align-items:center;gap:8px;font-size:11px;font-weight:700;letter-spacing:.15em;color:#2563eb;background:#eff5ff;border:1px solid #dbe7fd;padding:7px 14px;border-radius:99px;margin-bottom:18px}
 .lv-verification-eyebrow:before{content:'';width:6px;height:6px;border-radius:50%;background:#2563eb}
-.lv-verification-intro h2{font-size:clamp(30px,3.4vw,42px);font-weight:650;letter-spacing:-.035em;margin-bottom:16px;line-height:1.15}
-.lv-verification-intro p{font-size:16px;line-height:1.8;color:#607087;max-width:560px;margin-inline:auto}
+.lv-verification-intro h2{font-size:clamp(30px,3.4vw,42px);font-weight:650;letter-spacing:-.035em;margin-bottom:16px;line-height:1.15;color:#142039}
+.lv-verification-intro h2 span{color:#718097}
+.lv-verification-intro p{font-size:16px;line-height:1.8;color:#607087;max-width:540px}
 .lv-verification-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px;position:relative;z-index:1}
 .lv-verification-card{position:relative;background:#fff;border:1px solid #e1e7f0;border-radius:18px;padding:30px;transition:all .25s ease;display:flex;flex-direction:column}
 .lv-verification-card:hover{border-color:#b9cef1;box-shadow:0 18px 40px -22px #1d4ed83b;transform:translateY(-2px)}
