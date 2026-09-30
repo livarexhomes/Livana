@@ -1562,6 +1562,20 @@ function ChatRequestDetail({ inquiry, onBack, onMarkRead, onStatusChange, agents
           This request is closed. Change status to reopen.
         </div>
       )}
+
+      {/* Reply via email */}
+      {inquiry.email && (
+        <div className="px-3 py-2.5 sm:px-5 sm:py-3 border-t border-slate-100 shrink-0">
+          <a
+            href={`https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(inquiry.email)}&su=${encodeURIComponent(`Re: ${inquiry.subject || 'Your inquiry'}`)}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-[13.5px] font-medium transition-colors"
+          >
+            <Mail className="w-4 h-4" /> Reply via Email
+          </a>
+        </div>
+      )}
     </div>
   )
 }
@@ -2051,7 +2065,9 @@ function ContactDetail({ contact, onBack }: {
       {/* Footer — reply via email */}
       <div className="px-5 py-3.5 border-t border-slate-100 shrink-0">
         <a
-          href={`mailto:${contact.email}?subject=${encodeURIComponent(`Re: ${contact.subject || 'Your message'}`)}`}
+          href={`https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(contact.email)}&su=${encodeURIComponent(`Re: ${contact.subject || 'Your message'}`)}`}
+          target="_blank"
+          rel="noopener noreferrer"
           className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-[13.5px] font-medium transition-colors"
         >
           <Mail className="w-4 h-4" /> Reply via Email
