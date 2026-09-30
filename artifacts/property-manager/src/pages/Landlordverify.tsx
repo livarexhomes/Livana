@@ -1,6 +1,6 @@
 import * as React from 'react'
 import { Link } from '@/lib/navigation'
-import { ArrowRight, ArrowUpRight, BadgeCheck, Building2, Check, ChevronDown, HousePlus, MapPin, MessageSquare, SearchCheck, ShieldCheck, Users, Handshake, CircleDollarSign, SlidersHorizontal } from 'lucide-react'
+import { ArrowRight, ArrowUpRight, BadgeCheck, Building2, Check, CheckCircle2, ChevronDown, HousePlus, MapPin, MessageSquare, SearchCheck, ShieldCheck, Users, Handshake, CircleDollarSign, SlidersHorizontal } from 'lucide-react'
 import PublicNavbar from '@/components/layout/PublicNavbar'
 import Footer from '@/components/layout/Footer'
 import SEO from '@/components/SEO'
@@ -15,12 +15,12 @@ const steps = [
     { title: "Complete the rental", description: "You and the tenant proceed directly, with LIVAREX providing the platform and transaction support where applicable.", icon: Handshake },
 ]
 const benefits = [
-    "Meet genuine tenants",
-    "List without any fee",
-    "No middle man",
-    "No commission",
-    "Get a verified badge",
-    "Your property, your rule"
+    { title: "Meet genuine tenants", description: "Connect with tenants who have been verified, so you know you're talking to real people looking for a real home.", badge: "Verified tenants", icon: Users },
+    { title: "List without any fee", description: "There are no upfront costs to list your property on LIVAREX. Create your listing and reach prospective tenants at no charge.", badge: "Free listing", icon: CircleDollarSign },
+    { title: "No middle man", description: "Communicate directly with tenants through our platform. No agents, no intermediaries, just you and the tenant.", badge: "Direct contact", icon: Handshake },
+    { title: "No commission", description: "Keep what you earn. LIVAREX doesn't charge any commission on rentals completed through the platform.", badge: "0% commission", icon: BadgeCheck },
+    { title: "Get a verified badge", description: "Stand out with a verified badge that shows tenants your identity and property have been checked.", badge: "Trusted profile", icon: ShieldCheck },
+    { title: "Your property, your rule", description: "You decide who to rent to, at what price, and on what terms. You're in full control of your property.", badge: "Full control", icon: SlidersHorizontal },
 ]
 const verificationSteps = [
     {
@@ -145,7 +145,7 @@ export default function LandlordVerify() {
                         <h2 id="lv-benefits-title">Why list with <span>LIVAREX?</span></h2>
                     </div>
                     <ol className="lv-verification-list">
-                        {landlordVerificationProcess.map(({ title, badge, description, icon: Icon }, index) => (
+                        {benefits.map(({ title, description, badge, icon: Icon }, index) => (
                             <li key={title} className="lv-verification-step">
                                 <span className="lv-verification-number">{index + 1}</span>
                                 <div className="lv-verification-card">
