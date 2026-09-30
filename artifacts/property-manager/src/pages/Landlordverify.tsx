@@ -15,12 +15,12 @@ const steps = [
     { title: "Complete the rental", description: "You and the tenant proceed directly, with LIVAREX providing the platform and transaction support where applicable.", icon: Handshake },
 ]
 const benefits = [
-    "List your property free",
-    "Reach genuine prospective tenants",
-    "Verified landlord profile",
-    "No agents involved",
-    "No agent commission",
-    "Manage your property your way"
+    "Meet genuine tenants",
+    "List without any fee",
+    "No middle man",
+    "No commission",
+    "Get a verified badge",
+    "Your property, your rule"
 ]
 const verificationSteps = [
     {
