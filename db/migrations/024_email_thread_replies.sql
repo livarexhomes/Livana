@@ -31,6 +31,17 @@ create table if not exists public.email_thread_replies (
   created_at      timestamptz not null default now()
 );
 
+-- Backfill columns for environments where the table was created by an earlier
+-- version of this migration (without message_id, in_reply_to, direction).
+ALTER TABLE public.email_thread_replies
+  ADD COLUMN IF NOT EXISTS message_id    text,
+  ADD COLUMN IF NOT EXISTS in_reply_to   text,
+  ADD COLUMN IF NOT EXISTS direction     text NOT NULL DEFAULT 'outbound';
+
+-- Backfill the status check by widening it to include 'received'.
+ALTER TABLE public.email_thread_replies
+  DROP CONSTRAINT IF EXISTS email_thread_replies_status_check;
+
 create index if not exists email_thread_replies_contact_idx
   on public.email_thread_replies (contact_id, created_at desc);
 
