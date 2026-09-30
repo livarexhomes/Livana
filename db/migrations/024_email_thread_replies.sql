@@ -40,6 +40,9 @@ create index if not exists email_thread_replies_inquiry_idx
 create index if not exists email_thread_replies_to_email_idx
   on public.email_thread_replies (to_email);
 
+create index if not exists email_thread_replies_message_id_idx
+  on public.email_thread_replies (message_id);
+
 -- ── Row Level Security ────────────────────────────────────────────────────────
 alter table public.email_thread_replies enable row level security;
 
@@ -54,6 +57,21 @@ create policy "email_thread_replies_admin_select" on public.email_thread_replies
 drop policy if exists "email_thread_replies_admin_insert" on public.email_thread_replies;
 create policy "email_thread_replies_admin_insert" on public.email_thread_replies
   for insert with check (true);
+
+-- ── Realtime ─────────────────────────────────────────────────────────────────
+-- Allow Supabase Realtime to broadcast INSERTs on this table so the admin
+-- inbox picks up inbound replies without polling.
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_publication_tables
+    WHERE pubname = 'supabase_realtime'
+      AND schemaname = 'public'
+      AND tablename = 'email_thread_replies'
+  ) THEN
+    ALTER PUBLICATION supabase_realtime ADD TABLE public.email_thread_replies;
+  END IF;
+END$$;
 
 comment on table public.email_thread_replies is
   'Audit log of every email sent from the admin panel via the Resend integration.';

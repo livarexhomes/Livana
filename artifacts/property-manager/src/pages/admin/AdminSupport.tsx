@@ -2055,6 +2055,7 @@ function ContactDetail({ contact, onBack }: {
   const [thread, setThread] = useState<EmailReply[]>([])
   const [loadingThread, setLoadingThread] = useState(false)
   const sendingRef = useRef(false)
+  const lastSeenInboundId = useRef<string | null>(null)
 
   const subject = contact.subject ? `Re: ${contact.subject}` : 'Re: Your message'
 
@@ -2063,12 +2064,49 @@ function ContactDetail({ contact, onBack }: {
     try {
       const res = await fetch(`/api/get-email-thread?contactId=${encodeURIComponent(contact.id)}`)
       const data = await res.json().catch(() => null)
-      if (res.ok && data?.replies) setThread(data.replies)
+      if (res.ok && data?.replies) {
+        setThread(data.replies)
+        // Detect a NEW inbound reply we haven't shown yet → toast + sound.
+        const inbound = data.replies.find((r: EmailReply) => r.direction === 'inbound')
+        if (inbound && inbound.id !== lastSeenInboundId.current) {
+          if (lastSeenInboundId.current !== null) {
+            // not the first load
+            try { playSupportSound(getSoundMuted()) } catch { /* ignore */ }
+            toast({
+              title: 'New reply received',
+              description: `${contact.name} replied by email.`,
+            })
+          }
+          lastSeenInboundId.current = inbound.id
+        }
+      }
     } catch { /* swallow */ }
     finally { setLoadingThread(false) }
-  }, [contact.id])
+  }, [contact.id, contact.name, toast])
 
-  useEffect(() => { loadThread() }, [loadThread])
+  useEffect(() => {
+    loadThread()
+    // Subscribe to realtime INSERTs on email_thread_replies that match this
+    // contact so inbound replies pop in without manual refresh.
+    const supabase = createClient()
+    const channel = supabase
+      .channel(`admin_email_thread:${contact.id}`)
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'email_thread_replies', filter: `contact_id=eq.${contact.id}` },
+        () => { loadThread() },
+      )
+      .subscribe()
+
+    // Fallback polling every 12s in case Realtime isn't connected (corporate
+    // firewalls, missed events, etc.).
+    const poll = setInterval(loadThread, 12_000)
+
+    return () => {
+      supabase.removeChannel(channel)
+      clearInterval(poll)
+    }
+  }, [contact.id, loadThread])
 
   async function sendReply(e: React.FormEvent) {
     e.preventDefault()
