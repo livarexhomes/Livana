@@ -135,10 +135,6 @@ export default function LandlordVerify() {
                 </div>
             </section>
             <div className="lv-principles"><div className="lv-container lv-principles-grid"><p>Less friction.<br /><strong>More ownership.</strong></p><span><HousePlus aria-hidden="true" />Zero listing fee</span><span><ShieldCheck aria-hidden="true" />Verification before publication</span><span><MessageSquare aria-hidden="true" />Direct conversations</span></div></div>
-            <section id="how-it-works" className="lv-section lv-container" aria-labelledby="lv-process-title">
-                <div className="lv-section-heading"><h2 id="lv-process-title">How It Works</h2></div>
-                <ProcessGuide />
-            </section>
             <section id="why-list-with-us" className="lv-benefits-section" aria-labelledby="lv-benefits-title">
                 <div className="lv-container lv-section">
                     <div className="lv-value-heading">
@@ -160,6 +156,10 @@ export default function LandlordVerify() {
                         ))}
                     </ol>
                 </div>
+            </section>
+            <section id="how-it-works" className="lv-section lv-container" aria-labelledby="lv-process-title">
+                <div className="lv-section-heading"><h2 id="lv-process-title">How It Works</h2></div>
+                <ProcessGuide />
             </section>
             <section className="lv-container lv-section lv-control" aria-labelledby="lv-control-title"><div><span className="lv-eyebrow">CLARITY AT EVERY STAGE</span><h2 id="lv-control-title">A clear path.<br /><span>No guessing what’s next.</span></h2><p className="lv-body-copy">From identity verification to an approved listing, each stage has a purpose. You stay involved in the decisions that matter.</p><a className="lv-text-link" href="#how-it-works">Explore the listing process<ArrowRight size={17} aria-hidden="true" /></a></div><div className="lv-timeline-card"><div className="lv-timeline-heading"><span className="lv-icon"><Building2 size={21} aria-hidden="true" /></span><div><h3>Your listing journey</h3><p>An example of the path to publication</p></div></div><ol>{[{ title: 'Identity verification', text: 'Establish your landlord profile', icon: ShieldCheck }, { title: 'Property submission', text: 'Share the details that tenants need', icon: HousePlus }, { title: 'LIVAREX review', text: 'Complete the required approval process', icon: SearchCheck }, { title: 'Ready to be discovered', text: 'Approved listings become visible to tenants', icon: Users }].map(({ title, text, icon: Icon }, index) => <li key={title}><span className="lv-timeline-icon"><Icon size={19} aria-hidden="true" /></span><div><h4>{title}</h4><p>{text}</p></div><span className="lv-caption">0{index + 1}</span></li>)}</ol></div></section>
             {/* ONE PROCESS SECTION; NO TABS OR DUPLICATE IDS ooo*/}
