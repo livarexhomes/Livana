@@ -22,7 +22,10 @@ create table if not exists public.email_thread_replies (
   body            text not null,
   body_html       text,
   resend_id       text,
-  status          text not null default 'sent', -- sent | failed | queued
+  message_id      text,                       -- RFC-822 Message-ID of the outbound message (used for In-Reply-To matching)
+  in_reply_to     text,                       -- RFC-822 In-Reply-To of the inbound reply (if any)
+  status          text not null default 'sent', -- sent | received | failed | queued
+  direction       text not null default 'outbound', -- outbound | inbound
   error_message   text,
   sent_by         uuid references public.agents(id) on delete set null,
   created_at      timestamptz not null default now()

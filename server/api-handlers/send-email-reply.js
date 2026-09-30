@@ -124,6 +124,15 @@ export default async function handler(req, res) {
   }
   headers['Reply-To'] = cfg.adminEmail || from
 
+  // BCC the admin inbox so the team always has a copy of every reply sent
+  // (independent of the in-app audit log). Skip when the recipient IS the admin.
+  const bcc =
+    cfg.adminEmail &&
+    cfg.adminEmail.toLowerCase() !== to &&
+    /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(cfg.adminEmail)
+      ? [cfg.adminEmail]
+      : undefined
+
   let resendResp, payload = null, errorMessage = null
   try {
     resendResp = await fetch('https://api.resend.com/emails', {
@@ -135,6 +144,7 @@ export default async function handler(req, res) {
       body: JSON.stringify({
         from,
         to,
+        ...(bcc ? { bcc } : {}),
         subject,
         html,
         text: message,
@@ -165,6 +175,9 @@ export default async function handler(req, res) {
         body: message,
         body_html: html,
         resend_id: resendId,
+        message_id: resendId ? `<${resendId}@resend.dev>` : null,
+        in_reply_to: threadId || null,
+        direction: 'outbound',
         status: ok ? 'sent' : 'failed',
         error_message: ok ? null : (errorMessage || payload?.message || `Resend status ${resendResp?.status ?? 'unknown'}`),
       }

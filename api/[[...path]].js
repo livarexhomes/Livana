@@ -27,6 +27,7 @@ const handlers = {
   'send-support-notification': () => import('../server/api-handlers/send-support-notification.js'),
   'send-email-reply': () => import('../server/api-handlers/send-email-reply.js'),
   'get-email-thread': () => import('../server/api-handlers/get-email-thread.js'),
+  'resend-inbound': () => import('../server/api-handlers/resend-inbound.js'),
   'support-presence': () => import('../server/api-handlers/support-presence.js'),
   'verify-otp': () => import('../server/api-handlers/verify-otp.js'),
   'verify-reset': () => import('../server/api-handlers/verify-reset.js'),

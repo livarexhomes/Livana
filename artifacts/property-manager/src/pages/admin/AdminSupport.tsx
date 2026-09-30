@@ -2038,7 +2038,8 @@ interface EmailReply {
   from_name: string | null
   subject: string
   body: string
-  status: 'sent' | 'failed' | 'queued'
+  status: 'sent' | 'failed' | 'queued' | 'received'
+  direction?: 'outbound' | 'inbound'
   error_message: string | null
   resend_id: string | null
   created_at: string
@@ -2161,11 +2162,43 @@ function ContactDetail({ contact, onBack }: {
         {/* Email thread history */}
         {thread.length > 0 && (
           <div className="space-y-3 pt-3 border-t border-slate-100">
-            <p className="text-[11px] font-bold uppercase tracking-widest text-slate-400">
-              Email replies · {thread.length}
-            </p>
+            <div className="flex items-center justify-between">
+              <p className="text-[11px] font-bold uppercase tracking-widest text-slate-400">
+                Email thread · {thread.length}
+              </p>
+              <button
+                type="button"
+                onClick={loadThread}
+                disabled={loadingThread}
+                className="text-[11px] font-medium text-slate-500 hover:text-slate-900 disabled:opacity-50 inline-flex items-center gap-1 transition-colors"
+                title="Refresh thread"
+              >
+                <RefreshCw className={`w-3 h-3 ${loadingThread ? 'animate-spin' : ''}`} /> Refresh
+              </button>
+            </div>
             {thread.map((reply) => {
+              const isInbound = reply.direction === 'inbound'
               const failed = reply.status === 'failed'
+              if (isInbound) {
+                // Inbound reply — render on the LEFT like the original message.
+                return (
+                  <div key={reply.id} className="flex items-end gap-2.5">
+                    <div className={`shrink-0 w-7 h-7 rounded-full bg-gradient-to-br ${avatarGrad(reply.from_name || reply.from_email)} flex items-center justify-center text-[11px] font-semibold text-white`}>
+                      {(reply.from_name || reply.from_email || 'C')[0]?.toUpperCase() ?? 'C'}
+                    </div>
+                    <div className="max-w-[85%] rounded-2xl rounded-bl-md bg-white border border-slate-200 px-4 py-2.5 text-[13.5px] text-slate-800 leading-relaxed whitespace-pre-wrap">
+                      <div className="flex items-center gap-1.5 text-[10.5px] font-semibold uppercase tracking-wider text-emerald-700 mb-1.5">
+                        <CheckCircle2 className="w-3 h-3" /> Reply received
+                      </div>
+                      <div>{reply.body}</div>
+                      <div className="mt-1.5 text-[10.5px] text-slate-400">
+                        {format(new Date(reply.created_at), 'd MMM, h:mm a')}
+                      </div>
+                    </div>
+                  </div>
+                )
+              }
+              // Outbound — render on the RIGHT.
               return (
                 <div key={reply.id} className="flex items-end gap-2.5 justify-end">
                   <div className={`max-w-[85%] rounded-2xl rounded-br-md px-4 py-2.5 text-[13.5px] leading-relaxed whitespace-pre-wrap ${
