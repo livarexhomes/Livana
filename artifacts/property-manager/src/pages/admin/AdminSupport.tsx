@@ -2028,15 +2028,91 @@ function SupportTab({ onOpenQueued, view = 'queue' }: { onOpenQueued: (id: strin
 
 // ── ContactDetail ─────────────────────────────────────────────────────────────
 
+interface EmailReply {
+  id: string
+  contact_id: string | null
+  inquiry_id: string | null
+  to_email: string
+  to_name: string | null
+  from_email: string
+  from_name: string | null
+  subject: string
+  body: string
+  status: 'sent' | 'failed' | 'queued'
+  error_message: string | null
+  resend_id: string | null
+  created_at: string
+}
+
 function ContactDetail({ contact, onBack }: {
   contact: ContactMessage
   onBack: () => void
 }) {
+  const { toast } = useToast()
+  const [replyText, setReplyText] = useState('')
+  const [sending, setSending] = useState(false)
+  const [thread, setThread] = useState<EmailReply[]>([])
+  const [loadingThread, setLoadingThread] = useState(false)
+  const sendingRef = useRef(false)
+
+  const subject = contact.subject ? `Re: ${contact.subject}` : 'Re: Your message'
+
+  const loadThread = useCallback(async () => {
+    setLoadingThread(true)
+    try {
+      const res = await fetch(`/api/get-email-thread?contactId=${encodeURIComponent(contact.id)}`)
+      const data = await res.json().catch(() => null)
+      if (res.ok && data?.replies) setThread(data.replies)
+    } catch { /* swallow */ }
+    finally { setLoadingThread(false) }
+  }, [contact.id])
+
+  useEffect(() => { loadThread() }, [loadThread])
+
+  async function sendReply(e: React.FormEvent) {
+    e.preventDefault()
+    if (sendingRef.current) return
+    const body = replyText.trim()
+    if (!body || sending) return
+    sendingRef.current = true
+    setSending(true)
+    try {
+      const res = await fetch('/api/send-email-reply', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          to: contact.email,
+          toName: contact.name,
+          subject,
+          body,
+          contactId: contact.id,
+        }),
+      })
+      const data = await res.json().catch(() => null)
+      if (!res.ok) {
+        toast({
+          title: 'Email failed',
+          description: data?.error || 'Could not send the email.',
+          variant: 'destructive',
+        })
+      } else {
+        toast({ title: 'Email sent', description: `Reply delivered to ${contact.email}.` })
+        setReplyText('')
+        await loadThread()
+      }
+    } catch (err) {
+      toast({ title: 'Network error', description: String(err), variant: 'destructive' })
+    } finally {
+      setSending(false)
+      sendingRef.current = false
+    }
+  }
+
   return (
     <div className="flex flex-col h-full bg-white overflow-hidden">
       {/* Header */}
       <div className="flex items-center gap-3 px-5 py-3.5 border-b border-slate-100 shrink-0">
-        <button onClick={onBack} className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:ring-offset-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:ring-offset-2 lg:hidden p-1.5 -ml-1.5 rounded-lg hover:bg-slate-100 text-slate-500 transition-colors">
+        <button onClick={onBack} className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:ring-offset-2 lg:hidden p-1.5 -ml-1.5 rounded-lg hover:bg-slate-100 text-slate-500 transition-colors">
           <ChevronLeft className="w-4 h-4" />
         </button>
         <div className={`w-10 h-10 rounded-full bg-gradient-to-br ${avatarGrad(contact.name)} flex items-center justify-center shrink-0 text-[13px] font-semibold text-white`}>
@@ -2053,6 +2129,7 @@ function ContactDetail({ contact, onBack }: {
 
       {/* Body */}
       <div className="flex-1 overflow-y-auto p-6 space-y-5">
+        {/* Meta grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div className="rounded-xl bg-slate-50 px-4 py-3">
             <p className="text-[11px] font-medium text-slate-400 mb-1">Role</p>
@@ -2068,23 +2145,102 @@ function ContactDetail({ contact, onBack }: {
           </div>
         </div>
 
+        {/* Original message bubble (incoming) */}
         <div>
           <p className="text-[11px] font-medium text-slate-400 mb-2">Message</p>
-          <p className="text-[13.5px] text-slate-700 leading-relaxed whitespace-pre-wrap bg-slate-50 rounded-xl p-4">{contact.message}</p>
+          <div className="flex items-end gap-2.5">
+            <div className={`shrink-0 w-7 h-7 rounded-full bg-gradient-to-br ${avatarGrad(contact.name)} flex items-center justify-center text-[11px] font-semibold text-white`}>
+              {contact.name[0]?.toUpperCase() ?? 'C'}
+            </div>
+            <div className="max-w-[85%] rounded-2xl rounded-bl-md bg-slate-100 px-4 py-2.5 text-[13.5px] text-slate-800 leading-relaxed whitespace-pre-wrap">
+              {contact.message}
+            </div>
+          </div>
         </div>
+
+        {/* Email thread history */}
+        {thread.length > 0 && (
+          <div className="space-y-3 pt-3 border-t border-slate-100">
+            <p className="text-[11px] font-bold uppercase tracking-widest text-slate-400">
+              Email replies · {thread.length}
+            </p>
+            {thread.map((reply) => {
+              const failed = reply.status === 'failed'
+              return (
+                <div key={reply.id} className="flex items-end gap-2.5 justify-end">
+                  <div className={`max-w-[85%] rounded-2xl rounded-br-md px-4 py-2.5 text-[13.5px] leading-relaxed whitespace-pre-wrap ${
+                    failed
+                      ? 'bg-red-50 text-red-900 border border-red-200'
+                      : 'bg-blue-600 text-white'
+                  }`}>
+                    {failed && (
+                      <div className="flex items-center gap-1.5 text-[11px] font-semibold mb-1.5 text-red-700">
+                        <XCircle className="w-3.5 h-3.5" /> Failed to send
+                      </div>
+                    )}
+                    <div>{reply.body}</div>
+                    <div className={`mt-1.5 text-[10.5px] ${failed ? 'text-red-600/70' : 'text-white/70'}`}>
+                      {format(new Date(reply.created_at), 'd MMM, h:mm a')}
+                      {reply.error_message ? ` · ${reply.error_message}` : ''}
+                    </div>
+                  </div>
+                  <div className="shrink-0 w-7 h-7 rounded-full bg-slate-900 flex items-center justify-center text-[11px] font-semibold text-white">
+                    {(reply.from_name || reply.from_email || 'A')[0]?.toUpperCase() ?? 'A'}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        )}
+        {loadingThread && thread.length === 0 && (
+          <div className="flex justify-center py-2">
+            <Loader2 className="w-4 h-4 animate-spin text-slate-400" />
+          </div>
+        )}
       </div>
 
-      {/* Footer — reply via email */}
-      <div className="px-5 py-3.5 border-t border-slate-100 shrink-0">
-        <a
-          href={`https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(contact.email)}&su=${encodeURIComponent(`Re: ${contact.subject || 'Your message'}`)}`}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-[13.5px] font-medium transition-colors"
-        >
-          <Mail className="w-4 h-4" /> Reply via Email
-        </a>
-      </div>
+      {/* Footer — inline reply composer */}
+      <form onSubmit={sendReply} className="px-5 py-3.5 border-t border-slate-100 shrink-0 space-y-2.5">
+        <div className="flex items-center justify-between">
+          <p className="text-[11px] font-medium text-slate-500">
+            Reply to <span className="font-semibold text-slate-700">{contact.email}</span> via Resend
+          </p>
+          <a
+            href={`https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(contact.email)}&su=${encodeURIComponent(subject)}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1 text-[11px] font-medium text-slate-500 hover:text-slate-900 transition-colors"
+            title="Open in Gmail"
+          >
+            <Mail className="w-3 h-3" /> Open in Gmail
+          </a>
+        </div>
+        <textarea
+          rows={3}
+          value={replyText}
+          onChange={e => setReplyText(e.target.value)}
+          onKeyDown={e => {
+            if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+              e.preventDefault()
+              sendReply(e as any)
+            }
+          }}
+          placeholder={`Write a reply to ${contact.name}… (⌘/Ctrl + Enter to send)`}
+          disabled={sending}
+          className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-[13.5px] bg-slate-50 text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/25 focus:border-blue-300 transition-all resize-none disabled:opacity-50"
+        />
+        <div className="flex items-center justify-between">
+          <p className="text-[10.5px] text-slate-400">Subject: <span className="font-medium text-slate-500">{subject}</span></p>
+          <button
+            type="submit"
+            disabled={!replyText.trim() || sending}
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 disabled:opacity-40 text-white text-[13px] font-medium transition-colors"
+          >
+            {sending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
+            Send email
+          </button>
+        </div>
+      </form>
     </div>
   )
 }
