@@ -18,7 +18,7 @@ const benefits = [
     { title: "Meet genuine tenants", description: "Connect with tenants who have been verified, so you know you're talking to real people looking for a real home.", badge: "Verified tenants", icon: Users },
     { title: "List without any fee", description: "There are no upfront costs to list your property on LIVAREX. Create your listing and reach prospective tenants at no charge.", badge: "Free listing", icon: CircleDollarSign },
     { title: "No middle man", description: "Communicate directly with tenants through our platform. No agents, no intermediaries, just you and the tenant.", badge: "Direct contact", icon: Handshake },
-    { title: "No commission", description: "Keep what you earn. LIVAREX doesn't charge any commission on rentals completed through the platform.", badge: "0% commission", icon: BadgeCheck },
+    // { title: "No commission", description: "Keep what you earn. LIVAREX doesn't charge any commission on rentals completed through the platform.", badge: "0% commission", icon: BadgeCheck },
     { title: "Get a verified badge", description: "Stand out with a verified badge that shows tenants your identity and property have been checked.", badge: "Trusted profile", icon: ShieldCheck },
     { title: "Your property, your rule", description: "You decide who to rent to, at what price, and on what terms. You're in full control of your property.", badge: "Full control", icon: SlidersHorizontal },
 ]
@@ -61,11 +61,11 @@ const verificationSteps = [
 ]
 
 const landlordVerificationProcess = [
-    { title: "Account Registration", badge: "Required", description: "Landlords create a verified account with a valid email address and Nigerian phone number. OTP verification confirms the phone immediately.", icon: Users },
-    { title: "Government ID Submission", badge: "Required", description: "Every landlord must upload a clear photo of one government-issued ID: NIN slip, international passport, driver's license, or voter's card.", icon: ShieldCheck },
-    { title: "Manual Document Review", badge: "24–48 hrs", description: "Our verification team reviews every submission within 24–48 hours. We cross-check the ID details, confirm identity, and check against our fraud database.", icon: SearchCheck },
-    { title: "Property Ownership Confirmation", badge: "Per listing", description: "For each listing, we review proof of ownership or legal authority to let (title deed, C of O, allocation letter, or estate agent authority). Landlords listing without proof are declined.", icon: HousePlus },
-    { title: "Verified Badge Awarded", badge: "Ongoing", description: "Approved landlords receive the ✅ Verified badge on their profile and all their listings. This badge tells tenants: \"This person is real, their identity is confirmed, and their property claim has been checked.\"", icon: BadgeCheck },
+  { title: "Account Registration", badge: "Required", description: "Landlords create a verified account with a valid email address and Nigerian phone number. OTP verification confirms the phone immediately.", icon: Users },
+  { title: "Government ID Submission", badge: "Required", description: "Every landlord must upload a clear photo of one government-issued ID: NIN slip, international passport, driver's license, or voter's card.", icon: ShieldCheck },
+  { title: "Manual Document Review", badge: "24–48 hrs", description: "Our verification team reviews every submission within 24–48 hours. We cross-check the ID details, confirm identity, and check against our fraud database.", icon: SearchCheck },
+  { title: "Property Ownership Confirmation", badge: "Per listing", description: "For each listing, we review proof of ownership or legal authority to let (title deed, C of O, allocation letter, or estate agent authority). Landlords listing without proof are declined.", icon: HousePlus },
+  { title: "Verified Badge Awarded", badge: "Ongoing", description: "Approved landlords receive the ✅ Verified badge on their profile and all their listings. This badge tells tenants: \"This person is real, their identity is confirmed, and their property claim has been checked.\"", icon: BadgeCheck },
 ]
 
 const benefitIcons = [HousePlus, Users, BadgeCheck, Handshake, CircleDollarSign, SlidersHorizontal]
@@ -134,26 +134,21 @@ export default function LandlordVerify() {
                     </figure>
                 </div>
             </section>
-
-            <section id="how-it-works" className="lv-section lv-container" aria-labelledby="lv-process-title">
-                <div className="lv-section-heading"><h2 id="lv-process-title">How It Works</h2></div>
-                <ProcessGuide />
-            </section>
             <div className="lv-principles"><div className="lv-container lv-principles-grid"><p>Less friction.<br /><strong>More ownership.</strong></p><span><HousePlus aria-hidden="true" />Zero listing fee</span><span><ShieldCheck aria-hidden="true" />Verification before publication</span><span><MessageSquare aria-hidden="true" />Direct conversations</span></div></div>
             <section id="why-list-with-us" className="lv-benefits-section" aria-labelledby="lv-benefits-title">
                 <div className="lv-container lv-section">
                     <div className="lv-value-heading">
                         <h2 id="lv-benefits-title">Why list with <span>LIVAREX?</span></h2>
                     </div>
-                    <ol className="lv-verification-list">
+                    <ol className="lv-benefits-list">
                         {benefits.map(({ title, description, badge, icon: Icon }, index) => (
-                            <li key={title} className="lv-verification-step">
-                                <span className="lv-verification-number">{index + 1}</span>
-                                <div className="lv-verification-card">
-                                    <div className="lv-verification-step-heading">
-                                        <span className="lv-verification-icon"><Icon size={22} aria-hidden="true" /></span>
+                            <li key={title} className="lv-benefits-step">
+                                <span className="lv-benefits-number">{index + 1}</span>
+                                <div className="lv-benefits-card">
+                                    <div className="lv-benefits-step-heading">
+                                        <span className="lv-benefits-icon"><Icon size={22} aria-hidden="true" /></span>
                                         <h3>{title}</h3>
-                                        <span className="lv-verification-badge">{badge}</span>
+                                        <span className="lv-benefits-badge">{badge}</span>
                                     </div>
                                     <p>{description}</p>
                                 </div>
@@ -166,36 +161,62 @@ export default function LandlordVerify() {
             <section id="verification-process" className="lv-verification-process-section" aria-labelledby="lv-verification-title">
                 <div className="lv-container">
                     <div className="lv-verification-intro">
+                        <span className="lv-verification-eyebrow">VERIFICATION PROCESS</span>
                         <h2 id="lv-verification-title">How LIVAREX Verifies Landlords</h2>
                         <p>Trust is our product. Every landlord on LIVAREX goes through a manual identity and property verification process before their listings go live.</p>
                     </div>
                     <div className="lv-verification-grid">
                         <div className="lv-verification-card">
-                            <span className="lv-verification-card-num">01</span>
+                            <div className="lv-verification-card-head">
+                                <span className="lv-verification-card-icon">
+                                    <Users size={20} aria-hidden="true" />
+                                </span>
+                                <span className="lv-verification-card-num">01</span>
+                            </div>
                             <h4>Account Registration</h4>
                             <span className="lv-verification-card-badge">Required</span>
                             <p>Create a verified account with a valid email and Nigerian phone number. OTP verification confirms your phone immediately.</p>
                         </div>
                         <div className="lv-verification-card">
-                            <span className="lv-verification-card-num">02</span>
+                            <div className="lv-verification-card-head">
+                                <span className="lv-verification-card-icon">
+                                    <ShieldCheck size={20} aria-hidden="true" />
+                                </span>
+                                <span className="lv-verification-card-num">02</span>
+                            </div>
                             <h4>Government ID Submission</h4>
                             <span className="lv-verification-card-badge">Required</span>
                             <p>Upload a clear photo of your government-issued ID: NIN slip, passport, driver's license, or voter's card.</p>
                         </div>
                         <div className="lv-verification-card">
-                            <span className="lv-verification-card-num">03</span>
+                            <div className="lv-verification-card-head">
+                                <span className="lv-verification-card-icon">
+                                    <SearchCheck size={20} aria-hidden="true" />
+                                </span>
+                                <span className="lv-verification-card-num">03</span>
+                            </div>
                             <h4>Manual Document Review</h4>
                             <span className="lv-verification-card-badge">24–48 hrs</span>
-                            <p>Our team reviews every submission within 24-48 hours, cross-checking ID details and checking against our fraud database.</p>
+                            <p>Our team reviews every submission within 24–48 hours, cross-checking ID details and screening against fraud databases.</p>
                         </div>
                         <div className="lv-verification-card">
-                            <span className="lv-verification-card-num">04</span>
+                            <div className="lv-verification-card-head">
+                                <span className="lv-verification-card-icon">
+                                    <HousePlus size={20} aria-hidden="true" />
+                                </span>
+                                <span className="lv-verification-card-num">04</span>
+                            </div>
                             <h4>Property Ownership</h4>
                             <span className="lv-verification-card-badge">Per listing</span>
                             <p>For each listing, we verify proof of ownership or legal authority to let. Listings without proof are declined.</p>
                         </div>
                         <div className="lv-verification-card lv-verification-card-featured">
-                            <span className="lv-verification-card-num">05</span>
+                            <div className="lv-verification-card-head">
+                                <span className="lv-verification-card-icon">
+                                    <BadgeCheck size={20} aria-hidden="true" />
+                                </span>
+                                <span className="lv-verification-card-num">05</span>
+                            </div>
                             <h4>Verified Badge Awarded</h4>
                             <span className="lv-verification-card-badge">Ongoing</span>
                             <p>Approved landlords receive the ✅ Verified badge on their profile and all listings, confirming their identity and property claim.</p>
@@ -204,7 +225,10 @@ export default function LandlordVerify() {
                 </div>
             </section>
 
-
+            <section id="how-it-works" className="lv-section lv-container" aria-labelledby="lv-process-title">
+                <div className="lv-section-heading"><h2 id="lv-process-title">How It Works</h2></div>
+                <ProcessGuide />
+            </section>
             <section className="lv-container lv-section lv-control" aria-labelledby="lv-control-title"><div><span className="lv-eyebrow">CLARITY AT EVERY STAGE</span><h2 id="lv-control-title">A clear path.<br /><span>No guessing what’s next.</span></h2><p className="lv-body-copy">From identity verification to an approved listing, each stage has a purpose. You stay involved in the decisions that matter.</p><a className="lv-text-link" href="#how-it-works">Explore the listing process<ArrowRight size={17} aria-hidden="true" /></a></div><div className="lv-timeline-card"><div className="lv-timeline-heading"><span className="lv-icon"><Building2 size={21} aria-hidden="true" /></span><div><h3>Your listing journey</h3><p>An example of the path to publication</p></div></div><ol>{[{ title: 'Identity verification', text: 'Establish your landlord profile', icon: ShieldCheck }, { title: 'Property submission', text: 'Share the details that tenants need', icon: HousePlus }, { title: 'LIVAREX review', text: 'Complete the required approval process', icon: SearchCheck }, { title: 'Ready to be discovered', text: 'Approved listings become visible to tenants', icon: Users }].map(({ title, text, icon: Icon }, index) => <li key={title}><span className="lv-timeline-icon"><Icon size={19} aria-hidden="true" /></span><div><h4>{title}</h4><p>{text}</p></div><span className="lv-caption">0{index + 1}</span></li>)}</ol></div></section>
             {/* ONE PROCESS SECTION; NO TABS OR DUPLICATE IDS ooo*/}
             {/* <section id="signup-to-rental" className="py-16 md:py-20" aria-labelledby="process-title">
@@ -230,26 +254,37 @@ const styles = `
 @media(max-width:390px){.lv-container{width:calc(100% - 32px)}.lv-main h1{font-size:41px}.lv-card-heading .lv-caption{display:none}.lv-property-photo{height:300px}.lv-principles-grid{grid-template-columns:1fr}.lv-principles p br{display:none}.lv-principles strong{margin-left:5px}.lv-property-info div>span{font-size:10px}.lv-timeline-card{padding:20px}.lv-cta{padding:26px}.lv-cta h2{font-size:28px}}
 @media(prefers-reduced-motion:reduce){.lv-main *{transition:none!important;animation:none!important;scroll-behavior:auto!important}}
 
-.lv-verification-process-section{padding:80px 0;background:#f7f9fc;border-block:1px solid #edf0f5}
-.lv-verification-intro{text-align:center;max-width:680px;margin:0 auto 50px}
-.lv-verification-intro h2{font-size:clamp(28px,3vw,38px);font-weight:650;letter-spacing:-.03em;margin-bottom:16px}
-.lv-verification-intro p{font-size:16px;line-height:1.8;color:#607087}
-.lv-verification-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
-.lv-verification-card{background:#fff;border:1px solid #e1e7f0;border-radius:18px;padding:28px;position:relative;transition:border-color .2s,box-shadow .2s}
-.lv-verification-card:hover{border-color:#b9cef1;box-shadow:0 12px 32px -20px #1d4ed83b}
-.lv-verification-card-num{position:absolute;right:24px;top:24px;font-size:13px;font-weight:700;color:#cbd5e1;font-variant-numeric:tabular-nums}
-.lv-verification-card h4{font-size:17px;font-weight:650;line-height:1.4;margin-bottom:12px;padding-right:40px}
-.lv-verification-card-badge{display:inline-flex;align-items:center;gap:6px;border:1px solid #e3e9f2;border-radius:6px;padding:4px 10px;background:#f8fafc;color:#52637a;font-size:11px;font-weight:600;margin-bottom:14px}
+.lv-verification-process-section{padding:80px 0;background:linear-gradient(180deg,#f7f9fc 0%,#ffffff 100%);border-block:1px solid #edf0f5;position:relative;overflow:hidden}
+.lv-verification-process-section:before{content:'';position:absolute;top:-200px;right:-200px;width:500px;height:500px;background:radial-gradient(circle,#dbeafe 0%,transparent 70%);opacity:.5;pointer-events:none}
+.lv-verification-process-section:after{content:'';position:absolute;bottom:-200px;left:-200px;width:500px;height:500px;background:radial-gradient(circle,#e0e7ff 0%,transparent 70%);opacity:.4;pointer-events:none}
+.lv-verification-intro{text-align:center;max-width:680px;margin:0 auto 56px;position:relative;z-index:1}
+.lv-verification-eyebrow{display:inline-flex;align-items:center;gap:8px;font-size:11px;font-weight:700;letter-spacing:.15em;color:#2563eb;background:#eff5ff;border:1px solid #dbe7fd;padding:7px 14px;border-radius:99px;margin-bottom:18px}
+.lv-verification-eyebrow:before{content:'';width:6px;height:6px;border-radius:50%;background:#2563eb}
+.lv-verification-intro h2{font-size:clamp(30px,3.4vw,42px);font-weight:650;letter-spacing:-.035em;margin-bottom:16px;line-height:1.15}
+.lv-verification-intro p{font-size:16px;line-height:1.8;color:#607087;max-width:560px;margin-inline:auto}
+.lv-verification-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px;position:relative;z-index:1}
+.lv-verification-card{position:relative;background:#fff;border:1px solid #e1e7f0;border-radius:18px;padding:30px;transition:all .25s ease;display:flex;flex-direction:column}
+.lv-verification-card:hover{border-color:#b9cef1;box-shadow:0 18px 40px -22px #1d4ed83b;transform:translateY(-2px)}
+.lv-verification-card-head{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;margin-bottom:22px}
+.lv-verification-card-icon{width:46px;height:46px;display:grid;place-items:center;background:linear-gradient(135deg,#eff5ff,#dbe7fd);color:#2563eb;border-radius:12px;border:1px solid #dbe7fd;flex-shrink:0}
+.lv-verification-card-num{font-size:13px;font-weight:700;letter-spacing:.04em;color:#a9bedf;font-variant-numeric:tabular-nums;padding-top:8px}
+.lv-verification-card h4{font-size:18px;font-weight:650;line-height:1.35;letter-spacing:-.02em;margin-bottom:10px;color:#142039}
+.lv-verification-card-badge{display:inline-flex;align-items:center;gap:6px;align-self:flex-start;border:1px solid #e3e9f2;border-radius:6px;padding:4px 10px;background:#f8fafc;color:#52637a;font-size:11px;font-weight:600;margin-bottom:14px}
 .lv-verification-card-badge:before{content:'';width:5px;height:5px;border-radius:50%;background:#7b91b3}
-.lv-verification-card p{font-size:13px;line-height:1.7;color:#607087}
-.lv-verification-card-featured{background:linear-gradient(145deg,#2563eb,#1746b4);border-color:#2563eb;color:white;grid-column:span 2}
-.lv-verification-card-featured .lv-verification-card-num{color:#ffffff4d}
-.lv-verification-card-featured h4{color:white}
-.lv-verification-card-featured .lv-verification-card-badge{background:#ffffff1a;border-color:#ffffff30;color:#e1eaff}
+.lv-verification-card p{font-size:13.5px;line-height:1.7;color:#607087;margin-top:auto}
+.lv-verification-card-featured{background:linear-gradient(145deg,#2563eb 0%,#1e4ec7 50%,#1746b4 100%);border-color:#2563eb;color:white;grid-column:span 2;box-shadow:0 18px 40px -22px #1d4ed866;position:relative;overflow:hidden}
+.lv-verification-card-featured:before{content:'';position:absolute;width:280px;height:280px;border:1px solid #ffffff14;border-radius:50%;right:-140px;top:-100px;pointer-events:none}
+.lv-verification-card-featured:after{content:'';position:absolute;width:180px;height:180px;border:1px solid #ffffff0c;border-radius:50%;left:-60px;bottom:-80px;pointer-events:none}
+.lv-verification-card-featured>*{position:relative;z-index:1}
+.lv-verification-card-featured:hover{border-color:#2563eb;box-shadow:0 22px 50px -22px #1d4ed899}
+.lv-verification-card-featured .lv-verification-card-icon{background:#ffffff18;border-color:#ffffff30;color:white}
+.lv-verification-card-featured .lv-verification-card-num{color:#ffffff40}
+.lv-verification-card-featured h4{color:white;font-size:20px}
+.lv-verification-card-featured .lv-verification-card-badge{background:#ffffff18;border-color:#ffffff30;color:#e1eaff}
 .lv-verification-card-featured .lv-verification-card-badge:before{background:#b8d6ff}
-.lv-verification-card-featured p{color:#e1eaff}
-@media(max-width:1023px){.lv-verification-grid{grid-template-columns:repeat(2,1fr)}.lv-verification-card-featured{grid-column:span 2}}
-@media(max-width:600px){.lv-verification-grid{grid-template-columns:1fr}.lv-verification-card-featured{grid-column:auto}}
+.lv-verification-card-featured p{color:#ffffffd9;font-size:14px;line-height:1.75}
+@media(max-width:1023px){.lv-verification-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}.lv-verification-card-featured{grid-column:span 2}}
+@media(max-width:600px){.lv-verification-process-section{padding:50px 0}.lv-verification-grid{grid-template-columns:1fr;gap:14px}.lv-verification-card-featured{grid-column:auto}.lv-verification-card{padding:24px}}
 
 .lv-process-cards{list-style:none;padding:0;margin:0;display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:18px}
 .lv-process-card{grid-column:span 2;border:1px solid #e1e7f0;border-radius:16px;padding:28px;background:#fff}
@@ -306,34 +341,34 @@ const styles = `
 
 
 
-.lv-verification-list{list-style:none;padding:0;margin:0;display:grid;grid-template-columns:minmax(0,1.05fr) repeat(2,minmax(0,1fr));gap:20px}
-.lv-verification-step{position:relative;min-width:0;overflow:hidden;border:1px solid #e0e7f1;border-radius:22px;padding:28px;background:#fff;box-shadow:0 3px 7px #18305403;transition:border-color .2s,box-shadow .2s}
-.lv-verification-step:hover{border-color:#b9cef1;box-shadow:0 12px 32px -20px #1d4ed83b}
-.lv-verification-number{position:absolute;right:26px;top:30px;font-size:12px;font-weight:650;color:#72849e;font-variant-numeric:tabular-nums}
-.lv-verification-card{position:relative}
-.lv-verification-step-heading{display:grid;grid-template-columns:minmax(0,1fr);justify-items:start;gap:13px}
-.lv-verification-icon{display:grid;place-items:center;width:48px;height:48px;border:1px solid #e0eafe;border-radius:15px;background:linear-gradient(145deg,#fff,#eef4ff);color:#2563eb;margin-bottom:15px;box-shadow:0 3px 6px #2563eb06}
-.lv-verification-step-heading h3{font-size:20px;font-weight:650;line-height:1.35;letter-spacing:-.03em;max-width:250px}
-.lv-verification-badge{display:inline-flex;align-items:center;gap:6px;border:1px solid #e3e9f2;border-radius:7px;padding:5px 9px;background:#f8fafc;color:#52637a;font-size:10px;font-weight:650;line-height:1.5}
-.lv-verification-badge:before{content:'';width:5px;height:5px;border-radius:50%;background:#7b91b3}
-.lv-verification-card p{font-size:13px;line-height:1.85;color:#607087;margin-top:16px}
-.lv-verification-step:first-child{grid-row:span 2;padding:34px;background:linear-gradient(155deg,#2864e8 0%,#1f50c0 60%,#163d98 100%);border-color:#285bce;color:white;display:flex;flex-direction:column;box-shadow:0 14px 34px -22px #1746b488}
-.lv-verification-step:first-child:before{content:'';position:absolute;width:370px;height:370px;border:1px solid #ffffff17;border-radius:50%;right:-180px;bottom:-130px;box-shadow:0 0 0 38px #ffffff04,0 0 0 76px #ffffff04;pointer-events:none}
-.lv-verification-step:first-child:after{content:'';position:absolute;left:34px;bottom:38px;width:104px;height:104px;border:1px solid #ffffff30;border-radius:24px;transform:rotate(-9deg);background:linear-gradient(135deg,#ffffff14,#ffffff03);box-shadow:10px 10px 0 -1px #ffffff07;pointer-events:none}
-.lv-verification-step:first-child .lv-verification-card{z-index:1;padding-bottom:155px}
-.lv-verification-step:first-child .lv-verification-number{font-size:112px;line-height:1;letter-spacing:-.07em;color:#ffffff18;top:auto;bottom:22px;right:28px}
-.lv-verification-step:first-child .lv-verification-icon{background:#ffffff12;border-color:#ffffff30;color:white;width:58px;height:58px;margin-bottom:35px;box-shadow:inset 0 1px 0 #ffffff20}
-.lv-verification-step:first-child h3{font-size:clamp(28px,2.6vw,36px);line-height:1.12;letter-spacing:-.045em}
-.lv-verification-step:first-child .lv-verification-badge{background:#ffffff10;border-color:#ffffff30;color:#f0f5ff;margin-top:4px}
-.lv-verification-step:first-child .lv-verification-badge:before{background:#b8d6ff}
-.lv-verification-step:first-child p{color:#e1eaff;font-size:15px;line-height:1.9;margin-top:23px}
-.lv-verification-step:nth-child(3) .lv-verification-badge{color:#936026;background:#fffbeb;border-color:#f5e5bb}
-.lv-verification-step:nth-child(3) .lv-verification-badge:before{background:#d89e39}
-.lv-verification-step:last-child{background:linear-gradient(135deg,#f4f8ff,#fff);border-color:#ccdcf7}
-.lv-verification-step:last-child .lv-verification-icon{color:#1d4ed8;border-color:#cdddf9;background:#eaf2ff}
-.lv-verification-step:last-child .lv-verification-badge{color:#237358;background:#f0faf5;border-color:#d4ecdf}
-.lv-verification-step:last-child .lv-verification-badge:before{background:#359a73}
-@media(max-width:1023px){.lv-verification-list{grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}.lv-verification-step{padding:25px}.lv-verification-step:first-child{grid-row:span 2;padding:28px}.lv-verification-step:last-child{grid-column:1/-1}.lv-verification-step:last-child .lv-verification-card{display:grid;grid-template-columns:minmax(0,.7fr) minmax(0,1.3fr);gap:28px;align-items:center}.lv-verification-step:last-child p{margin-top:0}}
-@media(max-width:600px){.lv-verification-list{grid-template-columns:1fr;gap:14px}.lv-verification-step{padding:24px;border-radius:18px}.lv-verification-step:first-child{grid-row:auto;padding:26px}.lv-verification-step:first-child .lv-verification-card{padding-bottom:65px}.lv-verification-step:first-child .lv-verification-icon{margin-bottom:12px}.lv-verification-step:first-child h3{font-size:30px;max-width:none}.lv-verification-step:first-child:after{width:48px;height:48px;bottom:24px;left:26px;border-radius:12px}.lv-verification-step:first-child .lv-verification-number{font-size:78px;bottom:15px}.lv-verification-step:last-child{grid-column:auto}.lv-verification-step:last-child .lv-verification-card{display:block}.lv-verification-step:last-child p{margin-top:16px}.lv-verification-icon{margin-bottom:9px}.lv-verification-card p{font-size:14px}}
-@media(prefers-reduced-motion:reduce){.lv-verification-step{transition:none}}
+.lv-benefits-list{list-style:none;padding:0;margin:0;display:grid;grid-template-columns:minmax(0,1.05fr) repeat(2,minmax(0,1fr));gap:20px}
+.lv-benefits-step{position:relative;min-width:0;overflow:hidden;border:1px solid #e0e7f1;border-radius:22px;padding:28px;background:#fff;box-shadow:0 3px 7px #18305403;transition:border-color .2s,box-shadow .2s}
+.lv-benefits-step:hover{border-color:#b9cef1;box-shadow:0 12px 32px -20px #1d4ed83b}
+.lv-benefits-number{position:absolute;right:26px;top:30px;font-size:12px;font-weight:650;color:#72849e;font-variant-numeric:tabular-nums}
+.lv-benefits-card{position:relative}
+.lv-benefits-step-heading{display:grid;grid-template-columns:minmax(0,1fr);justify-items:start;gap:13px}
+.lv-benefits-icon{display:grid;place-items:center;width:48px;height:48px;border:1px solid #e0eafe;border-radius:15px;background:linear-gradient(145deg,#fff,#eef4ff);color:#2563eb;margin-bottom:15px;box-shadow:0 3px 6px #2563eb06}
+.lv-benefits-step-heading h3{font-size:20px;font-weight:650;line-height:1.35;letter-spacing:-.03em;max-width:250px;color:#142039}
+.lv-benefits-badge{display:inline-flex;align-items:center;gap:6px;border:1px solid #e3e9f2;border-radius:7px;padding:5px 9px;background:#f8fafc;color:#52637a;font-size:10px;font-weight:650;line-height:1.5}
+.lv-benefits-badge:before{content:'';width:5px;height:5px;border-radius:50%;background:#7b91b3}
+.lv-benefits-card p{font-size:13px;line-height:1.85;color:#607087;margin-top:16px}
+.lv-benefits-step:first-child{grid-row:span 2;padding:34px;background:linear-gradient(155deg,#2864e8 0%,#1f50c0 60%,#163d98 100%);border-color:#285bce;color:white;display:flex;flex-direction:column;box-shadow:0 14px 34px -22px #1746b488}
+.lv-benefits-step:first-child:before{content:'';position:absolute;width:370px;height:370px;border:1px solid #ffffff17;border-radius:50%;right:-180px;bottom:-130px;box-shadow:0 0 0 38px #ffffff04,0 0 0 76px #ffffff04;pointer-events:none}
+.lv-benefits-step:first-child:after{content:'';position:absolute;left:34px;bottom:38px;width:104px;height:104px;border:1px solid #ffffff30;border-radius:24px;transform:rotate(-9deg);background:linear-gradient(135deg,#ffffff14,#ffffff03);box-shadow:10px 10px 0 -1px #ffffff07;pointer-events:none}
+.lv-benefits-step:first-child .lv-benefits-card{z-index:1;padding-bottom:155px}
+.lv-benefits-step:first-child .lv-benefits-number{font-size:112px;line-height:1;letter-spacing:-.07em;color:#ffffff18;top:auto;bottom:22px;right:28px}
+.lv-benefits-step:first-child .lv-benefits-icon{background:#ffffff12;border-color:#ffffff30;color:white;width:58px;height:58px;margin-bottom:35px;box-shadow:inset 0 1px 0 #ffffff20}
+.lv-benefits-step:first-child h3{font-size:clamp(28px,2.6vw,36px);line-height:1.12;letter-spacing:-.045em;color:white}
+.lv-benefits-step:first-child .lv-benefits-badge{background:#ffffff10;border-color:#ffffff30;color:#f0f5ff;margin-top:4px}
+.lv-benefits-step:first-child .lv-benefits-badge:before{background:#b8d6ff}
+.lv-benefits-step:first-child p{color:#e1eaff;font-size:15px;line-height:1.9;margin-top:23px}
+.lv-benefits-step:nth-child(3) .lv-benefits-badge{color:#936026;background:#fffbeb;border-color:#f5e5bb}
+.lv-benefits-step:nth-child(3) .lv-benefits-badge:before{background:#d89e39}
+.lv-benefits-step:last-child{background:linear-gradient(135deg,#f4f8ff,#fff);border-color:#ccdcf7}
+.lv-benefits-step:last-child .lv-benefits-icon{color:#1d4ed8;border-color:#cdddf9;background:#eaf2ff}
+.lv-benefits-step:last-child .lv-benefits-badge{color:#237358;background:#f0faf5;border-color:#d4ecdf}
+.lv-benefits-step:last-child .lv-benefits-badge:before{background:#359a73}
+@media(max-width:1023px){.lv-benefits-list{grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}.lv-benefits-step{padding:25px}.lv-benefits-step:first-child{grid-row:span 2;padding:28px}.lv-benefits-step:last-child{grid-column:1/-1}.lv-benefits-step:last-child .lv-benefits-card{display:grid;grid-template-columns:minmax(0,.7fr) minmax(0,1.3fr);gap:28px;align-items:center}.lv-benefits-step:last-child p{margin-top:0}}
+@media(max-width:600px){.lv-benefits-list{grid-template-columns:1fr;gap:14px}.lv-benefits-step{padding:24px;border-radius:18px}.lv-benefits-step:first-child{grid-row:auto;padding:26px}.lv-benefits-step:first-child .lv-benefits-card{padding-bottom:65px}.lv-benefits-step:first-child .lv-benefits-icon{margin-bottom:12px}.lv-benefits-step:first-child h3{font-size:30px;max-width:none}.lv-benefits-step:first-child:after{width:48px;height:48px;bottom:24px;left:26px;border-radius:12px}.lv-benefits-step:first-child .lv-benefits-number{font-size:78px;bottom:15px}.lv-benefits-step:last-child{grid-column:auto}.lv-benefits-step:last-child .lv-benefits-card{display:block}.lv-benefits-step:last-child p{margin-top:16px}.lv-benefits-icon{margin-bottom:9px}.lv-benefits-card p{font-size:14px}}
+@media(prefers-reduced-motion:reduce){.lv-benefits-step{transition:none}}
 `
