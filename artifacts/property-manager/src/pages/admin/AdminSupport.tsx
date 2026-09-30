@@ -86,6 +86,7 @@ interface ChatInquiry {
   id: string
   name: string
   note: string
+  subject?: string | null
   phone: string | null
   email: string | null
   visitor_id: string | null

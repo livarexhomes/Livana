@@ -157,6 +157,75 @@ export default function LandlordVerify() {
                     </ol>
                 </div>
             </section>
+            {/* Verification Process Section */}
+            <section id="verification-process" className="lv-verification-process-section" aria-labelledby="lv-verification-title">
+                <div className="lv-container">
+                    <div className="lv-verification-intro">
+                        <h2 id="lv-verification-title">How LIVAREX Verifies Landlords</h2>
+                        <p>Trust is our product. Every landlord on LIVAREX goes through a manual identity and property verification process before their listings go live.</p>
+                    </div>
+                    <div className="lv-verification-steps">
+                        <h3>5-step verification</h3>
+                        <ol className="lv-verification-timeline">
+                            <li>
+                                <span className="lv-verification-step-num">1</span>
+                                <div className="lv-verification-step-content">
+                                    <h4>Account Registration</h4>
+                                    <span className="lv-verification-badge">Required</span>
+                                    <p>Landlords create a verified account with a valid email address and Nigerian phone number. OTP verification confirms the phone immediately.</p>
+                                </div>
+                            </li>
+                            <li>
+                                <span className="lv-verification-step-num">2</span>
+                                <div className="lv-verification-step-content">
+                                    <h4>Government ID Submission</h4>
+                                    <span className="lv-verification-badge">Required</span>
+                                    <p>Every landlord must upload a clear photo of one government-issued ID: NIN slip, international passport, driver's license, or voter's card.</p>
+                                </div>
+                            </li>
+                            <li>
+                                <span className="lv-verification-step-num">3</span>
+                                <div className="lv-verification-step-content">
+                                    <h4>Manual Document Review</h4>
+                                    <span className="lv-verification-badge">24–48 hrs</span>
+                                    <p>Our verification team reviews every submission within 24–48 hours. We cross-check the ID details, confirm identity, and check against our fraud database.</p>
+                                </div>
+                            </li>
+                            <li>
+                                <span className="lv-verification-step-num">4</span>
+                                <div className="lv-verification-step-content">
+                                    <h4>Property Ownership Confirmation</h4>
+                                    <span className="lv-verification-badge">Per listing</span>
+                                    <p>For each listing, we review proof of ownership or legal authority to let (title deed, C of O, allocation letter, or estate agent authority). Landlords listing without proof are declined.</p>
+                                </div>
+                            </li>
+                            <li>
+                                <span className="lv-verification-step-num">5</span>
+                                <div className="lv-verification-step-content">
+                                    <h4>Verified Badge Awarded</h4>
+                                    <span className="lv-verification-badge">Ongoing</span>
+                                    <p>Approved landlords receive the ✅ Verified badge on their profile and all their listings. This badge tells tenants: "This person is real, their identity is confirmed, and their property claim has been checked."</p>
+                                </div>
+                            </li>
+                        </ol>
+                    </div>
+                    <div className="lv-badge-meaning">
+                        <h3>What the ✅ badge means</h3>
+                        <ul>
+                            <li>The landlord's government-issued ID has been reviewed</li>
+                            <li>Their identity matches the documents submitted</li>
+                            <li>Their claim to the property has been checked</li>
+                            <li>Their listing complies with our content policy</li>
+                            <li>They agreed to LIVAREX's landlord code of conduct</li>
+                        </ul>
+                    </div>
+                    <div className="lv-inspection-warning">
+                        <span className="lv-warning-icon">⚠️</span>
+                        <p><strong>Always inspect before paying</strong> — Verified status dramatically reduces scam risk, but we still strongly recommend booking a physical inspection before transferring any money. Use our free inspection booking tool on every property page.</p>
+                    </div>
+                </div>
+            </section>
+
             <section id="how-it-works" className="lv-section lv-container" aria-labelledby="lv-process-title">
                 <div className="lv-section-heading"><h2 id="lv-process-title">How It Works</h2></div>
                 <ProcessGuide />
@@ -185,6 +254,32 @@ const styles = `
 @media(max-width:767px){.lv-container{width:calc(100% - 40px)}.lv-hero{padding:36px 0 30px}.lv-hero-grid{grid-template-columns:1fr;gap:35px}.lv-main h1{font-size:clamp(43px,8vw,60px)}.lv-hero-copy{max-width:560px}.lv-hero-description{max-width:510px}.lv-property-figure{width:100%;max-width:560px;margin-inline:auto!important}.lv-property-card{transform:none}.lv-property-photo{height:340px}.lv-floating-note{left:12px}.lv-property-figure figcaption{padding-top:54px}.lv-floating-note{bottom:33px}.lv-card-heading .lv-caption{display:inline}.lv-principles-grid{gap:20px;padding-block:23px}.lv-principles-grid>span{font-size:11px;gap:8px}.lv-section-heading{display:block;margin-bottom:26px}.lv-section-heading>p{margin-top:17px;max-width:480px}.lv-control{grid-template-columns:1fr;gap:30px}.lv-faq-section{grid-template-columns:1fr;gap:23px;padding-block:45px 55px}.lv-cta{align-items:flex-start;flex-direction:column;padding:30px;gap:26px}.lv-cta h2{font-size:32px}.lv-cta-action{align-items:flex-start}.lv-cta-wrap{padding-bottom:45px}}
 @media(max-width:390px){.lv-container{width:calc(100% - 32px)}.lv-main h1{font-size:41px}.lv-card-heading .lv-caption{display:none}.lv-property-photo{height:300px}.lv-principles-grid{grid-template-columns:1fr}.lv-principles p br{display:none}.lv-principles strong{margin-left:5px}.lv-property-info div>span{font-size:10px}.lv-timeline-card{padding:20px}.lv-cta{padding:26px}.lv-cta h2{font-size:28px}}
 @media(prefers-reduced-motion:reduce){.lv-main *{transition:none!important;animation:none!important;scroll-behavior:auto!important}}
+
+.lv-verification-process-section{padding:80px 0;background:#f7f9fc;border-block:1px solid #edf0f5}
+.lv-verification-intro{text-align:center;max-width:680px;margin:0 auto 50px}
+.lv-verification-intro h2{font-size:clamp(28px,3vw,38px);font-weight:650;letter-spacing:-.03em;margin-bottom:16px}
+.lv-verification-intro p{font-size:16px;line-height:1.8;color:#607087}
+.lv-verification-steps{background:#fff;border:1px solid #e1e7f0;border-radius:20px;padding:40px;margin-bottom:40px}
+.lv-verification-steps h3{font-size:13px;font-weight:700;letter-spacing:.12em;color:#2563eb;margin-bottom:32px;text-transform:uppercase}
+.lv-verification-timeline{list-style:none;padding:0;margin:0;counter-reset:verification-step}
+.lv-verification-timeline>li{display:flex;gap:24px;padding:28px 0;border-bottom:1px solid #edf0f5;counter-increment:verification-step}
+.lv-verification-timeline>li:last-child{border-bottom:none}
+.lv-verification-step-num{flex-shrink:0;width:48px;height:48px;display:grid;place-items:center;background:linear-gradient(135deg,#2563eb,#1746b4);color:white;font-size:20px;font-weight:700;border-radius:12px}
+.lv-verification-step-content{flex:1}
+.lv-verification-step-content h4{font-size:18px;font-weight:650;margin-bottom:8px}
+.lv-verification-badge{display:inline-flex;align-items:center;gap:6px;border:1px solid #e3e9f2;border-radius:6px;padding:4px 10px;background:#f8fafc;color:#52637a;font-size:11px;font-weight:600;margin-bottom:12px}
+.lv-verification-badge:before{content:'';width:5px;height:5px;border-radius:50%;background:#7b91b3}
+.lv-verification-step-content p{font-size:14px;line-height:1.75;color:#607087}
+.lv-badge-meaning{background:#fff;border:1px solid #e1e7f0;border-radius:20px;padding:36px 40px;margin-bottom:32px}
+.lv-badge-meaning h3{font-size:20px;font-weight:650;margin-bottom:24px}
+.lv-badge-meaning ul{list-style:none;padding:0;margin:0;display:grid;grid-template-columns:repeat(2,1fr);gap:16px}
+.lv-badge-meaning li{font-size:14px;line-height:1.6;color:#52637a;padding-left:28px;position:relative}
+.lv-badge-meaning li:before{content:'✓';position:absolute;left:0;color:#2563eb;font-weight:700}
+.lv-inspection-warning{display:flex;align-items:flex-start;gap:16px;padding:24px;background:#fffbeb;border:1px solid #f5e5bb;border-radius:14px}
+.lv-warning-icon{font-size:24px;flex-shrink:0}
+.lv-inspection-warning p{font-size:14px;line-height:1.7;color:#936026}
+.lv-inspection-warning strong{color:#b45309}
+@media(max-width:767px){.lv-verification-process-section{padding:50px 0}.lv-verification-steps{padding:24px}.lv-verification-timeline>li{flex-direction:column;gap:16px;padding:20px 0}.lv-badge-meaning{padding:24px}.lv-badge-meaning ul{grid-template-columns:1fr}}
 
 .lv-process-cards{list-style:none;padding:0;margin:0;display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:18px}
 .lv-process-card{grid-column:span 2;border:1px solid #e1e7f0;border-radius:16px;padding:28px;background:#fff}
