@@ -38,7 +38,7 @@ const pillars = [
   { title: 'Reviewed properties', description: 'Property listings go through defined LIVAREX review and verification checks.', icon: FileText },
   { title: 'Direct connections', description: 'Prospective tenants can connect directly with approved landlords.', icon: MessageSquare },
 ]
-const landlordBenefits = ['List your property free', 'Reach genuine prospective tenants', 'Verified landlord profile', 'No agents involved', 'No agent commission', 'Manage your property your way']
+const landlordBenefits = ['Meet genuine tenants', 'List without any fee', 'No middle man', 'No commission', 'Get a verified badge', 'Your property, your rule']
 const sectionLinks = [
   { id: 'our-story', label: 'Our purpose' },
   { id: 'mission', label: 'Mission & vision' },
