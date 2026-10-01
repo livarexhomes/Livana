@@ -212,6 +212,7 @@ export default async function handler(req, res) {
   const emailConfig = await resolveEmailConfig(process.env, { allowDisabled: true }).catch(() => ({}))
   const resendApiKey = emailConfig.apiKey || getEnv('RESEND_API_KEY') || ''
   if (event.emailId && resendApiKey && (!event.text && !event.html || !event.headers.length)) {
+    let receivedOk = false
     try {
       const received = await fetch(`https://api.resend.com/emails/receiving/${encodeURIComponent(event.emailId)}`, {
         headers: { Authorization: `Bearer ${resendApiKey}` },
@@ -227,6 +228,7 @@ export default async function handler(req, res) {
           event.html = message.html || event.html
           event.headers = message.headers || event.headers
           event.messageId = message.message_id || event.messageId
+          receivedOk = Boolean(message.text || message.html || message.headers)
         }
       } else {
         console.warn('[resend-inbound] failed to fetch received email body', {
@@ -239,6 +241,11 @@ export default async function handler(req, res) {
         emailId: event.emailId,
         error: String(err?.message || err),
       })
+    }
+    // If Resend sent an `email_id` we should be able to hydrate the message.
+    // Bail with 502 so Resend retries instead of storing an empty reply.
+    if (!receivedOk) {
+      return sendJson(res, 502, { error: 'Failed to retrieve received email body' })
     }
   }
 

@@ -172,54 +172,72 @@ export default async function handler(req, res) {
 
   const ok = !!resendResp && resendResp.ok && payload?.id
   const resendId = ok ? payload.id : null
+  // Resend's send response carries the provider-internal id; the real RFC-822
+  // Message-ID generated for the email lives in `response_id` and is what the
+  // receiving server will echo in `In-Reply-To` / `References` when the user
+  // replies. Use it for `message_id` so future inbound matching is reliable.
+  const realMessageId = typeof payload?.response_id === 'string' && payload.response_id
+    ? payload.response_id
+    : resendId
+      ? `<${resendId}@resend.dev>`
+      : null
+  // Prefer the original Message-ID from the inbound contact message so the
+  // outbound email lands in the same conversation in Gmail/Outlook even when
+  // `threadId` isn't supplied by the client.
+  const outboundMessageId = threadId || realMessageId
 
-  // Persist to email_thread_replies (best-effort — failures don't block the send,
-  // but we still log them so the admin can spot thread sync problems clearly).
-  try {
-    const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL
-    const serviceKey = process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY || ''
-    if (supabaseUrl && serviceKey) {
-      const row = {
-        contact_id: contactId,
-        inquiry_id: inquiryId,
-        to_email: to,
-        to_name: toName || null,
-        from_email: cfg.fromEmail || 'noreply@livarex.com.ng',
-        from_name: cfg.fromName || 'Livarex Homes',
-        subject,
-        body: message,
-        body_html: html,
-        resend_id: resendId,
-        message_id: resendId ? `<${resendId}@resend.dev>` : null,
-        in_reply_to: threadId || null,
-        direction: 'outbound',
-        status: ok ? 'sent' : 'failed',
-        error_message: ok ? null : (errorMessage || payload?.message || `Resend status ${resendResp?.status ?? 'unknown'}`),
-      }
-      const persisted = await fetch(`${supabaseUrl}/rest/v1/email_thread_replies`, {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${serviceKey}`,
-          apikey: serviceKey,
-          'Content-Type': 'application/json',
-          Prefer: 'return=minimal',
-        },
-        body: JSON.stringify(row),
-      })
-      if (!persisted.ok) {
-        console.error('[send-email-reply] failed to persist outbound reply', {
-          status: persisted.status,
-          statusText: persisted.statusText,
-          contactId,
-          inquiryId,
-          to,
-        })
-      }
-    } else {
-      console.warn('[send-email-reply] missing Supabase service key; outbound reply not persisted to email_thread_replies')
-    }
-  } catch (err) {
-    console.error('[send-email-reply] persistence error', err)
+  const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL
+  const serviceKey = process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY || ''
+  if (!supabaseUrl || !serviceKey) {
+    console.error('[send-email-reply] missing Supabase service key; outbound reply not persisted to email_thread_replies')
+    return sendJson(res, 500, { error: 'Thread persistence is unavailable. Configure Supabase before sending email replies.' })
+  }
+
+  const row = {
+    contact_id: contactId,
+    inquiry_id: inquiryId,
+    to_email: to,
+    to_name: toName || null,
+    from_email: cfg.fromEmail || 'noreply@livarex.com.ng',
+    from_name: cfg.fromName || 'Livarex Homes',
+    subject,
+    body: message,
+    body_html: html,
+    resend_id: resendId,
+    message_id: outboundMessageId,
+    in_reply_to: threadId || null,
+    direction: 'outbound',
+    status: ok ? 'sent' : 'failed',
+    error_message: ok ? null : (errorMessage || payload?.message || `Resend status ${resendResp?.status ?? 'unknown'}`),
+  }
+  const persisted = await fetch(`${supabaseUrl}/rest/v1/email_thread_replies`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${serviceKey}`,
+      apikey: serviceKey,
+      'Content-Type': 'application/json',
+      Prefer: 'return=minimal',
+    },
+    body: JSON.stringify(row),
+  }).catch((err) => ({ ok: false, status: 0, statusText: String(err?.message || err) }))
+
+  if (!persisted.ok) {
+    console.error('[send-email-reply] failed to persist outbound reply', {
+      status: persisted.status,
+      statusText: persisted.statusText,
+      contactId,
+      inquiryId,
+      to,
+      resendId,
+    })
+    // Surface a clear error so the admin UI can react. We intentionally return
+    // 500 (not 502) so the outbound message isn't treated as a fully sent
+    // success: the in-app thread is required for the conversation to stay
+    // complete on the AdminSupport page.
+    return sendJson(res, 500, {
+      error: persisted.statusText || `Thread persistence failed (status ${persisted.status})`,
+      persisted: false,
+    })
   }
 
   if (!ok) {
@@ -228,5 +246,10 @@ export default async function handler(req, res) {
     })
   }
 
-  return sendJson(res, 200, { success: true, id: resendId, inboundConfigured: Boolean(inboundReplyTo) })
+  return sendJson(res, 200, {
+    success: true,
+    id: resendId,
+    messageId: outboundMessageId,
+    inboundConfigured: Boolean(inboundReplyTo),
+  })
 }
