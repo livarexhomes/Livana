@@ -1020,7 +1020,7 @@ export default function HomePage() {
             {([
               { step: '01', Icon: Search, title: 'Discover', desc: 'Browse available verified properties.' },
               { step: '02', Icon: ShieldCheck, title: 'Verify', desc: 'Review clear property and landlord information.' },
-              { step: '03', Icon: Calendar, title: 'Inspect', desc: 'Request and coordinate your property inspection.' },
+              { step: '03', Icon: Calendar, title: 'Inspect', desc: 'Request and coordinate your property inspection. Zero Inspection Fee.' },
               { step: '04', Icon: Home, title: 'Move In', desc: 'Complete the process with greater confidence.' },
             ] as const).map((item, i) => {
               const isActive = activeHiwStep === i
