@@ -75,7 +75,7 @@ function FeesSummary({ breakdown, percent }: { breakdown: FeeBreakdown; percent?
           <span>Rent Amount</span><span className="font-semibold text-gray-900">{formatNaira(breakdown.rent)}</span>
         </div>
         <div className="flex items-center justify-between text-gray-600">
-          <span>Agency Fee ({percent != null ? `${percent}%` : '—'})</span><span className="font-semibold text-gray-900">{formatNaira(breakdown.agencyFee)}</span>
+          <span>Livarex Service Fee ({percent != null ? `${percent}%` : '—'})</span><span className="font-semibold text-gray-900">{formatNaira(breakdown.agencyFee)}</span>
         </div>
         {breakdown.agreementFee > 0 && (
           <div className="flex items-center justify-between text-gray-600">
@@ -236,7 +236,7 @@ export default function AdminProperties() {
       .then(({ data }) => setLandlords(data ?? []))
   }, [])
 
-  // Load the configured Agency Fee percentage and keep it in sync.
+  // Load the configured Livarex Service Fee percentage and keep it in sync.
   useEffect(() => {
     let active = true
     getFeeConfig().then(cfg => { if (active) setFeeConfig(cfg) })
@@ -668,7 +668,7 @@ export default function AdminProperties() {
                         {/* Mobile: fee breakdown */}
                         <div className="sm:hidden mt-1.5 space-y-1 text-[11px]">
                           <div className="flex items-center justify-between text-slate-500">
-                            <span>Agency fee</span>
+                            <span>Livarex Service Fee</span>
                             <span className="font-semibold text-slate-700">{formatNaira(breakdown.agencyFee)}</span>
                           </div>
                           <div className="flex items-center justify-between pt-1 border-t border-slate-100 font-semibold">
@@ -856,7 +856,7 @@ export default function AdminProperties() {
                     />
                   </div>
                   <div>
-                    <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5 block">Agency Fee (auto)</label>
+                    <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5 block">Livarex Service Fee (auto)</label>
                     <div className="w-full px-4 py-2.5 rounded-xl border border-gray-200 bg-gray-100 text-sm text-gray-900 font-semibold flex items-center justify-between">
                       <span>{formatNaira(editBreakdown.agencyFee)}</span>
                       <span className="text-xs font-medium text-gray-400">{feeConfig ? `${feeConfig.agencyFeePercent}%` : '…'}</span>
@@ -1173,7 +1173,7 @@ export default function AdminProperties() {
                   />
                 </div>
                 <div>
-                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1.5 block">Agency Fee (auto)</label>
+                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1.5 block">Livarex Service Fee (auto)</label>
                   <div className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 bg-gray-100 text-sm text-gray-900 font-semibold flex items-center justify-between">
                     <span>{formatNaira(addBreakdown.agencyFee)}</span>
                     <span className="text-xs font-medium text-gray-400">{feeConfig ? `${feeConfig.agencyFeePercent}%` : '…'}</span>

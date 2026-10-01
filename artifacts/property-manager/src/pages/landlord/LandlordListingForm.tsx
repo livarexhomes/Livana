@@ -57,7 +57,7 @@ const emptyForm: FormData = {
   amenities: [], agreement_fee: '', other_charges: '', latitude: '', longitude: '',
 }
 
-const FIELD_CLASS = 'w-full px-4 py-3 rounded-xl border border-gray-200 text-sm text-gray-900 bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all'
+const FIELD_CLASS = 'w-full px-4 py-3 rounded-xl border border-gray-200 text-sm text-gray-900 bg-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all'
 const SELECT_CLASS = FIELD_CLASS + ' cursor-pointer'
 
 export default function LandlordListingForm() {
@@ -146,7 +146,7 @@ export default function LandlordListingForm() {
     })
   }, [isEdit, id])
 
-  // Load the configured Agency Fee percentage once and keep it in sync when
+  // Load the configured Livarex Service Fee percentage once and keep it in sync when
   // the admin saves new Listing Rules while this form is open.
   useEffect(() => {
     let active = true
@@ -368,31 +368,69 @@ export default function LandlordListingForm() {
           <header className="flex items-center justify-between pl-14 pr-4 md:px-8 py-4 bg-white border-b border-gray-100 shrink-0">
             <div className="flex items-center gap-3">
               <button type="button" onClick={() => navigate('/landlord/listings')}
-                className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors">
+                aria-label="Back to listings"
+                className="w-9 h-9 flex items-center justify-center rounded-xl border border-gray-200 text-gray-500 hover:text-gray-900 hover:bg-gray-50 transition-colors">
                 <ArrowLeft className="w-4 h-4" />
               </button>
               <div>
                 <h1 className="text-lg font-extrabold text-gray-900 tracking-tight">
-                  {isEdit ? 'Edit Listing' : 'New Listing'}
+                  {isEdit ? 'Edit your listing' : 'Create a listing'}
                 </h1>
-                <p className="text-xs text-gray-400 mt-0.5">
-                  {isEdit ? 'Update your property details' : 'Fill in the details for your new property'}
+                <p className="text-xs text-gray-500 mt-0.5">
+                  {isEdit ? 'Keep your property details and photos up to date.' : 'Add the details tenants need to find their next home.'}
                 </p>
               </div>
             </div>
+            {isEdit && (
+              <span className="hidden sm:inline-flex items-center gap-1.5 rounded-full border border-blue-100 bg-blue-50 px-3 py-1.5 text-xs font-semibold text-blue-700">
+                <Home className="w-3.5 h-3.5" />
+                Listing editor
+              </span>
+            )}
           </header>
 
           <main className="flex-1 overflow-y-auto p-4 md:p-6 pb-24 md:pb-6">
-            <div className="max-w-2xl">
+            <div className="max-w-6xl mx-auto">
+              <div className="mb-6 rounded-2xl border border-blue-100 bg-gradient-to-r from-blue-50 via-white to-white px-5 py-4 sm:px-6">
+                <p className="text-xs font-bold uppercase tracking-[0.12em] text-blue-700">
+                  {isEdit ? 'Manage property' : 'New property'}
+                </p>
+                <h2 className="mt-1 text-lg font-bold text-gray-900">
+                  {form.title || (isEdit ? 'Update your listing' : 'Tell us about your property')}
+                </h2>
+                <p className="mt-1 text-sm text-gray-600">
+                  Work through each section below. Your changes are saved when you select {isEdit ? 'Save changes' : 'Create listing'}.
+                </p>
+              </div>
               {error && (
                 <div className="mb-5 px-4 py-3.5 bg-red-50 border border-red-200 rounded-xl text-sm text-red-700 flex items-start gap-2">
                   <span className="font-semibold">Error:</span> {error}
                 </div>
               )}
 
-              <form onSubmit={handleSubmit} className="space-y-5">
+              <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-[220px_minmax(0,1fr)] gap-5 items-start">
+                <nav aria-label="Listing form sections" className="lg:sticky lg:top-4 rounded-2xl border border-gray-200 bg-white p-3 shadow-sm">
+                  <p className="px-3 pb-2 pt-1 text-[11px] font-bold uppercase tracking-wider text-gray-400">Edit menu</p>
+                  <div className="flex gap-2 overflow-x-auto lg:flex-col lg:gap-1">
+                    {[
+                      { href: '#listing-basics', label: 'Basic information', icon: Home },
+                      { href: '#listing-location', label: 'Location & price', icon: MapPin },
+                      { href: '#listing-amenities', label: 'Amenities', icon: Tag },
+                      { href: '#listing-details', label: 'Property details', icon: BedDouble },
+                      { href: '#listing-photos', label: 'Photos', icon: ImagePlus },
+                    ].map(({ href, label, icon: Icon }) => (
+                      <a key={href} href={href}
+                        className="inline-flex shrink-0 items-center gap-2.5 rounded-xl px-3 py-2.5 text-sm font-medium text-gray-600 transition-colors hover:bg-blue-50 hover:text-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/40 lg:w-full">
+                        <Icon className="h-4 w-4 shrink-0" />
+                        {label}
+                      </a>
+                    ))}
+                  </div>
+                </nav>
+
+                <div className="min-w-0 space-y-5">
                 {/* Basic Info */}
-                <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-5">
+                <div id="listing-basics" className="scroll-mt-5 bg-white rounded-2xl border border-gray-200/80 shadow-sm p-5 sm:p-6 space-y-5">
                   <div className="flex items-center gap-2 pb-1 border-b border-gray-100">
                     <Home className="w-4 h-4 text-blue-600" />
                     <h2 className="text-sm font-bold text-gray-900">Basic Information</h2>
@@ -420,7 +458,7 @@ export default function LandlordListingForm() {
                 </div>
 
                 {/* Location & Price */}
-                <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-5">
+                <div id="listing-location" className="scroll-mt-5 bg-white rounded-2xl border border-gray-200/80 shadow-sm p-5 sm:p-6 space-y-5">
                   <div className="flex items-center gap-2 pb-1 border-b border-gray-100">
                     <MapPin className="w-4 h-4 text-blue-600" />
                     <h2 className="text-sm font-bold text-gray-900">Location & Price</h2>
@@ -476,7 +514,7 @@ export default function LandlordListingForm() {
                     </div>
                     <div>
                       <label className="flex items-center gap-1.5 text-sm font-semibold text-gray-700 mb-2">
-                        <ReceiptText className="w-3.5 h-3.5 text-gray-400" /> Agency Fee (auto)
+                        <ReceiptText className="w-3.5 h-3.5 text-gray-400" /> Livarex Service Fee (auto)
                       </label>
                       <div className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-gray-100 text-sm text-gray-900 font-semibold flex items-center justify-between">
                         <span>{formatNaira(breakdown.agencyFee)}</span>
@@ -531,7 +569,7 @@ export default function LandlordListingForm() {
                         <span>Rent Amount</span><span className="font-semibold text-gray-900">{formatNaira(breakdown.rent)}</span>
                       </div>
                       <div className="flex items-center justify-between text-gray-600">
-                        <span>Agency Fee ({feeConfig ? `${feeConfig.agencyFeePercent}%` : '—'})</span><span className="font-semibold text-gray-900">{formatNaira(breakdown.agencyFee)}</span>
+                        <span>Livarex Service Fee ({feeConfig ? `${feeConfig.agencyFeePercent}%` : '—'})</span><span className="font-semibold text-gray-900">{formatNaira(breakdown.agencyFee)}</span>
                       </div>
                       {breakdown.agreementFee > 0 && (
                         <div className="flex items-center justify-between text-gray-600">
@@ -552,7 +590,7 @@ export default function LandlordListingForm() {
                 </div>
 
                 {/* Amenities */}
-                <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-5">
+                <div id="listing-amenities" className="scroll-mt-5 bg-white rounded-2xl border border-gray-200/80 shadow-sm p-5 sm:p-6 space-y-5">
                   <div className="flex items-center gap-2 pb-1 border-b border-gray-100">
                     <Tag className="w-4 h-4 text-blue-600" />
                     <h2 className="text-sm font-bold text-gray-900">Amenities</h2>
@@ -593,7 +631,7 @@ export default function LandlordListingForm() {
                 </div>
 
                 {/* Details */}
-                <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-5">
+                <div id="listing-details" className="scroll-mt-5 bg-white rounded-2xl border border-gray-200/80 shadow-sm p-5 sm:p-6 space-y-5">
                   <div className="flex items-center gap-2 pb-1 border-b border-gray-100">
                     <Tag className="w-4 h-4 text-blue-600" />
                     <h2 className="text-sm font-bold text-gray-900">Property Details</h2>
@@ -657,7 +695,7 @@ export default function LandlordListingForm() {
                 </div>
 
                 {/* Images */}
-                <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-4">
+                <div id="listing-photos" className="scroll-mt-5 bg-white rounded-2xl border border-gray-200/80 shadow-sm p-5 sm:p-6 space-y-4">
                   <div className="flex items-center gap-2 pb-1 border-b border-gray-100">
                     <ImagePlus className="w-4 h-4 text-blue-600" />
                     <h2 className="text-sm font-bold text-gray-900">Photos</h2>
@@ -748,13 +786,14 @@ export default function LandlordListingForm() {
                 {/* Actions */}
                 <div className="flex gap-3">
                   <button type="submit" disabled={loading}
-                    className="flex-1 py-3 bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white font-bold rounded-xl transition-colors shadow-sm shadow-blue-600/20 text-sm">
+                    className="flex-1 py-3 bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white font-bold rounded-xl transition-colors shadow-sm shadow-blue-600/20 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2">
                     {loading ? 'Saving…' : isEdit ? 'Save changes' : 'Create listing'}
                   </button>
                   <button type="button" onClick={() => navigate('/landlord/listings')}
-                    className="px-6 py-3 bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 font-semibold rounded-xl transition-colors text-sm">
+                    className="px-6 py-3 bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 font-semibold rounded-xl transition-colors text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/40 focus-visible:ring-offset-2">
                     Cancel
                   </button>
+                </div>
                 </div>
               </form>
             </div>

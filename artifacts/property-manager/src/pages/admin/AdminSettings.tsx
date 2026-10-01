@@ -679,7 +679,7 @@ export default function AdminSettings() {
         updated_at: new Date().toISOString(),
       }, { onConflict: 'key' })
 
-    // Listing Rules changed → invalidate the cached agency fee percentage and
+    // Listing Rules changed → invalidate the cached Livarex Service Fee percentage and
     // notify any open forms so they re-fetch immediately.
     if (!error && key === 'listing_rules') {
       invalidateFeeConfig()
@@ -2832,15 +2832,15 @@ export default function AdminSettings() {
                     </div>
                   </div>
 
-                  {/* Agency fee percentage */}
+                  {/* Livarex Service Fee percentage */}
                   <div className="mt-4 bg-white border border-slate-200 rounded-2xl p-5 sm:p-6 shadow-[0_1px_3px_#0f172a04]">
                     <div className="flex items-center gap-2.5 mb-4">
                       <div className="w-7 h-7 rounded-lg bg-gray-100 flex items-center justify-center">
                         <DollarSign className="w-3.5 h-3.5 text-gray-400" strokeWidth={1.8} />
                       </div>
                       <div>
-                        <p className="text-sm font-semibold text-gray-900">Agency Fee Percentage</p>
-                        <p className="text-xs text-slate-500">Applied automatically to every listing's Agency Fee</p>
+                        <p className="text-sm font-semibold text-gray-900">Livarex Service Fee Percentage</p>
+                        <p className="text-xs text-slate-500">Applied automatically to every listing's Livarex Service Fee</p>
                       </div>
                     </div>
                     <div className="flex items-center gap-4">
@@ -2855,7 +2855,7 @@ export default function AdminSettings() {
                       />
                       <span className="text-sm font-semibold text-gray-500">%</span>
                       <p className="text-xs text-slate-500">
-                        This is the single source of truth — Agency Fee is always calculated as rent × this percentage.
+                        This is the single source of truth — Livarex Service Fee is always calculated as rent × this percentage.
                       </p>
                     </div>
                   </div>
@@ -2863,7 +2863,7 @@ export default function AdminSettings() {
                   <div className="mt-3 flex items-center gap-2 px-4 py-3 rounded-lg bg-blue-50 border border-blue-100">
                     <CheckCircle className="w-4 h-4 text-blue-600 shrink-0" strokeWidth={2} />
                     <p className="text-sm text-blue-700">
-                      {[listing.autoApprove, listing.requireImages, listing.requireDescription, listing.allowNegotiation].filter(Boolean).length} of 4 rules active · Agency Fee {listing.agencyFeePercent}%
+                      {[listing.autoApprove, listing.requireImages, listing.requireDescription, listing.allowNegotiation].filter(Boolean).length} of 4 rules active · Livarex Service Fee {listing.agencyFeePercent}%
                     </p>
                   </div>
                 </div>

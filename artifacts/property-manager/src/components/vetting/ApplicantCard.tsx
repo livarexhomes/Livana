@@ -2,7 +2,8 @@ import { Phone, ChevronRight, MapPin } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { KYC_STATUS_META, daysAgo, avatarGrad, getInitials, type VettingLandlord } from './mockData'
 
-const BRAND = '#2563EB'
+const BRAND = '#6366F1'
+const ACCENT = '#A855F7'
 
 interface ApplicantCardProps {
   landlord: VettingLandlord
@@ -32,18 +33,28 @@ export default function ApplicantCard({
       onKeyDown={onKeyDown}
       tabIndex={tabIndex}
       className={cn(
-        'group relative flex w-full items-center gap-3.5 px-4 py-3.5 text-left transition-all duration-150',
-        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1',
+        'group relative flex w-full items-center gap-3.5 px-4 py-3.5 text-left transition-all duration-200',
+        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400/60 focus-visible:ring-offset-0',
         selected
-          ? 'bg-white border-l-4 border-l-transparent'
-          : 'hover:bg-slate-50/80',
+          ? 'bg-gradient-to-r from-indigo-50/80 via-violet-50/40 to-transparent'
+          : 'hover:bg-slate-50/70',
       )}
-      style={selected ? { borderLeftColor: BRAND } : undefined}
     >
+      {/* Selection indicator bar */}
+      <span
+        aria-hidden="true"
+        className={cn(
+          'absolute inset-y-2 left-0 w-1 rounded-r-full transition-all duration-200',
+          selected
+            ? 'bg-gradient-to-b from-indigo-500 to-violet-500 shadow-sm shadow-indigo-500/40'
+            : 'bg-transparent',
+        )}
+      />
+
       {/* Avatar */}
       <div
         className={cn(
-          'relative flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl text-[11px] font-black text-white shadow-sm',
+          'relative flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl text-[11px] font-black text-white shadow-sm ring-2 ring-white',
           avatarGrad(landlord.full_name),
         )}
         aria-hidden="true"
@@ -52,7 +63,7 @@ export default function ApplicantCard({
         {/* Status dot */}
         <span
           className={cn(
-            'absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-white',
+            'absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-white shadow-sm',
             landlord.status === 'approved'     && 'bg-emerald-500',
             landlord.status === 'pending'     && 'bg-amber-400',
             landlord.status === 'rejected'    && 'bg-red-500',
@@ -67,19 +78,19 @@ export default function ApplicantCard({
         <div className="flex items-center justify-between gap-2">
           <p
             className={cn(
-              'truncate text-[14px] font-bold',
-              selected ? 'text-slate-900' : 'text-slate-800',
+              'truncate text-[14px] font-bold tracking-tight transition-colors',
+              selected ? 'text-indigo-900' : 'text-slate-800 group-hover:text-slate-900',
             )}
           >
             {landlord.full_name}
           </p>
           {ago && (
-            <span className="shrink-0 rounded-full bg-amber-50 border border-amber-200 px-1.5 py-0.5 text-[10px] font-bold text-amber-600">
+            <span className="shrink-0 rounded-full bg-amber-50 px-1.5 py-0.5 text-[10px] font-bold text-amber-700 ring-1 ring-amber-200/70">
               {ago}
             </span>
           )}
         </div>
-        <div className="mt-1 flex items-center gap-2 flex-wrap">
+        <div className="mt-1.5 flex items-center gap-2 flex-wrap">
           {/* Status badge */}
           <span
             className={cn(
@@ -110,10 +121,10 @@ export default function ApplicantCard({
       {/* Chevron */}
       <ChevronRight
         className={cn(
-          'h-4 w-4 shrink-0 text-slate-300 transition-all duration-150',
+          'h-4 w-4 shrink-0 transition-all duration-200',
           selected
-            ? 'text-slate-900 translate-x-0.5'
-            : 'group-hover:translate-x-0.5 group-hover:text-slate-500',
+            ? 'translate-x-0.5 text-indigo-500'
+            : 'text-slate-300 group-hover:translate-x-0.5 group-hover:text-slate-500',
         )}
       />
     </button>

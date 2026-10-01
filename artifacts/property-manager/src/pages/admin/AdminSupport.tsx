@@ -78,8 +78,9 @@ interface Enquiry {
   created_at: string
   updated_at: string
   tenant_id?: string
+  property_id?: string | null
   tenants?: { full_name: string | null; phone: string | null } | null
-  properties?: { title: string | null; city: string | null; address: string | null } | null
+  properties?: { id?: string | null; title: string | null; city: string | null; address: string | null } | null
 }
 
 interface ChatInquiry {
@@ -939,8 +940,11 @@ function EnquiryDetail({ enquiry, onBack, onStatusChange }: {
   const s = ENQUIRY_STATUS_META[enquiry.status]
   const tenantName    = enquiry.tenants?.full_name ?? 'Tenant'
   const tenantInitial = tenantName[0]?.toUpperCase() ?? 'T'
-  const propertyTitle = enquiry.properties?.title ?? 'Property'
-  const propertyCity  = enquiry.properties?.city  ?? ''
+  const propertyTitle = enquiry.properties?.title?.trim() || 'Property'
+  const propertyAddress = enquiry.properties?.address?.trim() ?? ''
+  const propertyCity = enquiry.properties?.city?.trim() ?? ''
+  const propertyLocation = [propertyAddress, propertyCity].filter(Boolean).join(', ')
+  const propertyId    = enquiry.property_id ?? enquiry.properties?.id ?? null
   const isClosed = enquiry.status === 'closed'
 
   useEffect(() => {
@@ -1079,13 +1083,40 @@ function EnquiryDetail({ enquiry, onBack, onStatusChange }: {
         ) : (
           <>
             {/* Property info */}
-            <div className="flex items-start gap-3 p-3.5 bg-slate-50 rounded-xl mb-3">
+            <div className="flex items-start gap-3 p-4 bg-white border border-blue-100 rounded-xl mb-3 shadow-sm">
               <div className="w-8 h-8 rounded-lg bg-slate-900 flex items-center justify-center shrink-0">
                 <Building2 className="w-4 h-4 text-white" />
               </div>
-              <div className="min-w-0">
-                <p className="text-[13.5px] font-semibold text-slate-900 truncate">{propertyTitle}</p>
-                {propertyCity && <p className="text-[12px] text-slate-500 mt-0.5">{propertyCity}</p>}
+              <div className="min-w-0 flex-1">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-blue-700">Property this enquiry is about</p>
+                    {propertyId ? (
+                      <a href={`/listings/${propertyId}`} target="_blank" rel="noopener noreferrer"
+                        className="block truncate text-[13.5px] font-semibold text-slate-900 hover:text-blue-700 hover:underline">
+                        {propertyTitle}
+                      </a>
+                    ) : (
+                      <p className="truncate text-[13.5px] font-semibold text-slate-900">{propertyTitle}</p>
+                    )}
+                    {propertyLocation && <p className="text-[12px] text-slate-600 mt-0.5">{propertyLocation}</p>}
+                    {!propertyId && (
+                      <p className="mt-1 text-[11px] font-medium text-amber-700">No listing is linked to this enquiry.</p>
+                    )}
+                  </div>
+                  {propertyId && (
+                    <a
+                      href={`/listings/${propertyId}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      aria-label={`View listing: ${propertyTitle}`}
+                      className="shrink-0 inline-flex items-center gap-1 rounded-lg border border-blue-200 bg-blue-50 px-2.5 py-1.5 text-[11px] font-semibold text-blue-700 transition-colors hover:bg-blue-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/40"
+                    >
+                      <Home className="w-3 h-3" />
+                      View listing
+                    </a>
+                  )}
+                </div>
               </div>
             </div>
 
@@ -2415,11 +2446,17 @@ function toContactItem(c: ContactMessage): InboxItem {
 }
 
 function toEnquiryItem(e: Enquiry): InboxItem {
+  const propertyTitle = e.properties?.title?.trim()
+  const propertyAddress = e.properties?.address?.trim()
+  const propertyCity = e.properties?.city?.trim()
+  const propertyLocation = [propertyAddress, propertyCity].filter(Boolean).join(', ')
+  const propertySubtitle = [propertyTitle, propertyLocation].filter(Boolean).join(' • ') || 'Property'
+
   return {
     id: e.id,
     type: 'enquiry',
     name: e.tenants?.full_name ?? 'Tenant',
-    subtitle: e.properties?.title ?? 'Property',
+    subtitle: propertySubtitle,
     body: e.message,
     status: e.status,
     unread: false,
@@ -2479,7 +2516,7 @@ function InboxTab({ liveState, onOpenThreadChange, initialChatId, onInitialChatC
 
   useEffect(() => {
     const supabase = createClient()
-    supabase.from('enquiries').select('*, tenants(full_name, phone), properties(title, city, address)')
+    supabase.from('enquiries').select('*, tenants(full_name, phone), properties(id, title, city, address)')
       .order('created_at', { ascending: false })
       .then(({ data }) => setEnquiries((data as Enquiry[]) ?? []))
     supabase.from('chat_inquiries').select('*')
@@ -2496,7 +2533,7 @@ function InboxTab({ liveState, onOpenThreadChange, initialChatId, onInitialChatC
       async (payload) => {
         const supabase2 = createClient()
         const { data } = await supabase2.from('enquiries')
-          .select('*, tenants(full_name, phone), properties(title, city, address)')
+          .select('*, tenants(full_name, phone), properties(id, title, city, address)')
           .eq('id', payload.new.id).single()
         if (data) setEnquiries(prev => prev.find(e => e.id === data.id) ? prev : [data as Enquiry, ...prev])
       })

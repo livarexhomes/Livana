@@ -105,7 +105,7 @@ export default function PropertyDetailPage() {
   const [copied, setCopied]       = useState(false)
   const [feeConfig, setFeeConfig] = useState<FeeConfig | null>(null)
 
-  // Load the configured Agency Fee percentage (for the Total Payable card) and
+  // Load the configured Livarex Service Fee percentage (for the Total Payable card) and
   // keep it in sync if the admin updates Listing Rules while this page is open.
   useEffect(() => {
     if (!isSupabaseConfigured()) return
@@ -729,7 +729,7 @@ export default function PropertyDetailPage() {
                         <span className="font-semibold text-gray-900">{formatNaira(breakdown.rent)}</span>
                       </div>
                       <div className="flex items-center justify-between text-gray-600">
-                        <span>Agency Fee{feeConfig ? ` (${feeConfig.agencyFeePercent}%)` : ''}</span>
+                        <span>Livarex Service Fee{feeConfig ? ` (${feeConfig.agencyFeePercent}%)` : ''}</span>
                         <span className="font-semibold text-gray-900">{formatNaira(breakdown.agencyFee)}</span>
                       </div>
                       {breakdown.agreementFee > 0 && (

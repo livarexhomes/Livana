@@ -1,14 +1,14 @@
-// Agency Fee configuration + Total Payable calculations.
+// Livarex Service Fee configuration + Total Payable calculations.
 //
-// The Agency Fee percentage is configured by admins under
+// The Livarex Service Fee percentage is configured by admins under
 // Admin → Settings → Listing Rules and stored in the `admin_settings`
 // table under the `listing_rules` key. This module is the single source of
-// truth for every Agency Fee / Total Payable computation in the app.
+// truth for every Livarex Service Fee / Total Payable computation in the app.
 
 import { createClient } from './supabase'
 
 export interface FeeConfig {
-  /** Agency Fee percentage (e.g. 10 = 10% of rent). */
+  /** Livarex Service Fee percentage (e.g. 10 = 10% of rent). */
   agencyFeePercent: number
 }
 
@@ -29,7 +29,7 @@ export const DEFAULT_FEE_CONFIG: FeeConfig = {
 let cachedConfig: FeeConfig | null = null
 
 /**
- * Fetch the configured Agency Fee percentage from `admin_settings`
+ * Fetch the configured Livarex Service Fee percentage from `admin_settings`
  * (`listing_rules` row). Falls back to the default (10%) when the table is
  * missing or the value isn't set yet.
  */
@@ -51,10 +51,10 @@ export async function getFeeConfig(options?: { refresh?: boolean }): Promise<Fee
     }
     // The table/row may not exist yet (pre-migration) — use the default.
     if (error) {
-      console.warn('[fees] Could not load agency fee config, using default:', error.message)
+      console.warn('[fees] Could not load Livarex Service Fee config, using default:', error.message)
     }
   } catch (err) {
-    console.warn('[fees] Failed to load agency fee config, using default:', err)
+    console.warn('[fees] Failed to load Livarex Service Fee config, using default:', err)
   }
 
   cachedConfig = DEFAULT_FEE_CONFIG
@@ -67,7 +67,7 @@ export function invalidateFeeConfig() {
 }
 
 /**
- * Agency Fee for a rent amount at the given percentage.
+ * Livarex Service Fee for a rent amount at the given percentage.
  * Rounded up to the nearest naira so the total is never understated.
  */
 export function getAgencyFee(price: number, percent: number): number {
@@ -80,7 +80,7 @@ export function getAgencyFee(price: number, percent: number): number {
 /**
  * Compute the full Total Payable breakdown for a property.
  * Optional fees are only included when they have a value.
- * The agency fee is ALWAYS computed from the configured percentage — it is
+ * The Livarex Service Fee is ALWAYS computed from the configured percentage — it is
  * never stored, so changing the admin setting retroactively updates all fees.
  */
 export function calcFeeBreakdown(

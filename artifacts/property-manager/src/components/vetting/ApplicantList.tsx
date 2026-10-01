@@ -64,18 +64,29 @@ export default function ApplicantList({
       >
         {loading ? (
           <div className="flex items-center justify-center py-20" aria-busy="true">
-            <Loader2 className="h-5 w-5 animate-spin text-slate-400" />
+            <div className="flex flex-col items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-500 to-violet-500 text-white shadow-md shadow-indigo-500/30">
+                <Loader2 className="h-4 w-4 animate-spin" />
+              </div>
+              <p className="text-xs font-semibold text-slate-400">Loading applicants…</p>
+            </div>
           </div>
         ) : landlords.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 text-center px-4">
-            <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl border border-dashed border-slate-200">
-              <Users className="h-7 w-7 text-slate-300" />
+            <div className="relative mb-5">
+              <div
+                aria-hidden="true"
+                className="absolute inset-0 rounded-3xl bg-gradient-to-br from-indigo-500/20 to-violet-500/20 blur-xl"
+              />
+              <div className="relative flex h-16 w-16 items-center justify-center rounded-3xl border border-slate-200/80 bg-white shadow-sm">
+                <Users className="h-7 w-7 text-slate-300" />
+              </div>
             </div>
-            <p className="text-sm font-bold text-slate-600">No applicants</p>
+            <p className="text-sm font-bold text-slate-700">No applicants</p>
             <p className="mt-1 text-xs text-slate-400">Try a different filter or search term.</p>
           </div>
         ) : (
-          <div className="divide-y divide-slate-50">
+          <div className="divide-y divide-slate-100/80">
             {landlords.map((l, idx) => (
               <ApplicantCard
                 key={l.id}

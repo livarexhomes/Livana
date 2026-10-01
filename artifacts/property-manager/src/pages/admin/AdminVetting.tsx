@@ -45,6 +45,10 @@ const KYC_FILTER_TABS_BASE = [
   { key: 'all',           label: 'All' },
 ] as const
 
+const BRAND = '#6366F1'
+const BRAND_D = '#4F46E5'
+const ACCENT = '#A855F7'
+
 // ── Main Component ────────────────────────────────────────────────────────────
 
 export default function AdminVetting() {
@@ -266,7 +270,7 @@ export default function AdminVetting() {
   return (
     <AuthGuard require="admin">
       <MobileSidebarProvider>
-        <div className="vetting-page lv-vetting flex h-screen overflow-hidden bg-white text-slate-900">
+        <div className="vetting-page lv-vetting flex h-screen overflow-hidden bg-slate-50/40 text-slate-900">
         <style>{vettingStyles}</style>
         <AdminSidebar userEmail={user?.email} userName={displayName} />
 
@@ -282,15 +286,15 @@ export default function AdminVetting() {
           {/* Mobile: stat grid */}
           <div className="sm:hidden px-3 pt-3">
             <MobileStatGrid>
-               <MobileStatCard label="KYC pending"     value={kycCounts.pending}      color="#2563EB" icon={Clock} />
+               <MobileStatCard label="KYC pending"     value={kycCounts.pending}      color="#6366F1" icon={Clock} />
                <MobileStatCard label="KYC approved"    value={kycCounts.approved}     color="#16a34a" icon={CheckCircle} />
-               <MobileStatCard label="Listings pending" value={pendingListings.length} color="#7c3aed" icon={ListChecks} />
-               <MobileStatCard label="Landlords"       value={kycCounts.all}          color="#1e40af" icon={Users} />
+               <MobileStatCard label="Listings pending" value={pendingListings.length} color="#A855F7" icon={ListChecks} />
+               <MobileStatCard label="Landlords"       value={kycCounts.all}          color="#4F46E5" icon={Users} />
             </MobileStatGrid>
           </div>
 
           {/* Status filter dropdown + tab switcher */}
-          <div className="hidden sm:flex flex-wrap items-center justify-between gap-3 px-5 py-4 bg-white border-b border-slate-200 shrink-0">
+          <div className="hidden sm:flex flex-wrap items-center justify-between gap-3 px-5 py-4 bg-white/70 backdrop-blur border-b border-slate-200/80 shrink-0">
             <StatusFilterDropdown
               value={kycStatusFilter}
               onChange={setKycStatusFilter}
@@ -321,7 +325,7 @@ export default function AdminVetting() {
               data-testid="vetting-grid"
             >
               {/* LEFT: landlord queue — independently scrollable */}
-              <div className="w-72 xl:w-[21rem] shrink-0 min-h-0 overflow-hidden border-r border-slate-200 bg-white hidden md:flex md:flex-col">
+              <div className="w-72 xl:w-[21rem] shrink-0 min-h-0 overflow-hidden border-r border-slate-200/80 bg-white hidden md:flex md:flex-col">
                 {/* Toolbar without status pills on desktop (pills already in header dropdown) */}
                 <div className="px-4 pt-4 pb-2 border-b border-slate-100 shrink-0">
                   <VettingToolbar
@@ -346,12 +350,12 @@ export default function AdminVetting() {
               </div>
 
               {/* RIGHT: review workspace — sticky, independently scrollable */}
-              <div className="flex-1 min-w-0 min-h-0 overflow-y-auto bg-white">
+              <div className="flex-1 min-w-0 min-h-0 overflow-y-auto bg-slate-50/40">
                 {/* Mobile: back button when no landlord selected */}
                 {selectedLandlord && (
                   <div className="md:hidden px-4 pt-3">
                     <button onClick={clearKycSelection}
-                      className="flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-slate-800 transition">
+                      className="inline-flex items-center gap-1.5 rounded-full border border-slate-200/80 bg-white px-3 py-1.5 text-xs font-semibold text-slate-500 shadow-sm transition-all hover:bg-slate-50 hover:text-slate-700">
                       <ChevronDown className="w-4 h-4 rotate-90" /> Back to queue
                     </button>
                   </div>
@@ -360,7 +364,7 @@ export default function AdminVetting() {
                   {/* Mobile: compact queue header */}
                   <div className="md:hidden mb-4">
                     <div className="flex items-center justify-between mb-3">
-                      <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Landlord queue</p>
+                      <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">Landlord queue</p>
                       <span className="text-[11px] font-semibold text-slate-500">{kycFiltered.length}</span>
                     </div>
                     <VettingToolbar
@@ -381,7 +385,7 @@ export default function AdminVetting() {
                       selectedId={selectedLandlord?.id}
                       onSelect={selectLandlord}
                       loading={kycLoading}
-                      className="min-h-0 rounded-2xl border border-slate-200 shadow-none"
+                      className="min-h-0 rounded-2xl border border-slate-200/80 shadow-sm"
                     />
                   </div>
                   <div className="hidden md:block">
@@ -437,7 +441,7 @@ export default function AdminVetting() {
   )
 }
 
-// ── Listing Approvals tab (unchanged from previous design) ────────────────────
+// ── Listing Approvals tab ─────────────────────────────────────────────────────
 
 function ListingsTab({
   listings, loading, processing, confirm, setConfirm, onApprove, onReject,
@@ -449,36 +453,54 @@ function ListingsTab({
   onReject:  (id: string) => Promise<void>
 }) {
   return (
-    <div className="flex flex-1 min-h-0 overflow-hidden flex-col rounded-2xl border border-slate-200 bg-white">
-      <div className="shrink-0 flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 bg-white px-4 py-4 sm:px-6 sm:py-5">
+    <div className="relative flex flex-1 min-h-0 overflow-hidden flex-col rounded-3xl border border-slate-200/80 bg-white shadow-sm">
+      <div
+        className="pointer-events-none absolute inset-x-0 top-0 h-32 opacity-60"
+        style={{
+          background:
+            'linear-gradient(180deg, rgba(99,102,241,0.05) 0%, rgba(168,85,247,0.03) 50%, transparent 100%)',
+        }}
+      />
+      <div className="relative shrink-0 flex flex-wrap items-center justify-between gap-3 border-b border-slate-200/80 bg-white/80 backdrop-blur px-4 py-4 sm:px-6 sm:py-5">
         <div>
-          <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Property review</p>
-          <h3 className="mt-1 text-base font-bold tracking-tight text-slate-900">
+          <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">Property review</p>
+          <h3 className="mt-1 text-base font-extrabold tracking-tight text-slate-900">
             {loading ? 'Loading…' : listings.length === 0
               ? 'All listings approved'
               : `${listings.length} listing${listings.length !== 1 ? 's' : ''} awaiting review`}
           </h3>
         </div>
         {listings.length > 0 && (
-          <div className="inline-flex items-center gap-2 text-xs text-slate-600 bg-slate-100 border border-slate-200 rounded-full px-4 py-2 font-semibold shrink-0">
-             <span className="w-2 h-2 rounded-full bg-[#2563EB] animate-pulse" />
+          <div className="inline-flex items-center gap-2 rounded-full border border-indigo-200/60 bg-gradient-to-r from-indigo-50 to-violet-50 px-3 py-1.5 text-xs font-bold text-indigo-700 shadow-sm shrink-0">
+            <span className="relative inline-flex h-2 w-2">
+              <span className="absolute inset-0 animate-ping rounded-full bg-indigo-500 opacity-70" />
+              <span className="relative h-2 w-2 rounded-full bg-indigo-500" />
+            </span>
             {listings.length} pending
           </div>
         )}
       </div>
 
-      <div className="flex-1 overflow-y-auto p-4 sm:p-6">
+      <div className="relative flex-1 overflow-y-auto p-4 sm:p-6">
         {loading ? (
           <div className="flex items-center justify-center py-16 sm:py-24 gap-3 text-slate-400">
-            <Loader2 className="w-5 h-5 animate-spin" />
-            <span className="text-sm font-medium">Loading pending listings…</span>
+            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-500 to-violet-500 text-white shadow-md shadow-indigo-500/30">
+              <Loader2 className="w-4 h-4 animate-spin" />
+            </div>
+            <span className="text-sm font-semibold">Loading pending listings…</span>
           </div>
         ) : listings.length === 0 ? (
           <div className="py-12 text-center">
-            <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl border border-dashed border-slate-200 mx-auto">
-              <ListChecks className="w-7 h-7 text-slate-300" />
+            <div className="relative mx-auto mb-5 w-fit">
+              <div
+                aria-hidden="true"
+                className="absolute inset-0 rounded-3xl bg-gradient-to-br from-indigo-500/30 to-violet-500/30 blur-xl"
+              />
+              <div className="relative flex h-16 w-16 items-center justify-center rounded-3xl border border-slate-200/80 bg-white shadow-sm">
+                <ListChecks className="w-7 h-7 text-slate-300" />
+              </div>
             </div>
-            <p className="text-sm font-bold text-slate-600">All caught up!</p>
+            <p className="text-sm font-extrabold text-slate-700">All caught up!</p>
             <p className="mt-1 text-xs text-slate-400">No listing submissions waiting for review.</p>
           </div>
         ) : (
@@ -520,31 +542,32 @@ function ListingCard({
   const landlordName = listing.landlords?.full_name ?? 'Unknown landlord'
 
   return (
-      <div className="lv-vetting-card flex min-w-0 flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white p-2 shadow-sm transition-shadow hover:shadow-lg hover:shadow-slate-200/50">
-      <div className="relative aspect-[16/10] overflow-hidden rounded-xl bg-slate-100">
+      <div className="group relative flex min-w-0 flex-col overflow-hidden rounded-3xl border border-slate-200/80 bg-white p-2 shadow-sm shadow-slate-900/[0.02] transition-all duration-300 hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-xl hover:shadow-slate-900/[0.06]">
+      <div className="relative aspect-[16/10] overflow-hidden rounded-2xl bg-slate-100">
         {coverUrl ? (
-          <img src={coverUrl} alt={listing.title} className="w-full h-full object-cover" />
+          <img src={coverUrl} alt={listing.title} className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" />
         ) : (
           <div className="w-full h-full flex items-center justify-center">
             <Building2 className="w-10 h-10 text-slate-300" />
           </div>
         )}
+        <div className="absolute inset-0 bg-gradient-to-t from-slate-900/40 via-transparent to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
         <div className="absolute top-3 left-3">
-          <span className={`text-[11px] font-bold px-2.5 py-1 rounded-full ${
-             listing.type === 'sale' ? 'bg-[#2563EB] text-white' : 'bg-slate-800 text-white'
+          <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-wider shadow-md ${
+             listing.type === 'sale' ? 'bg-gradient-to-br from-indigo-500 to-violet-500 text-white shadow-indigo-500/30' : 'bg-slate-900/90 text-white backdrop-blur'
           }`}>
             {listing.type === 'sale' ? 'For Sale' : 'For Rent'}
           </span>
         </div>
         <div className="absolute top-3 right-3">
-             <span className="text-[11px] font-bold text-slate-600 bg-white/90 border border-slate-200 rounded-full px-2.5 py-1 backdrop-blur-sm shadow-sm">
+             <span className="inline-flex items-center gap-1 rounded-full border border-white/40 bg-white/90 px-2.5 py-1 text-[10px] font-bold text-slate-600 backdrop-blur shadow-sm">
             {daysAgo(listing.created_at)}
           </span>
         </div>
       </div>
 
       <div className="flex-1 px-3 py-4">
-         <h4 className="text-base font-bold text-slate-900 line-clamp-2 leading-snug tracking-tight">{listing.title}</h4>
+         <h4 className="text-base font-extrabold tracking-tight text-slate-900 line-clamp-2 leading-snug">{listing.title}</h4>
 
         <div className="mt-2 space-y-1.5">
           <div className="flex items-center gap-1.5 text-[12px] text-slate-500">
@@ -559,15 +582,20 @@ function ListingCard({
         </div>
 
         <div className="mt-4 flex flex-wrap items-center justify-between gap-2 border-t border-slate-100 pt-3">
-           <p className="text-xl font-extrabold tracking-tight text-blue-700 break-words">{fmtNaira(listing.price)}</p>
+           <p
+             className="text-xl font-extrabold tracking-tight break-words"
+             style={{ background: `linear-gradient(135deg, ${BRAND}, ${ACCENT})`, WebkitBackgroundClip: 'text', backgroundClip: 'text', color: 'transparent' }}
+           >
+             {fmtNaira(listing.price)}
+           </p>
           <div className="text-[11px] text-slate-400 flex items-center gap-1">
             <DollarSign className="w-3 h-3" />
             {listing.type === 'rent' ? '/yr' : 'outright'}
           </div>
         </div>
 
-         <div className="mt-4 flex flex-wrap items-center gap-2 rounded-xl border border-slate-100 bg-slate-50 px-3 py-3">
-          <div className={`w-7 h-7 rounded-full bg-gradient-to-br ${avatarGrad(landlordName)} flex items-center justify-center shrink-0 text-[9px] font-bold text-white`}>
+         <div className="mt-4 flex flex-wrap items-center gap-2 rounded-2xl border border-slate-200/70 bg-gradient-to-br from-slate-50 to-white px-3 py-3">
+          <div className={`w-8 h-8 rounded-full bg-gradient-to-br ${avatarGrad(landlordName)} flex items-center justify-center shrink-0 text-[10px] font-black text-white shadow-sm ring-2 ring-white`}>
             {getInitials(landlordName)}
           </div>
           <div className="min-w-0">
@@ -576,13 +604,13 @@ function ListingCard({
               <p className="text-[10px] text-slate-400 truncate">{listing.landlords.whatsapp}</p>
             )}
           </div>
-           <span className="ml-auto shrink-0 rounded-full bg-slate-100 border border-slate-200 px-2 py-0.5 text-[10px] font-bold text-slate-500">Submitted</span>
+           <span className="ml-auto shrink-0 rounded-full border border-slate-200 bg-white px-2 py-0.5 text-[10px] font-bold text-slate-500 shadow-sm">Submitted</span>
         </div>
       </div>
 
       <div className="shrink-0 px-3 pb-3">
         {isConfirming ? (
-           <div className="rounded-2xl border border-slate-200 bg-slate-50 p-3">
+           <div className="rounded-2xl border border-slate-200/80 bg-slate-50/80 p-3">
             <p className="text-xs font-semibold text-slate-700 mb-2.5 text-center">
               {confirm?.action === 'approve'
                 ? 'Approve this listing and make it live?'
@@ -590,14 +618,16 @@ function ListingCard({
             </p>
             <div className="flex gap-2">
               <button onClick={() => setConfirm(null)}
-                 className="flex-1 rounded-xl border border-slate-200 bg-white py-2 text-xs font-semibold text-slate-600 hover:bg-slate-50 transition-colors">
+                 className="flex-1 rounded-xl border border-slate-200 bg-white py-2 text-xs font-semibold text-slate-600 transition-all hover:bg-slate-50">
                 Cancel
               </button>
                <button
                 onClick={() => confirm?.action === 'approve' ? onApprove(listing.id) : onReject(listing.id)}
                 disabled={busy}
-                 className={`flex-1 rounded-xl py-2 text-xs font-bold text-white transition-colors disabled:opacity-60 ${
-                    confirm?.action === 'approve' ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-red-600 hover:bg-red-700'
+                 className={`flex-1 rounded-xl py-2 text-xs font-bold text-white transition-all disabled:opacity-60 shadow-md ${
+                    confirm?.action === 'approve'
+                      ? 'bg-gradient-to-br from-emerald-500 to-teal-500 shadow-emerald-500/30 hover:shadow-lg hover:shadow-emerald-500/40'
+                      : 'bg-gradient-to-br from-red-500 to-rose-500 shadow-red-500/30 hover:shadow-lg hover:shadow-red-500/40'
                  }`}>
                 {busy ? <Loader2 className="w-3.5 h-3.5 animate-spin mx-auto" /> : confirm?.action === 'approve' ? 'Approve' : 'Delete listing'}
               </button>
@@ -608,13 +638,13 @@ function ListingCard({
             <button
               onClick={() => setConfirm({ id: listing.id, action: 'approve' })}
               disabled={busy}
-               className="flex-1 flex items-center justify-center gap-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white py-2.5 text-xs font-bold transition-colors disabled:opacity-60 shadow-sm">
+               className="flex flex-1 items-center justify-center gap-1.5 rounded-xl py-2.5 text-xs font-bold text-white transition-all disabled:opacity-60 shadow-md hover:shadow-lg bg-gradient-to-br from-indigo-500 to-violet-500 shadow-indigo-500/30 hover:shadow-indigo-500/40">
               <CheckCircle className="w-3.5 h-3.5" /> Approve
             </button>
             <button
               onClick={() => setConfirm({ id: listing.id, action: 'reject' })}
               disabled={busy}
-               className="flex-1 flex items-center justify-center gap-1.5 rounded-xl border border-red-200 bg-white hover:bg-red-50 text-red-700 py-2.5 text-xs font-bold transition-colors disabled:opacity-60">
+               className="flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-red-200/80 bg-white text-red-700 py-2.5 text-xs font-bold transition-all hover:bg-red-50 hover:border-red-300 hover:shadow-md hover:shadow-red-500/10 disabled:opacity-60">
               <Trash2 className="w-3.5 h-3.5" /> Reject
             </button>
           </div>
@@ -626,14 +656,14 @@ function ListingCard({
 
 const vettingStyles = `
 .lv-vetting{height:100vh;height:100dvh;color-scheme:light}
-.lv-vetting-content{background:#fff}
-.lv-vetting-content input,.lv-vetting-content select,.lv-vetting-content textarea{color:#0f172a;background-color:#fff;border-color:#cbd5e1;border-radius:10px;min-height:42px}
+.lv-vetting-content{background:#f8fafc}
+.lv-vetting-content input,.lv-vetting-content select,.lv-vetting-content textarea{color:#0f172a;background-color:#fff;border-color:#e2e8f0;border-radius:12px;min-height:42px}
 .lv-vetting-content input::placeholder,.lv-vetting-content textarea::placeholder{color:#64748b;opacity:1}
-.lv-vetting-content input:focus,.lv-vetting-content select:focus,.lv-vetting-content textarea:focus{outline:2px solid #2563eb;outline-offset:2px}
-.lv-vetting-content button:focus-visible{outline:2px solid #2563eb;outline-offset:3px}
+.lv-vetting-content input:focus,.lv-vetting-content select:focus,.lv-vetting-content textarea:focus{outline:2px solid #6366f1;outline-offset:2px}
+.lv-vetting-content button:focus-visible{outline:2px solid #6366f1;outline-offset:3px}
 .lv-vetting-content .text-slate-400{color:#64748b}
 .lv-vetting-content [data-testid="vetting-grid"]{isolation:isolate}
-.lv-vetting-content .overflow-y-auto{overscroll-behavior:contain;scrollbar-width:thin;scrollbar-color:#cbd5e1 #fff}
+.lv-vetting-content .overflow-y-auto{overscroll-behavior:contain;scrollbar-width:thin;scrollbar-color:#cbd5e1 transparent}
 .lv-vetting-card button{min-height:44px}
 @media(max-width:767px){.lv-vetting-content input,.lv-vetting-content select,.lv-vetting-content textarea{font-size:16px}.lv-vetting-content{padding-bottom:env(safe-area-inset-bottom)}}
 @media(prefers-reduced-motion:reduce){.lv-vetting-content *{transition:none!important;animation:none!important}}

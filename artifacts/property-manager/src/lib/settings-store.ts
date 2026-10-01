@@ -1,5 +1,5 @@
 // Minimal pub/sub so that when the admin saves Listing Rules (e.g. a new
-// Agency Fee percentage), forms already open in other tabs pick up the change.
+// Livarex Service Fee percentage), forms already open in other tabs pick up the change.
 
 type Listener = () => void
 
