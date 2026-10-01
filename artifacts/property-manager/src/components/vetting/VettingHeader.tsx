@@ -14,6 +14,7 @@ interface VettingHeaderProps {
   onSearch?: (q: string) => void
   totalNotifications?: number
   adminName?: string
+  searchEnabled?: boolean
 }
 
 function getInitials(name: string) {
@@ -27,6 +28,7 @@ export default function VettingHeader({
   onSearch,
   totalNotifications,
   adminName,
+  searchEnabled = true,
 }: VettingHeaderProps) {
   const [query, setQuery]           = useState('')
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false)
@@ -120,7 +122,7 @@ export default function VettingHeader({
               </span>
             </div>
             <h1 className="truncate text-[20px] font-extrabold tracking-tight text-slate-900 sm:text-[22px]">
-              Vetting <span style={{ background: `linear-gradient(135deg, ${BRAND}, ${ACCENT})`, WebkitBackgroundClip: 'text', backgroundClip: 'text', color: 'transparent' }}>Desk</span>
+              Vetting <span style={{ background: `linear-gradient(135deg, ${BRAND}, ${ACCENT})`, WebkitBackgroundClip: 'text', backgroundClip: 'text', color: 'transparent' }}>Hub</span>
             </h1>
           </div>
         </div>
@@ -154,7 +156,7 @@ export default function VettingHeader({
           </div>
 
           {/* Desktop search */}
-          <div className="relative hidden md:block">
+          {searchEnabled && <div className="relative hidden md:block">
             <div
               className="group flex h-11 items-center gap-2.5 rounded-2xl border border-slate-200/70 bg-white/70 px-3.5 shadow-sm shadow-slate-900/[0.02] focus-within:border-indigo-300 focus-within:bg-white focus-within:shadow-md focus-within:shadow-indigo-500/10 focus-within:ring-4 focus-within:ring-indigo-500/10"
             >
@@ -178,10 +180,10 @@ export default function VettingHeader({
                 </button>
               )}
             </div>
-          </div>
+          </div>}
 
           {/* Mobile search trigger */}
-          <div ref={mobileSearchRef} className="relative md:hidden">
+          {searchEnabled && <div ref={mobileSearchRef} className="relative md:hidden">
             <button
               type="button"
               onClick={() => setMobileSearchOpen(o => !o)}
@@ -206,7 +208,7 @@ export default function VettingHeader({
                 </div>
               </div>
             )}
-          </div>
+          </div>}
 
           {/* Admin avatar */}
           <div

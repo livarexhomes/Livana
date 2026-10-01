@@ -19,7 +19,7 @@ export default function VettingTabs({
     <div
       role="tablist"
       aria-label="Vetting workspace"
-      className="relative inline-flex items-center gap-1 rounded-2xl border border-slate-200/70 bg-slate-100/60 p-1 shadow-inner shadow-slate-900/[0.04]"
+      className="relative flex w-full items-center gap-1 rounded-2xl border border-slate-200/70 bg-slate-100/70 p-1 shadow-inner shadow-slate-900/[0.04] sm:w-auto"
     >
       <TabBtn
         active={active === 'identity'}
@@ -55,7 +55,7 @@ function TabBtn({
       aria-selected={active}
       onClick={onClick}
       className={cn(
-        'relative inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold transition-all duration-200',
+        'relative inline-flex min-w-0 flex-1 items-center justify-center gap-1.5 rounded-xl px-2 py-2.5 text-[11px] font-semibold transition-all duration-200 sm:flex-none sm:gap-2 sm:px-4 sm:py-2 sm:text-sm',
         'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400/50 focus-visible:ring-offset-1 focus-visible:ring-offset-slate-100',
         active
           ? 'bg-white text-slate-900 shadow-md shadow-slate-900/[0.08] ring-1 ring-slate-200/80'
@@ -74,18 +74,16 @@ function TabBtn({
         <Icon className="h-3.5 w-3.5" strokeWidth={active ? 2.4 : 1.8} />
       </span>
       {label}
-      {count > 0 && (
-        <span
-          className={cn(
-            'inline-flex h-5 min-w-[20px] items-center justify-center rounded-full px-1.5 text-[10px] font-bold transition-colors',
-            active
-              ? 'bg-gradient-to-br from-indigo-500 to-violet-500 text-white shadow-sm shadow-indigo-500/30'
-              : 'bg-slate-200/70 text-slate-500',
-          )}
-        >
-          {count}
-        </span>
-      )}
+      <span
+        className={cn(
+          'inline-flex h-5 min-w-[20px] items-center justify-center rounded-full px-1.5 text-[10px] font-bold transition-colors',
+          active
+            ? 'bg-gradient-to-br from-indigo-500 to-violet-500 text-white shadow-sm shadow-indigo-500/30'
+            : 'bg-slate-200/70 text-slate-500',
+        )}
+      >
+        {count}
+      </span>
     </button>
   )
 }

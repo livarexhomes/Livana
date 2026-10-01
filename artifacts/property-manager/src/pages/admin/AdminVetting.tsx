@@ -8,7 +8,7 @@ import {
 } from 'lucide-react'
 import AdminSidebar from '../../components/layout/AdminSidebar'
 import AuthGuard from '../../components/auth/AuthGuard'
-import { MobileSidebarProvider, MobilePageHeader, MobileStatGrid, MobileStatCard, MobileEmptyState } from '@/components/ui/mobile-admin'
+import { MobileSidebarProvider } from '@/components/ui/mobile-admin'
 import { createClient, getKycDocUrl, getSupabaseImageUrl } from '../../lib/supabase'
 import {
   VettingHeader,
@@ -281,17 +281,50 @@ export default function AdminVetting() {
             totalNotifications={totalPending}
             onSearch={setKycSearch}
             adminName={displayName}
+            searchEnabled={activeTab === 'identity'}
           />
 
-          {/* Mobile: stat grid */}
-          <div className="sm:hidden px-3 pt-3">
-            <MobileStatGrid>
-               <MobileStatCard label="KYC pending"     value={kycCounts.pending}      color="#6366F1" icon={Clock} />
-               <MobileStatCard label="KYC approved"    value={kycCounts.approved}     color="#16a34a" icon={CheckCircle} />
-               <MobileStatCard label="Listings pending" value={pendingListings.length} color="#A855F7" icon={ListChecks} />
-               <MobileStatCard label="Landlords"       value={kycCounts.all}          color="#4F46E5" icon={Users} />
-            </MobileStatGrid>
-          </div>
+          {/* Overview */}
+          <section className="shrink-0 border-b border-slate-200/80 bg-white px-4 py-4 sm:px-6 sm:py-5" aria-label="Vetting overview">
+            <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-indigo-600">Verification operations</p>
+                <h2 className="mt-1 text-xl font-extrabold tracking-tight text-slate-900 sm:text-2xl">Vetting Hub</h2>
+                <p className="mt-1 text-xs text-slate-500 sm:text-sm">Review landlord identities and property submissions in one place.</p>
+              </div>
+              <span className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-bold ${totalPending ? 'border-amber-200 bg-amber-50 text-amber-800' : 'border-emerald-200 bg-emerald-50 text-emerald-800'}`}>
+                <span className={`h-2 w-2 rounded-full ${totalPending ? 'bg-amber-500' : 'bg-emerald-500'}`} />
+                {totalPending ? `${totalPending} items need review` : 'All queues up to date'}
+              </span>
+            </div>
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 sm:gap-3">
+              {[
+                { label: 'Pending identity', value: kycCounts.pending, icon: Clock, tone: 'amber', action: () => { setActiveTab('identity'); setKycStatusFilter('pending') }, active: activeTab === 'identity' && kycStatusFilter === 'pending' },
+                { label: 'Verified landlords', value: kycCounts.approved, icon: CheckCircle, tone: 'emerald', action: () => { setActiveTab('identity'); setKycStatusFilter('approved') }, active: activeTab === 'identity' && kycStatusFilter === 'approved' },
+                { label: 'Listing approvals', value: pendingListings.length, icon: ListChecks, tone: 'violet', action: () => setActiveTab('listings'), active: activeTab === 'listings' },
+                { label: 'Total landlords', value: kycCounts.all, icon: Users, tone: 'blue', action: () => { setActiveTab('identity'); setKycStatusFilter('all') }, active: activeTab === 'identity' && kycStatusFilter === 'all' },
+              ].map(({ label, value, icon: Icon, tone, action, active }) => {
+                const tones: Record<string, string> = {
+                  amber: 'bg-amber-50 text-amber-700 ring-amber-100',
+                  emerald: 'bg-emerald-50 text-emerald-700 ring-emerald-100',
+                  violet: 'bg-violet-50 text-violet-700 ring-violet-100',
+                  blue: 'bg-blue-50 text-blue-700 ring-blue-100',
+                }
+                return (
+                  <button key={label} type="button" onClick={action}
+                    className={`group flex min-w-0 items-center gap-2.5 rounded-2xl border px-3 py-3 text-left transition-all sm:gap-3 sm:px-4 ${active ? 'border-indigo-200 bg-indigo-50/70 shadow-sm ring-1 ring-indigo-100' : 'border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50'}`}>
+                    <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ring-1 ${tones[tone]}`}>
+                      <Icon className="h-4 w-4" />
+                    </span>
+                    <span className="min-w-0">
+                      <span className="block text-lg font-extrabold leading-tight text-slate-900 sm:text-xl">{value}</span>
+                      <span className="mt-0.5 block truncate text-[10px] font-semibold text-slate-500 sm:text-xs">{label}</span>
+                    </span>
+                  </button>
+                )
+              })}
+            </div>
+          </section>
 
           {/* Workspace navigation */}
           <div className="hidden sm:flex flex-wrap items-center justify-between gap-3 px-5 py-4 bg-white/70 backdrop-blur border-b border-slate-200/80 shrink-0">
@@ -318,7 +351,14 @@ export default function AdminVetting() {
           </div>
 
           {/* Tab switcher (mobile only) */}
-          <div className="sm:hidden shrink-0 border-b border-slate-100 bg-white px-4 py-2">
+          <div className="sm:hidden shrink-0 space-y-2 border-b border-slate-200 bg-white px-3 py-3">
+            {activeTab === 'identity' && (
+              <StatusFilterDropdown
+                value={kycStatusFilter}
+                onChange={setKycStatusFilter}
+                tabs={kycFilterTabs}
+              />
+            )}
             <VettingTabs
               active={activeTab}
               onChange={setActiveTab}
@@ -330,11 +370,18 @@ export default function AdminVetting() {
           {activeTab === 'identity' ? (
             /* ── Two-panel workspace — each panel scrolls independently ── */
             <div
-              className="flex flex-1 min-h-0 overflow-hidden"
+              className="flex flex-1 min-h-0 gap-4 overflow-hidden bg-slate-100/70 p-3 sm:p-4"
               data-testid="vetting-grid"
             >
               {/* LEFT: landlord queue — independently scrollable */}
-              <div className="w-72 xl:w-[21rem] shrink-0 min-h-0 overflow-hidden border-r border-slate-200/80 bg-white hidden md:flex md:flex-col">
+              <div className="hidden w-80 shrink-0 min-h-0 flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm xl:w-[23rem] md:flex">
+                <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3.5">
+                  <div>
+                    <h3 className="text-sm font-bold text-slate-900">Identity queue</h3>
+                    <p className="mt-0.5 text-[11px] text-slate-500">{kycFiltered.length} {kycStatusFilter === 'all' ? 'landlords' : `${kycStatusFilter.replaceAll('_', ' ')} records`}</p>
+                  </div>
+                  <span className="rounded-lg bg-slate-100 px-2 py-1 text-[11px] font-bold tabular-nums text-slate-600">{kycFiltered.length}</span>
+                </div>
                 {/* Toolbar without status pills on desktop (pills already in header dropdown) */}
                 <div className="px-4 pt-4 pb-2 border-b border-slate-100 shrink-0">
                   <VettingToolbar
@@ -359,7 +406,7 @@ export default function AdminVetting() {
               </div>
 
               {/* RIGHT: review workspace — sticky, independently scrollable */}
-              <div className="flex-1 min-w-0 min-h-0 overflow-y-auto bg-slate-50/40">
+              <div className="flex-1 min-w-0 min-h-0 overflow-y-auto rounded-2xl border border-slate-200 bg-white p-3 shadow-sm md:p-4">
                 {/* Mobile: back button when no landlord selected */}
                 {selectedLandlord && (
                   <div className="md:hidden px-4 pt-3">
@@ -369,7 +416,7 @@ export default function AdminVetting() {
                     </button>
                   </div>
                 )}
-                <div className="px-4 pb-6 pt-4 sm:px-6 md:pt-6">
+                <div className="min-h-full px-0 pb-6 pt-0 sm:px-0 md:pt-0">
                   {/* Mobile: compact queue header */}
                   <div className="md:hidden mb-4">
                     <div className="flex items-center justify-between mb-3">
