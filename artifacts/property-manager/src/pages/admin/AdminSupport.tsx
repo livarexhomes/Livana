@@ -2161,6 +2161,27 @@ function ContactDetail({ contact, onBack }: {
           variant: 'destructive',
         })
       } else {
+        const sentAt = new Date().toISOString()
+        const sentLocalReply: EmailReply = {
+          id: `local-${Date.now()}`,
+          contact_id: contact.id,
+          inquiry_id: null,
+          to_email: contact.email,
+          to_name: contact.name,
+          from_email: 'noreply@livarex.com.ng',
+          from_name: 'Livarex Homes',
+          subject,
+          body,
+          status: 'sent',
+          direction: 'outbound',
+          error_message: null,
+          resend_id: data?.id ?? null,
+          created_at: sentAt,
+        }
+        setThread(prev => {
+          const alreadyHas = prev.some(r => r.direction === 'outbound' && r.body === body && r.created_at === sentAt)
+          return alreadyHas ? prev : [sentLocalReply, ...prev]
+        })
         toast({
           title: 'Email sent',
           description: data?.inboundConfigured

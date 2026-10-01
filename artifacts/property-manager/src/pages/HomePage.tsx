@@ -1120,7 +1120,7 @@ export default function HomePage() {
               </div>
 
               <div className="lv-closing-image relative flex items-end shrink-0 overflow-hidden rounded-2xl px-7 py-5">
-                <img src={HERO_IMAGES[5].src} alt={HERO_IMAGES[5].alt} loading="lazy" className="absolute inset-0 h-full w-full object-cover" />
+                <img src={HERO_IMAGES[4].src} alt={HERO_IMAGES[4].alt} loading="lazy" className="absolute inset-0 h-full w-full object-cover" />
                 <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/10 to-transparent" />
                 <div className="relative z-10 text-left">
                   <p className="text-xs font-bold uppercase tracking-widest text-blue-300">Currently available in</p>

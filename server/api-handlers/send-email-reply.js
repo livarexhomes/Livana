@@ -173,10 +173,11 @@ export default async function handler(req, res) {
   const ok = !!resendResp && resendResp.ok && payload?.id
   const resendId = ok ? payload.id : null
 
-  // Persist to email_thread_replies (best-effort — failures don't block the send).
+  // Persist to email_thread_replies (best-effort — failures don't block the send,
+  // but we still log them so the admin can spot thread sync problems clearly).
   try {
     const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL
-    const serviceKey = process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY
+    const serviceKey = process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY || ''
     if (supabaseUrl && serviceKey) {
       const row = {
         contact_id: contactId,
@@ -195,7 +196,7 @@ export default async function handler(req, res) {
         status: ok ? 'sent' : 'failed',
         error_message: ok ? null : (errorMessage || payload?.message || `Resend status ${resendResp?.status ?? 'unknown'}`),
       }
-      await fetch(`${supabaseUrl}/rest/v1/email_thread_replies`, {
+      const persisted = await fetch(`${supabaseUrl}/rest/v1/email_thread_replies`, {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${serviceKey}`,
@@ -204,9 +205,22 @@ export default async function handler(req, res) {
           Prefer: 'return=minimal',
         },
         body: JSON.stringify(row),
-      }).catch(() => null)
+      })
+      if (!persisted.ok) {
+        console.error('[send-email-reply] failed to persist outbound reply', {
+          status: persisted.status,
+          statusText: persisted.statusText,
+          contactId,
+          inquiryId,
+          to,
+        })
+      }
+    } else {
+      console.warn('[send-email-reply] missing Supabase service key; outbound reply not persisted to email_thread_replies')
     }
-  } catch { /* non-fatal */ }
+  } catch (err) {
+    console.error('[send-email-reply] persistence error', err)
+  }
 
   if (!ok) {
     return sendJson(res, 502, {
