@@ -1,10 +1,13 @@
 // POST /api/send-chat-message
 //
-// Inserts a visitor message into chat_messages using the service-role key,
-// bypassing RLS. Also marks the parent inquiry as unread by admin.
+// Inserts a visitor or authenticated admin message into chat_messages using
+// the service-role key, bypassing RLS. Visitor messages mark the parent
+// inquiry unread for admins.
 //
 // Body: { inquiry_id, body, attachment_url?, attachment_name? }
 // Returns: the inserted chat_messages row
+
+import { requireAdmin } from './lib/auth-guard.js'
 
 function sendJson(res, status, body) {
   res.statusCode = status
@@ -47,8 +50,16 @@ export default async function handler(req, res) {
   if (!body) return sendJson(res, 400, { error: 'Invalid request body' })
 
   const { inquiry_id, body: msgBody, attachment_url, attachment_name } = body
+  const sender = body.sender === 'admin' ? 'admin' : 'visitor'
   if (!inquiry_id) return sendJson(res, 400, { error: 'inquiry_id is required' })
   if (!msgBody && !attachment_url) return sendJson(res, 400, { error: 'body or attachment_url is required' })
+
+  // Never let a visitor impersonate an admin merely by changing the request
+  // body. Admin replies use this endpoint so they work even when direct
+  // browser-to-Supabase RLS policies are unavailable or stale.
+  if (sender === 'admin' && !(await requireAdmin(req))) {
+    return sendJson(res, 403, { error: 'Admin authentication is required' })
+  }
 
   const headers = {
     'Content-Type':  'application/json',
@@ -65,7 +76,7 @@ export default async function handler(req, res) {
       headers,
       body: JSON.stringify({
         inquiry_id,
-        sender: 'visitor',
+        sender,
         body: String(msgBody || '').slice(0, 10000),
         attachment_url: attachment_url || null,
         attachment_name: attachment_name || null,
@@ -81,12 +92,15 @@ export default async function handler(req, res) {
   const inserted = Array.isArray(msgJson) ? msgJson[0] : msgJson
   if (!inserted?.id) return sendJson(res, 502, { error: 'No row returned' })
 
-  // Mark inquiry as unread by admin (fire-and-forget)
-  fetch(`${SUPABASE_URL}/rest/v1/chat_inquiries?id=eq.${inquiry_id}`, {
-    method: 'PATCH',
-    headers: { ...headers, Prefer: 'return=minimal' },
-    body: JSON.stringify({ read_by_admin: false }),
-  }).catch(() => {})
+  // A visitor message is new work for the team. An admin reply must not put
+  // the same conversation back in the unread queue.
+  if (sender === 'visitor') {
+    fetch(`${SUPABASE_URL}/rest/v1/chat_inquiries?id=eq.${inquiry_id}`, {
+      method: 'PATCH',
+      headers: { ...headers, Prefer: 'return=minimal' },
+      body: JSON.stringify({ read_by_admin: false }),
+    }).catch(() => {})
+  }
 
   return sendJson(res, 200, inserted)
 }
