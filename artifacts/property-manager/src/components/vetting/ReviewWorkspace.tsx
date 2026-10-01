@@ -15,9 +15,9 @@ import {
 import IdentityGrid from './IdentityGrid'
 import DocumentCard from './DocumentCard'
 
-const BRAND   = '#6366F1'
-const BRAND_D = '#4F46E5'
-const ACCENT  = '#A855F7'
+const BRAND   = '#2563EB'
+const BRAND_D = '#1D4ED8'
+const ACCENT  = '#3B82F6'
 
 interface ReviewWorkspaceProps {
   landlord: VettingLandlord | null
@@ -91,7 +91,7 @@ export default function ReviewWorkspace({
           {/* Avatar */}
           <div
             className={cn(
-              'relative flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl text-[16px] font-black text-white shadow-lg shadow-indigo-500/20 ring-2 ring-white',
+              'relative flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl text-[16px] font-black text-white shadow-lg shadow-blue-500/20 ring-2 ring-white',
               avatarGrad(landlord.full_name),
             )}
             aria-hidden="true"
@@ -130,7 +130,7 @@ export default function ReviewWorkspace({
               <button
                 type="button"
                 onClick={onClose}
-                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-slate-200/80 bg-white text-slate-400 shadow-sm transition-all hover:bg-slate-50 hover:text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-400/40"
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-slate-200/80 bg-white text-slate-400 shadow-sm transition-all hover:bg-slate-50 hover:text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-400/40"
                 aria-label="Close review"
               >
                 <X className="h-4 w-4" />
@@ -151,7 +151,7 @@ export default function ReviewWorkspace({
               {landlord.email && (
                 <a
                   href={`mailto:${landlord.email}`}
-                  className="inline-flex items-center gap-1.5 rounded-full border border-slate-200/80 bg-white px-2.5 py-1 text-[11px] font-semibold text-slate-600 shadow-sm transition-all hover:border-violet-200 hover:bg-violet-50 hover:text-violet-700"
+                  className="inline-flex items-center gap-1.5 rounded-full border border-slate-200/80 bg-white px-2.5 py-1 text-[11px] font-semibold text-slate-600 shadow-sm transition-all hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700"
                 >
                   <Mail className="h-3 w-3" />
                   <span className="truncate max-w-[180px]">{landlord.email}</span>
@@ -388,14 +388,14 @@ function StatusBanner({ status }: { status: VettingStatus }) {
 // ── Empty state ────────────────────────────────────────────────────────────────
 function EmptyWorkspace() {
   return (
-    <div className="flex h-full min-h-0 flex-col items-center justify-center rounded-3xl border border-dashed border-slate-200 bg-gradient-to-br from-slate-50/50 via-white to-indigo-50/30 p-10 text-center">
+    <div className="flex h-full min-h-0 flex-col items-center justify-center rounded-3xl border border-dashed border-slate-200 bg-gradient-to-br from-slate-50/50 via-white to-blue-50/30 p-10 text-center">
       <div className="relative">
         <div
           aria-hidden="true"
-          className="absolute inset-0 rounded-3xl bg-gradient-to-br from-indigo-500/30 to-violet-500/30 blur-2xl"
+          className="absolute inset-0 rounded-3xl bg-gradient-to-br from-blue-500/30 to-blue-500/30 blur-2xl"
         />
         <div
-          className="relative mb-5 flex h-20 w-20 items-center justify-center rounded-3xl shadow-lg shadow-indigo-500/30 ring-2 ring-white"
+          className="relative mb-5 flex h-20 w-20 items-center justify-center rounded-3xl shadow-lg shadow-blue-500/30 ring-2 ring-white"
           style={{ background: `linear-gradient(135deg, ${BRAND} 0%, ${BRAND_D} 50%, ${ACCENT} 100%)` }}
         >
           <ShieldCheck className="h-10 w-10 text-white" strokeWidth={2.25} />

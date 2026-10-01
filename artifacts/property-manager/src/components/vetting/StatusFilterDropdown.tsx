@@ -40,28 +40,28 @@ export default function StatusFilterDropdown({
   const selected = tabs.find(t => t.key === value) ?? tabs[tabs.length - 1]
 
   return (
-    <div ref={ref} className="relative">
+    <div ref={ref} className={cn('relative', open && 'z-50')}>
       <button
         type="button"
         onClick={() => setOpen(o => !o)}
         className={cn(
           'flex items-center gap-2.5 rounded-xl border border-slate-200/80 bg-white px-3 py-2 text-xs font-bold text-slate-700 shadow-sm shadow-slate-900/[0.03] transition-all',
-          'hover:border-slate-300 hover:shadow-md focus:outline-none focus:ring-4 focus:ring-indigo-500/10',
-          open && 'border-indigo-300 ring-4 ring-indigo-500/10',
+          'hover:border-slate-300 hover:shadow-md focus:outline-none focus:ring-4 focus:ring-blue-500/10',
+          open && 'border-blue-300 ring-4 ring-blue-500/10',
         )}
       >
         <Filter className="h-3.5 w-3.5 text-slate-400" />
         <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Status</span>
         <span className={cn('h-2 w-2 rounded-full shrink-0', DOT[selected?.key] ?? 'bg-slate-400')} />
         <span>{selected?.label}</span>
-        <span className="inline-flex h-4 min-w-[18px] items-center justify-center rounded-full bg-gradient-to-br from-indigo-500 to-violet-500 px-1 text-[10px] font-black text-white shadow-sm shadow-indigo-500/30">
+        <span className="inline-flex h-4 min-w-[18px] items-center justify-center rounded-full bg-blue-600 px-1 text-[10px] font-black text-white shadow-sm shadow-blue-500/30">
           {selected?.count}
         </span>
         <ChevronDown className={cn('h-3.5 w-3.5 text-slate-400 transition-transform', open && 'rotate-180')} />
       </button>
 
       {open && (
-        <div className="absolute left-0 top-full z-50 mt-1.5 w-60 overflow-hidden rounded-2xl border border-slate-200/80 bg-white p-1 shadow-xl shadow-slate-900/10">
+        <div className="absolute left-0 top-full z-[100] mt-1.5 w-60 overflow-hidden rounded-2xl border border-slate-200 bg-white p-1.5 shadow-xl shadow-slate-900/15">
           <div className="px-3 py-2 text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400">
             Filter by status
           </div>
@@ -74,7 +74,7 @@ export default function StatusFilterDropdown({
                 className={cn(
                   'flex w-full items-center gap-3 rounded-lg px-2.5 py-2 text-xs font-semibold transition-colors',
                   tab.key === value
-                    ? 'bg-gradient-to-br from-indigo-500 to-violet-500 text-white shadow-sm shadow-indigo-500/30'
+                    ? 'bg-blue-600 text-white shadow-sm shadow-blue-500/30'
                     : 'text-slate-700 hover:bg-slate-50',
                 )}
               >

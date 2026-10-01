@@ -2,8 +2,8 @@ import { Phone, ChevronRight, MapPin } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { KYC_STATUS_META, daysAgo, avatarGrad, getInitials, type VettingLandlord } from './mockData'
 
-const BRAND = '#6366F1'
-const ACCENT = '#A855F7'
+const BRAND = '#2563EB'
+const ACCENT = '#3B82F6'
 
 interface ApplicantCardProps {
   landlord: VettingLandlord
@@ -34,9 +34,9 @@ export default function ApplicantCard({
       tabIndex={tabIndex}
       className={cn(
         'group relative flex w-full items-center gap-3.5 px-4 py-3.5 text-left transition-all duration-200',
-        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400/60 focus-visible:ring-offset-0',
+        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400/60 focus-visible:ring-offset-0',
         selected
-          ? 'bg-gradient-to-r from-indigo-50/80 via-violet-50/40 to-transparent'
+          ? 'bg-gradient-to-r from-blue-50/80 via-blue-50/40 to-transparent'
           : 'hover:bg-slate-50/70',
       )}
     >
@@ -46,7 +46,7 @@ export default function ApplicantCard({
         className={cn(
           'absolute inset-y-2 left-0 w-1 rounded-r-full transition-all duration-200',
           selected
-            ? 'bg-gradient-to-b from-indigo-500 to-violet-500 shadow-sm shadow-indigo-500/40'
+            ? 'bg-gradient-to-b from-blue-500 to-blue-500 shadow-sm shadow-blue-500/40'
             : 'bg-transparent',
         )}
       />
@@ -79,7 +79,7 @@ export default function ApplicantCard({
           <p
             className={cn(
               'truncate text-[14px] font-bold tracking-tight transition-colors',
-              selected ? 'text-indigo-900' : 'text-slate-800 group-hover:text-slate-900',
+              selected ? 'text-blue-900' : 'text-slate-800 group-hover:text-slate-900',
             )}
           >
             {landlord.full_name}
@@ -123,7 +123,7 @@ export default function ApplicantCard({
         className={cn(
           'h-4 w-4 shrink-0 transition-all duration-200',
           selected
-            ? 'translate-x-0.5 text-indigo-500'
+            ? 'translate-x-0.5 text-blue-500'
             : 'text-slate-300 group-hover:translate-x-0.5 group-hover:text-slate-500',
         )}
       />

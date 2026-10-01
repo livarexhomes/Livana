@@ -11,9 +11,9 @@ import {
 import IdentityGrid from '../IdentityGrid'
 import DocumentCard from '../DocumentCard'
 
-const BRAND   = '#6366F1'
-const BRAND_D = '#4F46E5'
-const ACCENT  = '#A855F7'
+const BRAND   = '#2563EB'
+const BRAND_D = '#1D4ED8'
+const ACCENT  = '#3B82F6'
 
 interface MobileReviewScreenProps {
   landlord: VettingLandlord
@@ -88,7 +88,7 @@ export default function MobileReviewScreen({
         />
         <div className="relative flex items-start gap-3">
           <div className={cn(
-            'relative flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl text-[16px] font-black text-white shadow-lg shadow-indigo-500/20 ring-2 ring-white',
+            'relative flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl text-[16px] font-black text-white shadow-lg shadow-blue-500/20 ring-2 ring-white',
             avatarGrad(landlord.full_name),
           )}>
             {getInitials(landlord.full_name)}

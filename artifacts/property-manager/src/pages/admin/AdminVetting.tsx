@@ -45,9 +45,9 @@ const KYC_FILTER_TABS_BASE = [
   { key: 'all',           label: 'All' },
 ] as const
 
-const BRAND = '#6366F1'
-const BRAND_D = '#4F46E5'
-const ACCENT = '#A855F7'
+const BRAND = '#2563EB'
+const BRAND_D = '#1D4ED8'
+const ACCENT = '#3B82F6'
 
 // ── Main Component ────────────────────────────────────────────────────────────
 
@@ -286,28 +286,21 @@ export default function AdminVetting() {
           {/* Mobile: stat grid */}
           <div className="sm:hidden px-3 pt-3">
             <MobileStatGrid>
-               <MobileStatCard label="KYC pending"     value={kycCounts.pending}      color="#6366F1" icon={Clock} />
+               <MobileStatCard label="KYC pending"     value={kycCounts.pending}      color="#2563EB" icon={Clock} />
                <MobileStatCard label="KYC approved"    value={kycCounts.approved}     color="#16a34a" icon={CheckCircle} />
-               <MobileStatCard label="Listings pending" value={pendingListings.length} color="#A855F7" icon={ListChecks} />
-               <MobileStatCard label="Landlords"       value={kycCounts.all}          color="#4F46E5" icon={Users} />
+               <MobileStatCard label="Listings pending" value={pendingListings.length} color="#3B82F6" icon={ListChecks} />
+               <MobileStatCard label="Landlords"       value={kycCounts.all}          color="#1D4ED8" icon={Users} />
             </MobileStatGrid>
           </div>
 
           {/* Workspace navigation */}
-          <div className="hidden sm:flex flex-wrap items-center justify-between gap-3 px-5 py-4 bg-white/70 backdrop-blur border-b border-slate-200/80 shrink-0">
+          <div className="relative z-40 hidden sm:flex flex-wrap items-center justify-between gap-3 px-5 py-4 bg-white/70 backdrop-blur border-b border-slate-200/80 shrink-0">
             <div className="min-w-0">
-              {activeTab === 'identity' ? (
-                <StatusFilterDropdown
-                  value={kycStatusFilter}
-                  onChange={setKycStatusFilter}
-                  tabs={kycFilterTabs}
-                />
-              ) : (
-                <div>
-                  <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400">Property review</p>
-                  <p className="mt-0.5 text-xs text-slate-500">Review and approve landlord listing submissions</p>
-                </div>
-              )}
+              <StatusFilterDropdown
+                value={kycStatusFilter}
+                onChange={setKycStatusFilter}
+                tabs={kycFilterTabs}
+              />
             </div>
             <VettingTabs
               active={activeTab}
@@ -318,7 +311,12 @@ export default function AdminVetting() {
           </div>
 
           {/* Tab switcher (mobile only) */}
-          <div className="sm:hidden shrink-0 border-b border-slate-100 bg-white px-4 py-2">
+          <div className="relative z-40 sm:hidden shrink-0 space-y-2 border-b border-slate-100 bg-white px-4 py-3">
+            <StatusFilterDropdown
+              value={kycStatusFilter}
+              onChange={setKycStatusFilter}
+              tabs={kycFilterTabs}
+            />
             <VettingTabs
               active={activeTab}
               onChange={setActiveTab}
@@ -485,10 +483,10 @@ function ListingsTab({
           </h3>
         </div>
         {listings.length > 0 && (
-          <div className="inline-flex items-center gap-2 rounded-full border border-indigo-200/60 bg-gradient-to-r from-indigo-50 to-violet-50 px-3 py-1.5 text-xs font-bold text-indigo-700 shadow-sm shrink-0">
+          <div className="inline-flex items-center gap-2 rounded-full border border-blue-200/60 bg-gradient-to-r from-blue-50 to-blue-50 px-3 py-1.5 text-xs font-bold text-blue-700 shadow-sm shrink-0">
             <span className="relative inline-flex h-2 w-2">
-              <span className="absolute inset-0 animate-ping rounded-full bg-indigo-500 opacity-70" />
-              <span className="relative h-2 w-2 rounded-full bg-indigo-500" />
+              <span className="absolute inset-0 animate-ping rounded-full bg-blue-500 opacity-70" />
+              <span className="relative h-2 w-2 rounded-full bg-blue-500" />
             </span>
             {listings.length} pending
           </div>
@@ -498,7 +496,7 @@ function ListingsTab({
       <div className="relative flex-1 overflow-y-auto p-4 sm:p-6">
         {loading ? (
           <div className="flex items-center justify-center py-16 sm:py-24 gap-3 text-slate-400">
-            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-500 to-violet-500 text-white shadow-md shadow-indigo-500/30">
+            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-500 to-blue-500 text-white shadow-md shadow-blue-500/30">
               <Loader2 className="w-4 h-4 animate-spin" />
             </div>
             <span className="text-sm font-semibold">Loading pending listings…</span>
@@ -524,7 +522,7 @@ function ListingsTab({
                 <button
                   type="button"
                   onClick={onReviewIdentity}
-                  className="mt-6 inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-bold text-white shadow-sm shadow-indigo-600/20 transition-colors hover:bg-indigo-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2"
+                  className="mt-6 inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-bold text-white shadow-sm shadow-blue-600/20 transition-colors hover:bg-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
                 >
                   <ShieldCheck className="h-4 w-4" />
                   Review {kycPendingCount} pending identity check{kycPendingCount === 1 ? '' : 's'}
@@ -583,7 +581,7 @@ function ListingCard({
         <div className="absolute inset-0 bg-gradient-to-t from-slate-900/40 via-transparent to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
         <div className="absolute top-3 left-3">
           <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-wider shadow-md ${
-             listing.type === 'sale' ? 'bg-gradient-to-br from-indigo-500 to-violet-500 text-white shadow-indigo-500/30' : 'bg-slate-900/90 text-white backdrop-blur'
+             listing.type === 'sale' ? 'bg-gradient-to-br from-blue-500 to-blue-500 text-white shadow-blue-500/30' : 'bg-slate-900/90 text-white backdrop-blur'
           }`}>
             {listing.type === 'sale' ? 'For Sale' : 'For Rent'}
           </span>
@@ -667,7 +665,7 @@ function ListingCard({
             <button
               onClick={() => setConfirm({ id: listing.id, action: 'approve' })}
               disabled={busy}
-               className="flex flex-1 items-center justify-center gap-1.5 rounded-xl py-2.5 text-xs font-bold text-white transition-all disabled:opacity-60 shadow-md hover:shadow-lg bg-gradient-to-br from-indigo-500 to-violet-500 shadow-indigo-500/30 hover:shadow-indigo-500/40">
+               className="flex flex-1 items-center justify-center gap-1.5 rounded-xl py-2.5 text-xs font-bold text-white transition-all disabled:opacity-60 shadow-md hover:shadow-lg bg-gradient-to-br from-blue-500 to-blue-500 shadow-blue-500/30 hover:shadow-blue-500/40">
               <CheckCircle className="w-3.5 h-3.5" /> Approve
             </button>
             <button

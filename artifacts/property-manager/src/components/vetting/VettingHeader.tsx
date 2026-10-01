@@ -3,9 +3,9 @@ import { Search, Bell, X, ShieldCheck, Sparkles } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 // ── Brand color constants ──────────────────────────────────────────────────────
-const BRAND   = '#6366F1' // indigo-500
-const BRAND_D = '#4F46E5' // indigo-600
-const ACCENT  = '#A855F7' // violet-500
+const BRAND   = '#2563EB' // blue-500
+const BRAND_D = '#1D4ED8' // blue-600
+const ACCENT  = '#3B82F6' // blue-500
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 interface VettingHeaderProps {
@@ -92,7 +92,7 @@ export default function VettingHeader({
         <div className="flex items-center gap-3.5 min-w-0">
           {/* Brand icon */}
           <div
-            className="relative flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl shadow-md shadow-indigo-500/20"
+            className="relative flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl shadow-md shadow-blue-500/20"
             style={{ background: `linear-gradient(135deg, ${BRAND} 0%, ${BRAND_D} 100%)` }}
           >
             <ShieldCheck className="h-5 w-5 text-white" strokeWidth={2.25} />
@@ -156,9 +156,9 @@ export default function VettingHeader({
           {/* Desktop search */}
           <div className="relative hidden md:block">
             <div
-              className="group flex h-11 items-center gap-2.5 rounded-2xl border border-slate-200/70 bg-white/70 px-3.5 shadow-sm shadow-slate-900/[0.02] focus-within:border-indigo-300 focus-within:bg-white focus-within:shadow-md focus-within:shadow-indigo-500/10 focus-within:ring-4 focus-within:ring-indigo-500/10"
+              className="group flex h-11 items-center gap-2.5 rounded-2xl border border-slate-200/70 bg-white/70 px-3.5 shadow-sm shadow-slate-900/[0.02] focus-within:border-blue-300 focus-within:bg-white focus-within:shadow-md focus-within:shadow-blue-500/10 focus-within:ring-4 focus-within:ring-blue-500/10"
             >
-              <Search className="h-3.5 w-3.5 shrink-0 text-slate-400 transition-colors group-focus-within:text-indigo-500" />
+              <Search className="h-3.5 w-3.5 shrink-0 text-slate-400 transition-colors group-focus-within:text-blue-500" />
               <input
                 type="search"
                 value={query}
@@ -260,7 +260,7 @@ export default function VettingHeader({
                 <div className="divide-y divide-slate-50">
                   <NotifRow
                     icon={<ShieldCheck className="h-3.5 w-3.5" />}
-                    iconBg="bg-gradient-to-br from-indigo-50 to-violet-50 text-indigo-600 ring-1 ring-indigo-100"
+                    iconBg="bg-gradient-to-br from-blue-50 to-blue-50 text-blue-600 ring-1 ring-blue-100"
                     label="Identity checks"
                     sub={`${kycPendingCount} awaiting review`}
                     badge={kycPendingCount > 0 ? kycPendingCount : null}
@@ -270,7 +270,7 @@ export default function VettingHeader({
                       <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
                       <polyline points="9 22 9 12 15 12 15 22"/>
                     </svg>}
-                    iconBg="bg-gradient-to-br from-violet-50 to-purple-50 text-violet-600 ring-1 ring-violet-100"
+                    iconBg="bg-gradient-to-br from-blue-50 to-blue-50 text-blue-600 ring-1 ring-blue-100"
                     label="Listing submissions"
                     sub={`${listingsPendingCount} pending approval`}
                     badge={listingsPendingCount > 0 ? listingsPendingCount : null}

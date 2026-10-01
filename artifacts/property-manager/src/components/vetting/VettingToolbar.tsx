@@ -60,13 +60,13 @@ export default function VettingToolbar({
 
         {/* Search */}
         <div className="group relative flex-1">
-          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400 transition-colors group-focus-within:text-indigo-500 pointer-events-none" />
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400 transition-colors group-focus-within:text-blue-500 pointer-events-none" />
           <input
             type="search"
             value={search}
             onChange={e => onSearch(e.target.value)}
             placeholder="Search by name, email or phone…"
-            className="w-full rounded-xl border border-slate-200/80 bg-white py-2.5 pl-10 pr-9 text-xs text-slate-900 placeholder:text-slate-400 transition-all focus:border-indigo-300 focus:bg-white focus:outline-none focus:ring-4 focus:ring-indigo-500/10 focus:shadow-md focus:shadow-indigo-500/5"
+            className="w-full rounded-xl border border-slate-200/80 bg-white py-2.5 pl-10 pr-9 text-xs text-slate-900 placeholder:text-slate-400 transition-all focus:border-blue-300 focus:bg-white focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:shadow-md focus:shadow-blue-500/5"
           />
           {search && (
             <button
@@ -84,7 +84,7 @@ export default function VettingToolbar({
           <button
             type="button"
             onClick={() => setSortOpen(o => !o)}
-            className="flex items-center gap-2 rounded-xl border border-slate-200/80 bg-white px-3 py-2.5 text-xs font-semibold text-slate-700 shadow-sm shadow-slate-900/[0.03] transition-all hover:border-slate-300 hover:shadow-md focus:outline-none focus:ring-4 focus:ring-indigo-500/10"
+            className="flex items-center gap-2 rounded-xl border border-slate-200/80 bg-white px-3 py-2.5 text-xs font-semibold text-slate-700 shadow-sm shadow-slate-900/[0.03] transition-all hover:border-slate-300 hover:shadow-md focus:outline-none focus:ring-4 focus:ring-blue-500/10"
           >
             <SlidersHorizontal className="h-3.5 w-3.5 text-slate-400" />
             <span className="hidden sm:inline">
@@ -102,7 +102,7 @@ export default function VettingToolbar({
                   className={cn(
                     'flex w-full items-center gap-2 rounded-lg px-3 py-2 text-xs font-semibold transition-colors',
                     sort === opt.value
-                      ? 'bg-gradient-to-br from-indigo-500 to-violet-500 text-white shadow-sm shadow-indigo-500/30'
+                      ? 'bg-gradient-to-br from-blue-500 to-blue-500 text-white shadow-sm shadow-blue-500/30'
                       : 'text-slate-700 hover:bg-slate-50',
                   )}
                 >
@@ -127,9 +127,9 @@ export default function VettingToolbar({
             onClick={() => onStatusFilter(tab.key)}
             className={cn(
               'group inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[11px] font-bold transition-all duration-200',
-              'focus:outline-none focus:ring-2 focus:ring-indigo-400/40',
+              'focus:outline-none focus:ring-2 focus:ring-blue-400/40',
               statusFilter === tab.key
-                ? 'border-transparent bg-gradient-to-br from-indigo-500 to-violet-500 text-white shadow-md shadow-indigo-500/30'
+                ? 'border-transparent bg-gradient-to-br from-blue-500 to-blue-500 text-white shadow-md shadow-blue-500/30'
                 : 'border-slate-200/80 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50',
             )}
           >

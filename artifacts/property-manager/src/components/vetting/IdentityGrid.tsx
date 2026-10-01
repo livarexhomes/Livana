@@ -5,28 +5,27 @@ import {
 import { cn } from '@/lib/utils'
 import { fmtDate, type VettingLandlord } from './mockData'
 
-const BRAND = '#6366F1'
-const ACCENT = '#A855F7'
+const BRAND = '#2563EB'
+const ACCENT = '#3B82F6'
 
 interface IdentityGridProps {
   landlord: VettingLandlord
 }
 
 export default function IdentityGrid({ landlord }: IdentityGridProps) {
-  const fields: Array<{ icon: LucideIcon; label: string; value: string; accent?: boolean; tone?: 'indigo' | 'violet' | 'sky' | 'amber' }> = [
+  const fields: Array<{ icon: LucideIcon; label: string; value: string; accent?: boolean; tone?: 'blue' | 'sky' | 'amber' }> = [
     { icon: Calendar,    label: 'Joined Date',     value: fmtDate(landlord.created_at),       tone: 'sky' },
-    { icon: Clock,      label: 'Submitted Date',  value: fmtDate(landlord.kyc_submitted_at), accent: true, tone: 'indigo' },
-    { icon: Hash,       label: 'NIN',             value: landlord.nin          || '—', tone: 'violet' },
+    { icon: Clock,      label: 'Submitted Date',  value: fmtDate(landlord.kyc_submitted_at), accent: true, tone: 'blue' },
+    { icon: Hash,       label: 'NIN',             value: landlord.nin          || '—', tone: 'blue' },
     { icon: CreditCard, label: 'ID Type',         value: landlord.id_type      || '—', tone: 'amber' },
-    { icon: Mail,       label: 'Email',           value: landlord.email        || '—', tone: 'indigo' },
-    { icon: Phone,      label: 'Phone',           value: landlord.whatsapp     || '—', tone: 'violet' },
+    { icon: Mail,       label: 'Email',           value: landlord.email        || '—', tone: 'blue' },
+    { icon: Phone,      label: 'Phone',           value: landlord.whatsapp     || '—', tone: 'blue' },
     { icon: MapPin,     label: 'Location',        value: landlord.city         || '—', tone: 'sky' },
   ]
 
   const TONES: Record<NonNullable<typeof fields[number]['tone']>, string> = {
-    indigo: 'from-indigo-500/15 to-violet-500/15 text-indigo-600',
-    violet: 'from-violet-500/15 to-purple-500/15 text-violet-600',
-    sky:    'from-sky-500/15 to-indigo-500/15 text-sky-600',
+    blue: 'from-blue-500/15 to-blue-500/15 text-blue-600',
+    sky:  'from-sky-500/15 to-blue-500/15 text-sky-600',
     amber:  'from-amber-500/15 to-orange-500/15 text-amber-600',
   }
 
@@ -34,13 +33,13 @@ export default function IdentityGrid({ landlord }: IdentityGridProps) {
     <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
       {fields.map(f => {
         const Icon = f.icon
-        const tone = TONES[f.tone ?? 'indigo']
+        const tone = TONES[f.tone ?? 'blue']
         return (
           <div
             key={f.label}
             className={cn(
               'group relative flex items-start gap-3 overflow-hidden rounded-xl border border-slate-200/70 bg-white p-3.5 shadow-sm shadow-slate-900/[0.02] transition-all hover:border-slate-300/80 hover:shadow-md hover:shadow-slate-900/[0.04]',
-              f.accent && 'ring-1 ring-indigo-200/50',
+              f.accent && 'ring-1 ring-blue-200/50',
             )}
           >
             {/* Subtle accent wash on hover for accent row */}

@@ -65,7 +65,7 @@ export default function ApplicantList({
         {loading ? (
           <div className="flex items-center justify-center py-20" aria-busy="true">
             <div className="flex flex-col items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-500 to-violet-500 text-white shadow-md shadow-indigo-500/30">
+              <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-500 to-blue-500 text-white shadow-md shadow-blue-500/30">
                 <Loader2 className="h-4 w-4 animate-spin" />
               </div>
               <p className="text-xs font-semibold text-slate-400">Loading applicants…</p>
@@ -76,7 +76,7 @@ export default function ApplicantList({
             <div className="relative mb-5">
               <div
                 aria-hidden="true"
-                className="absolute inset-0 rounded-3xl bg-gradient-to-br from-indigo-500/20 to-violet-500/20 blur-xl"
+                className="absolute inset-0 rounded-3xl bg-gradient-to-br from-blue-500/20 to-blue-500/20 blur-xl"
               />
               <div className="relative flex h-16 w-16 items-center justify-center rounded-3xl border border-slate-200/80 bg-white shadow-sm">
                 <Users className="h-7 w-7 text-slate-300" />
