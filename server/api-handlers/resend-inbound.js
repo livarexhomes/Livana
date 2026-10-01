@@ -139,6 +139,16 @@ export default async function handler(req, res) {
     return sendJson(res, 500, { error: 'Supabase env not configured' })
   }
 
+  // Surface a console breadcrumb so it's obvious in Vercel/CLI logs when an
+  // inbound webhook actually reaches this endpoint.
+  try {
+    console.log('[resend-inbound] webhook hit', {
+      svix: !!req.headers['svix-id'] || !!req.headers['Svix-Id'],
+      ua: req.headers['user-agent'] || '',
+      ts: new Date().toISOString(),
+    })
+  } catch { /* ignore */ }
+
   // Read raw body for signature verification.
   const rawBody = await new Promise((resolve) => {
     if (typeof req.body === 'string') return resolve(req.body)
