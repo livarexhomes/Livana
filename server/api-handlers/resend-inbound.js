@@ -169,22 +169,67 @@ export default async function handler(req, res) {
   const references = headerValue(event.headers, 'references')
   const fromEmail = String(event.from).match(/<([^>]+)>/)?.[1] || String(event.from).trim()
 
-  // 1) Find the original outbound message via message_id match.
+  /**
+   * Normalize an RFC-822 Message-ID value for equality comparison.
+   * Resend delivers `In-Reply-To` / `References` either with or without the
+   * surrounding angle brackets depending on the upstream provider. We strip
+   * them so we can match against the value we persisted in `message_id`.
+   */
+  const stripBrackets = (v) => {
+    if (!v) return ''
+    const s = String(v).trim()
+    if (s.startsWith('<') && s.endsWith('>')) return s.slice(1, -1).trim()
+    return s
+  }
+
+  // 1a) Try to find the original outbound message via In-Reply-To match.
   let contactId = null, inquiryId = null, subject = event.subject
-  if (inReplyTo) {
-    const findUrl = `${supabaseUrl}/rest/v1/email_thread_replies?message_id=eq.${encodeURIComponent(inReplyTo)}&limit=1`
-    const r = await fetch(findUrl, {
-      headers: { Authorization: `Bearer ${serviceKey}`, apikey: serviceKey },
-    }).catch(() => null)
-    if (r && r.ok) {
-      const rows = await r.json().catch(() => [])
-      const found = Array.isArray(rows) ? rows[0] : null
-      if (found) {
-        contactId = found.contact_id
-        inquiryId = found.inquiry_id
-        if (found.subject && !/^re:/i.test(event.subject)) subject = `Re: ${found.subject}`
+  const replyIdNorm = stripBrackets(inReplyTo) || stripBrackets(references)
+  if (replyIdNorm) {
+    // Match either with or without brackets for resilience.
+    const candidates = [
+      replyIdNorm,
+      `<${replyIdNorm}>`,
+    ]
+    for (const candidate of candidates) {
+      const findUrl =
+        `${supabaseUrl}/rest/v1/email_thread_replies?` +
+        `message_id=eq.${encodeURIComponent(candidate)}&limit=1`
+      const r = await fetch(findUrl, {
+        headers: { Authorization: `Bearer ${serviceKey}`, apikey: serviceKey },
+      }).catch(() => null)
+      if (r && r.ok) {
+        const rows = await r.json().catch(() => [])
+        const found = Array.isArray(rows) ? rows[0] : null
+        if (found) {
+          contactId = found.contact_id
+          inquiryId = found.inquiry_id
+          if (found.subject && !/^re:/i.test(event.subject)) subject = `Re: ${found.subject}`
+          break
+        }
       }
     }
+  }
+
+  // 1b) Fallback: link the reply to the contact_messages row whose email
+  // matches the sender. This is essential when In-Reply-To was stripped,
+  // missing, or doesn't thread properly (Gmail conversation view, BCC
+  // replies, etc.) — otherwise the inbound row has a NULL contact_id and
+  // the admin UI (which filters by contact_id) never shows the reply.
+  if (!contactId && fromEmail) {
+    try {
+      const lookupUrl =
+        `${supabaseUrl}/rest/v1/contact_messages?` +
+        `email=ilike.${encodeURIComponent(fromEmail)}&limit=1`
+      const r = await fetch(lookupUrl, {
+        headers: { Authorization: `Bearer ${serviceKey}`, apikey: serviceKey },
+      }).catch(() => null)
+      if (r && r.ok) {
+        const rows = await r.json().catch(() => [])
+        const found = Array.isArray(rows) ? rows[0] : null
+        if (found) contactId = found.id
+      }
+    } catch { /* swallow */ }
   }
 
   // 2) Insert the inbound reply into the thread.
