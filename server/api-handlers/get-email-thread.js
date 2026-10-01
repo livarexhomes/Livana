@@ -82,10 +82,18 @@ export default async function handler(req, res) {
         const contactRows = await contactResponse.json().catch(() => [])
         const contactEmail = String(contactRows?.[0]?.email || '').trim().toLowerCase()
         if (contactEmail) {
-          const inboundRows = await getRows(
-            `from_email=ilike.${encodeURIComponent(contactEmail)}`,
-          )
-          rows.push(...inboundRows)
+          // Pull in rows associated with the contact's email but missing
+          // contact_id: both inbound (`from_email`) and outbound (`to_email`).
+          // Restricting to either direction would silently hide the other.
+          const [inboundRows, outboundRows] = await Promise.all([
+            getRows(
+              `from_email=ilike.${encodeURIComponent(contactEmail)}`,
+            ),
+            getRows(
+              `to_email=eq.${encodeURIComponent(contactEmail)}`,
+            ),
+          ])
+          rows.push(...inboundRows, ...outboundRows)
         }
       }
     } else if (inquiryId) {
