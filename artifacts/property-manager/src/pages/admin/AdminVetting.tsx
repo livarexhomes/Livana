@@ -61,6 +61,7 @@ export default function AdminVetting() {
   const [selectedLandlord, setSelectedLandlord] = useState<VettingLandlord | null>(null)
   const [kycProcessing, setKycProcessing]   = useState<string | null>(null)
   const [kycDocs, setKycDocs]               = useState<{ doc_type: string; url: string; file_name: string }[]>(USE_MOCK_VETTING ? MOCK_KYC_DOCS : [])
+  const [kycDocsError, setKycDocsError]     = useState('')
   const [imgErrors, setImgErrors]           = useState<Record<string, boolean>>({})
   const [docsLoading, setDocsLoading]       = useState(false)
 
@@ -160,11 +161,17 @@ export default function AdminVetting() {
       setImgErrors({})
       return
     }
-    setDocsLoading(true); setKycDocs([]); setImgErrors({})
+    setDocsLoading(true); setKycDocs([]); setKycDocsError(''); setImgErrors({})
     const supabase = createClient()
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('kyc_documents').select('doc_type, storage_path, file_name')
       .eq('landlord_id', landlordId).order('created_at', { ascending: true })
+    if (error) {
+      console.error('[KYC] Failed to load document records:', error.message)
+      setKycDocsError(`Could not load KYC document records: ${error.message}`)
+      setDocsLoading(false)
+      return
+    }
     if (data?.length) {
       const withUrls = await Promise.all(
         data.map(async (d: any) => ({
@@ -174,6 +181,9 @@ export default function AdminVetting() {
         }))
       )
       setKycDocs(withUrls)
+      if (withUrls.some(doc => !doc.url)) {
+        setKycDocsError('Document records were found, but file access failed. Check the private KYC bucket policies.')
+      }
     }
     setDocsLoading(false)
   }
@@ -378,6 +388,7 @@ export default function AdminVetting() {
                   <ReviewWorkspace
                     landlord={selectedLandlord}
                     kycDocs={kycDocs}
+                    docsError={kycDocsError}
                     docsLoading={docsLoading}
                     processing={kycProcessing}
                     imgErrors={imgErrors}
@@ -410,6 +421,7 @@ export default function AdminVetting() {
             <MobileReviewScreen
               landlord={selectedLandlord}
               kycDocs={kycDocs}
+              docsError={kycDocsError}
               docsLoading={docsLoading}
               processing={kycProcessing}
               imgErrors={imgErrors}

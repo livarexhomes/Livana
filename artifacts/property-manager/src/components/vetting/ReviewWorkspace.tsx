@@ -22,6 +22,7 @@ const BRAND_D = '#1D4ED8'
 interface ReviewWorkspaceProps {
   landlord: VettingLandlord | null
   kycDocs: VettingKycDoc[]
+  docsError?: string
   docsLoading?: boolean
   processing?: string | null
   imgErrors: Record<string, boolean>
@@ -33,6 +34,7 @@ interface ReviewWorkspaceProps {
 export default function ReviewWorkspace({
   landlord,
   kycDocs,
+  docsError,
   docsLoading = false,
   processing = null,
   imgErrors,
@@ -226,6 +228,10 @@ export default function ReviewWorkspace({
             <div className="flex items-center justify-center gap-3 rounded-2xl border border-dashed border-slate-200 bg-slate-50 py-12">
               <Loader2 className="h-5 w-5 animate-spin text-slate-400" />
               <span className="text-sm font-medium text-slate-500">Loading documents…</span>
+            </div>
+          ) : docsError ? (
+            <div role="alert" className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+              {docsError}
             </div>
           ) : kycDocs.length === 0 ? (
             <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 py-10 text-center">

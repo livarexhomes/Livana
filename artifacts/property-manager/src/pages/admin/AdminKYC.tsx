@@ -72,6 +72,7 @@ export default function AdminKYC() {
   const [landlords, setLandlords]         = useState<any[]>([])
   const [filtered, setFiltered]           = useState<any[]>([])
   const [loading, setLoading]             = useState(true)
+  const [loadError, setLoadError]         = useState('')
   const [refreshing, setRefreshing]       = useState(false)
   const [search, setSearch]               = useState('')
   const [statusFilter, setStatusFilter]   = useState('pending')
@@ -86,9 +87,14 @@ export default function AdminKYC() {
   const loadData = useCallback(async (initial = false) => {
     if (initial) setLoading(true)
     else setRefreshing(true)
+    setLoadError('')
     const supabase = createClient()
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('landlords').select('*').order('created_at', { ascending: false })
+    if (error) {
+      console.error('[KYC] Failed to load landlords:', error.message)
+      setLoadError(error.message)
+    }
     const rows = data ?? []
     setLandlords(rows)
     // Update selected landlord in-place if its record changed externally
@@ -239,6 +245,12 @@ export default function AdminKYC() {
             subtitle={`${counts.pending} pending · ${landlords.length} landlords total`}
             pendingCount={counts.pending}
           />
+
+          {loadError && (
+            <div className="mx-4 mt-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 md:mx-6">
+              Could not load KYC submissions: {loadError}
+            </div>
+          )}
 
           {/* ── Hero header ────────────────────────────────────────────────── */}
           <div className={`${selected ? 'hidden' : 'shrink-0'} px-4 md:px-6 py-4`}>
