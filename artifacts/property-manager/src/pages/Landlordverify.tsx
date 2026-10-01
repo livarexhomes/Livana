@@ -16,7 +16,7 @@ const steps = [
 ]
 const benefits = [
     { title: "Meet genuine tenants", description: "Connect with tenants who have been verified, so you know you're talking to real people looking for a real home.", badge: "Verified tenants", icon: Users },
-    { title: "List without any fee", description: "There are no upfront costs to list your property on LIVAREX. Create your listing and reach prospective tenants at no charge.", badge: "Free listing", icon: CircleDollarSign },
+    { title: "List without any fee", description: "There are no costs to list your property on LIVAREX. Create your listing and reach prospective tenants at no charge.", badge: "Free listing", icon: CircleDollarSign },
     { title: "No middle man", description: "Communicate directly with tenants through our platform. No agents, no intermediaries, just you and the tenant.", badge: "Direct contact", icon: Handshake },
     // { title: "No commission", description: "Keep what you earn. LIVAREX doesn't charge any commission on rentals completed through the platform.", badge: "0% commission", icon: BadgeCheck },
     { title: "Get a verified badge", description: "Stand out with a verified badge that shows tenants your identity and property have been checked.", badge: "Trusted profile", icon: ShieldCheck },
