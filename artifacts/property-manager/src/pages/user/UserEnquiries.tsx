@@ -30,6 +30,24 @@ interface SupportMessage {
   created_at: string
 }
 
+interface PropertyEnquiry {
+  id: string
+  message: string
+  status: 'new' | 'open' | 'replied' | 'closed'
+  created_at: string
+  updated_at: string
+  property_id: string | null
+  properties?: { title: string; city: string | null }[] | null
+}
+
+interface PropertyEnquiryReply {
+  id: string
+  enquiry_id: string
+  sender_role: 'landlord' | 'admin'
+  message: string
+  created_at: string
+}
+
 // ── Constants ─────────────────────────────────────────────────────────────────
 
 const PRIORITY_META = {
@@ -462,13 +480,91 @@ function ChatThread({ ticket, onBack }: { ticket: SupportTicket; onBack: () => v
   )
 }
 
+function PropertyEnquiryThread({ enquiry, onBack }: { enquiry: PropertyEnquiry; onBack: () => void }) {
+  const [replies, setReplies] = useState<PropertyEnquiryReply[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const supabase = createClient()
+    supabase
+      .from('enquiry_replies')
+      .select('id, enquiry_id, sender_role, message, created_at')
+      .eq('enquiry_id', enquiry.id)
+      .order('created_at', { ascending: true })
+      .then(({ data }) => {
+        setReplies((data as PropertyEnquiryReply[]) ?? [])
+        setLoading(false)
+      })
+
+    const channel = supabase
+      .channel(`tenant_enquiry_replies:${enquiry.id}`)
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'enquiry_replies', filter: `enquiry_id=eq.${enquiry.id}` },
+        (payload) => setReplies(prev => prev.some(reply => reply.id === payload.new.id)
+          ? prev
+          : [...prev, payload.new as PropertyEnquiryReply])
+      )
+      .subscribe()
+
+    return () => { supabase.removeChannel(channel) }
+  }, [enquiry.id])
+
+  return (
+    <div className="flex flex-col h-full bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+      <div className="flex items-center gap-3 px-5 py-4 border-b border-gray-100 shrink-0">
+        <button onClick={onBack} className="lg:hidden p-1.5 rounded-lg hover:bg-gray-100 text-gray-500" aria-label="Back to enquiries">
+          <ChevronLeft className="w-4 h-4" />
+        </button>
+        <div className="flex-1 min-w-0">
+          <p className="font-bold text-gray-900 text-sm truncate">{enquiry.properties?.[0]?.title ?? 'Property enquiry'}</p>
+          <p className="text-xs text-gray-400 mt-0.5">
+            {enquiry.properties?.[0]?.city ? `${enquiry.properties[0].city} · ` : ''}
+            {enquiry.status === 'replied' ? 'Replied' : enquiry.status === 'closed' ? 'Closed' : 'Open'}
+          </p>
+        </div>
+      </div>
+
+      <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4">
+        <div className="flex justify-center">
+          <span className="text-[11px] text-gray-400 bg-gray-50 border border-gray-100 px-3 py-1 rounded-full">
+            Enquiry sent · {format(new Date(enquiry.created_at), 'dd MMM yyyy, h:mm a')}
+          </span>
+        </div>
+        <div className="flex justify-end">
+          <div className="max-w-[80%] rounded-2xl rounded-br-sm bg-blue-600 px-4 py-2.5 text-sm text-white break-words">
+            {enquiry.message}
+          </div>
+        </div>
+        {loading ? (
+          <div className="flex justify-center"><Loader2 className="w-5 h-5 animate-spin text-gray-300" /></div>
+        ) : replies.map(reply => (
+          <div key={reply.id} className="flex items-end justify-start gap-2">
+            <div className="w-7 h-7 rounded-full bg-gray-900 flex items-center justify-center shrink-0">
+              <HeadphonesIcon className="w-3.5 h-3.5 text-white" />
+            </div>
+            <div className="max-w-[80%] rounded-2xl rounded-bl-sm bg-gray-100 px-4 py-2.5 text-sm text-gray-800 break-words">
+              {reply.message}
+            </div>
+          </div>
+        ))}
+      </div>
+      <div className="px-5 py-3 border-t border-gray-100 text-center text-xs text-gray-400">
+        Replies from the property team will appear here.
+      </div>
+    </div>
+  )
+}
+
 // ── Main Support Page ─────────────────────────────────────────────────────────
 
 export default function UserSupportPage() {
   const [tenantId, setTenantId]       = useState<string | null>(null)
   const [tickets, setTickets]         = useState<SupportTicket[]>([])
+  const [propertyEnquiries, setPropertyEnquiries] = useState<PropertyEnquiry[]>([])
   const [loading, setLoading]         = useState(true)
   const [selectedId, setSelectedId]   = useState<string | null>(null)
+  const [selectedEnquiryId, setSelectedEnquiryId] = useState<string | null>(null)
   const [showNewForm, setShowNewForm] = useState(false)
 
   useEffect(() => {
@@ -497,12 +593,13 @@ export default function UserSupportPage() {
       if (!tenant) { setLoading(false); return }
       setTenantId(tenant.id)
 
-      const { data } = await supabase
-        .from('support_tickets')
-        .select('*')
-        .eq('tenant_id', tenant.id)
-        .order('updated_at', { ascending: false })
-      setTickets((data as SupportTicket[]) ?? [])
+      const [{ data: ticketData }, { data: enquiryData }] = await Promise.all([
+        supabase.from('support_tickets').select('*').eq('tenant_id', tenant.id).order('updated_at', { ascending: false }),
+        supabase.from('enquiries').select('id, message, status, created_at, updated_at, property_id, properties(title, city)')
+          .eq('tenant_id', tenant.id).order('created_at', { ascending: false }),
+      ])
+      setTickets((ticketData as SupportTicket[]) ?? [])
+      setPropertyEnquiries((enquiryData as PropertyEnquiry[]) ?? [])
       setLoading(false)
     })
   }, [])
@@ -529,10 +626,13 @@ export default function UserSupportPage() {
   function handleTicketCreated(ticket: SupportTicket) {
     setTickets(prev => [ticket, ...prev])
     setShowNewForm(false)
+    setSelectedEnquiryId(null)
     setSelectedId(ticket.id)
   }
 
   const selected = tickets.find(t => t.id === selectedId) ?? null
+  const selectedEnquiry = propertyEnquiries.find(enquiry => enquiry.id === selectedEnquiryId) ?? null
+  const hasSelection = Boolean(selected || selectedEnquiry)
 
   return (
     <AuthGuard require="tenant">
@@ -540,16 +640,16 @@ export default function UserSupportPage() {
         <div className="flex gap-5 h-[calc(100dvh-130px)] min-h-0">
 
           {/* ── Left: ticket list ── */}
-          <div className={`flex flex-col gap-3 w-full lg:w-80 xl:w-96 shrink-0 min-h-0 ${selected ? 'hidden lg:flex' : 'flex'}`}>
+          <div className={`flex flex-col gap-3 w-full lg:w-80 xl:w-96 shrink-0 min-h-0 ${hasSelection ? 'hidden lg:flex' : 'flex'}`}>
 
             {/* Header */}
             <div className="flex items-center justify-between">
               <div>
-                <h2 className="text-base font-extrabold text-gray-900">Support</h2>
-                <p className="text-xs text-gray-400 mt-0.5">{tickets.length} ticket{tickets.length !== 1 ? 's' : ''}</p>
+                <h2 className="text-base font-extrabold text-gray-900">Enquiries</h2>
+                <p className="text-xs text-gray-400 mt-0.5">{propertyEnquiries.length} property {propertyEnquiries.length === 1 ? 'enquiry' : 'enquiries'} · {tickets.length} support {tickets.length === 1 ? 'ticket' : 'tickets'}</p>
               </div>
               <button
-                onClick={() => { setShowNewForm(v => !v); setSelectedId(null) }}
+                onClick={() => { setShowNewForm(v => !v); setSelectedId(null); setSelectedEnquiryId(null) }}
                 className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-semibold transition-all border ${
                   showNewForm
                     ? 'bg-gray-900 text-white border-gray-900'
@@ -578,13 +678,13 @@ export default function UserSupportPage() {
                     <div className="h-3 bg-gray-100 rounded w-1/2" />
                   </div>
                 ))
-              ) : tickets.length === 0 && !showNewForm ? (
+              ) : propertyEnquiries.length === 0 && tickets.length === 0 && !showNewForm ? (
                 <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-10 text-center flex flex-col items-center">
                   <div className="w-14 h-14 rounded-2xl bg-blue-50 flex items-center justify-center mb-3">
                     <HeadphonesIcon className="w-7 h-7 text-blue-400" />
                   </div>
-                  <h3 className="font-bold text-gray-900 mb-1 text-sm">No tickets yet</h3>
-                  <p className="text-xs text-gray-400 mb-4">Submit a ticket and we'll get back to you.</p>
+                  <h3 className="font-bold text-gray-900 mb-1 text-sm">No enquiries yet</h3>
+                  <p className="text-xs text-gray-400 mb-4">Listing enquiries and support tickets will appear here.</p>
                   <button
                     onClick={() => setShowNewForm(true)}
                     className="flex items-center gap-1.5 px-4 py-2 bg-gray-900 text-white text-sm font-semibold rounded-xl hover:bg-gray-800 transition-colors"
@@ -593,14 +693,40 @@ export default function UserSupportPage() {
                   </button>
                 </div>
               ) : (
-                tickets.map(ticket => {
+                <>
+                {propertyEnquiries.length > 0 && <p className="px-1 pt-1 text-[11px] font-bold uppercase tracking-wide text-gray-400">Property enquiries</p>}
+                {propertyEnquiries.map(enquiry => {
+                  const isActive = selectedEnquiryId === enquiry.id
+                  return (
+                    <button
+                      key={`enquiry-${enquiry.id}`}
+                      onClick={() => { setSelectedEnquiryId(enquiry.id); setSelectedId(null); setShowNewForm(false) }}
+                      className={`w-full text-left px-4 py-3.5 rounded-2xl border transition-all ${isActive ? 'bg-gray-900 border-gray-900 text-white shadow-md' : 'bg-white border-gray-100 hover:border-gray-200 hover:shadow-sm'}`}
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <p className={`font-semibold text-sm truncate ${isActive ? 'text-white' : 'text-gray-900'}`}>
+                          {enquiry.properties?.[0]?.title ?? 'Property enquiry'}
+                        </p>
+                        <span className={`shrink-0 text-[10px] font-bold px-2 py-0.5 rounded-full ${isActive ? 'bg-white/20 text-white' : enquiry.status === 'replied' ? 'bg-blue-50 text-blue-600' : 'bg-amber-50 text-amber-600'}`}>
+                          {enquiry.status === 'replied' ? 'Replied' : enquiry.status === 'closed' ? 'Closed' : 'Open'}
+                        </span>
+                      </div>
+                      <p className={`text-xs mt-1 truncate ${isActive ? 'text-white/70' : 'text-gray-500'}`}>{enquiry.message}</p>
+                      <span className={`block text-[11px] mt-1.5 ${isActive ? 'text-white/60' : 'text-gray-400'}`}>
+                        {formatDistanceToNow(new Date(enquiry.updated_at), { addSuffix: true })}
+                      </span>
+                    </button>
+                  )
+                })}
+                {tickets.length > 0 && <p className="px-1 pt-2 text-[11px] font-bold uppercase tracking-wide text-gray-400">Support tickets</p>}
+                {tickets.map(ticket => {
                   const s = STATUS_META[ticket.status]
                   const p = PRIORITY_META[ticket.priority]
                   const isActive = selectedId === ticket.id
                   return (
                     <button
                       key={ticket.id}
-                      onClick={() => { setSelectedId(ticket.id); setShowNewForm(false) }}
+                      onClick={() => { setSelectedId(ticket.id); setSelectedEnquiryId(null); setShowNewForm(false) }}
                       className={`w-full text-left px-4 py-3.5 rounded-2xl border transition-all ${
                         isActive
                           ? 'bg-gray-900 border-gray-900 text-white shadow-md'
@@ -630,14 +756,21 @@ export default function UserSupportPage() {
                       </div>
                     </button>
                   )
-                })
+                })}
+                </>
               )}
             </div>
           </div>
 
           {/* ── Right: chat thread ── */}
-          <div className={`flex-1 min-w-0 min-h-0 ${selected ? 'flex' : 'hidden lg:flex'} flex-col`}>
-            {selected ? (
+          <div className={`flex-1 min-w-0 min-h-0 ${hasSelection ? 'flex' : 'hidden lg:flex'} flex-col`}>
+            {selectedEnquiry ? (
+              <PropertyEnquiryThread
+                key={selectedEnquiry.id}
+                enquiry={selectedEnquiry}
+                onBack={() => setSelectedEnquiryId(null)}
+              />
+            ) : selected ? (
               <ChatThread
                 key={selected.id}
                 ticket={selected}
@@ -648,8 +781,8 @@ export default function UserSupportPage() {
                 <div className="w-16 h-16 rounded-2xl bg-gray-50 flex items-center justify-center mb-4">
                   <MessageSquare className="w-8 h-8 text-gray-300" />
                 </div>
-                <p className="font-bold text-gray-900 mb-1">Select a ticket</p>
-                <p className="text-sm text-gray-400">Choose a ticket from the list or create a new one.</p>
+                <p className="font-bold text-gray-900 mb-1">Select an enquiry</p>
+                <p className="text-sm text-gray-400">Choose a property enquiry or support ticket from the list.</p>
               </div>
             )}
           </div>
