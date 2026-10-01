@@ -1226,14 +1226,24 @@ function ChatRequestDetail({ inquiry, onBack, onMarkRead, onStatusChange, agents
 
   useEffect(() => {
     const supabase = createClient()
-    supabase.from('chat_messages').select('*')
-      .eq('inquiry_id', inquiry.id)
-      .order('created_at', { ascending: true })
-      .then(({ data, error }) => {
-        if (error) console.error('Error loading chat messages:', error)
-        setMessages((data as ChatMessage[]) ?? [])
-        setLoading(false)
-      })
+    let active = true
+
+    // Use the server endpoint rather than a direct browser query. It reads
+    // with the service role, so chat history remains visible when an admin's
+    // Supabase RLS policy or Realtime subscription is unavailable.
+    const loadMessages = async () => {
+      try {
+        const response = await fetch(`/api/get-chat-messages?inquiry_id=${encodeURIComponent(inquiry.id)}`)
+        const payload = await response.json().catch(() => null)
+        if (!response.ok) throw new Error(payload?.error || `HTTP ${response.status}`)
+        if (active) setMessages((payload?.messages ?? []) as ChatMessage[])
+      } catch (error) {
+        console.error('Error loading chat messages:', error)
+      } finally {
+        if (active) setLoading(false)
+      }
+    }
+    loadMessages()
 
     const channel = supabase.channel(`admin_chat_inquiry:${inquiry.id}`)
       .on('postgres_changes',
@@ -1250,6 +1260,11 @@ function ChatRequestDetail({ inquiry, onBack, onMarkRead, onStatusChange, agents
       })
       .subscribe()
 
+    // Realtime can be disabled or blocked by a corporate firewall. Polling is
+    // a reliable fallback so a visitor's message appears in the open admin
+    // chat without requiring a full-page refresh.
+    const poll = window.setInterval(loadMessages, 3_000)
+
     // Opening the thread marks it as read (both the inquiry badge and the
     // visitor's message read-receipts).
     supabase.from('chat_inquiries').update({ read_by_admin: true }).eq('id', inquiry.id)
@@ -1260,7 +1275,9 @@ function ChatRequestDetail({ inquiry, onBack, onMarkRead, onStatusChange, agents
     onMarkRead(inquiry.id)
 
     return () => {
+      active = false
       supabase.removeChannel(channel)
+      window.clearInterval(poll)
       if (visitorTypingTimer.current) window.clearTimeout(visitorTypingTimer.current)
     }
   }, [inquiry.id])
@@ -1289,9 +1306,18 @@ function ChatRequestDetail({ inquiry, onBack, onMarkRead, onStatusChange, agents
     setMessages(prev => [...prev, { id: optId, inquiry_id: inquiry.id, sender: 'admin', body, read_by_admin: true, read_by_visitor: false, attachment_url: null, attachment_name: null, created_at: new Date().toISOString() }])
     try {
       const supabase = createClient()
-      const { data: inserted, error: insertErr } = await supabase.from('chat_messages')
-        .insert({ inquiry_id: inquiry.id, sender: 'admin', body }).select().single()
-      if (insertErr) throw new Error(insertErr.message)
+      const { data: { session } } = await supabase.auth.getSession()
+      const response = await fetch('/api/send-chat-message', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
+        },
+        body: JSON.stringify({ inquiry_id: inquiry.id, sender: 'admin', body }),
+      })
+      const payload = await response.json().catch(() => null)
+      if (!response.ok) throw new Error(payload?.error || `HTTP ${response.status}`)
+      const inserted = payload as ChatMessage | null
       if (inserted) setMessages(prev => prev
         .map(m => (m.id === optId ? (inserted as ChatMessage) : m))
         .filter((m, i, arr) => arr.findIndex(x => x.id === m.id) === i))
@@ -2135,7 +2161,12 @@ function ContactDetail({ contact, onBack }: {
           variant: 'destructive',
         })
       } else {
-        toast({ title: 'Email sent', description: `Reply delivered to ${contact.email}.` })
+        toast({
+          title: 'Email sent',
+          description: data?.inboundConfigured
+            ? `Reply delivered to ${contact.email}. Their response will appear in this thread.`
+            : `Reply delivered to ${contact.email}. Configure a Resend inbound address to receive responses here.`,
+        })
         setReplyText('')
         await loadThread()
       }
@@ -2277,13 +2308,13 @@ function ContactDetail({ contact, onBack }: {
             Reply to <span className="font-semibold text-slate-700">{contact.email}</span> via Resend
           </p>
           <a
-            href={`https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(contact.email)}&su=${encodeURIComponent(subject)}`}
+            href="https://resend.com/emails"
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-1 text-[11px] font-medium text-slate-500 hover:text-slate-900 transition-colors"
-            title="Open in Gmail"
+            title="Open Resend email dashboard"
           >
-            <Mail className="w-3 h-3" /> Open in Gmail
+            <Mail className="w-3 h-3" /> Open Resend inbox
           </a>
         </div>
         <textarea
@@ -3302,4 +3333,3 @@ export default function AdminSupportPage() {
     </AuthGuard>
   )
 }
-

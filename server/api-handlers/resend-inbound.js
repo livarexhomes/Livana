@@ -5,8 +5,8 @@
  * to an outbound admin email, Resend POSTs the message here. We:
  *
  *   1. Verify the Resend webhook signature (if RESEND_WEBHOOK_SECRET is set).
- *   2. Match the inbound `In-Reply-To` header against the `message_id` we
- *      stored in `email_thread_replies` when the outbound email was sent.
+ *   2. Match the tagged Resend receiving address to the contact thread, with
+ *      `In-Reply-To` as a fallback for legacy messages.
  *   3. Insert the inbound reply into the thread (direction = 'inbound').
  *   4. Fire a notification email to the admin inbox so they know the contact
  *      replied.
@@ -15,10 +15,12 @@
  *   https://<your-domain>/api/resend-inbound
  *
  * Required env vars (optional but recommended):
+ *   RESEND_INBOUND_ADDRESS - receiving base address used in outgoing Reply-To
  *   RESEND_WEBHOOK_SECRET  - shared secret for signature verification
  *   RESEND_INBOUND_ENABLED - set to "false" to disable without removing the route
  */
 
+import { createHmac, timingSafeEqual } from 'node:crypto'
 import { resolveEmailConfig, renderAdminNotificationEmail } from './lib/email-template.js'
 
 function getEnv(key) {
@@ -73,33 +75,24 @@ const esc = (value) =>
 function verifySignature(req, rawBody, secret) {
   if (!secret) return true // secret not configured → skip verification (dev only)
   try {
-    const { createHmac } = require('node:crypto')
     const svixId = req.headers['svix-id'] || req.headers['Svix-Id']
     const svixTs = req.headers['svix-timestamp'] || req.headers['Svix-Timestamp']
     const svixSig = req.headers['svix-signature'] || req.headers['Svix-Signature']
     if (!svixId || !svixTs || !svixSig) return false
 
     const signed = `${svixId}.${svixTs}.${rawBody}`
-    const expected = createHmac('sha256', secret).update(signed).digest('base64')
+    // Svix secrets are `whsec_<base64 key>`, not the literal HMAC key.
+    const signingKey = Buffer.from(String(secret).replace(/^whsec_/, ''), 'base64')
+    const expected = createHmac('sha256', signingKey).update(signed).digest()
 
     // Signature header can contain multiple space-separated base64 sigs ("v1,... v1,...")
     return String(svixSig)
       .split(' ')
       .map((s) => s.split(',').pop())
       .some((candidate) => {
-        try {
-          return timingSafeEqualStr(expected, candidate)
-        } catch { return false }
+        try { return timingSafeEqual(expected, Buffer.from(candidate, 'base64')) } catch { return false }
       })
   } catch { return false }
-}
-
-function timingSafeEqualStr(a, b) {
-  if (typeof a !== 'string' || typeof b !== 'string') return false
-  if (a.length !== b.length) return false
-  let mismatch = 0
-  for (let i = 0; i < a.length; i++) mismatch |= a.charCodeAt(i) ^ b.charCodeAt(i)
-  return mismatch === 0
 }
 
 /** Best-effort extraction of relevant fields from a Resend webhook payload. */
@@ -125,6 +118,18 @@ function headerValue(headers, name) {
   const target = String(name).toLowerCase()
   const hit = headers.find((h) => String(h?.name || '').toLowerCase() === target)
   return hit ? String(hit.value || '').trim() : ''
+}
+
+function emailAddress(value) {
+  return String(value || '').match(/<([^>]+)>/)?.[1]?.trim().toLowerCase() || String(value || '').trim().toLowerCase()
+}
+
+function contactIdFromRecipients(recipients) {
+  for (const value of (Array.isArray(recipients) ? recipients : [recipients])) {
+    const match = emailAddress(value).match(/^[^@+\s]+\+([0-9a-f]{8}-[0-9a-f-]{27,})@/i)
+    if (match) return match[1]
+  }
+  return null
 }
 
 export default async function handler(req, res) {
@@ -177,7 +182,7 @@ export default async function handler(req, res) {
 
   const inReplyTo = headerValue(event.headers, 'in-reply-to')
   const references = headerValue(event.headers, 'references')
-  const fromEmail = String(event.from).match(/<([^>]+)>/)?.[1] || String(event.from).trim()
+  const fromEmail = emailAddress(event.from)
 
   /**
    * Normalize an RFC-822 Message-ID value for equality comparison.
@@ -193,7 +198,9 @@ export default async function handler(req, res) {
   }
 
   // 1a) Try to find the original outbound message via In-Reply-To match.
-  let contactId = null, inquiryId = null, subject = event.subject
+  // The tagged receiving address is reliable even when clients remove or
+  // rewrite In-Reply-To headers.
+  let contactId = contactIdFromRecipients(event.to), inquiryId = null, subject = event.subject
   const replyIdNorm = stripBrackets(inReplyTo) || stripBrackets(references)
   if (replyIdNorm) {
     // Match either with or without brackets for resilience.
@@ -240,6 +247,18 @@ export default async function handler(req, res) {
         if (found) contactId = found.id
       }
     } catch { /* swallow */ }
+  }
+
+  // Resend webhooks are delivered at least once, so avoid duplicate thread
+  // entries and duplicate admin notifications on a retry.
+  if (event.messageId) {
+    const duplicate = await fetch(
+      `${supabaseUrl}/rest/v1/email_thread_replies?resend_id=eq.${encodeURIComponent(event.messageId)}&limit=1`,
+      { headers: { Authorization: `Bearer ${serviceKey}`, apikey: serviceKey } },
+    ).catch(() => null)
+    if (duplicate?.ok && (await duplicate.json().catch(() => [])).length) {
+      return sendJson(res, 200, { received: true, duplicate: true, matched: !!contactId || !!inquiryId })
+    }
   }
 
   // 2) Insert the inbound reply into the thread.

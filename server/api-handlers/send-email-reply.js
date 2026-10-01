@@ -72,6 +72,17 @@ function plainToHtml(text) {
     .join('')
 }
 
+// A Resend receiving route for `replies+*@<domain>` can use this deterministic
+// address to associate a response with the contact without trusting email
+// client threading headers.
+function replyAddress(baseAddress, contactId) {
+  const base = String(baseAddress || '').trim().toLowerCase()
+  if (!contactId || !/^[0-9a-f]{8}-[0-9a-f-]{27,}$/i.test(contactId)) return base
+  const match = base.match(/^([^@+\s]+)@([^@\s]+)$/)
+  if (!match) return base
+  return `${match[1]}+${contactId}@${match[2]}`
+}
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') return sendJson(res, 405, { error: 'Method not allowed' })
 
@@ -122,7 +133,10 @@ export default async function handler(req, res) {
     headers['In-Reply-To'] = threadId
     headers['References'] = threadId
   }
-  headers['Reply-To'] = cfg.adminEmail || from
+  // Sending replies to the team's mailbox bypasses the webhook and the admin
+  // thread. Configure this address as a Resend receiving route instead.
+  const inboundReplyTo = replyAddress(getEnv('RESEND_INBOUND_ADDRESS'), contactId)
+  headers['Reply-To'] = inboundReplyTo || cfg.adminEmail || from
 
   // BCC the admin inbox so the team always has a copy of every reply sent
   // (independent of the in-app audit log). Skip when the recipient IS the admin.
@@ -200,5 +214,5 @@ export default async function handler(req, res) {
     })
   }
 
-  return sendJson(res, 200, { success: true, id: resendId })
+  return sendJson(res, 200, { success: true, id: resendId, inboundConfigured: Boolean(inboundReplyTo) })
 }
