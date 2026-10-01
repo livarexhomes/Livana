@@ -39,30 +39,80 @@ export default async function handler(req, res) {
   const email     = params.get('email')
   const limit     = Math.min(Number(params.get('limit') || 50), 200)
 
-  let filter = ''
-  if (contactId) filter = `contact_id=eq.${encodeURIComponent(contactId)}`
-  else if (inquiryId) filter = `inquiry_id=eq.${encodeURIComponent(inquiryId)}`
-  else if (email) filter = `to_email=eq.${encodeURIComponent(email.toLowerCase())}`
-  else return sendJson(res, 400, { error: 'contactId, inquiryId, or email required' })
+  if (!contactId && !inquiryId && !email) {
+    return sendJson(res, 400, { error: 'contactId, inquiryId, or email required' })
+  }
 
-  const apiUrl =
-    `${supabaseUrl}/rest/v1/email_thread_replies?` +
-    `${filter}&order=created_at.desc&limit=${limit}`
+  const headers = {
+    Authorization: `Bearer ${serviceKey}`,
+    apikey: serviceKey,
+  }
+
+  async function getRows(filter) {
+    const apiUrl =
+      `${supabaseUrl}/rest/v1/email_thread_replies?` +
+      `${filter}&order=created_at.asc&limit=${limit}`
+    const response = await fetch(apiUrl, { headers })
+    if (!response.ok) {
+      const errText = await response.text().catch(() => '')
+      throw new Error(errText || `Failed to load thread (HTTP ${response.status})`)
+    }
+    const rows = await response.json()
+    return Array.isArray(rows) ? rows : []
+  }
 
   try {
-    const r = await fetch(apiUrl, {
-      headers: {
-        Authorization: `Bearer ${serviceKey}`,
-        apikey: serviceKey,
-      },
-    })
-    if (!r.ok) {
-      const errText = await r.text().catch(() => '')
-      return sendJson(res, r.status, { error: errText || 'Failed to load thread' })
+    let rows = []
+
+    if (contactId) {
+      // Primary lookup: rows explicitly linked to the contact.
+      const primary = await getRows(
+        `contact_id=eq.${encodeURIComponent(contactId)}`,
+      )
+      rows.push(...primary)
+
+      // Recovery lookup: an older/missed inbound webhook may have been
+      // persisted without contact_id even though the sender email is known.
+      // Resolve the contact's email, then merge inbound rows from that sender.
+      const contactResponse = await fetch(
+        `${supabaseUrl}/rest/v1/contact_messages?id=eq.${encodeURIComponent(contactId)}&select=email&limit=1`,
+        { headers },
+      )
+      if (contactResponse.ok) {
+        const contactRows = await contactResponse.json().catch(() => [])
+        const contactEmail = String(contactRows?.[0]?.email || '').trim().toLowerCase()
+        if (contactEmail) {
+          const inboundRows = await getRows(
+            `from_email=ilike.${encodeURIComponent(contactEmail)}`,
+          )
+          rows.push(...inboundRows)
+        }
+      }
+    } else if (inquiryId) {
+      rows = await getRows(`inquiry_id=eq.${encodeURIComponent(inquiryId)}`)
+    } else {
+      // Email fallback is used by legacy callers. Include both directions:
+      // outbound messages addressed to the contact and inbound messages from it.
+      const [outbound, inbound] = await Promise.all([
+        getRows(`to_email=eq.${encodeURIComponent(email.toLowerCase())}`),
+        getRows(`from_email=ilike.${encodeURIComponent(email.toLowerCase())}`),
+      ])
+      rows.push(...outbound, ...inbound)
     }
-    const rows = await r.json()
-    return sendJson(res, 200, { replies: rows ?? [] })
+
+    // The two contact lookups can overlap, so deduplicate by row id and
+    // always return the conversation chronologically.
+    const unique = new Map()
+    for (const row of rows) {
+      if (row?.id) unique.set(row.id, row)
+    }
+    const replies = Array.from(unique.values()).sort(
+      (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime(),
+    )
+
+    return sendJson(res, 200, { replies: replies.slice(-limit) })
   } catch (err) {
+    console.error('[get-email-thread] failed to load thread', err)
     return sendJson(res, 500, { error: String(err?.message || err) })
   }
 }
