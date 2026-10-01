@@ -9,6 +9,8 @@ const HERO_IMAGES = [
   { src: 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=1800&q=90', alt: 'Modern apartment interior' },
   { src: 'https://images.unsplash.com/photo-1512918728675-ed5a9ecdebfd?w=1800&q=90', alt: 'Premium residential building' },
   { src: 'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=1800&q=90', alt: 'Elegant living space' },
+  { src: '/heroimg.png', alt: 'Elegant living space' },
+  
 ]
 import PublicNavbar from '../components/layout/PublicNavbar'
 import Footer from '../components/layout/Footer'
@@ -276,7 +278,7 @@ export default function HomePage() {
 
         {/* Subtle noise texture */}
         <div className="pointer-events-none absolute inset-0 opacity-[0.03]"
-          style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=\'0 0 256 256\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'noise\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.9\' numOctaves=\'4\' stitchTiles=\'stitch\'/%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23noise)\'/%3E%3C/svg%3E")' }} />
+          style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 256 256%27%3E%3Cfilter id=%27noise%27%3E%3CfeTurbulence type=%27fractalNoise%27 baseFrequency=%270.9%27 numOctaves=%274%27 stitchTiles=%27stitch%27/%3E%3C/filter%3E%3Crect width=%27100%25%27 height=%27100%25%27 filter=%27url(%23noise)%27/%3E%3C/svg%3E")' }} />
 
         {/* Content */}
         <div className="lv-hero-content relative max-w-7xl mx-auto px-5 sm:px-8 lg:px-12 flex flex-col justify-center">
@@ -1118,7 +1120,7 @@ export default function HomePage() {
               </div>
 
               <div className="lv-closing-image relative flex items-end shrink-0 overflow-hidden rounded-2xl px-7 py-5">
-                <img src={HERO_IMAGES[0].src} alt={HERO_IMAGES[0].alt} loading="lazy" className="absolute inset-0 h-full w-full object-cover" />
+                <img src={HERO_IMAGES[5].src} alt={HERO_IMAGES[5].alt} loading="lazy" className="absolute inset-0 h-full w-full object-cover" />
                 <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/10 to-transparent" />
                 <div className="relative z-10 text-left">
                   <p className="text-xs font-bold uppercase tracking-widest text-blue-300">Currently available in</p>

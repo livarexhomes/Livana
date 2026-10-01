@@ -71,14 +71,20 @@ const esc = (value) =>
  * Resend uses standard Svix headers: svix-id, svix-timestamp, svix-signature.
  *
  * @see https://resend.com/docs/dashboard/webhooks/introduction
+ *
+ * Returns `{ ok: boolean, reason?: string }` so callers can log the precise
+ * cause of a failed verification (missing headers, mismatch, exception, …).
+ * For backwards compatibility, the result is also truthy/falsy.
  */
 function verifySignature(req, rawBody, secret) {
-  if (!secret) return true // secret not configured → skip verification (dev only)
+  if (!secret) return { ok: true, reason: 'no-secret' } // secret not configured → skip verification (dev only)
   try {
     const svixId = req.headers['svix-id'] || req.headers['Svix-Id']
     const svixTs = req.headers['svix-timestamp'] || req.headers['Svix-Timestamp']
     const svixSig = req.headers['svix-signature'] || req.headers['Svix-Signature']
-    if (!svixId || !svixTs || !svixSig) return false
+    if (!svixId || !svixTs || !svixSig) {
+      return { ok: false, reason: 'missing-headers' }
+    }
 
     const signed = `${svixId}.${svixTs}.${rawBody}`
     // Svix secrets are `whsec_<base64 key>`, not the literal HMAC key.
@@ -86,13 +92,16 @@ function verifySignature(req, rawBody, secret) {
     const expected = createHmac('sha256', signingKey).update(signed).digest()
 
     // Signature header can contain multiple space-separated base64 sigs ("v1,... v1,...")
-    return String(svixSig)
+    const match = String(svixSig)
       .split(' ')
       .map((s) => s.split(',').pop())
       .some((candidate) => {
         try { return timingSafeEqual(expected, Buffer.from(candidate, 'base64')) } catch { return false }
       })
-  } catch { return false }
+    return match ? { ok: true } : { ok: false, reason: 'mismatch' }
+  } catch (err) {
+    return { ok: false, reason: `exception:${String(err?.message || err)}` }
+  }
 }
 
 /** Best-effort extraction of relevant fields from a Resend webhook payload. */
@@ -169,7 +178,17 @@ export default async function handler(req, res) {
   })
 
   const secret = getEnv('RESEND_WEBHOOK_SECRET')
-  if (!verifySignature(req, rawBody, secret)) {
+  const sigResult = verifySignature(req, rawBody, secret)
+  if (!sigResult.ok) {
+    try {
+      console.warn('[resend-inbound] signature verification failed', {
+        reason: sigResult.reason,
+        hasSvixId: !!(req.headers['svix-id'] || req.headers['Svix-Id']),
+        hasSvixTs: !!(req.headers['svix-timestamp'] || req.headers['Svix-Timestamp']),
+        hasSvixSig: !!(req.headers['svix-signature'] || req.headers['Svix-Signature']),
+        bodyBytes: typeof rawBody === 'string' ? rawBody.length : 0,
+      })
+    } catch { /* ignore */ }
     return sendJson(res, 401, { error: 'Invalid signature' })
   }
 
@@ -178,7 +197,19 @@ export default async function handler(req, res) {
   if (!payload) return sendJson(res, 400, { error: 'Invalid JSON' })
 
   const event = parseInboundEvent(payload)
-  if (!event) return sendJson(res, 200, { ignored: true })
+  if (!event) {
+    try { console.log('[resend-inbound] ignored non-received event', { type: payload?.type }) } catch {}
+    return sendJson(res, 200, { ignored: true })
+  }
+  try {
+    console.log('[resend-inbound] received', {
+      from: event.from,
+      to: event.to,
+      subject: event.subject,
+      inReplyTo: headerValue(event.headers, 'in-reply-to'),
+      messageId: event.messageId,
+    })
+  } catch { /* ignore */ }
 
   const inReplyTo = headerValue(event.headers, 'in-reply-to')
   const references = headerValue(event.headers, 'references')
@@ -260,6 +291,14 @@ export default async function handler(req, res) {
       return sendJson(res, 200, { received: true, duplicate: true, matched: !!contactId || !!inquiryId })
     }
   }
+
+  try {
+    console.log('[resend-inbound] match result', {
+      fromEmail,
+      contactIdMatched: !!contactId,
+      inquiryIdMatched: !!inquiryId,
+    })
+  } catch { /* ignore */ }
 
   // 2) Insert the inbound reply into the thread.
   const insertUrl = `${supabaseUrl}/rest/v1/email_thread_replies`

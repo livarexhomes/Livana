@@ -177,6 +177,7 @@ export default function LandlordOnboarding() {
     }
     setUploading(true); setError('')
     const supabase = createClient()
+    const rowsToInsert: Array<{ landlord_id: string; doc_type: string; storage_path: string; file_name: string }> = []
 
     // Upload each document
     for (const slot of DOC_SLOTS) {
@@ -187,13 +188,27 @@ export default function LandlordOnboarding() {
       const { error: upErr } = await supabase.storage
         .from('kyc-documents')
         .upload(path, file, { upsert: true })
-      if (upErr) { setError(`Upload failed: ${upErr.message}`); setUploading(false); return }
-      await supabase.from('kyc_documents').insert({
-        landlord_id:  landlordId,
-        doc_type:     slot.key,
+      if (upErr) {
+        setError(`Upload failed: ${upErr.message}`)
+        setUploading(false)
+        return
+      }
+
+      rowsToInsert.push({
+        landlord_id: landlordId,
+        doc_type: slot.key,
         storage_path: path,
-        file_name:    file.name,
+        file_name: file.name,
       })
+    }
+
+    if (rowsToInsert.length > 0) {
+      const { error: insertErr } = await supabase.from('kyc_documents').insert(rowsToInsert)
+      if (insertErr) {
+        setError(`Could not save KYC record: ${insertErr.message}`)
+        setUploading(false)
+        return
+      }
     }
 
     setUploading(false)

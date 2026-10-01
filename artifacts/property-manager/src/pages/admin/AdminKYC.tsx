@@ -117,12 +117,26 @@ export default function AdminKYC() {
       clearTimeout(debounceRef.current)
       debounceRef.current = setTimeout(() => loadData(false), 1500)
     }
+    const refreshSelectedDocs = () => {
+      if (selected?.id) {
+        void loadKycDocs(selected.id)
+      }
+    }
     const channel = supabase.channel('kyc-live')
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'landlords' }, debouncedLoad)
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'landlords' }, debouncedLoad)
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'kyc_documents' }, () => {
+        debouncedLoad(); refreshSelectedDocs()
+      })
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'kyc_documents' }, () => {
+        debouncedLoad(); refreshSelectedDocs()
+      })
+      .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'kyc_documents' }, () => {
+        debouncedLoad(); refreshSelectedDocs()
+      })
       .subscribe()
     return () => { clearTimeout(debounceRef.current); supabase.removeChannel(channel) }
-  }, [loadData])
+  }, [loadData, selected?.id])
 
   useEffect(() => {
     let list = [...landlords]
@@ -153,9 +167,14 @@ export default function AdminKYC() {
     setKycDocs([])
     setImgErrors({})
     const supabase = createClient()
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('kyc_documents').select('doc_type, storage_path, file_name')
       .eq('landlord_id', landlordId).order('created_at', { ascending: true })
+    if (error) {
+      console.error('[KYC] Failed to load documents:', error.message)
+      setDocsLoading(false)
+      return
+    }
     if (data && data.length > 0) {
       const withUrls = await Promise.all(
         data.map(async (d: any) => ({
