@@ -2135,7 +2135,12 @@ function ContactDetail({ contact, onBack }: {
           variant: 'destructive',
         })
       } else {
-        toast({ title: 'Email sent', description: `Reply delivered to ${contact.email}.` })
+        toast({
+          title: 'Email sent',
+          description: data?.inboundConfigured
+            ? `Reply delivered to ${contact.email}. Their response will appear in this thread.`
+            : `Reply delivered to ${contact.email}. Configure a Resend inbound address to receive responses here.`,
+        })
         setReplyText('')
         await loadThread()
       }
@@ -2277,13 +2282,13 @@ function ContactDetail({ contact, onBack }: {
             Reply to <span className="font-semibold text-slate-700">{contact.email}</span> via Resend
           </p>
           <a
-            href={`https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(contact.email)}&su=${encodeURIComponent(subject)}`}
+            href="https://resend.com/emails"
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-1 text-[11px] font-medium text-slate-500 hover:text-slate-900 transition-colors"
-            title="Open in Gmail"
+            title="Open Resend email dashboard"
           >
-            <Mail className="w-3 h-3" /> Open in Gmail
+            <Mail className="w-3 h-3" /> Open Resend inbox
           </a>
         </div>
         <textarea
@@ -3302,4 +3307,3 @@ export default function AdminSupportPage() {
     </AuthGuard>
   )
 }
-

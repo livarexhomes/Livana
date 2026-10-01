@@ -6,6 +6,12 @@ import { createRequire } from 'node:module'
 
 const require = createRequire(import.meta.url)
 
+// Keep request bodies untouched until the selected handler reads them. This is
+// required for Resend/Svix webhook verification: parsing and re-serializing a
+// JSON body changes the bytes covered by the signature. The API handlers that
+// accept JSON already support reading the raw request stream.
+export const config = { api: { bodyParser: false } }
+
 const handlers = {
   chat: () => import('../server/api-handlers/chat.js'),
   'create-chat-ticket': () => import('../server/api-handlers/create-chat-ticket.js'),
