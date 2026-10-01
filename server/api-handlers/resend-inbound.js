@@ -116,17 +116,24 @@ function parseInboundEvent(payload) {
     subject: data.subject || '(no subject)',
     text: data.text || '',
     html: data.html || '',
-    headers: Array.isArray(data.headers) ? data.headers : [],
-    messageId: data.message_id || data.id || '',
+    headers: data.headers || [],
+    emailId: data.email_id || data.id || '',
+    messageId: data.message_id || '',
     createdAt: data.created_at || new Date().toISOString(),
   }
 }
 
 function headerValue(headers, name) {
-  if (!Array.isArray(headers)) return ''
   const target = String(name).toLowerCase()
-  const hit = headers.find((h) => String(h?.name || '').toLowerCase() === target)
-  return hit ? String(hit.value || '').trim() : ''
+  if (Array.isArray(headers)) {
+    const hit = headers.find((h) => String(h?.name || '').toLowerCase() === target)
+    return hit ? String(hit.value || '').trim() : ''
+  }
+  if (headers && typeof headers === 'object') {
+    const key = Object.keys(headers).find((header) => header.toLowerCase() === target)
+    return key ? String(headers[key] || '').trim() : ''
+  }
+  return ''
 }
 
 function emailAddress(value) {
@@ -201,6 +208,40 @@ export default async function handler(req, res) {
     try { console.log('[resend-inbound] ignored non-received event', { type: payload?.type }) } catch {}
     return sendJson(res, 200, { ignored: true })
   }
+
+  const emailConfig = await resolveEmailConfig(process.env, { allowDisabled: true }).catch(() => ({}))
+  const resendApiKey = emailConfig.apiKey || getEnv('RESEND_API_KEY') || ''
+  if (event.emailId && resendApiKey && (!event.text && !event.html || !event.headers.length)) {
+    try {
+      const received = await fetch(`https://api.resend.com/emails/receiving/${encodeURIComponent(event.emailId)}`, {
+        headers: { Authorization: `Bearer ${resendApiKey}` },
+      })
+      if (received.ok) {
+        const response = await received.json().catch(() => null)
+        const message = response?.data || response
+        if (message && typeof message === 'object') {
+          event.from = message.from || event.from
+          event.to = message.to || event.to
+          event.subject = message.subject || event.subject
+          event.text = message.text || event.text
+          event.html = message.html || event.html
+          event.headers = message.headers || event.headers
+          event.messageId = message.message_id || event.messageId
+        }
+      } else {
+        console.warn('[resend-inbound] failed to fetch received email body', {
+          emailId: event.emailId,
+          status: received.status,
+        })
+      }
+    } catch (err) {
+      console.warn('[resend-inbound] error fetching received email body', {
+        emailId: event.emailId,
+        error: String(err?.message || err),
+      })
+    }
+  }
+
   try {
     console.log('[resend-inbound] received', {
       from: event.from,
@@ -268,7 +309,7 @@ export default async function handler(req, res) {
     try {
       const lookupUrl =
         `${supabaseUrl}/rest/v1/contact_messages?` +
-        `email=ilike.${encodeURIComponent(fromEmail)}&limit=1`
+        `email=ilike.${encodeURIComponent(fromEmail)}&order=created_at.desc&limit=1`
       const r = await fetch(lookupUrl, {
         headers: { Authorization: `Bearer ${serviceKey}`, apikey: serviceKey },
       }).catch(() => null)
@@ -282,9 +323,9 @@ export default async function handler(req, res) {
 
   // Resend webhooks are delivered at least once, so avoid duplicate thread
   // entries and duplicate admin notifications on a retry.
-  if (event.messageId) {
+  if (event.emailId || event.messageId) {
     const duplicate = await fetch(
-      `${supabaseUrl}/rest/v1/email_thread_replies?resend_id=eq.${encodeURIComponent(event.messageId)}&limit=1`,
+      `${supabaseUrl}/rest/v1/email_thread_replies?resend_id=eq.${encodeURIComponent(event.emailId || event.messageId)}&limit=1`,
       { headers: { Authorization: `Bearer ${serviceKey}`, apikey: serviceKey } },
     ).catch(() => null)
     if (duplicate?.ok && (await duplicate.json().catch(() => [])).length) {
@@ -312,8 +353,8 @@ export default async function handler(req, res) {
     subject,
     body: event.text || event.html?.replace(/<[^>]+>/g, '') || '',
     body_html: event.html || null,
-    resend_id: event.messageId || null,
-    message_id: event.messageId ? `<${event.messageId}@resend.dev>` : null,
+    resend_id: event.emailId || event.messageId || null,
+    message_id: event.messageId || null,
     in_reply_to: inReplyTo || references || null,
     direction: 'inbound',
     status: 'received',
@@ -330,11 +371,22 @@ export default async function handler(req, res) {
     body: JSON.stringify(inboundRow),
   }).catch(() => null)
 
+  if (!inserted?.ok) {
+    const error = await inserted?.text().catch(() => '')
+    console.error('[resend-inbound] failed to persist inbound reply', {
+      status: inserted?.status || 0,
+      error: error.slice(0, 500),
+      contactId,
+      inquiryId,
+      emailId: event.emailId,
+    })
+    return sendJson(res, 500, { error: 'Failed to persist inbound reply' })
+  }
+
   // 3) Fire an admin notification so the team sees the reply in their inbox.
   try {
-    const cfg = await resolveEmailConfig(process.env, { allowDisabled: true })
-    const apiKey = cfg.apiKey
-    const adminEmail = cfg.adminEmail
+    const apiKey = resendApiKey
+    const adminEmail = emailConfig.adminEmail
     if (apiKey && adminEmail && /^email\.received$/i.test(event.type)) {
       const html = renderAdminNotificationEmail({
         title: 'New reply from a contact',
@@ -355,7 +407,7 @@ export default async function handler(req, res) {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          from: cfg.from,
+          from: emailConfig.from,
           to: adminEmail,
           subject: `↩️ Reply: ${subject}`,
           html,
