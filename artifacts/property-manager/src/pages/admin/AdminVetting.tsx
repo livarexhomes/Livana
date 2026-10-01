@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import { cn } from '@/lib/utils'
 import {
-  CheckCircle, Clock,
+  CheckCircle, Clock, ShieldCheck,
   Loader2, Users, Building2,
   BedDouble, Bath, MapPin, DollarSign, ListChecks,
   Trash2, ChevronDown, ChevronRight,
@@ -293,13 +293,22 @@ export default function AdminVetting() {
             </MobileStatGrid>
           </div>
 
-          {/* Status filter dropdown + tab switcher */}
+          {/* Workspace navigation */}
           <div className="hidden sm:flex flex-wrap items-center justify-between gap-3 px-5 py-4 bg-white/70 backdrop-blur border-b border-slate-200/80 shrink-0">
-            <StatusFilterDropdown
-              value={kycStatusFilter}
-              onChange={setKycStatusFilter}
-              tabs={kycFilterTabs}
-            />
+            <div className="min-w-0">
+              {activeTab === 'identity' ? (
+                <StatusFilterDropdown
+                  value={kycStatusFilter}
+                  onChange={setKycStatusFilter}
+                  tabs={kycFilterTabs}
+                />
+              ) : (
+                <div>
+                  <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400">Property review</p>
+                  <p className="mt-0.5 text-xs text-slate-500">Review and approve landlord listing submissions</p>
+                </div>
+              )}
+            </div>
             <VettingTabs
               active={activeTab}
               onChange={setActiveTab}
@@ -414,6 +423,8 @@ export default function AdminVetting() {
                 setConfirm={setListingConfirm}
                 onApprove={approveListing}
                 onReject={rejectListing}
+                onReviewIdentity={() => { setActiveTab('identity'); setKycStatusFilter('pending') }}
+                kycPendingCount={kycCounts.pending}
               />
             </div>
           )}
@@ -445,12 +456,15 @@ export default function AdminVetting() {
 
 function ListingsTab({
   listings, loading, processing, confirm, setConfirm, onApprove, onReject,
+  onReviewIdentity, kycPendingCount,
 }: {
   listings: any[]; loading: boolean; processing: string | null
   confirm: { id: string; action: 'approve' | 'reject' } | null
   setConfirm: (c: { id: string; action: 'approve' | 'reject' } | null) => void
   onApprove: (id: string) => Promise<void>
   onReject:  (id: string) => Promise<void>
+  onReviewIdentity: () => void
+  kycPendingCount: number
 }) {
   return (
     <div className="relative flex flex-1 min-h-0 overflow-hidden flex-col rounded-3xl border border-slate-200/80 bg-white shadow-sm">
@@ -466,7 +480,7 @@ function ListingsTab({
           <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">Property review</p>
           <h3 className="mt-1 text-base font-extrabold tracking-tight text-slate-900">
             {loading ? 'Loading…' : listings.length === 0
-              ? 'All listings approved'
+              ? 'No submissions waiting for review'
               : `${listings.length} listing${listings.length !== 1 ? 's' : ''} awaiting review`}
           </h3>
         </div>
@@ -490,18 +504,33 @@ function ListingsTab({
             <span className="text-sm font-semibold">Loading pending listings…</span>
           </div>
         ) : listings.length === 0 ? (
-          <div className="py-12 text-center">
-            <div className="relative mx-auto mb-5 w-fit">
-              <div
-                aria-hidden="true"
-                className="absolute inset-0 rounded-3xl bg-gradient-to-br from-indigo-500/30 to-violet-500/30 blur-xl"
-              />
-              <div className="relative flex h-16 w-16 items-center justify-center rounded-3xl border border-slate-200/80 bg-white shadow-sm">
-                <ListChecks className="w-7 h-7 text-slate-300" />
+          <div className="flex min-h-[min(60vh,520px)] items-center justify-center">
+            <div className="w-full max-w-md rounded-3xl border border-emerald-100 bg-gradient-to-b from-emerald-50/70 via-white to-white px-6 py-10 text-center shadow-sm sm:px-10">
+              <div className="relative mx-auto mb-5 w-fit">
+                <div
+                  aria-hidden="true"
+                  className="absolute inset-0 rounded-3xl bg-emerald-400/20 blur-xl"
+                />
+                <div className="relative flex h-16 w-16 items-center justify-center rounded-3xl border border-emerald-100 bg-white shadow-sm">
+                  <ListChecks className="w-7 h-7 text-emerald-600" />
+                </div>
               </div>
+              <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-emerald-700">Listing approvals</p>
+              <h4 className="mt-2 text-lg font-extrabold tracking-tight text-slate-900">Your listing queue is clear</h4>
+              <p className="mx-auto mt-2 max-w-sm text-sm leading-relaxed text-slate-500">
+                There are no property submissions waiting for approval. New listings will appear here when landlords submit them.
+              </p>
+              {kycPendingCount > 0 && (
+                <button
+                  type="button"
+                  onClick={onReviewIdentity}
+                  className="mt-6 inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-bold text-white shadow-sm shadow-indigo-600/20 transition-colors hover:bg-indigo-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2"
+                >
+                  <ShieldCheck className="h-4 w-4" />
+                  Review {kycPendingCount} pending identity check{kycPendingCount === 1 ? '' : 's'}
+                </button>
+              )}
             </div>
-            <p className="text-sm font-extrabold text-slate-700">All caught up!</p>
-            <p className="mt-1 text-xs text-slate-400">No listing submissions waiting for review.</p>
           </div>
         ) : (
           <div className="grid gap-5 md:grid-cols-2 2xl:grid-cols-3">
