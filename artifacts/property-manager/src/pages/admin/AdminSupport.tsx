@@ -138,7 +138,7 @@ interface EnquiryReply {
   enquiry_id: string
   message: string
   created_at: string
-  sender_role: 'landlord' | 'admin'
+  sender_role: 'tenant' | 'landlord' | 'admin'
   landlords?: { full_name: string | null } | null
   admins?: { email: string | null } | null
 }
@@ -1144,14 +1144,15 @@ function EnquiryDetail({ enquiry, onBack, onStatusChange }: {
             {/* Replies */}
             {replies.map(reply => {
               const isAdmin = reply.sender_role === 'admin'
+              const isTenant = reply.sender_role === 'tenant'
               const senderName = isAdmin 
                 ? (reply.admins?.email?.split('@')[0] ?? 'Admin')
-                : (reply.landlords?.full_name ?? 'Landlord')
+                : isTenant ? tenantName : (reply.landlords?.full_name ?? 'Landlord')
               return (
                 <div key={reply.id} className={`flex items-end gap-2.5 ${isAdmin ? 'justify-end' : 'justify-start'}`}>
                   {!isAdmin && (
                     <div className="w-8 h-8 rounded-full bg-gradient-to-br from-slate-600 to-slate-700 flex items-center justify-center shrink-0 text-[11px] font-semibold text-white">
-                      <span>L</span>
+                      <span>{isTenant ? tenantInitial : 'L'}</span>
                     </div>
                   )}
                   <div className={`min-w-0 max-w-[88%] sm:max-w-[78%] break-words [overflow-wrap:anywhere] flex flex-col gap-1 ${isAdmin ? 'items-end' : 'items-start'}`}>

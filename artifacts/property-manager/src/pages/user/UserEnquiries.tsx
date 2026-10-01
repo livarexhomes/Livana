@@ -43,7 +43,7 @@ interface PropertyEnquiry {
 interface PropertyEnquiryReply {
   id: string
   enquiry_id: string
-  sender_role: 'landlord' | 'admin'
+  sender_role: 'tenant' | 'landlord' | 'admin'
   message: string
   created_at: string
 }
@@ -483,6 +483,15 @@ function ChatThread({ ticket, onBack }: { ticket: SupportTicket; onBack: () => v
 function PropertyEnquiryThread({ enquiry, onBack }: { enquiry: PropertyEnquiry; onBack: () => void }) {
   const [replies, setReplies] = useState<PropertyEnquiryReply[]>([])
   const [loading, setLoading] = useState(true)
+  const [input, setInput] = useState('')
+  const [sending, setSending] = useState(false)
+  const [sendError, setSendError] = useState('')
+  const bottomRef = useRef<HTMLDivElement>(null)
+  const sendingRef = useRef(false)
+
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [replies])
 
   useEffect(() => {
     const supabase = createClient()
@@ -509,6 +518,36 @@ function PropertyEnquiryThread({ enquiry, onBack }: { enquiry: PropertyEnquiry; 
 
     return () => { supabase.removeChannel(channel) }
   }, [enquiry.id])
+
+  async function sendReply(e: React.FormEvent) {
+    e.preventDefault()
+    const body = input.trim()
+    if (!body || sendingRef.current) return
+
+    sendingRef.current = true
+    setSending(true)
+    setSendError('')
+    try {
+      const { data, error } = await createClient()
+        .from('enquiry_replies')
+        .insert({ enquiry_id: enquiry.id, sender_role: 'tenant', message: body })
+        .select('id, enquiry_id, sender_role, message, created_at')
+        .single()
+
+      if (error) throw error
+      if (data) {
+        setReplies(prev => prev.some(reply => reply.id === data.id)
+          ? prev
+          : [...prev, data as PropertyEnquiryReply])
+      }
+      setInput('')
+    } catch (error) {
+      setSendError(error instanceof Error ? error.message : 'Message could not be sent. Please try again.')
+    } finally {
+      setSending(false)
+      sendingRef.current = false
+    }
+  }
 
   return (
     <div className="flex flex-col h-full bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
@@ -538,20 +577,50 @@ function PropertyEnquiryThread({ enquiry, onBack }: { enquiry: PropertyEnquiry; 
         </div>
         {loading ? (
           <div className="flex justify-center"><Loader2 className="w-5 h-5 animate-spin text-gray-300" /></div>
-        ) : replies.map(reply => (
-          <div key={reply.id} className="flex items-end justify-start gap-2">
-            <div className="w-7 h-7 rounded-full bg-gray-900 flex items-center justify-center shrink-0">
-              <HeadphonesIcon className="w-3.5 h-3.5 text-white" />
+        ) : replies.map(reply => {
+          const isTenant = reply.sender_role === 'tenant'
+          return (
+            <div key={reply.id} className={`flex items-end gap-2 ${isTenant ? 'justify-end' : 'justify-start'}`}>
+              {!isTenant && (
+                <div className="w-7 h-7 rounded-full bg-gray-900 flex items-center justify-center shrink-0">
+                  <HeadphonesIcon className="w-3.5 h-3.5 text-white" />
+                </div>
+              )}
+              <div className={`max-w-[80%] rounded-2xl px-4 py-2.5 text-sm break-words ${isTenant ? 'rounded-br-sm bg-blue-600 text-white' : 'rounded-bl-sm bg-gray-100 text-gray-800'}`}>
+                {reply.message}
+              </div>
             </div>
-            <div className="max-w-[80%] rounded-2xl rounded-bl-sm bg-gray-100 px-4 py-2.5 text-sm text-gray-800 break-words">
-              {reply.message}
-            </div>
+          )
+        })}
+        <div ref={bottomRef} />
+      </div>
+      {enquiry.status === 'closed' ? (
+        <div className="px-5 py-3 border-t border-gray-100 text-center text-xs text-gray-400">
+          This enquiry is closed. Contact support to start a new conversation.
+        </div>
+      ) : (
+        <form onSubmit={sendReply} className="px-4 py-3 border-t border-gray-100 shrink-0 space-y-2">
+          {sendError && <p role="alert" className="text-xs text-red-600">{sendError}</p>}
+          <div className="flex items-end gap-2">
+            <textarea
+              rows={1}
+              value={input}
+              onChange={e => setInput(e.target.value)}
+              onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendReply(e as any) } }}
+              placeholder="Type your reply… (Enter to send)"
+              className="flex-1 px-4 py-2.5 rounded-xl border border-gray-200 text-sm bg-white text-gray-900 placeholder-gray-400 caret-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all resize-none"
+            />
+            <button
+              type="submit"
+              disabled={!input.trim() || sending}
+              aria-label="Send reply"
+              className="w-10 h-10 rounded-xl bg-blue-600 hover:bg-blue-700 disabled:opacity-40 text-white flex items-center justify-center transition-colors shrink-0"
+            >
+              {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+            </button>
           </div>
-        ))}
-      </div>
-      <div className="px-5 py-3 border-t border-gray-100 text-center text-xs text-gray-400">
-        Replies from the property team will appear here.
-      </div>
+        </form>
+      )}
     </div>
   )
 }
