@@ -128,7 +128,7 @@ export default function AboutPage() {
               </h2>
             </div>
             <div className="lg:pt-2">
-              <p className="text-xl font-medium leading-8 tracking-tight text-slate-800">Behind every listing is a landlord. Behind every search is someone looking for a place to call home.</p>
+              <p className="text-xl font-medium leading-8 tracking-tight text-slate-800"><strong>Behind every listing is a landlord. Behind every search is someone looking for a place to call home.</strong></p>
               <p className={`${bodyCopy} mt-5`}>The rental journey in Nigeria comes with frustration - unverified listings, unclear information, multiple intermediaries and high agent fees. This makes it difficult for genuine tenants to find available properties and for honest landlords to connect with the right people.</p>
               <br />
               <p className="text-xl font-medium leading-8 tracking-tight text-slate-800">LIVAREX exists to change this.</p>
