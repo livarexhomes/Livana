@@ -137,14 +137,6 @@ export default function Footer() {
               </li>
               <li>
                 <Link
-                  href="/subscription-agreement"
-                  className="hover:text-white transition-colors"
-                >
-                  Subscription Agreement
-                </Link>
-              </li>
-              <li>
-                <Link
                   href="/cookie-policy"
                   className="hover:text-white transition-colors"
                 >
