@@ -123,7 +123,7 @@ export default function AboutPage() {
                 <br />
                 <span className="text-blue-600">greater clarity.</span>
                 <span className="mt-4 block text-lg font-medium italic leading-7 tracking-[-0.02em] text-slate-500 sm:text-xl">
-                  “At LIVAREX, we believe finding a home in Nigeria should be simple, transparent and stress-free.”
+                  “At LIVAREX, we exist to makes renting in NIGERIA simpler, safer and more transparent- for both landlords and tenants.”
                 </span>
               </h2>
             </div>
