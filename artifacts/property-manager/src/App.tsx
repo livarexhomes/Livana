@@ -4,7 +4,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { lazy, Suspense, useEffect } from "react";
 import ChatWidget from "@/components/ChatWidget";
-import WhatsAppWidget from "@/components/WhatsAppWidget";
+import LandingWhatsAppWidget from "@/components/LandingWhatsAppWidget";
 import { ThemeProvider, useTheme } from "@/lib/theme";
 import { slugToLocationLabel } from "@/lib/locationSlug";
 import LivarexLoader from "@/components/LivarexLoader";
@@ -168,7 +168,22 @@ function Router() {
 }
 
 const LIVAREX_CHAT_ENABLED = import.meta.env.VITE_LIVAREX_CHAT_ENABLED === 'true'
-const WHATSAPP_WIDGET_ENABLED = import.meta.env.VITE_WHATSAPP_WIDGET_ENABLED === 'true'
+
+function AppWhatsAppWidget() {
+  const [location] = useLocation()
+  const path = location.split('?')[0]
+  const isDashboard =
+    path === '/admin' ||
+    path.startsWith('/admin/') ||
+    path === '/user' ||
+    path.startsWith('/user/') ||
+    path === '/landlord' ||
+    (path.startsWith('/landlord/') &&
+      path !== '/landlord/register' &&
+      path !== '/landlord/verify')
+
+  return isDashboard ? null : <LandingWhatsAppWidget />
+}
 
 function App() {
   return (
@@ -178,10 +193,10 @@ function App() {
           <ThemeProvider>
             <Router />
           </ThemeProvider>
+          <AppWhatsAppWidget />
         </WouterRouter>
         <Toaster />
         {LIVAREX_CHAT_ENABLED && <ChatWidget />}
-        {WHATSAPP_WIDGET_ENABLED && <WhatsAppWidget />}
       </TooltipProvider>
     </QueryClientProvider>
   );
