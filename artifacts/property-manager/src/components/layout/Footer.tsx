@@ -226,13 +226,7 @@ export default function Footer() {
             >
               Privacy policy
             </Link>
-            ,{' '}
-            <Link
-              href="/subscription-agreement"
-              className="underline hover:text-white transition-colors"
-            >
-              Subscription Agreement
-            </Link>{' '}
+            
             and{' '}
             <Link
               href="/cookie-policy"
