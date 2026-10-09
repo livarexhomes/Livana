@@ -70,7 +70,7 @@ const landlordVerificationProcess = [
 const benefitIcons = [HousePlus, Users, BadgeCheck, Handshake, CircleDollarSign, SlidersHorizontal]
 
 const faqs = [
-    { q: 'Is it free to list my property?', a: 'Yes. Listing your property on LIVAREX is free. There is no upfront listing fee. Your property will go through our verification and review process before it is published.' },
+    { q: 'Is it free to list my property?', a: 'Yes. Listing your property on LIVAREX is free. There is no listing fee. Your property will go through our verification and review process before it is published.' },
     { q: 'Why do I need landlord verification?', a: 'Identity verification helps establish a more trustworthy landlord profile. Complete the required verification and property review before your listing can be published.' },
     { q: 'Does my property go live immediately?', a: 'Your property becomes visible to prospective tenants once the required review and approval process is complete.' },
     { q: 'Do I still make the final rental decision?', a: 'Yes. You remain involved in the final rental process and make your own property decisions. LIVAREX provides platform support where applicable.' },
