@@ -123,7 +123,7 @@ export default function AboutPage() {
                 <br />
                 <span className="text-blue-600">greater clarity.</span>
                 <span className="mt-4 block text-lg font-medium italic leading-7 tracking-[-0.02em] text-slate-500 sm:text-xl">
-                  “At LIVAREX, we exist to makes renting in NIGERIA simpler, safer and more transparent- for both landlords and tenants.”
+                  “At LIVAREX, we exist to make the property journey  in Nigeria simpler, safer and more transparent - for everyone involved.”
                 </span>
               </h2>
             </div>
@@ -132,7 +132,8 @@ export default function AboutPage() {
               <p className={`${bodyCopy} mt-5`}>The rental journey in Nigeria comes with frustration - unverified listings, unclear information, multiple intermediaries and high agent fees. This makes it difficult for genuine tenants to find available properties and for honest landlords to connect with the right people.</p>
               <br />
               <p className="text-xl font-medium leading-8 tracking-tight text-slate-800">LIVAREX exists to change this.</p>
-              <p className={`${bodyCopy} mt-4`}>We connect verified landlords directly with prospective tenants, provide clear and accurate property information. Through verified landlord identities, reviewed property information and direct communication, we help remove the uncertainty and unnecessary middlemen from the process. Our goal is simple: clearer information, better conversations and more confidence for everyone taking the next step.</p>
+              <p className={`${bodyCopy} mt-4`}>We connect verified landlords directly with prospective tenants and provide clear, reliable property information. Through identity verification, reviewed property information and direct communication, we help reduce uncertainty and ambiguity throughout the rental process.
+Our goal is simple: clearer information, better conversations and more confidence for everyone taking the next step.</p>
               <div className="mt-7 flex items-center gap-3 border-t border-slate-100 pt-6 text-sm font-semibold text-blue-700"><Building2 className="h-5 w-5" aria-hidden="true" />Built around the Nigerian rental experience.</div>
             </div>
           </div>

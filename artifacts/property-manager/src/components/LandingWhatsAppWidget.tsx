@@ -219,7 +219,7 @@ export default function LandingWhatsAppWidget() {
           type="button"
           onClick={() => setOpen(true)}
           aria-label="Chat with Livarex Support"
-          className="group fixed bottom-5 right-5 z-[9999] flex items-center gap-3 rounded-full border border-white/80 bg-slate-900/90 p-2 pr-5 text-xs font-bold text-white shadow-[0_20px_50px_rgba(15,23,42,0.3)] backdrop-blur-2xl transition-all duration-300 hover:-translate-y-1 hover:bg-black hover:shadow-[0_25px_60px_rgba(15,23,42,0.4)] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-emerald-400/40"
+          className="group fixed bottom-5 right-5 z-[9999] flex h-14 w-14 items-center justify-center rounded-full border border-white/80 bg-slate-900/90 p-2 text-xs font-bold text-white shadow-[0_20px_50px_rgba(15,23,42,0.3)] backdrop-blur-2xl transition-all duration-300 hover:-translate-y-1 hover:bg-black hover:shadow-[0_25px_60px_rgba(15,23,42,0.4)] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-emerald-400/40 sm:h-auto sm:w-auto sm:justify-start sm:gap-3 sm:pr-5"
         >
           {/* Avatar stack with pulse */}
           <div className="relative flex items-center">
@@ -230,14 +230,14 @@ export default function LandingWhatsAppWidget() {
             </div>
           </div>
 
-          <div className="flex flex-col text-left">
+          <div className="hidden flex-col text-left sm:flex">
             <div className="flex items-center gap-1.5">
               <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
               <span className="text-[9px] font-black uppercase tracking-widest text-emerald-400">Online Now</span>
             </div>
             <span className="text-[13px] font-extrabold text-white">Chat with Livarex</span>
           </div>
-          <ArrowUpRight className="ml-1 h-4 w-4 text-slate-400 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-white" />
+          <ArrowUpRight className="ml-1 hidden h-4 w-4 text-slate-400 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-white sm:block" />
         </button>
       )}
 
