@@ -98,7 +98,7 @@ export default function HowWeVerifyPage() {
             How LIVAREX Verifies Landlords
           </h1>
           <p className="text-blue-200/80 text-base md:text-xl max-w-2xl mx-auto">
-            Trust is our product. Every landlord on LIVAREX goes through a manual identity and property verification process before their listings go live.
+            Trust is at the heart of LIVAREX. Every landlord on LIVAREX goes through an identity verification process, while each property is reviewed before a listing goes live.
           </p>
         </div>
       </div>

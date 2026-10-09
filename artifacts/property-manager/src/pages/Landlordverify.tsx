@@ -17,7 +17,7 @@ const steps = [
 const benefits = [
     { title: "Meet genuine tenants", description: "Connect with tenants who have been verified, so you know you're talking to real people looking for a real home.", badge: "Verified tenants", icon: Users },
     { title: "List without any fee", description: "There are no costs to list your property on LIVAREX. Create your listing and reach prospective tenants at no charge.", badge: "Free listing", icon: CircleDollarSign },
-    { title: "No middle man", description: "Communicate directly with tenants through our platform. No agents, no intermediaries, just you and the tenant.", badge: "Direct contact", icon: Handshake },
+    { title: "No middle man", description: "Communicate directly with tenants through our platform. No intermediaries, just you and the tenant.", badge: "Direct contact", icon: Handshake },
     { title: "Get a verified badge", description: "Stand out with a verified badge that shows tenants your identity and property have been checked.", badge: "Trusted profile", icon: ShieldCheck },
     { title: "Your property, your rule", description: "You decide who to rent to, at what price, and on what terms. You're in full control of your property.", badge: "Full control", icon: SlidersHorizontal },
 ]
@@ -70,7 +70,7 @@ const landlordVerificationProcess = [
 const benefitIcons = [HousePlus, Users, BadgeCheck, Handshake, CircleDollarSign, SlidersHorizontal]
 
 const faqs = [
-    { q: 'Is it free to list my property?', a: 'You can create a property listing without an upfront listing fee. Free listing refers to publishing your property; review any applicable service terms before completing a rental.' },
+    { q: 'Is it free to list my property?', a: 'Yes. Listing your property on LIVAREX is free. There is no upfront listing fee. Your property will go through our verification and review process before it is published.' },
     { q: 'Why do I need landlord verification?', a: 'Identity verification helps establish a more trustworthy landlord profile. Complete the required verification and property review before your listing can be published.' },
     { q: 'Does my property go live immediately?', a: 'Your property becomes visible to prospective tenants once the required review and approval process is complete.' },
     { q: 'Do I still make the final rental decision?', a: 'Yes. You remain involved in the final rental process and make your own property decisions. LIVAREX provides platform support where applicable.' },
@@ -165,7 +165,7 @@ export default function LandlordVerify() {
                 <div className="lv-container">
                     <div className="lv-verification-intro">
                         <h2 id="lv-verification-title">How LIVAREX <span>Verifies Landlords</span></h2>
-                        <p>Trust is our product. Every landlord on LIVAREX goes through a manual identity and property verification process before their listings go live.</p>
+                        <p>Trust is at the heart of LIVAREX. Every landlord on LIVAREX goes through an identity verification process, while each property is reviewed before a listing goes live.</p>
                     </div>
                     <div className="lv-verification-grid">
                         <div className="lv-verification-card">
@@ -208,9 +208,9 @@ export default function LandlordVerify() {
                                 </span>
                                 <span className="lv-verification-card-num">04</span>
                             </div>
-                            <h4>Property Ownership</h4>
+                            <h4>Property Ownership Verification</h4>
                             <span className="lv-verification-card-badge">Per listing</span>
-                            <p>For each listing, we verify proof of ownership or legal authority to let. Listings without proof are declined.</p>
+                            <p>For each property, we review documents showing ownership or legal authority to let the property. Listings are only approved when the required documentation meets our verification requirements.</p>
                         </div>
                         <div className="lv-verification-card lv-verification-card-featured">
                             <div className="lv-verification-card-head">
