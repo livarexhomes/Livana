@@ -18,7 +18,6 @@ const benefits = [
     { title: "Meet genuine tenants", description: "Connect with tenants who have been verified, so you know you're talking to real people looking for a real home.", badge: "Verified tenants", icon: Users },
     { title: "List without any fee", description: "There are no costs to list your property on LIVAREX. Create your listing and reach prospective tenants at no charge.", badge: "Free listing", icon: CircleDollarSign },
     { title: "No middle man", description: "Communicate directly with tenants through our platform. No agents, no intermediaries, just you and the tenant.", badge: "Direct contact", icon: Handshake },
-    // { title: "No commission", description: "Keep what you earn. LIVAREX doesn't charge any commission on rentals completed through the platform.", badge: "0% commission", icon: BadgeCheck },
     { title: "Get a verified badge", description: "Stand out with a verified badge that shows tenants your identity and property have been checked.", badge: "Trusted profile", icon: ShieldCheck },
     { title: "Your property, your rule", description: "You decide who to rent to, at what price, and on what terms. You're in full control of your property.", badge: "Full control", icon: SlidersHorizontal },
 ]
@@ -64,7 +63,7 @@ const landlordVerificationProcess = [
   { title: "Account Registration", badge: "Required", description: "Landlords create a verified account with a valid email address and Nigerian phone number. OTP verification confirms the phone immediately.", icon: Users },
   { title: "Government ID Submission", badge: "Required", description: "Every landlord must upload a clear photo of one government-issued ID: NIN slip, international passport, driver's license, or voter's card.", icon: ShieldCheck },
   { title: "Manual Document Review", badge: "24–48 hrs", description: "Our verification team reviews every submission within 24–48 hours. We cross-check the ID details, confirm identity, and check against our fraud database.", icon: SearchCheck },
-  { title: "Property Ownership Confirmation", badge: "Per listing", description: "For each listing, we review proof of ownership or legal authority to let (title deed, C of O, allocation letter, or estate agent authority). Landlords listing without proof are declined.", icon: HousePlus },
+  { title: "Property Ownership Verification", badge: "Per listing", description: "For each listing, we review proof of ownership or legal authority to let (title deed, C of O, allocation letter, or estate agent authority). Landlords listing without proof are declined.", icon: HousePlus },
   { title: "Verified Badge Awarded", badge: "Ongoing", description: "Approved landlords receive the ✅ Verified badge on their profile and all their listings. This badge tells tenants: \"This person is real, their identity is confirmed, and their property claim has been checked.\"", icon: BadgeCheck },
 ]
 

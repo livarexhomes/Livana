@@ -82,7 +82,7 @@ export default function AboutPage() {
                   A place to live.<br />A connection<br /><span className="text-blue-600">you can build on.</span>
                 </h1>
                 <p className="mt-6 max-w-lg text-base leading-8 text-slate-600">
-                  LIVAREX is a Nigerian property marketplace connecting prospective tenants with verified landlords and verify property listings.
+                  LIVAREX is a Nigerian property marketplace connecting prospective tenants with verified landlords and verified property listings.
                 </p>
                 <p className="mt-3 max-w-lg text-[15px] leading-7 text-slate-600">We bring verification, clearer information and direct connections into a decision that matters: finding your next home.</p>
                 <div className="mt-8 flex flex-wrap items-center gap-4">
