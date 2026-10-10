@@ -5,6 +5,8 @@ import {
   BriefcaseBusiness,
   Building2,
   CheckCircle,
+  Clock,
+  Headphones,
   House,
   Mail,
   MapPin,
@@ -17,6 +19,7 @@ import {
   ArrowUpRight,
   ChevronDown,
   Sparkles,
+  Star,
   UserCheck,
 } from 'lucide-react'
 import PublicNavbar from '@/components/layout/PublicNavbar'
@@ -319,37 +322,59 @@ export default function ContactPage() {
               </div>
 
               <div className="relative">
-                <div className="grid gap-4 md:grid-cols-[1.25fr_0.75fr]">
-                  <div className="overflow-hidden rounded-[1.75rem] border border-white/10 bg-white/5 p-3 shadow-[0_26px_80px_-28px_rgba(14,116,144,0.75)]">
-                    <img
-                      src="/support.png"
-                      alt="Modern residential property exterior"
-                      className="h-[22rem] w-full rounded-[1.2rem] object-cover sm:h-[27rem]"
-                    />
+                {/* Soft outer glow behind the card */}
+                <div className="pointer-events-none absolute -inset-6 -z-10 rounded-[2.5rem] bg-gradient-to-br from-blue-500/30 via-sky-400/15 to-cyan-300/20 blur-2xl" aria-hidden="true" />
+
+                {/* Decorative orbit ring */}
+                <div className="pointer-events-none absolute -right-10 -top-10 -z-10 h-44 w-44 rounded-full border border-white/10 [mask-image:radial-gradient(circle,transparent_60%,black_60%)] sm:-right-14 sm:-top-14 sm:h-56 sm:w-56" aria-hidden="true" />
+                <div className="pointer-events-none absolute -left-6 bottom-10 -z-10 h-3 w-3 rounded-full bg-blue-400 shadow-[0_0_24px_6px_rgba(96,165,250,0.6)] sm:h-4 sm:w-4" aria-hidden="true" />
+                <div className="pointer-events-none absolute right-6 top-12 -z-10 h-2 w-2 rounded-full bg-cyan-300 shadow-[0_0_18px_4px_rgba(103,232,249,0.7)]" aria-hidden="true" />
+
+                {/* Main image card */}
+                <div className="relative overflow-hidden rounded-[1.75rem] border border-white/10 bg-gradient-to-br from-white/[0.07] to-white/[0.02] p-3 shadow-[0_26px_80px_-28px_rgba(14,116,144,0.75)] ring-1 ring-inset ring-white/5">
+                  {/* Subtle image overlay gradient */}
+                  <div className="pointer-events-none absolute inset-3 rounded-[1.2rem] bg-gradient-to-tr from-slate-950/40 via-transparent to-blue-500/10" aria-hidden="true" />
+
+                  <img
+                    src="/support.png"
+                    alt="Modern residential property exterior"
+                    className="relative h-[22rem] w-full rounded-[1.2rem] object-cover sm:h-[27rem]"
+                  />
+
+                  {/* Top-right live status chip */}
+                  <div className="absolute right-5 top-5 inline-flex items-center gap-2 rounded-full border border-white/15 bg-slate-950/70 px-3 py-1.5 text-[11px] font-semibold text-white shadow-lg shadow-slate-950/30 backdrop-blur-md">
+                    <span className="relative flex h-2 w-2">
+                      <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
+                      <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-400" />
+                    </span>
+                    <span className="text-emerald-300">Live</span>
+                    <span className="text-white/60">•</span>
+                    <span>Team online</span>
                   </div>
-
-                  {/* <div className="space-y-4">
-                    <div className="overflow-hidden rounded-[1.5rem] border border-white/10 bg-white/5 p-3">
-                      <img
-                        src="https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?auto=format&fit=crop&w=900&q=80"
-                        alt="Modern apartment interior"
-                        className="h-36 w-full rounded-[1rem] object-cover sm:h-44"
-                      />
-                    </div>
-
-                    <div className="overflow-hidden rounded-[1.5rem] border border-white/10 bg-white/5 p-3">
-                      <img
-                        src="https://images.unsplash.com/photo-1494526585095-c41746248156?auto=format&fit=crop&w=900&q=80"
-                        alt="Modern residential balcony exterior"
-                        className="h-36 w-full rounded-[1rem] object-cover sm:h-44"
-                      />
-                    </div>
-                  </div> */}
                 </div>
 
-                <div className="absolute bottom-5 left-5 rounded-2xl border border-white/10 bg-slate-950/80 px-4 py-3 shadow-xl shadow-slate-950/20 backdrop-blur-sm">
-                  <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-blue-300">Property Support</p>
-                  <p className="mt-1 text-sm font-semibold text-white">Here when you need us.</p>
+                {/* Bottom-left support badge */}
+                <div className="absolute -bottom-4 left-5 flex items-center gap-3 rounded-2xl border border-white/10 bg-slate-950/85 px-4 py-3 shadow-2xl shadow-slate-950/40 backdrop-blur-md sm:-bottom-6">
+                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-cyan-400 shadow-lg shadow-blue-500/30">
+                    <Headphones className="h-5 w-5 text-white" aria-hidden="true" />
+                  </span>
+                  <div className="min-w-0">
+                    <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-blue-300">Property Support</p>
+                    <p className="mt-0.5 text-sm font-semibold text-white">Here when you need us.</p>
+                  </div>
+                </div>
+
+                {/* Top-left response time chip */}
+                <div className="absolute -left-3 top-16 hidden items-center gap-2 rounded-xl border border-white/10 bg-slate-950/80 px-3 py-2 text-xs font-semibold text-white shadow-xl shadow-slate-950/30 backdrop-blur-md sm:-left-5 sm:flex">
+                  <Clock className="h-3.5 w-3.5 text-cyan-300" aria-hidden="true" />
+                  <span>Replies in &lt; 5 min</span>
+                </div>
+
+                {/* Bottom-right rating chip */}
+                <div className="absolute -right-2 bottom-20 hidden items-center gap-2 rounded-xl border border-white/10 bg-slate-950/80 px-3 py-2 text-xs font-semibold text-white shadow-xl shadow-slate-950/30 backdrop-blur-md sm:-right-4 sm:flex">
+                  <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" aria-hidden="true" />
+                  <span className="text-white">4.9</span>
+                  <span className="text-white/60">• 2k+ reviews</span>
                 </div>
               </div>
             </div>
@@ -517,45 +542,379 @@ export default function ContactPage() {
           </div>
         </section>
 
-        <section className="bg-white py-14 md:py-20" aria-labelledby="office-title">
-          <div className="mx-auto max-w-7xl px-5 sm:px-8">
-            <div className="relative overflow-hidden rounded-[24px] bg-slate-100">
-              <img src="https://images.unsplash.com/photo-1460317442991-0ec209397118?auto=format&fit=crop&w=1400&q=80" alt="Residential architecture" loading="lazy" className="h-64 w-full object-cover md:absolute md:inset-0 md:h-full" />
-              <div className="pointer-events-none absolute inset-0 hidden bg-gradient-to-r from-slate-950/10 via-slate-950/10 to-slate-950/40 md:block" />
-              <div className="relative p-4 md:flex md:min-h-[420px] md:items-center md:justify-end md:p-8 lg:p-10">
-                <div className="rounded-2xl border border-slate-100 bg-white p-6 shadow-xl shadow-slate-950/5 md:w-[420px] sm:p-8"><span className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-50 text-blue-600"><MapPin className="h-5 w-5" aria-hidden="true" /></span><p className="mt-6 text-[11px] font-bold uppercase tracking-[0.18em] text-blue-600">Our Location</p><h2 id="office-title" className="mt-3 text-3xl font-semibold tracking-[-0.04em] text-slate-950">Visit LIVAREX</h2><p className="mt-4 text-base leading-7 text-slate-600">{address}</p><a href={`https://maps.google.com/?q=${encodeURIComponent(address)}`} target="_blank" rel="noopener noreferrer" className="mt-6 inline-flex min-h-12 w-full items-center justify-between gap-3 rounded-xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-blue-700">Get Directions<ArrowUpRight className="h-4 w-4" aria-hidden="true" /></a></div>
+        <section className="relative overflow-hidden bg-white py-14 md:py-20" aria-labelledby="office-title">
+          <div className="pointer-events-none absolute inset-x-0 -top-24 h-64 bg-[radial-gradient(closest-side,rgba(37,99,235,0.08),transparent)]" aria-hidden="true" />
+
+          <div className="relative mx-auto max-w-7xl px-5 sm:px-8">
+            <div className="mx-auto mb-10 max-w-2xl text-center md:mb-14">
+              <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-blue-600">Visit LIVAREX</p>
+              <h2 id="office-title" className="mt-3 text-3xl font-semibold tracking-[-0.04em] text-slate-950 sm:text-4xl">
+                Stop by our Lagos office.
+              </h2>
+              <p className="mt-4 text-base leading-7 text-slate-600">
+                The LIVAREX team is happy to meet in person to walk you through listings, verifications or partnership enquiries.
+              </p>
+            </div>
+
+            <div className="grid items-stretch gap-6 lg:grid-cols-[1.1fr_0.9fr]">
+              <div className="relative overflow-hidden rounded-[24px] border border-slate-200 bg-slate-100 shadow-[0_24px_70px_-45px_rgba(15,23,42,0.35)]">
+                <div className="relative h-[320px] sm:h-[420px] lg:h-full lg:min-h-[520px]">
+                  <img
+                    src="/homes/support.png"
+                    alt="LIVAREX Lagos office exterior"
+                    loading="lazy"
+                    className="h-full w-full object-cover"
+                  />
+                  <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-slate-950/70 via-slate-950/20 to-transparent" />
+
+                  <div className="absolute left-5 top-5 inline-flex items-center gap-2 rounded-full border border-white/20 bg-slate-950/70 px-3 py-1.5 text-[11px] font-semibold text-white shadow-lg backdrop-blur-md">
+                    <span className="relative flex h-2 w-2">
+                      <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
+                      <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-400" />
+                    </span>
+                    <span className="text-emerald-300">Open today</span>
+                    <span className="text-white/60">•</span>
+                    <span>9am – 6pm WAT</span>
+                  </div>
+
+                  <div className="absolute inset-x-0 bottom-0 p-5 sm:p-7">
+                    <div className="rounded-2xl border border-white/15 bg-white/95 p-5 shadow-xl shadow-slate-950/30 backdrop-blur-md sm:p-6">
+                      <div className="flex items-start gap-3">
+                        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-600 text-white shadow-lg shadow-blue-600/30">
+                          <MapPin className="h-5 w-5" aria-hidden="true" />
+                        </span>
+                        <div className="min-w-0 flex-1">
+                          <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-blue-600">Head Office</p>
+                          <p className="mt-1.5 text-base font-semibold leading-snug text-slate-950 sm:text-lg">{address}</p>
+                        </div>
+                      </div>
+
+                      <div className="mt-5 flex flex-col gap-2 sm:flex-row">
+                        <a
+                          href={`https://maps.google.com/?q=${encodeURIComponent(address)}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-blue-700"
+                        >
+                          Get Directions
+                          <ArrowUpRight className="h-4 w-4" aria-hidden="true" />
+                        </a>
+                        <a
+                          href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50"
+                        >
+                          View larger map
+                        </a>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-4">
+                <div className="rounded-[24px] border border-slate-200 bg-white p-6 shadow-[0_24px_70px_-45px_rgba(15,23,42,0.25)] sm:p-8">
+                  <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
+                    <Clock className="h-5 w-5" aria-hidden="true" />
+                  </span>
+                  <h3 className="mt-5 text-lg font-semibold tracking-[-0.03em] text-slate-950">Office hours</h3>
+                  <p className="mt-1 text-sm leading-6 text-slate-600">Walk-ins are welcome, appointments are faster.</p>
+                  <dl className="mt-5 divide-y divide-slate-100 text-sm">
+                    <div className="flex items-center justify-between py-3">
+                      <dt className="text-slate-600">Monday – Friday</dt>
+                      <dd className="font-semibold text-slate-950">9:00 AM – 6:00 PM</dd>
+                    </div>
+                    <div className="flex items-center justify-between py-3">
+                      <dt className="text-slate-600">Saturday</dt>
+                      <dd className="font-semibold text-slate-950">10:00 AM – 3:00 PM</dd>
+                    </div>
+                    <div className="flex items-center justify-between py-3">
+                      <dt className="text-slate-600">Sunday</dt>
+                      <dd className="font-semibold text-slate-500">Closed</dd>
+                    </div>
+                  </dl>
+                </div>
+
+                <div className="rounded-[24px] border border-slate-200 bg-white p-6 shadow-[0_24px_70px_-45px_rgba(15,23,42,0.25)] sm:p-8">
+                  <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
+                    <Building2 className="h-5 w-5" aria-hidden="true" />
+                  </span>
+                  <h3 className="mt-5 text-lg font-semibold tracking-[-0.03em] text-slate-950">Plan your visit</h3>
+                  <ul className="mt-5 space-y-3 text-sm leading-6 text-slate-600">
+                    <li className="flex items-start gap-3">
+                      <CheckCircle className="mt-0.5 h-4 w-4 shrink-0 text-blue-600" aria-hidden="true" />
+                      <span>Secure visitor parking is available on-site.</span>
+                    </li>
+                    <li className="flex items-start gap-3">
+                      <CheckCircle className="mt-0.5 h-4 w-4 shrink-0 text-blue-600" aria-hidden="true" />
+                      <span>Bring a valid ID for landlord or partner meetings.</span>
+                    </li>
+                    <li className="flex items-start gap-3">
+                      <CheckCircle className="mt-0.5 h-4 w-4 shrink-0 text-blue-600" aria-hidden="true" />
+                      <span>Schedule ahead so the right team is ready for you.</span>
+                    </li>
+                  </ul>
+                  <Link
+                    href="#contact-form"
+                    className="mt-6 inline-flex min-h-11 items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-900 transition-colors hover:bg-slate-50"
+                  >
+                    Book a visit
+                    <ArrowRight className="h-4 w-4" aria-hidden="true" />
+                  </Link>
+                </div>
               </div>
             </div>
           </div>
         </section>
 
-        <section className="border-t border-slate-200 bg-white py-12 md:py-16">
-          <div className="mx-auto max-w-7xl px-5 sm:px-8">
-            <div className="mx-auto max-w-3xl text-center">
+        <section className="relative overflow-hidden border-t border-slate-200 bg-[#f7f9fc] py-14 md:py-20">
+          <div className="pointer-events-none absolute -left-32 top-10 h-72 w-72 rounded-full bg-blue-200/40 blur-3xl" aria-hidden="true" />
+          <div className="pointer-events-none absolute -right-24 bottom-0 h-80 w-80 rounded-full bg-sky-200/30 blur-3xl" aria-hidden="true" />
+
+          <div className="relative mx-auto max-w-7xl px-5 sm:px-8">
+            <div className="mx-auto mb-10 max-w-2xl text-center md:mb-14">
               <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-blue-600">Quick Help</p>
               <h2 className="mt-3 text-3xl font-semibold tracking-[-0.05em] text-slate-950 sm:text-4xl">
-                You May Find Your Answer Here.
+                You may find your answer here.
               </h2>
+              <p className="mt-4 text-base leading-7 text-slate-600">
+                Shortcuts to the LIVAREX guides our users reach for most — start with the topic closest to your goal.
+              </p>
             </div>
 
-            <div className="mt-10 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-              {helpLinks.map(({ href, icon: Icon, label, description }) => {
-                const content = <><span className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 text-blue-600"><Icon className="h-4 w-4" aria-hidden="true" /></span><h3 className="mt-4 text-base font-semibold text-slate-950">{label}</h3><p className="mt-2 text-sm leading-6 text-slate-600">{description}</p><span className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-blue-600">Learn more <ArrowRight className="h-4 w-4" aria-hidden="true" /></span></>
-                const card = 'block rounded-2xl border border-slate-200 bg-white p-5 transition-colors hover:border-blue-200 hover:bg-blue-50/30'
-                return href.startsWith('#') ? <a key={label} href={href} className={card}>{content}</a> : <Link key={label} href={href} className={card}>{content}</Link>
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              {helpLinks.map(({ href, icon: Icon, label, description }, index) => {
+                const isFeatured = index === 0
+                const wrapperClass = isFeatured
+                  ? 'group relative flex h-full flex-col overflow-hidden rounded-3xl border border-slate-900 bg-slate-950 p-6 text-white shadow-[0_24px_70px_-45px_rgba(15,23,42,0.6)] transition-all hover:bg-slate-900 md:col-span-2 md:p-8'
+                  : 'group relative flex h-full flex-col overflow-hidden rounded-3xl border border-slate-200 bg-white p-6 text-slate-900 shadow-[0_18px_60px_-45px_rgba(15,23,42,0.18)] transition-all hover:-translate-y-0.5 hover:border-blue-200 hover:shadow-[0_24px_70px_-45px_rgba(37,99,235,0.35)] md:p-7'
+
+                const iconWrap = isFeatured
+                  ? 'flex h-12 w-12 items-center justify-center rounded-2xl bg-white/10 text-blue-200 ring-1 ring-inset ring-white/15'
+                  : 'flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-50 text-blue-600 ring-1 ring-inset ring-blue-100'
+
+                const titleClass = isFeatured
+                  ? 'mt-6 text-2xl font-semibold leading-tight tracking-[-0.04em] text-white sm:text-3xl'
+                  : 'mt-5 text-lg font-semibold tracking-[-0.03em] text-slate-950'
+
+                const descClass = isFeatured
+                  ? 'mt-3 max-w-md text-sm leading-7 text-slate-300 sm:text-base'
+                  : 'mt-2 text-sm leading-6 text-slate-600'
+
+                const ctaClass = isFeatured
+                  ? 'mt-8 inline-flex min-h-11 w-fit items-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-blue-500'
+                  : 'mt-7 inline-flex min-h-11 w-fit items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-900 transition-colors group-hover:border-blue-200 group-hover:bg-blue-50/60'
+
+                const accent = isFeatured ? (
+                  <>
+                    <div className="pointer-events-none absolute -right-20 -top-20 h-64 w-64 rounded-full bg-blue-500/30 blur-3xl" aria-hidden="true" />
+                    <div className="pointer-events-none absolute -bottom-32 -left-20 h-72 w-72 rounded-full bg-sky-500/15 blur-3xl" aria-hidden="true" />
+                  </>
+                ) : null
+
+                const inner = (
+                  <>
+                    {accent}
+                    <span className={iconWrap}>
+                      <Icon className="h-5 w-5" aria-hidden="true" />
+                    </span>
+                    <h3 className={titleClass}>{label}</h3>
+                    <p className={descClass}>{description}</p>
+                    <span className={ctaClass}>
+                      {isFeatured ? 'Read the guide' : 'Learn more'}
+                      <ArrowUpRight className="h-4 w-4 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" aria-hidden="true" />
+                    </span>
+                  </>
+                )
+
+                if (href.startsWith('#')) {
+                  return (
+                    <a key={label} href={href} className={wrapperClass}>
+                      {inner}
+                    </a>
+                  )
+                }
+                return (
+                  <Link key={label} href={href} className={wrapperClass}>
+                    {inner}
+                  </Link>
+                )
               })}
+            </div>
+
+            <div className="mt-10 flex flex-col items-center justify-between gap-4 rounded-3xl border border-slate-200 bg-white p-5 shadow-[0_18px_60px_-45px_rgba(15,23,42,0.18)] sm:flex-row sm:p-6">
+              <div className="flex items-center gap-4">
+                <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-blue-50 text-blue-600">
+                  <MessageCircle className="h-5 w-5" aria-hidden="true" />
+                </span>
+                <div>
+                  <p className="text-sm font-semibold text-slate-950">Can’t find what you need?</p>
+                  <p className="mt-0.5 text-xs leading-5 text-slate-600">Our team is happy to point you in the right direction.</p>
+                </div>
+              </div>
+              <a
+                href="#contact-form"
+                className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-blue-700"
+              >
+                Contact the team
+                <ArrowRight className="h-4 w-4" aria-hidden="true" />
+              </a>
             </div>
           </div>
         </section>
 
-        <section id="faq-panel" className="border-t border-slate-100 bg-[#f7f9fc] py-14 md:py-20" aria-labelledby="faq-title">
-          <div className="mx-auto grid max-w-7xl gap-8 px-5 sm:px-8 lg:grid-cols-[0.75fr_1.25fr] lg:gap-16">
-            <div><p className="text-[11px] font-bold uppercase tracking-[0.18em] text-blue-600">Questions We Hear Often</p><h2 id="faq-title" className="mt-4 text-3xl font-semibold leading-tight tracking-[-0.04em] text-slate-950 sm:text-4xl">Frequently Asked<br />Questions</h2><p className="mt-5 max-w-sm text-sm leading-7 text-slate-600">A few answers to help you take the next step.</p><a href="#contact-form" className="mt-5 inline-flex min-h-11 items-center gap-2 rounded-md text-sm font-semibold text-blue-600">Still have a question?<ArrowRight className="h-4 w-4" aria-hidden="true" /></a></div>
-            <div className="rounded-[20px] border border-slate-200 bg-white px-5 sm:px-7">
-              {faqs.map((faq, index) => <div key={faq.q} className="border-b border-slate-100 last:border-0">
-                <button type="button" id={`contact-faq-trigger-${index}`} aria-expanded={openFaq === index} aria-controls={`contact-faq-${index}`} onClick={() => setOpenFaq(openFaq === index ? null : index)} className="flex min-h-20 w-full items-center justify-between gap-4 py-5 text-left"><span className="text-sm font-semibold leading-6 text-slate-900 sm:text-base">{faq.q}</span><span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${openFaq === index ? 'bg-blue-600 text-white' : 'bg-blue-50 text-blue-600'}`}>{openFaq === index ? <Minus className="h-4 w-4" aria-hidden="true" /> : <Plus className="h-4 w-4" aria-hidden="true" />}</span></button>
-                <div id={`contact-faq-${index}`} role="region" aria-labelledby={`contact-faq-trigger-${index}`} hidden={openFaq !== index} className="max-w-xl pb-6 pr-6 text-sm leading-7 text-slate-600">{faq.a}</div>
-              </div>)}
+        <section id="faq-panel" className="relative overflow-hidden border-t border-slate-100 bg-white py-14 md:py-20" aria-labelledby="faq-title">
+          <div className="pointer-events-none absolute -left-32 top-20 h-72 w-72 rounded-full bg-blue-100/60 blur-3xl" aria-hidden="true" />
+          <div className="pointer-events-none absolute -right-24 bottom-10 h-80 w-80 rounded-full bg-sky-100/50 blur-3xl" aria-hidden="true" />
+
+          <div className="relative mx-auto max-w-7xl px-5 sm:px-8">
+            <div className="grid items-start gap-10 lg:grid-cols-[0.85fr_1.4fr] lg:gap-14">
+              <div className="lg:sticky lg:top-28">
+                <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-blue-600">Questions We Hear Often</p>
+                <h2 id="faq-title" className="mt-4 text-3xl font-semibold leading-[1.05] tracking-[-0.04em] text-slate-950 sm:text-4xl">
+                  Frequently asked<br />questions.
+                </h2>
+                <p className="mt-5 max-w-sm text-sm leading-7 text-slate-600">
+                  A few answers to help you take the next step. Can’t find what you’re looking for? Our team replies quickly.
+                </p>
+
+                <div className="mt-7 flex flex-col gap-3 sm:flex-row lg:flex-col">
+                  <a
+                    href="#contact-form"
+                    className="inline-flex min-h-11 w-fit items-center gap-2 rounded-xl bg-slate-950 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-slate-800"
+                  >
+                    Still have a question?
+                    <ArrowUpRight className="h-4 w-4" aria-hidden="true" />
+                  </a>
+                  <a
+                    href={phoneToWaLink(phone)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex min-h-11 w-fit items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-900 transition-colors hover:bg-slate-50"
+                  >
+                    <MessageCircle className="h-4 w-4 text-blue-600" aria-hidden="true" />
+                    Chat on WhatsApp
+                  </a>
+                </div>
+
+                <div className="mt-8 hidden items-center gap-3 rounded-2xl border border-slate-200 bg-white/80 p-4 backdrop-blur lg:flex">
+                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
+                    <Clock className="h-5 w-5" aria-hidden="true" />
+                  </span>
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold text-slate-950">Average reply · under 5 min</p>
+                    <p className="mt-0.5 text-xs leading-5 text-slate-600">Mon–Sat during office hours.</p>
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <div className="mb-4 flex items-center gap-2 rounded-2xl border border-blue-100 bg-blue-50/70 px-4 py-3 text-sm text-slate-700">
+                  <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-blue-600 text-white">
+                    <Sparkles className="h-3.5 w-3.5" aria-hidden="true" />
+                  </span>
+                  <p>
+                    <span className="font-semibold text-slate-950">Popular this week:</span>{' '}
+                    <span className="text-slate-700">“{faqs[0].q}”</span>
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => setOpenFaq(0)}
+                    className="ml-auto inline-flex min-h-9 items-center gap-1 rounded-lg bg-white px-3 py-1.5 text-xs font-semibold text-blue-600 ring-1 ring-inset ring-blue-100 transition-colors hover:bg-blue-100"
+                  >
+                    Read answer
+                    <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
+                  </button>
+                </div>
+
+                <div className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-[0_18px_60px_-45px_rgba(15,23,42,0.18)]">
+                  {faqs.map((faq, index) => {
+                    const isOpen = openFaq === index
+                    return (
+                      <div
+                        key={faq.q}
+                        className={`border-b border-slate-100 last:border-0 transition-colors ${isOpen ? 'bg-blue-50/30' : 'bg-white'}`}
+                      >
+                        <button
+                          type="button"
+                          id={`contact-faq-trigger-${index}`}
+                          aria-expanded={isOpen}
+                          aria-controls={`contact-faq-${index}`}
+                          onClick={() => setOpenFaq(isOpen ? null : index)}
+                          className="group flex min-h-[72px] w-full items-start justify-between gap-4 px-5 py-5 text-left sm:px-7"
+                        >
+                          <span className="flex min-w-0 items-start gap-3 sm:gap-4">
+                            <span
+                              className={`mt-0.5 inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[11px] font-bold sm:h-8 sm:w-8 ${isOpen ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-500'}`}
+                            >
+                              {(index + 1).toString().padStart(2, '0')}
+                            </span>
+                            <span className="text-sm font-semibold leading-6 text-slate-900 sm:text-base">{faq.q}</span>
+                          </span>
+                          <span
+                            className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full transition-all ${isOpen ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/25 rotate-180' : 'bg-blue-50 text-blue-600 group-hover:bg-blue-100'}`}
+                          >
+                            {isOpen ? <Minus className="h-4 w-4" aria-hidden="true" /> : <Plus className="h-4 w-4" aria-hidden="true" />}
+                          </span>
+                        </button>
+                        <div
+                          id={`contact-faq-${index}`}
+                          role="region"
+                          aria-labelledby={`contact-faq-trigger-${index}`}
+                          hidden={!isOpen}
+                          className="max-w-2xl px-5 pb-6 pr-10 pl-[60px] text-sm leading-7 text-slate-600 sm:px-7 sm:pl-[68px]"
+                        >
+                          {faq.a}
+                          {isOpen && (
+                            <div className="mt-5 flex flex-wrap items-center gap-3 border-t border-slate-200/70 pt-4 text-xs text-slate-500">
+                              <span>Was this helpful?</span>
+                              <button
+                                type="button"
+                                className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white px-3 py-1 font-semibold text-slate-700 transition-colors hover:border-blue-200 hover:bg-blue-50"
+                              >
+                                Yes
+                              </button>
+                              <button
+                                type="button"
+                                className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white px-3 py-1 font-semibold text-slate-700 transition-colors hover:border-blue-200 hover:bg-blue-50"
+                              >
+                                Not really
+                              </button>
+                              <a
+                                href="#contact-form"
+                                className="ml-auto inline-flex items-center gap-1 font-semibold text-blue-600 hover:text-blue-700"
+                              >
+                                Ask the team
+                                <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
+                              </a>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+
+                <div className="mt-6 flex flex-col items-start justify-between gap-3 rounded-2xl border border-slate-200 bg-white p-5 sm:flex-row sm:items-center sm:p-6">
+                  <div className="flex items-center gap-3">
+                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
+                      <MessageCircle className="h-5 w-5" aria-hidden="true" />
+                    </span>
+                    <div>
+                      <p className="text-sm font-semibold text-slate-950">Looking for something else?</p>
+                      <p className="mt-0.5 text-xs leading-5 text-slate-600">Our support team is one message away.</p>
+                    </div>
+                  </div>
+                  <a
+                    href="#contact-form"
+                    className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-blue-700"
+                  >
+                    Send a message
+                    <ArrowRight className="h-4 w-4" aria-hidden="true" />
+                  </a>
+                </div>
+              </div>
             </div>
           </div>
         </section>
