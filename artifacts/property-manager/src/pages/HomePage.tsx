@@ -5,10 +5,10 @@ import { Link } from '@/lib/navigation'
 import { ArrowRight, ShieldCheck, Building2, Users, CheckCircle2, CheckCircle, MapPin, Calendar, ChevronDown, Search, Send, Home, X, ChevronLeft, ChevronRight, Pause, Play } from 'lucide-react';
 
 const HERO_IMAGES = [
-  { src: 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=1800&q=90', alt: 'Luxury apartment with pool' },
-  { src: 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=1800&q=90', alt: 'Modern apartment interior' },
-  { src: 'https://images.unsplash.com/photo-1512918728675-ed5a9ecdebfd?w=1800&q=90', alt: 'Premium residential building' },
-  { src: 'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=1800&q=90', alt: 'Elegant living space' },
+  { src: '/hero1.png', alt: 'Luxury apartment with pool' },
+  { src: '/hero2.png', alt: 'Modern apartment interior' },
+  { src: '/hero3.png', alt: 'Premium residential building' },
+  { src: '/hero4.png', alt: 'Elegant living space' },
   { src: '/heroimg.png', alt: 'Elegant living space' },
   
 ]
