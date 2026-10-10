@@ -355,9 +355,9 @@ export default function ContactPage() {
 
                 {/* Bottom-left support badge */}
                 <div className="absolute -bottom-4 left-5 flex items-center gap-3 rounded-2xl border border-white/10 bg-slate-950/85 px-4 py-3 shadow-2xl shadow-slate-950/40 backdrop-blur-md sm:-bottom-6">
-                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-cyan-400 shadow-lg shadow-blue-500/30">
+                  {/* <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-cyan-400 shadow-lg shadow-blue-500/30">
                     <Headphones className="h-5 w-5 text-white" aria-hidden="true" />
-                  </span>
+                  </span> */}
                   <div className="min-w-0">
                     <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-blue-300">Property Support</p>
                     <p className="mt-0.5 text-sm font-semibold text-white">Here when you need us.</p>
@@ -368,13 +368,6 @@ export default function ContactPage() {
                 <div className="absolute -left-3 top-16 hidden items-center gap-2 rounded-xl border border-white/10 bg-slate-950/80 px-3 py-2 text-xs font-semibold text-white shadow-xl shadow-slate-950/30 backdrop-blur-md sm:-left-5 sm:flex">
                   <Clock className="h-3.5 w-3.5 text-cyan-300" aria-hidden="true" />
                   <span>Replies in &lt; 5 min</span>
-                </div>
-
-                {/* Bottom-right rating chip */}
-                <div className="absolute -right-2 bottom-20 hidden items-center gap-2 rounded-xl border border-white/10 bg-slate-950/80 px-3 py-2 text-xs font-semibold text-white shadow-xl shadow-slate-950/30 backdrop-blur-md sm:-right-4 sm:flex">
-                  <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" aria-hidden="true" />
-                  <span className="text-white">4.9</span>
-                  <span className="text-white/60">• 2k+ reviews</span>
                 </div>
               </div>
             </div>
