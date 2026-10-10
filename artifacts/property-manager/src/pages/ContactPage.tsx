@@ -607,7 +607,7 @@ export default function ContactPage() {
               </div>
 
               <div className="flex flex-col gap-4">
-                <div className="rounded-[24px] border border-slate-200 bg-white p-6 shadow-[0_24px_70px_-45px_rgba(15,23,42,0.25)] sm:p-8">
+                {/* <div className="rounded-[24px] border border-slate-200 bg-white p-6 shadow-[0_24px_70px_-45px_rgba(15,23,42,0.25)] sm:p-8">
                   <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
                     <Clock className="h-5 w-5" aria-hidden="true" />
                   </span>
@@ -627,7 +627,7 @@ export default function ContactPage() {
                       <dd className="font-semibold text-slate-500">Closed</dd>
                     </div>
                   </dl>
-                </div>
+                </div> */}
 
                 <div className="rounded-[24px] border border-slate-200 bg-white p-6 shadow-[0_24px_70px_-45px_rgba(15,23,42,0.25)] sm:p-8">
                   <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
