@@ -535,7 +535,7 @@ export default function ContactPage() {
           </div>
         </section>
 
-        <section className="relative overflow-hidden bg-white py-14 md:py-20" aria-labelledby="office-title">
+        {/* <section className="relative overflow-hidden bg-white py-14 md:py-20" aria-labelledby="office-title">
           <div className="pointer-events-none absolute inset-x-0 -top-24 h-64 bg-[radial-gradient(closest-side,rgba(37,99,235,0.08),transparent)]" aria-hidden="true" />
 
           <div className="relative mx-auto max-w-7xl px-5 sm:px-8">
@@ -607,7 +607,7 @@ export default function ContactPage() {
               </div>
 
               <div className="flex flex-col gap-4">
-                {/* <div className="rounded-[24px] border border-slate-200 bg-white p-6 shadow-[0_24px_70px_-45px_rgba(15,23,42,0.25)] sm:p-8">
+                <div className="rounded-[24px] border border-slate-200 bg-white p-6 shadow-[0_24px_70px_-45px_rgba(15,23,42,0.25)] sm:p-8">
                   <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
                     <Clock className="h-5 w-5" aria-hidden="true" />
                   </span>
@@ -627,7 +627,7 @@ export default function ContactPage() {
                       <dd className="font-semibold text-slate-500">Closed</dd>
                     </div>
                   </dl>
-                </div> */}
+                </div>
 
                 <div className="rounded-[24px] border border-slate-200 bg-white p-6 shadow-[0_24px_70px_-45px_rgba(15,23,42,0.25)] sm:p-8">
                   <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
@@ -659,7 +659,7 @@ export default function ContactPage() {
               </div>
             </div>
           </div>
-        </section>
+        </section> */}
 
         <section className="relative overflow-hidden border-t border-slate-200 bg-[#f7f9fc] py-14 md:py-20">
           <div className="pointer-events-none absolute -left-32 top-10 h-72 w-72 rounded-full bg-blue-200/40 blur-3xl" aria-hidden="true" />
