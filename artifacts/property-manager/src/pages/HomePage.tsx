@@ -5,11 +5,11 @@ import { Link } from '@/lib/navigation'
 import { ArrowRight, ShieldCheck, Building2, Users, CheckCircle2, CheckCircle, MapPin, Calendar, ChevronDown, Search, Send, Home, X, ChevronLeft, ChevronRight, Pause, Play } from 'lucide-react';
 
 const HERO_IMAGES = [
-  { src: '/hero1.png', alt: 'Luxury apartment with pool' },
-  { src: '/hero2.png', alt: 'Modern apartment interior' },
-  { src: '/hero3.png', alt: 'Premium residential building' },
-  { src: '/hero4.png', alt: 'Elegant living space' },
-  { src: '/heroimg.png', alt: 'Elegant living space' },
+  { src: '/homes/hero1.png', alt: 'Luxury apartment with pool' },
+  { src: '/homes/hero2.png', alt: 'Modern apartment interior' },
+  { src: '/homes/hero3.png', alt: 'Premium residential building' },
+  { src: '/homes/hero4.png', alt: 'Elegant living space' },
+  { src: '/homes/heroimg.png', alt: 'Elegant living space' },
   
 ]
 import PublicNavbar from '../components/layout/PublicNavbar'
