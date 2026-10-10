@@ -328,7 +328,7 @@ export default function ContactPage() {
                     />
                   </div>
 
-                  <div className="space-y-4">
+                  {/* <div className="space-y-4">
                     <div className="overflow-hidden rounded-[1.5rem] border border-white/10 bg-white/5 p-3">
                       <img
                         src="https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?auto=format&fit=crop&w=900&q=80"
@@ -344,7 +344,7 @@ export default function ContactPage() {
                         className="h-36 w-full rounded-[1rem] object-cover sm:h-44"
                       />
                     </div>
-                  </div>
+                  </div> */}
                 </div>
 
                 <div className="absolute bottom-5 left-5 rounded-2xl border border-white/10 bg-slate-950/80 px-4 py-3 shadow-xl shadow-slate-950/20 backdrop-blur-sm">

@@ -9,7 +9,7 @@ const HERO_IMAGES = [
   { src: '/homes/hero2.png', alt: 'Modern apartment interior' },
   { src: '/homes/hero3.png', alt: 'Premium residential building' },
   { src: '/homes/hero4.png', alt: 'Elegant living space' },
-  { src: '/homes/heroimg.png', alt: 'Elegant living space' },
+  { src: '/heroimg.png', alt: 'Elegant living space' },
   
 ]
 import PublicNavbar from '../components/layout/PublicNavbar'
