@@ -336,7 +336,7 @@ export default function ContactPage() {
                   <div className="pointer-events-none absolute inset-3 rounded-[1.2rem] bg-gradient-to-tr from-slate-950/40 via-transparent to-blue-500/10" aria-hidden="true" />
 
                   <img
-                    src="/support.png"
+                    src="/support0.png"
                     alt="Modern residential property exterior"
                     className="relative h-[22rem] w-full rounded-[1.2rem] object-cover sm:h-[27rem]"
                   />
