@@ -146,8 +146,8 @@ export default function CookiePolicyPage() {
                 colour="bg-violet-50 text-violet-600"
                 name="Analytics Cookies"
                 required={false}
-                purpose="These cookies help us understand how visitors interact with our platform — which pages are most visited, how users navigate between listings, where they drop off in the registration flow, and how long they spend on each section. This data is aggregated and anonymised. We use this to improve the platform for all users."
-                examples={['Google Analytics', 'Page views', 'Session duration', 'Traffic sources']}
+                purpose="First-party analytics help us estimate unique website visitors and page views. A random identifier is stored in your browser's local storage and used only to count public-site visits. We do not use it to identify you or collect your IP address."
+                examples={['livarex_visitor_id', 'Unique visitor estimates', 'Page views']}
               />
               <CookieCard
                 icon={Settings2}
@@ -184,6 +184,7 @@ export default function CookiePolicyPage() {
                     { name: 'sb-access-token',   provider: 'Supabase',         purpose: 'Authentication session',             duration: 'Session',   type: 'Essential' },
                     { name: 'sb-refresh-token',  provider: 'Supabase',         purpose: 'Auth token refresh',                 duration: '7 days',    type: 'Essential' },
                     { name: 'livarex_prefs',     provider: 'Livarex',          purpose: 'Search filters & preferences',       duration: '30 days',   type: 'Functional' },
+                    { name: 'livarex_visitor_id', provider: 'Livarex',          purpose: 'Estimate unique public-site visitors', duration: 'Until cleared', type: 'Analytics' },
                     { name: '_ga',               provider: 'Google Analytics', purpose: 'Distinguish unique users',           duration: '2 years',   type: 'Analytics' },
                     { name: '_gid',              provider: 'Google Analytics', purpose: 'Track session activity',             duration: '24 hours',  type: 'Analytics' },
                     { name: '_fbp',              provider: 'Meta (Facebook)',   purpose: 'Facebook advertising attribution',   duration: '90 days',   type: 'Marketing' },

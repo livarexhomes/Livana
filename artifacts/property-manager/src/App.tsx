@@ -8,6 +8,7 @@ import LandingWhatsAppWidget from "@/components/LandingWhatsAppWidget";
 import { ThemeProvider, useTheme } from "@/lib/theme";
 import { slugToLocationLabel } from "@/lib/locationSlug";
 import LivarexLoader from "@/components/LivarexLoader";
+import { trackSiteVisit } from "@/lib/site-analytics";
 
 const HomePage = lazy(() => import("@/pages/HomePage"));
 const ListingsPage = lazy(() => import("@/pages/ListingsPage"));
@@ -94,6 +95,18 @@ function Router() {
       else root.classList.remove('dark');
     }
   }, [location, resolvedDark]);
+
+  useEffect(() => {
+    const path = location.split('?')[0]
+    const privateRoute = ['/admin', '/landlord', '/user'].some(
+      (prefix) => path === prefix || path.startsWith(`${prefix}/`),
+    )
+    if (privateRoute) return
+
+    trackSiteVisit().catch((error) => {
+      console.warn('[site-analytics] visitor tracking failed:', error)
+    })
+  }, [location])
 
   return (
     <Suspense fallback={<Loading />}>

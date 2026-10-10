@@ -3,7 +3,7 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { Link } from '@/lib/navigation'
 import {
   Building2, Users,
-  MessageSquare, MapPin, ArrowRight, Clock, ShieldCheck,
+  MessageSquare, MapPin, ArrowRight, Clock, ShieldCheck, Eye,
 } from 'lucide-react'
 import AdminHeader from '../../components/layout/AdminHeader'
 import {
@@ -47,6 +47,7 @@ export default function AdminDashboard() {
     properties: 0, active: 0, occupied: 0,
     landlords: 0, pendingLandlords: 0, tenants: 0, enquiries: 0,
   })
+  const [visitorStats, setVisitorStats] = useState({ total: 0, today: 0 })
   const [recentEnquiries, setRecentEnquiries]   = useState<any[]>([])
   const [recentLandlords, setRecentLandlords]   = useState<any[]>([])
   const [recentListings, setRecentListings]     = useState<any[]>([])
@@ -57,6 +58,22 @@ export default function AdminDashboard() {
   const [refreshing, setRefreshing]             = useState(false)
   const [lastUpdated, setLastUpdated]           = useState<Date | null>(null)
   const debounceRef                             = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  const loadVisitorStats = useCallback(async () => {
+    const { data, error } = await createClient().rpc('get_site_visitor_stats')
+    if (error) {
+      console.warn('[admin-dashboard] visitor stats could not be loaded:', error.message)
+      return
+    }
+
+    const result = Array.isArray(data) ? data[0] : data
+    if (result) {
+      setVisitorStats({
+        total: Number(result.total_visitors) || 0,
+        today: Number(result.visitors_today) || 0,
+      })
+    }
+  }, [])
 
   const loadData = useCallback(async (initial = false) => {
     if (initial) setLoading(true)
@@ -132,8 +149,9 @@ export default function AdminDashboard() {
       setUser({ email: user.email })
       window.__livarexUserId = user.id
       loadData(true)
+      loadVisitorStats()
     })
-  }, [loadData])
+  }, [loadData, loadVisitorStats])
 
   useEffect(() => {
     const supabase = createClient()
@@ -146,9 +164,10 @@ export default function AdminDashboard() {
       .on('postgres_changes', { event: '*', schema: 'public', table: 'landlords' },  debouncedLoad)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'tenants' },    debouncedLoad)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'enquiries' },  debouncedLoad)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'site_visitors' }, loadVisitorStats)
       .subscribe()
     return () => { if (debounceRef.current) clearTimeout(debounceRef.current); supabase.removeChannel(channel) }
-  }, [loadData])
+  }, [loadData, loadVisitorStats])
 
   const rawName        = user?.email ? user.email.split('@')[0] : 'Admin'
   const displayName    = rawName.charAt(0).toUpperCase() + rawName.slice(1)
@@ -229,15 +248,17 @@ export default function AdminDashboard() {
                     <MobileStatCard label="Landlords" value={stats.landlords} icon={Users} />
                     <MobileStatCard label="Tenants" value={stats.tenants} icon={ShieldCheck} />
                     <MobileStatCard label="Enquiries" value={stats.enquiries} icon={MessageSquare} />
+                    <MobileStatCard label="Visitors today" value={visitorStats.today} icon={Eye} />
                   </MobileStatGrid>
                 </div>
 
-                <div className="hidden sm:grid grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="hidden sm:grid grid-cols-2 lg:grid-cols-5 gap-4">
                   {[
                     { label: 'Total Listings', value: stats.properties, icon: Building2,  sub: `${stats.active} active`,  color: 'blue'   },
                     { label: 'Landlords',      value: stats.landlords,  icon: Users,       sub: stats.pendingLandlords > 0 ? `${stats.pendingLandlords} pending` : 'all verified', color: 'purple' },
                     { label: 'Tenants',        value: stats.tenants,    icon: ShieldCheck, sub: 'registered users',          color: 'teal'   },
                     { label: 'Enquiries',      value: stats.enquiries, icon: MessageSquare, sub: `${engagementRate} per listing`, color: 'green' },
+                    { label: 'Unique Visitors', value: visitorStats.total, icon: Eye, sub: `${visitorStats.today.toLocaleString()} today`, color: 'blue' },
                   ].map(item => {
                     const Icon = item.icon
                     const iconBgMap: Record<string, string> = {
