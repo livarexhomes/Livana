@@ -194,7 +194,7 @@ export default function LoginPage() {
       <div className="hidden lg:flex lg:w-[48%] xl:w-[50%] shrink-0 bg-slate-950 flex-col justify-between gap-8 rounded-[28px] p-9 xl:p-12 relative overflow-hidden">
         {/* Background image */}
         <img
-          src="https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=1400&q=80"
+          src="/homes/hero2.png"
           alt="Modern home"
           className="absolute inset-0 w-full h-full object-cover opacity-60"
         />
