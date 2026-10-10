@@ -257,28 +257,49 @@ export default async function handler(req, res) {
     // ── remove ──────────────────────────────────────────────────────────────
     if (action === 'remove') {
       if (!userId) return sendJson(res, 400, { error: 'userId is required' })
+      if (String(userId) === admin.id) {
+        return sendJson(res, 403, { error: 'You cannot remove your own admin account.' })
+      }
 
-      // SECURITY: admins are protected from removal via this endpoint. Their
-      // account can only be deleted by direct Supabase admin intervention, so
-      // a non-admin (or even a fellow admin) cannot nuke the admin roster
-      // through the agent-management UI/API.
       const targetResp = await fetch(`${SUPABASE_URL}/auth/v1/admin/users/${encodeURIComponent(userId)}`, {
         headers: { Authorization: `Bearer ${SUPABASE_SERVICE_KEY}`, apikey: SUPABASE_SERVICE_KEY },
       })
       const targetData = await targetResp.json().catch(() => null)
-      const targetMeta = targetData?.app_metadata ?? {}
-      const targetIsAdmin =
-        targetMeta.role === 'admin' ||
-        (Array.isArray(targetMeta.roles) && targetMeta.roles.includes('admin'))
-      if (targetIsAdmin) {
-        return sendJson(res, 403, {
-          error: 'Admin accounts are protected and cannot be removed from this endpoint.',
-        })
-      }
       if (!targetResp.ok) {
         return sendJson(res, targetResp.status || 500, {
           error: getErrorMessage(targetData) || 'Failed to load target user',
         })
+      }
+
+      // Agent accounts also carry the admin auth role so they can access the
+      // admin app. Only remove accounts explicitly listed as support agents.
+      const rosterResp = await fetch(
+        `${SUPABASE_URL}/rest/v1/agents?user_id=eq.${encodeURIComponent(userId)}&select=id,role&limit=1`,
+        {
+          headers: {
+            Authorization: ['Bearer', SUPABASE_SERVICE_KEY].join(' '),
+            apikey: SUPABASE_SERVICE_KEY,
+          },
+        },
+      )
+      if (!rosterResp.ok) {
+        const rosterError = await rosterResp.json().catch(() => null)
+        return sendJson(res, rosterResp.status || 500, {
+          error: getErrorMessage(rosterError) || 'Failed to verify support agent',
+        })
+      }
+      const rosterRows = await rosterResp.json().catch(() => null)
+      const agentRow = Array.isArray(rosterRows) ? rosterRows[0] : null
+      if (!agentRow || !['agent', 'support'].includes(agentRow.role)) {
+        return sendJson(res, 403, { error: 'Only support agent accounts can be removed here.' })
+      }
+
+      const targetMeta = targetData?.app_metadata ?? {}
+      const targetIsAdmin =
+        targetMeta.role === 'admin' ||
+        (Array.isArray(targetMeta.roles) && targetMeta.roles.includes('admin'))
+      if (!targetIsAdmin) {
+        return sendJson(res, 403, { error: 'The target account is not an authorized support agent.' })
       }
 
       // Fully delete the Supabase auth account. The `agents` row has

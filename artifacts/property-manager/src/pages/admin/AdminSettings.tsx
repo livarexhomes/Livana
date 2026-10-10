@@ -309,6 +309,7 @@ function AgentSettingsSection({ currentUserId }: { currentUserId?: string }) {
   const [newPassword, setNewPassword] = useState('')
   const [mode, setMode] = useState<'create' | 'invite'>('create')
   const [adding, setAdding] = useState(false)
+  const [removingAgentId, setRemovingAgentId] = useState<string | null>(null)
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null)
 
   useEffect(() => {
@@ -381,14 +382,28 @@ function AgentSettingsSection({ currentUserId }: { currentUserId?: string }) {
   }
 
   async function removeAgent(agent: AgentSettingsRow) {
-    const res = await authedFetch('/api/manage-support-agent', { action: 'remove', userId: agent.user_id })
-    const data = await res.json()
-    if (!res.ok) {
-      setMsg({ ok: false, text: data.error || 'Could not remove agent' })
-      return
+    if (removingAgentId) return
+    const confirmed = window.confirm(
+      `Permanently delete ${agent.name} (${agent.email}) and revoke their Livarex account access?`,
+    )
+    if (!confirmed) return
+
+    setRemovingAgentId(agent.id)
+    setMsg(null)
+    try {
+      const res = await authedFetch('/api/manage-support-agent', { action: 'remove', userId: agent.user_id })
+      const data = await res.json()
+      if (!res.ok) {
+        setMsg({ ok: false, text: data.error || 'Could not remove agent' })
+        return
+      }
+      setAgents(prev => prev.filter(a => a.id !== agent.id))
+      setMsg({ ok: true, text: 'Agent account permanently deleted.' })
+    } catch (err) {
+      setMsg({ ok: false, text: String(err) })
+    } finally {
+      setRemovingAgentId(null)
     }
-    setAgents(prev => prev.filter(a => a.id !== agent.id))
-    setMsg({ ok: true, text: 'Agent removed.' })
   }
 
   return (
@@ -495,9 +510,11 @@ function AgentSettingsSection({ currentUserId }: { currentUserId?: string }) {
                           }`}>
                           {agent.active ? 'Deactivate' : 'Activate'}
                         </button>
-                        <button onClick={() => removeAgent(agent)} title="Remove agent"
-                          className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:ring-offset-2 inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-1.5 rounded-lg border border-gray-200 bg-white text-gray-500 hover:text-red-600 hover:border-red-200 transition-colors">
-                          <Trash2 className="w-3 h-3" /> Remove
+                        <button onClick={() => removeAgent(agent)} title="Permanently delete agent account"
+                          disabled={removingAgentId !== null}
+                          className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:ring-offset-2 inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-1.5 rounded-lg border border-gray-200 bg-white text-gray-500 hover:text-red-600 hover:border-red-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                          {removingAgentId === agent.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <Trash2 className="w-3 h-3" />}
+                          {removingAgentId === agent.id ? 'Removing…' : 'Remove'}
                         </button>
                       </>
                     )}
