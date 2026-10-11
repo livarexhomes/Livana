@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react'
 import { Link, useLocation } from '@/lib/navigation'
 import {
-  Menu, Search, ChevronDown, Building2, X,
+  Menu, Search, ChevronDown, Building2, X, MapPin, BedDouble, ArrowUpDown,
 } from 'lucide-react'
 import AuthGuard from '../../components/auth/AuthGuard'
 import UserSidebar from '../../components/layout/UserSidebar'
@@ -171,75 +171,122 @@ export default function UserDashboardPage() {
 
 
           {/* Filter bar */}
-          <div className="rounded-2xl border border-gray-100 bg-white p-3 shadow-sm sm:p-3.5">
+          <div className="relative overflow-hidden rounded-3xl border border-slate-200/80 bg-gradient-to-b from-white to-slate-50/60 p-3.5 shadow-[0_8px_30px_-12px_rgba(15,23,42,0.08),0_1px_0_rgba(255,255,255,0.8)_inset] ring-1 ring-inset ring-white/60 sm:p-4">
+            <div
+              aria-hidden="true"
+              className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-slate-200/80 to-transparent"
+            />
+
             <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:gap-2">
 
               {/* Search */}
-              <div className="relative w-full sm:min-w-40 sm:flex-1">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
+              <div className="group relative w-full sm:min-w-44 sm:flex-1">
+                <div className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 flex h-5 w-5 items-center justify-center rounded-md text-slate-400 transition-colors group-focus-within:text-blue-600 group-focus-within:bg-blue-50">
+                  <Search className="h-3.5 w-3.5" />
+                </div>
                 <input
                   type="text"
                   placeholder="Search by title, city or area…"
                   value={search}
                   onChange={e => setSearch(e.target.value)}
-                  className="w-full rounded-xl border border-gray-200 bg-gray-50 py-2.5 pl-9 pr-3 text-sm text-gray-800 placeholder-gray-400 transition-all focus:bg-white focus:outline-none focus:ring-2 focus:ring-gray-900"
+                  className="w-full rounded-2xl border border-slate-200 bg-white/80 py-2.5 pl-9 pr-9 text-sm text-slate-800 placeholder:text-slate-400 shadow-[0_1px_0_rgba(15,23,42,0.02)_inset] transition-all duration-200 hover:border-slate-300 hover:bg-white focus:border-blue-300 focus:bg-white focus:outline-none focus:ring-4 focus:ring-blue-100/70"
                 />
+                {search && (
+                  <button
+                    type="button"
+                    aria-label="Clear search"
+                    onClick={() => setSearch('')}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 flex h-6 w-6 items-center justify-center rounded-full text-slate-400 transition-all hover:bg-slate-100 hover:text-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-300"
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                )}
               </div>
 
               {/* Type tabs */}
-              <div className="-mx-3 flex max-w-[calc(100%+1.5rem)] items-center gap-1 overflow-x-auto px-3 pb-0.5 no-scrollbar sm:mx-0 sm:max-w-none sm:px-0 sm:pb-0">
-                {TYPE_TABS.map(t => (
-                  <button key={t.value} onClick={() => setTypeFilter(t.value)}
-                    className={`min-h-10 shrink-0 rounded-xl border px-4 text-xs font-semibold whitespace-nowrap transition-all ${
-                      typeFilter === t.value
-                        ? 'bg-gray-900 text-white border-gray-900'
-                        : 'bg-white text-gray-500 border-gray-200 hover:border-gray-400'
-                    }`}>
-                    {t.label}
-                  </button>
-                ))}
+              <div
+                role="tablist"
+                aria-label="Listing type"
+                className="relative -mx-3 flex max-w-[calc(100%+1.5rem)] items-center gap-1 overflow-x-auto rounded-2xl bg-slate-100/70 p-1 px-3 ring-1 ring-inset ring-slate-200/70 no-scrollbar sm:mx-0 sm:max-w-none sm:px-1"
+              >
+                {TYPE_TABS.map(t => {
+                  const selected = typeFilter === t.value
+                  return (
+                    <button
+                      key={t.value}
+                      role="tab"
+                      aria-selected={selected}
+                      onClick={() => setTypeFilter(t.value)}
+                      className={`relative inline-flex min-h-9 shrink-0 items-center justify-center rounded-xl px-3.5 text-xs font-semibold whitespace-nowrap transition-all duration-200 active:scale-[0.97] ${
+                        selected
+                          ? 'bg-white text-slate-900 shadow-[0_4px_12px_-4px_rgba(15,23,42,0.18),0_1px_0_rgba(255,255,255,1)_inset] ring-1 ring-slate-200/70'
+                          : 'text-slate-500 hover:text-slate-800'
+                      }`}
+                    >
+                      {t.label}
+                    </button>
+                  )
+                })}
               </div>
 
               <div className="grid grid-cols-2 gap-2 sm:flex sm:items-center">
                 {/* State */}
-                <div className="relative min-w-0">
-                  <select value={stateFilter} onChange={e => setStateFilter(e.target.value)}
-                    className="min-h-10 w-full appearance-none rounded-xl border border-gray-200 bg-white py-2 pl-3 pr-8 text-xs text-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-900 cursor-pointer sm:w-auto">
+                <div className="group relative min-w-0">
+                  <MapPin aria-hidden="true" className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400 transition-colors group-focus-within:text-blue-600" />
+                  <select
+                    aria-label="State"
+                    value={stateFilter}
+                    onChange={e => setStateFilter(e.target.value)}
+                    className="min-h-10 w-full appearance-none rounded-2xl border border-slate-200 bg-white/80 py-2 pl-8 pr-8 text-xs font-medium text-slate-700 shadow-[0_1px_0_rgba(15,23,42,0.02)_inset] transition-all duration-200 hover:border-slate-300 hover:bg-white focus:border-blue-300 focus:bg-white focus:outline-none focus:ring-4 focus:ring-blue-100/70 cursor-pointer sm:w-auto"
+                  >
                     <option value="">Any State</option>
                     <option value="Lagos">Lagos</option>
                     <option value="Ogun">Ogun</option>
                   </select>
-                  <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-gray-400 pointer-events-none" />
+                  <ChevronDown aria-hidden="true" className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400 transition-transform group-focus-within:rotate-180" />
                 </div>
 
                 {/* Beds */}
-                <div className="relative min-w-0">
-                  <select value={bedsFilter} onChange={e => setBedsFilter(e.target.value)}
-                    className="min-h-10 w-full appearance-none rounded-xl border border-gray-200 bg-white py-2 pl-3 pr-8 text-xs text-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-900 cursor-pointer sm:w-auto">
+                <div className="group relative min-w-0">
+                  <BedDouble aria-hidden="true" className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400 transition-colors group-focus-within:text-blue-600" />
+                  <select
+                    aria-label="Bedrooms"
+                    value={bedsFilter}
+                    onChange={e => setBedsFilter(e.target.value)}
+                    className="min-h-10 w-full appearance-none rounded-2xl border border-slate-200 bg-white/80 py-2 pl-8 pr-8 text-xs font-medium text-slate-700 shadow-[0_1px_0_rgba(15,23,42,0.02)_inset] transition-all duration-200 hover:border-slate-300 hover:bg-white focus:border-blue-300 focus:bg-white focus:outline-none focus:ring-4 focus:ring-blue-100/70 cursor-pointer sm:w-auto"
+                  >
                     <option value="">Any Beds</option>
                     <option value="1">1+ Beds</option>
                     <option value="2">2+ Beds</option>
                     <option value="3">3+ Beds</option>
                     <option value="4">4+ Beds</option>
                   </select>
-                  <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-gray-400 pointer-events-none" />
+                  <ChevronDown aria-hidden="true" className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400 transition-transform group-focus-within:rotate-180" />
                 </div>
 
                 {/* Sort */}
-                <div className="relative col-span-2 min-w-0 sm:col-span-1">
-                  <select value={sortBy} onChange={e => setSortBy(e.target.value)}
-                    className="min-h-10 w-full appearance-none rounded-xl border border-gray-200 bg-white py-2 pl-3 pr-8 text-xs text-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-900 cursor-pointer sm:w-auto">
-                    <option value="newest">Newest</option>
-                    <option value="price_asc">Price ↑</option>
-                    <option value="price_desc">Price ↓</option>
+                <div className="group relative col-span-2 min-w-0 sm:col-span-1">
+                  <ArrowUpDown aria-hidden="true" className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400 transition-colors group-focus-within:text-blue-600" />
+                  <select
+                    aria-label="Sort by"
+                    value={sortBy}
+                    onChange={e => setSortBy(e.target.value)}
+                    className="min-h-10 w-full appearance-none rounded-2xl border border-slate-200 bg-white/80 py-2 pl-8 pr-8 text-xs font-medium text-slate-700 shadow-[0_1px_0_rgba(15,23,42,0.02)_inset] transition-all duration-200 hover:border-slate-300 hover:bg-white focus:border-blue-300 focus:bg-white focus:outline-none focus:ring-4 focus:ring-blue-100/70 cursor-pointer sm:w-auto"
+                  >
+                    <option value="newest">Newest first</option>
+                    <option value="price_asc">Price: Low → High</option>
+                    <option value="price_desc">Price: High → Low</option>
                   </select>
-                  <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-gray-400 pointer-events-none" />
+                  <ChevronDown aria-hidden="true" className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400 transition-transform group-focus-within:rotate-180" />
                 </div>
 
                 {hasFilters && (
-                  <button onClick={clearFilters}
-                    className="col-span-2 flex min-h-10 items-center justify-center gap-1 rounded-xl border border-red-100 px-3 py-2 text-xs text-red-500 hover:bg-red-50 sm:col-span-1 sm:shrink-0">
-                    <X className="w-3 h-3" /> Clear
+                  <button
+                    type="button"
+                    onClick={clearFilters}
+                    className="col-span-2 inline-flex min-h-10 items-center justify-center gap-1.5 rounded-2xl border border-rose-200/80 bg-rose-50/70 px-3 py-2 text-xs font-semibold text-rose-600 shadow-[0_1px_0_rgba(255,255,255,0.8)_inset] transition-all duration-200 hover:border-rose-300 hover:bg-rose-100/80 active:scale-[0.97] sm:col-span-1 sm:shrink-0"
+                  >
+                    <X className="h-3.5 w-3.5" /> Clear filters
                   </button>
                 )}
               </div>
@@ -247,14 +294,22 @@ export default function UserDashboardPage() {
           </div>
 
           {/* Count */}
-          <div className="flex items-center justify-between px-1">
-            <p className="text-sm text-gray-500">
-              <span className="font-bold text-gray-900">{filtered.length}</span>{' '}
-              {filtered.length === 1 ? 'property' : 'properties'}
-              {hasFilters && <span className="text-green-600 ml-1 font-medium">· filtered</span>}
-            </p>
-            <Link href="/listings" className="text-xs font-semibold text-blue-600 hover:text-blue-700 transition-colors">
-              Full listings page →
+          <div className="flex items-center justify-between gap-3 px-1">
+            <div className="flex items-center gap-2">
+              <span className="inline-flex h-6 min-w-6 items-center justify-center rounded-full bg-slate-900 px-2 text-[11px] font-bold text-white shadow-sm">
+                {filtered.length}
+              </span>
+              <p className="text-sm text-slate-500">
+                {filtered.length === 1 ? 'property' : 'properties'}
+                {hasFilters && <span className="ml-1 font-medium text-emerald-600">· filtered</span>}
+              </p>
+            </div>
+            <Link
+              href="/listings"
+              className="group inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold text-blue-600 transition-colors hover:bg-blue-50 hover:text-blue-700"
+            >
+              Full listings page
+              <span aria-hidden="true" className="transition-transform group-hover:translate-x-0.5">→</span>
             </Link>
           </div>
 
