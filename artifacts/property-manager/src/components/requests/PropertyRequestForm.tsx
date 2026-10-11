@@ -236,7 +236,7 @@ function CustomSelectField({
           id={`${label}-dropdown-panel`}
           role="listbox"
           aria-label={label}
-          className="fixed inset-x-3 bottom-3 z-50 flex max-h-[calc(100dvh-1.5rem)] flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white p-2 shadow-[0_22px_50px_rgba(15,23,42,0.16)] sm:absolute sm:inset-auto sm:left-0 sm:right-0 sm:top-[calc(100%+8px)] sm:bottom-auto sm:max-h-[22rem] sm:min-w-full sm:p-2.5"
+          className="fixed inset-x-3 z-[70] flex max-h-[calc(100dvh-5rem-env(safe-area-inset-bottom)-1.5rem)] flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white p-2 shadow-[0_22px_50px_rgba(15,23,42,0.16)] bottom-[calc(5rem+env(safe-area-inset-bottom)+0.75rem)] sm:absolute sm:inset-auto sm:left-0 sm:right-0 sm:top-[calc(100%+8px)] sm:bottom-auto sm:max-h-[22rem] sm:min-w-full sm:p-2.5"
         >
           {searchable && (
             <div className="mb-2 shrink-0 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
