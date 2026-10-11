@@ -236,10 +236,10 @@ function CustomSelectField({
           id={`${label}-dropdown-panel`}
           role="listbox"
           aria-label={label}
-          className="fixed inset-x-3 bottom-3 z-50 rounded-2xl border border-slate-200 bg-white p-2 shadow-[0_22px_50px_rgba(15,23,42,0.16)] sm:absolute sm:inset-auto sm:left-0 sm:right-0 sm:top-[calc(100%+8px)] sm:bottom-auto sm:max-h-[22rem] sm:min-w-full sm:p-2.5"
+          className="fixed inset-x-3 bottom-3 z-50 flex max-h-[calc(100dvh-1.5rem)] flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white p-2 shadow-[0_22px_50px_rgba(15,23,42,0.16)] sm:absolute sm:inset-auto sm:left-0 sm:right-0 sm:top-[calc(100%+8px)] sm:bottom-auto sm:max-h-[22rem] sm:min-w-full sm:p-2.5"
         >
           {searchable && (
-            <div className="mb-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
+            <div className="mb-2 shrink-0 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
               <div className="flex items-center gap-2">
                 <Search className="h-4 w-4 text-slate-400" />
                 <input
@@ -253,7 +253,7 @@ function CustomSelectField({
             </div>
           )}
 
-          <div className="max-h-[16rem] space-y-1 overflow-y-auto sm:max-h-[18rem]">
+          <div className="min-h-0 flex-1 space-y-1 overflow-y-auto overscroll-contain sm:max-h-[18rem]">
             {filteredOptions.length > 0 ? (
               filteredOptions.map(option => {
                 const isSelected = option === value

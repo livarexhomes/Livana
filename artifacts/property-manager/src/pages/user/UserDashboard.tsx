@@ -53,7 +53,7 @@ export function UserLayout({ children, title }: { children: React.ReactNode; tit
             <span className="text-sm font-semibold text-gray-700 hidden sm:block">{displayName}</span>
           </div>
         </header>
-        <main className="flex-1 overflow-y-auto p-4 md:p-6 pb-20 md:pb-6">{children}</main>
+        <main className="flex-1 overflow-y-auto p-4 pb-[calc(5rem+env(safe-area-inset-bottom))] md:p-6 md:pb-6">{children}</main>
       </div>
 
       {/* Mobile bottom navigation */}
@@ -171,26 +171,26 @@ export default function UserDashboardPage() {
 
 
           {/* Filter bar */}
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-3">
-            <div className="flex flex-wrap items-center gap-2">
+          <div className="rounded-2xl border border-gray-100 bg-white p-3 shadow-sm sm:p-3.5">
+            <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:gap-2">
 
               {/* Search */}
-              <div className="relative flex-1 min-w-40">
+              <div className="relative w-full sm:min-w-40 sm:flex-1">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
                 <input
                   type="text"
                   placeholder="Search by title, city or area…"
                   value={search}
                   onChange={e => setSearch(e.target.value)}
-                  className="w-full pl-8 pr-3 py-2 rounded-xl border border-gray-200 bg-gray-50 text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-900 focus:bg-white transition-all"
+                  className="w-full rounded-xl border border-gray-200 bg-gray-50 py-2.5 pl-9 pr-3 text-sm text-gray-800 placeholder-gray-400 transition-all focus:bg-white focus:outline-none focus:ring-2 focus:ring-gray-900"
                 />
               </div>
 
               {/* Type tabs */}
-              <div className="flex items-center gap-1 overflow-x-auto no-scrollbar">
+              <div className="-mx-3 flex max-w-[calc(100%+1.5rem)] items-center gap-1 overflow-x-auto px-3 pb-0.5 no-scrollbar sm:mx-0 sm:max-w-none sm:px-0 sm:pb-0">
                 {TYPE_TABS.map(t => (
                   <button key={t.value} onClick={() => setTypeFilter(t.value)}
-                    className={`px-3 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-all border ${
+                    className={`min-h-10 shrink-0 rounded-xl border px-4 text-xs font-semibold whitespace-nowrap transition-all ${
                       typeFilter === t.value
                         ? 'bg-gray-900 text-white border-gray-900'
                         : 'bg-white text-gray-500 border-gray-200 hover:border-gray-400'
@@ -200,47 +200,49 @@ export default function UserDashboardPage() {
                 ))}
               </div>
 
-              {/* State */}
-              <div className="relative shrink-0">
-                <select value={stateFilter} onChange={e => setStateFilter(e.target.value)}
-                  className="appearance-none pl-3 pr-7 py-2 rounded-xl border border-gray-200 text-xs bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-900 cursor-pointer">
-                  <option value="">Any State</option>
-                  <option value="Lagos">Lagos</option>
-                  <option value="Ogun">Ogun</option>
-                </select>
-                <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-gray-400 pointer-events-none" />
-              </div>
+              <div className="grid grid-cols-2 gap-2 sm:flex sm:items-center">
+                {/* State */}
+                <div className="relative min-w-0">
+                  <select value={stateFilter} onChange={e => setStateFilter(e.target.value)}
+                    className="min-h-10 w-full appearance-none rounded-xl border border-gray-200 bg-white py-2 pl-3 pr-8 text-xs text-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-900 cursor-pointer sm:w-auto">
+                    <option value="">Any State</option>
+                    <option value="Lagos">Lagos</option>
+                    <option value="Ogun">Ogun</option>
+                  </select>
+                  <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-gray-400 pointer-events-none" />
+                </div>
 
-              {/* Beds */}
-              <div className="relative shrink-0">
-                <select value={bedsFilter} onChange={e => setBedsFilter(e.target.value)}
-                  className="appearance-none pl-3 pr-7 py-2 rounded-xl border border-gray-200 text-xs bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-900 cursor-pointer">
-                  <option value="">Any Beds</option>
-                  <option value="1">1+ Beds</option>
-                  <option value="2">2+ Beds</option>
-                  <option value="3">3+ Beds</option>
-                  <option value="4">4+ Beds</option>
-                </select>
-                <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-gray-400 pointer-events-none" />
-              </div>
+                {/* Beds */}
+                <div className="relative min-w-0">
+                  <select value={bedsFilter} onChange={e => setBedsFilter(e.target.value)}
+                    className="min-h-10 w-full appearance-none rounded-xl border border-gray-200 bg-white py-2 pl-3 pr-8 text-xs text-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-900 cursor-pointer sm:w-auto">
+                    <option value="">Any Beds</option>
+                    <option value="1">1+ Beds</option>
+                    <option value="2">2+ Beds</option>
+                    <option value="3">3+ Beds</option>
+                    <option value="4">4+ Beds</option>
+                  </select>
+                  <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-gray-400 pointer-events-none" />
+                </div>
 
-              {/* Sort */}
-              <div className="relative shrink-0">
-                <select value={sortBy} onChange={e => setSortBy(e.target.value)}
-                  className="appearance-none pl-3 pr-7 py-2 rounded-xl border border-gray-200 text-xs bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-900 cursor-pointer">
-                  <option value="newest">Newest</option>
-                  <option value="price_asc">Price ↑</option>
-                  <option value="price_desc">Price ↓</option>
-                </select>
-                <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-gray-400 pointer-events-none" />
-              </div>
+                {/* Sort */}
+                <div className="relative col-span-2 min-w-0 sm:col-span-1">
+                  <select value={sortBy} onChange={e => setSortBy(e.target.value)}
+                    className="min-h-10 w-full appearance-none rounded-xl border border-gray-200 bg-white py-2 pl-3 pr-8 text-xs text-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-900 cursor-pointer sm:w-auto">
+                    <option value="newest">Newest</option>
+                    <option value="price_asc">Price ↑</option>
+                    <option value="price_desc">Price ↓</option>
+                  </select>
+                  <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-gray-400 pointer-events-none" />
+                </div>
 
-              {hasFilters && (
-                <button onClick={clearFilters}
-                  className="flex items-center gap-1 px-3 py-2 rounded-xl text-xs text-red-500 hover:bg-red-50 border border-red-100 shrink-0">
-                  <X className="w-3 h-3" /> Clear
-                </button>
-              )}
+                {hasFilters && (
+                  <button onClick={clearFilters}
+                    className="col-span-2 flex min-h-10 items-center justify-center gap-1 rounded-xl border border-red-100 px-3 py-2 text-xs text-red-500 hover:bg-red-50 sm:col-span-1 sm:shrink-0">
+                    <X className="w-3 h-3" /> Clear
+                  </button>
+                )}
+              </div>
             </div>
           </div>
 

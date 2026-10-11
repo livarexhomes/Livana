@@ -30,36 +30,45 @@ export default function UserBottomNav({ userEmail }: Props) {
   }
 
   return (
-    <nav className="md:hidden fixed bottom-0 left-0 right-0 h-16 bg-white border-t border-gray-200 flex items-center justify-between px-1 z-50">
-      {mainNav.map((item) => {
-        const Icon = item.icon
-        const active = isActive(item)
-        return (
-          <Link
-            key={item.href}
-            href={item.href}
-            className={`flex-1 flex flex-col items-center justify-center gap-1 py-2 rounded-lg transition-all duration-200 ${
-              active
-                ? 'text-blue-600 bg-blue-50'
-                : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
-            }`}
-            title={item.label}
-          >
-            <Icon className={`w-5 h-5 ${active ? 'stroke-2' : 'stroke-1.5'}`} />
-            <span className="text-[10px] font-semibold">{item.label}</span>
-          </Link>
-        )
-      })}
+    <nav
+      aria-label="Account navigation"
+      className="fixed inset-x-0 bottom-0 z-50 border-t border-slate-200/80 bg-white/95 px-1.5 pb-[env(safe-area-inset-bottom)] shadow-[0_-8px_24px_rgba(15,23,42,0.08)] backdrop-blur-xl md:hidden"
+    >
+      <div className="mx-auto grid min-h-16 max-w-xl grid-cols-6 items-center gap-1">
+        {mainNav.map((item) => {
+          const Icon = item.icon
+          const active = isActive(item)
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              aria-current={active ? 'page' : undefined}
+              className={`flex min-h-14 min-w-0 flex-col items-center justify-center gap-1 rounded-2xl px-0.5 py-2 transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-blue-500 ${
+                active
+                  ? 'bg-blue-50 text-blue-700'
+                  : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'
+              }`}
+              title={item.label}
+            >
+              <Icon aria-hidden="true" className={`h-5 w-5 shrink-0 ${active ? 'stroke-[2.25]' : 'stroke-[1.75]'}`} />
+              <span className="max-w-full truncate text-[clamp(0.55rem,2.5vw,0.65rem)] font-semibold leading-none tracking-tight">
+                {item.label}
+              </span>
+            </Link>
+          )
+        })}
 
-      <button
-        type="button"
-        onClick={handleLogout}
-        className="flex-1 flex flex-col items-center justify-center gap-1 py-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all duration-200"
-        title="Sign out"
-      >
-        <LogOut className="w-5 h-5 stroke-1.5" />
-        <span className="text-[10px] font-semibold">Exit</span>
-      </button>
+        <button
+          type="button"
+          onClick={handleLogout}
+          aria-label="Sign out"
+          className="flex min-h-14 min-w-0 flex-col items-center justify-center gap-1 rounded-2xl px-0.5 py-2 text-slate-500 transition-colors duration-200 hover:bg-rose-50 hover:text-rose-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-rose-500"
+          title="Sign out"
+        >
+          <LogOut aria-hidden="true" className="h-5 w-5 shrink-0 stroke-[1.75]" />
+          <span className="text-[clamp(0.55rem,2.5vw,0.65rem)] font-semibold leading-none tracking-tight">Exit</span>
+        </button>
+      </div>
     </nav>
   )
 }
