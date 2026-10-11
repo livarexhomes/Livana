@@ -19,6 +19,7 @@ const handlers = {
   'send-chat-message': () => import('../server/api-handlers/send-chat-message.js'),
   'clear-chat-messages': () => import('../server/api-handlers/clear-chat-messages.js'),
   'clear-all-chats': () => import('../server/api-handlers/clear-all-chats.js'),
+  'delete-chat-thread': () => import('../server/api-handlers/delete-chat-thread.js'),
   'delete-user': () => import('../server/api-handlers/delete-user.js'),
   'landlord-register': () => import('../server/api-handlers/landlord-register.js'),
   'update-landlord-status': () => import('../server/api-handlers/update-landlord-status.js'),

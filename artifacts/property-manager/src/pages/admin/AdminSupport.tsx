@@ -2,7 +2,7 @@ import AdminPropertyRequests from '@/components/admin/AdminPropertyRequests'
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import {
   HeadphonesIcon, Send, Loader2, MessageSquare,
-  Clock, CheckCircle2, XCircle, User,
+  Clock, Check, CheckCircle2, XCircle, User,
   ChevronLeft, ChevronDown as ChevronDownIcon, RefreshCw, Inbox, Building2, Mail,
   Volume2, VolumeX, ShieldCheck, KeyRound, Trash2, Search, X, Lock,
   Paperclip, CheckCheck, Calendar, Home, Activity, Archive, Users,
@@ -1249,6 +1249,20 @@ function ChatRequestDetail({ inquiry, onBack, onMarkRead, onStatusChange, agents
     setShowClearConfirm(false)
   }
 
+  async function deleteThread() {
+    setClearing(true)
+    try {
+      const r = await fetch('/api/delete-chat-thread', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ inquiry_id: inquiry.id }),
+      })
+      if (r.ok) onStatusChange(inquiry.id, 'closed')
+    } catch { /* non-fatal */ }
+    setClearing(false)
+    setShowClearConfirm(false)
+  }
+
   const s = ENQUIRY_STATUS_META[inquiry.status]
   const assignedAgent = assignedTo ?? agents.find(a => a.id === inquiry.agent_id) ?? null
 
@@ -1471,10 +1485,21 @@ function ChatRequestDetail({ inquiry, onBack, onMarkRead, onStatusChange, agents
             ]}
             disabled={updating}
           />
-          {/* Admin-only: clear all chat messages */}
+          {/* Clear messages only — keeps the thread itself */}
+          <button
+            onClick={clearChat}
+            disabled={clearing || messages.length === 0}
+            title="Clear messages only"
+            aria-label="Clear messages"
+            className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:ring-offset-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:ring-offset-2 grid size-8 sm:size-9 place-items-center rounded-lg border border-slate-200 bg-white text-slate-400 hover:text-amber-600 hover:border-amber-200 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            {clearing ? <Loader2 className="w-4 h-4 animate-spin" /> : <MessageSquare className="w-4 h-4" />}
+          </button>
+          {/* Admin-only: delete the whole history (thread + messages) */}
           <button
             onClick={() => setShowClearConfirm(true)}
-            title="Clear chat history"
+            title="Delete thread (removes chat and all messages)"
+            aria-label="Delete thread"
             className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:ring-offset-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:ring-offset-2 grid size-8 sm:size-9 place-items-center rounded-lg border border-slate-200 bg-white text-slate-400 hover:text-red-500 hover:border-red-200 transition-colors"
           >
             <Trash2 className="w-4 h-4" />
@@ -1482,7 +1507,7 @@ function ChatRequestDetail({ inquiry, onBack, onMarkRead, onStatusChange, agents
         </div>
       </div>
 
-      {/* ── Clear-chat confirmation dialog ───────────────────────────── */}
+      {/* ── Delete-thread confirmation dialog ─────────────────────────── */}
       {showClearConfirm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
           <div className="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-6">
@@ -1491,8 +1516,8 @@ function ChatRequestDetail({ inquiry, onBack, onMarkRead, onStatusChange, agents
                 <Trash2 className="w-5 h-5 text-red-500" />
               </div>
               <div>
-                <p className="text-[15px] font-semibold text-slate-900">Clear chat history?</p>
-                <p className="text-[12.5px] text-slate-500 mt-0.5">This permanently deletes all messages in this thread. It cannot be undone.</p>
+                <p className="text-[15px] font-semibold text-slate-900">Delete this conversation?</p>
+                <p className="text-[12.5px] text-slate-500 mt-0.5">This permanently deletes the entire chat history and the thread. It cannot be undone.</p>
               </div>
             </div>
             <div className="flex gap-2 justify-end">
@@ -1500,10 +1525,10 @@ function ChatRequestDetail({ inquiry, onBack, onMarkRead, onStatusChange, agents
                 className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:ring-offset-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:ring-offset-2 px-4 py-2 rounded-lg border border-slate-200 text-[13px] font-medium text-slate-700 hover:bg-slate-50 transition-colors disabled:opacity-50">
                 Cancel
               </button>
-              <button onClick={clearChat} disabled={clearing}
+              <button onClick={deleteThread} disabled={clearing}
                 className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:ring-offset-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:ring-offset-2 px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700 disabled:opacity-50 text-[13px] font-medium text-white transition-colors flex items-center gap-1.5">
                 {clearing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
-                Clear messages
+                Delete thread
               </button>
             </div>
           </div>
@@ -2483,6 +2508,10 @@ function InboxTab({ liveState, onOpenThreadChange, initialChatId, onInitialChatC
   const [search, setSearch] = useState('')
   const [showClearAllConfirm, setShowClearAllConfirm] = useState(false)
   const [clearingAll, setClearingAll] = useState(false)
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
+  const [bulkDeleting, setBulkDeleting] = useState(false)
+  const [showBulkDeleteConfirm, setShowBulkDeleteConfirm] = useState(false)
+  const { toast } = useToast()
 
   async function clearAllChats() {
     setClearingAll(true)
@@ -2495,6 +2524,56 @@ function InboxTab({ liveState, onOpenThreadChange, initialChatId, onInitialChatC
     } catch { /* non-fatal */ }
     setClearingAll(false)
     setShowClearAllConfirm(false)
+  }
+
+  function toggleSelect(id: string) {
+    setSelectedIds(prev => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
+
+  function clearSelection() {
+    setSelectedIds(new Set())
+  }
+
+  async function deleteSelected() {
+    if (!selectedIds.size) return
+    setBulkDeleting(true)
+    try {
+      // Remove selected chats via the chat-thread endpoint. Non-chat items
+      // are ignored for now (only chat threads support bulk removal here).
+      const chatIds = Array.from(selectedIds)
+        .map(key => {
+          if (!key.startsWith('chat:')) return null
+          return key.slice(5)
+        })
+        .filter(Boolean) as string[]
+
+      if (chatIds.length) {
+        const r = await fetch('/api/delete-chat-thread', {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ inquiry_id: chatIds }),
+        })
+        if (r.ok) {
+          setChats(prev => prev.filter(c => !chatIds.includes(c.id)))
+          if (selectedKey && chatIds.includes(selectedKey.slice(5))) setSelectedKey(null)
+          toast({ title: `${chatIds.length} chat${chatIds.length === 1 ? '' : 's'} deleted`, description: 'The thread and its history were permanently removed.' })
+        } else {
+          toast({ title: 'Bulk delete failed', description: 'Some chats could not be removed. Please try again.', variant: 'destructive' })
+        }
+      } else {
+        toast({ title: 'No chat threads selected', description: 'Bulk delete currently only supports chat conversations.', variant: 'destructive' })
+      }
+      setSelectedIds(new Set())
+    } catch {
+      toast({ title: 'Network error', description: 'Could not reach the server.', variant: 'destructive' })
+    }
+    setBulkDeleting(false)
+    setShowBulkDeleteConfirm(false)
   }
 
   // Notify the parent of the currently-open thread so the page-level alert
@@ -2652,6 +2731,38 @@ function InboxTab({ liveState, onOpenThreadChange, initialChatId, onInitialChatC
         </div>
       )}
 
+      {/* ── Bulk delete confirmation dialog ──────────────────────────────── */}
+      {showBulkDeleteConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 rounded-xl bg-red-50 flex items-center justify-center shrink-0">
+                <Trash2 className="w-5 h-5 text-red-500" />
+              </div>
+              <div>
+                <p className="text-[15px] font-semibold text-slate-900">
+                  Delete {selectedIds.size} chat conversation{selectedIds.size === 1 ? '' : 's'}?
+                </p>
+                <p className="text-[12.5px] text-slate-500 mt-0.5">
+                  This permanently deletes each thread and its full message history. It cannot be undone.
+                </p>
+              </div>
+            </div>
+            <div className="flex gap-2 justify-end">
+              <button onClick={() => setShowBulkDeleteConfirm(false)} disabled={bulkDeleting}
+                className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:ring-offset-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:ring-offset-2 px-4 py-2 rounded-lg border border-slate-200 text-[13px] font-medium text-slate-700 hover:bg-slate-50 transition-colors disabled:opacity-50">
+                Cancel
+              </button>
+              <button onClick={deleteSelected} disabled={bulkDeleting}
+                className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:ring-offset-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:ring-offset-2 px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700 disabled:opacity-50 text-[13px] font-medium text-white transition-colors flex items-center gap-1.5">
+                {bulkDeleting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
+                Delete threads
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Inbox queue */}
       <div className={`flex flex-col bg-white w-full lg:w-[20rem] xl:w-[22rem] shrink-0 overflow-hidden border-r border-slate-100/80 ${selected ? 'hidden lg:flex' : 'flex'}`}>
         <div className="px-4 pt-5 pb-4 border-b border-slate-200/70 bg-white">
@@ -2712,6 +2823,36 @@ function InboxTab({ liveState, onOpenThreadChange, initialChatId, onInitialChatC
           </div>
         </div>
 
+        {/* Bulk action bar — visible when chats are selected */}
+        {selectedIds.size > 0 && (
+          <div className="px-4 py-2.5 border-b border-violet-200 bg-violet-50/80 flex items-center gap-2 shrink-0">
+            <span className="inline-flex items-center gap-1.5 text-[11.5px] font-semibold text-violet-700">
+              <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-violet-600 text-white px-1.5 text-[10px]">
+                {selectedIds.size}
+              </span>
+              chat{selectedIds.size === 1 ? '' : 's'} selected
+            </span>
+            <div className="ml-auto flex items-center gap-1.5">
+              <button
+                type="button"
+                onClick={clearSelection}
+                className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:ring-offset-2 inline-flex items-center gap-1 h-7 px-2.5 rounded-lg text-[11px] font-semibold text-slate-600 hover:text-slate-900 hover:bg-white border border-transparent hover:border-slate-200 transition-colors"
+              >
+                <X className="w-3 h-3" />
+                Clear
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowBulkDeleteConfirm(true)}
+                className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:ring-offset-2 inline-flex items-center gap-1.5 h-7 px-3 rounded-lg text-[11px] font-semibold text-white bg-red-600 hover:bg-red-700 transition-colors"
+              >
+                <Trash2 className="w-3 h-3" />
+                Delete selected
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Message list */}
         <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain p-3 space-y-2 bg-slate-50/60">
           {loading ? (
@@ -2744,54 +2885,88 @@ function InboxTab({ liveState, onOpenThreadChange, initialChatId, onInitialChatC
                   contact: 'from-amber-500 to-orange-500',
                 }
                 const typeColor = typeColors[item.type]
+                const itemKey = `${item.type}:${item.id}`
+                const isSelected = selectedIds.has(itemKey)
                 return (
-                  <button key={`${item.type}:${item.id}`} onClick={() => setSelectedKey(`${item.type}:${item.id}`)}
-                    className={`focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:ring-offset-2 relative w-full text-left rounded-xl px-3 py-3 transition-all flex items-start gap-3 ${
+                  <div
+                    key={itemKey}
+                    className={`group relative rounded-xl transition-all flex items-stretch ${
                       isActive
                         ? 'bg-blue-50 border border-blue-300 ring-1 ring-blue-200 shadow-sm'
-                        : isUnread
-                          ? 'bg-white border border-slate-200 shadow-sm hover:border-blue-200 hover:bg-blue-50/30'
-                          : 'bg-white hover:bg-slate-50 border border-slate-200/70 hover:border-slate-300'
-                    }`}>
-                    {/* Unread left accent */}
-                    {isUnread && <span className="absolute left-0 top-3 bottom-3 w-[3px] rounded-r-full bg-gradient-to-b from-primary to-blue-500" />}
-                    {/* Avatar */}
-                    <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${typeColor} flex items-center justify-center shrink-0 text-[11px] font-bold text-white shadow-sm`}>
-                      {initialsOf(item.name)}
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      {/* Name + time */}
-                      <div className="flex items-center justify-between gap-2">
-                        <p className={`truncate font-semibold text-[13px] ${isUnread ? 'text-slate-900' : 'text-slate-700'}`}>{item.name}</p>
-                        <span className={`shrink-0 text-[10px] tabular-nums ${isUnread ? 'text-primary font-semibold' : 'text-slate-400'}`}>
-                          {formatDistanceToNow(new Date(item.created_at), { addSuffix: true })}
+                        : isSelected
+                          ? 'bg-violet-50/60 border border-violet-200 shadow-sm'
+                          : isUnread
+                            ? 'bg-white border border-slate-200 shadow-sm hover:border-blue-200 hover:bg-blue-50/30'
+                            : 'bg-white hover:bg-slate-50 border border-slate-200/70 hover:border-slate-300'
+                    }`}
+                  >
+                    {/* Selection checkbox (chat items only) */}
+                    {isChat && (
+                      <label
+                        className="flex items-center justify-center pl-3 pr-1 cursor-pointer shrink-0"
+                        onClick={(event) => event.stopPropagation()}
+                        title={isSelected ? 'Deselect' : 'Select for bulk delete'}
+                      >
+                        <span
+                          className={`relative inline-flex h-4 w-4 items-center justify-center rounded border transition-all ${
+                            isSelected
+                              ? 'bg-violet-600 border-violet-600 text-white'
+                              : 'bg-white border-slate-300 group-hover:border-slate-400'
+                          }`}
+                        >
+                          <input
+                            type="checkbox"
+                            className="absolute inset-0 opacity-0 cursor-pointer"
+                            checked={isSelected}
+                            onChange={() => toggleSelect(itemKey)}
+                            aria-label={`Select ${item.name}`}
+                          />
+                          {isSelected && <Check className="w-3 h-3" strokeWidth={3} aria-hidden="true" />}
                         </span>
+                      </label>
+                    )}
+                    <button type="button" onClick={() => setSelectedKey(itemKey)}
+                      className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:ring-offset-2 flex-1 min-w-0 text-left rounded-r-xl pl-2 pr-3 py-3 flex items-start gap-3">
+                      {/* Unread left accent */}
+                      {isUnread && <span className="absolute left-0 top-3 bottom-3 w-[3px] rounded-r-full bg-gradient-to-b from-primary to-blue-500" />}
+                      {/* Avatar */}
+                      <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${typeColor} flex items-center justify-center shrink-0 text-[11px] font-bold text-white shadow-sm`}>
+                        {initialsOf(item.name)}
                       </div>
-                      {/* Preview + badges */}
-                      <div className="mt-1.5 flex items-center gap-2 min-w-0">
-                        <span className={`shrink-0 text-[9px] font-bold px-1.5 py-0.5 rounded-md uppercase tracking-wide ${
-                          item.type === 'enquiry' ? 'bg-blue-100 text-blue-700' :
-                          item.type === 'chat' ? 'bg-violet-100 text-violet-700' :
-                          'bg-amber-100 text-amber-700'
-                        }`}>
-                          {item.type}
-                        </span>
-                        <p className={`text-[11.5px] truncate min-w-0 flex-1 ${isUnread ? 'text-slate-600' : 'text-slate-500'}`}>{item.subtitle}</p>
-                        <span className={`shrink-0 inline-flex items-center gap-1 text-[10px] font-semibold ${s.color}`}>
-                          <span className={`w-1.5 h-1.5 rounded-full ${s.dot}`} />{s.label}
-                        </span>
+                      <div className="min-w-0 flex-1">
+                        {/* Name + time */}
+                        <div className="flex items-center justify-between gap-2">
+                          <p className={`truncate font-semibold text-[13px] ${isUnread ? 'text-slate-900' : 'text-slate-700'}`}>{item.name}</p>
+                          <span className={`shrink-0 text-[10px] tabular-nums ${isUnread ? 'text-primary font-semibold' : 'text-slate-400'}`}>
+                            {formatDistanceToNow(new Date(item.created_at), { addSuffix: true })}
+                          </span>
+                        </div>
+                        {/* Preview + badges */}
+                        <div className="mt-1.5 flex items-center gap-2 min-w-0">
+                          <span className={`shrink-0 text-[9px] font-bold px-1.5 py-0.5 rounded-md uppercase tracking-wide ${
+                            item.type === 'enquiry' ? 'bg-blue-100 text-blue-700' :
+                            item.type === 'chat' ? 'bg-violet-100 text-violet-700' :
+                            'bg-amber-100 text-amber-700'
+                          }`}>
+                            {item.type}
+                          </span>
+                          <p className={`text-[11.5px] truncate min-w-0 flex-1 ${isUnread ? 'text-slate-600' : 'text-slate-500'}`}>{item.subtitle}</p>
+                          <span className={`shrink-0 inline-flex items-center gap-1 text-[10px] font-semibold ${s.color}`}>
+                            <span className={`w-1.5 h-1.5 rounded-full ${s.dot}`} />{s.label}
+                          </span>
+                        </div>
+                        {/* Body preview */}
+                        {item.body && (
+                          <p className={`text-[11px] mt-1 line-clamp-1 ${isUnread ? 'text-slate-500 font-medium' : 'text-slate-400'}`}>{item.body}</p>
+                        )}
+                        {isChat && chatInq?.agent_status === 'queued' && (
+                          <span className="mt-1.5 shrink-0 inline-flex items-center gap-1 text-[10px] font-semibold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full">
+                            <Clock className="w-2.5 h-2.5" />Queued
+                          </span>
+                        )}
                       </div>
-                      {/* Body preview */}
-                      {item.body && (
-                        <p className={`text-[11px] mt-1 line-clamp-1 ${isUnread ? 'text-slate-500 font-medium' : 'text-slate-400'}`}>{item.body}</p>
-                      )}
-                      {isChat && chatInq?.agent_status === 'queued' && (
-                        <span className="mt-1.5 shrink-0 inline-flex items-center gap-1 text-[10px] font-semibold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full">
-                          <Clock className="w-2.5 h-2.5" />Queued
-                        </span>
-                      )}
-                    </div>
-                  </button>
+                    </button>
+                  </div>
                 )
               })}
             </div>
@@ -3177,6 +3352,7 @@ export default function AdminSupportPage() {
   const [chatOpenCount, setChatOpenCount] = useState(0)
   const [contactCount, setContactCount]   = useState(0)
   const [supportOpenCount, setSupportOpenCount] = useState(0)
+  const [propertyRequestCount, setPropertyRequestCount] = useState(0)
   const [liveState, setLiveState] = useState<LiveSupportState>({
     status: 'offline', online: false, onlineAgents: [], awayAgents: [], offlineAgents: [], agents: [], availableCount: 0, agentCount: 0,
   })
@@ -3237,6 +3413,13 @@ export default function AdminSupportPage() {
           title: 'New message from visitor',
           description: (event.body || '').slice(0, 80),
         })
+      } else if (event.type === 'new_property_request') {
+        const ref = `PR-${event.request.id.slice(0, 8).toUpperCase()}`
+        const where = [event.request.area, event.request.state].filter(Boolean).join(', ')
+        toast({
+          title: `New property request · ${ref}`,
+          description: `${event.request.purpose} · ${event.request.propertyType}${where ? ` · ${where}` : ''}`,
+        })
       }
     })
   }, [toast])
@@ -3259,6 +3442,8 @@ export default function AdminSupportPage() {
         .then(({ count }) => setSupportOpenCount(count ?? 0))
       supabase.from('support_tickets').select('id', { count: 'exact', head: true }).in('status', ['resolved', 'closed'])
         .then(({ count }) => setTotalResolvedCount(count ?? 0))
+      supabase.from('property_requests').select('id', { count: 'exact', head: true }).in('status', ['submitted', 'reviewing'])
+        .then(({ count }) => setPropertyRequestCount(count ?? 0))
     }
     fetchCounts()
 
@@ -3274,7 +3459,10 @@ export default function AdminSupportPage() {
     const ch4 = supabase.channel('support_ticket_badge')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'support_tickets' }, fetchCounts)
       .subscribe()
-    return () => { supabase.removeChannel(ch1); supabase.removeChannel(ch2); supabase.removeChannel(ch3); supabase.removeChannel(ch4) }
+    const ch5 = supabase.channel('property_request_badge')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'property_requests' }, fetchCounts)
+      .subscribe()
+    return () => { supabase.removeChannel(ch1); supabase.removeChannel(ch2); supabase.removeChannel(ch3); supabase.removeChannel(ch4); supabase.removeChannel(ch5) }
   }, [])
 
   const displayName = user?.email ? user.email.split('@')[0] : 'Admin'
@@ -3352,7 +3540,7 @@ export default function AdminSupportPage() {
                   {([
                     { key: 'support', label: 'Queue',      icon: HeadphonesIcon, count: supportOpenCount },
                     { key: 'inbox',   label: 'Inbox',      icon: Inbox,          count: inboxCount },
-                    { key: 'requests', label: 'Property Requests', icon: Building2, count: 0 },
+                    { key: 'requests', label: 'Property Requests', icon: Building2, count: propertyRequestCount },
                   ] as const).map(t => {
                     const Icon = t.icon
                     return (

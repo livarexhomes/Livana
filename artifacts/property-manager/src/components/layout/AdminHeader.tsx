@@ -1,11 +1,12 @@
 import { useState, useEffect, useRef, ReactNode } from 'react'
 import { useLocation } from '@/lib/navigation'
-import { Search, Bell, X, Building2, Users, MessageSquare, ArrowRight, ChevronRight, ShieldCheck, Headphones, Menu } from 'lucide-react'
+import { Search, Bell, X, Building2, Users, MessageSquare, ArrowRight, ChevronRight, ShieldCheck, Headphones, Menu, Check, CheckCheck } from 'lucide-react'
 import { createClient } from '@/lib/supabase'
 import { cn } from '@/lib/utils'
 import { useMobileSidebar } from '@/components/ui/mobile-sidebar-context'
 import { getNotificationSettings } from '@/lib/platform-settings'
 import { playSupportSound, getSoundMuted } from '@/lib/support-notifications'
+import { useToast } from '@/hooks/use-toast'
 
 type SearchResult = {
   id: string
@@ -33,6 +34,7 @@ interface AdminHeaderProps {
 export default function AdminHeader({ title, subtitle, action, pendingCount = 0 }: AdminHeaderProps) {
   const [, navigate] = useLocation()
   const { setOpen } = useMobileSidebar()
+  const { toast } = useToast()
   const [query, setQuery]           = useState('')
   const [results, setResults]       = useState<SearchResult[]>([])
   const [searching, setSearching]   = useState(false)
@@ -40,6 +42,8 @@ export default function AdminHeader({ title, subtitle, action, pendingCount = 0 
   const [showNotif, setShowNotif]   = useState(false)
   const [notifs, setNotifs]         = useState<Notif[]>([])
   const [unread, setUnread]         = useState(0)
+  const [readIds, setReadIds]       = useState<Set<string>>(new Set())
+  const seenIdsRef                  = useRef<Set<string>>(new Set())
   const searchRef = useRef<HTMLDivElement>(null)
   const notifRef  = useRef<HTMLDivElement>(null)
   const inputRef  = useRef<HTMLInputElement>(null)
@@ -48,7 +52,7 @@ export default function AdminHeader({ title, subtitle, action, pendingCount = 0 
   // open support tickets + contact messages + chat inquiries. The
   // newLandlord / newEnquiry / newProperty toggles from Admin Settings gate
   // their respective items.
-  async function loadNotifs() {
+  async function loadNotifs({ silent = false }: { silent?: boolean } = {}) {
     const supabase = createClient()
     const cutoff = new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString()
     const prefs = await getNotificationSettings({ refresh: true }).catch(() => null)
@@ -114,11 +118,26 @@ export default function AdminHeader({ title, subtitle, action, pendingCount = 0 
     }
 
     setNotifs(items)
-    setUnread(items.length)
+    const remainingUnread = items.filter(n => !seenIdsRef.current.has(n.id)).length
+    setUnread(remainingUnread)
+
+    // Surface brand-new notifications (anything not seen before in this
+    // session) as toast notifications so the admin doesn't have to keep
+    // opening the bell panel.
+    if (silent) {
+      const fresh = items.filter(n => !seenIdsRef.current.has(n.id))
+      for (const n of fresh) {
+        seenIdsRef.current.add(n.id)
+        toast({ title: n.label, description: n.sub })
+      }
+    } else {
+      // Initial load — just register the ids so we don't spam toasts on mount.
+      for (const n of items) seenIdsRef.current.add(n.id)
+    }
   }
 
   useEffect(() => {
-    loadNotifs()
+    loadNotifs({ silent: false })
 
     const supabase = createClient()
 
@@ -126,23 +145,23 @@ export default function AdminHeader({ title, subtitle, action, pendingCount = 0 
     // contact messages, chat inquiries, or properties.
     const channel = supabase
       .channel('admin-notif-watch')
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'enquiries' }, loadNotifs)
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'support_tickets' }, loadNotifs)
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'tenants' }, loadNotifs)
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'landlords' }, loadNotifs)
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'contact_messages' }, loadNotifs)
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'enquiries' }, () => loadNotifs({ silent: true }))
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'support_tickets' }, () => loadNotifs({ silent: true }))
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'tenants' }, () => loadNotifs({ silent: true }))
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'landlords' }, () => loadNotifs({ silent: true }))
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'contact_messages' }, () => loadNotifs({ silent: true }))
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'chat_inquiries' }, (payload) => {
         // New chat inquiry → play the support sound so the admin notices
         // without a page refresh (respects the mute toggle).
         playSupportSound(getSoundMuted())
-        loadNotifs()
+        loadNotifs({ silent: true })
       })
-      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'chat_inquiries' }, loadNotifs)
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'properties' }, loadNotifs)
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'chat_inquiries' }, () => loadNotifs({ silent: true }))
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'properties' }, () => loadNotifs({ silent: true }))
       .subscribe()
 
     return () => { supabase.removeChannel(channel) }
-  }, [])
+  }, [toast])
 
   function relAgo(ts: string) {
     const diff = Date.now() - new Date(ts).getTime()
@@ -199,8 +218,16 @@ export default function AdminHeader({ title, subtitle, action, pendingCount = 0 
   function openNotif() {
     setShowNotif(v => !v)
     setShowSearch(false)
-    // Clear badge once panel is opened
-    setTimeout(() => setUnread(0), 300)
+  }
+
+  function markAllAsRead() {
+    const next = new Set(readIds)
+    for (const n of notifs) {
+      next.add(n.id)
+      seenIdsRef.current.add(n.id)
+    }
+    setReadIds(next)
+    setUnread(0)
   }
 
   function goTo(href: string) {
@@ -317,11 +344,24 @@ export default function AdminHeader({ title, subtitle, action, pendingCount = 0 
           {showNotif && (
             <div className="absolute top-full right-0 mt-2 w-80 bg-white rounded-2xl shadow-xl border border-slate-100 z-50 overflow-hidden">
               <div className="flex items-center justify-between px-4 py-3.5 border-b border-slate-100">
-                <h3 className="text-sm font-extrabold text-gray-900">Notifications</h3>
+                <div className="flex items-center gap-2">
+                  <h3 className="text-sm font-extrabold text-gray-900">Notifications</h3>
+                  {unread > 0 && (
+                    <span className="text-[10px] font-bold text-red-600 bg-red-50 px-2 py-0.5 rounded-full">
+                      {unread} new
+                    </span>
+                  )}
+                </div>
                 {notifs.length > 0 && (
-                  <span className="text-[10px] font-bold text-red-600 bg-red-50 px-2 py-0.5 rounded-full">
-                    {notifs.length} new
-                  </span>
+                  <button
+                    type="button"
+                    onClick={markAllAsRead}
+                    disabled={unread === 0}
+                    className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-blue-600 hover:text-blue-700 disabled:cursor-not-allowed disabled:text-slate-300 transition-colors"
+                  >
+                    <CheckCheck className="w-3.5 h-3.5" />
+                    Mark all as read
+                  </button>
                 )}
               </div>
 
@@ -334,14 +374,24 @@ export default function AdminHeader({ title, subtitle, action, pendingCount = 0 
                 <div className="divide-y divide-gray-50 max-h-80 overflow-y-auto">
                   {notifs.map(n => {
                     const { Icon, bg, ic } = notifIconFor(n.type, n.id)
+                    const isRead = readIds.has(n.id)
                     return (
                       <button key={n.id} type="button" onClick={() => goTo(n.href)}
-                        className="w-full flex items-start gap-3 px-4 py-3.5 hover:bg-slate-50 transition-colors text-left group">
+                        className={cn(
+                          'relative w-full flex items-start gap-3 px-4 py-3.5 transition-colors text-left group',
+                          isRead ? 'hover:bg-slate-50' : 'bg-blue-50/40 hover:bg-blue-50/70',
+                        )}>
+                        {!isRead && (
+                          <span aria-hidden="true" className="absolute left-1.5 top-1/2 -translate-y-1/2 w-1.5 h-1.5 rounded-full bg-blue-500" />
+                        )}
                         <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 mt-0.5 ${bg}`}>
                           <Icon className={`w-4 h-4 ${ic}`} />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="text-xs font-semibold text-gray-800 leading-snug group-hover:text-slate-950 transition-colors">{n.label}</p>
+                          <p className={cn(
+                            'text-xs leading-snug transition-colors',
+                            isRead ? 'font-medium text-slate-600' : 'font-semibold text-gray-800 group-hover:text-slate-950',
+                          )}>{n.label}</p>
                           <p className="text-[11px] text-gray-400 mt-0.5 line-clamp-1">{n.sub}</p>
                         </div>
                         <ChevronRight className="w-3.5 h-3.5 text-gray-300 group-hover:text-slate-500 shrink-0 mt-1 transition-colors" />
@@ -356,9 +406,11 @@ export default function AdminHeader({ title, subtitle, action, pendingCount = 0 
                   className="flex-1 flex items-center justify-center gap-1.5 text-xs font-semibold text-slate-700 hover:text-slate-950 transition-colors">
                   Activity log <ArrowRight className="w-3 h-3" />
                 </button>
-                <button type="button" onClick={() => goTo('/admin/vetting')}
-                  className="flex-1 flex items-center justify-center gap-1.5 text-xs font-semibold text-slate-700 hover:text-slate-950 transition-colors">
-                  Vetting Hub <ArrowRight className="w-3 h-3" />
+                <button type="button" onClick={markAllAsRead}
+                  disabled={unread === 0}
+                  className="flex-1 flex items-center justify-center gap-1.5 text-xs font-semibold text-slate-700 hover:text-slate-950 disabled:text-slate-300 disabled:cursor-not-allowed transition-colors">
+                  <Check className="w-3 h-3" />
+                  Mark all as read
                 </button>
               </div>
             </div>

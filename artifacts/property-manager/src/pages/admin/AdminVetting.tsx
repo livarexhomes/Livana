@@ -8,7 +8,7 @@ import {
 } from 'lucide-react'
 import AdminSidebar from '../../components/layout/AdminSidebar'
 import AuthGuard from '../../components/auth/AuthGuard'
-import { MobileSidebarProvider, MobileStatGrid, MobileStatCard } from '@/components/ui/mobile-admin'
+import { MobileSidebarProvider } from '@/components/ui/mobile-admin'
 import { createClient, getKycDocUrl, getSupabaseImageUrl } from '../../lib/supabase'
 import {
   VettingHeader,
@@ -282,16 +282,6 @@ export default function AdminVetting() {
             onSearch={setKycSearch}
             adminName={displayName}
           />
-
-          {/* Mobile: stat grid */}
-          <div className="sm:hidden px-3 pt-3">
-            <MobileStatGrid>
-               <MobileStatCard label="KYC pending"     value={kycCounts.pending}      color="#2563EB" icon={Clock} />
-               <MobileStatCard label="KYC approved"    value={kycCounts.approved}     color="#16a34a" icon={CheckCircle} />
-               <MobileStatCard label="Listings pending" value={pendingListings.length} color="#3B82F6" icon={ListChecks} />
-               <MobileStatCard label="Landlords"       value={kycCounts.all}          color="#1D4ED8" icon={Users} />
-            </MobileStatGrid>
-          </div>
 
           {/* Workspace navigation */}
           <div className="relative z-40 hidden sm:flex flex-wrap items-center justify-between gap-3 px-5 py-4 bg-white/70 backdrop-blur border-b border-slate-200/80 shrink-0">

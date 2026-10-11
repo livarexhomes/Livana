@@ -8,6 +8,7 @@ import {
   Plus,
   RefreshCw,
   Search,
+  Trash2,
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase'
 import type { PropertyRequest, PropertyRequestStatus } from '@/types'
@@ -335,6 +336,8 @@ function RequestDetail({
     useState<PropertyRequestStatus>('submitted')
   const [saving, setSaving] = useState(false)
   const [picker, setPicker] = useState(false)
+  const [deleting, setDeleting] = useState(false)
+  const [confirmDelete, setConfirmDelete] = useState(false)
   const [section, setSection] = useState<'overview' | 'progress' | 'matches'>(
     'overview',
   )
@@ -427,6 +430,34 @@ function RequestDetail({
     }
   }
 
+  async function deleteRequest() {
+    if (!request || lock.current) return
+    lock.current = true
+    setDeleting(true)
+    setError('')
+    try {
+      // Remove any matches first so we don't leave orphaned rows.
+      const matches = await createClient()
+        .from('property_request_matches')
+        .delete()
+        .eq('request_id', id)
+      if (matches.error) throw new Error(matches.error.message)
+      const { error: deleteError } = await createClient()
+        .from('property_requests')
+        .delete()
+        .eq('id', id)
+      if (deleteError) throw new Error(deleteError.message)
+      onChanged()
+      onBack()
+    } catch (error) {
+      setError(errorText(error))
+    } finally {
+      lock.current = false
+      setDeleting(false)
+      setConfirmDelete(false)
+    }
+  }
+
   return (
     <div className="pr-detail-shell">
       <div className="pr-detail-toolbar">
@@ -440,6 +471,17 @@ function RequestDetail({
           onClick={() => void load()}
         >
           <RefreshCw size={14} /> Refresh
+        </button>
+        <button
+          type="button"
+          className="pr-button pr-delete"
+          disabled={loading || saving || deleting || !request}
+          onClick={() => setConfirmDelete(true)}
+          aria-label="Delete property request"
+          title="Delete request"
+        >
+          <Trash2 size={14} />
+          <span className="hidden sm:inline">Delete</span>
         </button>
       </div>
       {notice && (
@@ -729,6 +771,57 @@ function RequestDetail({
           )}
         </>
       ) : null}
+
+      {confirmDelete && request && (
+        <Dialog
+          open
+          onOpenChange={(open) => {
+            if (!open && !deleting) setConfirmDelete(false)
+          }}
+        >
+          <DialogContent className="pr-match-dialog max-h-[90dvh] max-w-md overflow-y-auto rounded-lg p-5">
+            <DialogHeader>
+              <DialogTitle>Delete property request?</DialogTitle>
+              <DialogDescription>
+                {reference(request.id)} will be permanently removed along with
+                its property matches. The customer will no longer see this
+                request.
+              </DialogDescription>
+            </DialogHeader>
+            {error && (
+              <p role="alert" className="text-sm text-red-700">
+                {error}
+              </p>
+            )}
+            <div className="flex justify-end gap-2">
+              <button
+                type="button"
+                className="pr-button"
+                disabled={deleting}
+                onClick={() => setConfirmDelete(false)}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="pr-button pr-danger"
+                disabled={deleting}
+                onClick={() => void deleteRequest()}
+              >
+                {deleting ? (
+                  <>
+                    <Loader2 size={14} className="animate-spin" /> Deleting…
+                  </>
+                ) : (
+                  <>
+                    <Trash2 size={14} /> Delete request
+                  </>
+                )}
+              </button>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   )
 }
@@ -986,6 +1079,10 @@ const propertyRequestStyles = `
 .pr-button:disabled{opacity:.45;cursor:not-allowed}
 .pr-primary{background:#2563eb;border-color:#2563eb;color:#fff;box-shadow:0 3px 8px #2563eb18}
 .pr-primary:hover:not(:disabled){background:#1d4ed8;border-color:#1d4ed8}
+.pr-delete{color:#dc2626;border-color:#fecaca;background:#fef2f2}
+.pr-delete:hover:not(:disabled){background:#fee2e2;border-color:#fca5a5;color:#b91c1c}
+.pr-danger{background:#dc2626;border-color:#dc2626;color:#fff;box-shadow:0 3px 8px #dc262618}
+.pr-danger:hover:not(:disabled){background:#b91c1c;border-color:#b91c1c}
 .pr-workspace button:focus-visible,.pr-match-dialog button:focus-visible,.pr-field input:focus-visible,.pr-field select:focus-visible{outline:2px solid #3b82f6;outline-offset:3px}
 .pr-status{display:inline-flex;align-items:center;gap:6px;width:fit-content;padding:5px 9px;border-radius:7px;background:#f1f5f9;color:#475569;font-size:11px;font-weight:600;line-height:1.4}
 .pr-status:before{content:'';width:5px;height:5px;border-radius:50%;background:currentColor}

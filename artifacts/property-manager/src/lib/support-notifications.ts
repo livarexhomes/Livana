@@ -12,6 +12,7 @@ export type SupportAlertEvent =
   | { type: 'new_inquiry'; inquiry: { id: string; name: string; note: string } }
   | { type: 'new_queued'; inquiry: { id: string; name: string; note: string; ticketNo?: string | null } }
   | { type: 'new_message'; inquiryId: string; inquiryName: string; body: string; sender: 'visitor' | 'admin' }
+  | { type: 'new_property_request'; request: { id: string; propertyType: string; purpose: string; state: string; area: string; tenantName: string } }
 
 const MUTE_KEY = 'livarex-support-sound-muted'
 
@@ -110,6 +111,24 @@ export function subscribeToSupportAlerts(
           inquiryName: 'Visitor',
           body: String(row.body ?? ''),
           sender: 'visitor',
+        })
+      },
+    )
+    .on(
+      'postgres_changes',
+      { event: 'INSERT', schema: 'public', table: 'property_requests' },
+      (payload) => {
+        const row = (payload.new ?? {}) as Record<string, unknown>
+        onChange({
+          type: 'new_property_request',
+          request: {
+            id: String(row.id ?? ''),
+            propertyType: String(row.property_type ?? 'Property'),
+            purpose: String(row.purpose ?? ''),
+            state: String(row.state ?? ''),
+            area: String(row.preferred_area ?? ''),
+            tenantName: 'A customer',
+          },
         })
       },
     )
