@@ -1,4 +1,26 @@
 import { createClient } from '@supabase/supabase-js'
+import { requireAdmin } from './lib/auth-guard.js'
+
+function parseJsonBody(req) {
+  return new Promise((resolve) => {
+    if (typeof req.body === 'string') {
+      try { return resolve(JSON.parse(req.body)) } catch { return resolve(null) }
+    }
+    if (req.body && typeof req.body === 'object') return resolve(req.body)
+    if (typeof req.json === 'function') {
+      req.json().then(resolve).catch(() => resolve(null))
+      return
+    }
+    let raw = ''
+    req.on('data', (chunk) => {
+      raw += typeof chunk === 'string' ? chunk : new TextDecoder().decode(chunk)
+    })
+    req.on('end', () => {
+      try { resolve(JSON.parse(raw)) } catch { resolve(null) }
+    })
+    req.on('error', () => resolve(null))
+  })
+}
 
 /**
  * DELETE /api/clear-chat-messages
@@ -13,14 +35,17 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' })
   }
 
-  const supabaseUrl = process.env.VITE_SUPABASE_URL
-  const serviceKey  = process.env.SUPABASE_SERVICE_ROLE_KEY
+  const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL
+  const serviceKey  = process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY
   if (!supabaseUrl || !serviceKey) {
     return res.status(500).json({ error: 'Server misconfiguration' })
   }
+  if (!(await requireAdmin(req))) {
+    return res.status(403).json({ error: 'Admin authentication is required' })
+  }
 
-  const body = req.body ?? {}
-  const inquiry_id = body.inquiry_id
+  const body = await parseJsonBody(req)
+  const inquiry_id = body?.inquiry_id
   if (!inquiry_id) {
     return res.status(400).json({ error: 'inquiry_id is required' })
   }

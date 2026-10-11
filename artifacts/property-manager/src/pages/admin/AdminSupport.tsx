@@ -1239,36 +1239,53 @@ function ChatRequestDetail({ inquiry, onBack, onMarkRead, onStatusChange, onDele
   async function clearChat() {
     setClearing(true)
     try {
+      const supabase = createClient()
+      const { data: { session } } = await supabase.auth.getSession()
       const r = await fetch('/api/clear-chat-messages', {
         method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
+        },
         body: JSON.stringify({ inquiry_id: inquiry.id }),
       })
-      if (r.ok) setMessages([])
-    } catch { /* non-fatal */ }
-    setClearing(false)
-    setShowClearConfirm(false)
+      const result = await r.json().catch(() => null)
+      if (!r.ok) throw new Error(result?.error || `HTTP ${r.status}`)
+      setMessages([])
+      setShowClearConfirm(false)
+    } catch (error) {
+      toast({ title: 'Could not clear chat messages', description: String(error), variant: 'destructive' })
+    } finally {
+      setClearing(false)
+    }
   }
 
   async function deleteThread() {
     setClearing(true)
     try {
+      const supabase = createClient()
+      const { data: { session } } = await supabase.auth.getSession()
       const r = await fetch('/api/delete-chat-thread', {
         method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
+        },
         body: JSON.stringify({ inquiry_id: inquiry.id }),
       })
+      const result = await r.json().catch(() => null)
       if (r.ok) {
         onDelete(inquiry.id)
         onBack()
       } else {
-        toast({ title: 'Delete failed', description: 'The thread could not be removed. Please try again.', variant: 'destructive' })
+        throw new Error(result?.error || `HTTP ${r.status}`)
       }
-    } catch {
-      toast({ title: 'Network error', description: 'Could not reach the server.', variant: 'destructive' })
+    } catch (error) {
+      toast({ title: 'Delete failed', description: String(error), variant: 'destructive' })
+    } finally {
+      setClearing(false)
+      setShowClearConfirm(false)
     }
-    setClearing(false)
-    setShowClearConfirm(false)
   }
 
   const s = ENQUIRY_STATUS_META[inquiry.status]
@@ -2524,14 +2541,27 @@ function InboxTab({ liveState, onOpenThreadChange, initialChatId, onInitialChatC
   async function clearAllChats() {
     setClearingAll(true)
     try {
-      const r = await fetch('/api/clear-all-chats', { method: 'DELETE' })
-      if (r.ok) {
-        setChats([])
-        setSelectedKey(null)
-      }
-    } catch { /* non-fatal */ }
-    setClearingAll(false)
-    setShowClearAllConfirm(false)
+      const supabase = createClient()
+      const { data: { session } } = await supabase.auth.getSession()
+      const r = await fetch('/api/clear-all-chats', {
+        method: 'DELETE',
+        headers: {
+          ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
+        },
+      })
+      const result = await r.json().catch(() => null)
+      if (!r.ok) throw new Error(result?.error || `HTTP ${r.status}`)
+      setChats([])
+      setContacts([])
+      setSelectedKey(null)
+      setSelectedIds(new Set())
+      toast({ title: 'Conversations cleared', description: 'Live chats, contact-form threads, and their messages were deleted.' })
+      setShowClearAllConfirm(false)
+    } catch (error) {
+      toast({ title: 'Could not clear chat conversations', description: String(error), variant: 'destructive' })
+    } finally {
+      setClearingAll(false)
+    }
   }
 
   function toggleSelect(id: string) {
@@ -2561,27 +2591,31 @@ function InboxTab({ liveState, onOpenThreadChange, initialChatId, onInitialChatC
         .filter(Boolean) as string[]
 
       if (chatIds.length) {
+        const supabase = createClient()
+        const { data: { session } } = await supabase.auth.getSession()
         const r = await fetch('/api/delete-chat-thread', {
           method: 'DELETE',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
+          },
           body: JSON.stringify({ inquiry_id: chatIds }),
         })
-        if (r.ok) {
-          setChats(prev => prev.filter(c => !chatIds.includes(c.id)))
-          if (selectedKey && chatIds.includes(selectedKey.slice(5))) setSelectedKey(null)
-          toast({ title: `${chatIds.length} chat${chatIds.length === 1 ? '' : 's'} deleted`, description: 'The thread and its history were permanently removed.' })
-        } else {
-          toast({ title: 'Bulk delete failed', description: 'Some chats could not be removed. Please try again.', variant: 'destructive' })
-        }
+        const result = await r.json().catch(() => null)
+        if (!r.ok) throw new Error(result?.error || `HTTP ${r.status}`)
+        setChats(prev => prev.filter(c => !chatIds.includes(c.id)))
+        if (selectedKey && chatIds.includes(selectedKey.slice(5))) setSelectedKey(null)
+        toast({ title: `${chatIds.length} chat${chatIds.length === 1 ? '' : 's'} deleted`, description: 'The thread and its history were permanently removed.' })
+        setSelectedIds(new Set())
+        setShowBulkDeleteConfirm(false)
       } else {
         toast({ title: 'No chat threads selected', description: 'Bulk delete currently only supports chat conversations.', variant: 'destructive' })
       }
-      setSelectedIds(new Set())
-    } catch {
-      toast({ title: 'Network error', description: 'Could not reach the server.', variant: 'destructive' })
+    } catch (error) {
+      toast({ title: 'Bulk delete failed', description: String(error), variant: 'destructive' })
+    } finally {
+      setBulkDeleting(false)
     }
-    setBulkDeleting(false)
-    setShowBulkDeleteConfirm(false)
   }
 
   // Notify the parent of the currently-open thread so the page-level alert
@@ -2740,9 +2774,9 @@ function InboxTab({ liveState, onOpenThreadChange, initialChatId, onInitialChatC
                 <Trash2 className="w-5 h-5 text-red-500" />
               </div>
               <div>
-                <p className="text-[15px] font-semibold text-slate-900">Clear all chat conversations?</p>
+                <p className="text-[15px] font-semibold text-slate-900">Clear all conversations?</p>
                 <p className="text-[12.5px] text-slate-500 mt-0.5">
-                  This permanently deletes every chat thread and all messages. It cannot be undone.
+                  This permanently deletes all live chats and contact-form threads with their messages. It cannot be undone.
                 </p>
               </div>
             </div>
@@ -2809,7 +2843,7 @@ function InboxTab({ liveState, onOpenThreadChange, initialChatId, onInitialChatC
             {/* Admin: bulk-clear all chat conversations */}
             <button
               onClick={() => setShowClearAllConfirm(true)}
-              title="Clear all chat conversations"
+              title="Clear all conversations"
               className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:ring-offset-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:ring-offset-2 inline-flex items-center gap-1 h-7 px-2.5 rounded-lg border border-slate-200 bg-white text-[11px] font-medium text-slate-500 hover:text-red-600 hover:border-red-200 transition-colors"
             >
               <Trash2 className="w-3 h-3" />
