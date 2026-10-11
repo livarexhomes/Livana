@@ -1211,11 +1211,12 @@ function EnquiryDetail({ enquiry, onBack, onStatusChange }: {
 
 // ── ChatRequestDetail ─────────────────────────────────────────────────────────
 
-function ChatRequestDetail({ inquiry, onBack, onMarkRead, onStatusChange, agents, liveState }: {
+function ChatRequestDetail({ inquiry, onBack, onMarkRead, onStatusChange, onDelete, agents, liveState }: {
   inquiry: ChatInquiry
   onBack: () => void
   onMarkRead: (id: string) => void
   onStatusChange: (id: string, status: ChatInquiry['status']) => void
+  onDelete: (id: string) => void
   agents: SupportAgent[]
   liveState: LiveSupportState
 }) {
@@ -1257,8 +1258,15 @@ function ChatRequestDetail({ inquiry, onBack, onMarkRead, onStatusChange, agents
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ inquiry_id: inquiry.id }),
       })
-      if (r.ok) onStatusChange(inquiry.id, 'closed')
-    } catch { /* non-fatal */ }
+      if (r.ok) {
+        onDelete(inquiry.id)
+        onBack()
+      } else {
+        toast({ title: 'Delete failed', description: 'The thread could not be removed. Please try again.', variant: 'destructive' })
+      }
+    } catch {
+      toast({ title: 'Network error', description: 'Could not reach the server.', variant: 'destructive' })
+    }
     setClearing(false)
     setShowClearConfirm(false)
   }
@@ -2626,6 +2634,18 @@ function InboxTab({ liveState, onOpenThreadChange, initialChatId, onInitialChatC
          (payload) => setChats(prev => prev.find(c => c.id === payload.new.id) ? prev : [payload.new as ChatInquiry, ...prev]))
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'chat_inquiries' },
         (payload) => setChats(prev => prev.map(i => i.id === payload.new.id ? { ...i, ...payload.new } as ChatInquiry : i)))
+      .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'chat_inquiries' },
+        (payload) => {
+          const oldId = String((payload.old as { id?: string } | null)?.id ?? '')
+          if (!oldId) return
+          setChats(prev => prev.filter(c => c.id !== oldId))
+          setSelectedIds(prev => {
+            const next = new Set(prev)
+            next.delete(`chat:${oldId}`)
+            return next
+          })
+          if (selectedKey === `chat:${oldId}`) setSelectedKey(null)
+        })
       .subscribe()
 
     const contactChannel = supabase.channel('admin_contact_messages')
@@ -2697,6 +2717,16 @@ function InboxTab({ liveState, onOpenThreadChange, initialChatId, onInitialChatC
 
   function handleChatStatusChange(id: string, status: ChatInquiry['status']) {
     setChats(prev => prev.map(c => c.id === id ? { ...c, status } : c))
+  }
+
+  function handleChatDelete(id: string) {
+    setChats(prev => prev.filter(c => c.id !== id))
+    if (selectedKey === `chat:${id}`) setSelectedKey(null)
+    setSelectedIds(prev => {
+      const next = new Set(prev)
+      next.delete(`chat:${id}`)
+      return next
+    })
   }
 
   return (
@@ -2982,6 +3012,7 @@ function InboxTab({ liveState, onOpenThreadChange, initialChatId, onInitialChatC
               onBack={() => setSelectedKey(null)}
               onMarkRead={handleChatMarkRead}
               onStatusChange={handleChatStatusChange}
+              onDelete={handleChatDelete}
               agents={agents}
               liveState={liveState} />
           ) : selected.type === 'contact' && selected.contact ? (
