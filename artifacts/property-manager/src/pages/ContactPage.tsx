@@ -81,7 +81,7 @@ const helpLinks = [
   {
     label: 'How landlord verification works',
     description: 'Learn how LIVAREX reviews landlords and listings.',
-    href: '/about',
+    href: '/landlord/verify',
     icon: ShieldCheck,
   },
   {
@@ -155,7 +155,7 @@ export default function ContactPage() {
 
   const phone = platform?.phone || '+234 7061370742'
   const email = platform?.email || 'support@livarex.com.ng'
-  const address = platform?.address?.trim() || '14 Bourdillon Road, Ikoyi, Lagos'
+  const address = platform?.address?.trim() || 'Joju Road, Sango, Lagos'
 
   const channels = [
     {

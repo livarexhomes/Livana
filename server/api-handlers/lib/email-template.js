@@ -183,12 +183,12 @@ export function renderEmail({
           <tr>
             <td style="padding:22px 40px 30px;border-top:1px solid ${BRAND.border};background:#fbfcfe;">
               <p style="margin:0;font-size:12px;color:${BRAND.footer};line-height:1.7;text-align:center;">
-                LIVAREX · ${esc('14 Bourdillon Road, Ikoyi, Lagos, Nigeria')}<br>
+                LIVAREX · ${esc('Joju Road, Sango, Lagos, Nigeria')}<br>
                 <a href="${BRAND.website}" style="color:${BRAND.blue};text-decoration:none;">${BRAND.domain}</a>
                 ${safe.footerNote ? ` · ${safe.footerNote}` : ''}
               </p>
               <p style="margin:12px 0 0;font-size:11px;color:#cbd5e1;line-height:1.6;text-align:center;">
-                No agent fees. No hidden costs. Just verified homes.
+                Zero inspection fee. No hidden fees. Just verified home and properties.
               </p>
             </td>
           </tr>
