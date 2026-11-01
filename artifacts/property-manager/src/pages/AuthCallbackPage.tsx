@@ -53,7 +53,7 @@ export default function AuthCallbackPage() {
       // Always treat them as a tenant in that case, regardless of requestedRole.
       const [landlordResult, tenantResult] = await Promise.all([
         supabase.from('landlords').select('status').eq('user_id', user.id).maybeSingle(),
-        supabase.from('tenants').select('id').eq('user_id', user.id).maybeSingle(),
+        supabase.from('tenants').select('id, marital_status, occupation').eq('user_id', user.id).maybeSingle(),
       ])
       const existingLandlord = landlordResult.data as { status: string } | null
       const existingTenant   = tenantResult.data
@@ -100,7 +100,17 @@ export default function AuthCallbackPage() {
           console.error('Tenant update failed:', updateError)
         }
       }
-      navigate(redirectTo)
+      if (!tenantResult.data && !updateError) {
+        const { error: insertError } = await supabase.from('tenants').insert({
+          user_id: user.id,
+          ...tenantData,
+        })
+        if (insertError && insertError.code !== '23505') console.error('Tenant insert failed:', insertError)
+      }
+      const tenantProfile = tenantResult.data as { id: string; marital_status: string | null; occupation: string | null } | null
+      const needsProfileDetails = requestedRole === 'tenant'
+        && (!tenantProfile?.marital_status || !tenantProfile.occupation)
+      navigate(needsProfileDetails ? '/user/complete-profile' : redirectTo)
     }
 
     // Implicit flow — session is in the URL hash, getSession() picks it up automatically.

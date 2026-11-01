@@ -58,7 +58,10 @@ export default function RegisterPage() {
       const signupPayload = {
         email: email.trim(),
         password,
-        options: { data: { full_name: fullName.trim(), phone: phone.trim() || null } },
+        options: {
+          data: { full_name: fullName.trim(), phone: phone.trim() || null },
+          emailRedirectTo: `${window.location.origin}/auth/callback?role=tenant`,
+        },
       }
 
       let signupResult = await supabase.auth.signUp(signupPayload)
@@ -150,7 +153,7 @@ export default function RegisterPage() {
         return
       }
 
-      navigate('/user')
+      navigate('/user/complete-profile')
     } catch (unknownError) {
       const unexpectedError = unknownError instanceof Error
         ? { name: unknownError.name, message: unknownError.message }
@@ -266,6 +269,7 @@ export default function RegisterPage() {
                 <input
                   type="tel"
                   placeholder="+234 800 000 0000"
+                  required
                   value={phone}
                   onChange={e => setPhone(e.target.value)}
                   className="w-full px-4 py-3.5 rounded-2xl border border-gray-200 bg-gray-50 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:bg-white transition-all"

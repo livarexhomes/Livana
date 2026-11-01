@@ -54,6 +54,7 @@ const FAQPage = lazy(() => import("@/pages/faq"));
 
 const UserDashboard = lazy(() => import("@/pages/user/UserDashboard"));
 const UserProfile = lazy(() => import("@/pages/user/UserProfile"));
+const UserProfileCompletion = lazy(() => import("@/pages/user/UserProfileCompletion"));
 const UserSaved = lazy(() => import("@/pages/user/UserSaved"));
 const UserPropertyRequests = lazy(() => import("@/pages/user/UserPropertyRequests"));
 const UserPropertyRequestDetailPage = lazy(() => import("@/pages/user/UserPropertyRequestDetailPage"));
@@ -165,6 +166,7 @@ function Router() {
         <Route path="/admin/help" component={AdminHelp} />
 
         <Route path="/user" component={UserDashboard} />
+        <Route path="/user/complete-profile" component={UserProfileCompletion} />
         <Route path="/user/profile" component={UserProfile} />
         <Route path="/user/saved" component={UserSaved} />
         <Route path="/user/requests/:id" component={UserPropertyRequestDetailPage} />

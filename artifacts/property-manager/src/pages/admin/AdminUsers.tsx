@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import {
   Search, MessageSquare, Clock, UserX,
   ShieldOff, Trash2, ShieldCheck, X, Home, Calendar,
-  UserCheck, MoreVertical, ChevronLeft,
+  UserCheck, MoreVertical, ChevronLeft, Eye,
 } from 'lucide-react'
 import { Link } from '@/lib/navigation'
 import AdminSidebar from '../../components/layout/AdminSidebar'
@@ -34,11 +34,20 @@ function timeAgo(iso: string) {
   if (d < 2592000) return `${Math.floor(d / 86400)}d ago`
   return new Date(iso).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: '2-digit' })
 }
+function formatProfileValue(value: string | number | null | undefined) {
+  if (value == null || value === '') return 'Not provided'
+  return typeof value === 'string'
+    ? value.replace(/_/g, ' ').replace(/\b\w/g, character => character.toUpperCase())
+    : value
+}
 
 type Tenant = {
   id: string; user_id: string; full_name: string
   phone?: string | null; email?: string | null
   avatar_url?: string | null; provider?: string | null
+  marital_status?: string | null; occupation?: string | null
+  employment_type?: string | null; household_size?: number | null
+  city?: string | null; move_in_timeline?: string | null
   created_at: string; enquiry_count: number
   status: 'active' | 'suspended'
 }
@@ -119,6 +128,33 @@ function TenantDrawer({ tenant, onClose }: { tenant: Tenant; onClose: () => void
         </div>
 
         <div className="flex-1 overflow-y-auto">
+          <section className="border-b border-gray-100 px-4 py-4 sm:px-6">
+            <div className="mb-3 flex items-center justify-between gap-3">
+              <h2 className="text-xs font-black uppercase tracking-widest text-gray-400">User profile</h2>
+              <span className={`rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide ${
+                tenant.marital_status && tenant.occupation
+                  ? 'bg-emerald-50 text-emerald-700'
+                  : 'bg-amber-50 text-amber-700'
+              }`}>
+                {tenant.marital_status && tenant.occupation ? 'Complete' : 'Incomplete'}
+              </span>
+            </div>
+            <dl className="grid grid-cols-2 gap-x-4 gap-y-3">
+              {[
+                { label: 'Marital status', value: tenant.marital_status },
+                { label: 'Occupation', value: tenant.occupation },
+                { label: 'Work situation', value: tenant.employment_type },
+                { label: 'Household size', value: tenant.household_size },
+                { label: 'Current city', value: tenant.city },
+                { label: 'Move-in timeframe', value: tenant.move_in_timeline },
+              ].map(field => (
+                <div key={field.label} className="min-w-0">
+                  <dt className="text-[10px] font-semibold uppercase tracking-wider text-gray-400">{field.label}</dt>
+                  <dd className="mt-0.5 break-words text-sm font-semibold text-gray-800">{formatProfileValue(field.value)}</dd>
+                </div>
+              ))}
+            </dl>
+          </section>
           <div className="px-4 py-3 sm:px-6 py-4 border-b border-gray-50">
             <p className="text-xs font-black text-gray-400 uppercase tracking-widest">Enquiries</p>
           </div>
@@ -252,6 +288,12 @@ export default function AdminUsers() {
         full_name: t.full_name ?? 'Unknown Tenant',
         phone: t.phone ?? null, email: t.email ?? null,
         avatar_url: t.avatar_url ?? null, provider: t.provider ?? 'email',
+        marital_status: t.marital_status ?? null,
+        occupation: t.occupation ?? null,
+        employment_type: t.employment_type ?? null,
+        household_size: t.household_size ?? null,
+        city: t.city ?? null,
+        move_in_timeline: t.move_in_timeline ?? null,
         created_at: t.created_at,
         enquiry_count: enquiryCounts[t.id] || 0,
         status: t.status ?? 'active',
@@ -469,6 +511,10 @@ export default function AdminUsers() {
                       {/* Actions — full-width row on mobile, inline on sm+ */}
                       <div className="mt-2.5 -mx-3 -mb-2.5 flex items-center gap-1.5 border-t border-slate-100 px-3 py-2 sm:mt-0 sm:mx-0 sm:mb-0 sm:border-0 sm:px-0 sm:py-0 sm:absolute sm:right-3 sm:top-1/2 sm:-translate-y-1/2 sm:bg-white"
                         onClick={e => e.stopPropagation()}>
+                        <button type="button" onClick={() => setSelectedTenant(t)}
+                          className="flex-1 sm:flex-none h-10 sm:h-7 rounded-lg border border-slate-200 bg-white px-2.5 text-[11px] font-semibold text-slate-700 hover:bg-slate-50 transition-colors flex items-center justify-center gap-1.5">
+                          <Eye className="w-3 h-3" /> View profile
+                        </button>
                         {isSuspended ? (
                           <button type="button" onClick={() => setConfirm({ type: 'unsuspend', tenant: t })}
                             className="flex-1 sm:flex-none h-10 sm:h-7 rounded-lg border border-emerald-200 bg-emerald-50 px-2.5 text-[11px] font-semibold text-emerald-700 hover:bg-emerald-100 transition-colors">
