@@ -265,7 +265,7 @@ export default function RegisterPage() {
                 />
               </div>
               <div>
-                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-widest mb-1.5">Phone <span className="text-gray-400 normal-case font-normal">(optional)</span></label>
+                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-widest mb-1.5">Phone <span className="text-gray-400 normal-case font-normal">*</span></label>
                 <input
                   type="tel"
                   placeholder="+234 800 000 0000"
