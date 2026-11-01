@@ -1312,7 +1312,7 @@ export default function ChatWidget() {
                       autoComplete="email" placeholder="you@example.com"
                       className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-[12px] text-slate-900 outline-none focus:border-primary/40 focus:ring-2 focus:ring-primary/20 focus:bg-white transition-all" />
                   </Field>
-                  <Field label="Phone (optional)">
+                  <Field label="Phone">
                     <input value={agentPhone} onChange={e => setAgentPhone(e.target.value)} type="tel"
                       autoComplete="tel" placeholder="+234 …"
                       className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-[12px] text-slate-900 outline-none focus:border-primary/40 focus:ring-2 focus:ring-primary/20 focus:bg-white transition-all" />
