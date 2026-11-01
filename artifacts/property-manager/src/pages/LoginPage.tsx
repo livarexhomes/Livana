@@ -42,9 +42,9 @@ export default function LoginPage() {
 
     const { data: tenant, error: tenantError } = await supabase
       .from('tenants')
-      .select('id, marital_status, occupation')
+      .select('id, marital_status, city, looking_for')
       .eq('user_id', user.id)
-      .maybeSingle() as { data: { id: string; marital_status: string | null; occupation: string | null } | null; error: { message: string } | null }
+      .maybeSingle() as { data: { id: string; marital_status: string | null; city: string | null; looking_for: string | null } | null; error: { message: string } | null }
     if (tenantError) {
       setError('We could not load your profile. Please try signing in again.')
       setLoading(false)
@@ -67,7 +67,7 @@ export default function LoginPage() {
       return
     }
 
-    if (!tenant.marital_status || !tenant.occupation?.trim()) {
+    if (!tenant.marital_status || !tenant.city?.trim() || !tenant.looking_for) {
       navigate('/user/complete-profile')
       return
     }

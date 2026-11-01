@@ -86,6 +86,13 @@ export interface Database {
           user_id: string
           full_name: string
           phone: string | null
+          marital_status: string | null
+          occupation: string | null
+          employment_type: string | null
+          household_size: number | null
+          city: string | null
+          move_in_timeline: string | null
+          looking_for: string | null
           created_at: string
           updated_at: string
         }
@@ -94,6 +101,13 @@ export interface Database {
           user_id: string
           full_name: string
           phone?: string | null
+          marital_status?: string | null
+          occupation?: string | null
+          employment_type?: string | null
+          household_size?: number | null
+          city?: string | null
+          move_in_timeline?: string | null
+          looking_for?: string | null
           created_at?: string
           updated_at?: string
         }
@@ -102,6 +116,13 @@ export interface Database {
           user_id?: string
           full_name?: string
           phone?: string | null
+          marital_status?: string | null
+          occupation?: string | null
+          employment_type?: string | null
+          household_size?: number | null
+          city?: string | null
+          move_in_timeline?: string | null
+          looking_for?: string | null
           created_at?: string
           updated_at?: string
         }

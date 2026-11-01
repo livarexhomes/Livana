@@ -45,7 +45,7 @@ type Tenant = {
   id: string; user_id: string; full_name: string
   phone?: string | null; email?: string | null
   avatar_url?: string | null; provider?: string | null
-  marital_status?: string | null; occupation?: string | null
+  marital_status?: string | null; occupation?: string | null; looking_for?: string | null
   employment_type?: string | null; household_size?: number | null
   city?: string | null; move_in_timeline?: string | null
   created_at: string; enquiry_count: number
@@ -132,11 +132,11 @@ function TenantDrawer({ tenant, onClose }: { tenant: Tenant; onClose: () => void
             <div className="mb-3 flex items-center justify-between gap-3">
               <h2 className="text-xs font-black uppercase tracking-widest text-gray-400">User profile</h2>
               <span className={`rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide ${
-                tenant.marital_status && tenant.occupation
+                tenant.marital_status && tenant.city?.trim() && tenant.looking_for
                   ? 'bg-emerald-50 text-emerald-700'
                   : 'bg-amber-50 text-amber-700'
               }`}>
-                {tenant.marital_status && tenant.occupation ? 'Complete' : 'Incomplete'}
+                {tenant.marital_status && tenant.city?.trim() && tenant.looking_for ? 'Complete' : 'Incomplete'}
               </span>
             </div>
             <dl className="grid grid-cols-2 gap-x-4 gap-y-3">
@@ -146,7 +146,7 @@ function TenantDrawer({ tenant, onClose }: { tenant: Tenant; onClose: () => void
                 { label: 'Work situation', value: tenant.employment_type },
                 { label: 'Household size', value: tenant.household_size },
                 { label: 'Current city', value: tenant.city },
-                { label: 'Move-in timeframe', value: tenant.move_in_timeline },
+                { label: 'Looking for', value: tenant.looking_for },
               ].map(field => (
                 <div key={field.label} className="min-w-0">
                   <dt className="text-[10px] font-semibold uppercase tracking-wider text-gray-400">{field.label}</dt>
@@ -294,6 +294,7 @@ export default function AdminUsers() {
         household_size: t.household_size ?? null,
         city: t.city ?? null,
         move_in_timeline: t.move_in_timeline ?? null,
+        looking_for: t.looking_for ?? null,
         created_at: t.created_at,
         enquiry_count: enquiryCounts[t.id] || 0,
         status: t.status ?? 'active',

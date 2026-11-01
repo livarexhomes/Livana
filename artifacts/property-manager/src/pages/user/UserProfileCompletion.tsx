@@ -20,18 +20,16 @@ type ProfileForm = {
   marital_status: string
   occupation: string
   employment_type: string
-  household_size: string
   city: string
-  move_in_timeline: string
+  looking_for: string
 }
 
 const EMPTY_FORM: ProfileForm = {
   marital_status: '',
   occupation: '',
   employment_type: '',
-  household_size: '',
   city: '',
-  move_in_timeline: '',
+  looking_for: '',
 }
 
 const inputClass =
@@ -69,7 +67,7 @@ export default function UserProfileCompletion() {
         const { data, error } = await supabase
           .from('tenants')
           .select(
-            'marital_status, occupation, employment_type, household_size, city, move_in_timeline'
+            'marital_status, occupation, employment_type, city, looking_for'
           )
           .eq('user_id', user.id)
           .maybeSingle() as {
@@ -86,11 +84,8 @@ export default function UserProfileCompletion() {
             marital_status: data.marital_status ?? '',
             occupation: data.occupation ?? '',
             employment_type: data.employment_type ?? '',
-            household_size: data.household_size
-              ? String(data.household_size)
-              : '',
             city: data.city ?? '',
-            move_in_timeline: data.move_in_timeline ?? '',
+            looking_for: data.looking_for ?? '',
           })
         }
       } catch {
@@ -133,11 +128,8 @@ export default function UserProfileCompletion() {
           marital_status: form.marital_status,
           occupation: form.occupation.trim(),
           employment_type: form.employment_type || null,
-          household_size: form.household_size
-            ? Number(form.household_size)
-            : null,
-          city: form.city.trim() || null,
-          move_in_timeline: form.move_in_timeline || null,
+          city: form.city.trim(),
+          looking_for: form.looking_for,
         })
         .eq('user_id', userId)
         .select('id')
@@ -325,12 +317,11 @@ export default function UserProfileCompletion() {
                   </div>
                 </div>
 
-                {!loading && (!form.marital_status || !form.occupation.trim()) && (
+                {!loading && (!form.marital_status || !form.city.trim() || !form.looking_for) && (
                   <div className="mb-6 flex gap-3 rounded-xl border border-blue-100 bg-blue-50/70 p-3.5">
                     <InfoIcon />
                     <p className="text-xs leading-5 text-blue-800">
-                      Please complete the required fields marked with an
-                      asterisk to continue.
+                      Add your marital status, current city, and property preference to continue. Occupation and work status are optional.
                     </p>
                   </div>
                 )}
@@ -382,13 +373,12 @@ export default function UserProfileCompletion() {
 
                         <div>
                           <label htmlFor="occupation" className={labelClass}>
-                            Occupation <span className="text-blue-600">*</span>
+                            Occupation <span className="font-normal text-slate-400">(optional)</span>
                           </label>
                           <div className="relative">
                             <BriefcaseBusiness className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
                             <input
                               id="occupation"
-                              required
                               maxLength={100}
                               value={form.occupation}
                               onChange={e => updateForm('occupation', e.target.value)}
@@ -446,16 +436,16 @@ export default function UserProfileCompletion() {
                         <h3 className="text-sm font-bold text-slate-900">
                           Location details
                         </h3>
-                        <span className="text-[10px] text-slate-400">OPTIONAL</span>
                       </div>
 
                       <label htmlFor="city" className={labelClass}>
-                        Current city
+                        Current city <span className="text-blue-600">*</span>
                       </label>
                       <div className="relative">
                         <MapPin className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
                         <input
                           id="city"
+                          required
                           maxLength={100}
                           value={form.city}
                           onChange={e => updateForm('city', e.target.value)}
@@ -464,6 +454,42 @@ export default function UserProfileCompletion() {
                         />
                       </div>
                     </div>
+
+                    <div className="border-t border-slate-100" />
+
+                    {/* Property preference */}
+                    <fieldset>
+                      <legend className={labelClass}>
+                        Looking for <span className="text-blue-600">*</span>
+                      </legend>
+                      <div className="grid gap-3 sm:grid-cols-3">
+                        {[
+                          { value: 'rent', label: "I'm looking for property to rent" },
+                          { value: 'buy', label: "I'm looking for property to buy" },
+                          { value: 'both', label: 'Both' },
+                        ].map(option => (
+                          <label
+                            key={option.value}
+                            className={`flex min-h-[58px] cursor-pointer items-center gap-3 rounded-xl border px-4 py-3 text-sm transition-colors ${
+                              form.looking_for === option.value
+                                ? 'border-blue-600 bg-blue-50 text-blue-900 ring-2 ring-blue-600/10'
+                                : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300'
+                            }`}
+                          >
+                            <input
+                              type="radio"
+                              name="looking-for"
+                              value={option.value}
+                              required
+                              checked={form.looking_for === option.value}
+                              onChange={e => updateForm('looking_for', e.target.value)}
+                              className="h-4 w-4 shrink-0 accent-blue-700"
+                            />
+                            <span className="leading-5">{option.label}</span>
+                          </label>
+                        ))}
+                      </div>
+                    </fieldset>
 
                     {error && (
                       <div
