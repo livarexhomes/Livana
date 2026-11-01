@@ -38,6 +38,23 @@ const inputClass =
 const labelClass =
   'mb-2 block text-[13px] font-semibold text-slate-700'
 
+function getProfileErrorMessage(error: unknown, action: 'load' | 'save') {
+  const code = typeof error === 'object' && error !== null && 'code' in error
+    ? String(error.code)
+    : ''
+
+  if (['42703', 'PGRST204', 'PGRST205'].includes(code)) {
+    return 'The profile database update is missing. Apply migration 033_tenant_looking_for.sql, then refresh and try again.'
+  }
+  if (code === '42501') {
+    return 'Profile update permissions are missing. Apply migration 033_tenant_looking_for.sql, then refresh and try again.'
+  }
+
+  return action === 'load'
+    ? 'Unable to load your profile. Please refresh and try again.'
+    : 'We could not save your details. Please try again.'
+}
+
 export default function UserProfileCompletion() {
   const [, navigate] = useLocation()
 
@@ -88,9 +105,10 @@ export default function UserProfileCompletion() {
             looking_for: data.looking_for ?? '',
           })
         }
-      } catch {
+      } catch (loadError) {
+        console.error('[profile-completion] profile load failed:', loadError)
         if (active) {
-          setError('Unable to load your profile. Please refresh and try again.')
+          setError(getProfileErrorMessage(loadError, 'load'))
         }
       } finally {
         if (active) setLoading(false)
@@ -145,7 +163,7 @@ export default function UserProfileCompletion() {
       navigate('/user')
     } catch (saveError) {
       console.error('[profile-completion] profile update failed:', saveError)
-      setError('We could not save your details. Please try again.')
+      setError(getProfileErrorMessage(saveError, 'save'))
       setSaving(false)
     }
   }

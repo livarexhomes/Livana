@@ -15,9 +15,9 @@ import { ResponsiveFilters } from '@/components/ui/responsive-filters'
 import { StatusBadge } from '@/components/ui/status-badge'
 
 const AVATAR_GRADIENTS = [
-  'from-violet-500 to-purple-600', 'from-blue-500 to-blue-700',
-  'from-emerald-400 to-teal-600',  'from-rose-400 to-pink-600',
-  'from-amber-400 to-orange-500',  'from-indigo-400 to-indigo-600',
+  'from-blue-500 to-blue-700', 'from-indigo-500 to-blue-800',
+  'from-sky-500 to-blue-700',  'from-violet-500 to-indigo-700',
+  'from-blue-600 to-indigo-800', 'from-cyan-500 to-blue-700',
 ]
 function avatarGrad(name: string) {
   let h = 0; for (const c of name) h = (h * 31 + c.charCodeAt(0)) & 0xffff
@@ -393,29 +393,29 @@ export default function AdminUsers() {
             </div>
 
               {/* ── Hero card (desktop only) ── */}
-            <div className="hidden sm:block px-4 md:px-6 pt-3 pb-2">
-              <div className="rounded-2xl border border-slate-200 bg-white px-5 py-4 shadow-sm">
+            <div className="hidden sm:block px-4 md:px-6 pt-4 pb-3">
+              <div className="rounded-2xl border border-slate-200/80 bg-white px-5 py-5 shadow-sm md:px-6">
                 <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                   <div>
-                    <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">Property seekers</p>
-                    <h2 className="mt-0.5 text-xl sm:text-2xl font-extrabold text-slate-950">Tenants</h2>
+                    <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-400">Property seekers</p>
+                    <h2 className="mt-1 text-2xl font-bold tracking-tight text-slate-950">Tenants</h2>
                   </div>
-                  <div className="grid grid-cols-3 gap-1.5 sm:flex sm:items-center sm:flex-wrap sm:gap-2 sm:shrink-0">
+                  <div className="grid grid-cols-3 gap-2 sm:flex sm:items-center sm:gap-2.5 sm:shrink-0">
                     {[
-                      { label: 'Total',     value: tenants.length, color: 'text-slate-700'   },
+                      { label: 'Total',     value: tenants.length, color: 'text-slate-900'   },
                       { label: 'Active',    value: activeCount,    color: 'text-emerald-700' },
                       { label: 'Suspended', value: suspendedCount, color: 'text-amber-700'   },
                     ].map(s => (
-                      <div key={s.label} className="rounded-2xl border border-slate-100 bg-slate-50 px-2 sm:px-3 py-1.5 text-center sm:min-w-[56px]">
-                        <p className={`text-base font-extrabold ${s.color}`}>{s.value}</p>
-                        <p className="text-[9px] font-semibold uppercase tracking-[0.2em] text-slate-400 whitespace-nowrap">{s.label}</p>
+                      <div key={s.label} className="min-w-[72px] rounded-xl border border-slate-100 bg-slate-50/80 px-3 py-2 text-center">
+                        <p className={`text-lg font-bold leading-5 ${s.color}`}>{s.value}</p>
+                        <p className="mt-1 whitespace-nowrap text-[9px] font-bold uppercase tracking-[0.16em] text-slate-400">{s.label}</p>
                       </div>
                     ))}
                   </div>
                 </div>
 
                 {/* Filter + Search */}
-                <div className="mt-2.5 flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between">
+                <div className="mt-5 flex flex-col gap-3 border-t border-slate-100 pt-4 sm:flex-row sm:items-center sm:justify-between">
                   <div className="w-full sm:w-auto">
                     <ResponsiveFilters
                       tabs={[
@@ -428,12 +428,13 @@ export default function AdminUsers() {
                       label="Status"
                     />
                   </div>
-                  <label className="flex h-9 sm:h-8 items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 px-3 focus-within:border-slate-300 focus-within:bg-white transition-all w-full sm:w-44 shrink-0">
-                    <Search className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                  <label className="flex h-10 w-full shrink-0 items-center gap-2.5 rounded-xl border border-slate-200 bg-slate-50 px-3.5 transition-colors focus-within:border-blue-300 focus-within:bg-white focus-within:ring-4 focus-within:ring-blue-500/10 sm:w-64">
+                    <Search aria-hidden="true" className="h-4 w-4 shrink-0 text-slate-400" />
                     <input
+                      aria-label="Search tenants"
                       value={search} onChange={e => setSearch(e.target.value)}
                       placeholder="Search name, email, phone…"
-                      className="flex-1 sm:w-44 sm:flex-none bg-transparent text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none"
+                      className="min-w-0 flex-1 bg-transparent text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none"
                     />
                   </label>
                 </div>
@@ -441,8 +442,8 @@ export default function AdminUsers() {
             </div>
 
             {/* Count row */}
-            <div className="flex items-center justify-between px-4 md:px-6 mb-2">
-              <p className="text-xs text-slate-500">
+            <div className="mb-3 flex items-center justify-between px-4 md:px-6">
+              <p className="text-sm text-slate-500">
                 <span className="font-bold text-slate-900">{filtered.length}</span> {filtered.length === 1 ? 'tenant' : 'tenants'}
                 {statusFilter !== 'all' && <span className="ml-1.5 text-[10px] font-bold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded-md">{statusFilter}</span>}
               </p>
@@ -470,9 +471,18 @@ export default function AdminUsers() {
             ) : filtered.length === 0 ? (
               <div className="bg-white rounded-xl border border-dashed border-slate-200 p-6 sm:p-10 text-center">
                 <p className="font-semibold text-slate-600">No tenants match your search.</p>
+                {search && (
+                  <button
+                    type="button"
+                    onClick={() => setSearch('')}
+                    className="mt-3 rounded-sm text-sm font-semibold text-blue-700 hover:text-blue-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
+                  >
+                    Clear search
+                  </button>
+                )}
               </div>
             ) : (
-              <div className="space-y-1.5">
+              <div className="space-y-2.5">
                 {filtered.map(t => {
                   const grad = avatarGrad(t.full_name)
                   const initials = getInitials(t.full_name)
@@ -480,56 +490,57 @@ export default function AdminUsers() {
                   return (
                     <article
                       key={t.id}
-                      className={`group relative rounded-xl border border-slate-100 bg-white px-3 py-2.5 shadow-[0_1px_3px_rgba(0,0,0,0.04)] transition-all duration-200
-                        hover:border-slate-200 hover:shadow-[0_4px_16px_rgba(0,0,0,0.07)] ${isSuspended ? 'opacity-80' : ''}`}
+                      className={`group rounded-2xl border border-slate-200/70 bg-white px-4 py-4 shadow-[0_1px_3px_rgba(15,23,42,0.04)] transition-all duration-200
+                        xl:flex xl:items-center xl:gap-5
+                        hover:border-slate-300 hover:shadow-[0_6px_20px_rgba(15,23,42,0.07)] sm:px-5 ${isSuspended ? 'opacity-80' : ''}`}
                     >
                       <button type="button" onClick={() => setSelectedTenant(t)} aria-label={`View ${t.full_name} profile`}
-                        className="flex w-full items-start gap-3 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 sm:pr-44">
+                        className="flex min-w-0 w-full items-start gap-3.5 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 xl:flex-1">
                         {/* Avatar */}
-                        <div className={`relative flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br ${grad} text-white`}>
-                          <span className="text-[12px] font-semibold">{initials}</span>
+                        <div className={`relative flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br ${grad} text-white shadow-sm`}>
+                          <span className="text-sm font-bold">{initials}</span>
                           <span className={`absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full border-2 border-white ${isSuspended ? 'bg-amber-400' : 'bg-emerald-400'}`} />
                         </div>
 
                         {/* Identity */}
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center gap-2 min-w-0">
-                                    <p className="truncate text-sm font-semibold text-slate-900">{t.full_name}</p>
+                                    <p className="truncate text-[15px] font-semibold text-slate-950">{t.full_name}</p>
                                     {isSuspended ? <StatusBadge status="suspended" label="Suspended" size="sm" /> : <StatusBadge status="approved" label="Active" size="sm" />}
                                   </div>
-                          <div className="mt-0.5 flex items-center gap-x-3 gap-y-0.5 flex-wrap min-w-0">
-                            <span className="truncate text-[11px] text-slate-500">{t.email ?? t.phone ?? 'No contact details'}</span>
-                            <span className="inline-flex items-center gap-1 text-[11px] text-slate-400 shrink-0">
-                              <MessageSquare className="w-3 h-3" />{t.enquiry_count} {t.enquiry_count === 1 ? 'enquiry' : 'enquiries'}
+                          <div className="mt-1 flex min-w-0 flex-wrap items-center gap-x-4 gap-y-1">
+                            <span className="max-w-full truncate text-xs text-slate-600">{t.email ?? t.phone ?? 'No contact details'}</span>
+                            <span className="inline-flex shrink-0 items-center gap-1.5 text-xs text-slate-500">
+                              <MessageSquare aria-hidden="true" className="h-3.5 w-3.5" />{t.enquiry_count} {t.enquiry_count === 1 ? 'enquiry' : 'enquiries'}
                             </span>
-                            <span className="hidden sm:inline-flex items-center gap-1 text-[11px] text-slate-400 shrink-0">
-                              <Clock className="w-3 h-3" />Joined {timeAgo(t.created_at)}
+                            <span className="hidden items-center gap-1.5 text-xs text-slate-500 sm:inline-flex">
+                              <Clock aria-hidden="true" className="h-3.5 w-3.5" />Joined {timeAgo(t.created_at)}
                             </span>
                           </div>
                         </div>
                       </button>
 
-                      {/* Actions — full-width row on mobile, inline on sm+ */}
-                      <div className="mt-2.5 -mx-3 -mb-2.5 flex items-center gap-1.5 border-t border-slate-100 px-3 py-2 sm:mt-0 sm:mx-0 sm:mb-0 sm:border-0 sm:px-0 sm:py-0 sm:absolute sm:right-3 sm:top-1/2 sm:-translate-y-1/2 sm:bg-white"
+                      {/* Keep row actions below identity until there is room for a full action group. */}
+                      <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-slate-100 pt-3 xl:mt-0 xl:shrink-0 xl:flex-nowrap xl:border-0 xl:pt-0"
                         onClick={e => e.stopPropagation()}>
                         <button type="button" onClick={() => setSelectedTenant(t)}
-                          className="flex-1 sm:flex-none h-10 sm:h-7 rounded-lg border border-slate-200 bg-white px-2.5 text-[11px] font-semibold text-slate-700 hover:bg-slate-50 transition-colors flex items-center justify-center gap-1.5">
-                          <Eye className="w-3 h-3" /> View profile
+                          className="inline-flex min-h-10 flex-1 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-700 transition-colors hover:border-slate-300 hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 xl:flex-none">
+                          <Eye aria-hidden="true" className="h-4 w-4" /> View profile
                         </button>
                         {isSuspended ? (
                           <button type="button" onClick={() => setConfirm({ type: 'unsuspend', tenant: t })}
-                            className="flex-1 sm:flex-none h-10 sm:h-7 rounded-lg border border-emerald-200 bg-emerald-50 px-2.5 text-[11px] font-semibold text-emerald-700 hover:bg-emerald-100 transition-colors">
+                            className="min-h-10 flex-1 rounded-xl border border-emerald-200 bg-emerald-50 px-3 text-xs font-semibold text-emerald-700 transition-colors hover:bg-emerald-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 xl:flex-none">
                             Reinstate
                           </button>
                         ) : (
                           <button type="button" onClick={() => setConfirm({ type: 'suspend', tenant: t })}
-                            className="flex-1 sm:flex-none h-10 sm:h-7 rounded-lg border border-amber-200 bg-amber-50 px-2.5 text-[11px] font-semibold text-amber-700 hover:bg-amber-100 transition-colors">
+                            className="min-h-10 flex-1 rounded-xl border border-amber-200 bg-amber-50 px-3 text-xs font-semibold text-amber-700 transition-colors hover:bg-amber-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2 xl:flex-none">
                             Suspend
                           </button>
                         )}
                         <button type="button" onClick={() => setConfirm({ type: 'delete', tenant: t })}
-                            className="flex-1 sm:flex-none h-10 sm:h-7 rounded-lg border border-red-100 bg-red-50 px-2.5 text-[11px] font-semibold text-red-600 hover:bg-red-100 transition-colors flex items-center justify-center gap-1.5">
-                          <Trash2 className="w-3 h-3" /> Delete
+                            className="inline-flex min-h-10 flex-1 items-center justify-center gap-2 rounded-xl border border-red-200 bg-red-50 px-3 text-xs font-semibold text-red-700 transition-colors hover:bg-red-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2 xl:flex-none">
+                          <Trash2 aria-hidden="true" className="h-4 w-4" /> Delete
                         </button>
                       </div>
                     </article>

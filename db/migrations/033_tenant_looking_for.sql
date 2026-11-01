@@ -1,5 +1,11 @@
 -- Store each tenant's property search preference.
 ALTER TABLE public.tenants
+  ADD COLUMN IF NOT EXISTS marital_status TEXT,
+  ADD COLUMN IF NOT EXISTS occupation TEXT,
+  ADD COLUMN IF NOT EXISTS employment_type TEXT,
+  ADD COLUMN IF NOT EXISTS household_size INTEGER,
+  ADD COLUMN IF NOT EXISTS city TEXT,
+  ADD COLUMN IF NOT EXISTS move_in_timeline TEXT,
   ADD COLUMN IF NOT EXISTS looking_for TEXT;
 
 -- Keep the new self-service field within the existing tenant profile update guard.
@@ -37,3 +43,27 @@ BEGIN
   RETURN NEW;
 END;
 $$;
+
+ALTER TABLE public.tenants ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "tenants_select_own" ON public.tenants;
+CREATE POLICY "tenants_select_own"
+  ON public.tenants FOR SELECT TO authenticated
+  USING (user_id = auth.uid() OR public.is_admin());
+
+DROP POLICY IF EXISTS "tenants_insert_own" ON public.tenants;
+CREATE POLICY "tenants_insert_own"
+  ON public.tenants FOR INSERT TO authenticated
+  WITH CHECK (user_id = auth.uid());
+
+DROP POLICY IF EXISTS "tenants_update_own" ON public.tenants;
+CREATE POLICY "tenants_update_own"
+  ON public.tenants FOR UPDATE TO authenticated
+  USING (user_id = auth.uid())
+  WITH CHECK (user_id = auth.uid());
+
+DROP POLICY IF EXISTS "tenants_update_admin" ON public.tenants;
+CREATE POLICY "tenants_update_admin"
+  ON public.tenants FOR UPDATE TO authenticated
+  USING (public.is_admin())
+  WITH CHECK (public.is_admin());

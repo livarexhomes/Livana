@@ -8,6 +8,16 @@ import { isAdminUser } from '../lib/auth'
 import type { User } from '@supabase/supabase-js'
 import SEO from '../components/SEO'
 
+function getTenantProfileErrorMessage(error: { code?: string }) {
+  if (['42703', 'PGRST204', 'PGRST205'].includes(error.code ?? '')) {
+    return 'Your profile database needs an update. Please ask the LIVAREX team to apply migration 033_tenant_looking_for.sql, then try again.'
+  }
+  if (error.code === '42501') {
+    return 'Your account cannot access its profile yet. Please ask the LIVAREX team to apply the tenant profile permissions migration, then try again.'
+  }
+  return 'We could not check your account details. Check your connection and try again. If the problem continues, contact LIVAREX support.'
+}
+
 export default function LoginPage() {
   const [, navigate] = useLocation()
   const [showPassword, setShowPassword] = useState(false)
@@ -44,9 +54,10 @@ export default function LoginPage() {
       .from('tenants')
       .select('id, marital_status, city, looking_for')
       .eq('user_id', user.id)
-      .maybeSingle() as { data: { id: string; marital_status: string | null; city: string | null; looking_for: string | null } | null; error: { message: string } | null }
+      .maybeSingle() as { data: { id: string; marital_status: string | null; city: string | null; looking_for: string | null } | null; error: { code?: string; message: string } | null }
     if (tenantError) {
-      setError('We could not load your profile. Please try signing in again.')
+      console.error('[login] tenant profile lookup failed:', tenantError)
+      setError(getTenantProfileErrorMessage(tenantError))
       setLoading(false)
       return
     }
@@ -59,7 +70,8 @@ export default function LoginPage() {
         phone: meta.phone ?? null,
       })
       if (insertError) {
-        setError('We could not prepare your profile. Please try signing in again.')
+        console.error('[login] tenant profile creation failed:', insertError)
+        setError(getTenantProfileErrorMessage(insertError))
         setLoading(false)
         return
       }
