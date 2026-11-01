@@ -324,7 +324,7 @@ export default function PropertyDetailPage() {
           </div>
           <h1 className="text-2xl font-bold text-gray-900 mb-2">Property not found</h1>
           <p className="text-gray-500 mb-6">This listing may have been removed or doesn't exist.</p>
-          <Link href="/listings" className="px-5 py-2.5 bg-gray-900 hover:bg-gray-800 text-white rounded-xl font-semibold transition-colors text-sm">Browse Listings</Link>
+          <Link href="/listings" className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-semibold transition-colors text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2">Browse Listings</Link>
         </div>
       </div>
     )
@@ -435,14 +435,15 @@ export default function PropertyDetailPage() {
             <div className="absolute top-3 left-3 right-3 sm:top-5 sm:left-5 sm:right-5 z-10 flex items-center justify-between">
               <button
                 onClick={() => navigate('/listings')}
-                className="flex items-center gap-2 px-4 py-2.5 bg-white border border-slate-200 text-slate-700 rounded-xl text-sm font-semibold hover:bg-blue-50 transition-all active:scale-95"
+                className="flex items-center gap-2 px-4 py-2.5 bg-white border border-slate-200 text-slate-700 rounded-xl text-sm font-semibold hover:bg-blue-50 transition-all active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
               >
                 <ArrowLeft className="w-4 h-4" /> Back
               </button>
               <div className="flex gap-2">
                 <button
                   onClick={handleShare}
-                  className="p-2.5 bg-white border border-slate-200 text-slate-700 rounded-xl hover:bg-blue-50 transition-all active:scale-95"
+                  aria-label="Share this property"
+                  className="flex h-11 w-11 items-center justify-center bg-white border border-slate-200 text-slate-700 rounded-xl hover:bg-blue-50 transition-all active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
                 >
                   <Share2 className="w-4 h-4" />
                 </button>
@@ -450,10 +451,12 @@ export default function PropertyDetailPage() {
                   <button
                     onClick={handleSave}
                     disabled={saving}
-                    className={`p-2.5 backdrop-blur-md border rounded-2xl transition-all active:scale-95 ${
+                    aria-label={saved ? 'Remove property from saved listings' : 'Save property'}
+                    aria-pressed={saved}
+                    className={`flex h-11 w-11 items-center justify-center border rounded-xl transition-all active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 ${
                       saved
                         ? 'bg-rose-500 border-rose-400 text-white'
-                        : 'bg-white/10 border-white/20 text-white hover:bg-white/20'
+                        : 'bg-white border-slate-200 text-slate-700 hover:bg-blue-50'
                     }`}
                   >
                     <Heart className={`w-4 h-4 ${saved ? 'fill-current' : ''}`} />
@@ -480,6 +483,8 @@ export default function PropertyDetailPage() {
                   <button
                     key={img.id}
                     onClick={() => setActiveImg(i)}
+                    aria-label={`View photo ${i + 1} of ${images.length}`}
+                    aria-current={activeImg === i ? 'true' : undefined}
                     className={`relative shrink-0 w-16 h-12 md:w-20 md:h-14 rounded-xl overflow-hidden transition-all ${
                       activeImg === i ? 'ring-2 ring-blue-600 ring-offset-2' : 'opacity-50 hover:opacity-80'
                     }`}

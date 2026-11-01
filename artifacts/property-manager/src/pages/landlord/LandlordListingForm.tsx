@@ -349,7 +349,7 @@ export default function LandlordListingForm() {
   if (loadingData) {
     return (
       <AuthGuard require="landlord">
-        <div className="flex h-screen overflow-hidden bg-[#F4F6FB]">
+        <div className="flex h-dvh overflow-hidden bg-[#F4F6FB]">
           <LandlordSidebar userName={landlord?.full_name} userEmail={user?.email} />
           <div className="flex-1 flex items-center justify-center">
             <div className="animate-spin w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full" />
@@ -361,7 +361,7 @@ export default function LandlordListingForm() {
 
   return (
     <AuthGuard require="landlord">
-      <div className="flex h-screen overflow-hidden bg-[#F4F6FB]">
+      <div className="flex h-dvh overflow-hidden bg-[#F4F6FB]">
         <LandlordSidebar userName={landlord?.full_name} userEmail={user?.email} isVerified={landlord?.is_verified} />
 
         <div className="flex-1 flex flex-col min-w-0">
@@ -391,7 +391,7 @@ export default function LandlordListingForm() {
 
           <main className="flex-1 overflow-y-auto p-4 md:p-6 pb-24 md:pb-6">
             <div className="max-w-6xl mx-auto">
-              <div className="mb-6 rounded-2xl border border-blue-100 bg-gradient-to-r from-blue-50 via-white to-white px-5 py-4 sm:px-6">
+              <div className="mb-6 rounded-2xl border border-blue-100 bg-white px-5 py-4 sm:px-6">
                 <p className="text-xs font-bold uppercase tracking-[0.12em] text-blue-700">
                   {isEdit ? 'Manage property' : 'New property'}
                 </p>
@@ -403,7 +403,7 @@ export default function LandlordListingForm() {
                 </p>
               </div>
               {error && (
-                <div className="mb-5 px-4 py-3.5 bg-red-50 border border-red-200 rounded-xl text-sm text-red-700 flex items-start gap-2">
+                <div role="alert" className="mb-5 px-4 py-3.5 bg-red-50 border border-red-200 rounded-xl text-sm text-red-700 flex items-start gap-2">
                   <span className="font-semibold">Error:</span> {error}
                 </div>
               )}
@@ -437,20 +437,20 @@ export default function LandlordListingForm() {
                   </div>
 
                   <div>
-                    <label className="flex items-center gap-1.5 text-sm font-semibold text-gray-700 mb-2">
+                    <label htmlFor="listing-title" className="flex items-center gap-1.5 text-sm font-semibold text-gray-700 mb-2">
                       <FileText className="w-3.5 h-3.5 text-gray-400" /> Title *
                     </label>
-                    <input required value={form.title}
+                    <input id="listing-title" required value={form.title}
                       onChange={e => set('title', e.target.value)}
                       placeholder="e.g. Modern 3-Bedroom Apartment in Lekki"
                       className={FIELD_CLASS} />
                   </div>
 
                   <div>
-                    <label className="flex items-center gap-1.5 text-sm font-semibold text-gray-700 mb-2">
+                    <label htmlFor="listing-description" className="flex items-center gap-1.5 text-sm font-semibold text-gray-700 mb-2">
                       <FileText className="w-3.5 h-3.5 text-gray-400" /> Description
                     </label>
-                    <textarea rows={4} value={form.description}
+                    <textarea id="listing-description" rows={4} value={form.description}
                       onChange={e => set('description', e.target.value)}
                       placeholder="Describe the property, amenities, neighborhood…"
                       className={FIELD_CLASS + ' resize-none'} />
@@ -466,8 +466,8 @@ export default function LandlordListingForm() {
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                      <label className="text-sm font-semibold text-gray-700 mb-2 block">State *</label>
-                      <select required value={form.city}
+                      <label htmlFor="listing-state" className="text-sm font-semibold text-gray-700 mb-2 block">State *</label>
+                      <select id="listing-state" required value={form.city}
                         onChange={e => set('city', e.target.value)}
                         className={SELECT_CLASS}>
                         <option value="">Select state…</option>
@@ -475,8 +475,8 @@ export default function LandlordListingForm() {
                       </select>
                     </div>
                     <div>
-                      <label className="text-sm font-semibold text-gray-700 mb-2 block">Area / Neighbourhood *</label>
-                      <input required value={form.address}
+                      <label htmlFor="listing-area" className="text-sm font-semibold text-gray-700 mb-2 block">Area / Neighbourhood *</label>
+                      <input id="listing-area" required value={form.address}
                         onChange={e => set('address', e.target.value)}
                         placeholder={form.city && POPULAR_AREAS[form.city] ? `e.g. ${POPULAR_AREAS[form.city][0]}` : 'e.g. Lekki, Maitama…'}
                         list="landlord-area-suggestions"
@@ -506,6 +506,7 @@ export default function LandlordListingForm() {
                         <DollarSign className="w-3.5 h-3.5 text-gray-400" /> Rent Amount (₦) *
                       </label>
                       <MoneyInput
+                        aria-label="Rent amount in naira"
                         size="lg"
                         value={form.price}
                         onChange={v => set('price', v)}
@@ -529,6 +530,7 @@ export default function LandlordListingForm() {
                           <ReceiptText className="w-3.5 h-3.5 text-gray-400" /> Agreement Fee (₦)
                         </label>
                         <MoneyInput
+                          aria-label="Agreement fee in naira"
                           size="lg"
                           value={form.agreement_fee}
                           onChange={v => set('agreement_fee', v)}
@@ -540,6 +542,7 @@ export default function LandlordListingForm() {
                           <ReceiptText className="w-3.5 h-3.5 text-gray-400" /> Other Charges (₦)
                         </label>
                         <MoneyInput
+                          aria-label="Other charges in naira"
                           size="lg"
                           value={form.other_charges}
                           onChange={v => set('other_charges', v)}
@@ -548,10 +551,10 @@ export default function LandlordListingForm() {
                       </div>
                     </div>
                     <div>
-                      <label className="flex items-center gap-1.5 text-sm font-semibold text-gray-700 mb-2">
+                      <label htmlFor="listing-area-sqft" className="flex items-center gap-1.5 text-sm font-semibold text-gray-700 mb-2">
                         <Maximize2 className="w-3.5 h-3.5 text-gray-400" /> Area (sqft)
                       </label>
-                      <input type="number" min="0" value={form.area_sqft}
+                      <input id="listing-area-sqft" type="number" min="0" value={form.area_sqft}
                         onChange={e => set('area_sqft', e.target.value)}
                         placeholder="1200"
                         className={FIELD_CLASS} />
@@ -639,24 +642,24 @@ export default function LandlordListingForm() {
 
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                     <div>
-                      <label className="flex items-center gap-1.5 text-sm font-semibold text-gray-700 mb-2">
+                      <label htmlFor="listing-bedrooms" className="flex items-center gap-1.5 text-sm font-semibold text-gray-700 mb-2">
                         <BedDouble className="w-3.5 h-3.5 text-gray-400" /> Bedrooms
                       </label>
-                      <select value={form.bedrooms} onChange={e => set('bedrooms', e.target.value)} className={SELECT_CLASS}>
+                      <select id="listing-bedrooms" value={form.bedrooms} onChange={e => set('bedrooms', e.target.value)} className={SELECT_CLASS}>
                         {[1,2,3,4,5,6,7,8].map(n => <option key={n} value={n}>{n}</option>)}
                       </select>
                     </div>
                     <div>
-                      <label className="flex items-center gap-1.5 text-sm font-semibold text-gray-700 mb-2">
+                      <label htmlFor="listing-bathrooms" className="flex items-center gap-1.5 text-sm font-semibold text-gray-700 mb-2">
                         <Bath className="w-3.5 h-3.5 text-gray-400" /> Bathrooms
                       </label>
-                      <select value={form.bathrooms} onChange={e => set('bathrooms', e.target.value)} className={SELECT_CLASS}>
+                      <select id="listing-bathrooms" value={form.bathrooms} onChange={e => set('bathrooms', e.target.value)} className={SELECT_CLASS}>
                         {[1,2,3,4,5,6].map(n => <option key={n} value={n}>{n}</option>)}
                       </select>
                     </div>
                     <div>
-                      <label className="text-sm font-semibold text-gray-700 mb-2 block">Type</label>
-                      <select value={form.type} onChange={e => set('type', e.target.value)} className={SELECT_CLASS}>
+                      <label htmlFor="listing-type" className="text-sm font-semibold text-gray-700 mb-2 block">Type</label>
+                      <select id="listing-type" value={form.type} onChange={e => set('type', e.target.value)} className={SELECT_CLASS}>
                         <option value="rent">For Rent</option>
                         <option value="sale">For Sale</option>
                         <option value="lease">Lease</option>
@@ -664,8 +667,8 @@ export default function LandlordListingForm() {
                       </select>
                     </div>
                     <div>
-                      <label className="text-sm font-semibold text-gray-700 mb-2 block">Status</label>
-                      <select value={form.status} onChange={e => set('status', e.target.value)} className={SELECT_CLASS}>
+                      <label htmlFor="listing-status" className="text-sm font-semibold text-gray-700 mb-2 block">Status</label>
+                      <select id="listing-status" value={form.status} onChange={e => set('status', e.target.value)} className={SELECT_CLASS}>
                         <option value="available">Available</option>
                         <option value="taken">Taken</option>
                         <option value="coming_soon">Coming Soon</option>
@@ -716,14 +719,14 @@ export default function LandlordListingForm() {
                             />
                             <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-1.5">
                               <button type="button" onClick={() => setCoverExisting(img.id)}
-                                title="Set as cover"
-                                className={`w-7 h-7 rounded-lg flex items-center justify-center transition-colors ${img.is_cover ? 'bg-amber-400 text-white' : 'bg-white/90 text-gray-700 hover:bg-amber-400 hover:text-white'}`}>
+                                aria-label={img.is_cover ? `${img.alt_text || 'Property image'} is the cover photo` : `Set ${img.alt_text || 'property image'} as cover`}
+                                className={`w-9 h-9 rounded-lg flex items-center justify-center transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${img.is_cover ? 'bg-amber-400 text-white' : 'bg-white/90 text-gray-700 hover:bg-amber-400 hover:text-white'}`}>
                                 <Star className="w-3.5 h-3.5" fill={img.is_cover ? 'currentColor' : 'none'} />
                               </button>
                               <button type="button" onClick={() => deleteExistingImage(img)}
                                 disabled={deletingImg === img.id}
-                                title="Delete"
-                                className="w-7 h-7 rounded-lg bg-white/90 flex items-center justify-center text-red-500 hover:bg-red-500 hover:text-white transition-colors disabled:opacity-50">
+                                aria-label={`Delete ${img.alt_text || 'property image'}`}
+                                className="w-9 h-9 rounded-lg bg-white/90 flex items-center justify-center text-red-600 hover:bg-red-500 hover:text-white transition-colors disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500">
                                 {deletingImg === img.id
                                   ? <div className="w-3 h-3 border-2 border-red-400 border-t-transparent rounded-full animate-spin" />
                                   : <X className="w-3.5 h-3.5" />
@@ -757,7 +760,8 @@ export default function LandlordListingForm() {
                             )}
                             <button type="button"
                               onClick={e => { e.stopPropagation(); removeNewImage(i) }}
-                              className="absolute top-1 right-1 w-6 h-6 bg-white/90 hover:bg-red-500 hover:text-white rounded-lg flex items-center justify-center text-gray-700 transition-colors opacity-0 group-hover:opacity-100">
+                              aria-label={`Remove photo ${i + 1}`}
+                              className="absolute top-1 right-1 w-9 h-9 bg-white/95 hover:bg-red-500 hover:text-white rounded-lg flex items-center justify-center text-gray-700 transition-colors opacity-100 md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500">
                               <X className="w-3 h-3" />
                             </button>
                           </div>
@@ -769,7 +773,7 @@ export default function LandlordListingForm() {
                   {/* Upload area */}
                   <button type="button"
                     onClick={() => fileInputRef.current?.click()}
-                    className="w-full border-2 border-dashed border-gray-200 hover:border-blue-400 hover:bg-blue-50/40 rounded-xl py-8 flex flex-col items-center gap-2 text-gray-400 hover:text-blue-600 transition-all">
+                    className="w-full min-h-28 border-2 border-dashed border-gray-200 hover:border-blue-400 hover:bg-blue-50/40 rounded-xl py-8 flex flex-col items-center gap-2 text-gray-500 hover:text-blue-700 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2">
                     <ImagePlus className="w-7 h-7" />
                     <div className="text-center">
                       <p className="text-sm font-semibold">Click to add photos</p>

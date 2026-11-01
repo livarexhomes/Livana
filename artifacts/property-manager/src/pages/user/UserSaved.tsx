@@ -62,13 +62,13 @@ export default function UserSavedPage() {
             </div>
           ) : items.length === 0 ? (
             <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-16 text-center flex flex-col items-center">
-              <div className="w-14 h-14 rounded-2xl bg-red-50 flex items-center justify-center mb-4">
-                <Heart className="w-7 h-7 text-red-400" />
+              <div className="w-14 h-14 rounded-2xl bg-blue-50 flex items-center justify-center mb-4">
+                <Heart className="w-7 h-7 text-blue-600" />
               </div>
               <h3 className="font-bold text-gray-900 mb-1">No saved properties yet</h3>
               <p className="text-sm text-gray-500 mb-5">Bookmark any listing to find it here.</p>
               <Link href="/listings"
-                className="inline-flex items-center gap-2 px-5 py-2.5 bg-gray-900 text-white text-sm font-bold rounded-xl hover:bg-gray-800 transition-colors">
+                className="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white text-sm font-bold rounded-xl hover:bg-blue-700 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2">
                 Browse listings <ArrowRight className="w-4 h-4" />
               </Link>
             </div>
@@ -96,7 +96,8 @@ export default function UserSavedPage() {
                     <button
                       onClick={() => handleUnsave(item.id, item.property_id)}
                       disabled={removingId === item.property_id}
-                      className="absolute top-3 right-3 z-10 flex items-center gap-1.5 px-3 py-1.5 bg-white border border-red-200 text-red-500 text-xs font-semibold rounded-xl shadow-sm hover:bg-red-50 transition-all opacity-0 group-hover:opacity-100 disabled:opacity-50"
+                      aria-label={`Remove ${item.properties.title} from saved properties`}
+                      className="absolute top-3 right-3 z-10 flex min-h-10 items-center gap-1.5 px-3 py-1.5 bg-white border border-gray-200 text-gray-700 text-xs font-semibold rounded-xl shadow-sm hover:border-red-200 hover:bg-red-50 hover:text-red-600 transition-all md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 disabled:opacity-50"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                       Remove

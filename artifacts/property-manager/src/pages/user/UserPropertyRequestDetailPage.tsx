@@ -81,7 +81,7 @@ export default function UserPropertyRequestDetailPage() {
     return (
       <AuthGuard require="tenant">
         <UserLayout title="Property Request">
-          <div className="mx-auto max-w-5xl px-4 py-6 md:px-6">
+          <div className="mx-auto max-w-5xl py-2">
             <div className="h-10 w-32 animate-pulse rounded-xl bg-slate-200" />
           </div>
         </UserLayout>
@@ -93,11 +93,11 @@ export default function UserPropertyRequestDetailPage() {
     return (
       <AuthGuard require="tenant">
         <UserLayout title="Property Request">
-          <div className="mx-auto max-w-5xl px-4 py-6 md:px-6">
+          <div className="mx-auto max-w-5xl py-2">
             <button
               type="button"
               onClick={() => navigate('/user/requests')}
-              className="inline-flex items-center gap-2 text-sm font-semibold text-blue-600"
+              className="inline-flex items-center gap-2 rounded text-sm font-semibold text-blue-700 hover:text-blue-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
             >
               <ArrowLeft className="h-4 w-4" />
               Back to Property Requests
@@ -114,11 +114,11 @@ export default function UserPropertyRequestDetailPage() {
   return (
     <AuthGuard require="tenant">
       <UserLayout title="Property Request">
-        <div className="mx-auto max-w-6xl px-4 py-6 md:px-6">
+        <div className="mx-auto max-w-6xl py-2">
           <button
             type="button"
             onClick={() => navigate('/user/requests')}
-            className="inline-flex items-center gap-2 text-sm font-semibold text-blue-600"
+            className="inline-flex items-center gap-2 rounded text-sm font-semibold text-blue-700 hover:text-blue-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
           >
             <ArrowLeft className="h-4 w-4" />
             Back to Property Requests

@@ -17,18 +17,21 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 // ── Collapsible FAQ row ───────────────────────────────────────────────────────
 function FAQ({ q, children }: { q: string; children: React.ReactNode }) {
   const [open, setOpen] = useState(false)
+  const answerId = `cookie-answer-${q.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`
   return (
     <div className="rounded-2xl border border-gray-200 overflow-hidden">
       <button
         type="button"
+        aria-expanded={open}
+        aria-controls={answerId}
         onClick={() => setOpen(o => !o)}
-        className="w-full flex items-center justify-between gap-3 px-5 py-4 bg-white hover:bg-gray-50 text-left transition-colors"
+        className="w-full flex min-h-12 items-center justify-between gap-3 px-5 py-4 bg-white hover:bg-blue-50/50 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-blue-600"
       >
         <span className="text-sm font-semibold text-gray-900">{q}</span>
         {open ? <ChevronUp className="w-4 h-4 text-gray-400 shrink-0" /> : <ChevronDown className="w-4 h-4 text-gray-400 shrink-0" />}
       </button>
       {open && (
-        <div className="px-5 pb-5 pt-2 bg-gray-50 text-sm text-gray-600 leading-relaxed">
+        <div id={answerId} className="px-5 pb-5 pt-2 bg-slate-50 text-sm text-gray-600 leading-relaxed">
           {children}
         </div>
       )}
@@ -80,23 +83,23 @@ function CookieCard({
 // ── Page ──────────────────────────────────────────────────────────────────────
 export default function CookiePolicyPage() {
   return (
-    <div className="min-h-screen bg-[#F8F8F6] flex flex-col">
+    <div className="min-h-screen bg-slate-50 flex flex-col">
       <PublicNavbar />
 
       <main className="flex-1">
         {/* Hero */}
-        <div className="bg-gray-900 text-white pt-[88px] pb-16 px-4">
+        <div className="bg-blue-950 text-white pt-[88px] pb-14 px-5 sm:pb-16">
           <div className="max-w-3xl mx-auto">
             <div className="flex items-center gap-2.5 mb-4">
               <Cookie className="w-5 h-5 text-blue-400" />
               <p className="text-xs font-bold uppercase tracking-widest text-blue-400">Legal</p>
             </div>
-            <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight mb-4">Cookie Policy</h1>
+            <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold leading-tight tracking-tight mb-4">Cookie Policy</h1>
             <p className="text-gray-400 text-sm">Last updated: July 29, 2025 · Effective for all Livarex users</p>
           </div>
         </div>
 
-        <div className="max-w-3xl mx-auto px-4 py-14 space-y-12">
+        <div className="max-w-3xl mx-auto w-full px-5 sm:px-8 py-10 sm:py-14 space-y-12">
 
           {/* Intro */}
           <p className="text-gray-600 text-sm leading-relaxed">
@@ -143,7 +146,7 @@ export default function CookiePolicyPage() {
               />
               <CookieCard
                 icon={BarChart2}
-                colour="bg-violet-50 text-violet-600"
+                colour="bg-slate-100 text-slate-600"
                 name="Analytics Cookies"
                 required={false}
                 purpose="First-party analytics help us estimate unique website visitors and page views. A random identifier is stored in your browser's local storage and used only to count public-site visits. We do not use it to identify you or collect your IP address."
@@ -151,7 +154,7 @@ export default function CookiePolicyPage() {
               />
               <CookieCard
                 icon={Settings2}
-                colour="bg-emerald-50 text-emerald-600"
+                colour="bg-blue-50 text-blue-600"
                 name="Functional Cookies"
                 required={false}
                 purpose="These cookies remember choices you make to provide a more personalised experience. For example, remembering your preferred city, your last search filters, your saved properties list, or your chat history so you don't have to re-enter information on each visit."
@@ -159,7 +162,7 @@ export default function CookiePolicyPage() {
               />
               <CookieCard
                 icon={Megaphone}
-                colour="bg-amber-50 text-amber-600"
+                colour="bg-slate-100 text-slate-600"
                 name="Marketing Cookies"
                 required={false}
                 purpose="These cookies may be used to deliver advertisements that are more relevant to you and your interests, to limit how many times you see an ad, and to measure the effectiveness of advertising campaigns. They are typically placed by third-party advertising partners."
@@ -172,7 +175,7 @@ export default function CookiePolicyPage() {
           <Section title="3. Cookies We Specifically Use">
             <div className="overflow-x-auto">
               <table className="w-full text-xs border border-gray-200 rounded-2xl overflow-hidden">
-                <thead className="bg-gray-900 text-white">
+                <thead className="bg-blue-950 text-white">
                   <tr>
                     {['Cookie Name', 'Provider', 'Purpose', 'Duration', 'Type'].map(h => (
                       <th key={h} className="text-left px-4 py-3 font-semibold">{h}</th>
@@ -198,9 +201,9 @@ export default function CookiePolicyPage() {
                       <td className="px-4 py-3">
                         <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${
                           row.type === 'Essential' ? 'bg-blue-50 text-blue-600' :
-                          row.type === 'Functional' ? 'bg-emerald-50 text-emerald-600' :
-                          row.type === 'Analytics' ? 'bg-violet-50 text-violet-600' :
-                          'bg-amber-50 text-amber-600'
+                          row.type === 'Functional' ? 'bg-blue-50 text-blue-700' :
+                          row.type === 'Analytics' ? 'bg-slate-100 text-slate-600' :
+                          'bg-slate-100 text-slate-600'
                         }`}>{row.type}</span>
                       </td>
                     </tr>

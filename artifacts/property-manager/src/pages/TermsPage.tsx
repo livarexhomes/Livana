@@ -18,19 +18,19 @@ export default function TermsPage() {
   }, [])
 
   return (
-    <div className="min-h-screen bg-[#F8F8F6] flex flex-col">
+    <div className="min-h-screen bg-slate-50 flex flex-col">
       <PublicNavbar />
 
       <main className="flex-1">
-        <div className="bg-gray-900 text-white pt-[88px] pb-16 px-4">
+        <div className="bg-blue-950 text-white pt-[88px] pb-14 px-4 sm:pb-16">
           <div className="max-w-3xl mx-auto">
             <p className="text-xs font-bold uppercase tracking-widest text-blue-400 mb-3">Legal</p>
-            <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight mb-4">Terms and Conditions</h1>
+            <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight leading-tight mb-4">Terms and Conditions</h1>
             <p className="text-gray-400 text-sm">Last updated: June 27, 2025</p>
           </div>
         </div>
 
-        <div className="max-w-3xl mx-auto px-4 py-14 space-y-10">
+        <div className="max-w-3xl mx-auto w-full px-5 sm:px-8 py-10 sm:py-14 space-y-10">
 
           <p className="text-gray-600 text-sm leading-relaxed">
             Welcome to Livarex Homes Limited ("Livarex," "we," "our," or "us"). These Terms and Conditions ("Terms") govern your access to and use of the Livarex website, mobile applications, and all related services (collectively, the "Platform").
@@ -213,7 +213,7 @@ export default function TermsPage() {
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <section>
-      <h2 className="text-lg font-extrabold text-gray-900 mb-3">{title}</h2>
+      <h2 className="text-lg font-bold text-slate-900 mb-3 border-l-2 border-blue-600 pl-3">{title}</h2>
       <div className="text-gray-600 text-sm leading-relaxed space-y-2 [&_ul]:list-disc [&_ul]:pl-5 [&_ul]:space-y-1.5">
         {children}
       </div>

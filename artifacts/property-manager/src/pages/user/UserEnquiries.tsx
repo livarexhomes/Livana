@@ -132,7 +132,7 @@ function NewTicketForm({ tenantId, onCreated }: { tenantId: string; onCreated: (
             value={subject}
             onChange={e => setSubject(e.target.value)}
             placeholder="Brief description of your issue"
-            className="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm bg-white text-gray-900 placeholder-gray-400 caret-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-900 transition-all"
+            className="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm bg-white text-gray-900 placeholder-gray-400 caret-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 transition-all"
           />
         </div>
 
@@ -163,7 +163,7 @@ function NewTicketForm({ tenantId, onCreated }: { tenantId: string; onCreated: (
             value={body}
             onChange={e => setBody(e.target.value)}
             placeholder="Describe the issue in detail…"
-            className="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm bg-white text-gray-900 placeholder-gray-400 caret-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-900 transition-all resize-none"
+            className="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm bg-white text-gray-900 placeholder-gray-400 caret-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 transition-all resize-y"
           />
         </div>
 
@@ -175,7 +175,7 @@ function NewTicketForm({ tenantId, onCreated }: { tenantId: string; onCreated: (
 
         <button
           type="submit" disabled={loading}
-          className="w-full py-3 bg-gray-900 hover:bg-gray-800 disabled:opacity-60 text-white font-bold rounded-xl transition-colors text-sm flex items-center justify-center gap-2"
+          className="w-full py-3 bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white font-bold rounded-xl transition-colors text-sm flex items-center justify-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
         >
           {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
           {loading ? 'Submitting…' : 'Submit Ticket'}
@@ -376,14 +376,14 @@ function ChatThread({ ticket, onBack }: { ticket: SupportTicket; onBack: () => v
               return (
                 <div key={msg.id} className={`flex items-end gap-2 ${isTenant ? 'justify-end' : 'justify-start'}`}>
                   {!isTenant && (
-                    <div className="w-7 h-7 rounded-full bg-gray-900 flex items-center justify-center shrink-0 shadow-sm">
+                    <div className="w-7 h-7 rounded-full bg-blue-950 flex items-center justify-center shrink-0 shadow-sm">
                       <HeadphonesIcon className="w-3.5 h-3.5 text-white" />
                     </div>
                   )}
                   <div className={`max-w-[80%] sm:max-w-[75%] ${isTenant ? 'items-end' : 'items-start'} flex flex-col gap-1`}>
                     <div className={`px-4 py-2.5 rounded-2xl text-sm leading-relaxed break-words overflow-wrap-anywhere ${
                       isTenant
-                        ? 'bg-gray-900 text-white rounded-br-sm'
+                        ? 'bg-blue-600 text-white rounded-br-sm'
                         : 'bg-gray-100 text-gray-800 rounded-bl-sm'
                     } ${msg.id.startsWith('opt-') ? 'opacity-60' : ''}`}>
                       {msg.attachment_url && (
@@ -432,7 +432,8 @@ function ChatThread({ ticket, onBack }: { ticket: SupportTicket; onBack: () => v
               <img src={imagePreview} alt="preview" className="h-20 rounded-xl object-cover border border-gray-200" />
               <button
                 type="button" onClick={clearImage}
-                className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-gray-900 text-white flex items-center justify-center hover:bg-red-600 transition-colors"
+                aria-label="Remove attachment"
+                className="absolute -top-1.5 -right-1.5 w-7 h-7 rounded-full bg-gray-800 text-white flex items-center justify-center hover:bg-red-600 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
               >
                 <XIcon className="w-3 h-3" />
               </button>
@@ -443,7 +444,7 @@ function ChatThread({ ticket, onBack }: { ticket: SupportTicket; onBack: () => v
             <button
               type="button"
               onClick={() => fileInputRef.current?.click()}
-              className="w-10 h-10 rounded-xl border border-gray-200 bg-white hover:bg-gray-100 text-gray-500 flex items-center justify-center transition-colors shrink-0"
+              className="w-10 h-10 rounded-xl border border-gray-200 bg-white hover:bg-blue-50 hover:text-blue-700 text-gray-600 flex items-center justify-center transition-colors shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
               title="Attach image"
             >
               <ImageIcon className="w-4 h-4" />
@@ -461,11 +462,11 @@ function ChatThread({ ticket, onBack }: { ticket: SupportTicket; onBack: () => v
               onChange={e => setInput(e.target.value)}
               onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(e as any) } }}
               placeholder="Type a message… (Enter to send)"
-              className="flex-1 px-4 py-2.5 rounded-xl border border-gray-200 text-sm bg-white text-gray-900 placeholder-gray-400 caret-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-900 transition-all resize-none"
+              className="flex-1 px-4 py-2.5 rounded-xl border border-gray-200 text-sm bg-white text-gray-900 placeholder-gray-400 caret-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 transition-all resize-none"
             />
             <button
               type="submit" disabled={(!input.trim() && !imageFile) || sending}
-              className="w-10 h-10 rounded-xl bg-gray-900 hover:bg-gray-800 disabled:opacity-40 text-white flex items-center justify-center transition-all shrink-0"
+              className="w-10 h-10 rounded-xl bg-blue-600 hover:bg-blue-700 disabled:opacity-40 text-white flex items-center justify-center transition-colors shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
             >
               {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
             </button>
@@ -582,7 +583,7 @@ function PropertyEnquiryThread({ enquiry, onBack }: { enquiry: PropertyEnquiry; 
           return (
             <div key={reply.id} className={`flex items-end gap-2 ${isTenant ? 'justify-end' : 'justify-start'}`}>
               {!isTenant && (
-                <div className="w-7 h-7 rounded-full bg-gray-900 flex items-center justify-center shrink-0">
+                <div className="w-7 h-7 rounded-full bg-blue-950 flex items-center justify-center shrink-0">
                   <HeadphonesIcon className="w-3.5 h-3.5 text-white" />
                 </div>
               )}
@@ -706,7 +707,7 @@ export default function UserSupportPage() {
   return (
     <AuthGuard require="tenant">
       <UserLayout title="Support">
-        <div className="flex gap-5 h-[calc(100dvh-130px)] min-h-0">
+        <div className="flex gap-4 lg:gap-5 h-[calc(100dvh-130px)] min-h-0">
 
           {/* ── Left: ticket list ── */}
           <div className={`flex flex-col gap-3 w-full lg:w-80 xl:w-96 shrink-0 min-h-0 ${hasSelection ? 'hidden lg:flex' : 'flex'}`}>
@@ -721,9 +722,9 @@ export default function UserSupportPage() {
                 onClick={() => { setShowNewForm(v => !v); setSelectedId(null); setSelectedEnquiryId(null) }}
                 className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-semibold transition-all border ${
                   showNewForm
-                    ? 'bg-gray-900 text-white border-gray-900'
+                    ? 'bg-blue-600 text-white border-blue-600'
                     : 'bg-white text-gray-700 border-gray-200 hover:border-gray-400'
-                }`}
+                } focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1`}
               >
                 <Plus className="w-3.5 h-3.5" /> New ticket
               </button>
@@ -756,7 +757,7 @@ export default function UserSupportPage() {
                   <p className="text-xs text-gray-400 mb-4">Listing enquiries and support tickets will appear here.</p>
                   <button
                     onClick={() => setShowNewForm(true)}
-                    className="flex items-center gap-1.5 px-4 py-2 bg-gray-900 text-white text-sm font-semibold rounded-xl hover:bg-gray-800 transition-colors"
+                    className="flex items-center gap-1.5 px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded-xl hover:bg-blue-700 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
                   >
                     <Plus className="w-3.5 h-3.5" /> New ticket
                   </button>
@@ -770,7 +771,7 @@ export default function UserSupportPage() {
                     <button
                       key={`enquiry-${enquiry.id}`}
                       onClick={() => { setSelectedEnquiryId(enquiry.id); setSelectedId(null); setShowNewForm(false) }}
-                      className={`w-full text-left px-4 py-3.5 rounded-2xl border transition-all ${isActive ? 'bg-gray-900 border-gray-900 text-white shadow-md' : 'bg-white border-gray-100 hover:border-gray-200 hover:shadow-sm'}`}
+                      className={`w-full text-left px-4 py-3.5 rounded-2xl border transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${isActive ? 'bg-blue-600 border-blue-600 text-white shadow-sm' : 'bg-white border-gray-100 hover:border-blue-200 hover:shadow-sm'}`}
                     >
                       <div className="flex items-start justify-between gap-2">
                         <p className={`font-semibold text-sm truncate ${isActive ? 'text-white' : 'text-gray-900'}`}>
@@ -798,7 +799,7 @@ export default function UserSupportPage() {
                       onClick={() => { setSelectedId(ticket.id); setSelectedEnquiryId(null); setShowNewForm(false) }}
                       className={`w-full text-left px-4 py-3.5 rounded-2xl border transition-all ${
                         isActive
-                          ? 'bg-gray-900 border-gray-900 text-white shadow-md'
+                          ? 'bg-blue-600 border-blue-600 text-white shadow-sm'
                           : 'bg-white border-gray-100 hover:border-gray-200 hover:shadow-sm'
                       }`}
                     >

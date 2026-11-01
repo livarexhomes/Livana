@@ -63,7 +63,7 @@ export default function AboutPage() {
       <PublicNavbar />
       <style>{`
         .livarex-about section[id] { scroll-margin-top: 110px; }
-        .livarex-about a:focus-visible { outline: 3px solid #2563eb; outline-offset: 5px; }
+        .livarex-about a:focus-visible { outline: 3px solid #2563eb; outline-offset: 4px; border-radius: 4px; }
         @media (prefers-reduced-motion: reduce) {
           .livarex-about *, .livarex-about *::before, .livarex-about *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
         }
@@ -78,7 +78,7 @@ export default function AboutPage() {
                 <div className="inline-flex items-center gap-2 rounded-full border border-blue-100 bg-blue-50 px-3 py-2 text-xs font-semibold text-blue-700">
                   <span className="h-3.5 w-3.5 rounded-full bg-blue-600" aria-hidden="true" /> About LIVAREX
                 </div>
-                <h1 id="about-title" className="mt-6 max-w-2xl text-[42px] font-semibold leading-[1.06] tracking-[-0.055em] sm:text-5xl lg:text-[64px]">
+                <h1 id="about-title" className="mt-6 max-w-2xl text-[clamp(2.5rem,10vw,3rem)] font-semibold leading-[1.06] tracking-[-0.055em] sm:text-5xl lg:text-[64px]">
                   A place to live.<br />A connection<br /><span className="text-blue-600">you can build on.</span>
                 </h1>
                 <p className="mt-6 max-w-lg text-base leading-8 text-slate-600">

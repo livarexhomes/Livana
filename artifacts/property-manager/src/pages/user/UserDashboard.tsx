@@ -33,7 +33,7 @@ export function UserLayout({ children, title }: { children: React.ReactNode; tit
   const initials = displayName.split(' ').slice(0, 2).map((w: string) => w[0]).join('').toUpperCase() || 'U'
 
   return (
-    <div className="flex h-screen overflow-hidden bg-[#F4F6FB]">
+    <div className="flex h-dvh overflow-hidden bg-[#F4F6FB]">
       {/* Desktop sidebar */}
       <UserSidebar
         displayName={displayName}
@@ -47,7 +47,7 @@ export function UserLayout({ children, title }: { children: React.ReactNode; tit
         <header className="flex items-center justify-between px-4 md:px-8 py-4 bg-white border-b border-gray-100 shrink-0">
           <h1 className="text-base font-extrabold text-gray-900 tracking-tight">{title}</h1>
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center shadow-sm">
+            <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center shadow-sm">
               <span className="text-xs font-bold text-white">{initials}</span>
             </div>
             <span className="text-sm font-semibold text-gray-700 hidden sm:block">{displayName}</span>
@@ -217,9 +217,9 @@ export default function UserDashboardPage() {
                       role="tab"
                       aria-selected={selected}
                       onClick={() => setTypeFilter(t.value)}
-                      className={`relative inline-flex min-h-9 shrink-0 items-center justify-center rounded-xl px-3.5 text-xs font-semibold whitespace-nowrap transition-all duration-200 active:scale-[0.97] ${
+                      className={`relative inline-flex min-h-9 shrink-0 items-center justify-center rounded-xl px-3.5 text-xs font-semibold whitespace-nowrap transition-all duration-200 active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 ${
                         selected
-                          ? 'bg-white text-slate-900 shadow-[0_4px_12px_-4px_rgba(15,23,42,0.18),0_1px_0_rgba(255,255,255,1)_inset] ring-1 ring-slate-200/70'
+                                ? 'bg-blue-600 text-white shadow-sm'
                           : 'text-slate-500 hover:text-slate-800'
                       }`}
                     >
@@ -296,12 +296,12 @@ export default function UserDashboardPage() {
           {/* Count */}
           <div className="flex items-center justify-between gap-3 px-1">
             <div className="flex items-center gap-2">
-              <span className="inline-flex h-6 min-w-6 items-center justify-center rounded-full bg-slate-900 px-2 text-[11px] font-bold text-white shadow-sm">
+              <span className="inline-flex h-6 min-w-6 items-center justify-center rounded-full bg-blue-600 px-2 text-[11px] font-bold text-white shadow-sm">
                 {filtered.length}
               </span>
               <p className="text-sm text-slate-500">
                 {filtered.length === 1 ? 'property' : 'properties'}
-                {hasFilters && <span className="ml-1 font-medium text-emerald-600">· filtered</span>}
+                {hasFilters && <span className="ml-1 font-medium text-blue-700">· filtered</span>}
               </p>
             </div>
             <Link
@@ -336,13 +336,13 @@ export default function UserDashboardPage() {
               <p className="text-sm text-gray-500 mb-4">Can't find what you're looking for?</p>
               <p className="text-sm text-gray-500 mb-5">Create a property request and let Livarex help you find it.</p>
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-                <button onClick={openPropertyRequestsBuilder}
-                  className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-xl transition-colors">
+                <button type="button" onClick={openPropertyRequestsBuilder}
+                  className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-xl transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2">
                   Create Property Request
                 </button>
                 {hasFilters && (
-                  <button onClick={clearFilters}
-                    className="px-5 py-2.5 bg-gray-900 hover:bg-gray-800 text-white text-sm font-semibold rounded-xl transition-colors">
+                  <button type="button" onClick={clearFilters}
+                    className="px-5 py-2.5 bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 text-sm font-semibold rounded-xl transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2">
                     Clear filters
                   </button>
                 )}

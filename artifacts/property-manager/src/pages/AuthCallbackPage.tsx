@@ -134,13 +134,13 @@ export default function AuthCallbackPage() {
 
   if (errorMsg) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#FAFAFA] px-4">
-        <div className="flex flex-col items-center gap-3 text-center max-w-sm">
-          <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-slate-50 px-4 py-8">
+        <div role="alert" className="flex w-full max-w-md flex-col items-center gap-3 rounded-3xl border border-slate-200 bg-white px-6 py-9 text-center shadow-sm sm:px-10">
+          <div className="w-12 h-12 rounded-2xl bg-red-50 flex items-center justify-center" aria-hidden="true">
             <span className="text-red-600 text-lg font-bold">!</span>
           </div>
-          <p className="text-sm font-semibold text-gray-800">Sign-in failed</p>
-          <p className="text-xs text-gray-500 break-words">{errorMsg}</p>
+          <h1 className="text-lg font-semibold text-slate-900">Sign-in failed</h1>
+          <p className="text-sm leading-6 text-slate-600 break-words">{errorMsg}</p>
           <p className="text-xs text-gray-400">Redirecting to login…</p>
         </div>
       </div>
@@ -148,9 +148,9 @@ export default function AuthCallbackPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#FAFAFA]">
-      <div className="flex flex-col items-center gap-4">
-        <div className="animate-spin w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full" />
+    <div className="min-h-screen flex items-center justify-center bg-slate-50 px-4">
+      <div role="status" aria-live="polite" className="flex flex-col items-center gap-4 rounded-3xl border border-slate-200 bg-white px-10 py-9 shadow-sm">
+        <div aria-hidden="true" className="animate-spin w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full motion-reduce:animate-none" />
         <p className="text-sm text-gray-500">Signing you in…</p>
       </div>
     </div>

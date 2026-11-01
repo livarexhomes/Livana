@@ -620,7 +620,7 @@ export default function AdminLandlords() {
   return (
     <AuthGuard require="admin">
       <MobileSidebarProvider>
-        <div className="flex h-screen overflow-hidden bg-[#F4F6FB]">
+        <div className="flex h-screen h-[100dvh] overflow-hidden bg-[#F5F8FC]">
           <AdminSidebar userEmail={user?.email} userName={displayName} />
 
           <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
@@ -678,11 +678,11 @@ export default function AdminLandlords() {
                   <div className="flex items-center gap-2 w-full md:w-auto">
                     <label className="flex h-9 md:h-8 items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 px-3 focus-within:border-slate-300 focus-within:bg-white transition-all flex-1 md:flex-none md:w-36">
                       <Search className="h-3.5 w-3.5 shrink-0 text-slate-400" />
-                      <input value={search} onChange={e => setSearch(e.target.value)}
+                      <input aria-label="Search landlords by name, city, or phone" value={search} onChange={e => setSearch(e.target.value)}
                         placeholder="Name, city, phone…"
                         className="flex-1 md:flex-none md:w-36 bg-transparent text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none" />
                       {search && (
-                        <button onClick={() => setSearch('')} className="text-slate-400 hover:text-slate-600">
+                        <button type="button" aria-label="Clear landlord search" onClick={() => setSearch('')} className="rounded p-1 text-slate-400 hover:text-slate-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500">
                           <X className="w-3 h-3" />
                         </button>
                       )}

@@ -83,7 +83,7 @@ export default function LandlordListings() {
 
   return (
     <AuthGuard require="landlord">
-      <div className="flex h-screen overflow-hidden bg-[#F4F6FB]">
+      <div className="flex h-dvh overflow-hidden bg-[#F4F6FB]">
         <LandlordSidebar userName={landlord?.full_name} userEmail={user?.email} isVerified={landlord?.is_verified} />
 
         <div className="flex-1 flex flex-col min-w-0">
@@ -93,7 +93,7 @@ export default function LandlordListings() {
               <p className="text-sm text-gray-400 mt-0.5">{properties.length} total properties</p>
             </div>
             <Link href="/landlord/listings/new"
-              className="inline-flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-xl shadow-sm shadow-blue-600/20 transition-colors">
+              className="inline-flex min-h-10 items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-xl shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2">
               <Plus className="w-4 h-4" />
               <span className="hidden sm:inline">Add Listing</span>
             </Link>
@@ -104,17 +104,17 @@ export default function LandlordListings() {
             <div className="flex items-center gap-2 md:gap-3">
               <div className="flex-1 flex items-center gap-2 bg-white border border-gray-200 rounded-xl px-4 py-2.5 shadow-sm focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-blue-500 transition-all">
                 <Search className="w-4 h-4 text-gray-400 shrink-0" />
-                <input value={search} onChange={e => setSearch(e.target.value)}
+                <input aria-label="Search listings by title or city" value={search} onChange={e => setSearch(e.target.value)}
                   placeholder="Search by title or city…"
-                  className="flex-1 text-sm text-gray-700 placeholder-gray-400 focus:outline-none bg-transparent" />
+                  className="flex-1 min-w-0 text-sm text-gray-700 placeholder-gray-400 focus:outline-none bg-transparent" />
               </div>
               <div className="flex items-center bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
-                <button type="button" onClick={() => setViewMode('list')}
-                  className={`p-2.5 transition-colors ${viewMode === 'list' ? 'bg-blue-600 text-white' : 'text-gray-400 hover:bg-gray-50'}`}>
+                <button type="button" aria-label="List view" aria-pressed={viewMode === 'list'} onClick={() => setViewMode('list')}
+                  className={`p-2.5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-blue-500 ${viewMode === 'list' ? 'bg-blue-600 text-white' : 'text-gray-500 hover:bg-gray-50'}`}>
                   <List className="w-4 h-4" />
                 </button>
-                <button type="button" onClick={() => setViewMode('grid')}
-                  className={`p-2.5 transition-colors ${viewMode === 'grid' ? 'bg-blue-600 text-white' : 'text-gray-400 hover:bg-gray-50'}`}>
+                <button type="button" aria-label="Grid view" aria-pressed={viewMode === 'grid'} onClick={() => setViewMode('grid')}
+                  className={`p-2.5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-blue-500 ${viewMode === 'grid' ? 'bg-blue-600 text-white' : 'text-gray-500 hover:bg-gray-50'}`}>
                   <LayoutGrid className="w-4 h-4" />
                 </button>
               </div>
@@ -135,7 +135,7 @@ export default function LandlordListings() {
                 </p>
                 {!search && (
                   <Link href="/landlord/listings/new"
-                    className="inline-flex items-center gap-2 px-4 py-2.5 bg-blue-600 text-white text-sm font-bold rounded-xl hover:bg-blue-700 transition-colors">
+                    className="inline-flex items-center gap-2 px-4 py-2.5 bg-blue-600 text-white text-sm font-bold rounded-xl hover:bg-blue-700 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2">
                     <Plus className="w-4 h-4" /> Add your first listing
                   </Link>
                 )}
@@ -198,11 +198,12 @@ export default function LandlordListings() {
                           <td className="px-5 py-4">
                             <div className="flex items-center justify-end gap-1">
                               <Link href={`/landlord/listings/${p.id}/edit`}
-                                className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-colors">
+                                aria-label={`Edit ${p.title}`}
+                                className="w-9 h-9 flex items-center justify-center rounded-lg text-gray-500 hover:text-blue-700 hover:bg-blue-50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500">
                                 <Pencil className="w-3.5 h-3.5" />
                               </Link>
-                              <button onClick={() => handleDelete(p.id)} disabled={deleting === p.id}
-                                className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors disabled:opacity-40">
+                              <button type="button" aria-label={`Delete ${p.title}`} onClick={() => handleDelete(p.id)} disabled={deleting === p.id}
+                                className="w-9 h-9 flex items-center justify-center rounded-lg text-gray-500 hover:text-red-600 hover:bg-red-50 transition-colors disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500">
                                 <Trash2 className="w-3.5 h-3.5" />
                               </button>
                             </div>
@@ -270,11 +271,12 @@ export default function LandlordListings() {
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-1">
                             <Link href={`/landlord/listings/${p.id}/edit`}
-                              className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-colors">
+                              aria-label={`Edit ${p.title}`}
+                              className="w-9 h-9 flex items-center justify-center rounded-lg text-gray-500 hover:text-blue-700 hover:bg-blue-50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500">
                               <Pencil className="w-3.5 h-3.5" />
                             </Link>
-                            <button onClick={() => handleDelete(p.id)} disabled={deleting === p.id}
-                              className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors disabled:opacity-40">
+                            <button type="button" aria-label={`Delete ${p.title}`} onClick={() => handleDelete(p.id)} disabled={deleting === p.id}
+                              className="w-9 h-9 flex items-center justify-center rounded-lg text-gray-500 hover:text-red-600 hover:bg-red-50 transition-colors disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500">
                               <Trash2 className="w-3.5 h-3.5" />
                             </button>
                           </div>

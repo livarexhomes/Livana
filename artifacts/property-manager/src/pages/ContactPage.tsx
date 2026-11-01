@@ -277,10 +277,10 @@ export default function ContactPage() {
         @media(prefers-reduced-motion:reduce) { .lv-contact * { transition:none!important; animation:none!important; scroll-behavior:auto!important; } }
       `}</style>
       <main className="lv-contact">
-        <section className="relative overflow-hidden bg-slate-950 pt-24 pb-20 text-white sm:pt-28 lg:pt-32">
+        <section className="relative overflow-hidden bg-[#123d93] pt-24 pb-20 text-white sm:pt-28 lg:pt-32">
           <div className="absolute inset-0 opacity-[0.06]" style={{ backgroundImage: 'radial-gradient(circle at 1px 1px, rgba(255,255,255,0.9) 1px, transparent 0)', backgroundSize: '34px 34px' }} />
-          <div className="absolute -left-16 top-20 h-80 w-80 rounded-full bg-blue-600/20 blur-3xl" />
-          <div className="absolute right-0 top-0 h-[34rem] w-[34rem] rounded-full bg-sky-500/10 blur-3xl" />
+          <div className="absolute -left-16 top-20 h-80 w-80 rounded-full bg-blue-300/15 blur-3xl" />
+          <div className="absolute right-0 top-0 h-[34rem] w-[34rem] rounded-full bg-white/10 blur-3xl" />
 
           <div className="relative mx-auto max-w-7xl px-5 sm:px-8">
             <div className="grid items-center gap-12 lg:grid-cols-[1.05fr_0.95fr]">
@@ -306,14 +306,14 @@ export default function ContactPage() {
                 <div className="mt-8 flex flex-wrap gap-3">
                   <a
                     href="#contact-form"
-                    className="inline-flex items-center justify-center gap-2 rounded-2xl bg-blue-600 px-6 py-3.5 text-sm font-bold text-white shadow-lg shadow-blue-600/20 transition-all hover:bg-blue-500"
+                    className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-blue-600 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-blue-950/20 transition-colors hover:bg-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-blue-900"
                   >
                     Send a Message
                     <ArrowRight className="h-4 w-4" />
                   </a>
                   <a
                     href={phoneToTelLink(phone)}
-                    className="inline-flex items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-6 py-3.5 text-sm font-semibold text-white transition-all hover:bg-white/10"
+                    className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border border-white/25 bg-white/10 px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-white/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-blue-900"
                   >
                     <Phone className="h-4 w-4" />
                     Call Us
@@ -323,7 +323,7 @@ export default function ContactPage() {
 
               <div className="relative">
                 {/* Soft outer glow behind the card */}
-                <div className="pointer-events-none absolute -inset-6 -z-10 rounded-[2.5rem] bg-gradient-to-br from-blue-500/30 via-sky-400/15 to-cyan-300/20 blur-2xl" aria-hidden="true" />
+                <div className="pointer-events-none absolute -inset-6 -z-10 rounded-[2.5rem] bg-gradient-to-br from-blue-300/30 via-sky-300/15 to-white/10 blur-2xl" aria-hidden="true" />
 
                 {/* Decorative orbit ring */}
                 <div className="pointer-events-none absolute -right-10 -top-10 -z-10 h-44 w-44 rounded-full border border-white/10 [mask-image:radial-gradient(circle,transparent_60%,black_60%)] sm:-right-14 sm:-top-14 sm:h-56 sm:w-56" aria-hidden="true" />

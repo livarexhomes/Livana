@@ -497,7 +497,7 @@ export default function AdminProperties() {
   return (
     <AuthGuard require="admin">
       <MobileSidebarProvider>
-      <div className="flex h-screen overflow-hidden bg-[#F4F6FB]">
+      <div className="flex h-screen h-[100dvh] overflow-hidden bg-[#F5F8FC]">
         <AdminSidebar userEmail={user?.email} userName={displayName} />
 
         <div className="flex-1 flex flex-col min-w-0">
@@ -539,11 +539,11 @@ export default function AdminProperties() {
                       <option value="price_desc">Price ↓</option>
                     </select>
                     <div className="flex items-center gap-1 bg-slate-100 rounded-xl p-1 shrink-0">
-                      <button type="button" onClick={() => setViewMode('grid')}
+                      <button type="button" aria-label="Show listings as a grid" aria-pressed={viewMode === 'grid'} onClick={() => setViewMode('grid')}
                         className={`p-1.5 rounded-lg min-w-[44px] min-h-[44px] flex items-center justify-center transition ${viewMode === 'grid' ? 'bg-blue-600 text-white' : 'text-slate-500 hover:text-slate-700'}`}>
                         <LayoutGrid className="w-4 h-4" />
                       </button>
-                      <button type="button" onClick={() => setViewMode('list')}
+                      <button type="button" aria-label="Show listings as a list" aria-pressed={viewMode === 'list'} onClick={() => setViewMode('list')}
                         className={`p-1.5 rounded-lg min-w-[44px] min-h-[44px] flex items-center justify-center transition ${viewMode === 'list' ? 'bg-blue-600 text-white' : 'text-slate-500 hover:text-slate-700'}`}>
                         <List className="w-4 h-4" />
                       </button>
@@ -562,21 +562,21 @@ export default function AdminProperties() {
                 <div className="rounded-2xl border border-slate-200 bg-white p-3 sm:p-5 shadow-sm">
                   <div className="flex flex-col sm:gap-4 lg:flex-row lg:items-center lg:justify-between">
                     <div className="flex-1">
-                      <div className="flex items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 px-3 sm:px-4 py-2 sm:py-3 shadow-sm">
+                      <div className="flex items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 px-3 sm:px-4 py-2 sm:py-3 shadow-sm focus-within:border-blue-300 focus-within:ring-2 focus-within:ring-blue-500/20">
                         <Search className="w-4 h-4 text-slate-500" />
-                        <input value={search} onChange={e => setSearch(e.target.value)}
+                        <input aria-label="Search properties, neighborhoods, or landlords" value={search} onChange={e => setSearch(e.target.value)}
                           placeholder="Search properties, neighborhoods, or landlords"
                           className="w-full bg-transparent text-xs sm:text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none" />
                       </div>
                     </div>
                     <div className="flex flex-wrap items-center gap-3 mt-2 sm:mt-0">
                       <div className="hidden sm:inline-flex overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
-                        <button type="button" onClick={() => setViewMode('grid')}
-                          className={`px-4 py-2.5 transition ${viewMode === 'grid' ? 'bg-primary text-primary-foreground' : 'text-slate-500 hover:bg-slate-50'}`}>
+                        <button type="button" aria-label="Show listings as a grid" aria-pressed={viewMode === 'grid'} onClick={() => setViewMode('grid')}
+                          className={`px-4 py-2.5 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-blue-500 ${viewMode === 'grid' ? 'bg-primary text-primary-foreground' : 'text-slate-500 hover:bg-slate-50'}`}>
                           <LayoutGrid className="w-4 h-4" />
                         </button>
-                        <button type="button" onClick={() => setViewMode('list')}
-                          className={`px-4 py-2.5 transition ${viewMode === 'list' ? 'bg-primary text-primary-foreground' : 'text-slate-500 hover:bg-slate-50'}`}>
+                        <button type="button" aria-label="Show listings as a list" aria-pressed={viewMode === 'list'} onClick={() => setViewMode('list')}
+                          className={`px-4 py-2.5 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-blue-500 ${viewMode === 'list' ? 'bg-primary text-primary-foreground' : 'text-slate-500 hover:bg-slate-50'}`}>
                           <List className="w-4 h-4" />
                         </button>
                       </div>

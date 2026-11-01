@@ -1,5 +1,17 @@
+
 import { useEffect, useState } from 'react'
-import { ArrowRight, BriefcaseBusiness, Check, Info, MapPin, Users } from 'lucide-react'
+import {
+  ArrowRight,
+  BriefcaseBusiness,
+  Check,
+  ChevronDown,
+  Home,
+  MapPin,
+  ShieldCheck,
+  Sparkles,
+  UserRound,
+} from 'lucide-react'
+
 import { Link, useLocation } from '@/lib/navigation'
 import AuthGuard from '../../components/auth/AuthGuard'
 import { createClient } from '../../lib/supabase'
@@ -22,11 +34,15 @@ const EMPTY_FORM: ProfileForm = {
   move_in_timeline: '',
 }
 
-const inputClass = 'w-full rounded-lg border border-gray-200 bg-white px-3.5 py-3 text-sm text-gray-900 outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/15'
-const labelClass = 'mb-1.5 block text-sm font-semibold text-gray-800'
+const inputClass =
+  'w-full h-[50px] rounded-xl border border-slate-200 bg-white px-4 text-sm text-slate-900 outline-none transition-all placeholder:text-slate-400 hover:border-slate-300 focus:border-blue-600 focus:ring-4 focus:ring-blue-600/10'
+
+const labelClass =
+  'mb-2 block text-[13px] font-semibold text-slate-700'
 
 export default function UserProfileCompletion() {
   const [, navigate] = useLocation()
+
   const [userId, setUserId] = useState<string | null>(null)
   const [form, setForm] = useState<ProfileForm>(EMPTY_FORM)
   const [loading, setLoading] = useState(true)
@@ -34,182 +50,478 @@ export default function UserProfileCompletion() {
   const [error, setError] = useState('')
 
   useEffect(() => {
-    const supabase = createClient()
-    supabase.auth.getUser().then(async ({ data: { user } }) => {
-      if (!user) return
-      setUserId(user.id)
-      const { data } = await supabase
-        .from('tenants')
-        .select('marital_status, occupation, employment_type, household_size, city, move_in_timeline')
-        .eq('user_id', user.id)
-        .maybeSingle() as { data: Partial<ProfileForm> | null }
-      if (data) {
-        setForm({
-          marital_status: data.marital_status ?? '',
-          occupation: data.occupation ?? '',
-          employment_type: data.employment_type ?? '',
-          household_size: data.household_size ? String(data.household_size) : '',
-          city: data.city ?? '',
-          move_in_timeline: data.move_in_timeline ?? '',
-        })
+    let active = true
+
+    async function loadProfile() {
+      try {
+        const supabase = createClient()
+        const { data: { user } } = await supabase.auth.getUser()
+
+        if (!active) return
+
+        if (!user) {
+          setLoading(false)
+          return
+        }
+
+        setUserId(user.id)
+
+        const { data, error } = await supabase
+          .from('tenants')
+          .select(
+            'marital_status, occupation, employment_type, household_size, city, move_in_timeline'
+          )
+          .eq('user_id', user.id)
+          .maybeSingle() as {
+            data: Partial<ProfileForm> | null
+            error: unknown
+          }
+
+        if (error) throw error
+
+        if (!active) return
+
+        if (data) {
+          setForm({
+            marital_status: data.marital_status ?? '',
+            occupation: data.occupation ?? '',
+            employment_type: data.employment_type ?? '',
+            household_size: data.household_size
+              ? String(data.household_size)
+              : '',
+            city: data.city ?? '',
+            move_in_timeline: data.move_in_timeline ?? '',
+          })
+        }
+      } catch {
+        if (active) {
+          setError('Unable to load your profile. Please refresh and try again.')
+        }
+      } finally {
+        if (active) setLoading(false)
       }
-      setLoading(false)
-    })
-  }, [])
-
-  async function handleSubmit(event: React.FormEvent) {
-    event.preventDefault()
-    if (!userId) return
-    setSaving(true)
-    setError('')
-
-    const supabase = createClient()
-    const { error: saveError } = await supabase
-      .from('tenants')
-      .update({
-        marital_status: form.marital_status,
-        occupation: form.occupation.trim(),
-        employment_type: form.employment_type || null,
-        household_size: form.household_size ? Number(form.household_size) : null,
-        city: form.city.trim() || null,
-        move_in_timeline: form.move_in_timeline || null,
-      })
-      .eq('user_id', userId)
-
-    if (saveError) {
-      setError('We could not save your details. Please try again.')
-      setSaving(false)
-      return
     }
-    navigate('/user')
-  }
+
+    loadProfile()
+
+    return () => {
+      active = false
+    }
+  }, [])
 
   function updateForm(field: keyof ProfileForm, value: string) {
     setForm(current => ({ ...current, [field]: value }))
   }
 
+  async function handleSubmit(event: React.FormEvent) {
+    event.preventDefault()
+
+    if (!userId) {
+      setError('Your session has expired. Please sign in again.')
+      return
+    }
+
+    setSaving(true)
+    setError('')
+
+    try {
+      const supabase = createClient()
+
+      const { data: savedProfile, error: saveError } = await supabase
+        .from('tenants')
+        .update({
+          marital_status: form.marital_status,
+          occupation: form.occupation.trim(),
+          employment_type: form.employment_type || null,
+          household_size: form.household_size
+            ? Number(form.household_size)
+            : null,
+          city: form.city.trim() || null,
+          move_in_timeline: form.move_in_timeline || null,
+        })
+        .eq('user_id', userId)
+        .select('id')
+        .maybeSingle()
+
+      if (saveError) throw saveError
+      if (!savedProfile) {
+        setError('We could not find your profile. Please sign in again and retry.')
+        setSaving(false)
+        return
+      }
+
+      navigate('/user')
+    } catch (saveError) {
+      console.error('[profile-completion] profile update failed:', saveError)
+      setError('We could not save your details. Please try again.')
+      setSaving(false)
+    }
+  }
+
   return (
     <AuthGuard require="tenant">
-      <main className="min-h-screen bg-slate-50 px-4 py-8 sm:px-8 sm:py-12">
-        <div className="mx-auto max-w-3xl">
-          <div className="mb-8 flex items-center justify-between">
-            <Link href="/" className="inline-flex items-center">
-              <img src="/livarex-logo.png" alt="LIVAREX" className="h-9 w-auto" />
-            </Link>
-            <span className="text-xs font-bold uppercase tracking-wider text-gray-500">Profile setup · 1 of 1</span>
-          </div>
+      <main className="min-h-dvh bg-[#F7F9FC] text-slate-900">
 
-          <section className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
-            <div className="grid md:grid-cols-[0.8fr_1.2fr]">
-              <div className="flex flex-col justify-between bg-primary p-7 text-white sm:p-9">
-                <div>
-                  <p className="mb-3 text-xs font-bold uppercase tracking-[0.16em] text-blue-100">A better Property search</p>
-                  <h1 className="max-w-xs text-3xl font-bold leading-tight">Let’s make your search yours.</h1>
-                  <p className="mt-4 max-w-sm text-sm leading-6 text-blue-50/90">
-                    A few details help us tailor property recommendations and make future enquiries easier.
-                  </p>
-                </div>
-                <div className="mt-10 hidden items-center gap-3 text-sm text-blue-50/90 md:flex">
-                  <span className="flex h-8 w-8 items-center justify-center rounded-full bg-white/10"><Check className="h-4 w-4" /></span>
-                  <span>Your details stay attached to your account.</span>
-                </div>
+        {/* Header */}
+        <header className="border-b border-slate-200/80 bg-white">
+          <div className="mx-auto flex h-[76px] max-w-7xl items-center justify-between px-5 sm:px-8">
+
+            <Link href="/" className="flex items-center">
+              <img
+                src="/livarex-logo.png"
+                alt="Livarex"
+                className="h-9 w-auto"
+              />
+            </Link>
+
+            <div className="flex items-center gap-3">
+              <span className="hidden text-xs font-medium text-slate-500 sm:block">
+                Profile setup
+              </span>
+              <span className="rounded-full bg-blue-50 px-3 py-1.5 text-xs font-bold text-blue-700">
+                01 / 01
+              </span>
+            </div>
+
+          </div>
+        </header>
+
+        {/* Main content */}
+        <section className="mx-auto max-w-7xl px-5 py-9 sm:px-8 sm:py-14">
+
+          <div className="mx-auto max-w-6xl">
+
+            {/* Intro */}
+            <div className="mb-9 max-w-2xl">
+              <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-blue-100 bg-blue-50 px-3 py-1.5 text-xs font-semibold text-blue-700">
+                <Sparkles size={14} />
+                PERSONALISE YOUR EXPERIENCE
               </div>
 
-              <div className="p-6 sm:p-9">
-                <h2 className="text-xl font-bold text-gray-950">About you</h2>
-                <p className="mb-6 mt-1 text-sm text-gray-500">Required fields are marked with an asterisk.</p>
+              <h1 className="text-3xl font-bold tracking-tight text-slate-950 sm:text-4xl">
+                Let's find a place
+                <span className="text-blue-700"> that feels like yours.</span>
+              </h1>
+
+              <p className="mt-3 max-w-xl text-sm leading-7 text-slate-500 sm:text-base">
+                Tell us a little about yourself. We'll use these details
+                to make your property search more relevant and your
+                experience on Livarex more seamless.
+              </p>
+            </div>
+
+            {/* Main card */}
+            <div className="grid overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-[0_12px_50px_-25px_rgba(15,23,42,0.18)] lg:grid-cols-[0.82fr_1.18fr]">
+
+              {/* Left panel */}
+              <aside className="relative flex min-h-[360px] flex-col justify-between overflow-hidden bg-[#123D80] p-7 text-white sm:p-10 lg:min-h-[650px]">
+
+                {/* Decorative elements */}
+                <div className="pointer-events-none absolute -right-24 -top-20 h-80 w-80 rounded-full border border-white/10" />
+                <div className="pointer-events-none absolute -right-12 -top-8 h-56 w-56 rounded-full border border-white/10" />
+                <div className="pointer-events-none absolute -bottom-36 -left-24 h-80 w-80 rounded-full bg-blue-500/20 blur-3xl" />
+
+                <div className="relative z-10">
+                  <div className="mb-9 flex h-12 w-12 items-center justify-center rounded-2xl border border-white/20 bg-white/10">
+                    <Home size={23} />
+                  </div>
+
+                  <p className="mb-3 text-[11px] font-bold uppercase tracking-[0.2em] text-blue-200">
+                    Welcome to Livarex
+                  </p>
+
+                  <h2 className="max-w-sm text-3xl font-bold leading-[1.2] tracking-tight sm:text-[38px]">
+                    Your next chapter starts with the right address.
+                  </h2>
+
+                  <p className="mt-5 max-w-sm text-sm leading-7 text-blue-100/80">
+                    A better way to discover verified properties,
+                    connect with trusted property professionals and
+                    find somewhere you can truly call home.
+                  </p>
+                </div>
+
+                {/* Benefits */}
+                <div className="relative z-10 mt-12 space-y-5">
+
+                  <div className="flex items-center gap-3">
+                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white/10">
+                      <Check size={17} />
+                    </span>
+                    <div>
+                      <p className="text-sm font-semibold">Relevant recommendations</p>
+                      <p className="mt-0.5 text-xs text-blue-100/70">
+                        Discover properties suited to your needs.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-3">
+                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white/10">
+                      <ShieldCheck size={17} />
+                    </span>
+                    <div>
+                      <p className="text-sm font-semibold">A seamless experience</p>
+                      <p className="mt-0.5 text-xs text-blue-100/70">
+                        Your profile stays connected to your account.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-3">
+                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white/10">
+                      <MapPin size={17} />
+                    </span>
+                    <div>
+                      <p className="text-sm font-semibold">A search that understands you</p>
+                      <p className="mt-0.5 text-xs text-blue-100/70">
+                        Spend less time searching and more time discovering.
+                      </p>
+                    </div>
+                  </div>
+
+                </div>
+
+                <div className="relative z-10 mt-10 border-t border-white/15 pt-5">
+                  <p className="text-xs text-blue-100/60">
+                    LIVAREX · VERIFIED PROPERTY MARKETPLACE
+                  </p>
+                </div>
+              </aside>
+
+              {/* Right form panel */}
+              <div className="p-6 sm:p-9 lg:p-11">
+
+                <div className="mb-8 flex items-start justify-between gap-4">
+                  <div>
+                    <p className="text-xs font-bold uppercase tracking-wider text-blue-700">
+                      A little about you
+                    </p>
+                    <h2 className="mt-2 text-2xl font-bold tracking-tight text-slate-950">
+                      Complete your profile
+                    </h2>
+                    <p className="mt-2 text-sm leading-6 text-slate-500">
+                      This should only take a minute or two.
+                    </p>
+                  </div>
+
+                  <div className="hidden h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-blue-50 text-blue-700 sm:flex">
+                    <UserRound size={23} />
+                  </div>
+                </div>
+
+                {/* Progress */}
+                <div className="mb-8">
+                  <div className="mb-2 flex items-center justify-between text-xs">
+                    <span className="font-semibold text-slate-700">
+                      Profile information
+                    </span>
+                    <span className="font-medium text-slate-400">
+                      Step 1 of 1
+                    </span>
+                  </div>
+                  <div className="h-1.5 overflow-hidden rounded-full bg-slate-100">
+                    <div className="h-full w-full rounded-full bg-blue-600" />
+                  </div>
+                </div>
 
                 {!loading && (!form.marital_status || !form.occupation.trim()) && (
-                  <div role="status" className="mb-5 flex items-start gap-2 rounded-lg border border-blue-100 bg-blue-50 px-3.5 py-3 text-sm text-blue-800">
-                    <Info aria-hidden="true" className="mt-0.5 h-4 w-4 shrink-0" />
-                    <span>Your profile is incomplete. Add your marital status and occupation to continue.</span>
+                  <div className="mb-6 flex gap-3 rounded-xl border border-blue-100 bg-blue-50/70 p-3.5">
+                    <InfoIcon />
+                    <p className="text-xs leading-5 text-blue-800">
+                      Please complete the required fields marked with an
+                      asterisk to continue.
+                    </p>
                   </div>
                 )}
 
                 {loading ? (
-                  <div className="space-y-4" aria-label="Loading profile details">
-                    <div className="h-12 animate-pulse rounded-lg bg-gray-100" />
-                    <div className="h-12 animate-pulse rounded-lg bg-gray-100" />
-                    <div className="h-12 animate-pulse rounded-lg bg-gray-100" />
+                  <div className="space-y-6" aria-label="Loading profile">
+                    <div className="h-12 animate-pulse rounded-xl bg-slate-100" />
+                    <div className="h-12 animate-pulse rounded-xl bg-slate-100" />
+                    <div className="h-12 animate-pulse rounded-xl bg-slate-100" />
+                    <div className="h-12 animate-pulse rounded-xl bg-slate-100" />
                   </div>
                 ) : (
-                  <form onSubmit={handleSubmit} className="space-y-5">
-                    <div className="grid gap-5 sm:grid-cols-2">
-                      <div>
-                        <label htmlFor="marital-status" className={labelClass}>Marital status *</label>
-                        <select id="marital-status" required value={form.marital_status} onChange={event => updateForm('marital_status', event.target.value)} className={inputClass}>
-                          <option value="" disabled>Select status</option>
-                          <option value="single">Single</option>
-                          <option value="married">Married</option>
-                          <option value="divorced">Divorced</option>
-                          <option value="widowed">Widowed</option>
-                          <option value="prefer_not_to_say">Prefer not to say</option>
-                        </select>
+                  <form onSubmit={handleSubmit} className="space-y-7">
+
+                    {/* Personal details */}
+                    <div>
+                      <div className="mb-4 flex items-center gap-2">
+                        <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-blue-50 text-blue-700">
+                          <UserRound size={15} />
+                        </div>
+                        <h3 className="text-sm font-bold text-slate-900">
+                          Personal information
+                        </h3>
                       </div>
-                      <div>
-                        <label htmlFor="occupation" className={labelClass}>Occupation *</label>
-                        <div className="relative">
-                          <BriefcaseBusiness className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-                          <input id="occupation" required maxLength={100} value={form.occupation} onChange={event => updateForm('occupation', event.target.value)} placeholder="e.g. Teacher, designer, student" className={`${inputClass} pl-10`} />
+
+                      <div className="grid gap-5 sm:grid-cols-2">
+                        <div>
+                          <label htmlFor="marital-status" className={labelClass}>
+                            Marital status <span className="text-blue-600">*</span>
+                          </label>
+                          <div className="relative">
+                            <select
+                              id="marital-status"
+                              required
+                              value={form.marital_status}
+                              onChange={e => updateForm('marital_status', e.target.value)}
+                              className={`${inputClass} appearance-none pr-10`}
+                            >
+                              <option value="" disabled>Select status</option>
+                              <option value="single">Single</option>
+                              <option value="married">Married</option>
+                              <option value="divorced">Divorced</option>
+                              <option value="widowed">Widowed</option>
+                              <option value="prefer_not_to_say">Prefer not to say</option>
+                            </select>
+                            <ChevronDown className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                          </div>
+                        </div>
+
+                        <div>
+                          <label htmlFor="occupation" className={labelClass}>
+                            Occupation <span className="text-blue-600">*</span>
+                          </label>
+                          <div className="relative">
+                            <BriefcaseBusiness className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                            <input
+                              id="occupation"
+                              required
+                              maxLength={100}
+                              value={form.occupation}
+                              onChange={e => updateForm('occupation', e.target.value)}
+                              placeholder="e.g. Entrepreneur, Teacher"
+                              className={`${inputClass} pl-11`}
+                            />
+                          </div>
                         </div>
                       </div>
                     </div>
 
-                    <div className="grid gap-5 sm:grid-cols-2">
-                      <div>
-                        <label htmlFor="employment-type" className={labelClass}>Work status <span className="font-normal text-gray-400">(optional)</span></label>
-                        <select id="employment-type" value={form.employment_type} onChange={event => updateForm('employment_type', event.target.value)} className={inputClass}>
-                          <option value="">Select status</option>
+                    <div className="border-t border-slate-100" />
+
+                    {/* Employment */}
+                    <div>
+                      <div className="mb-4 flex items-center gap-2">
+                        <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-blue-50 text-blue-700">
+                          <BriefcaseBusiness size={15} />
+                        </div>
+                        <h3 className="text-sm font-bold text-slate-900">
+                          Employment details
+                        </h3>
+                        <span className="text-[10px] text-slate-400">OPTIONAL</span>
+                      </div>
+
+                      <label htmlFor="employment-type" className={labelClass}>
+                        Current work status
+                      </label>
+                      <div className="relative">
+                        <select
+                          id="employment-type"
+                          value={form.employment_type}
+                          onChange={e => updateForm('employment_type', e.target.value)}
+                          className={`${inputClass} appearance-none pr-10`}
+                        >
+                          <option value="">Select employment status</option>
                           <option value="employed">Employed</option>
                           <option value="self_employed">Self-employed</option>
                           <option value="student">Student</option>
                           <option value="between_jobs">Between jobs</option>
                           <option value="retired">Retired</option>
                         </select>
+                        <ChevronDown className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
                       </div>
-                      {/* <div>
-                        <label htmlFor="household-size" className={labelClass}>People moving in <span className="font-normal text-gray-400">(optional)</span></label>
-                        <div className="relative">
-                          <Users className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-                          <input id="household-size" type="number" min="1" max="20" value={form.household_size} onChange={event => updateForm('household_size', event.target.value)} placeholder="Including you" className={`${inputClass} pl-10`} />
-                        </div>
-                      </div> */}
                     </div>
 
-                    <div className="grid gap-5 sm:grid-cols-2">
-                      <div>
-                        <label htmlFor="city" className={labelClass}>Current city <span className="font-normal text-gray-400">(optional)</span></label>
-                        <div className="relative">
-                          <MapPin className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-                          <input id="city" maxLength={100} value={form.city} onChange={event => updateForm('city', event.target.value)} placeholder="e.g. Lagos" className={`${inputClass} pl-10`} />
+                    <div className="border-t border-slate-100" />
+
+                    {/* Location */}
+                    <div>
+                      <div className="mb-4 flex items-center gap-2">
+                        <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-blue-50 text-blue-700">
+                          <MapPin size={15} />
                         </div>
+                        <h3 className="text-sm font-bold text-slate-900">
+                          Location details
+                        </h3>
+                        <span className="text-[10px] text-slate-400">OPTIONAL</span>
                       </div>
-                      {/* <div>
-                        <label htmlFor="move-in" className={labelClass}>When are you looking to move? <span className="font-normal text-gray-400">(optional)</span></label>
-                        <select id="move-in" value={form.move_in_timeline} onChange={event => updateForm('move_in_timeline', event.target.value)} className={inputClass}>
-                          <option value="">Choose a timeframe</option>
-                          <option value="asap">As soon as possible</option>
-                          <option value="within_1_month">Within a month</option>
-                          <option value="1_to_3_months">1 to 3 months</option>
-                          <option value="3_plus_months">More than 3 months</option>
-                          <option value="just_browsing">Just browsing</option>
-                        </select>
-                      </div> */}
+
+                      <label htmlFor="city" className={labelClass}>
+                        Current city
+                      </label>
+                      <div className="relative">
+                        <MapPin className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                        <input
+                          id="city"
+                          maxLength={100}
+                          value={form.city}
+                          onChange={e => updateForm('city', e.target.value)}
+                          placeholder="e.g. Lagos, Abuja, Port Harcourt"
+                          className={`${inputClass} pl-11`}
+                        />
+                      </div>
                     </div>
 
-                    {error && <p role="alert" className="rounded-lg border border-red-200 bg-red-50 px-3.5 py-3 text-sm text-red-700">{error}</p>}
+                    {error && (
+                      <div
+                        role="alert"
+                        className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
+                      >
+                        {error}
+                      </div>
+                    )}
 
-                    <button type="submit" disabled={saving} className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 py-3.5 text-sm font-bold text-white transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60">
-                      {saving ? 'Saving details…' : 'Save and continue'}
-                      {!saving && <ArrowRight className="h-4 w-4" />}
-                    </button>
+                    {/* Submit */}
+                    <div className="pt-2">
+                      <button
+                        type="submit"
+                        disabled={saving || !userId}
+                        className="group flex h-[54px] w-full items-center justify-center gap-2 rounded-xl bg-blue-700 px-5 text-sm font-bold text-white shadow-lg shadow-blue-700/15 transition-all hover:-translate-y-0.5 hover:bg-blue-800 hover:shadow-xl hover:shadow-blue-700/20 disabled:cursor-not-allowed disabled:opacity-60"
+                      >
+                        {saving ? 'Saving your details...' : 'Save and continue'}
+                        {!saving && (
+                          <ArrowRight
+                            size={17}
+                            className="transition-transform group-hover:translate-x-1"
+                          />
+                        )}
+                      </button>
+
+                      <div className="mt-4 flex items-center justify-center gap-2 text-center">
+                        <ShieldCheck size={14} className="text-emerald-600" />
+                        <p className="text-[11px] text-slate-400">
+                          Your information is securely associated with your account.
+                        </p>
+                      </div>
+                    </div>
+
                   </form>
                 )}
               </div>
             </div>
-          </section>
-        </div>
+
+            {/* Footer */}
+            <footer className="mt-7 flex flex-col items-center justify-between gap-3 text-xs text-slate-400 sm:flex-row">
+              <p>© {new Date().getFullYear()} Livarex. All rights reserved.</p>
+              <p>
+                Finding the right property starts here.
+              </p>
+            </footer>
+
+          </div>
+        </section>
       </main>
     </AuthGuard>
+  )
+}
+
+function InfoIcon() {
+  return (
+    <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-blue-100 text-blue-700 text-xs font-bold">
+      i
+    </span>
   )
 }

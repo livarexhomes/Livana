@@ -241,7 +241,7 @@ export default function AdminProjects() {
   return (
     <AuthGuard require="admin">
       <MobileSidebarProvider>
-      <div className="flex h-screen overflow-hidden bg-[#F4F6FB]">
+      <div className="flex h-screen h-[100dvh] overflow-hidden bg-[#F5F8FC]">
         <AdminSidebar userEmail={user?.email} userName={displayName} />
 
         <div className="flex-1 flex flex-col min-w-0">
@@ -283,11 +283,11 @@ export default function AdminProjects() {
                  </select>
                )}
                <div className="flex items-center gap-1 bg-slate-100 rounded-xl p-1 shrink-0">
-                 <button type="button" onClick={() => setView('grid')}
+                 <button type="button" aria-label="Show projects as a grid" aria-pressed={view === 'grid'} onClick={() => setView('grid')}
                    className={`p-1.5 rounded-lg min-w-[44px] min-h-[44px] flex items-center justify-center transition ${view === 'grid' ? 'bg-white shadow-sm text-slate-900' : 'text-slate-400 hover:text-slate-700'}`}>
                    <LayoutGrid className="w-4 h-4" />
                  </button>
-                 <button type="button" onClick={() => setView('list')}
+                 <button type="button" aria-label="Show projects as a list" aria-pressed={view === 'list'} onClick={() => setView('list')}
                    className={`p-1.5 rounded-lg min-w-[44px] min-h-[44px] flex items-center justify-center transition ${view === 'list' ? 'bg-white shadow-sm text-slate-900' : 'text-slate-400 hover:text-slate-700'}`}>
                    <List className="w-4 h-4" />
                  </button>
@@ -334,9 +334,9 @@ export default function AdminProjects() {
                 {!loading && (
                   <div className="flex flex-col sm:flex-row sm:items-center gap-3">
                       {/* Search */}
-                      <div className="flex-1 flex items-center gap-2.5 rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2.5">
+                      <div className="flex-1 flex items-center gap-2.5 rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2.5 focus-within:border-blue-300 focus-within:ring-2 focus-within:ring-blue-500/20">
                         <Search className="w-4 h-4 text-slate-400 shrink-0" />
-                        <input value={search} onChange={e => setSearch(e.target.value)}
+                        <input aria-label="Search projects, developers, and locations" value={search} onChange={e => setSearch(e.target.value)}
                           placeholder="Search projects, developers, locations…"
                           className="w-full bg-transparent text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none" />
                         {search && (
@@ -361,11 +361,11 @@ export default function AdminProjects() {
 
                       {/* View toggle */}
                       <div className="flex items-center gap-1 bg-slate-100 rounded-xl p-1 shrink-0">
-                        <button type="button" onClick={() => setView('grid')}
+                        <button type="button" aria-label="Show projects as a grid" aria-pressed={view === 'grid'} onClick={() => setView('grid')}
                           className={`p-1.5 rounded-lg transition ${view === 'grid' ? 'bg-white shadow-sm text-slate-900' : 'text-slate-400 hover:text-slate-700'}`}>
                           <LayoutGrid className="w-4 h-4" />
                         </button>
-                        <button type="button" onClick={() => setView('list')}
+                        <button type="button" aria-label="Show projects as a list" aria-pressed={view === 'list'} onClick={() => setView('list')}
                           className={`p-1.5 rounded-lg transition ${view === 'list' ? 'bg-white shadow-sm text-slate-900' : 'text-slate-400 hover:text-slate-700'}`}>
                           <List className="w-4 h-4" />
                         </button>

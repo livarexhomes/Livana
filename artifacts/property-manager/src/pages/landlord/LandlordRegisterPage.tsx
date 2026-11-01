@@ -4,7 +4,7 @@ import { Link, useLocation } from '@/lib/navigation'
 import { Eye, EyeOff, Building2, CheckCircle2 } from 'lucide-react'
 import { createClient, isSupabaseConfigured } from '../../lib/supabase'
 
-const FIELD = 'w-full px-4 py-3.5 rounded-2xl border border-gray-200 bg-gray-50 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:bg-white transition-all'
+const FIELD = 'w-full min-h-12 px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 text-base text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:bg-white transition-colors'
 
 export default function LandlordRegisterPage() {
   const [, navigate] = useLocation()
@@ -59,10 +59,10 @@ export default function LandlordRegisterPage() {
   }
 
   return (
-    <div className="min-h-screen flex bg-white">
-      <div className="flex-1 flex flex-col justify-center px-6 sm:px-12 lg:px-16 py-12">
-        <div className="max-w-md w-full mx-auto">
-          <Link href="/" className="inline-flex items-center mb-10">
+    <div className="min-h-dvh flex bg-slate-50 p-0 lg:gap-3 lg:p-3">
+      <div className="min-w-0 flex-1 flex flex-col justify-center bg-white px-5 py-8 sm:px-10 sm:py-12 lg:rounded-[28px] lg:px-12 xl:px-16">
+        <div className="max-w-[500px] w-full mx-auto">
+          <Link href="/" className="inline-flex items-center mb-8 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-4">
             <img src="/livarex-logo.png" alt="LIVAREX" className="h-10 w-auto" />
           </Link>
           <div className="mb-8">
@@ -70,47 +70,47 @@ export default function LandlordRegisterPage() {
               <Building2 className="w-3.5 h-3.5 text-blue-600" />
               <span className="text-xs font-bold text-blue-600 uppercase tracking-wide">Partner Programme</span>
             </div>
-            <h1 className="text-3xl sm:text-4xl font-extrabold text-gray-900 leading-tight tracking-tight mb-2">
+            <h1 className="text-3xl sm:text-4xl font-bold text-slate-950 leading-tight tracking-tight mb-2">
               List your property<br />with LIVAREX
             </h1>
-            <p className="text-gray-500 text-base">Join our network of verified landlords. Livarex coordinates tenants, inspections and communication on your behalf.</p>
+            <p className="max-w-lg text-slate-600 text-sm sm:text-base leading-7">Join our network of verified landlords. Livarex coordinates tenants, inspections and communication on your behalf.</p>
           </div>
           {error && (
-            <div className="mb-5 px-4 py-3 bg-red-50 border border-red-200 rounded-2xl text-sm text-red-700">{error}</div>
+            <div role="alert" className="mb-5 px-4 py-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-700">{error}</div>
           )}
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-4" aria-busy={loading}>
             <div>
-              <label className="block text-xs font-semibold text-gray-500 uppercase tracking-widest mb-1.5">Full name *</label>
-              <input required type="text" placeholder="Chioma Okafor" value={form.fullName} onChange={e => set('fullName', e.target.value)} className={FIELD} />
+              <label htmlFor="landlord-full-name" className="block text-sm font-medium text-slate-700 mb-1.5">Full name *</label>
+              <input id="landlord-full-name" required type="text" autoComplete="name" placeholder="Chioma Okafor" value={form.fullName} onChange={e => set('fullName', e.target.value)} className={FIELD} />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-gray-500 uppercase tracking-widests mb-1.5">WhatsApp number *</label>
-              <input required type="tel" placeholder="+234 800 000 0000" value={form.whatsapp} onChange={e => set('whatsapp', e.target.value)} className={FIELD} />
-              <p className="text-xs text-gray-400 mt-1.5">Tenants will contact you directly on this number.</p>
+              <label htmlFor="landlord-whatsapp" className="block text-sm font-medium text-slate-700 mb-1.5">WhatsApp number *</label>
+              <input id="landlord-whatsapp" required type="tel" autoComplete="tel" placeholder="+234 800 000 0000" value={form.whatsapp} onChange={e => set('whatsapp', e.target.value)} className={FIELD} />
+              <p className="text-xs text-slate-500 mt-1.5">Tenants will contact you directly on this number.</p>
             </div>
             <div>
-              <label className="block text-xs font-semibold text-gray-500 uppercase tracking-widest mb-1.5">Email address *</label>
-              <input required type="email" autoComplete="email" placeholder="you@example.com" value={form.email} onChange={e => set('email', e.target.value)} className={FIELD} />
+              <label htmlFor="landlord-email" className="block text-sm font-medium text-slate-700 mb-1.5">Email address *</label>
+              <input id="landlord-email" required type="email" autoComplete="email" placeholder="you@example.com" value={form.email} onChange={e => set('email', e.target.value)} className={FIELD} />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-gray-500 uppercase tracking-widest mb-1.5">Password *</label>
+              <label htmlFor="landlord-password" className="block text-sm font-medium text-slate-700 mb-1.5">Password *</label>
               <div className="relative">
-                <input required type={showPassword ? 'text' : 'password'} minLength={8} autoComplete="new-password" placeholder="Min. 8 characters" value={form.password} onChange={e => set('password', e.target.value)} className={FIELD + ' pr-12'} />
-                <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition">
+                <input id="landlord-password" required type={showPassword ? 'text' : 'password'} minLength={8} autoComplete="new-password" placeholder="At least 8 characters" value={form.password} onChange={e => set('password', e.target.value)} className={FIELD + ' pr-12'} />
+                <button type="button" aria-label={showPassword ? 'Hide password' : 'Show password'} aria-pressed={showPassword} aria-controls="landlord-password" onClick={() => setShowPassword(!showPassword)} className="absolute right-1 top-1/2 -translate-y-1/2 flex h-10 w-10 items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-800 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500">
                   {showPassword ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
                 </button>
               </div>
             </div>
             <div>
-              <label className="block text-xs font-semibold text-gray-500 uppercase tracking-widest mb-1.5">City / State <span className="text-gray-400 normal-case font-normal">(optional)</span></label>
-              <input type="text" placeholder="e.g. Lagos" value={form.city} onChange={e => set('city', e.target.value)} className={FIELD} />
+              <label htmlFor="landlord-city" className="block text-sm font-medium text-slate-700 mb-1.5">City / State <span className="text-slate-500 font-normal">(optional)</span></label>
+              <input id="landlord-city" type="text" autoComplete="address-level2" placeholder="e.g. Lagos" value={form.city} onChange={e => set('city', e.target.value)} className={FIELD} />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-gray-500 uppercase tracking-widest mb-1.5">Short bio <span className="text-gray-400 normal-case font-normal">(optional)</span></label>
-              <textarea rows={3} placeholder="Tell tenants about yourself and your properties..." value={form.bio} onChange={e => set('bio', e.target.value)} className={FIELD + ' resize-none'} />
+              <label htmlFor="landlord-bio" className="block text-sm font-medium text-slate-700 mb-1.5">Short bio <span className="text-slate-500 font-normal">(optional)</span></label>
+              <textarea id="landlord-bio" rows={3} placeholder="Tell tenants about yourself and your properties..." value={form.bio} onChange={e => set('bio', e.target.value)} className={FIELD + ' min-h-28 resize-y'} />
             </div>
             <button type="submit" disabled={loading}
-              className="w-full py-3.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white font-bold rounded-2xl transition-all shadow-lg shadow-blue-600/25 text-sm mt-2">
+              className="w-full min-h-12 py-3 bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white font-semibold rounded-xl transition-colors shadow-sm shadow-blue-600/20 text-sm mt-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2">
               {loading ? 'Creating account…' : 'Apply as a partner landlord'}
             </button>
           </form>
@@ -120,11 +120,11 @@ export default function LandlordRegisterPage() {
           </p>
         </div>
       </div>
-      <div className="hidden lg:flex lg:w-[45%] xl:w-[48%] bg-gray-950 flex-col justify-between p-12 xl:p-16 relative overflow-hidden">
+      <div className="hidden lg:flex lg:w-[45%] xl:w-[48%] bg-blue-950 flex-col justify-between gap-8 rounded-[28px] p-10 xl:p-14 relative overflow-hidden">
         <img src="https://images.unsplash.com/photo-1582268611958-ebfd161ef9cf?w=1400&q=80" alt="Nigerian property" className="absolute inset-0 w-full h-full object-cover opacity-15" />
-        <div className="absolute inset-0 bg-gradient-to-br from-blue-900/50 via-gray-950/90 to-gray-950" />
+        <div className="absolute inset-0 bg-gradient-to-br from-blue-950/40 via-blue-950/80 to-slate-950/95" />
         <div className="relative z-10">
-          <div className="mb-14"><img src="/livarex-logo.png" alt="LIVAREX" className="h-10 w-auto" /></div>
+          <div className="mb-10 inline-flex items-center rounded-xl bg-white px-3 py-2"><img src="/livarex-logo.png" alt="LIVAREX" className="h-8 w-auto" /></div>
           <h2 className="text-4xl xl:text-5xl font-extrabold text-white leading-tight tracking-tight mb-4">
             Reach thousands<br />of verified<br />tenants.
           </h2>

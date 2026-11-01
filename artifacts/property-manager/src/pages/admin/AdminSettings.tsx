@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef, type ElementType, type ReactNode } from 'react'
+import { useState, useEffect, useCallback, useRef, useId, type ElementType, type ReactNode } from 'react'
 import {
   Building2, Bell, Shield, Globe, Save, CreditCard,
   CheckCircle, Mail, Phone, MapPin, User, Wifi,
@@ -117,11 +117,12 @@ function TimelineItem({ icon, color, label, time }: {
   )
 }
 
-function Toggle({ enabled, onChange, loading = false, disabled = false }: { enabled: boolean; onChange: () => void; loading?: boolean; disabled?: boolean }) {
+function Toggle({ enabled, onChange, label, loading = false, disabled = false }: { enabled: boolean; onChange: () => void; label: string; loading?: boolean; disabled?: boolean }) {
   return (
     <button
       type="button"
       role="switch"
+      aria-label={label}
       aria-checked={enabled}
       disabled={loading || disabled}
       onClick={e => { e.stopPropagation(); onChange() }}
@@ -152,6 +153,7 @@ function FieldInput({
   disabled?: boolean
   error?: string
 }) {
+  const inputId = useId()
   const [focused, setFocused] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
   const isPassword = type === 'password'
@@ -159,13 +161,14 @@ function FieldInput({
 
   return (
     <div className="lv-setting-field">
-      <label className="block text-xs font-semibold text-slate-600 mb-2">{label}</label>
+      <label htmlFor={inputId} className="block text-xs font-semibold text-slate-600 mb-2">{label}</label>
       <div className={`flex min-h-11 items-center gap-3 border rounded-lg px-3 py-2.5 bg-white transition-colors ${
         error ? 'border-red-300 ring-2 ring-red-100' :
         focused ? 'border-blue-500 ring-2 ring-blue-500/15' : 'border-gray-200 hover:border-gray-300'
       } ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}>
         <Icon className={`w-3.5 h-3.5 shrink-0 transition-colors ${error ? 'text-red-400' : focused ? 'text-blue-600' : 'text-gray-400'}`} strokeWidth={1.8} />
         <input
+          id={inputId}
           type={inputType}
           value={value}
           onChange={e => onChange(e.target.value)}
@@ -238,7 +241,7 @@ function ToggleRow({
         </div>
       </div>
       <div className="flex items-center gap-1.5 shrink-0">
-        <Toggle enabled={enabled} onChange={onChange} loading={loading} disabled={disabled} />
+        <Toggle enabled={enabled} onChange={onChange} label={label} loading={loading} disabled={disabled} />
         {!disabled && <ChevronRight className="w-3.5 h-3.5 text-gray-300" />}
       </div>
     </div>
@@ -1423,7 +1426,7 @@ export default function AdminSettings() {
     return (
       <AuthGuard require="admin">
         <MobileSidebarProvider>
-          <div className="lv-settings flex h-screen h-[100dvh] overflow-hidden bg-white">
+          <div className="lv-settings flex h-screen h-[100dvh] overflow-hidden bg-[#F5F8FC]">
             <style>{settingsDesign}</style>
           <AdminSidebar userEmail={user?.email} userName={displayName} />
             <div className="flex-1 flex items-center justify-center">
@@ -1438,7 +1441,7 @@ export default function AdminSettings() {
   return (
     <AuthGuard require="admin">
       <MobileSidebarProvider>
-        <div className="lv-settings flex h-screen h-[100dvh] overflow-hidden bg-white">
+        <div className="lv-settings flex h-screen h-[100dvh] overflow-hidden bg-[#F5F8FC]">
           <style>{settingsDesign}</style>
           <AdminSidebar userEmail={user?.email} userName={displayName} />
 
@@ -1481,7 +1484,7 @@ export default function AdminSettings() {
             </header>
 
             {/* ── Settings card ── */}
-            <div className="flex-1 min-h-0 bg-white overflow-hidden flex flex-col">
+            <div className="flex-1 min-h-0 bg-[#F5F8FC] overflow-hidden flex flex-col">
               {/* Mobile: horizontal scrollable chips */}
               <div className="lg:hidden shrink-0 border-b border-slate-100">
                 <div className="flex items-center gap-1.5 px-3 py-2.5 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">

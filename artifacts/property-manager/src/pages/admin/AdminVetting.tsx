@@ -270,7 +270,7 @@ export default function AdminVetting() {
   return (
     <AuthGuard require="admin">
       <MobileSidebarProvider>
-        <div className="vetting-page lv-vetting flex h-screen overflow-hidden bg-slate-50/40 text-slate-900">
+        <div className="vetting-page lv-vetting flex h-screen h-[100dvh] overflow-hidden bg-[#F5F8FC] text-slate-900">
         <style>{vettingStyles}</style>
         <AdminSidebar userEmail={user?.email} userName={displayName} />
 
@@ -351,7 +351,7 @@ export default function AdminVetting() {
                 {/* Mobile: back button when no landlord selected */}
                 {selectedLandlord && (
                   <div className="md:hidden px-4 pt-3">
-                    <button onClick={clearKycSelection}
+                    <button type="button" onClick={clearKycSelection}
                       className="inline-flex items-center gap-1.5 rounded-full border border-slate-200/80 bg-white px-3 py-1.5 text-xs font-semibold text-slate-500 shadow-sm transition-all hover:bg-slate-50 hover:text-slate-700">
                       <ChevronDown className="w-4 h-4 rotate-90" /> Back to queue
                     </button>

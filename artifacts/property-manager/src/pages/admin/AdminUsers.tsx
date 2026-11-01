@@ -364,7 +364,7 @@ export default function AdminUsers() {
   return (
     <AuthGuard require="admin">
       <MobileSidebarProvider>
-      <div className="flex h-screen overflow-hidden bg-[#F4F6FB]">
+      <div className="flex h-screen h-[100dvh] overflow-hidden bg-[#F5F8FC]">
         <AdminSidebar userEmail={user?.email} userName={displayName} />
         <div className="flex-1 flex flex-col min-w-0">
           <AdminHeader title="Tenants" subtitle={`${tenants.length} registered tenants`} />
@@ -479,11 +479,11 @@ export default function AdminUsers() {
                   return (
                     <article
                       key={t.id}
-                      onClick={() => setSelectedTenant(t)}
                       className={`group relative rounded-xl border border-slate-100 bg-white px-3 py-2.5 shadow-[0_1px_3px_rgba(0,0,0,0.04)] transition-all duration-200
-                        hover:border-slate-200 hover:shadow-[0_4px_16px_rgba(0,0,0,0.07)] cursor-pointer ${isSuspended ? 'opacity-80' : ''}`}
+                        hover:border-slate-200 hover:shadow-[0_4px_16px_rgba(0,0,0,0.07)] ${isSuspended ? 'opacity-80' : ''}`}
                     >
-                      <div className="flex items-start gap-3">
+                      <button type="button" onClick={() => setSelectedTenant(t)} aria-label={`View ${t.full_name} profile`}
+                        className="flex w-full items-start gap-3 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 sm:pr-44">
                         {/* Avatar */}
                         <div className={`relative flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br ${grad} text-white`}>
                           <span className="text-[12px] font-semibold">{initials}</span>
@@ -506,7 +506,7 @@ export default function AdminUsers() {
                             </span>
                           </div>
                         </div>
-                      </div>
+                      </button>
 
                       {/* Actions — full-width row on mobile, inline on sm+ */}
                       <div className="mt-2.5 -mx-3 -mb-2.5 flex items-center gap-1.5 border-t border-slate-100 px-3 py-2 sm:mt-0 sm:mx-0 sm:mb-0 sm:border-0 sm:px-0 sm:py-0 sm:absolute sm:right-3 sm:top-1/2 sm:-translate-y-1/2 sm:bg-white"

@@ -277,7 +277,7 @@ export default function LandlordOnboarding() {
   // ── OTP verification screen ──────────────────────────────
   if (otpStep) {
     return (
-      <div className="min-h-screen bg-[#FAFAFA] flex items-center justify-center px-4">
+      <div className="min-h-dvh bg-slate-50 flex items-center justify-center px-4 py-8">
         <div className="max-w-sm w-full bg-white rounded-3xl border border-gray-100 shadow-sm p-8 text-center">
           <div className="w-16 h-16 rounded-full bg-blue-50 flex items-center justify-center mx-auto mb-5">
             <KeyRound className="w-8 h-8 text-blue-600" />
@@ -289,25 +289,27 @@ export default function LandlordOnboarding() {
           </p>
 
           {otpError && (
-            <div className="mb-4 px-4 py-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-700 text-left">
+            <div role="alert" className="mb-4 px-4 py-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-700 text-left">
               {otpError}
             </div>
           )}
 
           <input
             type="text"
+            aria-label="6-digit email verification code"
+            autoComplete="one-time-code"
             inputMode="numeric"
             maxLength={6}
             value={otpCode}
             onChange={e => setOtpCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
             placeholder="000000"
-            className="w-full text-center text-3xl font-bold tracking-[0.5em] px-4 py-4 rounded-2xl border border-gray-200 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all mb-4"
+            className="w-full text-center text-3xl font-bold tracking-[0.5em] px-4 py-4 rounded-xl border border-gray-200 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 transition-all mb-4"
           />
 
           <button
             onClick={verifyOtp}
             disabled={otpLoading || otpCode.length !== 6}
-            className="w-full py-3.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-bold rounded-2xl transition-all text-sm flex items-center justify-center gap-2 mb-4">
+            className="w-full min-h-11 py-3.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-bold rounded-xl transition-colors text-sm flex items-center justify-center gap-2 mb-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2">
             {otpLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <ShieldCheck className="w-4 h-4" />}
             {otpLoading ? 'Verifying…' : 'Verify & Submit Application'}
           </button>
@@ -315,7 +317,7 @@ export default function LandlordOnboarding() {
           <button
             onClick={resendOtp}
             disabled={otpResending}
-            className="text-sm text-blue-600 hover:text-blue-700 font-semibold disabled:opacity-50">
+            className="rounded px-2 py-1 text-sm text-blue-700 hover:text-blue-800 font-semibold disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500">
             {otpResending ? 'Sending…' : "Didn't receive it? Resend code"}
           </button>
         </div>
@@ -326,8 +328,8 @@ export default function LandlordOnboarding() {
   // ── Submitted screen ─────────────────────────────────────
   if (submitted) {
     return (
-      <div className="min-h-screen bg-[#FAFAFA] flex items-center justify-center px-4">
-        <div className="max-w-md w-full text-center bg-white rounded-3xl border border-gray-100 p-10 shadow-sm">
+      <div className="min-h-dvh bg-slate-50 flex items-center justify-center px-4 py-8">
+        <div className="max-w-md w-full text-center bg-white rounded-2xl border border-gray-100 p-6 sm:p-10 shadow-sm">
           <div className="w-16 h-16 rounded-full bg-amber-100 flex items-center justify-center mx-auto mb-6">
             <ShieldCheck className="w-8 h-8 text-amber-500" />
           </div>
@@ -347,7 +349,7 @@ export default function LandlordOnboarding() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-dvh flex items-center justify-center">
         <div className="animate-spin w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full" />
       </div>
     )
@@ -355,7 +357,7 @@ export default function LandlordOnboarding() {
 
   // ── Main layout ──────────────────────────────────────────
   return (
-    <div className="min-h-screen bg-[#F8F9FB]">
+    <div className="min-h-dvh bg-slate-50">
       {/* Top bar */}
       <div className="bg-white border-b border-gray-100 sticky top-0 z-10">
         <div className="max-w-2xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
@@ -380,12 +382,12 @@ export default function LandlordOnboarding() {
                 <div className="flex flex-col items-center gap-1.5">
                   <div className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${
                     done    ? 'bg-emerald-500 text-white' :
-                    active  ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/30' :
+                    active  ? 'bg-blue-600 text-white shadow-md shadow-blue-600/20' :
                     'bg-gray-100 text-gray-400'
                   }`}>
                     {done ? <CheckCircle2 className="w-5 h-5" /> : <Icon className="w-5 h-5" />}
                   </div>
-                  <span className={`text-[11px] font-semibold ${active ? 'text-blue-600' : done ? 'text-emerald-600' : 'text-gray-400'}`}>
+                  <span aria-current={active ? 'step' : undefined} className={`text-[11px] font-semibold ${active ? 'text-blue-700' : done ? 'text-emerald-600' : 'text-gray-500'}`}>
                     {s.label}
                   </span>
                 </div>
@@ -399,10 +401,10 @@ export default function LandlordOnboarding() {
 
         {/* Error banner */}
         {error && (
-          <div className="flex items-start gap-3 px-4 py-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-700">
+          <div role="alert" className="flex items-start gap-3 px-4 py-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-700">
             <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
             <span>{error}</span>
-            <button onClick={() => setError('')} className="ml-auto shrink-0"><X className="w-4 h-4" /></button>
+            <button type="button" aria-label="Dismiss error" onClick={() => setError('')} className="ml-auto shrink-0 rounded p-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"><X className="w-4 h-4" /></button>
           </div>
         )}
 
@@ -416,36 +418,36 @@ export default function LandlordOnboarding() {
                 <span className="ml-auto text-xs text-gray-400">Step 1 of 3</span>
               </div>
               <div>
-                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Full Name *</label>
-                <input required value={profile.full_name} onChange={e => setP('full_name', e.target.value)}
+                <label htmlFor="onboarding-full-name" className="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1.5">Full Name *</label>
+                <input id="onboarding-full-name" required autoComplete="name" value={profile.full_name} onChange={e => setP('full_name', e.target.value)}
                   placeholder="e.g. Adebayo Johnson" className={FIELD} />
               </div>
               <div>
-                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">WhatsApp Number *</label>
-                <input required value={profile.whatsapp} onChange={e => setP('whatsapp', e.target.value)}
+                <label htmlFor="onboarding-whatsapp" className="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1.5">WhatsApp Number *</label>
+                <input id="onboarding-whatsapp" required type="tel" autoComplete="tel" value={profile.whatsapp} onChange={e => setP('whatsapp', e.target.value)}
                   placeholder="+2348012345678" className={FIELD} />
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">City</label>
-                  <input value={profile.city} onChange={e => setP('city', e.target.value)}
+                  <label htmlFor="onboarding-city" className="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1.5">City</label>
+                  <input id="onboarding-city" value={profile.city} onChange={e => setP('city', e.target.value)}
                     placeholder="e.g. Lagos" className={FIELD} />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">State</label>
-                  <input value={profile.state} onChange={e => setP('state', e.target.value)}
+                  <label htmlFor="onboarding-state" className="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1.5">State</label>
+                  <input id="onboarding-state" value={profile.state} onChange={e => setP('state', e.target.value)}
                     placeholder="e.g. Lagos State" className={FIELD} />
                 </div>
               </div>
               <div>
-                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Bio <span className="text-gray-400 normal-case font-normal">(optional)</span></label>
-                <textarea rows={3} value={profile.bio} onChange={e => setP('bio', e.target.value)}
+                <label htmlFor="onboarding-bio" className="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1.5">Bio <span className="text-gray-400 normal-case font-normal">(optional)</span></label>
+                <textarea id="onboarding-bio" rows={3} value={profile.bio} onChange={e => setP('bio', e.target.value)}
                   placeholder="Tell tenants a bit about yourself…"
                   className={FIELD + ' resize-none'} />
               </div>
             </div>
             <button onClick={saveProfile} disabled={saving || !profile.full_name || !profile.whatsapp}
-              className="w-full py-4 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-bold rounded-2xl transition-all shadow-lg shadow-blue-600/20 text-sm flex items-center justify-center gap-2">
+              className="w-full min-h-11 py-4 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-bold rounded-xl transition-colors text-sm flex items-center justify-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2">
               {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
               {saving ? 'Saving…' : <>Continue <ChevronRight className="w-4 h-4" /></>}
             </button>
@@ -463,8 +465,8 @@ export default function LandlordOnboarding() {
                 <span className="ml-auto text-xs text-gray-400">Step 2 of 3</span>
               </div>
               <div>
-                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">ID Type *</label>
-                <select required value={kyc.id_type} onChange={e => {
+                <label htmlFor="onboarding-id-type" className="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1.5">ID Type *</label>
+                <select id="onboarding-id-type" required value={kyc.id_type} onChange={e => {
                   const selected = e.target.value
                   setK('id_type', selected)
                   const max = ID_TYPE_LENGTHS[selected] ?? 20
@@ -475,8 +477,8 @@ export default function LandlordOnboarding() {
                 </select>
               </div>
               <div>
-                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">ID Number *</label>
-                <input required value={kyc.id_number} onChange={e => {
+                <label htmlFor="onboarding-id-number" className="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1.5">ID Number *</label>
+                <input id="onboarding-id-number" required value={kyc.id_number} onChange={e => {
                   const max = ID_TYPE_LENGTHS[kyc.id_type] ?? 20
                   setK('id_number', e.target.value.replace(/\D/g, '').slice(0, max))
                 }}
@@ -489,13 +491,13 @@ export default function LandlordOnboarding() {
             </div>
 
             <div className="flex gap-3">
-              <button onClick={() => setStep(1)}
-                className="px-6 py-4 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-2xl transition-all text-sm">
+              <button type="button" onClick={() => setStep(1)}
+                className="min-h-11 px-6 py-4 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-xl transition-colors text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500">
                 Back
               </button>
               <button onClick={saveKyc}
                 disabled={saving || !kyc.id_type || !kyc.id_number}
-                className="flex-1 py-4 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-bold rounded-2xl transition-all shadow-lg shadow-blue-600/20 text-sm flex items-center justify-center gap-2">
+                className="flex-1 min-h-11 py-4 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-bold rounded-xl transition-colors text-sm flex items-center justify-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2">
                 {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
                 {saving ? 'Saving…' : <>Continue <ChevronRight className="w-4 h-4" /></>}
               </button>
@@ -522,13 +524,14 @@ export default function LandlordOnboarding() {
                   const file = docs[slot.key]
                   return (
                     <div key={slot.key}>
-                      <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
+                      <label htmlFor={`onboarding-doc-${slot.key}`} className="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-2">
                         {slot.label} {slot.required && <span className="text-red-500">*</span>}
                       </label>
                       <input
                         type="file"
                         accept="image/jpeg,image/png,image/webp,application/pdf"
-                        className="hidden"
+                        id={`onboarding-doc-${slot.key}`}
+                        className="sr-only"
                         ref={el => { fileRefs.current[slot.key] = el }}
                         onChange={e => { const f = e.target.files?.[0]; if (f) pickFile(slot.key, f) }}
                       />
@@ -542,8 +545,8 @@ export default function LandlordOnboarding() {
                               <p className="text-xs font-semibold text-emerald-700 truncate px-4 max-w-full">{file.name}</p>
                             </div>
                           )}
-                          <button onClick={() => removeFile(slot.key)}
-                            className="absolute top-2 right-2 w-6 h-6 bg-white rounded-full flex items-center justify-center shadow-sm text-red-500 hover:bg-red-50 transition-colors">
+                          <button type="button" aria-label={`Remove ${slot.label}`} onClick={() => removeFile(slot.key)}
+                            className="absolute top-2 right-2 w-9 h-9 bg-white rounded-full flex items-center justify-center shadow-sm text-red-600 hover:bg-red-50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500">
                             <X className="w-3.5 h-3.5" />
                           </button>
                           <div className="absolute bottom-2 left-2">
@@ -554,8 +557,9 @@ export default function LandlordOnboarding() {
                         </div>
                       ) : (
                         <button type="button"
+                          aria-label={`Upload ${slot.label}`}
                           onClick={() => fileRefs.current[slot.key]?.click()}
-                          className="w-full h-32 rounded-xl border-2 border-dashed border-gray-200 hover:border-blue-400 hover:bg-blue-50/40 flex flex-col items-center justify-center gap-2 transition-all group">
+                          className="w-full h-32 rounded-xl border-2 border-dashed border-gray-200 hover:border-blue-400 hover:bg-blue-50/40 flex flex-col items-center justify-center gap-2 transition-all group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2">
                           {slot.key === 'selfie'
                             ? <Camera className="w-7 h-7 text-gray-300 group-hover:text-blue-400 transition-colors" />
                             : <Upload className="w-7 h-7 text-gray-300 group-hover:text-blue-400 transition-colors" />
@@ -580,12 +584,12 @@ export default function LandlordOnboarding() {
             </div>
 
             <div className="flex gap-3">
-              <button onClick={() => setStep(2)}
-                className="px-6 py-4 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-2xl transition-all text-sm">
+              <button type="button" onClick={() => setStep(2)}
+                className="min-h-11 px-6 py-4 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-xl transition-colors text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500">
                 Back
               </button>
               <button onClick={submitAll} disabled={uploading}
-                className="flex-1 py-4 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-bold rounded-2xl transition-all shadow-lg shadow-blue-600/20 text-sm flex items-center justify-center gap-2">
+                className="flex-1 min-h-11 py-4 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-bold rounded-xl transition-colors text-sm flex items-center justify-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2">
                 {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <ShieldCheck className="w-4 h-4" />}
                 {uploading ? 'Uploading…' : 'Submit for Verification'}
               </button>

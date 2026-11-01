@@ -137,7 +137,7 @@ export default function LandlordDashboard() {
 
   return (
     <AuthGuard require="landlord">
-      <div className="flex h-screen overflow-hidden bg-[#F4F6FB]">
+      <div className="flex h-dvh overflow-hidden bg-[#F4F6FB]">
         <LandlordSidebar userName={landlord?.full_name} userEmail={user?.email} isVerified={landlord?.is_verified} />
 
         <div className="flex-1 flex flex-col min-w-0">
@@ -146,11 +146,11 @@ export default function LandlordDashboard() {
             <h1 className="text-base font-extrabold text-gray-900 tracking-tight">My Listings</h1>
             <div className="flex items-center gap-3">
               <Link href="/landlord/listings/new"
-                className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-xl shadow-sm shadow-blue-600/20 transition-colors">
+                className="inline-flex min-h-10 items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-xl shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2">
                 <Plus className="w-4 h-4" />
                 <span className="hidden sm:inline">Add Listing</span>
               </Link>
-              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-violet-500 to-blue-600 flex items-center justify-center shadow-sm">
+              <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center shadow-sm">
                 <span className="text-xs font-bold text-white">{initials}</span>
               </div>
               <span className="text-sm font-semibold text-gray-700 hidden sm:block">{displayName}</span>
@@ -219,19 +219,20 @@ export default function LandlordDashboard() {
                         placeholder="Search by title, city or area…"
                         value={search}
                         onChange={e => setSearch(e.target.value)}
-                        className="w-full pl-8 pr-3 py-2 rounded-xl border border-gray-200 bg-gray-50 text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-900 focus:bg-white transition-all"
+                        aria-label="Search listings by title, city, or area"
+                        className="w-full pl-8 pr-3 py-2.5 rounded-xl border border-gray-200 bg-white text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 transition-all"
                       />
                     </div>
 
                     {/* Type tabs */}
                     <div className="flex items-center gap-1 overflow-x-auto no-scrollbar">
                       {TYPE_TABS.map(t => (
-                        <button key={t.value} onClick={() => setTypeFilter(t.value)}
+                        <button key={t.value} type="button" aria-pressed={typeFilter === t.value} onClick={() => setTypeFilter(t.value)}
                           className={`px-3 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-all border ${
                             typeFilter === t.value
-                              ? 'bg-gray-900 text-white border-gray-900'
+                              ? 'bg-blue-600 text-white border-blue-600'
                               : 'bg-white text-gray-500 border-gray-200 hover:border-gray-400'
-                          }`}>
+                          } focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1`}>
                           {t.label}
                         </button>
                       ))}
@@ -239,8 +240,8 @@ export default function LandlordDashboard() {
 
                     {/* State */}
                     <div className="relative shrink-0">
-                      <select value={stateFilter} onChange={e => setStateFilter(e.target.value)}
-                        className="appearance-none pl-3 pr-7 py-2 rounded-xl border border-gray-200 text-xs bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-900 cursor-pointer">
+                      <select aria-label="Filter by state" value={stateFilter} onChange={e => setStateFilter(e.target.value)}
+                        className="appearance-none pl-3 pr-7 py-2.5 rounded-xl border border-gray-200 text-xs bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 cursor-pointer">
                         <option value="">Any State</option>
                         <option value="Lagos">Lagos</option>
                         <option value="Ogun">Ogun</option>
@@ -250,8 +251,8 @@ export default function LandlordDashboard() {
 
                     {/* Beds */}
                     <div className="relative shrink-0">
-                      <select value={bedsFilter} onChange={e => setBedsFilter(e.target.value)}
-                        className="appearance-none pl-3 pr-7 py-2 rounded-xl border border-gray-200 text-xs bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-900 cursor-pointer">
+                      <select aria-label="Filter by bedrooms" value={bedsFilter} onChange={e => setBedsFilter(e.target.value)}
+                        className="appearance-none pl-3 pr-7 py-2.5 rounded-xl border border-gray-200 text-xs bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 cursor-pointer">
                         <option value="">Any Beds</option>
                         <option value="1">1+ Beds</option>
                         <option value="2">2+ Beds</option>
@@ -263,8 +264,8 @@ export default function LandlordDashboard() {
 
                     {/* Sort */}
                     <div className="relative shrink-0">
-                      <select value={sortBy} onChange={e => setSortBy(e.target.value)}
-                        className="appearance-none pl-3 pr-7 py-2 rounded-xl border border-gray-200 text-xs bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-900 cursor-pointer">
+                      <select aria-label="Sort listings" value={sortBy} onChange={e => setSortBy(e.target.value)}
+                        className="appearance-none pl-3 pr-7 py-2.5 rounded-xl border border-gray-200 text-xs bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 cursor-pointer">
                         <option value="newest">Newest</option>
                         <option value="price_asc">Price ↑</option>
                         <option value="price_desc">Price ↓</option>
@@ -273,8 +274,8 @@ export default function LandlordDashboard() {
                     </div>
 
                     {hasFilters && (
-                      <button onClick={clearFilters}
-                        className="flex items-center gap-1 px-3 py-2 rounded-xl text-xs text-red-500 hover:bg-red-50 border border-red-100 shrink-0">
+                      <button type="button" onClick={clearFilters}
+                        className="flex items-center gap-1 px-3 py-2.5 rounded-xl text-xs text-gray-600 hover:bg-gray-50 border border-gray-200 shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500">
                         <X className="w-3 h-3" /> Clear
                       </button>
                     )}
@@ -286,7 +287,7 @@ export default function LandlordDashboard() {
                   <p className="text-sm text-gray-500">
                     <span className="font-bold text-gray-900">{filtered.length}</span>{' '}
                     {filtered.length === 1 ? 'property' : 'properties'}
-                    {hasFilters && <span className="text-green-600 ml-1 font-medium">· filtered</span>}
+                    {hasFilters && <span className="text-blue-700 ml-1 font-medium">· filtered</span>}
                   </p>
                   <Link href="/listings"
                     className="text-xs font-semibold text-blue-600 hover:text-blue-700 transition-colors">
@@ -304,7 +305,7 @@ export default function LandlordDashboard() {
                     <p className="text-sm text-gray-500 mb-4">Try adjusting your filters.</p>
                     {hasFilters && (
                       <button onClick={clearFilters}
-                        className="px-5 py-2.5 bg-gray-900 hover:bg-gray-800 text-white text-sm font-semibold rounded-xl transition-colors">
+                        className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-xl transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2">
                         Clear filters
                       </button>
                     )}

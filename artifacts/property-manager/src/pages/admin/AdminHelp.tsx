@@ -136,7 +136,7 @@ export default function AdminHelp() {
   return (
     <AuthGuard require="admin">
       <MobileSidebarProvider>
-        <div className="flex h-screen overflow-hidden bg-[#F4F6FB]">
+        <div className="flex h-screen h-[100dvh] overflow-hidden bg-[#F5F8FC]">
           <AdminSidebar userEmail={user?.email} userName={displayName} />
 
           <div className="flex-1 flex flex-col min-w-0">
@@ -162,7 +162,7 @@ export default function AdminHelp() {
             <div className="h-full overflow-y-auto p-4 md:p-6">
               <div className="grid gap-4 xl:grid-cols-[1.5fr_0.9fr]">
                 <section className="space-y-4">
-                  <div className="rounded-xl sm:rounded-[32px] border border-slate-200 bg-white p-4 sm:p-5 shadow-sm">
+                  <div className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-5 shadow-sm">
                     <div className="grid gap-4 lg:grid-cols-[1.5fr_0.9fr] lg:items-center">
                       <div>
                         <p className="text-xs uppercase tracking-[0.3em] text-slate-400">Get support</p>
@@ -175,7 +175,7 @@ export default function AdminHelp() {
                           { label: 'Support channels', value: '3 options' },
                           { label: 'Ticket SLA', value: '24 hrs' },
                         ].map(item => (
-                          <div key={item.label} className="rounded-xl sm:rounded-3xl bg-slate-50 p-4 border border-slate-100">
+                          <div key={item.label} className="rounded-xl bg-blue-50/50 p-4 border border-blue-100/70">
                             <p className="text-[11px] uppercase tracking-[0.3em] text-slate-400">{item.label}</p>
                             <p className="mt-2 text-xl font-semibold text-slate-950">{item.value}</p>
                           </div>
@@ -187,18 +187,18 @@ export default function AdminHelp() {
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     {[
                       { icon: MessageSquare, title: 'Live Chat', desc: 'Quick replies during business hours', accent: 'bg-blue-600' },
-                      { icon: Mail, title: 'Email Support', desc: supportEmail, accent: 'bg-violet-600' },
-                      { icon: Phone, title: 'Phone Support', desc: supportPhone, accent: 'bg-emerald-600' },
+                      { icon: Mail, title: 'Email Support', desc: supportEmail, accent: 'bg-blue-600' },
+                      { icon: Phone, title: 'Phone Support', desc: supportPhone, accent: 'bg-blue-600' },
                     ].map(c => {
                       const Icon = c.icon
                       return (
-                        <div key={c.title} className="rounded-xl sm:rounded-[28px] border border-slate-200 bg-white p-4 shadow-sm hover:shadow-md transition">
-                          <div className={`w-11 h-11 rounded-xl sm:rounded-3xl ${c.accent} flex items-center justify-center text-white mb-4`}>
+                        <div key={c.title} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm hover:shadow-md transition">
+                          <div className={`w-11 h-11 rounded-xl ${c.accent} flex items-center justify-center text-white mb-4`}>
                             <Icon className="w-5 h-5" strokeWidth={1.7} />
                           </div>
                           <p className="text-sm font-semibold text-slate-950">{c.title}</p>
                           <p className="mt-2 text-sm text-slate-500 leading-relaxed">{c.desc}</p>
-                          <button type="button" className="mt-4 w-full sm:w-auto inline-flex items-center justify-center rounded-xl sm:rounded-2xl bg-slate-950 px-4 py-2.5 sm:py-2 text-sm font-semibold text-white hover:bg-slate-800 transition">
+                          <button type="button" className="mt-4 w-full sm:w-auto inline-flex items-center justify-center rounded-xl bg-blue-700 px-4 py-2.5 sm:py-2 text-sm font-semibold text-white hover:bg-blue-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 transition">
                             Contact
                           </button>
                         </div>
@@ -206,14 +206,14 @@ export default function AdminHelp() {
                     })}
                   </div>
 
-                  <div className="rounded-[32px] border border-slate-200 bg-white p-5 shadow-sm">
+                  <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
                     <div className="flex items-center gap-2 mb-4">
                       <HelpCircle className="w-5 h-5 text-blue-600" />
                       <h2 className="text-base font-bold text-slate-950">Frequently Asked Questions</h2>
                     </div>
-                    <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3 mb-5">
+                    <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3 mb-5 focus-within:border-blue-300 focus-within:ring-2 focus-within:ring-blue-500/20">
                       <Search className="w-4 h-4 text-slate-400" />
-                      <input value={search} onChange={e => setSearch(e.target.value)}
+                      <input aria-label="Search frequently asked questions" value={search} onChange={e => setSearch(e.target.value)}
                         placeholder="Search FAQs"
                         className="flex-1 text-sm text-slate-700 placeholder:text-slate-400 bg-transparent focus:outline-none" />
                     </div>
@@ -222,8 +222,8 @@ export default function AdminHelp() {
                         <div className="rounded-xl sm:rounded-3xl border border-slate-100 bg-slate-50 p-4 sm:p-5 text-center text-sm text-slate-500">No FAQs match your search.</div>
                       ) : filteredFaqs.map((faq, i) => (
                         <div key={i} className="rounded-xl sm:rounded-[26px] border border-slate-100 overflow-hidden">
-                          <button type="button" onClick={() => setOpenFaq(openFaq === i ? null : i)}
-                            className="w-full flex items-center justify-between gap-3 px-4 py-3.5 sm:px-5 sm:py-4 bg-white text-left hover:bg-slate-50 transition">
+                          <button type="button" aria-expanded={openFaq === i} onClick={() => setOpenFaq(openFaq === i ? null : i)}
+                            className="w-full flex items-center justify-between gap-3 px-4 py-3.5 sm:px-5 sm:py-4 bg-white text-left hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-blue-500 transition">
                             <p className="text-sm font-semibold text-slate-900">{faq.q}</p>
                             {openFaq === i ? <ChevronUp className="w-4 h-4 text-slate-400" /> : <ChevronDown className="w-4 h-4 text-slate-400" />}
                           </button>

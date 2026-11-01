@@ -51,13 +51,14 @@ function getPasswordStrength(val: string) {
   return { score, ...map[score] }
 }
 
-function Toggle({ on, onChange }: { on: boolean; onChange: () => void }) {
+function Toggle({ on, onChange, label }: { on: boolean; onChange: () => void; label: string }) {
   return (
     <button
       type="button"
       onClick={onChange}
       aria-pressed={on}
-      className={`relative w-11 h-6 rounded-full transition-colors duration-200 shrink-0 ${on ? 'bg-blue-600' : 'bg-gray-200'}`}
+      aria-label={label}
+      className={`relative w-11 h-6 rounded-full transition-colors duration-200 shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 ${on ? 'bg-blue-600' : 'bg-gray-300'}`}
     >
       <span className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-all duration-200 ${on ? 'left-[22px]' : 'left-0.5'}`} />
     </button>
@@ -69,13 +70,14 @@ const inputCls = 'flex-1 bg-transparent text-sm text-gray-900 outline-none place
 
 function PasswordField({ label, placeholder, value, onChange }: { label: string; placeholder: string; value: string; onChange: (v: string) => void }) {
   const [show, setShow] = useState(false)
+  const inputId = `settings-${label.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`
   return (
     <div>
-      <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">{label}</label>
+      <label htmlFor={inputId} className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">{label}</label>
       <div className={fieldCls}>
         <Lock className="w-4 h-4 text-gray-400 shrink-0" strokeWidth={1.7} />
-        <input type={show ? 'text' : 'password'} value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder} className={inputCls} />
-        <button type="button" onClick={() => setShow(s => !s)} className="text-gray-400 hover:text-gray-600 transition-colors">
+        <input id={inputId} type={show ? 'text' : 'password'} value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder} className={inputCls} />
+        <button type="button" aria-label={show ? `Hide ${label.toLowerCase()}` : `Show ${label.toLowerCase()}`} aria-controls={inputId} onClick={() => setShow(s => !s)} className="rounded p-1 text-gray-500 hover:text-gray-700 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500">
           {show ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
         </button>
       </div>
@@ -98,7 +100,7 @@ function CardSection({ title, desc, children }: { title: string; desc: string; c
 function SaveBtn({ onClick, loading, saved, icon, label }: { onClick: () => void; loading: boolean; saved: boolean; icon: React.ReactNode; label: string }) {
   return (
     <button type="button" onClick={onClick} disabled={loading}
-      className="w-full py-3.5 bg-gray-900 hover:bg-gray-800 disabled:opacity-50 text-white text-sm font-bold rounded-xl transition-all flex items-center justify-center gap-2 shadow-lg shadow-gray-900/10">
+      className="w-full py-3.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white text-sm font-bold rounded-xl transition-colors flex items-center justify-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2">
       {loading ? <><Loader2 className="w-4 h-4 animate-spin" /> Saving…</> : saved ? <><CheckCircle className="w-4 h-4 text-green-400" /> Saved!</> : <>{icon} {label}</>}
     </button>
   )
@@ -216,7 +218,7 @@ export default function LandlordSettings() {
 
   return (
     <AuthGuard require="landlord">
-      <div className="flex min-h-screen bg-gray-50">
+      <div className="flex min-h-dvh bg-slate-50">
 
         {/* Main app sidebar */}
         <div className="hidden md:block shrink-0">
@@ -244,7 +246,8 @@ export default function LandlordSettings() {
                   const isActive = active === s.id
                   return (
                     <button key={s.id} type="button" onClick={() => setActive(s.id)}
-                      className={`flex items-center gap-2 px-3.5 py-2.5 rounded-xl text-xs font-bold whitespace-nowrap shrink-0 transition-all ${isActive ? 'bg-gray-900 text-white' : 'bg-gray-50 text-gray-600 hover:bg-gray-100'}`}>
+                      aria-pressed={isActive}
+                      className={`flex items-center gap-2 px-3.5 py-2.5 rounded-xl text-xs font-bold whitespace-nowrap shrink-0 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1 ${isActive ? 'bg-blue-600 text-white' : 'bg-gray-50 text-gray-600 hover:bg-gray-100'}`}>
                       <Icon className="w-3.5 h-3.5" />
                       {s.label}
                     </button>
@@ -273,7 +276,8 @@ export default function LandlordSettings() {
                   const isActive = active === s.id
                   return (
                     <button key={s.id} type="button" onClick={() => setActive(s.id)}
-                      className={`flex items-center justify-between w-full px-3.5 py-2.5 rounded-xl text-sm font-semibold transition-all ${isActive ? 'bg-gray-900 text-white' : 'text-gray-600 hover:bg-gray-50'}`}>
+                      aria-pressed={isActive}
+                      className={`flex items-center justify-between w-full px-3.5 py-2.5 rounded-xl text-sm font-semibold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1 ${isActive ? 'bg-blue-600 text-white' : 'text-gray-600 hover:bg-gray-50'}`}>
                       <div className="flex items-center gap-2.5">
                         <Icon className="w-4 h-4 shrink-0" strokeWidth={1.7} />
                         {s.label}
@@ -306,7 +310,7 @@ export default function LandlordSettings() {
                               <p className="text-xs text-gray-500 mt-0.5 leading-relaxed">{n.desc}</p>
                             </div>
                           </div>
-                          <Toggle on={isOn} onChange={() => setNotifs(ns => ({ ...ns, [n.key]: !isOn }))} />
+                          <Toggle label={n.label} on={isOn} onChange={() => setNotifs(ns => ({ ...ns, [n.key]: !isOn }))} />
                         </div>
                       )
                     })}
@@ -323,18 +327,18 @@ export default function LandlordSettings() {
                   <CardSection title="Account Details" desc="Update your display name shown on listings.">
                     <div className="space-y-4">
                       <div>
-                        <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Email address</label>
+                        <label htmlFor="settings-email" className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Email address</label>
                         <div className={`${fieldCls} bg-gray-50`}>
                           <Mail className="w-4 h-4 text-gray-400 shrink-0" strokeWidth={1.7} />
-                          <input value={user?.email || ''} disabled className={`${inputCls} text-gray-500`} />
+                          <input id="settings-email" value={user?.email || ''} disabled className={`${inputCls} text-gray-500`} />
                         </div>
                         <p className="text-xs text-gray-400 mt-1.5">Contact support to change your email.</p>
                       </div>
                       <div>
-                        <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Display name</label>
+                        <label htmlFor="settings-display-name" className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Display name</label>
                         <div className={fieldCls}>
                           <User className="w-4 h-4 text-gray-400 shrink-0" strokeWidth={1.7} />
-                          <input value={displayName} onChange={e => setDisplayName(e.target.value)} placeholder="Your full name" className={inputCls} />
+                          <input id="settings-display-name" value={displayName} onChange={e => setDisplayName(e.target.value)} placeholder="Your full name" className={inputCls} />
                         </div>
                       </div>
                     </div>
@@ -374,7 +378,8 @@ export default function LandlordSettings() {
                         </DialogDescription>
                       </DialogHeader>
                       <div className="mt-4">
-                        <input type="text" value={deleteConfirmText} onChange={e => setDeleteConfirmText(e.target.value)} placeholder="Type DELETE to confirm"
+                        <label htmlFor="delete-account-confirmation" className="sr-only">Type DELETE to confirm account deletion</label>
+                        <input id="delete-account-confirmation" type="text" value={deleteConfirmText} onChange={e => setDeleteConfirmText(e.target.value)} placeholder="Type DELETE to confirm"
                           className="w-full px-3 py-2.5 text-sm rounded-xl border border-gray-200 focus:border-red-400 focus:ring-2 focus:ring-red-100 outline-none" />
                       </div>
                       <DialogFooter className="gap-2 flex-row justify-end mt-5">
@@ -397,10 +402,10 @@ export default function LandlordSettings() {
                     <div className="space-y-4">
                       <PasswordField label="Current password" placeholder="••••••••" value={currentPass} onChange={setCurrentPass} />
                       <div>
-                        <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">New password</label>
+                        <label htmlFor="settings-new-password" className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">New password</label>
                         <div className={fieldCls}>
                           <Lock className="w-4 h-4 text-gray-400 shrink-0" strokeWidth={1.7} />
-                          <input type="password" value={newPass} onChange={e => setNewPass(e.target.value)} placeholder="8+ characters" className={inputCls} />
+                          <input id="settings-new-password" type="password" value={newPass} onChange={e => setNewPass(e.target.value)} placeholder="8+ characters" className={inputCls} />
                         </div>
                         {newPass.length > 0 && (
                           <div className="mt-2.5">
@@ -450,10 +455,10 @@ export default function LandlordSettings() {
                   <CardSection title="WhatsApp Contact Settings" desc="Configure how tenants can reach you via WhatsApp.">
                     <div className="space-y-4">
                       <div>
-                        <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">WhatsApp number</label>
+                        <label htmlFor="settings-whatsapp" className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">WhatsApp number</label>
                         <div className={fieldCls}>
                           <Phone className="w-4 h-4 text-gray-400 shrink-0" strokeWidth={1.7} />
-                          <input value={whatsapp.number} onChange={e => setWhatsapp(w => ({ ...w, number: e.target.value }))} placeholder="+234 800 000 0000" className={inputCls} />
+                          <input id="settings-whatsapp" type="tel" value={whatsapp.number} onChange={e => setWhatsapp(w => ({ ...w, number: e.target.value }))} placeholder="+234 800 000 0000" className={inputCls} />
                         </div>
                         <p className="text-xs text-gray-400 mt-1.5">This number is shown to tenants on your listings.</p>
                       </div>
@@ -464,14 +469,14 @@ export default function LandlordSettings() {
                               <p className="text-sm font-semibold text-gray-900">{f.label}</p>
                               <p className="text-xs text-gray-500 mt-0.5">{f.desc}</p>
                             </div>
-                            <Toggle on={(whatsapp as any)[f.key]} onChange={() => setWhatsapp(w => ({ ...w, [f.key]: !(w as any)[f.key] }))} />
+                            <Toggle label={f.label} on={(whatsapp as any)[f.key]} onChange={() => setWhatsapp(w => ({ ...w, [f.key]: !(w as any)[f.key] }))} />
                           </div>
                         ))}
                       </div>
                       {whatsapp.autoReply && (
                         <div>
-                          <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Auto-reply message</label>
-                          <textarea rows={3} value={whatsapp.autoReplyMsg} onChange={e => setWhatsapp(w => ({ ...w, autoReplyMsg: e.target.value }))}
+                          <label htmlFor="settings-auto-reply" className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Auto-reply message</label>
+                          <textarea id="settings-auto-reply" rows={3} value={whatsapp.autoReplyMsg} onChange={e => setWhatsapp(w => ({ ...w, autoReplyMsg: e.target.value }))}
                             className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white text-sm text-gray-900 focus:border-blue-300 focus:ring-2 focus:ring-blue-500/20 outline-none resize-none transition-all"
                             placeholder="Your auto-reply message…" />
                         </div>

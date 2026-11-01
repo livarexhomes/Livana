@@ -3540,7 +3540,7 @@ export default function AdminSupportPage() {
   return (
     <AuthGuard require="admin">
       <MobileSidebarProvider>
-        <div className="flex h-screen h-[100dvh] overflow-hidden bg-[#f5f7fb]">
+        <div className="flex h-screen h-[100dvh] overflow-hidden bg-[#F5F8FC]">
           <AdminSidebar userEmail={user?.email} userName={displayName} />
 
           <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
@@ -3609,7 +3609,7 @@ export default function AdminSupportPage() {
                   ] as const).map(t => {
                     const Icon = t.icon
                     return (
-                      <button key={t.key} type="button" onClick={() => setTab(t.key)}
+                      <button key={t.key} type="button" aria-pressed={tab === t.key} onClick={() => setTab(t.key)}
                         className={`focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:ring-offset-2 relative shrink-0 inline-flex min-h-9 items-center gap-2 rounded-lg px-4 py-2 text-xs font-semibold transition-colors duration-150 ${
                           tab === t.key
                             ? 'bg-blue-600 text-white shadow-sm shadow-blue-600/15'

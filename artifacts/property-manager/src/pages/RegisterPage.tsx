@@ -5,7 +5,7 @@ import { ArrowRight, Eye, EyeOff, CheckCircle2, Loader2, Mail } from 'lucide-rea
 import { createClient, isSupabaseConfigured } from '../lib/supabase'
 import SEO from '../components/SEO'
 
-const inputClass = 'w-full rounded-xl border border-slate-200 bg-slate-50/70 px-4 py-3.5 text-sm text-slate-900 placeholder:text-slate-400 outline-none transition-colors focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-500/10'
+const inputClass = 'w-full min-h-12 rounded-xl border border-slate-200 bg-slate-50/70 px-4 py-3 text-base text-slate-900 placeholder:text-slate-400 outline-none transition-colors focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-500/10'
 const labelClass = 'mb-1.5 block text-sm font-semibold text-slate-700'
 
 export default function RegisterPage() {
@@ -357,7 +357,7 @@ export default function RegisterPage() {
       </main>
 
       {/* ── Right: Brand panel (hidden on mobile) ── */}
-      <aside className="relative hidden min-h-[calc(100vh-1.5rem)] flex-col justify-between overflow-hidden rounded-[28px] bg-slate-950 p-10 lg:flex xl:p-14">
+      <aside className="relative hidden min-h-[calc(100vh-1.5rem)] flex-col justify-between overflow-hidden rounded-[28px] bg-blue-950 p-10 lg:flex xl:p-14">
         {/* Background image */}
         <img
           src="https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=1400&q=80"
@@ -365,7 +365,7 @@ export default function RegisterPage() {
           aria-hidden="true"
           className="absolute inset-0 h-full w-full object-cover opacity-35"
         />
-        <div className="absolute inset-0 bg-gradient-to-br from-blue-950/70 via-slate-950/75 to-slate-950/95" />
+        <div className="absolute inset-0 bg-gradient-to-br from-blue-900/65 via-blue-950/80 to-slate-950/95" />
 
         {/* Top */}
         <div className="relative z-10">

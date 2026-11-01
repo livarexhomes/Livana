@@ -655,9 +655,11 @@ export default function HomePage() {
             {(['Rent', 'Lease'] as Tab[]).map(t => (
               <button
                 key={t}
+                type="button"
+                aria-pressed={activeTab === t}
                 onClick={() => setActiveTab(t)}
-                className={`px-5 py-2.5 rounded-2xl text-sm font-bold whitespace-nowrap transition-all duration-200 shrink-0 ${activeTab === t
-                  ? 'bg-gray-900 text-white shadow-lg shadow-gray-900/15'
+                className={`px-5 py-2.5 rounded-2xl text-sm font-bold whitespace-nowrap transition-all duration-200 shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 ${activeTab === t
+                  ? 'bg-blue-600 text-white shadow-md shadow-blue-600/20'
                   : 'bg-white text-gray-500 border border-gray-100 hover:border-gray-200 hover:text-gray-800 hover:shadow-sm'
                   }`}
               >

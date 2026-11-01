@@ -163,7 +163,8 @@ function ChatThread({
       <div className="flex items-center gap-3 px-5 py-4 border-b border-gray-100 shrink-0">
         <button
           onClick={onBack}
-          className="lg:hidden p-1.5 rounded-lg hover:bg-gray-100 text-gray-500 transition-colors"
+          aria-label="Back to support tickets"
+          className="lg:hidden min-h-10 min-w-10 flex items-center justify-center rounded-lg hover:bg-gray-100 text-gray-600 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
         >
           <ChevronLeft className="w-4 h-4" />
         </button>
@@ -585,11 +586,12 @@ export default function LandlordInbox() {
               key={key}
               type="button"
               onClick={() => setFilterStatus(key)}
+              aria-pressed={filterStatus === key}
               className={`shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
                 filterStatus === key
                   ? 'bg-blue-600 text-white'
                   : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
-              }`}
+              } focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1`}
             >
               {key === 'all' ? 'All' : STATUS_META[key].label}
               <span
@@ -628,7 +630,7 @@ export default function LandlordInbox() {
                 onClick={() => selectTicket(ticket.id)}
                 className={`w-full text-left px-4 py-3.5 border-b border-gray-50 transition-colors ${
                   isActive ? 'bg-blue-50 border-l-2 border-l-blue-500' : 'hover:bg-gray-50'
-                }`}
+                } focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-blue-500`}
               >
                 <div className="flex items-start justify-between gap-2">
                   <p
@@ -667,7 +669,7 @@ export default function LandlordInbox() {
 
   return (
     <AuthGuard require="landlord">
-      <div className="flex h-screen overflow-hidden bg-[#F4F6FB]">
+      <div className="flex h-dvh overflow-hidden bg-[#F4F6FB]">
         <LandlordSidebar
           userName={landlord?.full_name}
           userEmail={user?.email}
@@ -677,7 +679,7 @@ export default function LandlordInbox() {
         {/* Main content */}
         <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
           {/* Top bar */}
-          <header className="flex items-center gap-3 pl-14 pr-4 md:px-6 py-4 bg-white border-b border-gray-100 shrink-0">
+          <header className="flex flex-wrap items-center gap-x-3 gap-y-2 pl-14 pr-4 md:px-6 py-4 bg-white border-b border-gray-100 shrink-0">
             <div className="flex items-center gap-2">
               <HeadphonesIcon className="w-5 h-5 text-blue-600" />
               <h1 className="text-xl font-extrabold text-gray-900 tracking-tight">Support Center</h1>

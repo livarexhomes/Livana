@@ -165,8 +165,11 @@ export default function ListingsPage() {
 
               {/* LOCATION pill */}
               <button
+                type="button"
+                aria-expanded={openPanel === 'location'}
+                aria-controls="listing-location-filter"
                 onClick={() => togglePanel('location')}
-                className={`group flex items-center gap-1.5 h-9 px-3 rounded-xl border text-sm font-medium transition-all duration-150 shrink-0 ${
+                className={`group flex items-center gap-1.5 h-9 px-3 rounded-xl border text-sm font-medium transition-all duration-150 shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 ${
                   (stateFilter || areaFilter)
                     ? 'bg-blue-600 border-blue-600 text-white shadow-sm shadow-blue-600/25'
                     : openPanel === 'location'
@@ -181,8 +184,11 @@ export default function ListingsPage() {
 
               {/* TYPE pill */}
               <button
+                type="button"
+                aria-expanded={openPanel === 'type'}
+                aria-controls="listing-type-filter"
                 onClick={() => togglePanel('type')}
-                className={`group flex items-center gap-1.5 h-9 px-3 rounded-xl border text-sm font-medium transition-all duration-150 shrink-0 ${
+                className={`group flex items-center gap-1.5 h-9 px-3 rounded-xl border text-sm font-medium transition-all duration-150 shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 ${
                   typeFilter
                     ? 'bg-blue-600 border-blue-600 text-white shadow-sm shadow-blue-600/25'
                     : openPanel === 'type'
@@ -196,8 +202,11 @@ export default function ListingsPage() {
 
               {/* BEDS pill */}
               <button
+                type="button"
+                aria-expanded={openPanel === 'beds'}
+                aria-controls="listing-beds-filter"
                 onClick={() => togglePanel('beds')}
-                className={`group flex items-center gap-1.5 h-9 px-3 rounded-xl border text-sm font-medium transition-all duration-150 shrink-0 ${
+                className={`group flex items-center gap-1.5 h-9 px-3 rounded-xl border text-sm font-medium transition-all duration-150 shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 ${
                   bedsFilter
                     ? 'bg-blue-600 border-blue-600 text-white shadow-sm shadow-blue-600/25'
                     : openPanel === 'beds'
@@ -211,8 +220,11 @@ export default function ListingsPage() {
 
               {/* PRICE pill */}
               <button
+                type="button"
+                aria-expanded={openPanel === 'price'}
+                aria-controls="listing-price-filter"
                 onClick={() => togglePanel('price')}
-                className={`group flex items-center gap-1.5 h-9 px-3 rounded-xl border text-sm font-medium transition-all duration-150 shrink-0 ${
+                className={`group flex items-center gap-1.5 h-9 px-3 rounded-xl border text-sm font-medium transition-all duration-150 shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 ${
                   (minPrice || maxPrice)
                     ? 'bg-blue-600 border-blue-600 text-white shadow-sm shadow-blue-600/25'
                     : openPanel === 'price'
@@ -227,8 +239,9 @@ export default function ListingsPage() {
               {/* Clear filters */}
               {hasFilters && (
                 <button
+                  type="button"
                   onClick={clearFilters}
-                  className="flex items-center gap-1 h-9 px-2.5 rounded-xl text-sm font-medium text-red-500 hover:text-red-600 hover:bg-red-50 border border-transparent hover:border-red-100 transition-all duration-150 shrink-0"
+                  className="flex items-center gap-1 h-9 px-2.5 rounded-xl text-sm font-medium text-red-600 hover:text-red-700 hover:bg-red-50 border border-transparent hover:border-red-100 transition-all duration-150 shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
                 >
                   <X className="w-3.5 h-3.5" />
                   <span className="hidden sm:inline">Clear</span>
@@ -244,8 +257,8 @@ export default function ListingsPage() {
             {/* Right controls */}
             <div className="flex items-center gap-1.5 pl-2 border-l border-slate-100 shrink-0">
               <div className="relative">
-                <select value={sortBy} onChange={e => setSortBy(e.target.value)}
-                  className="appearance-none h-9 pl-2.5 pr-6 rounded-xl border border-slate-200 text-xs bg-white text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/30 cursor-pointer font-medium hover:border-slate-300 transition-colors">
+                <select aria-label="Sort properties" value={sortBy} onChange={e => setSortBy(e.target.value)}
+                  className="appearance-none h-9 pl-2.5 pr-6 rounded-xl border border-slate-200 text-xs bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/50 cursor-pointer font-medium hover:border-slate-300 transition-colors">
                   <option value="newest">Newest</option>
                   <option value="price_asc">Price ↑</option>
                   <option value="price_desc">Price ↓</option>
@@ -255,12 +268,14 @@ export default function ListingsPage() {
 
               {/* Map toggle — desktop only */}
               <button
+                type="button"
+                aria-pressed={mapVisible}
                 onClick={() => setMapVisible(v => !v)}
                 className={`hidden lg:flex items-center gap-2 h-9 px-3.5 rounded-xl border text-xs font-semibold transition-all duration-150 ${
                   mapVisible
-                    ? 'bg-slate-900 text-white border-slate-900 shadow-sm'
+                    ? 'bg-blue-600 text-white border-blue-600 shadow-sm shadow-blue-600/20'
                     : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300 hover:bg-slate-50'
-                }`}
+                } focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2`}
               >
                 {mapVisible ? <LayoutGrid className="w-3.5 h-3.5" /> : <Map className="w-3.5 h-3.5" />}
                 {mapVisible ? 'Hide Map' : 'Show Map'}
@@ -269,12 +284,12 @@ export default function ListingsPage() {
 
             {/* ── Dropdown panels — anchored left-0 on mobile, smart on desktop ── */}
             {openPanel === 'location' && (
-              <div className="absolute left-2 right-2 sm:left-4 sm:right-auto sm:w-76 top-[calc(100%+8px)] bg-white rounded-2xl shadow-[0_8px_32px_rgba(0,0,0,0.12)] border border-slate-100 p-4 z-50">
+              <div id="listing-location-filter" role="group" aria-label="Location filters" className="absolute left-2 right-2 sm:left-4 sm:right-auto sm:w-76 top-[calc(100%+8px)] bg-white rounded-2xl shadow-[0_8px_32px_rgba(0,0,0,0.12)] border border-slate-100 p-4 z-50">
                 <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2.5">State</p>
                 <div className="grid grid-cols-3 gap-1.5 mb-4">
                   {['', 'Lagos', 'Ogun'].map(v => (
                     <button key={v} onClick={() => { setStateFilter(v); setOpenPanel(null) }}
-                      className={`px-3 py-2 rounded-xl text-sm font-medium transition-all duration-150 text-center ${stateFilter === v ? 'bg-blue-600 text-white shadow-sm shadow-blue-600/25' : 'text-slate-700 hover:bg-slate-50 border border-slate-100'}`}>
+                      className={`px-3 py-2 rounded-xl text-sm font-medium transition-all duration-150 text-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 ${stateFilter === v ? 'bg-blue-600 text-white shadow-sm shadow-blue-600/25' : 'text-slate-700 hover:bg-slate-50 border border-slate-100'}`}>
                       {v || 'Any'}
                     </button>
                   ))}
@@ -284,22 +299,23 @@ export default function ListingsPage() {
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 pointer-events-none" />
                   <input value={areaFilter} onChange={e => setAreaFilter(e.target.value)}
                     onKeyDown={e => e.key === 'Enter' && setOpenPanel(null)}
+                    aria-label="Neighbourhood"
                     placeholder="e.g. Lekki, Ikeja…"
                     className="w-full pl-9 pr-3 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 transition-colors placeholder:text-slate-400" />
                 </div>
                 <button onClick={() => setOpenPanel(null)}
-                  className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-xl transition-colors shadow-sm shadow-blue-600/25">
+                  className="w-full min-h-11 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-xl transition-colors shadow-sm shadow-blue-600/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2">
                   Apply
                 </button>
               </div>
             )}
 
             {openPanel === 'type' && (
-              <div className="absolute left-2 right-2 sm:left-auto sm:right-auto sm:w-52 top-[calc(100%+8px)] bg-white rounded-2xl shadow-[0_8px_32px_rgba(0,0,0,0.12)] border border-slate-100 p-3 z-50">
+              <div id="listing-type-filter" role="group" aria-label="Property type filters" className="absolute left-2 right-2 sm:left-auto sm:right-auto sm:w-52 top-[calc(100%+8px)] bg-white rounded-2xl shadow-[0_8px_32px_rgba(0,0,0,0.12)] border border-slate-100 p-3 z-50">
                 <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2 px-1">Property type</p>
                 {TYPE_TABS.map(t => (
                   <button key={t.value} onClick={() => { setTypeFilter(t.value); setOpenPanel(null) }}
-                    className={`w-full text-left px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-150 mb-0.5 ${typeFilter === t.value ? 'bg-blue-600 text-white shadow-sm shadow-blue-600/20' : 'text-slate-700 hover:bg-slate-50'}`}>
+                    className={`w-full text-left px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-150 mb-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-inset ${typeFilter === t.value ? 'bg-blue-600 text-white shadow-sm shadow-blue-600/20' : 'text-slate-700 hover:bg-slate-50'}`}>
                     {t.label}
                   </button>
                 ))}
@@ -307,12 +323,12 @@ export default function ListingsPage() {
             )}
 
             {openPanel === 'beds' && (
-              <div className="absolute left-2 right-2 sm:left-auto sm:right-auto sm:w-64 top-[calc(100%+8px)] bg-white rounded-2xl shadow-[0_8px_32px_rgba(0,0,0,0.12)] border border-slate-100 p-3 z-50">
+              <div id="listing-beds-filter" role="group" aria-label="Bedroom and furnishing filters" className="absolute left-2 right-2 sm:left-auto sm:right-auto sm:w-64 top-[calc(100%+8px)] bg-white rounded-2xl shadow-[0_8px_32px_rgba(0,0,0,0.12)] border border-slate-100 p-3 z-50">
                 <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2 px-1">Bedrooms</p>
                 <div className="grid grid-cols-3 gap-1.5 mb-4">
                   {[['', 'Any'], ['1', '1+'], ['2', '2+'], ['3', '3+'], ['4', '4+'], ['5', '5+']].map(([v, l]) => (
                     <button key={v} onClick={() => setBedsFilter(v)}
-                      className={`py-2 rounded-xl text-sm font-medium transition-all duration-150 text-center ${bedsFilter === v ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-700 hover:bg-slate-50 border border-slate-100'}`}>
+                      className={`py-2 rounded-xl text-sm font-medium transition-all duration-150 text-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-inset ${bedsFilter === v ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-700 hover:bg-slate-50 border border-slate-100'}`}>
                       {l}
                     </button>
                   ))}
@@ -320,19 +336,19 @@ export default function ListingsPage() {
                 <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2 px-1">Furnished</p>
                 {[['', 'Any'], ['true', 'Furnished'], ['false', 'Unfurnished']].map(([v, l]) => (
                   <button key={v} onClick={() => setFurnishedFilter(v)}
-                    className={`w-full text-left px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-150 mb-0.5 ${furnishedFilter === v ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-700 hover:bg-slate-50'}`}>
+                    className={`w-full text-left px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-150 mb-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-inset ${furnishedFilter === v ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-700 hover:bg-slate-50'}`}>
                     {l}
                   </button>
                 ))}
                 <button onClick={() => setOpenPanel(null)}
-                  className="mt-2 w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-xl transition-colors shadow-sm shadow-blue-600/25">
+                  className="mt-2 w-full min-h-11 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-xl transition-colors shadow-sm shadow-blue-600/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2">
                   Apply
                 </button>
               </div>
             )}
 
             {openPanel === 'price' && (
-              <div className="absolute left-2 right-2 sm:left-auto sm:right-4 sm:w-72 top-[calc(100%+8px)] bg-white rounded-2xl shadow-[0_8px_32px_rgba(0,0,0,0.12)] border border-slate-100 p-4 z-50">
+              <div id="listing-price-filter" role="group" aria-label="Price filters" className="absolute left-2 right-2 sm:left-auto sm:right-4 sm:w-72 top-[calc(100%+8px)] bg-white rounded-2xl shadow-[0_8px_32px_rgba(0,0,0,0.12)] border border-slate-100 p-4 z-50">
                 <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-3">Price range (₦)</p>
                 <div className="grid grid-cols-2 gap-2 mb-4">
                   <div>
@@ -345,7 +361,7 @@ export default function ListingsPage() {
                   </div>
                 </div>
                 <button onClick={() => setOpenPanel(null)}
-                  className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-xl transition-colors shadow-sm shadow-blue-600/25">
+                  className="w-full min-h-11 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-xl transition-colors shadow-sm shadow-blue-600/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2">
                   Apply
                 </button>
               </div>

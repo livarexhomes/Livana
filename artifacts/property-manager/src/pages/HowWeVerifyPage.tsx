@@ -14,7 +14,7 @@ const STEPS = [
   },
   {
     number: 2,
-    icon: <FileText className="w-6 h-6 text-violet-600" />,
+    icon: <FileText className="w-6 h-6 text-blue-600" />,
     title: 'Government ID Submission',
     description: 'Every landlord must upload a clear photo of one government-issued ID: NIN slip, international passport, driver\'s license, or voter\'s card.',
     badge: 'Required',
@@ -30,7 +30,7 @@ const STEPS = [
   },
   {
     number: 4,
-    icon: <Home className="w-6 h-6 text-amber-600" />,
+    icon: <Home className="w-6 h-6 text-blue-600" />,
     title: 'Property Ownership Confirmation',
     description: 'For each listing, we review proof of ownership or legal authority to let (title deed, C of O, allocation letter, or estate agent authority). Landlords listing without proof are declined.',
     badge: 'Per listing',
@@ -89,7 +89,7 @@ export default function HowWeVerifyPage() {
       <PublicNavbar />
 
       {/* Hero */}
-      <div className="pt-[72px] bg-gradient-to-br from-gray-950 via-blue-950 to-gray-900">
+      <div className="pt-[72px] bg-gradient-to-br from-blue-950 via-blue-900 to-[#123d93]">
         <div className="max-w-4xl mx-auto px-5 sm:px-8 py-16 md:py-24 text-center">
           <div className="w-16 h-16 rounded-3xl bg-blue-600 flex items-center justify-center mx-auto mb-6 shadow-2xl shadow-blue-600/40">
             <ShieldCheck className="w-8 h-8 text-white" />
@@ -104,7 +104,7 @@ export default function HowWeVerifyPage() {
       </div>
 
       {/* Trust stats */}
-      <div className="bg-blue-600">
+      <div className="border-b border-blue-100 bg-blue-50">
         <div className="max-w-5xl mx-auto px-5 sm:px-8 py-6 grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
           {[
             { num: '100%', label: 'Landlords ID-verified' },
@@ -113,8 +113,8 @@ export default function HowWeVerifyPage() {
             { num: '24h', label: 'Report response time' },
           ].map(({ num, label }) => (
             <div key={label}>
-              <p className="text-2xl font-black text-white">{num}</p>
-              <p className="text-blue-200/80 text-xs font-medium mt-0.5">{label}</p>
+              <p className="text-2xl font-bold text-blue-900">{num}</p>
+              <p className="text-blue-800/75 text-xs font-medium mt-0.5">{label}</p>
             </div>
           ))}
         </div>
@@ -128,7 +128,7 @@ export default function HowWeVerifyPage() {
         </div>
         <div className="space-y-4">
           {STEPS.map((step, i) => (
-            <div key={step.number} className="flex gap-5 bg-gray-50 border border-gray-100 rounded-2xl p-6 hover:border-blue-200 hover:bg-blue-50/30 transition-all">
+            <div key={step.number} className="flex gap-4 sm:gap-5 bg-white border border-slate-200 rounded-2xl p-5 sm:p-6 hover:border-blue-200 hover:bg-blue-50/30 transition-colors">
               <div className="flex flex-col items-center gap-2 shrink-0">
                 <div className="w-12 h-12 rounded-2xl bg-white border border-gray-100 shadow-sm flex items-center justify-center">
                   {step.icon}
@@ -206,17 +206,17 @@ export default function HowWeVerifyPage() {
       </div>
 
       {/* CTAs */}
-      <div className="bg-gray-950 py-14">
+      <div className="bg-blue-950 py-14">
         <div className="max-w-4xl mx-auto px-5 sm:px-8">
           <div className="grid md:grid-cols-2 gap-6">
-            <div className="bg-white/5 border border-white/10 rounded-2xl p-7">
+            <div className="bg-white/5 border border-white/15 rounded-2xl p-7">
               <h3 className="text-xl font-extrabold text-white mb-2">Find a verified home</h3>
               <p className="text-gray-400 text-sm mb-5">Browse listings from ID-verified landlords across Lagos and beyond.</p>
               <Link href="/listings" className="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 transition-all text-sm">
                 Browse properties <ArrowRight className="w-4 h-4" />
               </Link>
             </div>
-            <div className="bg-white/5 border border-white/10 rounded-2xl p-7">
+            <div className="bg-white/5 border border-white/15 rounded-2xl p-7">
               <h3 className="text-xl font-extrabold text-white mb-2">List your property</h3>
               <p className="text-gray-400 text-sm mb-5">List your property and reach serious, pre-screened tenants across Lagos & Ogun — Livarex handles all coordination and inspections.</p>
               <Link href="/landlord/register" className="inline-flex items-center gap-2 px-5 py-2.5 bg-white text-gray-900 font-bold rounded-xl hover:bg-gray-100 transition-all text-sm">

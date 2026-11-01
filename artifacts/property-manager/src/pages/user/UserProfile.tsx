@@ -51,7 +51,7 @@ export default function UserProfilePage() {
 
           {/* Avatar card */}
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 flex items-center gap-4">
-            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center shadow-md shrink-0">
+            <div className="w-16 h-16 rounded-2xl bg-blue-600 flex items-center justify-center shadow-sm shrink-0">
               <span className="text-xl font-extrabold text-white">{initials}</span>
             </div>
             <div className="min-w-0">
@@ -81,50 +81,52 @@ export default function UserProfilePage() {
 
                 {/* Email (read-only) */}
                 <div>
-                  <label className="flex items-center gap-1.5 text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">
+                  <p id="profile-email-label" className="flex items-center gap-1.5 text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">
                     <Mail className="w-3.5 h-3.5" /> Email
-                  </label>
-                  <div className="w-full px-4 py-3 rounded-xl border border-gray-100 text-sm text-gray-400 bg-gray-50 select-none">
+                  </p>
+                  <div aria-labelledby="profile-email-label" className="w-full px-4 py-3 rounded-xl border border-gray-100 text-sm text-gray-600 bg-gray-50 select-none">
                     {userEmail}
                   </div>
                 </div>
 
                 {/* Full name */}
                 <div>
-                  <label className="flex items-center gap-1.5 text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">
+                  <label htmlFor="full-name" className="flex items-center gap-1.5 text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">
                     <User className="w-3.5 h-3.5" /> Full name
                   </label>
                   <input
+                    id="full-name"
                     required
                     value={form.full_name}
                     onChange={e => setForm(f => ({ ...f, full_name: e.target.value }))}
                     placeholder="Your full name"
-                    className="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm text-gray-900 bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-gray-900 transition-all"
+                    className="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm text-gray-900 bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
                   />
                 </div>
 
                 {/* Phone */}
                 <div>
-                  <label className="flex items-center gap-1.5 text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">
+                  <label htmlFor="phone" className="flex items-center gap-1.5 text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">
                     <Phone className="w-3.5 h-3.5" /> Phone
                     <span className="text-gray-300 font-normal normal-case tracking-normal">optional</span>
                   </label>
                   <input
+                    id="phone"
                     type="tel"
                     value={form.phone}
                     onChange={e => setForm(f => ({ ...f, phone: e.target.value }))}
                     placeholder="+234 800 000 0000"
-                    className="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm text-gray-900 bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-gray-900 transition-all"
+                    className="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm text-gray-900 bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
                   />
                 </div>
 
                 {error && (
-                  <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-xl px-4 py-3">
+                  <div role="alert" className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-xl px-4 py-3">
                     {error}
                   </div>
                 )}
                 {success && (
-                  <div className="flex items-center gap-2 text-sm text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-xl px-4 py-3">
+                  <div role="status" className="flex items-center gap-2 text-sm text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-xl px-4 py-3">
                     <CheckCircle className="w-4 h-4 shrink-0" /> Profile updated.
                   </div>
                 )}
@@ -132,7 +134,7 @@ export default function UserProfilePage() {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full py-3 bg-gray-900 hover:bg-gray-800 disabled:opacity-60 text-white font-bold rounded-xl transition-colors text-sm"
+                  className="w-full py-3 bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white font-bold rounded-xl transition-colors text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
                 >
                   {loading ? 'Saving…' : 'Save changes'}
                 </button>

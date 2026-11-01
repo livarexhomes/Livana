@@ -94,7 +94,7 @@ export default function LoginPage() {
         noIndex={true}
       />
       {/* ── Left: Form ── */}
-      <div className="min-w-0 flex-1 flex flex-col justify-center bg-white px-6 py-10 sm:px-12 sm:py-14 lg:rounded-[28px] lg:px-10 xl:px-16">
+      <main className="min-w-0 flex-1 flex flex-col justify-center bg-white px-5 py-8 sm:px-12 sm:py-14 lg:rounded-[28px] lg:px-10 xl:px-16">
         <div className="max-w-[420px] w-full mx-auto">
           {/* Logo */}
           <Link href="/" className="inline-flex items-center mb-10 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-4">
@@ -114,7 +114,7 @@ export default function LoginPage() {
             type="button"
             onClick={handleGoogle}
             disabled={googleLoading}
-            className="w-full flex items-center justify-center gap-3 py-3.5 rounded-2xl border border-gray-200 bg-white hover:bg-gray-50 hover:border-gray-300 text-sm font-semibold text-gray-700 transition-all disabled:opacity-60 shadow-sm mb-6 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 disabled:cursor-wait"
+            className="w-full min-h-12 flex items-center justify-center gap-3 py-3 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 hover:border-slate-300 text-sm font-semibold text-slate-700 transition-colors disabled:opacity-60 shadow-sm mb-6 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 disabled:cursor-wait"
           >
             <svg aria-hidden="true" className="w-5 h-5 shrink-0" viewBox="0 0 24 24">
               <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
@@ -210,17 +210,17 @@ export default function LoginPage() {
               </p>
             </>
         </div>
-      </div>
+      </main>
 
       {/* ── Right: Brand panel (hidden on mobile) ── */}
-      <div className="hidden lg:flex lg:w-[48%] xl:w-[50%] shrink-0 bg-slate-950 flex-col justify-between gap-8 rounded-[28px] p-9 xl:p-12 relative overflow-hidden">
+      <aside className="hidden lg:flex lg:w-[48%] xl:w-[50%] shrink-0 bg-blue-950 flex-col justify-between gap-8 rounded-[28px] p-9 xl:p-12 relative overflow-hidden">
         {/* Background image */}
         <img
           src="/homes/hero2.png"
           alt="Modern home"
           className="absolute inset-0 w-full h-full object-cover opacity-60"
         />
-        <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(2,6,23,0.3)_0%,rgba(2,6,23,0.55)_35%,rgba(2,6,23,0.96)_75%)]" />
+        <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(15,35,78,0.38)_0%,rgba(15,35,78,0.62)_35%,rgba(8,24,55,0.97)_75%)]" />
 
         {/* Top: logo + tagline */}
         <div className="relative z-10">
@@ -268,7 +268,7 @@ export default function LoginPage() {
             </div>
           ))}
         </div>
-      </div>
+      </aside>
     </div>
   )
 }

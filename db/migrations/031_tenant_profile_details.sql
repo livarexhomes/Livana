@@ -25,7 +25,8 @@ DECLARE
     'occupation',
     'employment_type',
     'household_size',
-    'move_in_timeline'
+    'move_in_timeline',
+    'updated_at'
   ];
 BEGIN
   IF COALESCE(auth.role(), '') = 'service_role' OR public.is_admin() THEN

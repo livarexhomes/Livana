@@ -112,7 +112,7 @@ export default function AdminActivity() {
 
   return (
     <AuthGuard require="admin">
-      <div className="flex h-screen overflow-hidden bg-[#F4F6FB]">
+      <div className="flex h-screen h-[100dvh] overflow-hidden bg-[#F5F8FC]">
         <AdminSidebar userEmail={user?.email} userName={displayName} />
 
         <div className="flex-1 flex flex-col min-w-0">
@@ -165,9 +165,9 @@ export default function AdminActivity() {
                       <div className="rounded-lg bg-slate-50 px-2.5 py-1 text-[11px] text-slate-500 ring-1 ring-slate-100">Latest 50 events</div>
                     </div>
                     <div className="mt-2.5 flex items-center gap-1.5 overflow-x-auto -mx-1 px-1 pb-0.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-                      <button onClick={() => setTypeFilter('all')}
-                        className={`shrink-0 inline-flex h-7 items-center gap-1.5 rounded-lg px-2.5 text-xs font-semibold transition ${
-                          typeFilter === 'all' ? 'bg-slate-950 text-white shadow-sm' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                      <button type="button" aria-pressed={typeFilter === 'all'} onClick={() => setTypeFilter('all')}
+                        className={`focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 shrink-0 inline-flex min-h-9 items-center gap-1.5 rounded-lg px-2.5 text-xs font-semibold transition ${
+                          typeFilter === 'all' ? 'bg-blue-700 text-white shadow-sm' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                         }`}>
                         <Activity className="w-3.5 h-3.5" />
                         All
@@ -179,9 +179,9 @@ export default function AdminActivity() {
                         const count = eventCounts[t as ActivityItem['type']]
                         const active = typeFilter === t
                         return (
-                          <button key={t} onClick={() => setTypeFilter(t)}
-                            className={`shrink-0 inline-flex h-7 items-center gap-1.5 rounded-lg px-2.5 text-xs font-semibold transition ${
-                              active ? 'bg-slate-950 text-white shadow-sm' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                          <button key={t} type="button" aria-pressed={active} onClick={() => setTypeFilter(t)}
+                            className={`focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 shrink-0 inline-flex min-h-9 items-center gap-1.5 rounded-lg px-2.5 text-xs font-semibold transition ${
+                              active ? 'bg-blue-700 text-white shadow-sm' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                             }`}>
                             <span className={`flex h-4 w-4 items-center justify-center rounded-md ${meta.bg} ${meta.text}`}><Icon className="w-3 h-3" /></span>
                             {meta.label}

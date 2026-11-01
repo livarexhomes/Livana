@@ -86,14 +86,14 @@ export default function ResetPasswordPage() {
   // Success
   if (step === 'done') {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-white px-6">
-        <div className="max-w-md w-full text-center">
+      <div className="min-h-screen min-h-[100dvh] flex items-center justify-center bg-slate-50 px-5 py-10">
+        <div className="max-w-md w-full rounded-3xl border border-slate-200 bg-white px-6 py-10 text-center shadow-sm sm:px-10">
           <div className="w-14 h-14 rounded-2xl bg-green-50 flex items-center justify-center mx-auto mb-5">
             <CheckCircle2 className="w-7 h-7 text-green-500" />
           </div>
           <h1 className="text-xl font-bold text-gray-900 mb-2">Password updated</h1>
           <p className="text-sm text-gray-500 mb-6">Your password has been changed. You can now sign in.</p>
-          <Link href="/login" className="inline-block px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-2xl text-sm transition-all">
+          <Link href="/login" className="inline-flex min-h-12 items-center justify-center px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2">
             Sign in now
           </Link>
         </div>
@@ -102,9 +102,9 @@ export default function ResetPasswordPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-white px-6">
-      <div className="max-w-md w-full">
-        <Link href="/" className="inline-flex items-center mb-10">
+    <div className="min-h-screen min-h-[100dvh] flex items-center justify-center bg-slate-50 px-5 py-10">
+      <div className="max-w-md w-full rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-10">
+        <Link href="/" className="inline-flex items-center mb-8 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-4">
           <img src="/livarex-logo.png" alt="LIVAREX" className="h-10 w-auto" />
         </Link>
 
@@ -117,8 +117,9 @@ export default function ResetPasswordPage() {
 
             <form onSubmit={requestCode} className="space-y-4">
               <div>
-                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-widest mb-1.5">Email</label>
+                <label htmlFor="reset-email" className="block text-sm font-medium text-slate-700 mb-1.5">Email address</label>
                 <input
+                  id="reset-email"
                   type="email"
                   required
                   autoFocus
@@ -126,15 +127,15 @@ export default function ResetPasswordPage() {
                   placeholder="you@example.com"
                   value={email}
                   onChange={e => setEmail(e.target.value)}
-                  className="w-full px-4 py-3.5 pr-12 rounded-2xl border border-gray-200 bg-gray-50 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:bg-white transition-all"
+                  className="w-full min-h-12 px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 text-base text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:bg-white transition-colors"
                 />
               </div>
 
               {error && (
-                <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-2xl px-4 py-3">{error}</div>
+                <div role="alert" className="text-sm text-red-700 bg-red-50 border border-red-200 rounded-xl px-4 py-3">{error}</div>
               )}
               {sent && (
-                <div className="text-sm text-green-600 bg-green-50 border border-green-200 rounded-2xl px-4 py-3">
+                <div role="status" aria-live="polite" className="text-sm text-green-700 bg-green-50 border border-green-200 rounded-xl px-4 py-3">
                   Code sent! Check your email (it can take a few minutes). Don't see it? Check spam.
                 </div>
               )}
@@ -142,14 +143,14 @@ export default function ResetPasswordPage() {
               <button
                 type="submit"
                 disabled={loading || !email.trim()}
-                className="w-full py-3.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white font-bold rounded-2xl transition-all shadow-lg shadow-blue-600/25 text-sm mt-2"
+                className="w-full min-h-12 py-3 bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white font-semibold rounded-xl transition-colors shadow-sm shadow-blue-600/20 text-sm mt-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
               >
                 {loading ? 'Sending…' : 'Send reset code'}
               </button>
 
               <p className="text-center text-sm text-gray-400">
                 Remembered it?{' '}
-                <Link href="/login" className="text-blue-600 hover:underline font-medium">Sign in</Link>
+                <Link href="/login" className="rounded-sm text-blue-700 hover:underline font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500">Sign in</Link>
               </p>
             </form>
           </>
@@ -166,34 +167,38 @@ export default function ResetPasswordPage() {
 
             <form onSubmit={verifyCode} className="space-y-4">
               <div>
-                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-widest mb-1.5">Verification code</label>
+                <label htmlFor="reset-code" className="block text-sm font-medium text-slate-700 mb-1.5">Verification code</label>
                 <input
+                  id="reset-code"
                   required
                   autoFocus
                   inputMode="numeric"
                   placeholder="6-digit code"
                   value={otp}
                   onChange={e => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                  className="w-full px-4 py-3.5 rounded-2xl border border-gray-200 bg-gray-50 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:bg-white transition-all text-center text-xl font-bold tracking-[0.4em]"
+                  className="w-full min-h-12 px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 text-base text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:bg-white transition-colors text-center text-xl font-bold tracking-[0.4em]"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-widest mb-1.5">New password</label>
+                <label htmlFor="reset-new-password" className="block text-sm font-medium text-slate-700 mb-1.5">New password</label>
                 <div className="relative">
                   <input
+                    id="reset-new-password"
                     type={showPassword ? 'text' : 'password'}
                     required
                     autoComplete="new-password"
                     placeholder="At least 8 characters"
                     value={password}
                     onChange={e => setPassword(e.target.value)}
-                    className="w-full px-4 py-3.5 pr-12 rounded-2xl border border-gray-200 bg-gray-50 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:bg-white transition-all"
+                    className="w-full min-h-12 px-4 py-3 pr-12 rounded-xl border border-slate-200 bg-slate-50 text-base text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:bg-white transition-colors"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition"
+                    aria-pressed={showPassword}
+                    aria-controls="reset-new-password"
+                    className="absolute right-1 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-800 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
                     aria-label={showPassword ? 'Hide password' : 'Show password'}
                   >
                     {showPassword ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
@@ -202,21 +207,24 @@ export default function ResetPasswordPage() {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-widest mb-1.5">Confirm password</label>
+                <label htmlFor="reset-confirm-password" className="block text-sm font-medium text-slate-700 mb-1.5">Confirm password</label>
                 <div className="relative">
                   <input
+                    id="reset-confirm-password"
                     type={showConfirm ? 'text' : 'password'}
                     required
                     autoComplete="new-password"
                     placeholder="Repeat your password"
                     value={confirm}
                     onChange={e => setConfirm(e.target.value)}
-                    className="w-full px-4 py-3.5 pr-12 rounded-2xl border border-gray-200 bg-gray-50 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:bg-white transition-all"
+                    className="w-full min-h-12 px-4 py-3 pr-12 rounded-xl border border-slate-200 bg-slate-50 text-base text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:bg-white transition-colors"
                   />
                   <button
                     type="button"
                     onClick={() => setShowConfirm(!showConfirm)}
-                    className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition"
+                    aria-pressed={showConfirm}
+                    aria-controls="reset-confirm-password"
+                    className="absolute right-1 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-800 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
                     aria-label={showConfirm ? 'Hide password' : 'Show password'}
                   >
                     {showConfirm ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
@@ -225,20 +233,20 @@ export default function ResetPasswordPage() {
               </div>
 
               {error && (
-                <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-2xl px-4 py-3">{error}</div>
+                <div role="alert" className="text-sm text-red-700 bg-red-50 border border-red-200 rounded-xl px-4 py-3">{error}</div>
               )}
 
               <button
                 type="submit"
                 disabled={loading || otp.length !== 6}
-                className="w-full py-3.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white font-bold rounded-2xl transition-all shadow-lg shadow-blue-600/25 text-sm mt-2"
+                className="w-full min-h-12 py-3 bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white font-semibold rounded-xl transition-colors shadow-sm shadow-blue-600/20 text-sm mt-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
               >
                 {loading ? 'Updating…' : 'Set new password'}
               </button>
 
               <p className="text-center text-sm text-gray-400">
                 <button type="button" onClick={() => { setStep('email'); setSent(false) }}
-                  className="text-blue-600 hover:underline font-medium">Request a new code</button>
+                  className="rounded-sm text-blue-700 hover:underline font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500">Request a new code</button>
               </p>
             </form>
           </>

@@ -225,8 +225,8 @@ export default function UserPropertyRequestsPage() {
   return (
     <AuthGuard require="tenant">
       <UserLayout title="Property Requests">
-        <div className="mx-auto max-w-7xl px-4 py-5 md:px-6 lg:px-8">
-          <header className="flex flex-col gap-3 border-b border-slate-200 pb-4 md:flex-row md:items-center md:justify-between">
+        <div className="mx-auto max-w-7xl py-1">
+          <header className="flex flex-col gap-3 border-b border-slate-200 pb-5 sm:pb-6 md:flex-row md:items-center md:justify-between">
             <div>
               <h1 className="text-2xl font-black tracking-tight text-gray-900">Property Requests</h1>
               <p className="mt-1 text-sm text-gray-500">
@@ -258,9 +258,9 @@ export default function UserPropertyRequestsPage() {
             </div>
           ) : requests.length > 0 ? (
             <section className="mt-8 border-t border-slate-200 pt-6">
-              <div className="mb-3 flex items-center justify-between gap-3">
+              <div className="mb-3 flex flex-col items-start justify-between gap-3 sm:flex-row sm:items-center">
                 <h2 className="text-lg font-extrabold text-gray-900">Your Requests</h2>
-                <div className="inline-flex items-center gap-3 text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-500">
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px] font-semibold uppercase tracking-[0.1em] text-slate-500">
                   <span>{summaryCards[0].value} Active</span>
                   <span className="text-slate-300">·</span>
                   <span>{summaryCards[1].value} Matched</span>
@@ -290,7 +290,7 @@ export default function UserPropertyRequestsPage() {
                         key={request.id}
                         type="button"
                         onClick={() => handleViewRequest(request)}
-                        className="group flex w-full flex-col gap-2 px-4 py-3 text-left transition hover:bg-slate-50 md:grid md:grid-cols-[1.4fr_1fr_0.9fr_0.7fr_0.5fr] md:items-center md:gap-3"
+                        className="group flex w-full flex-col gap-2 px-4 py-4 text-left transition hover:bg-blue-50/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-blue-500 md:grid md:grid-cols-[1.4fr_1fr_0.9fr_0.7fr_0.5fr] md:items-center md:gap-3"
                       >
                         <div className="min-w-0">
                           <p className="truncate text-sm font-semibold text-slate-900">

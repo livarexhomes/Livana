@@ -113,7 +113,7 @@ export default function LandlordProfile() {
 
   return (
     <AuthGuard require="landlord">
-      <div className="flex h-screen overflow-hidden bg-[#F4F6FB]">
+      <div className="flex h-dvh overflow-hidden bg-[#F4F6FB]">
         <LandlordSidebar
           userName={landlord?.full_name}
           userEmail={user?.email}
@@ -132,7 +132,7 @@ export default function LandlordProfile() {
               type="button"
               onClick={() => document.getElementById('profile-form')?.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }))}
               disabled={loading}
-              className="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white text-sm font-bold rounded-xl shadow-sm shadow-blue-600/20 transition-colors">
+              className="inline-flex min-h-10 items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white text-sm font-bold rounded-xl shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2">
               {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
               {loading ? 'Saving…' : 'Save Profile'}
             </button>
@@ -157,8 +157,8 @@ export default function LandlordProfile() {
                       type="button"
                       onClick={() => avatarInputRef.current?.click()}
                       disabled={avatarUploading}
-                      title="Upload profile photo"
-                      className="absolute bottom-4 right-4 w-9 h-9 bg-white/20 hover:bg-white/35 backdrop-blur-sm rounded-xl flex items-center justify-center text-white transition-colors border border-white/30">
+                      aria-label={avatarUploading ? 'Uploading profile photo' : 'Upload profile photo'}
+                      className="absolute bottom-4 right-4 w-10 h-10 bg-white/20 hover:bg-white/35 backdrop-blur-sm rounded-xl flex items-center justify-center text-white transition-colors border border-white/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-blue-600">
                       {avatarUploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Camera className="w-4 h-4" />}
                     </button>
                   </div>
@@ -177,7 +177,8 @@ export default function LandlordProfile() {
                         type="button"
                         onClick={() => avatarInputRef.current?.click()}
                         disabled={avatarUploading}
-                        className="absolute inset-0 rounded-2xl bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white transition-opacity">
+                        aria-label="Upload profile photo"
+                        className="absolute inset-0 rounded-2xl bg-black/40 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 flex items-center justify-center text-white transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500">
                         {avatarUploading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Camera className="w-5 h-5" />}
                       </button>
                     </div>
@@ -186,7 +187,7 @@ export default function LandlordProfile() {
                     <div className="flex flex-col sm:flex-row sm:items-start gap-3">
                       <div className="flex-1">
                         <div className="flex flex-wrap items-center gap-2">
-                          <h2 className="text-xl md:text-2xl font-extrabold text-gray-900 leading-tight">{displayName}</h2>
+                          <h2 className="break-words text-xl md:text-2xl font-extrabold text-gray-900 leading-tight">{displayName}</h2>
                           {landlord?.is_verified && (
                             <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-blue-600 text-white text-xs font-bold rounded-lg">
                               <CheckCircle className="w-3.5 h-3.5" /> Verified
@@ -203,10 +204,10 @@ export default function LandlordProfile() {
 
                       {/* Social quick-links */}
                       <div className="flex items-center gap-2 shrink-0">
-                        {form.website   && <a href={form.website}   target="_blank" rel="noopener noreferrer" className="w-8 h-8 rounded-lg bg-gray-100 hover:bg-blue-50 hover:text-blue-600 flex items-center justify-center text-gray-400 transition-colors"><Globe     className="w-4 h-4" /></a>}
-                        {form.linkedin  && <a href={form.linkedin}  target="_blank" rel="noopener noreferrer" className="w-8 h-8 rounded-lg bg-gray-100 hover:bg-blue-50 hover:text-blue-600 flex items-center justify-center text-gray-400 transition-colors"><Linkedin  className="w-4 h-4" /></a>}
-                        {form.twitter   && <a href={form.twitter}   target="_blank" rel="noopener noreferrer" className="w-8 h-8 rounded-lg bg-gray-100 hover:bg-blue-50 hover:text-blue-600 flex items-center justify-center text-gray-400 transition-colors"><Twitter   className="w-4 h-4" /></a>}
-                        {form.instagram && <a href={form.instagram} target="_blank" rel="noopener noreferrer" className="w-8 h-8 rounded-lg bg-gray-100 hover:bg-pink-50 hover:text-pink-500 flex items-center justify-center text-gray-400 transition-colors"><Instagram className="w-4 h-4" /></a>}
+                        {form.website   && <a aria-label="Website" href={form.website} target="_blank" rel="noopener noreferrer" className="w-9 h-9 rounded-lg bg-gray-100 hover:bg-blue-50 hover:text-blue-700 flex items-center justify-center text-gray-500 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"><Globe className="w-4 h-4" /></a>}
+                        {form.linkedin  && <a aria-label="LinkedIn" href={form.linkedin} target="_blank" rel="noopener noreferrer" className="w-9 h-9 rounded-lg bg-gray-100 hover:bg-blue-50 hover:text-blue-700 flex items-center justify-center text-gray-500 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"><Linkedin className="w-4 h-4" /></a>}
+                        {form.twitter   && <a aria-label="Twitter" href={form.twitter} target="_blank" rel="noopener noreferrer" className="w-9 h-9 rounded-lg bg-gray-100 hover:bg-blue-50 hover:text-blue-700 flex items-center justify-center text-gray-500 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"><Twitter className="w-4 h-4" /></a>}
+                        {form.instagram && <a aria-label="Instagram" href={form.instagram} target="_blank" rel="noopener noreferrer" className="w-9 h-9 rounded-lg bg-gray-100 hover:bg-blue-50 hover:text-blue-700 flex items-center justify-center text-gray-500 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"><Instagram className="w-4 h-4" /></a>}
                       </div>
                     </div>
 
@@ -221,10 +222,10 @@ export default function LandlordProfile() {
                 <input ref={avatarInputRef} type="file" accept="image/*" className="hidden" onChange={handleAvatarChange} />
 
                 {/* Feedback banners */}
-                {avatarError && <div className="px-4 py-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-700">{avatarError}</div>}
-                {error       && <div className="px-4 py-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-700">{error}</div>}
+                {avatarError && <div role="alert" className="px-4 py-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-700">{avatarError}</div>}
+                {error       && <div role="alert" className="px-4 py-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-700">{error}</div>}
                 {success     && (
-                  <div className="flex items-center gap-2 px-4 py-3 bg-emerald-50 border border-emerald-200 rounded-xl text-sm text-emerald-700">
+                  <div role="status" className="flex items-center gap-2 px-4 py-3 bg-emerald-50 border border-emerald-200 rounded-xl text-sm text-emerald-700">
                     <CheckCircle className="w-4 h-4 shrink-0" /> Profile updated successfully.
                   </div>
                 )}
@@ -242,18 +243,18 @@ export default function LandlordProfile() {
                     </div>
 
                     <div>
-                      <label className={LABEL}>Full Name *</label>
-                      <input required value={form.full_name}
+                      <label htmlFor="landlord-profile-name" className={LABEL}>Full Name *</label>
+                      <input id="landlord-profile-name" required value={form.full_name}
                         onChange={e => setForm(f => ({ ...f, full_name: e.target.value }))}
                         placeholder="Your full legal name"
                         className={FIELD} />
                     </div>
 
                     <div>
-                      <label className={LABEL}>WhatsApp Number *</label>
+                      <label htmlFor="landlord-profile-whatsapp" className={LABEL}>WhatsApp Number *</label>
                       <div className="relative">
                         <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                        <input required value={form.whatsapp}
+                        <input id="landlord-profile-whatsapp" required value={form.whatsapp}
                           onChange={e => setForm(f => ({ ...f, whatsapp: e.target.value }))}
                           placeholder="+234 800 000 0000"
                           className={`${FIELD} pl-10`} />
@@ -279,7 +280,7 @@ export default function LandlordProfile() {
                       <h2 className="text-sm font-bold text-gray-900">Professional Details</h2>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div>
                         <label className={LABEL}>City</label>
                         <input value={form.city}
@@ -297,10 +298,10 @@ export default function LandlordProfile() {
                     </div>
 
                     <div>
-                      <label className={LABEL}>Years of Experience</label>
+                      <label htmlFor="landlord-profile-experience" className={LABEL}>Years of Experience</label>
                       <div className="relative">
                         <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                        <input type="number" min="0" max="50" value={form.years_experience}
+                        <input id="landlord-profile-experience" type="number" min="0" max="50" value={form.years_experience}
                           onChange={e => setForm(f => ({ ...f, years_experience: e.target.value }))}
                           placeholder="e.g. 5"
                           className={`${FIELD} pl-10`} />
@@ -308,8 +309,8 @@ export default function LandlordProfile() {
                     </div>
 
                     <div>
-                      <label className={LABEL}>Specialization</label>
-                      <select value={form.specialization}
+                      <label htmlFor="landlord-profile-specialization" className={LABEL}>Specialization</label>
+                      <select id="landlord-profile-specialization" value={form.specialization}
                         onChange={e => setForm(f => ({ ...f, specialization: e.target.value }))}
                         className={FIELD}>
                         <option value="">Select a specialization…</option>
@@ -362,10 +363,10 @@ export default function LandlordProfile() {
                           const Icon = s.icon
                           return (
                             <div key={s.key}>
-                              <label className={LABEL}>{s.label}</label>
+                              <label htmlFor={`landlord-social-${s.key}`} className={LABEL}>{s.label}</label>
                               <div className="relative">
                                 <Icon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                                <input value={(form as any)[s.key]}
+                                <input id={`landlord-social-${s.key}`} value={(form as any)[s.key]}
                                   onChange={e => setForm(f => ({ ...f, [s.key]: e.target.value }))}
                                   placeholder={s.placeholder}
                                   className={`${FIELD} pl-10`} />
