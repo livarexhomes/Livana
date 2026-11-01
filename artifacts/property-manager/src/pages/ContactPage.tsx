@@ -277,7 +277,7 @@ export default function ContactPage() {
         @media(prefers-reduced-motion:reduce) { .lv-contact * { transition:none!important; animation:none!important; scroll-behavior:auto!important; } }
       `}</style>
       <main className="lv-contact">
-        <section className="relative overflow-hidden bg-[#123d93] pt-24 pb-20 text-white sm:pt-28 lg:pt-32">
+        <section className="relative overflow-hidden bg-slate-950 border-slate-900 bg-slate-950 pt-24 pb-20 text-white sm:pt-28 lg:pt-32">
           <div className="absolute inset-0 opacity-[0.06]" style={{ backgroundImage: 'radial-gradient(circle at 1px 1px, rgba(255,255,255,0.9) 1px, transparent 0)', backgroundSize: '34px 34px' }} />
           <div className="absolute -left-16 top-20 h-80 w-80 rounded-full bg-blue-300/15 blur-3xl" />
           <div className="absolute right-0 top-0 h-[34rem] w-[34rem] rounded-full bg-white/10 blur-3xl" />
