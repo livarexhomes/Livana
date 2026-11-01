@@ -4,6 +4,7 @@ import { ArrowRight, ArrowUpRight, BadgeCheck, Building2, Check, CheckCircle2, C
 import PublicNavbar from '@/components/layout/PublicNavbar'
 import Footer from '@/components/layout/Footer'
 import SEO from '@/components/SEO'
+import './Landlordverify.css'
 
 // Drop-in replacement for pages/Landlordverify.tsx. No additional packages required.
 const propertyImage = "/landlordver.png"
@@ -111,7 +112,6 @@ export default function LandlordVerify() {
     return <div className="lv-page selection:bg-blue-100 selection:text-blue-950">
         <SEO title="List Your Property on LIVAREX" description="List your property for free, complete landlord verification and connect directly with prospective tenants on LIVAREX." url="/landlord" />
         <PublicNavbar />
-        <style>{styles}</style>
         <main className="lv-main">
             <section className="lv-hero" aria-labelledby="lv-hero-title">
                 <div className="lv-container lv-hero-grid">
@@ -244,131 +244,3 @@ export default function LandlordVerify() {
         <Footer />
     </div>
 }
-
-const styles = `
-.lv-page{background:#fff;color:#142039}
-@media(min-width:1500px){.lv-hero{padding-top:85px;padding-bottom:65px}}
-@media(max-width:1023px){.lv-hero-grid{gap:35px}.lv-main h1{font-size:48px}.lv-card-heading .lv-caption{display:none}.lv-property-photo{height:335px}.lv-actions{gap:14px}.lv-principles-grid{gap:18px;grid-template-columns:1fr 1fr}.lv-section{padding-block:60px}.lv-control{gap:40px}.lv-cta{padding:36px}.lv-cta h2{font-size:31px}}
-@media(max-width:767px){.lv-container{width:calc(100% - 40px)}.lv-hero{padding:36px 0 30px}.lv-hero-grid{grid-template-columns:1fr;gap:35px}.lv-main h1{font-size:clamp(43px,8vw,60px)}.lv-hero-copy{max-width:560px}.lv-hero-description{max-width:510px}.lv-property-figure{width:100%;max-width:560px;margin-inline:auto!important}.lv-property-card{transform:none}.lv-property-photo{height:340px}.lv-floating-note{left:12px}.lv-property-figure figcaption{padding-top:54px}.lv-floating-note{bottom:33px}.lv-card-heading .lv-caption{display:inline}.lv-principles-grid{gap:20px;padding-block:23px}.lv-principles-grid>span{font-size:11px;gap:8px}.lv-section-heading{display:block;margin-bottom:26px}.lv-section-heading>p{margin-top:17px;max-width:480px}.lv-control{grid-template-columns:1fr;gap:30px}.lv-faq-section{grid-template-columns:1fr;gap:23px;padding-block:45px 55px}.lv-cta{align-items:flex-start;flex-direction:column;padding:30px;gap:26px}.lv-cta h2{font-size:32px}.lv-cta-action{align-items:flex-start}.lv-cta-wrap{padding-bottom:45px}}
-@media(max-width:390px){.lv-container{width:calc(100% - 32px)}.lv-main h1{font-size:41px}.lv-card-heading .lv-caption{display:none}.lv-property-photo{height:300px}.lv-principles-grid{grid-template-columns:1fr}.lv-principles p br{display:none}.lv-principles strong{margin-left:5px}.lv-property-info div>span{font-size:10px}.lv-timeline-card{padding:20px}.lv-cta{padding:26px}.lv-cta h2{font-size:28px}}
-@media(prefers-reduced-motion:reduce){.lv-main *{transition:none!important;animation:none!important;scroll-behavior:auto!important}}
-
-.lv-verification-process-section{padding:80px 0;background:linear-gradient(180deg,#f7f9fc 0%,#ffffff 100%);border-block:1px solid #edf0f5;position:relative;overflow:hidden}
-.lv-verification-process-section:before{content:'';position:absolute;top:-200px;right:-200px;width:500px;height:500px;background:radial-gradient(circle,#dbeafe 0%,transparent 70%);opacity:.5;pointer-events:none}
-.lv-verification-process-section:after{content:'';position:absolute;bottom:-200px;left:-200px;width:500px;height:500px;background:radial-gradient(circle,#e0e7ff 0%,transparent 70%);opacity:.4;pointer-events:none}
-.lv-verification-intro{text-align:left;max-width:560px;margin:0 0 48px;position:relative;z-index:1}
-.lv-verification-eyebrow{display:inline-flex;align-items:center;gap:8px;font-size:11px;font-weight:700;letter-spacing:.15em;color:#2563eb;background:#eff5ff;border:1px solid #dbe7fd;padding:7px 14px;border-radius:99px;margin-bottom:18px}
-.lv-verification-eyebrow:before{content:'';width:6px;height:6px;border-radius:50%;background:#2563eb}
-.lv-verification-intro h2{font-size:clamp(30px,3.4vw,42px);font-weight:650;letter-spacing:-.035em;margin-bottom:16px;line-height:1.15;color:#142039}
-.lv-verification-intro h2 span{color:#718097}
-.lv-verification-intro p{font-size:16px;line-height:1.8;color:#607087;max-width:540px}
-.lv-verification-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px;position:relative;z-index:1}
-.lv-verification-card{position:relative;background:#fff;border:1px solid #e1e7f0;border-radius:18px;padding:30px;transition:all .25s ease;display:flex;flex-direction:column}
-.lv-verification-card:hover{border-color:#b9cef1;box-shadow:0 18px 40px -22px #1d4ed83b;transform:translateY(-2px)}
-.lv-verification-card-head{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;margin-bottom:22px}
-.lv-verification-card-icon{width:46px;height:46px;display:grid;place-items:center;background:linear-gradient(135deg,#eff5ff,#dbe7fd);color:#2563eb;border-radius:12px;border:1px solid #dbe7fd;flex-shrink:0}
-.lv-verification-card-num{font-size:13px;font-weight:700;letter-spacing:.04em;color:#a9bedf;font-variant-numeric:tabular-nums;padding-top:8px}
-.lv-verification-card h4{font-size:18px;font-weight:650;line-height:1.35;letter-spacing:-.02em;margin-bottom:10px;color:#142039}
-.lv-verification-card-badge{display:inline-flex;align-items:center;gap:6px;align-self:flex-start;border:1px solid #e3e9f2;border-radius:6px;padding:4px 10px;background:#f8fafc;color:#52637a;font-size:11px;font-weight:600;margin-bottom:14px}
-.lv-verification-card-badge:before{content:'';width:5px;height:5px;border-radius:50%;background:#7b91b3}
-.lv-verification-card p{font-size:13.5px;line-height:1.7;color:#607087;margin-top:auto}
-.lv-verification-card-featured{background:linear-gradient(145deg,#2563eb 0%,#1e4ec7 50%,#1746b4 100%);border-color:#2563eb;color:white;grid-column:span 2;box-shadow:0 18px 40px -22px #1d4ed866;position:relative;overflow:hidden}
-.lv-verification-card-featured:before{content:'';position:absolute;width:280px;height:280px;border:1px solid #ffffff14;border-radius:50%;right:-140px;top:-100px;pointer-events:none}
-.lv-verification-card-featured:after{content:'';position:absolute;width:180px;height:180px;border:1px solid #ffffff0c;border-radius:50%;left:-60px;bottom:-80px;pointer-events:none}
-.lv-verification-card-featured>*{position:relative;z-index:1}
-.lv-verification-card-featured:hover{border-color:#2563eb;box-shadow:0 22px 50px -22px #1d4ed899}
-.lv-verification-card-featured .lv-verification-card-icon{background:#ffffff18;border-color:#ffffff30;color:white}
-.lv-verification-card-featured .lv-verification-card-num{color:#ffffff40}
-.lv-verification-card-featured h4{color:white;font-size:20px}
-.lv-verification-card-featured .lv-verification-card-badge{background:#ffffff18;border-color:#ffffff30;color:#e1eaff}
-.lv-verification-card-featured .lv-verification-card-badge:before{background:#b8d6ff}
-.lv-verification-card-featured p{color:#ffffffd9;font-size:14px;line-height:1.75}
-@media(max-width:1023px){.lv-verification-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}.lv-verification-card-featured{grid-column:span 2}}
-@media(max-width:600px){.lv-verification-process-section{padding:50px 0}.lv-verification-grid{grid-template-columns:1fr;gap:14px}.lv-verification-card-featured{grid-column:auto}.lv-verification-card{padding:24px}}
-
-.lv-process-cards{list-style:none;padding:0;margin:0;display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:18px}
-.lv-process-card{grid-column:span 2;border:1px solid #e1e7f0;border-radius:16px;padding:28px;background:#fff}
-.lv-process-card:nth-child(-n+2){grid-column:span 3;background:#f7faff}
-.lv-process-card-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:26px}
-.lv-process-index{font-size:32px;line-height:1;font-weight:650;letter-spacing:-.05em;color:#a9bedf}
-.lv-process-card h3{font-size:19px;font-weight:650;line-height:1.4;letter-spacing:-.02em}
-.lv-process-card p{margin-top:12px;font-size:14px;line-height:1.85;color:var(--lv-muted)}
-.lv-signup-line{display:flex;align-items:center;flex-wrap:wrap;gap:10px;font-size:14px;color:#52637a;margin-top:16px!important}
-.lv-signup-line svg{color:#2563eb}
-.lv-approved-benefits{list-style:none;padding:0;margin:0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
-.lv-approved-benefits li{display:flex;align-items:center;gap:14px;padding:25px 20px;min-height:106px;border:1px solid #e1e7f0;border-radius:13px;background:white}
-.lv-approved-check{width:38px;height:38px;flex-shrink:0;display:grid;place-items:center;border-radius:100%;background:#eef5ff;color:#2563eb}
-.lv-approved-benefits h3{font-size:15px;font-weight:600;line-height:1.5}
-@media(max-width:1023px){.lv-process-cards{grid-template-columns:repeat(2,minmax(0,1fr))}.lv-process-card,.lv-process-card:nth-child(-n+2){grid-column:auto}.lv-process-card:last-child{grid-column:1/-1}.lv-approved-benefits{grid-template-columns:repeat(2,minmax(0,1fr))}}
-@media(max-width:767px){.lv-process-cards,.lv-approved-benefits{grid-template-columns:1fr}.lv-process-card{padding:24px}.lv-process-card:last-child{grid-column:auto}.lv-section-heading>.lv-button{margin-top:20px}.lv-approved-benefits li{min-height:88px}.lv-process-card-top{margin-bottom:20px}}
-
-.lv-value-heading{display:flex;align-items:center;justify-content:space-between;gap:28px;margin-bottom:32px}
-.lv-value-heading h2{font-size:clamp(30px,3.3vw,43px);line-height:1.15;letter-spacing:-.045em;max-width:460px}
-.lv-value-heading h2>span{color:#2563eb}
-.lv-value-onboarding{display:flex;align-items:center;gap:14px;color:#52637a;font-size:12px;font-weight:600;flex-wrap:wrap}
-.lv-value-onboarding>span{display:flex;align-items:center;gap:9px}
-.lv-value-onboarding>svg{color:#8ba2c5}
-.lv-value-dot{width:27px;height:27px;display:grid;place-items:center;border-radius:50%;border:1px solid #dbe6f5;background:#fff;color:#2563eb;font-size:10px}
-.lv-value-grid{display:grid;grid-template-columns:1.05fr 1fr 1fr;grid-template-rows:auto auto auto;gap:16px;margin:0;padding:0;list-style:none}
-.lv-value-card{position:relative;min-width:0;overflow:hidden;background:#fff;border:1px solid #e1e8f2;border-radius:17px;padding:25px;transition:border-color .2s,box-shadow .2s}
-.lv-value-card:hover{border-color:#abc6f6;box-shadow:0 12px 30px -22px #24478266}
-.lv-value-top{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:24px}
-.lv-value-icon{display:grid;place-items:center;width:46px;height:46px;border:1px solid #e5edfa;border-radius:13px;background:#f5f8ff;color:#2563eb}
-.lv-value-count{font-size:11px;font-weight:600;color:#8494aa;letter-spacing:.1em}
-.lv-value-copy{display:flex;align-items:center;justify-content:space-between;gap:16px;position:relative;z-index:1}
-.lv-value-copy h3{font-size:17px;font-weight:600;line-height:1.5;letter-spacing:-.02em;max-width:260px}
-.lv-value-tick{width:24px;height:24px;display:grid;place-items:center;border-radius:50%;background:#eff5ff;color:#2563eb;flex-shrink:0}
-.lv-value-featured{grid-row:span 3;display:flex;flex-direction:column;background:linear-gradient(145deg,#2563eb,#1746b4);color:white;border-color:#2563eb;padding:30px}
-.lv-value-featured:before,.lv-value-featured:after{content:'';position:absolute;width:320px;height:320px;border:1px solid #ffffff18;border-radius:50%;right:-180px;top:75px;pointer-events:none}
-.lv-value-featured:after{width:410px;height:410px;right:-225px;top:30px}
-.lv-value-featured:hover{border-color:#2563eb}
-.lv-value-featured .lv-value-icon{background:#ffffff13;border-color:#ffffff30;color:white}
-.lv-value-featured .lv-value-count{color:#d4e2ff}
-.lv-value-price{font-size:clamp(80px,8vw,116px);line-height:1;font-weight:600;letter-spacing:-.07em;margin-block:auto;padding-block:30px;position:relative;z-index:1}
-.lv-value-featured .lv-value-copy{display:block}
-.lv-value-featured h3{font-size:30px;line-height:1.15;letter-spacing:-.04em;max-width:230px;margin-bottom:27px}
-.lv-value-featured .lv-button{width:100%;justify-content:space-between}
-.lv-value-wide{grid-column:span 2;display:flex;align-items:center;gap:18px;min-height:102px;background:#eef4ff;border-color:#dce7fa}
-.lv-value-wide .lv-value-top{margin:0}.lv-value-wide .lv-value-count{display:none}
-.lv-value-wide .lv-value-copy{flex:1}.lv-value-wide .lv-value-copy h3{max-width:none}
-.lv-value-wide .lv-value-tick{display:none}
-.lv-value-sliders{display:flex;flex-direction:column;gap:12px;width:70px;flex-shrink:0;margin-inline:12px}
-.lv-value-sliders i{display:block;height:2px;border-radius:5px;background:#c7d8f4;position:relative}
-.lv-value-sliders i:after{content:'';position:absolute;top:-4px;width:10px;height:10px;background:#fff;border:2px solid #2563eb;border-radius:50%;left:20%}
-.lv-value-sliders i:nth-child(2):after{left:65%}.lv-value-sliders i:nth-child(3):after{left:40%}
-@media(max-width:1023px){.lv-value-heading{align-items:flex-start;flex-direction:column;gap:20px}.lv-value-grid{grid-template-columns:1fr 1fr}.lv-value-featured{grid-row:span 2}.lv-value-wide{grid-column:1/-1}.lv-value-card{padding:23px}.lv-value-copy h3{font-size:16px}.lv-value-featured h3{font-size:29px}}
-@media(max-width:600px){.lv-value-grid{grid-template-columns:1fr;gap:12px}.lv-value-featured{grid-row:auto;min-height:350px}.lv-value-wide{grid-column:auto}.lv-value-price{font-size:86px;padding-block:24px}.lv-value-featured h3{max-width:none}.lv-value-card:not(.lv-value-featured){display:flex;align-items:center;gap:16px;min-height:110px;padding:21px}.lv-value-card:not(.lv-value-featured) .lv-value-top{margin:0}.lv-value-card:not(.lv-value-featured) .lv-value-count{display:none}.lv-value-card:not(.lv-value-featured) .lv-value-copy{flex:1}.lv-value-copy h3{font-size:15px}.lv-value-sliders{display:none}.lv-value-onboarding{gap:10px;font-size:11px}.lv-value-wide .lv-value-tick{display:grid}}
-
-
-
-.lv-benefits-list{list-style:none;padding:0;margin:0;display:grid;grid-template-columns:minmax(0,1.05fr) repeat(2,minmax(0,1fr));gap:20px}
-.lv-benefits-step{position:relative;min-width:0;overflow:hidden;border:1px solid #e0e7f1;border-radius:22px;padding:28px;background:#fff;box-shadow:0 3px 7px #18305403;transition:border-color .2s,box-shadow .2s}
-.lv-benefits-step:hover{border-color:#b9cef1;box-shadow:0 12px 32px -20px #1d4ed83b}
-.lv-benefits-number{position:absolute;right:26px;top:30px;font-size:12px;font-weight:650;color:#72849e;font-variant-numeric:tabular-nums}
-.lv-benefits-card{position:relative}
-.lv-benefits-step-heading{display:grid;grid-template-columns:minmax(0,1fr);justify-items:start;gap:13px}
-.lv-benefits-icon{display:grid;place-items:center;width:48px;height:48px;border:1px solid #e0eafe;border-radius:15px;background:linear-gradient(145deg,#fff,#eef4ff);color:#2563eb;margin-bottom:15px;box-shadow:0 3px 6px #2563eb06}
-.lv-benefits-step-heading h3{font-size:20px;font-weight:650;line-height:1.35;letter-spacing:-.03em;max-width:250px;color:#142039}
-.lv-benefits-badge{display:inline-flex;align-items:center;gap:6px;border:1px solid #e3e9f2;border-radius:7px;padding:5px 9px;background:#f8fafc;color:#52637a;font-size:10px;font-weight:650;line-height:1.5}
-.lv-benefits-badge:before{content:'';width:5px;height:5px;border-radius:50%;background:#7b91b3}
-.lv-benefits-card p{font-size:13px;line-height:1.85;color:#607087;margin-top:16px}
-.lv-benefits-step:first-child{grid-row:span 2;padding:34px;background:linear-gradient(155deg,#2864e8 0%,#1f50c0 60%,#163d98 100%);border-color:#285bce;color:white;display:flex;flex-direction:column;box-shadow:0 14px 34px -22px #1746b488}
-.lv-benefits-step:first-child:before{content:'';position:absolute;width:370px;height:370px;border:1px solid #ffffff17;border-radius:50%;right:-180px;bottom:-130px;box-shadow:0 0 0 38px #ffffff04,0 0 0 76px #ffffff04;pointer-events:none}
-.lv-benefits-step:first-child:after{content:'';position:absolute;left:34px;bottom:38px;width:104px;height:104px;border:1px solid #ffffff30;border-radius:24px;transform:rotate(-9deg);background:linear-gradient(135deg,#ffffff14,#ffffff03);box-shadow:10px 10px 0 -1px #ffffff07;pointer-events:none}
-.lv-benefits-step:first-child .lv-benefits-card{z-index:1;padding-bottom:155px}
-.lv-benefits-step:first-child .lv-benefits-number{font-size:112px;line-height:1;letter-spacing:-.07em;color:#ffffff18;top:auto;bottom:22px;right:28px}
-.lv-benefits-step:first-child .lv-benefits-icon{background:#ffffff12;border-color:#ffffff30;color:white;width:58px;height:58px;margin-bottom:35px;box-shadow:inset 0 1px 0 #ffffff20}
-.lv-benefits-step:first-child h3{font-size:clamp(28px,2.6vw,36px);line-height:1.12;letter-spacing:-.045em;color:white}
-.lv-benefits-step:first-child .lv-benefits-badge{background:#ffffff10;border-color:#ffffff30;color:#f0f5ff;margin-top:4px}
-.lv-benefits-step:first-child .lv-benefits-badge:before{background:#b8d6ff}
-.lv-benefits-step:first-child p{color:#e1eaff;font-size:15px;line-height:1.9;margin-top:23px}
-.lv-benefits-step:nth-child(3) .lv-benefits-badge{color:#936026;background:#fffbeb;border-color:#f5e5bb}
-.lv-benefits-step:nth-child(3) .lv-benefits-badge:before{background:#d89e39}
-.lv-benefits-step:last-child{background:linear-gradient(135deg,#f4f8ff,#fff);border-color:#ccdcf7}
-.lv-benefits-step:last-child .lv-benefits-icon{color:#1d4ed8;border-color:#cdddf9;background:#eaf2ff}
-.lv-benefits-step:last-child .lv-benefits-badge{color:#237358;background:#f0faf5;border-color:#d4ecdf}
-.lv-benefits-step:last-child .lv-benefits-badge:before{background:#359a73}
-@media(max-width:1023px){.lv-benefits-list{grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}.lv-benefits-step{padding:25px}.lv-benefits-step:first-child{grid-row:span 2;padding:28px}.lv-benefits-step:last-child{grid-column:1/-1}.lv-benefits-step:last-child .lv-benefits-card{display:grid;grid-template-columns:minmax(0,.7fr) minmax(0,1.3fr);gap:28px;align-items:center}.lv-benefits-step:last-child p{margin-top:0}}
-@media(max-width:600px){.lv-benefits-list{grid-template-columns:1fr;gap:14px}.lv-benefits-step{padding:24px;border-radius:18px}.lv-benefits-step:first-child{grid-row:auto;padding:26px}.lv-benefits-step:first-child .lv-benefits-card{padding-bottom:65px}.lv-benefits-step:first-child .lv-benefits-icon{margin-bottom:12px}.lv-benefits-step:first-child h3{font-size:30px;max-width:none}.lv-benefits-step:first-child:after{width:48px;height:48px;bottom:24px;left:26px;border-radius:12px}.lv-benefits-step:first-child .lv-benefits-number{font-size:78px;bottom:15px}.lv-benefits-step:last-child{grid-column:auto}.lv-benefits-step:last-child .lv-benefits-card{display:block}.lv-benefits-step:last-child p{margin-top:16px}.lv-benefits-icon{margin-bottom:9px}.lv-benefits-card p{font-size:14px}}
-@media(prefers-reduced-motion:reduce){.lv-benefits-step{transition:none}}
-`
