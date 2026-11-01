@@ -40,14 +40,36 @@ export default function LoginPage() {
       return
     }
 
-    let { data: tenant } = await supabase.from('tenants').select('id').eq('user_id', user.id).single() as { data: { id: string } | null }
+    const { data: tenant, error: tenantError } = await supabase
+      .from('tenants')
+      .select('id, marital_status, occupation')
+      .eq('user_id', user.id)
+      .maybeSingle() as { data: { id: string; marital_status: string | null; occupation: string | null } | null; error: { message: string } | null }
+    if (tenantError) {
+      setError('We could not load your profile. Please try signing in again.')
+      setLoading(false)
+      return
+    }
+
     if (!tenant) {
       const meta = user.user_metadata ?? {}
-      await supabase.from('tenants').insert({
+      const { error: insertError } = await supabase.from('tenants').insert({
         user_id: user.id,
         full_name: meta.full_name ?? user.email?.split('@')[0] ?? 'User',
         phone: meta.phone ?? null,
       })
+      if (insertError) {
+        setError('We could not prepare your profile. Please try signing in again.')
+        setLoading(false)
+        return
+      }
+      navigate('/user/complete-profile')
+      return
+    }
+
+    if (!tenant.marital_status || !tenant.occupation?.trim()) {
+      navigate('/user/complete-profile')
+      return
     }
 
     navigate('/user')

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { ArrowRight, BriefcaseBusiness, Check, MapPin, Users } from 'lucide-react'
+import { ArrowRight, BriefcaseBusiness, Check, Info, MapPin, Users } from 'lucide-react'
 import { Link, useLocation } from '@/lib/navigation'
 import AuthGuard from '../../components/auth/AuthGuard'
 import { createClient } from '../../lib/supabase'
@@ -22,7 +22,7 @@ const EMPTY_FORM: ProfileForm = {
   move_in_timeline: '',
 }
 
-const inputClass = 'w-full rounded-lg border border-gray-200 bg-white px-3.5 py-3 text-sm text-gray-900 outline-none transition focus:border-teal-700 focus:ring-2 focus:ring-teal-700/15'
+const inputClass = 'w-full rounded-lg border border-gray-200 bg-white px-3.5 py-3 text-sm text-gray-900 outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/15'
 const labelClass = 'mb-1.5 block text-sm font-semibold text-gray-800'
 
 export default function UserProfileCompletion() {
@@ -90,7 +90,7 @@ export default function UserProfileCompletion() {
 
   return (
     <AuthGuard require="tenant">
-      <main className="min-h-screen bg-[#f5f7f3] px-4 py-8 sm:px-8 sm:py-12">
+      <main className="min-h-screen bg-slate-50 px-4 py-8 sm:px-8 sm:py-12">
         <div className="mx-auto max-w-3xl">
           <div className="mb-8 flex items-center justify-between">
             <Link href="/" className="inline-flex items-center">
@@ -101,15 +101,15 @@ export default function UserProfileCompletion() {
 
           <section className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
             <div className="grid md:grid-cols-[0.8fr_1.2fr]">
-              <div className="flex flex-col justify-between bg-[#103d35] p-7 text-white sm:p-9">
+              <div className="flex flex-col justify-between bg-primary p-7 text-white sm:p-9">
                 <div>
-                  <p className="mb-3 text-xs font-bold uppercase tracking-[0.16em] text-teal-200">A better home search</p>
+                  <p className="mb-3 text-xs font-bold uppercase tracking-[0.16em] text-blue-100">A better home search</p>
                   <h1 className="max-w-xs text-3xl font-bold leading-tight">Let’s make your search yours.</h1>
-                  <p className="mt-4 max-w-sm text-sm leading-6 text-teal-50/80">
+                  <p className="mt-4 max-w-sm text-sm leading-6 text-blue-50/90">
                     A few details help us tailor property recommendations and make future enquiries easier.
                   </p>
                 </div>
-                <div className="mt-10 hidden items-center gap-3 text-sm text-teal-50/80 md:flex">
+                <div className="mt-10 hidden items-center gap-3 text-sm text-blue-50/90 md:flex">
                   <span className="flex h-8 w-8 items-center justify-center rounded-full bg-white/10"><Check className="h-4 w-4" /></span>
                   <span>Your details stay attached to your account.</span>
                 </div>
@@ -118,6 +118,13 @@ export default function UserProfileCompletion() {
               <div className="p-6 sm:p-9">
                 <h2 className="text-xl font-bold text-gray-950">About you</h2>
                 <p className="mb-6 mt-1 text-sm text-gray-500">Required fields are marked with an asterisk.</p>
+
+                {!loading && (!form.marital_status || !form.occupation.trim()) && (
+                  <div role="status" className="mb-5 flex items-start gap-2 rounded-lg border border-blue-100 bg-blue-50 px-3.5 py-3 text-sm text-blue-800">
+                    <Info aria-hidden="true" className="mt-0.5 h-4 w-4 shrink-0" />
+                    <span>Your profile is incomplete. Add your marital status and occupation to continue.</span>
+                  </div>
+                )}
 
                 {loading ? (
                   <div className="space-y-4" aria-label="Loading profile details">
@@ -192,7 +199,7 @@ export default function UserProfileCompletion() {
 
                     {error && <p role="alert" className="rounded-lg border border-red-200 bg-red-50 px-3.5 py-3 text-sm text-red-700">{error}</p>}
 
-                    <button type="submit" disabled={saving} className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-[#103d35] px-4 py-3.5 text-sm font-bold text-white transition hover:bg-[#0b302a] disabled:cursor-not-allowed disabled:opacity-60">
+                    <button type="submit" disabled={saving} className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 py-3.5 text-sm font-bold text-white transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60">
                       {saving ? 'Saving details…' : 'Save and continue'}
                       {!saving && <ArrowRight className="h-4 w-4" />}
                     </button>
