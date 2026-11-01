@@ -103,7 +103,7 @@ export default function UserProfileCompletion() {
             <div className="grid md:grid-cols-[0.8fr_1.2fr]">
               <div className="flex flex-col justify-between bg-primary p-7 text-white sm:p-9">
                 <div>
-                  <p className="mb-3 text-xs font-bold uppercase tracking-[0.16em] text-blue-100">A better home search</p>
+                  <p className="mb-3 text-xs font-bold uppercase tracking-[0.16em] text-blue-100">A better Property search</p>
                   <h1 className="max-w-xs text-3xl font-bold leading-tight">Let’s make your search yours.</h1>
                   <p className="mt-4 max-w-sm text-sm leading-6 text-blue-50/90">
                     A few details help us tailor property recommendations and make future enquiries easier.
@@ -157,9 +157,9 @@ export default function UserProfileCompletion() {
 
                     <div className="grid gap-5 sm:grid-cols-2">
                       <div>
-                        <label htmlFor="employment-type" className={labelClass}>Work situation <span className="font-normal text-gray-400">(optional)</span></label>
+                        <label htmlFor="employment-type" className={labelClass}>Work status <span className="font-normal text-gray-400">(optional)</span></label>
                         <select id="employment-type" value={form.employment_type} onChange={event => updateForm('employment_type', event.target.value)} className={inputClass}>
-                          <option value="">Select situation</option>
+                          <option value="">Select status</option>
                           <option value="employed">Employed</option>
                           <option value="self_employed">Self-employed</option>
                           <option value="student">Student</option>
@@ -167,13 +167,13 @@ export default function UserProfileCompletion() {
                           <option value="retired">Retired</option>
                         </select>
                       </div>
-                      <div>
+                      {/* <div>
                         <label htmlFor="household-size" className={labelClass}>People moving in <span className="font-normal text-gray-400">(optional)</span></label>
                         <div className="relative">
                           <Users className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
                           <input id="household-size" type="number" min="1" max="20" value={form.household_size} onChange={event => updateForm('household_size', event.target.value)} placeholder="Including you" className={`${inputClass} pl-10`} />
                         </div>
-                      </div>
+                      </div> */}
                     </div>
 
                     <div className="grid gap-5 sm:grid-cols-2">
@@ -184,7 +184,7 @@ export default function UserProfileCompletion() {
                           <input id="city" maxLength={100} value={form.city} onChange={event => updateForm('city', event.target.value)} placeholder="e.g. Lagos" className={`${inputClass} pl-10`} />
                         </div>
                       </div>
-                      <div>
+                      {/* <div>
                         <label htmlFor="move-in" className={labelClass}>When are you looking to move? <span className="font-normal text-gray-400">(optional)</span></label>
                         <select id="move-in" value={form.move_in_timeline} onChange={event => updateForm('move_in_timeline', event.target.value)} className={inputClass}>
                           <option value="">Choose a timeframe</option>
@@ -194,7 +194,7 @@ export default function UserProfileCompletion() {
                           <option value="3_plus_months">More than 3 months</option>
                           <option value="just_browsing">Just browsing</option>
                         </select>
-                      </div>
+                      </div> */}
                     </div>
 
                     {error && <p role="alert" className="rounded-lg border border-red-200 bg-red-50 px-3.5 py-3 text-sm text-red-700">{error}</p>}
