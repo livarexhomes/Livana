@@ -1073,9 +1073,9 @@ export default function ChatWidget() {
             )}
 
             {!AI_CHAT_ENABLED && selectedEnquiry && (
-              <div className="mx-4 mb-3 rounded-xl border border-emerald-100 bg-emerald-50/70 p-3">
-                <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-emerald-700">Property concierge</p>
-                <div className="mt-2 rounded-xl border border-emerald-100 bg-white p-3">
+              <div className="mx-4 mb-3 rounded-xl border border-blue-100 bg-blue-50/70 p-3">
+                <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-blue-700">Property concierge</p>
+                <div className="mt-2 rounded-xl border border-blue-100 bg-white p-3">
                   <form onSubmit={handleConciergeSubmit} className="space-y-3">
                     <div className="grid grid-cols-2 gap-2">
                       <Field label="Name *">
@@ -1118,7 +1118,7 @@ export default function ChatWidget() {
                     <Field label="Additional details">
                       <textarea value={conciergeForm.details} onChange={e => updateConciergeField('details', e.target.value)} rows={3} className="w-full resize-none rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-[12px] text-slate-900 outline-none focus:border-primary/40 focus:ring-2 focus:ring-primary/20 focus:bg-white" />
                     </Field>
-                    <button type="submit" disabled={conciergeSubmitting} className="w-full rounded-xl bg-emerald-600 px-3 py-2.5 text-[12px] font-bold text-white shadow-sm hover:bg-emerald-500 disabled:opacity-60">
+                    <button type="submit" disabled={conciergeSubmitting} className="w-full rounded-xl bg-primary px-3 py-2.5 text-[12px] font-bold text-white shadow-sm hover:bg-primary/90 disabled:opacity-60">
                       {conciergeSubmitting ? 'Preparing WhatsApp…' : 'Continue on WhatsApp'}
                     </button>
                   </form>
@@ -1137,9 +1137,9 @@ export default function ChatWidget() {
               })}
             </div>
 
-            <div className="mx-4 mb-4 flex items-center justify-between rounded-xl border border-emerald-100 bg-emerald-50/60 px-3 py-2.5">
+            <div className="mx-4 mb-4 flex items-center justify-between rounded-xl border border-blue-100 bg-blue-50/60 px-3 py-2.5">
               <span className="text-[11px] font-semibold text-slate-700">Prefer WhatsApp?</span>
-              <button onClick={() => openWhatsApp()} className="text-[11px] font-bold text-emerald-700 hover:underline">Continue on WhatsApp →</button>
+              <button onClick={() => openWhatsApp()} className="text-[11px] font-bold text-blue-700 hover:underline">Continue on WhatsApp →</button>
             </div>
           </div>
         )}
@@ -1158,7 +1158,7 @@ export default function ChatWidget() {
                 Help
               </button>
               <button onClick={() => goLive()}
-                className="ml-auto flex items-center gap-1.5 px-3 py-1.5 text-[12px] font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 rounded-full transition-colors">
+                className="ml-auto flex items-center gap-1.5 px-3 py-1.5 text-[12px] font-bold text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-full transition-colors">
                 <span className={`size-1.5 rounded-full ${agentAvailable ? 'bg-emerald-500' : 'bg-slate-400'}`} />
                 Talk to agent
               </button>
@@ -1263,10 +1263,10 @@ export default function ChatWidget() {
               </div>
             )}
             {liveStatus === 'active' && (
-              <div className="shrink-0 flex items-center justify-center gap-2 py-2.5 text-[12px] font-semibold text-emerald-700 bg-emerald-50 border-b border-emerald-100">
+              <div className="shrink-0 flex items-center justify-center gap-2 py-2.5 text-[12px] font-semibold text-blue-700 bg-blue-50 border-b border-blue-100">
                 <span className="size-2 rounded-full bg-emerald-500" />
                 Connected with {assignedAgent ?? 'Livarex Support'}
-                <span className="text-emerald-600/60 font-normal">· reply within seconds</span>
+                <span className="text-blue-600/60 font-normal">· reply within seconds</span>
               </div>
             )}
             {liveStatus === 'queued' && (
@@ -1486,8 +1486,8 @@ export default function ChatWidget() {
                   <button type="submit" disabled={!agentCanSend} aria-label="Send"
                     className="cw-send grid size-9 shrink-0 place-items-center rounded-full border-none cursor-pointer disabled:cursor-default transition-all"
                     style={{
-                      background: agentCanSend ? 'linear-gradient(135deg,#059669,#10b981)' : '#e2e8f0',
-                      boxShadow: agentCanSend ? '0 4px 14px rgba(5,150,105,0.35)' : 'none',
+                      background: agentCanSend ? 'linear-gradient(135deg,#1d4ed8,#3b82f6)' : '#e2e8f0',
+                      boxShadow: agentCanSend ? '0 4px 14px rgba(29,78,216,0.35)' : 'none',
                     }}>
                     <Send size={14} color={agentCanSend ? '#fff' : '#94a3b8'} className="translate-x-px" />
                   </button>
@@ -1521,7 +1521,7 @@ export default function ChatWidget() {
       {/* ── Toggle button ────────────────────────────────────────────────────── */}
       {!open && (
         <a href={waHref} target="_blank" rel="noopener noreferrer" aria-label="Continue on WhatsApp"
-          className="fixed bottom-6 right-[4.75rem] z-[9999] flex h-10 items-center gap-1.5 rounded-full border border-emerald-200 bg-white px-3 text-[11px] font-bold text-emerald-700 shadow-md transition-colors hover:bg-emerald-50">
+          className="fixed bottom-6 right-[4.75rem] z-[9999] flex h-10 items-center gap-1.5 rounded-full border border-blue-200 bg-white px-3 text-[11px] font-bold text-blue-700 shadow-md transition-colors hover:bg-blue-50">
           WhatsApp
         </a>
       )}
@@ -1564,7 +1564,7 @@ function AgentAvatarBubble({ name }: { name?: string | null }) {
   const initial = name ? name[0].toUpperCase() : 'A'
   return (
     <div className="relative shrink-0 grid size-[30px] place-items-center rounded-full text-white"
-      style={{ fontSize:11, fontWeight:900, background:'linear-gradient(135deg,#059669,#10b981)' }}>
+      style={{ fontSize:11, fontWeight:900, background:'linear-gradient(135deg,#1d4ed8,#3b82f6)' }}>
       {initial}
       <span className="absolute -bottom-0.5 -right-0.5 size-2.5 rounded-full border-2 border-white bg-emerald-400" aria-hidden />
     </div>
