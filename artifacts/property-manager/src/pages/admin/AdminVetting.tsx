@@ -593,6 +593,18 @@ function ListingsTab({
       return sort === 'oldest' ? aDate - bDate : bDate - aDate
     })
   }, [listings, search, sort])
+  const listingStatusCards: {
+    status: Exclude<ListingReviewFilter, 'all'>
+    label: string
+    description: string
+    icon: typeof Building2
+    tone: 'amber' | 'emerald' | 'blue' | 'rose'
+  }[] = [
+    { status: 'pending_review', label: 'Pending review', description: 'Needs your attention', icon: History, tone: 'amber' },
+    { status: 'available', label: 'Approved', description: 'Live on the platform', icon: CheckCircle, tone: 'emerald' },
+    { status: 'changes_requested', label: 'Needs changes', description: 'Waiting on landlord', icon: AlertCircle, tone: 'blue' },
+    { status: 'rejected', label: 'Rejected', description: 'Not approved', icon: XCircle, tone: 'rose' },
+  ]
 
   async function openListingPreview(listing: any) {
     const images: any[] = [...(listing.property_images ?? [])]
@@ -621,73 +633,118 @@ function ListingsTab({
   }
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col overflow-hidden bg-slate-50">
-      <div className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-b border-slate-200 bg-white px-4 py-3 sm:px-6">
-        <div>
-          <p className="text-xs font-semibold text-slate-500">Property review queue</p>
-          <h3 className="mt-0.5 text-base font-semibold tracking-tight text-slate-900">
-            {statusFilter === 'pending_review' ? 'Listings awaiting review' : 'Submitted properties'}
-          </h3>
-        </div>
-        <span className="rounded-full bg-blue-50 px-2.5 py-1 text-xs font-semibold text-blue-700">
-          {listingCounts.pending_review} pending
-        </span>
-      </div>
+    <div className="min-h-0 flex-1 overflow-y-auto bg-[#f6f8fb]">
+      <div className="mx-auto max-w-[1440px] space-y-6 p-4 sm:p-6 lg:p-8">
+        <section className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-blue-700">Property operations</p>
+            <h2 className="mt-1 text-2xl font-semibold tracking-tight text-slate-950 sm:text-[28px]">Listing approvals</h2>
+            <p className="mt-1 max-w-xl text-sm leading-6 text-slate-500">
+              Review landlord submissions, inspect property details, and keep the marketplace quality high.
+            </p>
+          </div>
+          <div className="flex items-center gap-3">
+            <span className="text-sm text-slate-500">{visibleListings.length} result{visibleListings.length === 1 ? '' : 's'}</span>
+            <button
+              type="button"
+              onClick={onRetry}
+              disabled={loading}
+              className="inline-flex h-10 items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-sm font-medium text-slate-700 transition-colors hover:border-slate-300 hover:bg-slate-50 disabled:cursor-wait disabled:opacity-60"
+            >
+              <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+              Refresh
+            </button>
+          </div>
+        </section>
 
-      <div className="flex shrink-0 flex-col gap-3 border-b border-slate-200 bg-white px-4 py-3 sm:flex-row sm:items-center sm:px-6">
-        <label className="relative min-w-0 flex-1">
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-          <input
-            type="search"
-            value={search}
-            onChange={event => setSearch(event.target.value)}
-            placeholder="Search title, location, landlord or reference…"
-            aria-label="Search property submissions"
-            className="h-10 w-full rounded-lg border border-slate-200 bg-white pl-9 pr-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/15"
-          />
-        </label>
-        <label className="flex min-w-0 items-center gap-2 text-xs font-medium text-slate-500 sm:w-auto">
-          <span className="sr-only sm:not-sr-only">Status</span>
-          <select
-            value={statusFilter}
-            onChange={event => onStatusFilter(event.target.value as ListingReviewFilter)}
-            className="h-10 min-w-0 flex-1 rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-700 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/15 sm:w-44 sm:flex-none"
-            aria-label="Filter property submissions by status"
-          >
-            {LISTING_REVIEW_FILTERS.map(filter => (
-              <option key={filter.value} value={filter.value}>
-                {filter.label} ({listingCounts[filter.value]})
-              </option>
-            ))}
-          </select>
-        </label>
-        <label className="flex min-w-0 items-center gap-2 text-xs font-medium text-slate-500 sm:w-auto">
-          <SlidersHorizontal className="hidden h-4 w-4 shrink-0 text-slate-400 sm:block" />
-          <span className="sr-only sm:not-sr-only">Sort</span>
-          <select
-            value={sort}
-            onChange={event => setSort(event.target.value as typeof sort)}
-            className="h-10 min-w-0 flex-1 rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-700 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/15 sm:w-40 sm:flex-none"
-            aria-label="Sort property submissions"
-          >
-            <option value="newest">Newest first</option>
-            <option value="oldest">Oldest first</option>
-            <option value="updated">Recently updated</option>
-          </select>
-        </label>
-        <span className="hidden whitespace-nowrap text-xs text-slate-500 lg:inline">
-          {visibleListings.length} result{visibleListings.length === 1 ? '' : 's'}
-        </span>
-      </div>
+        <section aria-label="Listing status summary" className="grid grid-cols-2 gap-3 xl:grid-cols-4">
+          {listingStatusCards.map(({ status, label, description, icon: Icon, tone }) => {
+            const selected = statusFilter === status
+            const tones = {
+              amber: { icon: 'bg-amber-50 text-amber-700', active: 'border-amber-300 ring-2 ring-amber-100' },
+              emerald: { icon: 'bg-emerald-50 text-emerald-700', active: 'border-emerald-300 ring-2 ring-emerald-100' },
+              blue: { icon: 'bg-blue-50 text-blue-700', active: 'border-blue-300 ring-2 ring-blue-100' },
+              rose: { icon: 'bg-rose-50 text-rose-700', active: 'border-rose-300 ring-2 ring-rose-100' },
+            }[tone]
+            return (
+              <button
+                key={status}
+                type="button"
+                aria-pressed={selected}
+                onClick={() => onStatusFilter(selected ? 'all' : status)}
+                className={`min-w-0 rounded-xl border bg-white p-4 text-left transition-colors hover:border-slate-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${selected ? tones.active : 'border-slate-200'}`}
+              >
+                <span className="flex items-start justify-between gap-2">
+                  <span className="min-w-0">
+                    <span className="block truncate text-xs font-medium text-slate-500">{label}</span>
+                    <span className="mt-2 block text-2xl font-semibold tracking-tight text-slate-950">{listingCounts[status]}</span>
+                  </span>
+                  <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${tones.icon}`}>
+                    <Icon className="h-4 w-4" />
+                  </span>
+                </span>
+                <span className="mt-2 block truncate text-xs text-slate-500">{description}</span>
+              </button>
+            )
+          })}
+        </section>
 
-      <div className="min-h-0 flex-1 overflow-y-auto p-4 sm:p-6">
-        {listingCountsError && (
-          <p role="status" className="mx-auto mb-4 max-w-6xl rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
-            {listingCountsError}
-          </p>
-        )}
+        <section className="overflow-hidden rounded-xl border border-slate-200 bg-white">
+          <div className="flex flex-col gap-1 border-b border-slate-100 px-4 py-4 sm:px-5">
+            <h3 className="text-sm font-semibold text-slate-900">
+              {statusFilter === 'pending_review' ? 'Listings awaiting review' : statusFilter === 'all' ? 'All submissions' : `${LISTING_REVIEW_FILTERS.find(filter => filter.value === statusFilter)?.label} listings`}
+            </h3>
+            <p className="text-xs text-slate-500">Search and filter the queue, then open a submission to review it.</p>
+          </div>
+          <div className="flex flex-col gap-3 border-b border-slate-100 bg-slate-50/60 p-4 sm:flex-row sm:items-center sm:px-5">
+            <label className="relative min-w-0 flex-1">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+              <input
+                type="search"
+                value={search}
+                onChange={event => setSearch(event.target.value)}
+                placeholder="Search title, location, landlord or reference…"
+                aria-label="Search property submissions"
+                className="h-10 w-full rounded-lg border border-slate-200 bg-white pl-9 pr-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/15"
+              />
+            </label>
+            <label className="flex min-w-0 items-center gap-2">
+              <span className="sr-only">Status</span>
+              <select
+                value={statusFilter}
+                onChange={event => onStatusFilter(event.target.value as ListingReviewFilter)}
+                className="h-10 min-w-0 flex-1 rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-700 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/15 sm:w-44 sm:flex-none"
+                aria-label="Filter property submissions by status"
+              >
+                {LISTING_REVIEW_FILTERS.map(filter => (
+                  <option key={filter.value} value={filter.value}>
+                    {filter.label} ({listingCounts[filter.value]})
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="flex min-w-0 items-center gap-2">
+              <SlidersHorizontal className="hidden h-4 w-4 shrink-0 text-slate-400 sm:block" />
+              <span className="sr-only">Sort</span>
+              <select
+                value={sort}
+                onChange={event => setSort(event.target.value as typeof sort)}
+                className="h-10 min-w-0 flex-1 rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-700 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/15 sm:w-40 sm:flex-none"
+                aria-label="Sort property submissions"
+              >
+                <option value="newest">Newest first</option>
+                <option value="oldest">Oldest first</option>
+                <option value="updated">Recently updated</option>
+              </select>
+            </label>
+          </div>
+          {listingCountsError && (
+            <p role="status" className="mx-4 mt-4 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800 sm:mx-5">
+              {listingCountsError}
+            </p>
+          )}
         {loading ? (
-          <div className="mx-auto max-w-5xl divide-y divide-slate-100 overflow-hidden rounded-xl border border-slate-200 bg-white">
+          <div className="divide-y divide-slate-100">
             {Array.from({ length: 5 }, (_, index) => (
               <div key={index} className="flex animate-pulse items-center gap-3 p-3 sm:gap-4 sm:p-4">
                 <div className="h-14 w-14 shrink-0 rounded-lg bg-slate-100 sm:h-16 sm:w-16" />
@@ -704,7 +761,7 @@ function ListingsTab({
             ))}
           </div>
         ) : error ? (
-          <div className="mx-auto mt-8 max-w-lg rounded-xl border border-red-200 bg-white p-6 text-center">
+          <div className="mx-auto my-8 max-w-lg rounded-xl border border-red-200 bg-white p-6 text-center">
             <AlertCircle className="mx-auto h-7 w-7 text-red-600" />
             <h4 className="mt-3 text-sm font-semibold text-slate-900">Could not load property submissions</h4>
             <p className="mt-1 break-words text-sm text-slate-500">{error}</p>
@@ -713,7 +770,7 @@ function ListingsTab({
             </button>
           </div>
         ) : visibleListings.length === 0 ? (
-          <div className="mx-auto mt-8 max-w-lg rounded-xl border border-slate-200 bg-white px-5 py-10 text-center">
+          <div className="mx-auto my-8 max-w-lg rounded-xl border border-slate-200 bg-white px-5 py-10 text-center">
             <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-slate-100 text-slate-600">
               <ListChecks className="h-6 w-6" />
             </div>
@@ -731,7 +788,7 @@ function ListingsTab({
             )}
           </div>
         ) : (
-          <div className="mx-auto max-w-6xl divide-y divide-slate-100 overflow-hidden rounded-xl border border-slate-200 bg-white">
+          <div className="divide-y divide-slate-100">
             {visibleListings.map((listing: any) => (
               <ListingCard
                 key={listing.id}
@@ -742,7 +799,7 @@ function ListingsTab({
             ))}
           </div>
         )}
-      </div>
+        </section>
       <Dialog open={!!viewingListing} onOpenChange={open => { if (!open) setViewingListing(null) }}>
         {viewingListing && (
           <ListingPreviewDialog
@@ -770,6 +827,7 @@ function ListingsTab({
           void onReviewDecision(currentDecision.listing.id, currentDecision.action, reason)
         }}
       />
+      </div>
     </div>
   )
 }
