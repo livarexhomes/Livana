@@ -388,29 +388,33 @@ function StatusBanner({ status }: { status: VettingStatus }) {
 // ── Empty state ────────────────────────────────────────────────────────────────
 function EmptyWorkspace() {
   return (
-    <div className="flex h-full min-h-0 flex-col items-center justify-center rounded-3xl border border-dashed border-slate-200 bg-gradient-to-br from-slate-50/50 via-white to-blue-50/30 p-10 text-center">
-      <div className="relative">
-        <div
-          aria-hidden="true"
-          className="absolute inset-0 rounded-3xl bg-gradient-to-br from-blue-500/30 to-blue-500/30 blur-2xl"
-        />
-        <div
-          className="relative mb-5 flex h-20 w-20 items-center justify-center rounded-3xl shadow-lg shadow-blue-500/30 ring-2 ring-white"
-          style={{ background: `linear-gradient(135deg, ${BRAND} 0%, ${BRAND_D} 50%, ${ACCENT} 100%)` }}
-        >
-          <ShieldCheck className="h-10 w-10 text-white" strokeWidth={2.25} />
+    <div className="flex h-full min-h-[min(70vh,680px)] flex-col items-center justify-center rounded-xl bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-blue-50/70 via-white to-white px-5 py-12 text-center sm:px-10">
+      <div className="w-full max-w-2xl rounded-3xl border border-slate-200/80 bg-white/90 px-6 py-10 sm:px-12 sm:py-14">
+        <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-blue-600 text-white">
+          <ShieldCheck className="h-8 w-8" strokeWidth={2} />
+        </div>
+        <p className="mt-6 text-[11px] font-bold uppercase tracking-[0.16em] text-blue-700">Identity review</p>
+        <h3 className="mt-2 text-xl font-bold tracking-tight text-slate-950 sm:text-2xl">Select a landlord to get started</h3>
+        <p className="mx-auto mt-3 max-w-md text-sm leading-6 text-slate-500">
+          Choose an application from the queue to review the landlord’s identity details, supporting documents, and verification status.
+        </p>
+        <div className="mx-auto mt-8 grid max-w-lg gap-3 text-left sm:grid-cols-3">
+          {[
+            { number: '01', label: 'Review profile', description: 'Check applicant details' },
+            { number: '02', label: 'Verify documents', description: 'Inspect submitted files' },
+            { number: '03', label: 'Make a decision', description: 'Approve or request updates' },
+          ].map(step => (
+            <div key={step.number} className="rounded-xl border border-slate-200/80 bg-slate-50/70 p-3.5">
+              <span className="text-[10px] font-bold tracking-wider text-blue-700">{step.number}</span>
+              <p className="mt-2 text-xs font-semibold text-slate-800">{step.label}</p>
+              <p className="mt-1 text-[11px] leading-relaxed text-slate-500">{step.description}</p>
+            </div>
+          ))}
         </div>
       </div>
-      <h3 className="text-[18px] font-extrabold tracking-tight text-slate-800">Select a landlord to review</h3>
-      <p className="mt-2 max-w-xs text-[13px] leading-relaxed text-slate-500">
-        Pick a landlord from the queue to view their identity details, documents, and make a decision.
-      </p>
-      <div className="mt-6 flex items-center gap-2 text-[11px] font-semibold text-slate-400">
-        <span className="h-px w-8 bg-gradient-to-r from-transparent to-slate-300" />
-        <ShieldCheck className="h-3 w-3" />
-        <span className="uppercase tracking-widest">Vetting Hub</span>
-        <ShieldCheck className="h-3 w-3" />
-        <span className="h-px w-8 bg-gradient-to-l from-transparent to-slate-300" />
+      <div className="mt-5 inline-flex items-center gap-2 text-[11px] font-semibold text-slate-400">
+        <ShieldCheck className="h-3.5 w-3.5 text-blue-500" />
+        <span>Secure landlord verification workspace</span>
       </div>
     </div>
   )

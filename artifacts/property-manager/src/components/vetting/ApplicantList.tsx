@@ -1,5 +1,5 @@
 import { useRef } from 'react'
-import { Loader2, Users } from 'lucide-react'
+import { Loader2, Users, SearchX } from 'lucide-react'
 import ApplicantCard from './ApplicantCard'
 import type { VettingLandlord } from './mockData'
 
@@ -63,27 +63,31 @@ export default function ApplicantList({
         className="flex-1 overflow-y-auto"
       >
         {loading ? (
-          <div className="flex items-center justify-center py-20" aria-busy="true">
-            <div className="flex flex-col items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-500 to-blue-500 text-white shadow-md shadow-blue-500/30">
-                <Loader2 className="h-4 w-4 animate-spin" />
+          <div className="flex min-h-[min(55vh,520px)] items-center justify-center px-5" aria-busy="true">
+            <div className="flex flex-col items-center gap-3 text-center">
+              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
+                <Loader2 className="h-5 w-5 animate-spin" />
               </div>
-              <p className="text-xs font-semibold text-slate-400">Loading applicants…</p>
+              <p className="text-sm font-medium text-slate-500">Loading applicants…</p>
             </div>
           </div>
         ) : landlords.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-20 text-center px-4">
-            <div className="relative mb-5">
-              <div
-                aria-hidden="true"
-                className="absolute inset-0 rounded-3xl bg-gradient-to-br from-blue-500/20 to-blue-500/20 blur-xl"
-              />
-              <div className="relative flex h-16 w-16 items-center justify-center rounded-3xl border border-slate-200/80 bg-white shadow-sm">
-                <Users className="h-7 w-7 text-slate-300" />
+          <div className="flex min-h-[min(55vh,520px)] flex-col items-center justify-center px-5 text-center">
+            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-100 text-slate-500">
+              <SearchX className="h-6 w-6" />
+            </div>
+            <div className="mt-4 max-w-[220px]">
+              <p className="text-sm font-semibold text-slate-800">
+                No applicants in this queue
+              </p>
+              <p className="mt-1.5 text-xs leading-relaxed text-slate-500">
+                New landlord applications will appear here when they’re submitted.
+              </p>
+              <div className="mt-4 inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-[11px] font-medium text-slate-500">
+                <Users className="h-3.5 w-3.5" />
+                Applications are listed here
               </div>
             </div>
-            <p className="text-sm font-bold text-slate-700">No applicants</p>
-            <p className="mt-1 text-xs text-slate-400">Try a different filter or search term.</p>
           </div>
         ) : (
           <div className="divide-y divide-slate-100/80">

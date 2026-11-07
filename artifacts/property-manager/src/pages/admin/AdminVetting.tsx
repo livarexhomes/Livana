@@ -288,7 +288,7 @@ export default function AdminVetting() {
           />
 
           {/* Workspace navigation */}
-          <div className="relative z-40 hidden sm:flex flex-wrap items-center justify-between gap-3 px-5 py-4 bg-white/70 backdrop-blur border-b border-slate-200/80 shrink-0">
+          <div className="relative z-40 hidden sm:flex min-h-[76px] flex-wrap items-center justify-between gap-3 border-b border-slate-200/80 bg-white px-6 py-3 shrink-0">
             <div className="min-w-0">
               <StatusFilterDropdown
                 value={kycStatusFilter}
@@ -305,7 +305,7 @@ export default function AdminVetting() {
           </div>
 
           {/* Tab switcher (mobile only) */}
-          <div className="relative z-40 sm:hidden shrink-0 space-y-2 border-b border-slate-100 bg-white px-4 py-3">
+          <div className="relative z-40 sm:hidden shrink-0 space-y-3 border-b border-slate-200 bg-white px-4 py-4">
             <StatusFilterDropdown
               value={kycStatusFilter}
               onChange={setKycStatusFilter}
@@ -322,13 +322,21 @@ export default function AdminVetting() {
           {activeTab === 'identity' ? (
             /* ── Two-panel workspace — each panel scrolls independently ── */
             <div
-              className="flex flex-1 min-h-0 overflow-hidden"
+              className="flex flex-1 min-h-0 gap-4 overflow-hidden bg-slate-50 p-4"
               data-testid="vetting-grid"
             >
               {/* LEFT: landlord queue — independently scrollable */}
-              <div className="w-72 xl:w-[21rem] shrink-0 min-h-0 overflow-hidden border-r border-slate-200/80 bg-white hidden md:flex md:flex-col">
-                {/* Toolbar without status pills on desktop (pills already in header dropdown) */}
-                <div className="px-4 pt-4 pb-2 border-b border-slate-100 shrink-0">
+              <div className="hidden w-[300px] shrink-0 min-h-0 flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white md:flex xl:w-[340px]">
+                <div className="shrink-0 border-b border-slate-100 px-5 pb-4 pt-5">
+                  <div className="mb-4 flex items-center justify-between gap-3">
+                    <div>
+                      <h2 className="text-sm font-bold tracking-tight text-slate-900">Identity checks</h2>
+                      <p className="mt-1 text-xs text-slate-500">Review landlord applications</p>
+                    </div>
+                    <span className="inline-flex min-w-7 items-center justify-center rounded-full bg-slate-100 px-2 py-1 text-xs font-semibold text-slate-600">
+                      {kycFiltered.length}
+                    </span>
+                  </div>
                   <VettingToolbar
                     search={kycSearch}
                     onSearch={setKycSearch}
@@ -351,7 +359,7 @@ export default function AdminVetting() {
               </div>
 
               {/* RIGHT: review workspace — sticky, independently scrollable */}
-              <div className="flex-1 min-w-0 min-h-0 overflow-y-auto bg-slate-50/40">
+              <div className="flex-1 min-w-0 min-h-0 overflow-y-auto rounded-2xl border border-slate-200 bg-white p-3 sm:p-4">
                 {/* Mobile: back button when no landlord selected */}
                 {selectedLandlord && (
                   <div className="md:hidden px-4 pt-3">
@@ -363,7 +371,7 @@ export default function AdminVetting() {
                 )}
                 <div className="px-4 pb-6 pt-4 sm:px-6 md:pt-6">
                   {/* Mobile: compact queue header */}
-                  <div className="md:hidden mb-4">
+                  <div className="mb-4 md:hidden">
                     <div className="flex items-center justify-between mb-3">
                       <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">Landlord queue</p>
                       <span className="text-[11px] font-semibold text-slate-500">{kycFiltered.length}</span>
@@ -389,18 +397,18 @@ export default function AdminVetting() {
                       className="min-h-0 rounded-2xl border border-slate-200/80 shadow-sm"
                     />
                   </div>
-                  <div className="hidden md:block">
-                  <ReviewWorkspace
-                    landlord={selectedLandlord}
-                    kycDocs={kycDocs}
-                    docsError={kycDocsError}
-                    docsLoading={docsLoading}
-                    processing={kycProcessing}
-                    imgErrors={imgErrors}
-                    onImgError={(k: string) => setImgErrors(prev => ({ ...prev, [k]: true }))}
-                    onClose={clearKycSelection}
-                    onUpdateStatus={updateKycStatus}
-                  />
+                  <div className="hidden h-full min-h-[min(70vh,680px)] md:block">
+                    <ReviewWorkspace
+                      landlord={selectedLandlord}
+                      kycDocs={kycDocs}
+                      docsError={kycDocsError}
+                      docsLoading={docsLoading}
+                      processing={kycProcessing}
+                      imgErrors={imgErrors}
+                      onImgError={(k: string) => setImgErrors(prev => ({ ...prev, [k]: true }))}
+                      onClose={clearKycSelection}
+                      onUpdateStatus={updateKycStatus}
+                    />
                   </div>
                 </div>
               </div>
