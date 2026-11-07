@@ -1,5 +1,5 @@
 export type PropertyType = 'sale' | 'rent' | 'lease' | 'commercial'
-export type PropertyStatus = 'available' | 'taken' | 'coming_soon' | 'under_negotiation'
+export type PropertyStatus = 'available' | 'taken' | 'coming_soon' | 'under_negotiation' | 'pending_review' | 'rejected' | 'changes_requested'
 export type LandlordStatus = 'not_submitted' | 'pending' | 'approved' | 'rejected' | 'suspended'
 
 export interface Landlord {
@@ -31,6 +31,9 @@ export interface Property {
   area_sqft: number | null
   type: PropertyType
   status: PropertyStatus
+  review_feedback?: string | null
+  reviewed_at?: string | null
+  reviewed_by?: string | null
   featured: boolean
   amenities: string[]
   latitude: number | null

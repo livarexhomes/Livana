@@ -143,7 +143,10 @@ export interface Database {
           bathrooms: number
           area_sqft: number | null
           type: 'sale' | 'rent'
-          status: 'available' | 'taken' | 'coming_soon' | 'under_negotiation' | 'pending_review'
+          status: 'available' | 'taken' | 'coming_soon' | 'under_negotiation' | 'pending_review' | 'rejected' | 'changes_requested'
+          review_feedback: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
           featured: boolean
           created_at: string
           updated_at: string
@@ -163,7 +166,10 @@ export interface Database {
           bathrooms: number
           area_sqft?: number | null
           type: 'sale' | 'rent'
-          status?: 'available' | 'taken' | 'coming_soon' | 'under_negotiation' | 'pending_review'
+          status?: 'available' | 'taken' | 'coming_soon' | 'under_negotiation' | 'pending_review' | 'rejected' | 'changes_requested'
+          review_feedback?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
           featured?: boolean
           created_at?: string
           updated_at?: string
@@ -183,7 +189,10 @@ export interface Database {
           bathrooms?: number
           area_sqft?: number | null
           type?: 'sale' | 'rent'
-          status?: 'available' | 'taken' | 'coming_soon' | 'under_negotiation' | 'pending_review'
+          status?: 'available' | 'taken' | 'coming_soon' | 'under_negotiation' | 'pending_review' | 'rejected' | 'changes_requested'
+          review_feedback?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
           featured?: boolean
           created_at?: string
           updated_at?: string
@@ -215,6 +224,35 @@ export interface Database {
           alt_text?: string | null
           is_cover?: boolean
           sort_order?: number
+          created_at?: string
+        }
+      }
+      property_review_events: {
+        Row: {
+          id: string
+          property_id: string | null
+          property_title: string
+          action: 'approved' | 'rejected' | 'changes_requested'
+          reason: string | null
+          admin_user_id: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          property_id?: string | null
+          property_title: string
+          action: 'approved' | 'rejected' | 'changes_requested'
+          reason?: string | null
+          admin_user_id?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          property_id?: string | null
+          property_title?: string
+          action?: 'approved' | 'rejected' | 'changes_requested'
+          reason?: string | null
+          admin_user_id?: string | null
           created_at?: string
         }
       }
@@ -512,7 +550,16 @@ export interface Database {
       }
     }
     Views: Record<string, never>
-    Functions: Record<string, never>
+    Functions: {
+      review_property_submission: {
+        Args: {
+          p_property_id: string
+          p_action: string
+          p_reason?: string | null
+        }
+        Returns: { property_id: string; new_status: string }[]
+      }
+    }
     Enums: Record<string, never>
   }
 }

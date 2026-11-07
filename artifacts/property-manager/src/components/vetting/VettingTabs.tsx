@@ -17,7 +17,7 @@ export default function VettingTabs({
     <div
       role="tablist"
       aria-label="Vetting workspace"
-      className="relative inline-flex max-w-full items-center gap-1 overflow-x-auto rounded-xl border border-slate-200 bg-slate-100/80 p-1"
+      className="inline-flex max-w-full items-center gap-4 overflow-x-auto"
     >
       <TabBtn
         active={active === 'identity'}
@@ -53,32 +53,32 @@ function TabBtn({
       aria-selected={active}
       onClick={onClick}
       className={cn(
-        'relative inline-flex min-h-10 shrink-0 items-center gap-2 rounded-lg px-3 py-2 text-xs font-semibold transition-colors sm:px-4 sm:text-sm',
-        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:ring-offset-1 focus-visible:ring-offset-slate-100',
+        'relative inline-flex min-h-10 shrink-0 items-center gap-2 border-b-2 px-1 py-2 text-xs font-medium transition-colors sm:text-sm',
+        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:ring-offset-2',
         active
-          ? 'bg-white text-slate-950 ring-1 ring-slate-200'
-          : 'text-slate-600 hover:bg-white/60 hover:text-slate-900',
+          ? 'border-blue-600 text-slate-900'
+          : 'border-transparent text-slate-500 hover:text-slate-900',
       )}
     >
       <span
         aria-hidden="true"
         className={cn(
-          'flex h-6 w-6 items-center justify-center rounded-md transition-colors',
+          'flex h-5 w-5 items-center justify-center transition-colors',
           active
-            ? 'bg-blue-600 text-white'
+            ? 'text-blue-600'
             : 'text-slate-400',
         )}
       >
-        <Icon         className="h-3.5 w-3.5" strokeWidth={active ? 2.2 : 1.8} />
+        <Icon className="h-4 w-4" strokeWidth={active ? 2.2 : 1.8} />
       </span>
       {label}
       {count > 0 && (
         <span
           className={cn(
-            'inline-flex h-5 min-w-[20px] items-center justify-center rounded-full px-1.5 text-[10px] font-bold transition-colors',
+            'inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-full px-1 text-[10px] font-semibold transition-colors',
             active
-              ? 'bg-blue-600 text-white'
-              : 'bg-slate-200 text-slate-600',
+              ? 'bg-blue-50 text-blue-700'
+              : 'bg-slate-100 text-slate-600',
           )}
         >
           {count}

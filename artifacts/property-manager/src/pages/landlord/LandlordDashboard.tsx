@@ -32,8 +32,10 @@ const STATUS_STYLE: Record<string, { label: string; className: string }> = {
   available: { label: 'Available', className: 'bg-emerald-50 text-emerald-700' },
   taken: { label: 'Taken', className: 'bg-slate-100 text-slate-600' },
   pending_review: { label: 'Pending review', className: 'bg-amber-50 text-amber-700' },
+  changes_requested: { label: 'Changes requested', className: 'bg-blue-50 text-blue-700' },
+  rejected: { label: 'Rejected', className: 'bg-red-50 text-red-700' },
   coming_soon: { label: 'Coming soon', className: 'bg-blue-50 text-blue-700' },
-  under_negotiation: { label: 'Negotiating', className: 'bg-violet-50 text-violet-700' },
+  under_negotiation: { label: 'Negotiating', className: 'bg-blue-50 text-blue-700' },
 }
 
 function timeAgo(value: string) {
@@ -81,7 +83,7 @@ export default function LandlordDashboard() {
       ] = await Promise.all([
         supabase.from('properties').select('id', { count: 'exact', head: true }).eq('landlord_id', landlordId),
         supabase.from('properties').select('id', { count: 'exact', head: true }).eq('landlord_id', landlordId).eq('status', 'available'),
-        supabase.from('properties').select('id', { count: 'exact', head: true }).eq('landlord_id', landlordId).eq('status', 'pending_review'),
+        supabase.from('properties').select('id', { count: 'exact', head: true }).eq('landlord_id', landlordId).in('status', ['pending_review', 'changes_requested']),
         supabase.from('properties').select('id', { count: 'exact', head: true }).eq('landlord_id', landlordId).eq('status', 'taken'),
         supabase.from('enquiries').select('id', { count: 'exact', head: true }).eq('landlord_id', landlordId),
         supabase.from('properties')

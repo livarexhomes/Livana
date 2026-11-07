@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { ArrowLeft, Phone, Mail, AlertTriangle, Ban, Clock, FileText, Loader2, X, CheckCircle, MapPin } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import {
@@ -10,10 +11,7 @@ import {
 } from '../mockData'
 import IdentityGrid from '../IdentityGrid'
 import DocumentCard from '../DocumentCard'
-
-const BRAND   = '#2563EB'
-const BRAND_D = '#1D4ED8'
-const ACCENT  = '#3B82F6'
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 
 interface MobileReviewScreenProps {
   landlord: VettingLandlord
@@ -39,7 +37,20 @@ export default function MobileReviewScreen({
   onUpdateStatus,
 }: MobileReviewScreenProps) {
   const meta = KYC_STATUS_META[landlord.status] ?? KYC_STATUS_META.pending
-  const busy = processing === landlord.id
+  const busy = processing !== null
+  const [pendingDecision, setPendingDecision] = useState<{ status: VettingStatus; label: string } | null>(null)
+  const [decisionError, setDecisionError] = useState('')
+
+  async function confirmDecision() {
+    if (!pendingDecision) return
+    setDecisionError('')
+    try {
+      await onUpdateStatus(landlord.id, pendingDecision.status)
+      setPendingDecision(null)
+    } catch (error) {
+      setDecisionError(error instanceof Error ? error.message : 'The decision could not be saved.')
+    }
+  }
 
   return (
     <div
@@ -55,7 +66,7 @@ export default function MobileReviewScreen({
           className="pointer-events-none absolute inset-0 opacity-50"
           style={{
             background:
-              'radial-gradient(60% 100% at 0% 0%, rgba(99,102,241,0.08) 0%, transparent 70%)',
+              'radial-gradient(60% 100% at 0% 0%, rgba(37,99,235,0.07) 0%, transparent 70%)',
           }}
         />
         <div className="relative flex items-center gap-3 px-4 py-3">
@@ -83,7 +94,7 @@ export default function MobileReviewScreen({
           className="pointer-events-none absolute inset-0"
           style={{
             background:
-              'linear-gradient(180deg, rgba(99,102,241,0.05) 0%, rgba(168,85,247,0.03) 100%)',
+              'linear-gradient(180deg, rgba(37,99,235,0.05) 0%, rgba(255,255,255,0) 100%)',
           }}
         />
         <div className="relative flex items-start gap-3">
@@ -176,22 +187,46 @@ export default function MobileReviewScreen({
       </div>
 
       {/* Sticky bottom action bar */}
-      <div className="fixed inset-x-0 bottom-0 z-50 border-t border-slate-200/80 bg-white/95 px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 shadow-[0_-8px_32px_-12px_rgba(99,102,241,0.18)] backdrop-blur">
+      <div className="fixed inset-x-0 bottom-0 z-50 border-t border-slate-200 bg-white/95 px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 shadow-[0_-8px_32px_-12px_rgba(15,23,42,0.12)] backdrop-blur">
         <div className="grid grid-cols-4 gap-2">
           {landlord.status !== 'approved' && (
-            <ActionBtn variant="approve" onClick={() => onUpdateStatus(landlord.id, 'approved')} loading={busy} />
+            <ActionBtn variant="approve" onClick={() => setPendingDecision({ status: 'approved', label: 'Approve' })} loading={busy} />
           )}
           {landlord.status !== 'rejected' && (
-            <ActionBtn variant="reject" onClick={() => onUpdateStatus(landlord.id, 'rejected')} loading={busy} />
+            <ActionBtn variant="reject" onClick={() => setPendingDecision({ status: 'rejected', label: 'Reject' })} loading={busy} />
           )}
           {landlord.status !== 'suspended' && (
-            <ActionBtn variant="suspend" onClick={() => onUpdateStatus(landlord.id, 'suspended')} loading={busy} />
+            <ActionBtn variant="suspend" onClick={() => setPendingDecision({ status: 'suspended', label: 'Suspend' })} loading={busy} />
           )}
           {landlord.status !== 'pending' && landlord.status !== 'not_submitted' && (
-            <ActionBtn variant="reset" onClick={() => onUpdateStatus(landlord.id, 'pending')} loading={busy} />
+            <ActionBtn variant="reset" onClick={() => setPendingDecision({ status: 'pending', label: 'Reset' })} loading={busy} />
           )}
         </div>
       </div>
+      <Dialog open={!!pendingDecision} onOpenChange={open => { if (!open && !busy) setPendingDecision(null) }}>
+        {pendingDecision && (
+          <DialogContent className="w-[calc(100%-1rem)] max-w-md rounded-xl border-slate-200 bg-white p-0 text-slate-900">
+            <DialogHeader className="border-b border-slate-100 px-5 py-4 pr-12 text-left">
+              <DialogTitle className="text-base font-semibold">Confirm {pendingDecision.label.toLowerCase()} decision</DialogTitle>
+              <DialogDescription className="text-sm text-slate-500">
+                {pendingDecision.label} identity verification for {landlord.full_name}?
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-3 px-5 py-4">
+              {decisionError && <p role="alert" className="text-sm text-red-600">{decisionError}</p>}
+              <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+              <button type="button" onClick={() => setPendingDecision(null)} disabled={busy} className="inline-flex h-10 items-center justify-center rounded-lg border border-slate-200 px-4 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50">
+                Cancel
+              </button>
+              <button type="button" onClick={() => void confirmDecision()} disabled={busy} className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-50">
+                {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle className="h-4 w-4" />}
+                Confirm {pendingDecision.label.toLowerCase()}
+              </button>
+              </div>
+            </div>
+          </DialogContent>
+        )}
+      </Dialog>
     </div>
   )
 }

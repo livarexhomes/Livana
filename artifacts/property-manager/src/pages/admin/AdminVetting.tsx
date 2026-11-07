@@ -1,11 +1,12 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import { cn } from '@/lib/utils'
 import {
-  CheckCircle, Clock, ShieldCheck,
+  CheckCircle, ShieldCheck,
   Loader2, Users, Building2,
   BedDouble, Bath, MapPin, DollarSign, ListChecks,
-  Trash2, ChevronDown, ChevronRight, Eye, Image as ImageIcon,
-  Home, Ruler, CalendarDays, Tag, XCircle,
+  ChevronDown, Eye, Image as ImageIcon,
+  Home, Ruler, CalendarDays, Tag, XCircle, Search, SlidersHorizontal,
+  FileText, History, AlertCircle, RefreshCw, Check,
 } from 'lucide-react'
 import AdminSidebar from '../../components/layout/AdminSidebar'
 import AuthGuard from '../../components/auth/AuthGuard'
@@ -30,6 +31,7 @@ import {
   type VettingStatus,
 } from '@/components/vetting'
 import StatusFilterDropdown from '@/components/vetting/StatusFilterDropdown'
+import { useToast } from '@/hooks/use-toast'
 import {
   Dialog,
   DialogContent,
@@ -53,9 +55,21 @@ const KYC_FILTER_TABS_BASE = [
   { key: 'all',           label: 'All' },
 ] as const
 
+type ListingReviewFilter = 'all' | 'pending_review' | 'available' | 'rejected' | 'changes_requested'
+type ListingReviewAction = 'approved' | 'rejected' | 'changes_requested'
+
+const LISTING_REVIEW_FILTERS: { value: ListingReviewFilter; label: string }[] = [
+  { value: 'all', label: 'All statuses' },
+  { value: 'pending_review', label: 'Pending' },
+  { value: 'available', label: 'Approved' },
+  { value: 'rejected', label: 'Rejected' },
+  { value: 'changes_requested', label: 'Needs changes' },
+]
+
 // ── Main Component ────────────────────────────────────────────────────────────
 
 export default function AdminVetting() {
+  const { toast } = useToast()
   const [user, setUser]               = useState<{ email?: string } | null>(null)
   const [activeTab, setActiveTab]     = useState<VettingTab>('identity')
 
@@ -76,8 +90,12 @@ export default function AdminVetting() {
   // ── Listings state ─────────────────────────────────────────────────────────
   const [pendingListings, setPendingListings]   = useState<any[]>([])
   const [listingsLoading, setListingsLoading]   = useState<boolean>(!USE_MOCK_VETTING)
+  const [listingsError, setListingsError] = useState('')
   const [listingProcessing, setListingProcessing] = useState<string | null>(null)
-  const [listingConfirm, setListingConfirm]     = useState<{ id: string; action: 'approve' | 'reject' } | null>(null)
+  const [listingStatusFilter, setListingStatusFilter] = useState<ListingReviewFilter>('pending_review')
+  const [listingCounts, setListingCounts] = useState({
+    pending_review: 0, available: 0, rejected: 0, changes_requested: 0, all: 0,
+  })
 
   // ── Auth ───────────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -145,19 +163,51 @@ export default function AdminVetting() {
   // ── Load Listings data ─────────────────────────────────────────────────────
   const loadPendingListings = useCallback(async () => {
     if (USE_MOCK_VETTING) {
+      setPendingListings([])
+      setListingCounts({ pending_review: 0, available: 0, rejected: 0, changes_requested: 0, all: 0 })
+      setListingsError('')
       setListingsLoading(false)
       return
     }
     setListingsLoading(true)
-    const supabase = createClient()
-    const { data } = await supabase
-      .from('properties')
-      .select('*, landlords(full_name, whatsapp), property_images(storage_path, is_cover, sort_order)')
-      .eq('status', 'pending_review')
-      .order('created_at', { ascending: true })
-    setPendingListings(data ?? [])
-    setListingsLoading(false)
-  }, [])
+    setListingsError('')
+    try {
+      const supabase = createClient()
+      const statuses: Exclude<ListingReviewFilter, 'all'>[] = [
+        'pending_review', 'available', 'rejected', 'changes_requested',
+      ]
+      const listingQuery = supabase
+        .from('properties')
+        .select('*, landlords(id, full_name, whatsapp, email, status, is_verified), property_images(id, storage_path, alt_text, is_cover, sort_order), property_review_events(id, action, reason, created_at, admin_user_id, property_title)')
+        .order('updated_at', { ascending: false })
+      if (listingStatusFilter === 'all') {
+        listingQuery.in('status', statuses)
+      } else {
+        listingQuery.eq('status', listingStatusFilter)
+      }
+
+      const [listingsResult, ...countResults] = await Promise.all([
+        listingQuery,
+        ...statuses.map(status => supabase
+          .from('properties')
+          .select('id', { count: 'exact', head: true })
+          .eq('status', status)),
+      ])
+      const queryError = listingsResult.error ?? countResults.find(result => result.error)?.error
+      if (queryError) throw queryError
+
+      const counts = Object.fromEntries(statuses.map((status, index) => [
+        status, countResults[index].count ?? 0,
+      ])) as Record<Exclude<ListingReviewFilter, 'all'>, number>
+      setListingCounts({ ...counts, all: Object.values(counts).reduce((sum, count) => sum + count, 0) })
+      setPendingListings(listingsResult.data ?? [])
+    } catch (error) {
+      console.error('[vetting] Failed to load property review queue:', error)
+      setListingsError(error instanceof Error ? error.message : 'Could not load property submissions.')
+    } finally {
+      setListingsLoading(false)
+    }
+  }, [listingStatusFilter])
 
   useEffect(() => { loadPendingListings() }, [loadPendingListings])
 
@@ -198,62 +248,78 @@ export default function AdminVetting() {
 
   async function updateKycStatus(id: string, status: VettingStatus) {
     setKycProcessing(id)
-    if (USE_MOCK_VETTING) {
-      // Update mock state locally.
-      setLandlords(ls => ls.map(l => l.id === id ? { ...l, status, is_verified: status === 'approved' } : l))
-      if (selectedLandlord?.id === id) {
-        setSelectedLandlord(s => s ? { ...s, status, is_verified: status === 'approved' } : s)
+    const patch = { status, is_verified: status === 'approved' }
+    try {
+      if (USE_MOCK_VETTING) {
+        setLandlords(ls => ls.map(l => l.id === id ? { ...l, ...patch } : l))
+      } else {
+        const current = landlords.find(landlord => landlord.id === id)
+        if (!current) throw new Error('This landlord is no longer in the review queue.')
+        const { data, error } = await createClient()
+          .from('landlords')
+          .update(patch)
+          .eq('id', id)
+          .eq('status', current.status)
+          .select('id')
+          .maybeSingle()
+        if (error) throw error
+        if (!data) throw new Error('This landlord was updated by another administrator. Refresh the queue and try again.')
       }
+      setLandlords(ls => ls.map(l => l.id === id ? { ...l, ...patch } : l))
+      if (selectedLandlord?.id === id) setSelectedLandlord(s => s ? { ...s, ...patch } : s)
+      toast({ title: 'Identity review saved', description: `Landlord status updated to ${status.replace('_', ' ')}.` })
+    } catch (error) {
+      console.error('[KYC] Failed to update landlord status:', error)
+      toast({
+        title: 'Could not save identity review',
+        description: error instanceof Error ? error.message : 'Please retry the decision.',
+        variant: 'destructive',
+      })
+      throw error
+    } finally {
       setKycProcessing(null)
-      return
     }
-    const supabase = createClient()
-    const patch: any = { status }
-    if (status === 'approved') patch.is_verified = true
-    if (status !== 'approved') patch.is_verified = false
-    await supabase.from('landlords').update(patch).eq('id', id)
-    setLandlords(ls => ls.map(l => l.id === id ? { ...l, ...patch } : l))
-    if (selectedLandlord?.id === id) setSelectedLandlord((s: any) => s ? { ...s, ...patch } : s)
-    setKycProcessing(null)
   }
 
   function clearKycSelection() { setSelectedLandlord(null); setKycDocs([]); setImgErrors({}) }
 
   function selectLandlord(l: VettingLandlord) {
+    if (kycProcessing) return
     if (selectedLandlord?.id === l.id) { clearKycSelection(); return }
     setSelectedLandlord(l); loadKycDocs(l.id)
   }
 
   // ── Listing actions ────────────────────────────────────────────────────────
 
-  async function approveListing(id: string) {
-    if (USE_MOCK_VETTING) {
-      setPendingListings(ls => ls.filter(l => l.id !== id))
-      setListingProcessing(null)
-      setListingConfirm(null)
-      return
-    }
+  async function reviewListing(id: string, action: ListingReviewAction, reason?: string) {
     setListingProcessing(id)
-    const supabase = createClient()
-    await supabase.from('properties').update({ status: 'available' }).eq('id', id)
-    setPendingListings(ls => ls.filter(l => l.id !== id))
-    setListingProcessing(null)
-    setListingConfirm(null)
-  }
+    try {
+      const supabase = createClient()
+      const { data, error } = await supabase.rpc('review_property_submission', {
+        p_property_id: id,
+        p_action: action,
+        p_reason: reason?.trim() || null,
+      })
+      if (error) throw error
+      if (!data?.length) throw new Error('The review did not return an updated submission.')
 
-  async function rejectListing(id: string) {
-    if (USE_MOCK_VETTING) {
-      setPendingListings(ls => ls.filter(l => l.id !== id))
+      const successText = action === 'approved'
+        ? 'Listing approved and published.'
+        : action === 'rejected'
+          ? 'Listing rejected. The reason is saved in its review history.'
+          : 'Changes requested. The landlord can update and resubmit the listing.'
+      toast({ title: 'Review saved', description: successText })
+      await loadPendingListings()
+    } catch (error) {
+      console.error('[vetting] Failed to save property review decision:', error)
+      toast({
+        title: 'Could not save review',
+        description: error instanceof Error ? error.message : 'Please retry the decision.',
+        variant: 'destructive',
+      })
+    } finally {
       setListingProcessing(null)
-      setListingConfirm(null)
-      return
     }
-    setListingProcessing(id)
-    const supabase = createClient()
-    await supabase.from('properties').delete().eq('id', id)
-    setPendingListings(ls => ls.filter(l => l.id !== id))
-    setListingProcessing(null)
-    setListingConfirm(null)
   }
 
   // ── Derived counts ─────────────────────────────────────────────────────────
@@ -267,7 +333,7 @@ export default function AdminVetting() {
     not_submitted: landlords.filter(l => l.status === 'not_submitted').length,
     all:           landlords.length,
   }
-  const totalPending = kycCounts.pending + pendingListings.length
+  const totalPending = kycCounts.pending + listingCounts.pending_review
 
   // ── Render ─────────────────────────────────────────────────────────────────
 
@@ -281,42 +347,43 @@ export default function AdminVetting() {
         <div className="lv-vetting-content flex flex-1 min-w-0 flex-col overflow-hidden">
           <VettingHeader
             kycPendingCount={kycCounts.pending}
-            listingsPendingCount={pendingListings.length}
+            listingsPendingCount={listingCounts.pending_review}
             totalNotifications={totalPending}
-            onSearch={setKycSearch}
             adminName={displayName}
           />
 
           {/* Workspace navigation */}
-          <div className="relative z-40 hidden sm:flex min-h-[76px] flex-wrap items-center justify-between gap-3 border-b border-slate-200/80 bg-white px-6 py-3 shrink-0">
-            <div className="min-w-0">
+          <div className="relative z-20 hidden sm:flex min-h-14 shrink-0 flex-wrap items-center justify-between gap-3 border-b border-slate-200 bg-white px-6">
+            {activeTab === 'identity' ? <div className="min-w-0">
               <StatusFilterDropdown
                 value={kycStatusFilter}
                 onChange={setKycStatusFilter}
                 tabs={kycFilterTabs}
               />
-            </div>
+            </div> : <div />}
             <VettingTabs
               active={activeTab}
               onChange={setActiveTab}
               kycCount={kycCounts.pending}
-              listingsCount={pendingListings.length}
+              listingsCount={listingCounts.pending_review}
             />
           </div>
 
           {/* Tab switcher (mobile only) */}
-          <div className="relative z-40 sm:hidden shrink-0 space-y-3 border-b border-slate-200 bg-white px-4 py-4">
-            <StatusFilterDropdown
-              value={kycStatusFilter}
-              onChange={setKycStatusFilter}
-              tabs={kycFilterTabs}
-            />
+          <div className="relative z-20 shrink-0 space-y-2 border-b border-slate-200 bg-white px-4 pt-2">
             <VettingTabs
               active={activeTab}
               onChange={setActiveTab}
               kycCount={kycCounts.pending}
-              listingsCount={pendingListings.length}
+              listingsCount={listingCounts.pending_review}
             />
+            {activeTab === 'identity' && (
+              <StatusFilterDropdown
+                value={kycStatusFilter}
+                onChange={setKycStatusFilter}
+                tabs={kycFilterTabs}
+              />
+            )}
           </div>
 
           {activeTab === 'identity' ? (
@@ -359,7 +426,7 @@ export default function AdminVetting() {
               </div>
 
               {/* RIGHT: review workspace — sticky, independently scrollable */}
-              <div className="flex-1 min-w-0 min-h-0 overflow-y-auto rounded-2xl border border-slate-200 bg-white p-3 sm:p-4">
+              <div className="flex-1 min-w-0 min-h-0 overflow-y-auto rounded-2xl border border-slate-200 bg-white p-3 sm:p-4 md:overflow-hidden">
                 {/* Mobile: back button when no landlord selected */}
                 {selectedLandlord && (
                   <div className="md:hidden px-4 pt-3">
@@ -369,7 +436,7 @@ export default function AdminVetting() {
                     </button>
                   </div>
                 )}
-                <div className="px-4 pb-6 pt-4 sm:px-6 md:pt-6">
+                <div className="min-h-full px-4 pb-6 pt-4 sm:px-6 md:flex md:h-full md:min-h-0 md:flex-col md:pb-4 md:pt-4">
                   {/* Mobile: compact queue header */}
                   <div className="mb-4 md:hidden">
                     <div className="flex items-center justify-between mb-3">
@@ -397,9 +464,11 @@ export default function AdminVetting() {
                       className="min-h-0 rounded-2xl border border-slate-200/80 shadow-sm"
                     />
                   </div>
-                  <div className="hidden h-full min-h-[min(70vh,680px)] md:block">
+                  <div className="hidden h-full min-h-0 md:block">
                     <ReviewWorkspace
                       landlord={selectedLandlord}
+                      applicantCount={kycFiltered.length}
+                      queueLoading={kycLoading}
                       kycDocs={kycDocs}
                       docsError={kycDocsError}
                       docsLoading={docsLoading}
@@ -417,12 +486,14 @@ export default function AdminVetting() {
             <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
               <ListingsTab
                 listings={pendingListings}
+                listingCounts={listingCounts}
+                statusFilter={listingStatusFilter}
+                onStatusFilter={setListingStatusFilter}
                 loading={listingsLoading}
+                error={listingsError}
+                onRetry={() => void loadPendingListings()}
                 processing={listingProcessing}
-                confirm={listingConfirm}
-                setConfirm={setListingConfirm}
-                onApprove={approveListing}
-                onReject={rejectListing}
+                onReviewDecision={reviewListing}
                 onReviewIdentity={() => { setActiveTab('identity'); setKycStatusFilter('pending') }}
                 kycPendingCount={kycCounts.pending}
               />
@@ -455,19 +526,45 @@ export default function AdminVetting() {
 // ── Listing Approvals tab ─────────────────────────────────────────────────────
 
 function ListingsTab({
-  listings, loading, processing, confirm, setConfirm, onApprove, onReject,
-  onReviewIdentity, kycPendingCount,
+  listings, listingCounts, statusFilter, onStatusFilter, loading, error, onRetry,
+  processing, onReviewDecision, onReviewIdentity, kycPendingCount,
 }: {
-  listings: any[]; loading: boolean; processing: string | null
-  confirm: { id: string; action: 'approve' | 'reject' } | null
-  setConfirm: (c: { id: string; action: 'approve' | 'reject' } | null) => void
-  onApprove: (id: string) => Promise<void>
-  onReject:  (id: string) => Promise<void>
+  listings: any[]
+  listingCounts: Record<ListingReviewFilter, number>
+  statusFilter: ListingReviewFilter
+  onStatusFilter: (filter: ListingReviewFilter) => void
+  loading: boolean
+  error: string
+  onRetry: () => void
+  processing: string | null
+  onReviewDecision: (id: string, action: ListingReviewAction, reason?: string) => Promise<void>
   onReviewIdentity: () => void
   kycPendingCount: number
 }) {
   const [viewingListing, setViewingListing] = useState<any | null>(null)
   const [previewImageIndex, setPreviewImageIndex] = useState(0)
+  const [decision, setDecision] = useState<{ listing: any; action: ListingReviewAction } | null>(null)
+  const [search, setSearch] = useState('')
+  const [sort, setSort] = useState<'newest' | 'oldest' | 'updated'>('newest')
+
+  const visibleListings = useMemo(() => {
+    const query = search.trim().toLocaleLowerCase()
+    const filtered = query
+      ? listings.filter(listing => [
+          listing.title,
+          listing.address,
+          listing.city,
+          listing.state,
+          listing.id,
+          listing.landlords?.full_name,
+        ].some(value => String(value ?? '').toLocaleLowerCase().includes(query)))
+      : [...listings]
+    return filtered.sort((a, b) => {
+      const aDate = new Date(sort === 'updated' ? a.updated_at ?? a.created_at : a.created_at).getTime()
+      const bDate = new Date(sort === 'updated' ? b.updated_at ?? b.created_at : b.created_at).getTime()
+      return sort === 'oldest' ? aDate - bDate : bDate - aDate
+    })
+  }, [listings, search, sort])
 
   function openListingPreview(listing: any) {
     const images: any[] = [...(listing.property_images ?? [])]
@@ -478,77 +575,118 @@ function ListingsTab({
   }
 
   return (
-    <div className="relative flex flex-1 min-h-0 overflow-hidden flex-col">
-      <div
-        className="pointer-events-none absolute inset-x-0 top-0 h-32 opacity-60"
-        style={{
-          background:
-            'linear-gradient(180deg, rgba(99,102,241,0.05) 0%, rgba(168,85,247,0.03) 50%, transparent 100%)',
-        }}
-      />
-      <div className="relative shrink-0 flex flex-wrap items-center justify-between gap-3 border-b border-slate-200/80 bg-white/80 backdrop-blur px-4 py-4 sm:px-6 sm:py-5">
+    <div className="flex min-h-0 flex-1 flex-col overflow-hidden bg-slate-50">
+      <div className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-b border-slate-200 bg-white px-4 py-3 sm:px-6">
         <div>
-          <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">Property review</p>
-          <h3 className="mt-1 text-base font-extrabold tracking-tight text-slate-900">
-            {loading ? 'Loading…' : listings.length === 0
-              ? 'No submissions waiting for review'
-              : `${listings.length} listing${listings.length !== 1 ? 's' : ''} awaiting review`}
+          <p className="text-xs font-semibold text-slate-500">Property review queue</p>
+          <h3 className="mt-0.5 text-base font-semibold tracking-tight text-slate-900">
+            {statusFilter === 'pending_review' ? 'Listings awaiting review' : 'Submitted properties'}
           </h3>
         </div>
-        {listings.length > 0 && (
-          <div className="inline-flex items-center gap-2 rounded-full border border-blue-200/60 bg-gradient-to-r from-blue-50 to-blue-50 px-3 py-1.5 text-xs font-bold text-blue-700 shadow-sm shrink-0">
-            <span className="relative inline-flex h-2 w-2">
-              <span className="absolute inset-0 animate-ping rounded-full bg-blue-500 opacity-70" />
-              <span className="relative h-2 w-2 rounded-full bg-blue-500" />
-            </span>
-            {listings.length} pending
-          </div>
-        )}
+        <span className="rounded-full bg-blue-50 px-2.5 py-1 text-xs font-semibold text-blue-700">
+          {listingCounts.pending_review} pending
+        </span>
       </div>
 
-      <div className="relative flex-1 overflow-y-auto px-4 py-5 sm:px-7 sm:py-7">
+      <div className="flex shrink-0 flex-col gap-3 border-b border-slate-200 bg-white px-4 py-3 sm:flex-row sm:items-center sm:px-6">
+        <label className="relative min-w-0 flex-1">
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+          <input
+            type="search"
+            value={search}
+            onChange={event => setSearch(event.target.value)}
+            placeholder="Search title, location, landlord or reference…"
+            aria-label="Search property submissions"
+            className="h-10 w-full rounded-lg border border-slate-200 bg-white pl-9 pr-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/15"
+          />
+        </label>
+        <label className="flex min-w-0 items-center gap-2 text-xs font-medium text-slate-500 sm:w-auto">
+          <span className="sr-only sm:not-sr-only">Status</span>
+          <select
+            value={statusFilter}
+            onChange={event => onStatusFilter(event.target.value as ListingReviewFilter)}
+            className="h-10 min-w-0 flex-1 rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-700 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/15 sm:w-44 sm:flex-none"
+            aria-label="Filter property submissions by status"
+          >
+            {LISTING_REVIEW_FILTERS.map(filter => (
+              <option key={filter.value} value={filter.value}>
+                {filter.label} ({listingCounts[filter.value]})
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="flex min-w-0 items-center gap-2 text-xs font-medium text-slate-500 sm:w-auto">
+          <SlidersHorizontal className="hidden h-4 w-4 shrink-0 text-slate-400 sm:block" />
+          <span className="sr-only sm:not-sr-only">Sort</span>
+          <select
+            value={sort}
+            onChange={event => setSort(event.target.value as typeof sort)}
+            className="h-10 min-w-0 flex-1 rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-700 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/15 sm:w-40 sm:flex-none"
+            aria-label="Sort property submissions"
+          >
+            <option value="newest">Newest first</option>
+            <option value="oldest">Oldest first</option>
+            <option value="updated">Recently updated</option>
+          </select>
+        </label>
+        <span className="hidden whitespace-nowrap text-xs text-slate-500 lg:inline">
+          {visibleListings.length} result{visibleListings.length === 1 ? '' : 's'}
+        </span>
+      </div>
+
+      <div className="min-h-0 flex-1 overflow-y-auto p-4 sm:p-6">
         {loading ? (
-          <div className="flex min-h-[50vh] items-center justify-center gap-3 text-slate-500">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
-              <Loader2 className="h-4 w-4 animate-spin" />
-            </div>
-            <span className="text-sm font-semibold">Loading pending listings…</span>
-          </div>
-        ) : listings.length === 0 ? (
-          <div className="flex min-h-[min(60vh,520px)] items-center justify-center">
-            <div className="w-full max-w-lg rounded-2xl border border-slate-200 bg-white px-6 py-10 text-center sm:px-10">
-              <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-50">
-                <ListChecks className="h-6 w-6 text-emerald-600" />
+          <div className="mx-auto max-w-5xl divide-y divide-slate-100 overflow-hidden rounded-xl border border-slate-200 bg-white">
+            {Array.from({ length: 5 }, (_, index) => (
+              <div key={index} className="flex animate-pulse items-center gap-3 p-3 sm:gap-4 sm:p-4">
+                <div className="h-14 w-14 shrink-0 rounded-lg bg-slate-100 sm:h-16 sm:w-16" />
+                <div className="min-w-0 flex-1 space-y-2">
+                  <div className="h-4 w-2/3 rounded bg-slate-100" />
+                  <div className="h-3 w-1/2 rounded bg-slate-100" />
+                </div>
+                <div className="hidden w-28 space-y-2 md:block">
+                  <div className="h-3 w-full rounded bg-slate-100" />
+                  <div className="h-3 w-2/3 rounded bg-slate-100" />
+                </div>
+                <div className="h-8 w-16 rounded-lg bg-slate-100" />
               </div>
-              <p className="text-xs font-bold uppercase tracking-[0.14em] text-emerald-700">Listing approvals</p>
-              <h4 className="mt-2 text-xl font-bold tracking-tight text-slate-900">Your review queue is clear</h4>
-              <p className="mx-auto mt-2 max-w-sm text-sm leading-relaxed text-slate-500">
-                There are no property submissions waiting for approval. New listings will appear here when landlords submit them.
-              </p>
-              {kycPendingCount > 0 && (
-                <button
-                  type="button"
-                  onClick={onReviewIdentity}
-                  className="mt-6 inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-bold text-white transition-colors hover:bg-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
-                >
-                  <ShieldCheck className="h-4 w-4" />
-                  Review {kycPendingCount} pending identity check{kycPendingCount === 1 ? '' : 's'}
-                </button>
-              )}
+            ))}
+          </div>
+        ) : error ? (
+          <div className="mx-auto mt-8 max-w-lg rounded-xl border border-red-200 bg-white p-6 text-center">
+            <AlertCircle className="mx-auto h-7 w-7 text-red-600" />
+            <h4 className="mt-3 text-sm font-semibold text-slate-900">Could not load property submissions</h4>
+            <p className="mt-1 break-words text-sm text-slate-500">{error}</p>
+            <button type="button" onClick={onRetry} className="mt-4 inline-flex h-9 items-center gap-2 rounded-lg bg-blue-600 px-3 text-sm font-semibold text-white hover:bg-blue-700">
+              <RefreshCw className="h-4 w-4" /> Retry
+            </button>
+          </div>
+        ) : visibleListings.length === 0 ? (
+          <div className="mx-auto mt-8 max-w-lg rounded-xl border border-slate-200 bg-white px-5 py-10 text-center">
+            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-slate-100 text-slate-600">
+              <ListChecks className="h-6 w-6" />
             </div>
+            <h4 className="mt-4 text-base font-semibold text-slate-900">
+              {search ? 'No matching submissions' : statusFilter === 'pending_review' ? 'No listings awaiting review' : 'No submissions in this status'}
+            </h4>
+            <p className="mx-auto mt-1 max-w-sm text-sm leading-6 text-slate-500">
+              {search ? 'Try another title, location, landlord name or reference.' : 'New landlord submissions will appear here when they are ready for review.'}
+            </p>
+            {!search && kycPendingCount > 0 && statusFilter === 'pending_review' && (
+              <button type="button" onClick={onReviewIdentity} className="mt-5 inline-flex h-9 items-center gap-2 rounded-lg border border-slate-200 px-3 text-sm font-medium text-slate-700 hover:bg-slate-50">
+                <ShieldCheck className="h-4 w-4 text-blue-600" />
+                Review {kycPendingCount} identity check{kycPendingCount === 1 ? '' : 's'}
+              </button>
+            )}
           </div>
         ) : (
-          <div className="mx-auto max-w-[1500px] divide-y divide-slate-200 rounded-2xl border border-slate-200 bg-white px-5 sm:px-7">
-            {listings.map((listing: any) => (
+          <div className="mx-auto max-w-6xl divide-y divide-slate-100 overflow-hidden rounded-xl border border-slate-200 bg-white">
+            {visibleListings.map((listing: any) => (
               <ListingCard
                 key={listing.id}
                 listing={listing}
                 processing={processing}
-                confirm={confirm}
-                setConfirm={setConfirm}
                 onView={openListingPreview}
-                onApprove={onApprove}
-                onReject={onReject}
               />
             ))}
           </div>
@@ -561,36 +699,125 @@ function ListingsTab({
             imageIndex={previewImageIndex}
             onImageChange={setPreviewImageIndex}
             onClose={() => setViewingListing(null)}
-            onApprove={() => {
-              setConfirm({ id: viewingListing.id, action: 'approve' })
-              setViewingListing(null)
-            }}
-            onReject={() => {
-              setConfirm({ id: viewingListing.id, action: 'reject' })
+            onDecision={action => {
+              setDecision({ listing: viewingListing, action })
               setViewingListing(null)
             }}
           />
         )}
       </Dialog>
+      <ReviewDecisionDialog
+        decision={decision}
+        processing={decision ? processing === decision.listing.id : false}
+        onClose={() => setDecision(null)}
+        onConfirm={reason => {
+          if (!decision) return
+          const currentDecision = decision
+          setDecision(null)
+          void onReviewDecision(currentDecision.listing.id, currentDecision.action, reason)
+        }}
+      />
     </div>
   )
 }
 
+function ReviewDecisionDialog({
+  decision, processing, onClose, onConfirm,
+}: {
+  decision: { listing: any; action: ListingReviewAction } | null
+  processing: boolean
+  onClose: () => void
+  onConfirm: (reason?: string) => void
+}) {
+  const [reason, setReason] = useState('')
+  useEffect(() => { setReason('') }, [decision?.listing.id, decision?.action])
+
+  const isPending = decision?.listing.status === 'pending_review'
+  const reasonRequired = decision?.action !== 'approved'
+  const actionLabel = decision?.action === 'approved'
+    ? 'Approve listing'
+    : decision?.action === 'rejected'
+      ? 'Reject listing'
+      : 'Request changes'
+
+  return (
+    <Dialog open={!!decision} onOpenChange={open => { if (!open && !processing) onClose() }}>
+      {decision && (
+        <DialogContent className="w-[calc(100%-1rem)] max-w-md rounded-xl border-slate-200 bg-white p-0 text-slate-900">
+          <DialogHeader className="border-b border-slate-100 px-5 py-4 pr-12 text-left">
+            <DialogTitle className="text-base font-semibold">{actionLabel}</DialogTitle>
+            <DialogDescription className="text-sm leading-5 text-slate-500">
+              {decision.listing.title}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 px-5 py-4">
+            {!isPending && (
+              <p className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
+                This submission is no longer pending. Refresh the queue before making a decision.
+              </p>
+            )}
+            <p className="text-sm leading-6 text-slate-600">
+              {decision.action === 'approved'
+                ? 'Confirm approval to make this listing available to property seekers.'
+                : decision.action === 'rejected'
+                  ? 'Provide a reason for rejection. The reason will be shared with the landlord and recorded in the review history.'
+                  : 'Describe the corrections the landlord should make. The listing will return to review after resubmission.'}
+            </p>
+            {reasonRequired && (
+              <label className="block text-sm font-medium text-slate-700">
+                {decision.action === 'rejected' ? 'Rejection reason' : 'Requested changes'}
+                <textarea
+                  autoFocus
+                  value={reason}
+                  onChange={event => setReason(event.target.value)}
+                  rows={4}
+                  maxLength={2000}
+                  required
+                  placeholder={decision.action === 'rejected' ? 'Explain why this listing cannot be approved…' : 'Describe the changes needed before approval…'}
+                  className="mt-2 w-full resize-y rounded-lg border border-slate-200 px-3 py-2.5 text-sm font-normal text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/15"
+                />
+                <span className="mt-1 block text-right text-xs font-normal text-slate-400">{reason.trim().length}/2000</span>
+              </label>
+            )}
+          </div>
+          <div className="flex flex-col-reverse gap-2 border-t border-slate-100 px-5 py-4 sm:flex-row sm:justify-end">
+            <button type="button" onClick={onClose} disabled={processing} className="inline-flex h-10 items-center justify-center rounded-lg border border-slate-200 px-4 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50">
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={() => onConfirm(reason.trim() || undefined)}
+              disabled={processing || !isPending || (reasonRequired && !reason.trim())}
+              className={`inline-flex h-10 items-center justify-center gap-2 rounded-lg px-4 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50 ${
+                decision.action === 'rejected' ? 'bg-red-600 hover:bg-red-700' : 'bg-blue-600 hover:bg-blue-700'
+              }`}
+            >
+              {processing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
+              Confirm {decision.action === 'approved' ? 'approval' : decision.action === 'rejected' ? 'rejection' : 'request'}
+            </button>
+          </div>
+        </DialogContent>
+      )}
+    </Dialog>
+  )
+}
+
 function ListingPreviewDialog({
-  listing, imageIndex, onImageChange, onClose, onApprove, onReject,
+  listing, imageIndex, onImageChange, onClose, onDecision,
 }: {
   listing: any
   imageIndex: number
   onImageChange: (index: number) => void
   onClose: () => void
-  onApprove: () => void
-  onReject: () => void
+  onDecision: (action: ListingReviewAction) => void
 }) {
   const images: any[] = [...(listing.property_images ?? [])]
     .sort((a, b) => (a.sort_order ?? 99) - (b.sort_order ?? 99))
   const selectedImage = images[imageIndex] ?? images[0]
   const selectedImageUrl = selectedImage ? getSupabaseImageUrl(selectedImage.storage_path, 1200) : null
   const landlordName = listing.landlords?.full_name ?? 'Unknown landlord'
+  const reviewEvents = [...(listing.property_review_events ?? [])]
+    .sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
   const propertyType = listing.property_type ?? 'Property'
   const details = [
     { label: 'Property type', value: propertyType, icon: Home },
@@ -605,9 +832,13 @@ function ListingPreviewDialog({
     <DialogContent className="!flex max-h-[94dvh] w-[calc(100%-1rem)] max-w-5xl flex-col gap-0 overflow-hidden rounded-2xl border-slate-200 bg-white p-0 text-slate-900 sm:w-[calc(100%-2rem)]">
       <DialogHeader className="shrink-0 border-b border-slate-200 px-5 py-4 pr-12 text-left sm:px-7">
         <div className="flex flex-wrap items-center gap-2">
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-50 px-2.5 py-1 text-[11px] font-bold text-blue-700">
-            <Clock className="h-3.5 w-3.5" />
-            Awaiting review
+          <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold ${
+            listing.status === 'pending_review' ? 'bg-amber-50 text-amber-700'
+              : listing.status === 'available' ? 'bg-emerald-50 text-emerald-700'
+                : listing.status === 'rejected' ? 'bg-red-50 text-red-700'
+                  : 'bg-blue-50 text-blue-700'
+          }`}>
+            {listing.status === 'pending_review' ? 'Pending review' : listing.status === 'available' ? 'Approved' : listing.status === 'rejected' ? 'Rejected' : 'Needs changes'}
           </span>
           <span className="text-xs text-slate-400">Submitted {daysAgo(listing.created_at)}</span>
         </div>
@@ -721,6 +952,13 @@ function ListingPreviewDialog({
                   <p className="mt-3 text-sm italic text-slate-400">No amenities listed.</p>
                 )}
               </div>
+
+              {listing.review_feedback && (
+                <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">
+                  <h3 className="text-sm font-semibold text-amber-900">Review feedback</h3>
+                  <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-amber-800">{listing.review_feedback}</p>
+                </div>
+              )}
             </div>
 
             <aside className="space-y-5">
@@ -732,17 +970,52 @@ function ListingPreviewDialog({
                   </div>
                   <div className="min-w-0">
                     <p className="truncate text-sm font-bold text-slate-900">{landlordName}</p>
-                    <p className="mt-0.5 text-xs text-slate-500">{listing.landlords?.whatsapp || 'Contact not provided'}</p>
+                    <p className="mt-0.5 break-all text-xs text-slate-500">{listing.landlords?.email || listing.landlords?.whatsapp || 'Contact not provided'}</p>
                   </div>
+                </div>
+                <div className="mt-4 border-t border-slate-100 pt-3">
+                  <p className="text-[11px] text-slate-500">Account reference</p>
+                  <p className="mt-1 break-all font-mono text-[11px] text-slate-700">{listing.landlords?.id ?? listing.landlord_id ?? 'Unavailable'}</p>
+                  <p className="mt-3 text-[11px] text-slate-500">Identity verification</p>
+                  <span className={`mt-1 inline-flex rounded-full px-2 py-1 text-[11px] font-semibold ${listing.landlords?.is_verified ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'}`}>
+                    {listing.landlords?.is_verified ? 'Verified' : 'Not verified'}
+                  </span>
                 </div>
               </div>
 
-              <div className="rounded-2xl border border-blue-100 bg-blue-50/70 p-5">
-                <h3 className="text-sm font-bold text-slate-900">Review checklist</h3>
+              <div className="rounded-xl border border-slate-200 bg-white p-4">
+                <h3 className="text-sm font-semibold text-slate-900">Documents</h3>
+                <div className="mt-3 flex items-start gap-2 text-xs leading-5 text-slate-600">
+                  <FileText className="mt-0.5 h-4 w-4 shrink-0 text-slate-400" />
+                  <span>Property images are shown above. No separate ownership-document records are attached to this submission.</span>
+                </div>
+              </div>
+
+              <div className="rounded-xl border border-slate-200 bg-white p-4">
+                <h3 className="flex items-center gap-2 text-sm font-semibold text-slate-900">
+                  <History className="h-4 w-4 text-slate-500" /> Submission history
+                </h3>
+                {reviewEvents.length ? (
+                  <ol className="mt-3 space-y-3">
+                    {reviewEvents.map((event: any) => (
+                      <li key={event.id} className="border-l-2 border-slate-200 pl-3">
+                        <p className="text-xs font-semibold capitalize text-slate-800">{String(event.action).replaceAll('_', ' ')}</p>
+                        <p className="mt-0.5 text-[11px] text-slate-500">{new Date(event.created_at).toLocaleString()}</p>
+                        {event.reason && <p className="mt-1 whitespace-pre-wrap text-xs leading-5 text-slate-600">{event.reason}</p>}
+                      </li>
+                    ))}
+                  </ol>
+                ) : (
+                  <p className="mt-2 text-xs leading-5 text-slate-500">This submission has not been reviewed before.</p>
+                )}
+              </div>
+
+              <div className="rounded-xl border border-slate-200 bg-white p-4">
+                <h3 className="text-sm font-semibold text-slate-900">Review checklist</h3>
                 <ul className="mt-3 space-y-3 text-xs leading-relaxed text-slate-700">
                   <li className="flex gap-2"><CheckCircle className="h-4 w-4 shrink-0 text-blue-600" /> Verify listing information and location.</li>
                   <li className="flex gap-2"><CheckCircle className="h-4 w-4 shrink-0 text-blue-600" /> Review photos, price, and property details.</li>
-                  <li className="flex gap-2"><CheckCircle className="h-4 w-4 shrink-0 text-blue-600" /> Confirm the landlord can provide supporting documents.</li>
+                  <li className="flex gap-2"><CheckCircle className="h-4 w-4 shrink-0 text-blue-600" /> Confirm ownership evidence through the appropriate process.</li>
                 </ul>
               </div>
             </aside>
@@ -757,14 +1030,22 @@ function ListingPreviewDialog({
             className="inline-flex min-h-10 items-center justify-center rounded-xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500">
             Close preview
           </button>
-          <button type="button" onClick={onReject}
-            className="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl border border-red-200 px-4 py-2 text-sm font-semibold text-red-700 transition-colors hover:bg-red-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500">
-            <XCircle className="h-4 w-4" /> Reject
-          </button>
-          <button type="button" onClick={onApprove}
-            className="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2">
-            <CheckCircle className="h-4 w-4" /> Approve listing
-          </button>
+          {listing.status === 'pending_review' && (
+            <>
+              <button type="button" onClick={() => onDecision('changes_requested')}
+                className="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500">
+                Request changes
+              </button>
+              <button type="button" onClick={() => onDecision('rejected')}
+                className="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl border border-red-200 px-3 py-2 text-sm font-semibold text-red-700 transition-colors hover:bg-red-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500">
+                <XCircle className="h-4 w-4" /> Reject
+              </button>
+              <button type="button" onClick={() => onDecision('approved')}
+                className="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2">
+                <CheckCircle className="h-4 w-4" /> Approve
+              </button>
+            </>
+          )}
         </div>
       </div>
     </DialogContent>
@@ -772,136 +1053,73 @@ function ListingPreviewDialog({
 }
 
 function ListingCard({
-  listing, processing, confirm, setConfirm, onView, onApprove, onReject,
+  listing, processing, onView,
 }: {
-  listing: any; processing: string | null
-  confirm: { id: string; action: 'approve' | 'reject' } | null
-  setConfirm: (c: { id: string; action: 'approve' | 'reject' } | null) => void
+  listing: any
+  processing: string | null
   onView: (listing: any) => void
-  onApprove: (id: string) => Promise<void>
-  onReject:  (id: string) => Promise<void>
 }) {
-  const busy = processing === listing.id
-  const isConfirming = confirm?.id === listing.id
-
+  const busy = processing !== null
   const images: any[] = listing.property_images ?? []
-  const cover = images.find((i: any) => i.is_cover) ?? images.sort((a: any, b: any) => (a.sort_order ?? 99) - (b.sort_order ?? 99))[0]
-  const coverUrl = cover ? getSupabaseImageUrl(cover.storage_path, 400) : null
-
+  const cover = images.find((image: any) => image.is_cover)
+    ?? [...images].sort((a: any, b: any) => (a.sort_order ?? 99) - (b.sort_order ?? 99))[0]
+  const coverUrl = cover ? getSupabaseImageUrl(cover.storage_path, 200) : null
   const landlordName = listing.landlords?.full_name ?? 'Unknown landlord'
+  const address = [listing.address, listing.city, listing.state].filter(Boolean).join(', ')
+  const statusLabel = listing.status === 'pending_review' ? 'Pending'
+    : listing.status === 'available' ? 'Approved'
+      : listing.status === 'rejected' ? 'Rejected' : 'Needs changes'
+  const statusClass = listing.status === 'pending_review' ? 'bg-amber-50 text-amber-700'
+    : listing.status === 'available' ? 'bg-emerald-50 text-emerald-700'
+      : listing.status === 'rejected' ? 'bg-red-50 text-red-700' : 'bg-blue-50 text-blue-700'
 
   return (
-      <article className="group relative grid min-w-0 gap-4 py-6 first:pt-5 last:pb-5 lg:grid-cols-[minmax(280px,0.42fr)_minmax(0,1fr)_230px] lg:items-center lg:gap-7">
-      <div className="relative aspect-[16/10] w-full min-w-0 overflow-hidden rounded-xl bg-slate-100 lg:aspect-[4/3]">
-        {coverUrl ? (
-          <img src={coverUrl} alt={listing.title} className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" />
-        ) : (
-          <div className="w-full h-full flex items-center justify-center">
-            <Building2 className="w-10 h-10 text-slate-300" />
-          </div>
-        )}
-        <div className="absolute inset-0 bg-gradient-to-t from-slate-900/40 via-transparent to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
-        <div className="absolute top-3 left-3">
-          <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-wider shadow-md ${
-             listing.type === 'sale' ? 'bg-gradient-to-br from-blue-500 to-blue-500 text-white shadow-blue-500/30' : 'bg-slate-900/90 text-white backdrop-blur'
-          }`}>
-            {listing.type === 'sale' ? 'For Sale' : 'For Rent'}
-          </span>
-        </div>
-        <div className="absolute top-3 right-3">
-             <span className="inline-flex items-center gap-1 rounded-full border border-white/40 bg-white/90 px-2.5 py-1 text-[10px] font-bold text-slate-600 backdrop-blur shadow-sm">
-            {daysAgo(listing.created_at)}
-          </span>
-        </div>
+    <article className="grid min-w-0 grid-cols-[56px_minmax(0,1fr)_auto] items-center gap-3 p-3 transition-colors hover:bg-slate-50/70 sm:gap-4 sm:p-4 md:grid-cols-[64px_minmax(0,1.8fr)_minmax(130px,1fr)_minmax(112px,auto)_88px]">
+      <div className="h-14 w-14 overflow-hidden rounded-lg bg-slate-100 sm:h-16 sm:w-16">
+        {coverUrl
+          ? <img src={coverUrl} alt="" className="h-full w-full object-cover" />
+          : <div className="flex h-full w-full items-center justify-center text-slate-400"><Building2 className="h-6 w-6" /></div>}
       </div>
-
-      <div className="flex min-w-0 flex-col py-1">
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-50 px-2.5 py-1 text-[10px] font-bold text-blue-700">
-            <Clock className="h-3 w-3" /> Awaiting review
-          </span>
-          <span className="text-[11px] font-medium text-slate-400">{daysAgo(listing.created_at)}</span>
-        </div>
-        <h4 className="mt-3 line-clamp-2 text-lg font-bold leading-snug tracking-tight text-slate-950">{listing.title}</h4>
-
-        <div className="mt-2 space-y-2">
-          <div className="flex items-start gap-2 text-sm text-slate-600">
-            <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-slate-400" />
-            <span className="line-clamp-2">{[listing.address, listing.city, listing.state].filter(Boolean).join(', ') || 'Location not provided'}</span>
-          </div>
-          <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs font-medium text-slate-600">
-            <span className="inline-flex items-center gap-1.5"><BedDouble className="h-4 w-4 text-slate-400" />{listing.bedrooms ?? '—'} bed</span>
-            <span className="inline-flex items-center gap-1.5"><Bath className="h-4 w-4 text-slate-400" />{listing.bathrooms ?? '—'} bath</span>
-            {listing.area_sqft && <span className="inline-flex items-center gap-1.5"><Ruler className="h-4 w-4 text-slate-400" />{Number(listing.area_sqft).toLocaleString()} sqft</span>}
-          </div>
-        </div>
-
-        <div className="mt-4 flex flex-wrap items-baseline gap-x-2 gap-y-1 border-t border-slate-100 pt-3">
-          <p className="text-2xl font-extrabold tracking-tight text-blue-700">{fmtNaira(Number(listing.price) || 0)}</p>
-          <span className="text-xs font-medium text-slate-500">{listing.type === 'rent' || listing.type === 'lease' ? '/ year' : 'outright'}</span>
-        </div>
-
-        <div className="mt-4 flex flex-wrap items-center gap-3">
-          <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br ${avatarGrad(landlordName)} text-[10px] font-black text-white`}>
-            {getInitials(landlordName)}
-          </div>
-          <div className="min-w-0">
-            <p className="truncate text-xs font-semibold text-slate-800">{landlordName}</p>
-            {listing.landlords?.whatsapp && (
-              <p className="truncate text-[11px] text-slate-500">{listing.landlords.whatsapp}</p>
-            )}
-          </div>
-        </div>
+      <button
+        type="button"
+        onClick={() => onView(listing)}
+        aria-label={`Review ${listing.title}`}
+        className="min-w-0 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
+      >
+        <span className="flex min-w-0 items-center gap-2">
+          <span className="truncate text-sm font-semibold text-slate-900">{listing.title || 'Untitled property'}</span>
+          <span className={`hidden shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold sm:inline-flex ${statusClass}`}>{statusLabel}</span>
+        </span>
+        <span className="mt-1 flex min-w-0 items-center gap-1 text-xs text-slate-500">
+          <MapPin className="h-3.5 w-3.5 shrink-0" />
+          <span className="truncate">{address || 'Location not provided'}</span>
+        </span>
+        <span className="mt-1 flex min-w-0 items-center gap-2 text-[11px] text-slate-500 md:hidden">
+          <span className="truncate">{landlordName}</span>
+          <span aria-hidden="true">·</span>
+          <span className="shrink-0">{daysAgo(listing.created_at)}</span>
+        </span>
+      </button>
+      <div className="hidden min-w-0 md:block">
+        <p className="truncate text-xs font-medium text-slate-700">{landlordName}</p>
+        <p className="mt-1 text-[11px] text-slate-500">Submitted {daysAgo(listing.created_at)}</p>
       </div>
-
-      <div className="flex min-w-0 flex-wrap gap-2 lg:flex-col">
-        {isConfirming ? (
-          <div className="w-full rounded-xl border border-slate-200 bg-slate-50 p-3">
-            <p className="mb-3 text-center text-xs font-semibold leading-relaxed text-slate-700">
-              {confirm?.action === 'approve'
-                ? 'Approve this listing and make it live?'
-                : 'Reject and permanently delete this listing?'}
-            </p>
-            <div className="flex gap-2">
-              <button onClick={() => setConfirm(null)}
-                className="min-h-10 flex-1 rounded-lg border border-slate-200 bg-white py-2 text-xs font-semibold text-slate-600 transition-colors hover:bg-slate-50">
-                Cancel
-              </button>
-               <button
-                onClick={() => confirm?.action === 'approve' ? onApprove(listing.id) : onReject(listing.id)}
-                disabled={busy}
-                className={`min-h-10 flex-1 rounded-lg py-2 text-xs font-bold text-white transition-colors disabled:opacity-60 ${
-                  confirm?.action === 'approve' ? 'bg-blue-600 hover:bg-blue-700' : 'bg-red-600 hover:bg-red-700'
-                }`}>
-                {busy ? <Loader2 className="w-3.5 h-3.5 animate-spin mx-auto" /> : confirm?.action === 'approve' ? 'Approve' : 'Delete listing'}
-              </button>
-            </div>
-           </div>
-        ) : (
-          <div className="flex gap-2">
-            <button
-              type="button"
-              onClick={() => onView(listing)}
-              className="inline-flex min-h-11 flex-1 items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
-              aria-label={`View ${listing.title} details`}
-            >
-              <Eye className="h-4 w-4" /> View
-            </button>
-            <button
-              onClick={() => setConfirm({ id: listing.id, action: 'approve' })}
-              disabled={busy}
-              className="inline-flex min-h-11 flex-1 items-center justify-center gap-1.5 rounded-xl bg-blue-600 px-3 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-blue-700 disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2">
-              <CheckCircle className="h-4 w-4" /> Approve
-            </button>
-            <button
-              onClick={() => setConfirm({ id: listing.id, action: 'reject' })}
-              disabled={busy}
-              className="inline-flex min-h-11 flex-1 items-center justify-center gap-1.5 rounded-xl border border-red-200 bg-white px-3 py-2.5 text-sm font-semibold text-red-700 transition-colors hover:bg-red-50 disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500">
-              <Trash2 className="h-4 w-4" /> Reject
-            </button>
-          </div>
-        )}
+      <div className="hidden min-w-0 text-right md:block">
+        <p className="whitespace-nowrap text-sm font-semibold text-slate-900">{fmtNaira(Number(listing.price) || 0)}</p>
+        <p className="mt-1 text-[11px] text-slate-500">{listing.type === 'sale' ? 'For sale' : 'For rent'}</p>
       </div>
+      <button
+        type="button"
+        onClick={() => onView(listing)}
+        disabled={busy}
+        className="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2.5 text-xs font-semibold text-slate-700 transition-colors hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700 disabled:opacity-50 sm:px-3"
+      >
+        {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Eye className="h-3.5 w-3.5" />}
+        <span className="hidden sm:inline">Review</span>
+      </button>
+      <span className={`col-start-2 row-start-2 inline-flex w-fit rounded-full px-2 py-0.5 text-[10px] font-semibold sm:hidden ${statusClass}`}>
+        {statusLabel} · {fmtNaira(Number(listing.price) || 0)}
+      </span>
     </article>
   )
 }
@@ -909,14 +1127,13 @@ function ListingCard({
 const vettingStyles = `
 .lv-vetting{height:100vh;height:100dvh;color-scheme:light}
 .lv-vetting-content{background:#f8fafc}
-.lv-vetting-content input,.lv-vetting-content select,.lv-vetting-content textarea{color:#0f172a;background-color:#fff;border-color:#e2e8f0;border-radius:12px;min-height:42px}
+.lv-vetting-content input,.lv-vetting-content select,.lv-vetting-content textarea{color:#101828;background-color:#fff;border-color:#e5e7eb;border-radius:8px;min-height:40px}
 .lv-vetting-content input::placeholder,.lv-vetting-content textarea::placeholder{color:#64748b;opacity:1}
-.lv-vetting-content input:focus,.lv-vetting-content select:focus,.lv-vetting-content textarea:focus{outline:2px solid #6366f1;outline-offset:2px}
-.lv-vetting-content button:focus-visible{outline:2px solid #6366f1;outline-offset:3px}
+.lv-vetting-content input:focus,.lv-vetting-content select:focus,.lv-vetting-content textarea:focus{outline:2px solid #2563eb;outline-offset:2px}
+.lv-vetting-content button:focus-visible{outline:2px solid #2563eb;outline-offset:3px}
 .lv-vetting-content .text-slate-400{color:#64748b}
 .lv-vetting-content [data-testid="vetting-grid"]{isolation:isolate}
 .lv-vetting-content .overflow-y-auto{overscroll-behavior:contain;scrollbar-width:thin;scrollbar-color:#cbd5e1 transparent}
-.lv-vetting-card button{min-height:44px}
 @media(max-width:767px){.lv-vetting-content input,.lv-vetting-content select,.lv-vetting-content textarea{font-size:16px}.lv-vetting-content{padding-bottom:env(safe-area-inset-bottom)}}
 @media(prefers-reduced-motion:reduce){.lv-vetting-content *{transition:none!important;animation:none!important}}
 `

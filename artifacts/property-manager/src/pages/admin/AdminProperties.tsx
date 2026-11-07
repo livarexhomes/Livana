@@ -42,7 +42,9 @@ const STATUS_META: Record<string, { label: string; icon: any; cls: string; dot: 
   taken:             { label: 'Taken',       icon: XCircle,     cls: 'text-red-500 bg-red-50',         dot: 'bg-red-500'     },
   coming_soon:       { label: 'Coming Soon', icon: Clock,       cls: 'text-blue-600 bg-blue-50',       dot: 'bg-blue-500'    },
   under_negotiation: { label: 'Negotiating',    icon: Clock,       cls: 'text-amber-600 bg-amber-50',     dot: 'bg-amber-500'   },
-  pending_review:    { label: 'Pending Review', icon: Clock,       cls: 'text-violet-600 bg-violet-50',   dot: 'bg-violet-500'  },
+  pending_review:    { label: 'Pending Review', icon: Clock,       cls: 'text-amber-600 bg-amber-50',     dot: 'bg-amber-500'  },
+  changes_requested: { label: 'Changes Requested', icon: Clock,   cls: 'text-blue-600 bg-blue-50',       dot: 'bg-blue-500'   },
+  rejected:          { label: 'Rejected',        icon: XCircle,     cls: 'text-red-600 bg-red-50',         dot: 'bg-red-500'    },
 }
 
 const AMENITIES = [
@@ -223,7 +225,7 @@ export default function AdminProperties() {
     supabase
       .from('properties')
       .select('*, landlords(full_name, is_verified), property_images(id, storage_path, is_cover, sort_order)')
-      .neq('status', 'pending_review')
+      .in('status', ['available', 'taken', 'coming_soon', 'under_negotiation'])
       .order('created_at', { ascending: false })
       .then(({ data }) => {
         setProperties(data ?? [])

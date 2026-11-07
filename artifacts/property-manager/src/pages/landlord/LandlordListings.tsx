@@ -15,6 +15,9 @@ const STATUS: Record<string, { label: string; bg: string; text: string; icon: an
   taken:             { label: 'Taken',        bg: 'bg-red-50',     text: 'text-red-600',     icon: XCircle    },
   coming_soon:       { label: 'Coming Soon', bg: 'bg-blue-50',    text: 'text-blue-700',    icon: Clock      },
   under_negotiation: { label: 'Negotiating', bg: 'bg-amber-50',   text: 'text-amber-700',   icon: AlertCircle},
+  pending_review:    { label: 'Pending review', bg: 'bg-amber-50', text: 'text-amber-700', icon: Clock },
+  changes_requested: { label: 'Changes requested', bg: 'bg-blue-50', text: 'text-blue-700', icon: AlertCircle },
+  rejected:          { label: 'Rejected', bg: 'bg-red-50', text: 'text-red-700', icon: XCircle },
 }
 
 export default function LandlordListings() {
@@ -179,6 +182,11 @@ export default function LandlordListings() {
                                   {p.bedrooms != null && `${p.bedrooms}bd`}{p.bathrooms != null && ` · ${p.bathrooms}ba`}
                                   {p.property_type && ` · ${p.property_type}`}
                                 </p>
+                                {p.review_feedback && (
+                                  <p className="mt-1 line-clamp-1 max-w-[260px] text-[11px] text-amber-700" title={p.review_feedback}>
+                                    {p.review_feedback}
+                                  </p>
+                                )}
                               </div>
                             </div>
                           </td>
@@ -259,6 +267,9 @@ export default function LandlordListings() {
                         <div className="flex items-center gap-1.5 text-xs text-gray-400 mb-3">
                           <MapPin className="w-3.5 h-3.5 shrink-0" />{p.city}
                         </div>
+                        {p.review_feedback && (
+                          <p className="mb-3 line-clamp-2 rounded-lg bg-amber-50 px-3 py-2 text-xs leading-5 text-amber-800">{p.review_feedback}</p>
+                        )}
                         {/* Beds / baths / type */}
                         {(p.bedrooms != null || p.bathrooms != null) && (
                           <div className="flex items-center gap-3 text-xs text-gray-500 pb-3 mb-3 border-b border-gray-100">

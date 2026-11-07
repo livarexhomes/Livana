@@ -328,7 +328,9 @@ export default function LandlordListingForm() {
       area_sqft: form.area_sqft ? Number(form.area_sqft) : null,
       type: form.type,
       // New listings always enter as pending_review; edits keep whatever status admin set.
-      status: isEdit ? form.status : 'pending_review',
+      status: isEdit && !['rejected', 'changes_requested'].includes(form.status)
+        ? form.status
+        : 'pending_review',
       featured: form.featured,
       amenities: form.amenities,
       latitude: form.latitude ? Number(form.latitude) : null,

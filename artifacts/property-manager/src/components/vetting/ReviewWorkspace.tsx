@@ -14,13 +14,15 @@ import {
 } from './mockData'
 import IdentityGrid from './IdentityGrid'
 import DocumentCard from './DocumentCard'
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 
 const BRAND   = '#2563EB'
-const BRAND_D = '#1D4ED8'
 const ACCENT  = '#3B82F6'
 
 interface ReviewWorkspaceProps {
   landlord: VettingLandlord | null
+  applicantCount?: number
+  queueLoading?: boolean
   kycDocs: VettingKycDoc[]
   docsError?: string
   docsLoading?: boolean
@@ -33,6 +35,8 @@ interface ReviewWorkspaceProps {
 
 export default function ReviewWorkspace({
   landlord,
+  applicantCount = 0,
+  queueLoading = false,
   kycDocs,
   docsError,
   docsLoading = false,
@@ -43,6 +47,7 @@ export default function ReviewWorkspace({
   onUpdateStatus,
 }: ReviewWorkspaceProps) {
   const [liveMessage, setLiveMessage] = useState<string>('')
+  const [pendingDecision, setPendingDecision] = useState<{ status: VettingStatus; label: string } | null>(null)
 
   useEffect(() => {
     if (!liveMessage) return
@@ -50,15 +55,22 @@ export default function ReviewWorkspace({
     return () => clearTimeout(t)
   }, [liveMessage])
 
-  if (!landlord) return <EmptyWorkspace />
+  if (!landlord) {
+    return <EmptyWorkspace applicantCount={applicantCount} loading={queueLoading} />
+  }
 
   const meta = KYC_STATUS_META[landlord.status] ?? KYC_STATUS_META.pending
-  const busy = processing === landlord.id
+  const busy = processing !== null
 
   async function handleStatus(next: VettingStatus, label: string) {
     setLiveMessage(`${label} in progress…`)
-    await onUpdateStatus(landlord!.id, next)
-    setLiveMessage(`${label} successful`)
+    try {
+      await onUpdateStatus(landlord!.id, next)
+      setLiveMessage(`${label} successful`)
+      setPendingDecision(null)
+    } catch {
+      setLiveMessage(`${label} could not be saved`)
+    }
   }
 
   return (
@@ -72,7 +84,7 @@ export default function ReviewWorkspace({
         className="relative shrink-0 overflow-hidden border-b border-slate-100 px-5 py-5"
         style={{
           background:
-            'linear-gradient(135deg, rgba(99,102,241,0.06) 0%, rgba(168,85,247,0.04) 50%, rgba(255,255,255,1) 100%)',
+            'linear-gradient(135deg, rgba(37,99,235,0.06) 0%, rgba(255,255,255,1) 76%)',
         }}
       >
         {/* Decorative pattern */}
@@ -191,20 +203,20 @@ export default function ReviewWorkspace({
           </div>
           <div className="mt-3 grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:items-center">
             {landlord.status !== 'approved' && (
-              <ActionBtn variant="approve"  onClick={() => handleStatus('approved',   'Approved')}   loading={busy} />
+              <ActionBtn variant="approve"  onClick={() => setPendingDecision({ status: 'approved', label: 'Approve' })}   loading={busy} />
             )}
             {landlord.status !== 'rejected' && (
-              <ActionBtn variant="reject"   onClick={() => handleStatus('rejected',   'Rejected')}  loading={busy} />
+              <ActionBtn variant="reject"   onClick={() => setPendingDecision({ status: 'rejected', label: 'Reject' })}  loading={busy} />
             )}
             {landlord.status !== 'suspended' && (
-              <ActionBtn variant="suspend"  onClick={() => handleStatus('suspended',   'Suspended')} loading={busy} />
+              <ActionBtn variant="suspend"  onClick={() => setPendingDecision({ status: 'suspended', label: 'Suspend' })} loading={busy} />
             )}
             {landlord.status !== 'pending' && landlord.status !== 'not_submitted' && (
-              <ActionBtn variant="reset"    onClick={() => handleStatus('pending',     'Reset')}      loading={busy} />
+              <ActionBtn variant="reset"    onClick={() => setPendingDecision({ status: 'pending', label: 'Reset' })}      loading={busy} />
             )}
           </div>
           <p className="mt-3 text-[11px] leading-relaxed text-slate-400">
-            Decisions are applied immediately and the landlord will be notified.
+            Review decisions require confirmation before they are saved.
           </p>
         </section>
 
@@ -271,6 +283,27 @@ export default function ReviewWorkspace({
       </div>
 
       <div role="status" className="sr-only">{liveMessage}</div>
+      <Dialog open={!!pendingDecision} onOpenChange={open => { if (!open && !busy) setPendingDecision(null) }}>
+        {pendingDecision && (
+          <DialogContent className="w-[calc(100%-1rem)] max-w-md rounded-xl border-slate-200 bg-white p-0 text-slate-900">
+            <DialogHeader className="border-b border-slate-100 px-5 py-4 pr-12 text-left">
+              <DialogTitle className="text-base font-semibold">Confirm {pendingDecision.label.toLowerCase()} decision</DialogTitle>
+              <DialogDescription className="text-sm text-slate-500">
+                {pendingDecision.label} identity verification for {landlord.full_name}?
+              </DialogDescription>
+            </DialogHeader>
+            <div className="flex flex-col-reverse gap-2 px-5 py-4 sm:flex-row sm:justify-end">
+              <button type="button" onClick={() => setPendingDecision(null)} disabled={busy} className="inline-flex h-10 items-center justify-center rounded-lg border border-slate-200 px-4 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50">
+                Cancel
+              </button>
+              <button type="button" onClick={() => void handleStatus(pendingDecision.status, pendingDecision.label)} disabled={busy} className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-50">
+                {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle className="h-4 w-4" />}
+                Confirm {pendingDecision.label.toLowerCase()}
+              </button>
+            </div>
+          </DialogContent>
+        )}
+      </Dialog>
     </div>
   )
 }
@@ -386,33 +419,73 @@ function StatusBanner({ status }: { status: VettingStatus }) {
 }
 
 // ── Empty state ────────────────────────────────────────────────────────────────
-function EmptyWorkspace() {
+function EmptyWorkspace({ applicantCount, loading }: { applicantCount: number; loading: boolean }) {
+  const isEmpty = !loading && applicantCount === 0
+  const steps = [
+    { number: '01', label: 'Review profile', description: 'Confirm applicant details', icon: ShieldCheck },
+    { number: '02', label: 'Verify documents', description: 'Inspect submitted files', icon: FileText },
+    { number: '03', label: 'Make a decision', description: 'Approve or request updates', icon: CheckCircle },
+  ]
+
   return (
-    <div className="flex h-full min-h-[min(70vh,680px)] flex-col items-center justify-center rounded-xl bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-blue-50/70 via-white to-white px-5 py-12 text-center sm:px-10">
-      <div className="w-full max-w-2xl rounded-3xl border border-slate-200/80 bg-white/90 px-6 py-10 sm:px-12 sm:py-14">
-        <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-blue-600 text-white">
-          <ShieldCheck className="h-8 w-8" strokeWidth={2} />
-        </div>
-        <p className="mt-6 text-[11px] font-bold uppercase tracking-[0.16em] text-blue-700">Identity review</p>
-        <h3 className="mt-2 text-xl font-bold tracking-tight text-slate-950 sm:text-2xl">Select a landlord to get started</h3>
-        <p className="mx-auto mt-3 max-w-md text-sm leading-6 text-slate-500">
-          Choose an application from the queue to review the landlord’s identity details, supporting documents, and verification status.
-        </p>
-        <div className="mx-auto mt-8 grid max-w-lg gap-3 text-left sm:grid-cols-3">
-          {[
-            { number: '01', label: 'Review profile', description: 'Check applicant details' },
-            { number: '02', label: 'Verify documents', description: 'Inspect submitted files' },
-            { number: '03', label: 'Make a decision', description: 'Approve or request updates' },
-          ].map(step => (
-            <div key={step.number} className="rounded-xl border border-slate-200/80 bg-slate-50/70 p-3.5">
-              <span className="text-[10px] font-bold tracking-wider text-blue-700">{step.number}</span>
-              <p className="mt-2 text-xs font-semibold text-slate-800">{step.label}</p>
-              <p className="mt-1 text-[11px] leading-relaxed text-slate-500">{step.description}</p>
+    <div className="relative flex h-full min-h-0 flex-col overflow-hidden rounded-xl bg-[radial-gradient(ellipse_at_50%_0%,_#eff6ff_0%,_#ffffff_64%)]">
+      <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-blue-200 to-transparent" />
+      <div className="relative flex min-h-0 flex-1 items-center justify-center overflow-y-auto px-5 py-7 sm:px-8 sm:py-8">
+        <div className="w-full max-w-3xl text-center">
+          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-600 text-white shadow-lg shadow-blue-600/20 ring-4 ring-blue-50 sm:h-16 sm:w-16">
+            {loading ? <Loader2 className="h-7 w-7 animate-spin" /> : <ShieldCheck className="h-7 w-7" strokeWidth={2} />}
+          </div>
+          <div className="mt-5 inline-flex items-center gap-2 rounded-full border border-blue-100 bg-white/90 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.16em] text-blue-700 shadow-sm">
+            <span className={cn('h-1.5 w-1.5 rounded-full', isEmpty ? 'bg-slate-400' : 'bg-blue-600')} />
+            {loading ? 'Identity review' : isEmpty ? 'Queue is clear' : 'Identity review'}
+          </div>
+          <h3 className="mt-3 text-xl font-bold tracking-tight text-slate-950 sm:text-2xl">
+            {loading
+              ? 'Loading the applicant queue'
+              : isEmpty
+                ? 'No applications to review'
+                : 'Select a landlord to get started'}
+          </h3>
+          <p className="mx-auto mt-2 max-w-lg text-sm leading-6 text-slate-500">
+            {loading
+              ? 'The latest landlord applications are being loaded.'
+              : isEmpty
+                ? 'There are no applications in this view right now. New submissions will appear here when landlords request verification.'
+                : 'Choose an application from the queue to review the landlord’s profile, supporting documents, and verification status.'}
+          </p>
+
+          {isEmpty ? (
+            <div className="mx-auto mt-7 flex max-w-lg items-start gap-3 rounded-2xl border border-slate-200 bg-white/80 px-4 py-3 text-left">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-500">
+                <Clock className="h-4 w-4" />
+              </div>
+              <div>
+                <p className="text-xs font-semibold text-slate-800">Nothing needs your attention</p>
+                <p className="mt-1 text-xs leading-5 text-slate-500">
+                  Try another status filter or check back when new applications arrive.
+                </p>
+              </div>
             </div>
-          ))}
+          ) : !loading ? (
+            <div className="mx-auto mt-7 grid max-w-2xl gap-3 text-left sm:grid-cols-3">
+              {steps.map(step => {
+                const Icon = step.icon
+                return (
+                  <div key={step.number} className="rounded-2xl border border-slate-200/80 bg-white/85 p-4 shadow-sm shadow-slate-900/[0.02]">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] font-bold tracking-wider text-blue-700">{step.number}</span>
+                      <Icon className="h-4 w-4 text-slate-400" />
+                    </div>
+                    <p className="mt-3 text-xs font-semibold text-slate-800">{step.label}</p>
+                    <p className="mt-1 text-[11px] leading-relaxed text-slate-500">{step.description}</p>
+                  </div>
+                )
+              })}
+            </div>
+          ) : null}
         </div>
       </div>
-      <div className="mt-5 inline-flex items-center gap-2 text-[11px] font-semibold text-slate-400">
+      <div className="relative flex shrink-0 items-center justify-center gap-2 border-t border-slate-100/80 bg-white/50 px-4 py-3 text-[10px] font-medium text-slate-400">
         <ShieldCheck className="h-3.5 w-3.5 text-blue-500" />
         <span>Secure landlord verification workspace</span>
       </div>

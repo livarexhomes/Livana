@@ -48,8 +48,7 @@ export default function IdentityGrid({ landlord }: IdentityGridProps) {
                 aria-hidden="true"
                 className="pointer-events-none absolute inset-0 opacity-40"
                 style={{
-                  background:
-                    'linear-gradient(135deg, rgba(99,102,241,0.05) 0%, rgba(168,85,247,0.05) 100%)',
+                  background: 'linear-gradient(135deg, rgba(37,99,235,0.05) 0%, rgba(255,255,255,0) 100%)',
                 }}
               />
             )}
