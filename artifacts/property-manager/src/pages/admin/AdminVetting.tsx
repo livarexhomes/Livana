@@ -4,7 +4,8 @@ import {
   CheckCircle, Clock, ShieldCheck,
   Loader2, Users, Building2,
   BedDouble, Bath, MapPin, DollarSign, ListChecks,
-  Trash2, ChevronDown, ChevronRight, Eye,
+  Trash2, ChevronDown, ChevronRight, Eye, Image as ImageIcon,
+  Home, Ruler, CalendarDays, Tag, XCircle,
 } from 'lucide-react'
 import AdminSidebar from '../../components/layout/AdminSidebar'
 import AuthGuard from '../../components/auth/AuthGuard'
@@ -51,10 +52,6 @@ const KYC_FILTER_TABS_BASE = [
   { key: 'not_submitted', label: 'Not Submitted' },
   { key: 'all',           label: 'All' },
 ] as const
-
-const BRAND = '#2563EB'
-const BRAND_D = '#1D4ED8'
-const ACCENT = '#3B82F6'
 
 // ── Main Component ────────────────────────────────────────────────────────────
 
@@ -462,6 +459,15 @@ function ListingsTab({
   kycPendingCount: number
 }) {
   const [viewingListing, setViewingListing] = useState<any | null>(null)
+  const [previewImageIndex, setPreviewImageIndex] = useState(0)
+
+  function openListingPreview(listing: any) {
+    const images: any[] = [...(listing.property_images ?? [])]
+      .sort((a, b) => (a.sort_order ?? 99) - (b.sort_order ?? 99))
+    const coverIndex = images.findIndex(image => image.is_cover)
+    setPreviewImageIndex(coverIndex >= 0 ? coverIndex : 0)
+    setViewingListing(listing)
+  }
 
   return (
     <div className="relative flex flex-1 min-h-0 overflow-hidden flex-col">
@@ -494,26 +500,20 @@ function ListingsTab({
 
       <div className="relative flex-1 overflow-y-auto px-4 py-5 sm:px-7 sm:py-7">
         {loading ? (
-          <div className="flex items-center justify-center py-16 sm:py-24 gap-3 text-slate-400">
-            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-500 to-blue-500 text-white shadow-md shadow-blue-500/30">
-              <Loader2 className="w-4 h-4 animate-spin" />
+          <div className="flex min-h-[50vh] items-center justify-center gap-3 text-slate-500">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
+              <Loader2 className="h-4 w-4 animate-spin" />
             </div>
             <span className="text-sm font-semibold">Loading pending listings…</span>
           </div>
         ) : listings.length === 0 ? (
           <div className="flex min-h-[min(60vh,520px)] items-center justify-center">
-            <div className="w-full max-w-md rounded-3xl border border-emerald-100 bg-gradient-to-b from-emerald-50/70 via-white to-white px-6 py-10 text-center shadow-sm sm:px-10">
-              <div className="relative mx-auto mb-5 w-fit">
-                <div
-                  aria-hidden="true"
-                  className="absolute inset-0 rounded-3xl bg-emerald-400/20 blur-xl"
-                />
-                <div className="relative flex h-16 w-16 items-center justify-center rounded-3xl border border-emerald-100 bg-white shadow-sm">
-                  <ListChecks className="w-7 h-7 text-emerald-600" />
-                </div>
+            <div className="w-full max-w-lg rounded-2xl border border-slate-200 bg-white px-6 py-10 text-center sm:px-10">
+              <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-50">
+                <ListChecks className="h-6 w-6 text-emerald-600" />
               </div>
-              <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-emerald-700">Listing approvals</p>
-              <h4 className="mt-2 text-lg font-extrabold tracking-tight text-slate-900">Your listing queue is clear</h4>
+              <p className="text-xs font-bold uppercase tracking-[0.14em] text-emerald-700">Listing approvals</p>
+              <h4 className="mt-2 text-xl font-bold tracking-tight text-slate-900">Your review queue is clear</h4>
               <p className="mx-auto mt-2 max-w-sm text-sm leading-relaxed text-slate-500">
                 There are no property submissions waiting for approval. New listings will appear here when landlords submit them.
               </p>
@@ -521,7 +521,7 @@ function ListingsTab({
                 <button
                   type="button"
                   onClick={onReviewIdentity}
-                  className="mt-6 inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-bold text-white shadow-sm shadow-blue-600/20 transition-colors hover:bg-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
+                  className="mt-6 inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-bold text-white transition-colors hover:bg-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
                 >
                   <ShieldCheck className="h-4 w-4" />
                   Review {kycPendingCount} pending identity check{kycPendingCount === 1 ? '' : 's'}
@@ -530,7 +530,7 @@ function ListingsTab({
             </div>
           </div>
         ) : (
-          <div className="grid grid-cols-1 gap-0">
+          <div className="mx-auto max-w-[1500px] divide-y divide-slate-200 rounded-2xl border border-slate-200 bg-white px-5 sm:px-7">
             {listings.map((listing: any) => (
               <ListingCard
                 key={listing.id}
@@ -538,7 +538,7 @@ function ListingsTab({
                 processing={processing}
                 confirm={confirm}
                 setConfirm={setConfirm}
-                onView={setViewingListing}
+                onView={openListingPreview}
                 onApprove={onApprove}
                 onReject={onReject}
               />
@@ -548,85 +548,218 @@ function ListingsTab({
       </div>
       <Dialog open={!!viewingListing} onOpenChange={open => { if (!open) setViewingListing(null) }}>
         {viewingListing && (
-          <DialogContent className="max-h-[90dvh] max-w-3xl overflow-y-auto rounded-2xl p-0">
-            <div className="p-5 sm:p-7">
-              <DialogHeader className="pr-8 text-left">
-                <DialogTitle className="text-xl font-extrabold tracking-tight text-slate-900">
-                  {viewingListing.title}
-                </DialogTitle>
-                <DialogDescription>
-                  Listing submitted by {viewingListing.landlords?.full_name ?? 'Unknown landlord'}
-                </DialogDescription>
-              </DialogHeader>
-
-              {(() => {
-                const images: any[] = [...(viewingListing.property_images ?? [])]
-                  .sort((a, b) => (a.sort_order ?? 99) - (b.sort_order ?? 99))
-                const cover = images.find(image => image.is_cover) ?? images[0]
-                const coverUrl = cover ? getSupabaseImageUrl(cover.storage_path, 900) : null
-                return coverUrl ? (
-                  <img
-                    src={coverUrl}
-                    alt={viewingListing.title}
-                    className="mt-5 max-h-[360px] w-full rounded-xl bg-slate-100 object-cover"
-                  />
-                ) : (
-                  <div className="mt-5 flex h-48 items-center justify-center rounded-xl bg-slate-100 text-slate-400">
-                    <Building2 className="h-10 w-10" />
-                  </div>
-                )
-              })()}
-
-              <div className="mt-5 grid gap-4 sm:grid-cols-2">
-                <div className="space-y-3">
-                  <div>
-                    <p className="text-xs font-bold uppercase tracking-wider text-slate-400">Location</p>
-                    <p className="mt-1 flex items-start gap-2 text-sm text-slate-700">
-                      <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-slate-400" />
-                      {[viewingListing.address, viewingListing.city, viewingListing.state].filter(Boolean).join(', ') || 'Not provided'}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-xs font-bold uppercase tracking-wider text-slate-400">Property details</p>
-                    <p className="mt-1 text-sm text-slate-700">
-                      {viewingListing.property_type ?? 'Property'} · {viewingListing.bedrooms ?? '—'} bed · {viewingListing.bathrooms ?? '—'} bath
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-xs font-bold uppercase tracking-wider text-slate-400">Landlord</p>
-                    <p className="mt-1 text-sm text-slate-700">{viewingListing.landlords?.full_name ?? 'Unknown landlord'}</p>
-                    {viewingListing.landlords?.whatsapp && (
-                      <p className="text-sm text-slate-500">{viewingListing.landlords.whatsapp}</p>
-                    )}
-                  </div>
-                </div>
-
-                <div className="space-y-3">
-                  <div>
-                    <p className="text-xs font-bold uppercase tracking-wider text-slate-400">Price</p>
-                    <p className="mt-1 text-lg font-extrabold text-blue-700">
-                      {fmtNaira(Number(viewingListing.price) || 0)} {viewingListing.type === 'rent' ? '/yr' : ''}
-                    </p>
-                  </div>
-                  {viewingListing.description && (
-                    <div>
-                      <p className="text-xs font-bold uppercase tracking-wider text-slate-400">Description</p>
-                      <p className="mt-1 whitespace-pre-wrap text-sm leading-relaxed text-slate-700">{viewingListing.description}</p>
-                    </div>
-                  )}
-                  {Array.isArray(viewingListing.amenities) && viewingListing.amenities.length > 0 && (
-                    <div>
-                      <p className="text-xs font-bold uppercase tracking-wider text-slate-400">Amenities</p>
-                      <p className="mt-1 text-sm text-slate-700">{viewingListing.amenities.join(', ')}</p>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          </DialogContent>
+          <ListingPreviewDialog
+            listing={viewingListing}
+            imageIndex={previewImageIndex}
+            onImageChange={setPreviewImageIndex}
+            onClose={() => setViewingListing(null)}
+            onApprove={() => {
+              setConfirm({ id: viewingListing.id, action: 'approve' })
+              setViewingListing(null)
+            }}
+            onReject={() => {
+              setConfirm({ id: viewingListing.id, action: 'reject' })
+              setViewingListing(null)
+            }}
+          />
         )}
       </Dialog>
     </div>
+  )
+}
+
+function ListingPreviewDialog({
+  listing, imageIndex, onImageChange, onClose, onApprove, onReject,
+}: {
+  listing: any
+  imageIndex: number
+  onImageChange: (index: number) => void
+  onClose: () => void
+  onApprove: () => void
+  onReject: () => void
+}) {
+  const images: any[] = [...(listing.property_images ?? [])]
+    .sort((a, b) => (a.sort_order ?? 99) - (b.sort_order ?? 99))
+  const selectedImage = images[imageIndex] ?? images[0]
+  const selectedImageUrl = selectedImage ? getSupabaseImageUrl(selectedImage.storage_path, 1200) : null
+  const landlordName = listing.landlords?.full_name ?? 'Unknown landlord'
+  const propertyType = listing.property_type ?? 'Property'
+  const details = [
+    { label: 'Property type', value: propertyType, icon: Home },
+    { label: 'Bedrooms', value: `${listing.bedrooms ?? '—'} ${listing.bedrooms === 1 ? 'bedroom' : 'bedrooms'}`, icon: BedDouble },
+    { label: 'Bathrooms', value: `${listing.bathrooms ?? '—'} ${listing.bathrooms === 1 ? 'bathroom' : 'bathrooms'}`, icon: Bath },
+    ...(listing.area_sqft ? [{ label: 'Floor area', value: `${Number(listing.area_sqft).toLocaleString()} sqft`, icon: Ruler }] : []),
+    { label: 'Listing type', value: listing.type === 'sale' ? 'For sale' : listing.type === 'lease' ? 'For lease' : 'For rent', icon: Tag },
+    { label: 'Submitted', value: daysAgo(listing.created_at), icon: CalendarDays },
+  ]
+
+  return (
+    <DialogContent className="!flex max-h-[94dvh] w-[calc(100%-1rem)] max-w-5xl flex-col gap-0 overflow-hidden rounded-2xl border-slate-200 bg-white p-0 text-slate-900 sm:w-[calc(100%-2rem)]">
+      <DialogHeader className="shrink-0 border-b border-slate-200 px-5 py-4 pr-12 text-left sm:px-7">
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-50 px-2.5 py-1 text-[11px] font-bold text-blue-700">
+            <Clock className="h-3.5 w-3.5" />
+            Awaiting review
+          </span>
+          <span className="text-xs text-slate-400">Submitted {daysAgo(listing.created_at)}</span>
+        </div>
+        <DialogTitle className="mt-2 text-xl font-bold tracking-tight text-slate-950 sm:text-2xl">
+          {listing.title}
+        </DialogTitle>
+        <DialogDescription className="flex items-center gap-1.5 text-sm text-slate-500">
+          <MapPin className="h-4 w-4 shrink-0" />
+          {[listing.address, listing.city, listing.state].filter(Boolean).join(', ') || 'Location not provided'}
+        </DialogDescription>
+      </DialogHeader>
+
+      <div className="min-h-0 flex-1 overflow-y-auto bg-slate-50/70">
+        <div className="mx-auto max-w-4xl space-y-5 p-4 sm:p-6">
+          <section aria-label="Property photos" className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
+            <div className="relative flex aspect-[16/8] max-h-[420px] min-h-44 items-center justify-center bg-slate-100">
+              {selectedImageUrl ? (
+                <img src={selectedImageUrl} alt={selectedImage?.alt_text || listing.title} className="h-full w-full object-cover" />
+              ) : (
+                <div className="flex flex-col items-center gap-2 text-slate-400">
+                  <ImageIcon className="h-10 w-10" />
+                  <span className="text-sm font-medium">No property photos provided</span>
+                </div>
+              )}
+              {images.length > 0 && (
+                <span className="absolute bottom-3 right-3 rounded-lg bg-slate-950/75 px-2.5 py-1 text-xs font-semibold text-white">
+                  {imageIndex + 1} / {images.length}
+                </span>
+              )}
+            </div>
+            {images.length > 1 && (
+              <div className="flex gap-2 overflow-x-auto border-t border-slate-100 p-3">
+                {images.map((image, index) => {
+                  const imageUrl = getSupabaseImageUrl(image.storage_path, 200)
+                  return (
+                    <button
+                      key={image.storage_path}
+                      type="button"
+                      onClick={() => onImageChange(index)}
+                      aria-label={`View property photo ${index + 1}`}
+                      aria-pressed={imageIndex === index}
+                      className={`relative h-16 w-24 shrink-0 overflow-hidden rounded-lg border-2 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${
+                        imageIndex === index ? 'border-blue-600' : 'border-transparent hover:border-slate-300'
+                      }`}
+                    >
+                      <img src={imageUrl} alt={image.alt_text || `Property photo ${index + 1}`} className="h-full w-full object-cover" />
+                      {image.is_cover && (
+                        <span className="absolute bottom-1 left-1 rounded bg-slate-950/75 px-1.5 py-0.5 text-[9px] font-bold text-white">Cover</span>
+                      )}
+                    </button>
+                  )
+                })}
+              </div>
+            )}
+          </section>
+
+          <section className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_300px]">
+            <div className="space-y-5">
+              <div className="rounded-2xl border border-slate-200 bg-white p-5 sm:p-6">
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <p className="text-xs font-bold uppercase tracking-[0.12em] text-slate-500">Asking price</p>
+                    <p className="mt-2 text-3xl font-extrabold tracking-tight text-blue-700">
+                      {fmtNaira(Number(listing.price) || 0)}
+                      {(listing.type === 'rent' || listing.type === 'lease') && (
+                        <span className="ml-1 text-base font-semibold text-slate-500">/ yr</span>
+                      )}
+                    </p>
+                  </div>
+                  <div className="rounded-xl bg-blue-50 p-3 text-blue-700">
+                    <DollarSign className="h-5 w-5" />
+                  </div>
+                </div>
+              </div>
+
+              <div className="rounded-2xl border border-slate-200 bg-white p-5 sm:p-6">
+                <h3 className="text-sm font-bold text-slate-900">Property details</h3>
+                <div className="mt-4 grid gap-4 sm:grid-cols-2">
+                  {details.map(({ label, value, icon: Icon }) => (
+                    <div key={label} className="flex items-start gap-3">
+                      <div className="rounded-lg bg-slate-100 p-2 text-slate-600">
+                        <Icon className="h-4 w-4" aria-hidden="true" />
+                      </div>
+                      <div>
+                        <p className="text-xs text-slate-500">{label}</p>
+                        <p className="mt-0.5 text-sm font-semibold text-slate-800">{value}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="rounded-2xl border border-slate-200 bg-white p-5 sm:p-6">
+                <h3 className="text-sm font-bold text-slate-900">Description</h3>
+                {listing.description ? (
+                  <p className="mt-3 whitespace-pre-wrap text-sm leading-7 text-slate-600">{listing.description}</p>
+                ) : (
+                  <p className="mt-3 text-sm italic text-slate-400">No description was provided.</p>
+                )}
+              </div>
+
+              <div className="rounded-2xl border border-slate-200 bg-white p-5 sm:p-6">
+                <h3 className="text-sm font-bold text-slate-900">Amenities</h3>
+                {Array.isArray(listing.amenities) && listing.amenities.length ? (
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {listing.amenities.map((amenity: string) => (
+                      <span key={amenity} className="rounded-lg bg-slate-100 px-3 py-1.5 text-xs font-medium text-slate-700">{amenity}</span>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="mt-3 text-sm italic text-slate-400">No amenities listed.</p>
+                )}
+              </div>
+            </div>
+
+            <aside className="space-y-5">
+              <div className="rounded-2xl border border-slate-200 bg-white p-5">
+                <p className="text-xs font-bold uppercase tracking-[0.12em] text-slate-500">Submitted by</p>
+                <div className="mt-3 flex items-center gap-3">
+                  <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-gradient-to-br ${avatarGrad(landlordName)} text-xs font-black text-white`}>
+                    {getInitials(landlordName)}
+                  </div>
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-bold text-slate-900">{landlordName}</p>
+                    <p className="mt-0.5 text-xs text-slate-500">{listing.landlords?.whatsapp || 'Contact not provided'}</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="rounded-2xl border border-blue-100 bg-blue-50/70 p-5">
+                <h3 className="text-sm font-bold text-slate-900">Review checklist</h3>
+                <ul className="mt-3 space-y-3 text-xs leading-relaxed text-slate-700">
+                  <li className="flex gap-2"><CheckCircle className="h-4 w-4 shrink-0 text-blue-600" /> Verify listing information and location.</li>
+                  <li className="flex gap-2"><CheckCircle className="h-4 w-4 shrink-0 text-blue-600" /> Review photos, price, and property details.</li>
+                  <li className="flex gap-2"><CheckCircle className="h-4 w-4 shrink-0 text-blue-600" /> Confirm the landlord can provide supporting documents.</li>
+                </ul>
+              </div>
+            </aside>
+          </section>
+        </div>
+      </div>
+
+      <div className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-t border-slate-200 bg-white px-4 py-3 sm:px-6">
+        <p className="hidden text-xs text-slate-500 sm:block">Review the submitted information before making a decision.</p>
+        <div className="ml-auto flex w-full flex-wrap justify-end gap-2 sm:w-auto">
+          <button type="button" onClick={onClose}
+            className="inline-flex min-h-10 items-center justify-center rounded-xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500">
+            Close preview
+          </button>
+          <button type="button" onClick={onReject}
+            className="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl border border-red-200 px-4 py-2 text-sm font-semibold text-red-700 transition-colors hover:bg-red-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500">
+            <XCircle className="h-4 w-4" /> Reject
+          </button>
+          <button type="button" onClick={onApprove}
+            className="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2">
+            <CheckCircle className="h-4 w-4" /> Approve listing
+          </button>
+        </div>
+      </div>
+    </DialogContent>
   )
 }
 
@@ -650,8 +783,8 @@ function ListingCard({
   const landlordName = listing.landlords?.full_name ?? 'Unknown landlord'
 
   return (
-      <div className="group relative flex min-w-0 flex-col overflow-hidden border-b border-slate-200/80 py-5 first:pt-0 last:border-b-0 lg:flex-row lg:items-stretch lg:gap-7">
-      <div className="relative aspect-[16/10] w-full shrink-0 overflow-hidden rounded-xl bg-slate-100 lg:aspect-auto lg:min-h-[300px] lg:w-[42%]">
+      <article className="group relative grid min-w-0 gap-4 py-6 first:pt-5 last:pb-5 lg:grid-cols-[minmax(280px,0.42fr)_minmax(0,1fr)_230px] lg:items-center lg:gap-7">
+      <div className="relative aspect-[16/10] w-full min-w-0 overflow-hidden rounded-xl bg-slate-100 lg:aspect-[4/3]">
         {coverUrl ? (
           <img src={coverUrl} alt={listing.title} className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" />
         ) : (
@@ -674,69 +807,64 @@ function ListingCard({
         </div>
       </div>
 
-      <div className="flex min-w-0 flex-1 flex-col px-1 py-4 lg:py-2">
-         <h4 className="text-base font-extrabold tracking-tight text-slate-900 line-clamp-2 leading-snug">{listing.title}</h4>
+      <div className="flex min-w-0 flex-col py-1">
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-50 px-2.5 py-1 text-[10px] font-bold text-blue-700">
+            <Clock className="h-3 w-3" /> Awaiting review
+          </span>
+          <span className="text-[11px] font-medium text-slate-400">{daysAgo(listing.created_at)}</span>
+        </div>
+        <h4 className="mt-3 line-clamp-2 text-lg font-bold leading-snug tracking-tight text-slate-950">{listing.title}</h4>
 
-        <div className="mt-2 space-y-1.5">
-          <div className="flex items-center gap-1.5 text-[12px] text-slate-500">
-            <MapPin className="w-3 h-3 shrink-0 text-slate-400" />
-            <span className="truncate">{listing.address}{listing.city ? `, ${listing.city}` : ''}</span>
+        <div className="mt-2 space-y-2">
+          <div className="flex items-start gap-2 text-sm text-slate-600">
+            <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-slate-400" />
+            <span className="line-clamp-2">{[listing.address, listing.city, listing.state].filter(Boolean).join(', ') || 'Location not provided'}</span>
           </div>
-          <div className="flex flex-wrap items-center gap-3 text-xs text-slate-500">
-            <span className="flex items-center gap-1"><BedDouble className="w-3 h-3 text-slate-400" />{listing.bedrooms} bed</span>
-            <span className="flex items-center gap-1"><Bath className="w-3 h-3 text-slate-400" />{listing.bathrooms} bath</span>
-            {listing.area_sqft && <span className="flex items-center gap-1"><MapPin className="w-3 h-3 text-slate-400" />{listing.area_sqft} sqft</span>}
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs font-medium text-slate-600">
+            <span className="inline-flex items-center gap-1.5"><BedDouble className="h-4 w-4 text-slate-400" />{listing.bedrooms ?? '—'} bed</span>
+            <span className="inline-flex items-center gap-1.5"><Bath className="h-4 w-4 text-slate-400" />{listing.bathrooms ?? '—'} bath</span>
+            {listing.area_sqft && <span className="inline-flex items-center gap-1.5"><Ruler className="h-4 w-4 text-slate-400" />{Number(listing.area_sqft).toLocaleString()} sqft</span>}
           </div>
         </div>
 
-        <div className="mt-4 flex flex-wrap items-center justify-between gap-2 border-t border-slate-100 pt-3">
-           <p
-             className="text-xl font-extrabold tracking-tight break-words"
-             style={{ background: `linear-gradient(135deg, ${BRAND}, ${ACCENT})`, WebkitBackgroundClip: 'text', backgroundClip: 'text', color: 'transparent' }}
-           >
-             {fmtNaira(listing.price)}
-           </p>
-          <div className="text-[11px] text-slate-400 flex items-center gap-1">
-            <DollarSign className="w-3 h-3" />
-            {listing.type === 'rent' ? '/yr' : 'outright'}
-          </div>
+        <div className="mt-4 flex flex-wrap items-baseline gap-x-2 gap-y-1 border-t border-slate-100 pt-3">
+          <p className="text-2xl font-extrabold tracking-tight text-blue-700">{fmtNaira(Number(listing.price) || 0)}</p>
+          <span className="text-xs font-medium text-slate-500">{listing.type === 'rent' || listing.type === 'lease' ? '/ year' : 'outright'}</span>
         </div>
 
-         <div className="mt-4 flex flex-wrap items-center gap-2 rounded-xl bg-slate-50 px-3 py-3">
-          <div className={`w-8 h-8 rounded-full bg-gradient-to-br ${avatarGrad(landlordName)} flex items-center justify-center shrink-0 text-[10px] font-black text-white shadow-sm ring-2 ring-white`}>
+        <div className="mt-4 flex flex-wrap items-center gap-3">
+          <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br ${avatarGrad(landlordName)} text-[10px] font-black text-white`}>
             {getInitials(landlordName)}
           </div>
           <div className="min-w-0">
-            <p className="text-[11px] font-semibold text-slate-700 truncate">{landlordName}</p>
+            <p className="truncate text-xs font-semibold text-slate-800">{landlordName}</p>
             {listing.landlords?.whatsapp && (
-              <p className="text-[10px] text-slate-400 truncate">{listing.landlords.whatsapp}</p>
+              <p className="truncate text-[11px] text-slate-500">{listing.landlords.whatsapp}</p>
             )}
           </div>
-           <span className="ml-auto shrink-0 rounded-full border border-slate-200 bg-white px-2 py-0.5 text-[10px] font-bold text-slate-500 shadow-sm">Submitted</span>
         </div>
       </div>
 
-      <div className="shrink-0 px-1 pb-4 lg:flex lg:w-[220px] lg:flex-col lg:justify-end lg:px-0">
+      <div className="flex min-w-0 flex-wrap gap-2 lg:flex-col">
         {isConfirming ? (
-           <div className="rounded-2xl border border-slate-200/80 bg-slate-50/80 p-3">
-            <p className="text-xs font-semibold text-slate-700 mb-2.5 text-center">
+          <div className="w-full rounded-xl border border-slate-200 bg-slate-50 p-3">
+            <p className="mb-3 text-center text-xs font-semibold leading-relaxed text-slate-700">
               {confirm?.action === 'approve'
                 ? 'Approve this listing and make it live?'
                 : 'Reject and permanently delete this listing?'}
             </p>
             <div className="flex gap-2">
               <button onClick={() => setConfirm(null)}
-                 className="flex-1 rounded-xl border border-slate-200 bg-white py-2 text-xs font-semibold text-slate-600 transition-all hover:bg-slate-50">
+                className="min-h-10 flex-1 rounded-lg border border-slate-200 bg-white py-2 text-xs font-semibold text-slate-600 transition-colors hover:bg-slate-50">
                 Cancel
               </button>
                <button
                 onClick={() => confirm?.action === 'approve' ? onApprove(listing.id) : onReject(listing.id)}
                 disabled={busy}
-                 className={`flex-1 rounded-xl py-2 text-xs font-bold text-white transition-all disabled:opacity-60 shadow-md ${
-                    confirm?.action === 'approve'
-                      ? 'bg-gradient-to-br from-emerald-500 to-teal-500 shadow-emerald-500/30 hover:shadow-lg hover:shadow-emerald-500/40'
-                      : 'bg-gradient-to-br from-red-500 to-rose-500 shadow-red-500/30 hover:shadow-lg hover:shadow-red-500/40'
-                 }`}>
+                className={`min-h-10 flex-1 rounded-lg py-2 text-xs font-bold text-white transition-colors disabled:opacity-60 ${
+                  confirm?.action === 'approve' ? 'bg-blue-600 hover:bg-blue-700' : 'bg-red-600 hover:bg-red-700'
+                }`}>
                 {busy ? <Loader2 className="w-3.5 h-3.5 animate-spin mx-auto" /> : confirm?.action === 'approve' ? 'Approve' : 'Delete listing'}
               </button>
             </div>
@@ -746,27 +874,27 @@ function ListingCard({
             <button
               type="button"
               onClick={() => onView(listing)}
-              className="flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white py-2.5 text-xs font-bold text-slate-700 transition-colors hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+              className="inline-flex min-h-11 flex-1 items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
               aria-label={`View ${listing.title} details`}
             >
-              <Eye className="h-3.5 w-3.5" /> View
+              <Eye className="h-4 w-4" /> View
             </button>
             <button
               onClick={() => setConfirm({ id: listing.id, action: 'approve' })}
               disabled={busy}
-               className="flex flex-1 items-center justify-center gap-1.5 rounded-xl py-2.5 text-xs font-bold text-white transition-all disabled:opacity-60 shadow-md hover:shadow-lg bg-gradient-to-br from-blue-500 to-blue-500 shadow-blue-500/30 hover:shadow-blue-500/40">
-              <CheckCircle className="w-3.5 h-3.5" /> Approve
+              className="inline-flex min-h-11 flex-1 items-center justify-center gap-1.5 rounded-xl bg-blue-600 px-3 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-blue-700 disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2">
+              <CheckCircle className="h-4 w-4" /> Approve
             </button>
             <button
               onClick={() => setConfirm({ id: listing.id, action: 'reject' })}
               disabled={busy}
-               className="flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-red-200/80 bg-white text-red-700 py-2.5 text-xs font-bold transition-all hover:bg-red-50 hover:border-red-300 hover:shadow-md hover:shadow-red-500/10 disabled:opacity-60">
-              <Trash2 className="w-3.5 h-3.5" /> Reject
+              className="inline-flex min-h-11 flex-1 items-center justify-center gap-1.5 rounded-xl border border-red-200 bg-white px-3 py-2.5 text-sm font-semibold text-red-700 transition-colors hover:bg-red-50 disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500">
+              <Trash2 className="h-4 w-4" /> Reject
             </button>
           </div>
         )}
       </div>
-    </div>
+    </article>
   )
 }
 
