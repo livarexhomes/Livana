@@ -2,14 +2,15 @@ import { useState, useEffect } from 'react'
 import { Link, useLocation } from '@/lib/navigation'
 import { createClient } from '@/lib/supabase'
 import {
-  LayoutDashboard, Building2, Inbox, User, Settings,
+  LayoutDashboard, Building2, Inbox, User, Settings, Search,
   LogOut, Menu, X, CheckCircle, PanelLeftClose, PanelLeftOpen, ExternalLink,
 } from 'lucide-react'
 
 const mainNav = [
-  { label: 'Dashboard',      href: '/landlord',             exact: true,  icon: LayoutDashboard },
-  { label: 'My Listings',    href: '/landlord/listings',    exact: false, icon: Building2 },
-  { label: 'Support Center', href: '/landlord/inbox',       exact: false, icon: Inbox },
+  { label: 'Dashboard',      href: '/landlord', exact: true,  icon: LayoutDashboard },
+  { label: 'Browse Properties', href: '/landlord/browse-properties', exact: false, icon: Search },
+  { label: 'My Properties',    href: '/landlord/listings',    exact: false, icon: Building2 },
+  { label: 'Messages', href: '/landlord/inbox',       exact: false, icon: Inbox },
   { label: 'Profile',        href: '/landlord/profile',     exact: false, icon: User },
   { label: 'Settings',       href: '/landlord/settings',    exact: false, icon: Settings },
 ]

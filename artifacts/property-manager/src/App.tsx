@@ -27,6 +27,7 @@ const LandlordVerifyPage = lazy(() => import("@/pages/Landlordverify"));
 
 const LandlordRegisterPage = lazy(() => import("@/pages/landlord/LandlordRegisterPage"));
 const LandlordDashboard = lazy(() => import("@/pages/landlord/LandlordDashboard"));
+const LandlordBrowseProperties = lazy(() => import("@/pages/landlord/LandlordBrowseProperties"));
 const LandlordOnboarding = lazy(() => import("@/pages/landlord/LandlordOnboarding"));
 const LandlordKYCPage = lazy(() => import("@/pages/landlord/LandlordKYCPage"));
 const LandlordListings = lazy(() => import("@/pages/landlord/LandlordListings"));
@@ -140,6 +141,7 @@ function Router() {
 
         <Route path="/landlord/register" component={LandlordRegisterPage} />
         <Route path="/landlord" component={LandlordDashboard} />
+        <Route path="/landlord/browse-properties" component={LandlordBrowseProperties} />
         <Route path="/landlord/onboarding" component={LandlordOnboarding} />
         <Route path="/landlord/kyc" component={LandlordKYCPage} />
         <Route path="/landlord/listings" component={LandlordListings} />

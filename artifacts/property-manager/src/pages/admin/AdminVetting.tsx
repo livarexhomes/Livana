@@ -4,7 +4,7 @@ import {
   CheckCircle, Clock, ShieldCheck,
   Loader2, Users, Building2,
   BedDouble, Bath, MapPin, DollarSign, ListChecks,
-  Trash2, ChevronDown, ChevronRight,
+  Trash2, ChevronDown, ChevronRight, Eye,
 } from 'lucide-react'
 import AdminSidebar from '../../components/layout/AdminSidebar'
 import AuthGuard from '../../components/auth/AuthGuard'
@@ -29,6 +29,13 @@ import {
   type VettingStatus,
 } from '@/components/vetting'
 import StatusFilterDropdown from '@/components/vetting/StatusFilterDropdown'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 
 function fmtNaira(n: number) {
   return '₦' + n.toLocaleString('en-NG')
@@ -402,7 +409,7 @@ export default function AdminVetting() {
               </div>
             </div>
           ) : (
-            <div className="flex flex-col flex-1 min-h-0 overflow-hidden p-4 sm:p-6">
+            <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
               <ListingsTab
                 listings={pendingListings}
                 loading={listingsLoading}
@@ -454,8 +461,10 @@ function ListingsTab({
   onReviewIdentity: () => void
   kycPendingCount: number
 }) {
+  const [viewingListing, setViewingListing] = useState<any | null>(null)
+
   return (
-    <div className="relative flex flex-1 min-h-0 overflow-hidden flex-col rounded-3xl border border-slate-200/80 bg-white shadow-sm">
+    <div className="relative flex flex-1 min-h-0 overflow-hidden flex-col">
       <div
         className="pointer-events-none absolute inset-x-0 top-0 h-32 opacity-60"
         style={{
@@ -483,7 +492,7 @@ function ListingsTab({
         )}
       </div>
 
-      <div className="relative flex-1 overflow-y-auto p-4 sm:p-6">
+      <div className="relative flex-1 overflow-y-auto px-4 py-5 sm:px-7 sm:py-7">
         {loading ? (
           <div className="flex items-center justify-center py-16 sm:py-24 gap-3 text-slate-400">
             <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-500 to-blue-500 text-white shadow-md shadow-blue-500/30">
@@ -521,7 +530,7 @@ function ListingsTab({
             </div>
           </div>
         ) : (
-          <div className="grid gap-5 md:grid-cols-2 2xl:grid-cols-3">
+          <div className="grid grid-cols-1 gap-0">
             {listings.map((listing: any) => (
               <ListingCard
                 key={listing.id}
@@ -529,6 +538,7 @@ function ListingsTab({
                 processing={processing}
                 confirm={confirm}
                 setConfirm={setConfirm}
+                onView={setViewingListing}
                 onApprove={onApprove}
                 onReject={onReject}
               />
@@ -536,16 +546,97 @@ function ListingsTab({
           </div>
         )}
       </div>
+      <Dialog open={!!viewingListing} onOpenChange={open => { if (!open) setViewingListing(null) }}>
+        {viewingListing && (
+          <DialogContent className="max-h-[90dvh] max-w-3xl overflow-y-auto rounded-2xl p-0">
+            <div className="p-5 sm:p-7">
+              <DialogHeader className="pr-8 text-left">
+                <DialogTitle className="text-xl font-extrabold tracking-tight text-slate-900">
+                  {viewingListing.title}
+                </DialogTitle>
+                <DialogDescription>
+                  Listing submitted by {viewingListing.landlords?.full_name ?? 'Unknown landlord'}
+                </DialogDescription>
+              </DialogHeader>
+
+              {(() => {
+                const images: any[] = [...(viewingListing.property_images ?? [])]
+                  .sort((a, b) => (a.sort_order ?? 99) - (b.sort_order ?? 99))
+                const cover = images.find(image => image.is_cover) ?? images[0]
+                const coverUrl = cover ? getSupabaseImageUrl(cover.storage_path, 900) : null
+                return coverUrl ? (
+                  <img
+                    src={coverUrl}
+                    alt={viewingListing.title}
+                    className="mt-5 max-h-[360px] w-full rounded-xl bg-slate-100 object-cover"
+                  />
+                ) : (
+                  <div className="mt-5 flex h-48 items-center justify-center rounded-xl bg-slate-100 text-slate-400">
+                    <Building2 className="h-10 w-10" />
+                  </div>
+                )
+              })()}
+
+              <div className="mt-5 grid gap-4 sm:grid-cols-2">
+                <div className="space-y-3">
+                  <div>
+                    <p className="text-xs font-bold uppercase tracking-wider text-slate-400">Location</p>
+                    <p className="mt-1 flex items-start gap-2 text-sm text-slate-700">
+                      <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-slate-400" />
+                      {[viewingListing.address, viewingListing.city, viewingListing.state].filter(Boolean).join(', ') || 'Not provided'}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs font-bold uppercase tracking-wider text-slate-400">Property details</p>
+                    <p className="mt-1 text-sm text-slate-700">
+                      {viewingListing.property_type ?? 'Property'} · {viewingListing.bedrooms ?? '—'} bed · {viewingListing.bathrooms ?? '—'} bath
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs font-bold uppercase tracking-wider text-slate-400">Landlord</p>
+                    <p className="mt-1 text-sm text-slate-700">{viewingListing.landlords?.full_name ?? 'Unknown landlord'}</p>
+                    {viewingListing.landlords?.whatsapp && (
+                      <p className="text-sm text-slate-500">{viewingListing.landlords.whatsapp}</p>
+                    )}
+                  </div>
+                </div>
+
+                <div className="space-y-3">
+                  <div>
+                    <p className="text-xs font-bold uppercase tracking-wider text-slate-400">Price</p>
+                    <p className="mt-1 text-lg font-extrabold text-blue-700">
+                      {fmtNaira(Number(viewingListing.price) || 0)} {viewingListing.type === 'rent' ? '/yr' : ''}
+                    </p>
+                  </div>
+                  {viewingListing.description && (
+                    <div>
+                      <p className="text-xs font-bold uppercase tracking-wider text-slate-400">Description</p>
+                      <p className="mt-1 whitespace-pre-wrap text-sm leading-relaxed text-slate-700">{viewingListing.description}</p>
+                    </div>
+                  )}
+                  {Array.isArray(viewingListing.amenities) && viewingListing.amenities.length > 0 && (
+                    <div>
+                      <p className="text-xs font-bold uppercase tracking-wider text-slate-400">Amenities</p>
+                      <p className="mt-1 text-sm text-slate-700">{viewingListing.amenities.join(', ')}</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </DialogContent>
+        )}
+      </Dialog>
     </div>
   )
 }
 
 function ListingCard({
-  listing, processing, confirm, setConfirm, onApprove, onReject,
+  listing, processing, confirm, setConfirm, onView, onApprove, onReject,
 }: {
   listing: any; processing: string | null
   confirm: { id: string; action: 'approve' | 'reject' } | null
   setConfirm: (c: { id: string; action: 'approve' | 'reject' } | null) => void
+  onView: (listing: any) => void
   onApprove: (id: string) => Promise<void>
   onReject:  (id: string) => Promise<void>
 }) {
@@ -559,8 +650,8 @@ function ListingCard({
   const landlordName = listing.landlords?.full_name ?? 'Unknown landlord'
 
   return (
-      <div className="group relative flex min-w-0 flex-col overflow-hidden rounded-3xl border border-slate-200/80 bg-white p-2 shadow-sm shadow-slate-900/[0.02] transition-all duration-300 hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-xl hover:shadow-slate-900/[0.06]">
-      <div className="relative aspect-[16/10] overflow-hidden rounded-2xl bg-slate-100">
+      <div className="group relative flex min-w-0 flex-col overflow-hidden border-b border-slate-200/80 py-5 first:pt-0 last:border-b-0 lg:flex-row lg:items-stretch lg:gap-7">
+      <div className="relative aspect-[16/10] w-full shrink-0 overflow-hidden rounded-xl bg-slate-100 lg:aspect-auto lg:min-h-[300px] lg:w-[42%]">
         {coverUrl ? (
           <img src={coverUrl} alt={listing.title} className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" />
         ) : (
@@ -583,7 +674,7 @@ function ListingCard({
         </div>
       </div>
 
-      <div className="flex-1 px-3 py-4">
+      <div className="flex min-w-0 flex-1 flex-col px-1 py-4 lg:py-2">
          <h4 className="text-base font-extrabold tracking-tight text-slate-900 line-clamp-2 leading-snug">{listing.title}</h4>
 
         <div className="mt-2 space-y-1.5">
@@ -611,7 +702,7 @@ function ListingCard({
           </div>
         </div>
 
-         <div className="mt-4 flex flex-wrap items-center gap-2 rounded-2xl border border-slate-200/70 bg-gradient-to-br from-slate-50 to-white px-3 py-3">
+         <div className="mt-4 flex flex-wrap items-center gap-2 rounded-xl bg-slate-50 px-3 py-3">
           <div className={`w-8 h-8 rounded-full bg-gradient-to-br ${avatarGrad(landlordName)} flex items-center justify-center shrink-0 text-[10px] font-black text-white shadow-sm ring-2 ring-white`}>
             {getInitials(landlordName)}
           </div>
@@ -625,7 +716,7 @@ function ListingCard({
         </div>
       </div>
 
-      <div className="shrink-0 px-3 pb-3">
+      <div className="shrink-0 px-1 pb-4 lg:flex lg:w-[220px] lg:flex-col lg:justify-end lg:px-0">
         {isConfirming ? (
            <div className="rounded-2xl border border-slate-200/80 bg-slate-50/80 p-3">
             <p className="text-xs font-semibold text-slate-700 mb-2.5 text-center">
@@ -652,6 +743,14 @@ function ListingCard({
            </div>
         ) : (
           <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={() => onView(listing)}
+              className="flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white py-2.5 text-xs font-bold text-slate-700 transition-colors hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+              aria-label={`View ${listing.title} details`}
+            >
+              <Eye className="h-3.5 w-3.5" /> View
+            </button>
             <button
               onClick={() => setConfirm({ id: listing.id, action: 'approve' })}
               disabled={busy}

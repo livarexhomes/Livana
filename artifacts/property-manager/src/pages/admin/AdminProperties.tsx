@@ -223,6 +223,7 @@ export default function AdminProperties() {
     supabase
       .from('properties')
       .select('*, landlords(full_name, is_verified), property_images(id, storage_path, is_cover, sort_order)')
+      .neq('status', 'pending_review')
       .order('created_at', { ascending: false })
       .then(({ data }) => {
         setProperties(data ?? [])

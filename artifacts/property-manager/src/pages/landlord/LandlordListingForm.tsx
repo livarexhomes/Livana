@@ -5,7 +5,8 @@ import {
   Maximize2, Tag, CheckCircle, ArrowLeft, ImagePlus, X, Star,
   Wifi, Car, Dumbbell, Waves, Wind, Shield, Zap,
   Droplets, TreePine, UtensilsCrossed, Tv, Lock, Sun, Package,
-  ReceiptText,
+  ReceiptText, Info, FileCheck2, ClipboardList, Home as HomeIcon,
+  SearchCheck, Bell, AlertTriangle,
 } from 'lucide-react'
 import LandlordSidebar from '../../components/layout/LandlordSidebar'
 import AuthGuard from '../../components/auth/AuthGuard'
@@ -18,6 +19,13 @@ import { digitsToNumber, formatNaira } from '../../lib/currency'
 import { getFeeConfig, calcFeeBreakdown, type FeeConfig } from '../../lib/fees'
 import { subscribeListingRulesChange } from '../../lib/settings-store'
 import { getListingSettings, type ListingSettings } from '../../lib/platform-settings'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 
 type FormData = {
   title: string; description: string; address: string; city: string
@@ -71,6 +79,8 @@ export default function LandlordListingForm() {
   const [loading, setLoading]   = useState(false)
   const [loadingData, setLoadingData] = useState(isEdit)
   const [error, setError]       = useState('')
+  const [approvalOpen, setApprovalOpen] = useState(false)
+  const [approvalAcknowledged, setApprovalAcknowledged] = useState(false)
   const [feeConfig, setFeeConfig] = useState<FeeConfig | null>(null)
 
   const [imageFiles, setImageFiles] = useState<File[]>([])
@@ -260,7 +270,6 @@ export default function LandlordListingForm() {
     e.preventDefault()
     if (!landlord) return
 
-    const supabase = createClient()
     const rules = listingRules
     const hasImages = imageFiles.length > 0 || existingImages.length > 0
     const description = form.description.trim()
@@ -275,17 +284,39 @@ export default function LandlordListingForm() {
 
     // Enforce the per-landlord listing cap (new listings only).
     if (!isEdit && rules && rules.maxPerLandlord > 0) {
-      const { count } = await supabase
+      setLoading(true)
+      setError('')
+      const supabase = createClient()
+      const { count, error: countError } = await supabase
         .from('properties')
         .select('id', { count: 'exact', head: true })
         .eq('landlord_id', landlord.id)
+      setLoading(false)
+      if (countError) {
+        console.error('[listing-form] Failed to check landlord listing limit:', countError.message)
+        setError(`Could not verify your listing limit: ${countError.message}`)
+        return
+      }
       if ((count ?? 0) >= rules.maxPerLandlord) {
         setError(`You've reached the maximum of ${rules.maxPerLandlord} active listings allowed on your account.`)
         return
       }
     }
 
+    setError('')
+    if (isEdit) {
+      await saveListing()
+      return
+    }
+    setApprovalAcknowledged(false)
+    setApprovalOpen(true)
+  }
+
+  async function saveListing() {
+    if (!landlord) return
+    const supabase = createClient()
     setLoading(true); setError('')
+    const description = form.description.trim()
     const data = {
       landlord_id: landlord.id,
       title: form.title.trim(), description: description || null,
@@ -800,6 +831,131 @@ export default function LandlordListingForm() {
                 </div>
                 </div>
               </form>
+
+              <Dialog open={approvalOpen} onOpenChange={open => {
+                if (!loading) setApprovalOpen(open)
+                if (!open) setApprovalAcknowledged(false)
+              }}>
+                <DialogContent className="flex max-h-[92dvh] max-w-xl flex-col gap-0 overflow-hidden rounded-xl border border-slate-200 bg-white p-0 text-slate-900">
+                  <div className="overflow-y-auto px-5 pb-4 pt-5 sm:px-7">
+                    <DialogHeader className="space-y-1 pr-7 text-left">
+                      <DialogTitle className="text-lg font-extrabold tracking-tight text-[#0B2454]">
+                        Property Verification &amp; Approval
+                      </DialogTitle>
+                      <DialogDescription className="font-semibold text-slate-800">
+                        One final step before your property goes live.
+                      </DialogDescription>
+                    </DialogHeader>
+
+                    <p className="mt-3 text-xs leading-relaxed text-slate-600">
+                      At LIVAREX, we review property information and supporting documents before approving a listing for publication. This helps prospective tenants find accurate listings and greater confidence.
+                    </p>
+
+                    <div className="mt-3 flex items-start gap-2 rounded-lg border border-blue-100 bg-blue-50 px-3 py-2.5">
+                      <Info className="mt-0.5 h-4 w-4 shrink-0 text-blue-700" />
+                      <p className="text-[11px] leading-relaxed text-slate-700">
+                        <strong>Submitting your property does not mean it will be published immediately.</strong> Your listing will go through our verification process.
+                      </p>
+                    </div>
+
+                    <h3 className="mt-5 text-sm font-bold text-slate-900">
+                      Here’s what we’ll do before your property goes live:
+                    </h3>
+
+                    <ol className="mt-3 divide-y divide-slate-100">
+                      <li className="flex gap-3 py-3 first:pt-0">
+                        <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#0B2454] text-xs font-bold text-white">1</span>
+                        <FileCheck2 className="mt-0.5 h-5 w-5 shrink-0 text-slate-500" />
+                        <div>
+                          <h4 className="text-xs font-bold text-slate-900">Review your listing information</h4>
+                          <p className="mt-0.5 text-[11px] leading-relaxed text-slate-600">We’ll review the property details, address, description, photos, rental price and other information for completeness and consistency.</p>
+                        </div>
+                      </li>
+                      <li className="flex gap-3 py-3">
+                        <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#0B2454] text-xs font-bold text-white">2</span>
+                        <ClipboardList className="mt-0.5 h-5 w-5 shrink-0 text-slate-500" />
+                        <div>
+                          <h4 className="text-xs font-bold text-slate-900">Verify supporting documents</h4>
+                          <p className="mt-0.5 text-[11px] leading-relaxed text-slate-600">We may request documents to confirm ownership or your right to let the property, such as:</p>
+                          <ul className="mt-1 list-disc space-y-0.5 pl-4 text-[10px] leading-relaxed text-slate-600 marker:text-amber-600">
+                            <li>Evidence of property ownership</li>
+                            <li>Certificate of Occupancy (C of O), where applicable</li>
+                            <li>Registered or relevant deed of assignment, where applicable</li>
+                            <li>Other documents establishing ownership or legal authority to let the property</li>
+                          </ul>
+                        </div>
+                      </li>
+                      <li className="flex gap-3 py-3">
+                        <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#0B2454] text-xs font-bold text-white">3</span>
+                        <HomeIcon className="mt-0.5 h-5 w-5 shrink-0 text-slate-500" />
+                        <div>
+                          <h4 className="text-xs font-bold text-slate-900">Physical property inspection (if necessary)</h4>
+                          <p className="mt-0.5 text-[11px] leading-relaxed text-slate-600">A physical inspection will be conducted when necessary. If required, we’ll contact you to arrange a suitable time and provide details before any visit.</p>
+                        </div>
+                      </li>
+                      <li className="flex gap-3 py-3">
+                        <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#0B2454] text-xs font-bold text-white">4</span>
+                        <SearchCheck className="mt-0.5 h-5 w-5 shrink-0 text-slate-500" />
+                        <div>
+                          <h4 className="text-xs font-bold text-slate-900">Review outcome</h4>
+                          <p className="mt-0.5 text-[11px] leading-relaxed text-slate-600">After review, we’ll notify you of the outcome. Your listing may be:</p>
+                          <div className="mt-1.5 flex flex-wrap gap-1.5 text-[10px] font-semibold">
+                            <span className="rounded-full bg-emerald-50 px-2 py-1 text-emerald-700">✓ Approved — property goes live</span>
+                            <span className="rounded-full bg-amber-50 px-2 py-1 text-amber-800">• More information required</span>
+                            <span className="rounded-full bg-blue-50 px-2 py-1 text-blue-700">⌕ Inspection required</span>
+                            <span className="rounded-full bg-red-50 px-2 py-1 text-red-700">× Not approved</span>
+                          </div>
+                        </div>
+                      </li>
+                      <li className="flex gap-3 py-3 last:pb-0">
+                        <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#0B2454] text-xs font-bold text-white">5</span>
+                        <Bell className="mt-0.5 h-5 w-5 shrink-0 text-slate-500" />
+                        <div>
+                          <h4 className="text-xs font-bold text-slate-900">Stay informed</h4>
+                          <p className="mt-0.5 text-[11px] leading-relaxed text-slate-600">You’ll receive updates on your listing status through your dashboard, email and in-app notifications.</p>
+                        </div>
+                      </li>
+                    </ol>
+                  </div>
+
+                  <div className="shrink-0 border-t border-slate-200 bg-white px-5 pb-5 pt-3 sm:px-7">
+                    <label htmlFor="listing-approval-acknowledgement" className="flex cursor-pointer items-start gap-2 rounded-lg border border-slate-200 bg-slate-50 p-3">
+                      <input
+                        id="listing-approval-acknowledgement"
+                        type="checkbox"
+                        checked={approvalAcknowledged}
+                        onChange={event => setApprovalAcknowledged(event.target.checked)}
+                        className="mt-0.5 h-4 w-4 shrink-0 accent-blue-700"
+                      />
+                      <span className="text-[10px] font-medium leading-relaxed text-slate-700">
+                        I understand that submitting my property does not mean it will be published immediately. LIVAREX will review the listing and any required supporting documents before making an approval decision.
+                      </span>
+                    </label>
+
+                    <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-[1fr_1.2fr]">
+                      <button
+                        type="button"
+                        onClick={() => setApprovalOpen(false)}
+                        disabled={loading}
+                        className="min-h-10 rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-700 transition-colors hover:bg-slate-50 disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+                      >
+                        Go Back and Edit
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setApprovalOpen(false)
+                          void saveListing()
+                        }}
+                        disabled={!approvalAcknowledged || loading}
+                        className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg bg-[#0B2454] px-3 py-2 text-xs font-bold text-white transition-colors hover:bg-[#12366f] disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
+                      >
+                        {loading ? 'Submitting…' : 'Confirm & Submit for Review'}
+                      </button>
+                    </div>
+                  </div>
+                </DialogContent>
+              </Dialog>
             </div>
           </main>
         </div>
