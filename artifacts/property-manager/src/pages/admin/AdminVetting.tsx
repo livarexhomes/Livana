@@ -44,6 +44,17 @@ function fmtNaira(n: number) {
   return '₦' + n.toLocaleString('en-NG')
 }
 
+function reviewEventLabel(action: string) {
+  const labels: Record<string, string> = {
+    approved: 'Approved',
+    rejected: 'Rejected',
+    changes_requested: 'Changes requested',
+    review_started: 'Review started',
+    resubmitted: 'Resubmitted by landlord',
+  }
+  return labels[action] ?? action.replaceAll('_', ' ')
+}
+
 function getErrorMessage(error: unknown, fallback: string) {
   if (error instanceof Error) return error.message
   if (typeof error === 'string') return error
@@ -346,6 +357,31 @@ export default function AdminVetting() {
     }
   }
 
+  async function startListingReview(id: string) {
+    setListingProcessing(id)
+    try {
+      const { data, error } = await createClient().rpc('start_property_review', {
+        p_property_id: id,
+      })
+      if (error) throw error
+      const startedAt = data?.[0]?.started_at
+      if (!startedAt) throw new Error('Review start was not recorded.')
+      toast({ title: 'Review started', description: 'The landlord can now see that their submission is being reviewed.' })
+      await loadPendingListings()
+      return startedAt
+    } catch (error) {
+      console.error('[vetting] Failed to start property review:', error)
+      toast({
+        title: 'Could not start review',
+        description: getErrorMessage(error, 'Please retry the action.'),
+        variant: 'destructive',
+      })
+      throw error
+    } finally {
+      setListingProcessing(null)
+    }
+  }
+
   // ── Derived counts ─────────────────────────────────────────────────────────
 
   const displayName = user?.email ? user.email.split('@')[0] : 'Admin'
@@ -518,6 +554,7 @@ export default function AdminVetting() {
                 error={listingsError}
                 onRetry={() => void loadPendingListings()}
                 processing={listingProcessing}
+                onStartReview={startListingReview}
                 onReviewDecision={reviewListing}
                 onReviewIdentity={() => { setActiveTab('identity'); setKycStatusFilter('pending') }}
                 kycPendingCount={kycCounts.pending}
@@ -552,7 +589,7 @@ export default function AdminVetting() {
 
 function ListingsTab({
   listings, listingCounts, listingCountsError, statusFilter, onStatusFilter, loading, error, onRetry,
-  processing, onReviewDecision, onReviewIdentity, kycPendingCount,
+  processing, onStartReview, onReviewDecision, onReviewIdentity, kycPendingCount,
 }: {
   listings: any[]
   listingCounts: Record<ListingReviewFilter, number>
@@ -563,6 +600,7 @@ function ListingsTab({
   error: string
   onRetry: () => void
   processing: string | null
+  onStartReview: (id: string) => Promise<string>
   onReviewDecision: (id: string, action: ListingReviewAction, reason?: string) => Promise<void>
   onReviewIdentity: () => void
   kycPendingCount: number
@@ -593,22 +631,17 @@ function ListingsTab({
       return sort === 'oldest' ? aDate - bDate : bDate - aDate
     })
   }, [listings, search, sort])
-  async function openListingPreview(listing: any) {
-    const images: any[] = [...(listing.property_images ?? [])]
-      .sort((a, b) => (a.sort_order ?? 99) - (b.sort_order ?? 99))
-    const coverIndex = images.findIndex(image => image.is_cover)
-    setPreviewImageIndex(coverIndex >= 0 ? coverIndex : 0)
-    setViewingListing({ ...listing, property_review_events: [] })
+  async function loadListingReviewHistory(listingId: string) {
     setReviewHistoryLoading(true)
     setReviewHistoryError('')
     try {
       const { data, error } = await createClient()
         .from('property_review_events')
         .select('id, action, reason, created_at, admin_user_id, property_title')
-        .eq('property_id', listing.id)
+        .eq('property_id', listingId)
         .order('created_at', { ascending: false })
       if (error) throw error
-      setViewingListing((current: any) => current?.id === listing.id
+      setViewingListing((current: any) => current?.id === listingId
         ? { ...current, property_review_events: data ?? [] }
         : current)
     } catch (error) {
@@ -616,6 +649,25 @@ function ListingsTab({
       setReviewHistoryError(getErrorMessage(error, 'Review history could not be loaded.'))
     } finally {
       setReviewHistoryLoading(false)
+    }
+  }
+
+  async function openListingPreview(listing: any) {
+    const images: any[] = [...(listing.property_images ?? [])]
+      .sort((a, b) => (a.sort_order ?? 99) - (b.sort_order ?? 99))
+    const coverIndex = images.findIndex(image => image.is_cover)
+    setPreviewImageIndex(coverIndex >= 0 ? coverIndex : 0)
+    setViewingListing({ ...listing, property_review_events: [] })
+    await loadListingReviewHistory(listing.id)
+  }
+
+  async function handleStartReview(listingId: string) {
+    try {
+      const startedAt = await onStartReview(listingId)
+      await loadListingReviewHistory(listingId)
+      return startedAt
+    } catch {
+      return null
     }
   }
 
@@ -770,8 +822,10 @@ function ListingsTab({
             imageIndex={previewImageIndex}
             historyLoading={reviewHistoryLoading}
             historyError={reviewHistoryError}
+            starting={processing === viewingListing.id}
             onImageChange={setPreviewImageIndex}
             onClose={() => setViewingListing(null)}
+            onStartReview={() => handleStartReview(viewingListing.id)}
             onDecision={action => {
               setDecision({ listing: viewingListing, action })
               setViewingListing(null)
@@ -877,14 +931,16 @@ function ReviewDecisionDialog({
 }
 
 function ListingPreviewDialog({
-  listing, imageIndex, historyLoading, historyError, onImageChange, onClose, onDecision,
+  listing, imageIndex, historyLoading, historyError, starting, onImageChange, onClose, onStartReview, onDecision,
 }: {
   listing: any
   imageIndex: number
   historyLoading: boolean
   historyError: string
+  starting: boolean
   onImageChange: (index: number) => void
   onClose: () => void
+  onStartReview: () => Promise<string | null>
   onDecision: (action: ListingReviewAction) => void
 }) {
   const images: any[] = [...(listing.property_images ?? [])]
@@ -894,6 +950,7 @@ function ListingPreviewDialog({
   const landlordName = listing.landlords?.full_name ?? 'Unknown landlord'
   const reviewEvents = [...(listing.property_review_events ?? [])]
     .sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+  const reviewInProgress = reviewEvents[0]?.action === 'review_started'
   const propertyType = listing.property_type ?? 'Property'
   const details = [
     { label: 'Property type', value: propertyType, icon: Home },
@@ -1075,7 +1132,7 @@ function ListingPreviewDialog({
                   <ol className="mt-3 space-y-3">
                     {reviewEvents.map((event: any) => (
                       <li key={event.id} className="border-l-2 border-slate-200 pl-3">
-                        <p className="text-xs font-semibold capitalize text-slate-800">{String(event.action).replaceAll('_', ' ')}</p>
+                        <p className="text-xs font-semibold text-slate-800">{reviewEventLabel(event.action)}</p>
                         <p className="mt-0.5 text-[11px] text-slate-500">{new Date(event.created_at).toLocaleString()}</p>
                         {event.reason && <p className="mt-1 whitespace-pre-wrap text-xs leading-5 text-slate-600">{event.reason}</p>}
                       </li>
@@ -1085,7 +1142,7 @@ function ListingPreviewDialog({
                   <p className="mt-2 text-xs text-slate-500">Loading review history…</p>
                 ) : historyError ? (
                   <p className="mt-2 break-words text-xs leading-5 text-amber-700">
-                    Review history is unavailable. Apply the property review workflow migration to enable this feature.
+                    Review history is temporarily unavailable.
                   </p>
                 ) : (
                   <p className="mt-2 text-xs leading-5 text-slate-500">This submission has not been reviewed before.</p>
@@ -1108,6 +1165,17 @@ function ListingPreviewDialog({
       <div className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-t border-slate-200 bg-white px-4 py-3 sm:px-6">
         <p className="hidden text-xs text-slate-500 sm:block">Review the submitted information before making a decision.</p>
         <div className="ml-auto flex w-full flex-wrap justify-end gap-2 sm:w-auto">
+          {listing.status === 'pending_review' && !reviewInProgress && (
+            <button
+              type="button"
+              onClick={() => void onStartReview()}
+              disabled={starting || historyLoading}
+              className="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50 disabled:cursor-wait disabled:opacity-60"
+            >
+              {starting ? <Loader2 className="h-4 w-4 animate-spin" /> : <History className="h-4 w-4" />}
+              Start review
+            </button>
+          )}
           <button type="button" onClick={onClose}
             className="inline-flex min-h-10 items-center justify-center rounded-xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500">
             Close preview

@@ -232,7 +232,7 @@ export interface Database {
           id: string
           property_id: string | null
           property_title: string
-          action: 'approved' | 'rejected' | 'changes_requested'
+          action: 'approved' | 'rejected' | 'changes_requested' | 'review_started' | 'resubmitted'
           reason: string | null
           admin_user_id: string | null
           created_at: string
@@ -241,7 +241,7 @@ export interface Database {
           id?: string
           property_id?: string | null
           property_title: string
-          action: 'approved' | 'rejected' | 'changes_requested'
+          action: 'approved' | 'rejected' | 'changes_requested' | 'review_started' | 'resubmitted'
           reason?: string | null
           admin_user_id?: string | null
           created_at?: string
@@ -250,7 +250,7 @@ export interface Database {
           id?: string
           property_id?: string | null
           property_title?: string
-          action?: 'approved' | 'rejected' | 'changes_requested'
+          action?: 'approved' | 'rejected' | 'changes_requested' | 'review_started' | 'resubmitted'
           reason?: string | null
           admin_user_id?: string | null
           created_at?: string
@@ -558,6 +558,10 @@ export interface Database {
           p_reason?: string | null
         }
         Returns: { property_id: string; new_status: string }[]
+      }
+      start_property_review: {
+        Args: { p_property_id: string }
+        Returns: { property_id: string; started_at: string }[]
       }
     }
     Enums: Record<string, never>

@@ -3,7 +3,7 @@ import { Link } from '@/lib/navigation'
 import {
   Plus, Building2, Pencil, Trash2, MapPin, BedDouble, Bath,
   LayoutGrid, List, Search, CheckCircle, Clock, XCircle, AlertCircle,
-  ImagePlus, ArrowRight,
+  ImagePlus, ArrowRight, History,
 } from 'lucide-react'
 import LandlordSidebar from '../../components/layout/LandlordSidebar'
 import AuthGuard from '../../components/auth/AuthGuard'
@@ -20,6 +20,21 @@ const STATUS: Record<string, { label: string; bg: string; text: string; icon: an
   rejected:          { label: 'Rejected', bg: 'bg-red-50', text: 'text-red-700', icon: XCircle },
 }
 
+type PropertyReviewEvent = {
+  property_id: string | null
+  action: 'approved' | 'rejected' | 'changes_requested' | 'review_started' | 'resubmitted'
+  reason: string | null
+  created_at: string
+}
+
+const REVIEW_EVENT_LABEL: Record<PropertyReviewEvent['action'], string> = {
+  approved: 'Approved',
+  rejected: 'Rejected',
+  changes_requested: 'Changes requested',
+  review_started: 'Admin started review',
+  resubmitted: 'Listing resubmitted',
+}
+
 export default function LandlordListings() {
   const [landlord, setLandlord]   = useState<Landlord | null>(null)
   const [user, setUser]           = useState<{ email?: string } | null>(null)
@@ -29,6 +44,8 @@ export default function LandlordListings() {
   const [deleting, setDeleting]   = useState<string | null>(null)
   const [viewMode, setViewMode]   = useState<'grid' | 'list'>('grid')
   const [search, setSearch]       = useState('')
+  const [reviewEvents, setReviewEvents] = useState<PropertyReviewEvent[]>([])
+  const [reviewTimelineError, setReviewTimelineError] = useState('')
 
   useEffect(() => { load() }, [])
 
@@ -58,6 +75,25 @@ export default function LandlordListings() {
         .order('created_at', { ascending: false }) as unknown as { data: Property[] | null }
       setProperties(data ?? [])
       setFiltered(data ?? [])
+      const propertyIds = (data ?? []).map(property => property.id)
+      if (propertyIds.length) {
+        const { data: events, error } = await supabase
+          .from('property_review_events')
+          .select('property_id, action, reason, created_at')
+          .in('property_id', propertyIds)
+          .order('created_at', { ascending: true })
+        if (error) {
+          console.error('[landlord-listings] Could not load review timeline:', error)
+          setReviewTimelineError('Review timeline is unavailable right now. Please refresh to try again.')
+          setReviewEvents([])
+        } else {
+          setReviewTimelineError('')
+          setReviewEvents((events ?? []) as PropertyReviewEvent[])
+        }
+      } else {
+        setReviewTimelineError('')
+        setReviewEvents([])
+      }
     }
     setLoading(false)
   }
@@ -146,13 +182,14 @@ export default function LandlordListings() {
             ) : viewMode === 'list' ? (
               <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
                 <div className="overflow-x-auto">
-                <table className="w-full min-w-[480px]">
+                <table className="w-full min-w-[720px]">
                   <thead className="bg-slate-50 border-b border-gray-100">
                     <tr>
                       <th className="text-left px-5 py-3.5 text-[10px] font-black text-gray-400 uppercase tracking-widest">Property</th>
                       <th className="text-left px-5 py-3.5 text-[10px] font-black text-gray-400 uppercase tracking-widest hidden sm:table-cell">Location</th>
                       <th className="text-left px-5 py-3.5 text-[10px] font-black text-gray-400 uppercase tracking-widest hidden md:table-cell">Price</th>
                       <th className="text-left px-5 py-3.5 text-[10px] font-black text-gray-400 uppercase tracking-widest">Status</th>
+                      <th className="text-left px-5 py-3.5 text-[10px] font-black text-gray-400 uppercase tracking-widest hidden lg:table-cell">Review timeline</th>
                       <th className="text-right px-5 py-3.5 text-[10px] font-black text-gray-400 uppercase tracking-widest">Actions</th>
                     </tr>
                   </thead>
@@ -202,6 +239,13 @@ export default function LandlordListings() {
                             <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-bold ${s.bg} ${s.text}`}>
                               <SIcon className="w-3 h-3" />{s.label}
                             </span>
+                          </td>
+                          <td className="px-5 py-4 hidden lg:table-cell">
+                            <ReviewTimeline
+                              property={p}
+                              events={reviewEvents.filter(event => event.property_id === p.id)}
+                              error={reviewTimelineError}
+                            />
                           </td>
                           <td className="px-5 py-4">
                             <div className="flex items-center justify-end gap-1">
@@ -270,6 +314,13 @@ export default function LandlordListings() {
                         {p.review_feedback && (
                           <p className="mb-3 line-clamp-2 rounded-lg bg-amber-50 px-3 py-2 text-xs leading-5 text-amber-800">{p.review_feedback}</p>
                         )}
+                        <div className="mb-3">
+                          <ReviewTimeline
+                            property={p}
+                            events={reviewEvents.filter(event => event.property_id === p.id)}
+                            error={reviewTimelineError}
+                          />
+                        </div>
                         {/* Beds / baths / type */}
                         {(p.bedrooms != null || p.bathrooms != null) && (
                           <div className="flex items-center gap-3 text-xs text-gray-500 pb-3 mb-3 border-b border-gray-100">
@@ -306,5 +357,69 @@ export default function LandlordListings() {
         </div>
       </div>
     </AuthGuard>
+  )
+}
+
+function ReviewTimeline({
+  property, events, error,
+}: {
+  property: Property
+  events: PropertyReviewEvent[]
+  error: string
+}) {
+  const latestEvent = events[events.length - 1]
+  const currentStep = error
+    ? 'Timeline unavailable'
+    : property.status === 'pending_review'
+      ? latestEvent?.action === 'review_started' ? 'Admin is reviewing' : 'Awaiting admin review'
+      : STATUS[property.status]?.label ?? 'Listing updated'
+
+  return (
+    <details className="group min-w-[150px]">
+      <summary className="flex cursor-pointer list-none items-center gap-1.5 text-xs font-medium text-slate-600 marker:hidden hover:text-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500">
+        <History className="h-3.5 w-3.5 shrink-0 text-blue-600" />
+        <span className="truncate">{currentStep}</span>
+        <span className="text-[10px] text-slate-400">· {events.length + 1}</span>
+      </summary>
+      <div className="mt-2 max-h-48 overflow-y-auto rounded-lg border border-slate-100 bg-slate-50 p-3">
+        {error ? (
+          <p className="text-xs leading-5 text-amber-700">{error}</p>
+        ) : (
+          <ol className="space-y-3">
+            <li className="relative border-l border-slate-200 pl-3">
+              <span className="absolute -left-[4px] top-1 h-1.5 w-1.5 rounded-full bg-blue-500" />
+              <p className="text-[11px] font-semibold text-slate-700">Listing submitted</p>
+              <time className="mt-0.5 block text-[10px] text-slate-400" dateTime={property.created_at}>
+                {new Date(property.created_at).toLocaleString()}
+              </time>
+            </li>
+            {events.map((event, index) => (
+              <li key={`${event.property_id}-${event.action}-${event.created_at}-${index}`} className="relative border-l border-slate-200 pl-3 last:border-transparent">
+                <span className={`absolute -left-[4px] top-1 h-1.5 w-1.5 rounded-full ${index === events.length - 1 ? 'bg-blue-500' : 'bg-slate-300'}`} />
+                <p className="text-[11px] font-semibold text-slate-700">{REVIEW_EVENT_LABEL[event.action]}</p>
+                <time className="mt-0.5 block text-[10px] text-slate-400" dateTime={event.created_at}>
+                  {new Date(event.created_at).toLocaleString()}
+                </time>
+                {event.reason && (
+                  <p className="mt-1 whitespace-pre-wrap break-words text-[11px] leading-4 text-slate-600">{event.reason}</p>
+                )}
+              </li>
+            ))}
+            {property.status === 'pending_review' && latestEvent?.action !== 'review_started' && (
+              <li className="relative border-l border-transparent pl-3">
+                <span className="absolute -left-[4px] top-1 h-1.5 w-1.5 rounded-full bg-amber-400" />
+                <p className="text-[11px] font-semibold text-amber-700">Awaiting admin review</p>
+              </li>
+            )}
+            {property.status === 'pending_review' && latestEvent?.action === 'review_started' && (
+              <li className="relative border-l border-transparent pl-3">
+                <span className="absolute -left-[4px] top-1 h-1.5 w-1.5 animate-pulse rounded-full bg-blue-500" />
+                <p className="text-[11px] font-semibold text-blue-700">Admin review in progress</p>
+              </li>
+            )}
+          </ol>
+        )}
+      </div>
+    </details>
   )
 }
