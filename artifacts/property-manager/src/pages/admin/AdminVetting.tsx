@@ -593,19 +593,6 @@ function ListingsTab({
       return sort === 'oldest' ? aDate - bDate : bDate - aDate
     })
   }, [listings, search, sort])
-  const listingStatusCards: {
-    status: Exclude<ListingReviewFilter, 'all'>
-    label: string
-    description: string
-    icon: typeof Building2
-    tone: 'amber' | 'emerald' | 'blue' | 'rose'
-  }[] = [
-    { status: 'pending_review', label: 'Pending review', description: 'Needs your attention', icon: History, tone: 'amber' },
-    { status: 'available', label: 'Approved', description: 'Live on the platform', icon: CheckCircle, tone: 'emerald' },
-    { status: 'changes_requested', label: 'Needs changes', description: 'Waiting on landlord', icon: AlertCircle, tone: 'blue' },
-    { status: 'rejected', label: 'Rejected', description: 'Not approved', icon: XCircle, tone: 'rose' },
-  ]
-
   async function openListingPreview(listing: any) {
     const images: any[] = [...(listing.property_images ?? [])]
       .sort((a, b) => (a.sort_order ?? 99) - (b.sort_order ?? 99))
@@ -635,68 +622,67 @@ function ListingsTab({
   return (
     <div className="min-h-0 flex-1 overflow-y-auto bg-[#f6f8fb]">
       <div className="mx-auto max-w-[1440px] space-y-6 p-4 sm:p-6 lg:p-8">
-        <section className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-blue-700">Property operations</p>
-            <h2 className="mt-1 text-2xl font-semibold tracking-tight text-slate-950 sm:text-[28px]">Listing approvals</h2>
-            <p className="mt-1 max-w-xl text-sm leading-6 text-slate-500">
-              Review landlord submissions, inspect property details, and keep the marketplace quality high.
-            </p>
-          </div>
-          <div className="flex items-center gap-3">
-            <span className="text-sm text-slate-500">{visibleListings.length} result{visibleListings.length === 1 ? '' : 's'}</span>
-            <button
-              type="button"
-              onClick={onRetry}
-              disabled={loading}
-              className="inline-flex h-10 items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-sm font-medium text-slate-700 transition-colors hover:border-slate-300 hover:bg-slate-50 disabled:cursor-wait disabled:opacity-60"
-            >
-              <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-              Refresh
-            </button>
-          </div>
-        </section>
-
-        <section aria-label="Listing status summary" className="grid grid-cols-2 gap-3 xl:grid-cols-4">
-          {listingStatusCards.map(({ status, label, description, icon: Icon, tone }) => {
-            const selected = statusFilter === status
-            const tones = {
-              amber: { icon: 'bg-amber-50 text-amber-700', active: 'border-amber-300 ring-2 ring-amber-100' },
-              emerald: { icon: 'bg-emerald-50 text-emerald-700', active: 'border-emerald-300 ring-2 ring-emerald-100' },
-              blue: { icon: 'bg-blue-50 text-blue-700', active: 'border-blue-300 ring-2 ring-blue-100' },
-              rose: { icon: 'bg-rose-50 text-rose-700', active: 'border-rose-300 ring-2 ring-rose-100' },
-            }[tone]
-            return (
+        <section className="relative overflow-hidden rounded-2xl bg-[#102a24] px-5 py-6 text-white sm:px-8 sm:py-8">
+          <div className="pointer-events-none absolute -right-10 -top-20 h-64 w-64 rounded-full border border-white/10" />
+          <div className="pointer-events-none absolute -right-2 -top-12 h-48 w-48 rounded-full border border-white/10" />
+          <div className="relative flex flex-col justify-between gap-5 sm:flex-row sm:items-end">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-200/80">Marketplace quality</p>
+              <h2 className="mt-2 text-2xl font-semibold tracking-tight sm:text-3xl">Property review desk</h2>
+              <p className="mt-2 max-w-xl text-sm leading-6 text-emerald-50/75">
+                Review submissions, verify the details, and decide what goes live on Livarex.
+              </p>
+            </div>
+            <div className="flex items-center gap-3">
+              <div className="rounded-xl border border-white/15 bg-white/10 px-4 py-2.5">
+                <p className="text-[11px] font-medium text-emerald-50/70">Awaiting review</p>
+                <p className="mt-0.5 text-xl font-semibold">{listingCounts.pending_review}</p>
+              </div>
               <button
-                key={status}
                 type="button"
-                aria-pressed={selected}
-                onClick={() => onStatusFilter(selected ? 'all' : status)}
-                className={`min-w-0 rounded-xl border bg-white p-4 text-left transition-colors hover:border-slate-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${selected ? tones.active : 'border-slate-200'}`}
+                onClick={onRetry}
+                disabled={loading}
+                className="inline-flex h-10 items-center gap-2 rounded-lg bg-white px-3 text-sm font-semibold text-[#16372f] transition-colors hover:bg-emerald-50 disabled:cursor-wait disabled:opacity-60"
               >
-                <span className="flex items-start justify-between gap-2">
-                  <span className="min-w-0">
-                    <span className="block truncate text-xs font-medium text-slate-500">{label}</span>
-                    <span className="mt-2 block text-2xl font-semibold tracking-tight text-slate-950">{listingCounts[status]}</span>
-                  </span>
-                  <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${tones.icon}`}>
-                    <Icon className="h-4 w-4" />
-                  </span>
-                </span>
-                <span className="mt-2 block truncate text-xs text-slate-500">{description}</span>
+                <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+                Refresh
               </button>
-            )
-          })}
+            </div>
+          </div>
         </section>
 
-        <section className="overflow-hidden rounded-xl border border-slate-200 bg-white">
-          <div className="flex flex-col gap-1 border-b border-slate-100 px-4 py-4 sm:px-5">
-            <h3 className="text-sm font-semibold text-slate-900">
-              {statusFilter === 'pending_review' ? 'Listings awaiting review' : statusFilter === 'all' ? 'All submissions' : `${LISTING_REVIEW_FILTERS.find(filter => filter.value === statusFilter)?.label} listings`}
-            </h3>
-            <p className="text-xs text-slate-500">Search and filter the queue, then open a submission to review it.</p>
+        <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm shadow-slate-900/[0.025]">
+          <div className="border-b border-slate-100 px-4 pt-4 sm:px-6">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <h3 className="text-sm font-semibold text-slate-900">Submission queue</h3>
+                <p className="mt-1 text-xs text-slate-500">{visibleListings.length} result{visibleListings.length === 1 ? '' : 's'} · select a property to review</p>
+              </div>
+            </div>
+            <div className="mt-4 flex gap-5 overflow-x-auto" role="tablist" aria-label="Filter submissions by status">
+              {LISTING_REVIEW_FILTERS.map(filter => {
+                const active = statusFilter === filter.value
+                return (
+                  <button
+                    key={filter.value}
+                    type="button"
+                    role="tab"
+                    aria-selected={active}
+                    onClick={() => onStatusFilter(filter.value)}
+                    className={`inline-flex shrink-0 items-center gap-2 border-b-2 pb-3 text-xs font-semibold transition-colors ${
+                      active ? 'border-emerald-700 text-emerald-800' : 'border-transparent text-slate-500 hover:text-slate-800'
+                    }`}
+                  >
+                    {filter.label}
+                    <span className={`rounded-full px-1.5 py-0.5 text-[10px] ${active ? 'bg-emerald-50 text-emerald-800' : 'bg-slate-100 text-slate-500'}`}>
+                      {listingCounts[filter.value]}
+                    </span>
+                  </button>
+                )
+              })}
+            </div>
           </div>
-          <div className="flex flex-col gap-3 border-b border-slate-100 bg-slate-50/60 p-4 sm:flex-row sm:items-center sm:px-5">
+          <div className="flex flex-col gap-3 border-b border-slate-100 bg-[#fbfcfb] p-4 sm:flex-row sm:items-center sm:px-6">
             <label className="relative min-w-0 flex-1">
               <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
               <input
@@ -707,21 +693,6 @@ function ListingsTab({
                 aria-label="Search property submissions"
                 className="h-10 w-full rounded-lg border border-slate-200 bg-white pl-9 pr-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/15"
               />
-            </label>
-            <label className="flex min-w-0 items-center gap-2">
-              <span className="sr-only">Status</span>
-              <select
-                value={statusFilter}
-                onChange={event => onStatusFilter(event.target.value as ListingReviewFilter)}
-                className="h-10 min-w-0 flex-1 rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-700 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/15 sm:w-44 sm:flex-none"
-                aria-label="Filter property submissions by status"
-              >
-                {LISTING_REVIEW_FILTERS.map(filter => (
-                  <option key={filter.value} value={filter.value}>
-                    {filter.label} ({listingCounts[filter.value]})
-                  </option>
-                ))}
-              </select>
             </label>
             <label className="flex min-w-0 items-center gap-2">
               <SlidersHorizontal className="hidden h-4 w-4 shrink-0 text-slate-400 sm:block" />
@@ -744,7 +715,7 @@ function ListingsTab({
             </p>
           )}
         {loading ? (
-          <div className="divide-y divide-slate-100">
+          <div className="grid grid-cols-1 gap-4 p-4 sm:grid-cols-2 sm:p-6 xl:grid-cols-3">
             {Array.from({ length: 5 }, (_, index) => (
               <div key={index} className="flex animate-pulse items-center gap-3 p-3 sm:gap-4 sm:p-4">
                 <div className="h-14 w-14 shrink-0 rounded-lg bg-slate-100 sm:h-16 sm:w-16" />
@@ -1182,7 +1153,7 @@ function ListingCard({
   const images: any[] = listing.property_images ?? []
   const cover = images.find((image: any) => image.is_cover)
     ?? [...images].sort((a: any, b: any) => (a.sort_order ?? 99) - (b.sort_order ?? 99))[0]
-  const coverUrl = cover ? getSupabaseImageUrl(cover.storage_path, 200) : null
+  const coverUrl = cover ? getSupabaseImageUrl(cover.storage_path, 640) : null
   const landlordName = listing.landlords?.full_name ?? 'Unknown landlord'
   const address = [listing.address, listing.city, listing.state].filter(Boolean).join(', ')
   const statusLabel = listing.status === 'pending_review' ? 'Pending'
@@ -1193,52 +1164,64 @@ function ListingCard({
       : listing.status === 'rejected' ? 'bg-red-50 text-red-700' : 'bg-blue-50 text-blue-700'
 
   return (
-    <article className="grid min-w-0 grid-cols-[56px_minmax(0,1fr)_auto] items-center gap-3 p-3 transition-colors hover:bg-slate-50/70 sm:gap-4 sm:p-4 md:grid-cols-[64px_minmax(0,1.8fr)_minmax(130px,1fr)_minmax(112px,auto)_88px]">
-      <div className="h-14 w-14 overflow-hidden rounded-lg bg-slate-100 sm:h-16 sm:w-16">
-        {coverUrl
-          ? <img src={coverUrl} alt="" className="h-full w-full object-cover" />
-          : <div className="flex h-full w-full items-center justify-center text-slate-400"><Building2 className="h-6 w-6" /></div>}
-      </div>
+    <article className="group min-w-0 overflow-hidden rounded-xl border border-slate-200 bg-white transition duration-200 hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-lg hover:shadow-slate-900/[0.06]">
       <button
         type="button"
         onClick={() => onView(listing)}
         aria-label={`Review ${listing.title}`}
-        className="min-w-0 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
+        className="relative block aspect-[16/10] w-full overflow-hidden bg-slate-100 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-emerald-600"
       >
-        <span className="flex min-w-0 items-center gap-2">
-          <span className="truncate text-sm font-semibold text-slate-900">{listing.title || 'Untitled property'}</span>
-          <span className={`hidden shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold sm:inline-flex ${statusClass}`}>{statusLabel}</span>
+        {coverUrl
+          ? <img src={coverUrl} alt="" className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.03]" />
+          : <div className="flex h-full w-full items-center justify-center text-slate-400"><Building2 className="h-9 w-9" /></div>}
+        <span className={`absolute left-3 top-3 inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-semibold shadow-sm ${statusClass}`}>
+          <span className="h-1.5 w-1.5 rounded-full bg-current" />
+          {statusLabel}
         </span>
-        <span className="mt-1 flex min-w-0 items-center gap-1 text-xs text-slate-500">
-          <MapPin className="h-3.5 w-3.5 shrink-0" />
-          <span className="truncate">{address || 'Location not provided'}</span>
+        <span className="absolute bottom-3 left-3 rounded-lg bg-slate-950/75 px-2.5 py-1.5 text-sm font-semibold text-white">
+          {fmtNaira(Number(listing.price) || 0)}
+          {(listing.type === 'rent' || listing.type === 'lease') && <span className="ml-1 text-[10px] font-medium text-white/75">/ yr</span>}
         </span>
-        <span className="mt-1 flex min-w-0 items-center gap-2 text-[11px] text-slate-500 md:hidden">
-          <span className="truncate">{landlordName}</span>
-          <span aria-hidden="true">·</span>
-          <span className="shrink-0">{daysAgo(listing.created_at)}</span>
+        <span className="absolute bottom-3 right-3 rounded-lg bg-white/95 px-2 py-1 text-[10px] font-semibold text-slate-700">
+          {listing.type === 'sale' ? 'For sale' : listing.type === 'lease' ? 'For lease' : 'For rent'}
         </span>
       </button>
-      <div className="hidden min-w-0 md:block">
-        <p className="truncate text-xs font-medium text-slate-700">{landlordName}</p>
-        <p className="mt-1 text-[11px] text-slate-500">Submitted {daysAgo(listing.created_at)}</p>
+
+      <div className="p-4">
+        <div className="flex min-w-0 items-start justify-between gap-3">
+          <div className="min-w-0">
+            <h4 className="truncate text-sm font-semibold text-slate-900">{listing.title || 'Untitled property'}</h4>
+            <p className="mt-1 flex min-w-0 items-center gap-1.5 text-xs text-slate-500">
+              <MapPin className="h-3.5 w-3.5 shrink-0 text-slate-400" />
+              <span className="truncate">{address || 'Location not provided'}</span>
+            </p>
+          </div>
+          <span className="shrink-0 rounded-md bg-slate-50 px-2 py-1 text-[10px] font-medium text-slate-500">
+            {daysAgo(listing.created_at)}
+          </span>
+        </div>
+
+        <div className="mt-4 flex items-center justify-between border-t border-slate-100 pt-3">
+          <div className="flex min-w-0 items-center gap-2">
+            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-emerald-50 text-xs font-semibold text-emerald-800">
+              {getInitials(landlordName)}
+            </span>
+            <span className="min-w-0">
+              <span className="block text-[10px] text-slate-400">Submitted by</span>
+              <span className="block max-w-[150px] truncate text-xs font-medium text-slate-700">{landlordName}</span>
+            </span>
+          </div>
+          <button
+            type="button"
+            onClick={() => onView(listing)}
+            disabled={busy}
+            className="inline-flex h-9 shrink-0 items-center justify-center gap-1.5 rounded-lg bg-[#16372f] px-3 text-xs font-semibold text-white transition-colors hover:bg-[#20483e] disabled:cursor-wait disabled:opacity-60"
+          >
+            {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Eye className="h-3.5 w-3.5" />}
+            Review
+          </button>
+        </div>
       </div>
-      <div className="hidden min-w-0 text-right md:block">
-        <p className="whitespace-nowrap text-sm font-semibold text-slate-900">{fmtNaira(Number(listing.price) || 0)}</p>
-        <p className="mt-1 text-[11px] text-slate-500">{listing.type === 'sale' ? 'For sale' : 'For rent'}</p>
-      </div>
-      <button
-        type="button"
-        onClick={() => onView(listing)}
-        disabled={busy}
-        className="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2.5 text-xs font-semibold text-slate-700 transition-colors hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700 disabled:opacity-50 sm:px-3"
-      >
-        {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Eye className="h-3.5 w-3.5" />}
-        <span className="hidden sm:inline">Review</span>
-      </button>
-      <span className={`col-start-2 row-start-2 inline-flex w-fit rounded-full px-2 py-0.5 text-[10px] font-semibold sm:hidden ${statusClass}`}>
-        {statusLabel} · {fmtNaira(Number(listing.price) || 0)}
-      </span>
     </article>
   )
 }
