@@ -44,6 +44,17 @@ function fmtNaira(n: number) {
   return '₦' + n.toLocaleString('en-NG')
 }
 
+function getErrorMessage(error: unknown, fallback: string) {
+  if (error instanceof Error) return error.message
+  if (typeof error === 'string') return error
+  if (error && typeof error === 'object' && 'message' in error && typeof error.message === 'string') {
+    const details = 'details' in error && typeof error.details === 'string' ? error.details : ''
+    const hint = 'hint' in error && typeof error.hint === 'string' ? error.hint : ''
+    return [error.message, details, hint].filter(Boolean).join(' ')
+  }
+  return fallback
+}
+
 // ── Constants ─────────────────────────────────────────────────────────────────
 
 const KYC_FILTER_TABS_BASE = [
@@ -91,6 +102,7 @@ export default function AdminVetting() {
   const [pendingListings, setPendingListings]   = useState<any[]>([])
   const [listingsLoading, setListingsLoading]   = useState<boolean>(!USE_MOCK_VETTING)
   const [listingsError, setListingsError] = useState('')
+  const [listingCountsError, setListingCountsError] = useState('')
   const [listingProcessing, setListingProcessing] = useState<string | null>(null)
   const [listingStatusFilter, setListingStatusFilter] = useState<ListingReviewFilter>('pending_review')
   const [listingCounts, setListingCounts] = useState({
@@ -166,11 +178,13 @@ export default function AdminVetting() {
       setPendingListings([])
       setListingCounts({ pending_review: 0, available: 0, rejected: 0, changes_requested: 0, all: 0 })
       setListingsError('')
+      setListingCountsError('')
       setListingsLoading(false)
       return
     }
     setListingsLoading(true)
     setListingsError('')
+    setListingCountsError('')
     try {
       const supabase = createClient()
       const statuses: Exclude<ListingReviewFilter, 'all'>[] = [
@@ -178,7 +192,7 @@ export default function AdminVetting() {
       ]
       const listingQuery = supabase
         .from('properties')
-        .select('*, landlords(id, full_name, whatsapp, email, status, is_verified), property_images(id, storage_path, alt_text, is_cover, sort_order), property_review_events(id, action, reason, created_at, admin_user_id, property_title)')
+        .select('*, landlords(id, full_name, whatsapp, status, is_verified), property_images(id, storage_path, alt_text, is_cover, sort_order)')
         .order('updated_at', { ascending: false })
       if (listingStatusFilter === 'all') {
         listingQuery.in('status', statuses)
@@ -186,24 +200,34 @@ export default function AdminVetting() {
         listingQuery.eq('status', listingStatusFilter)
       }
 
-      const [listingsResult, ...countResults] = await Promise.all([
-        listingQuery,
-        ...statuses.map(status => supabase
+      const listingsResult = await listingQuery
+      if (listingsResult.error) throw listingsResult.error
+      setPendingListings(listingsResult.data ?? [])
+
+      const countResults = await Promise.all(statuses.map(status => supabase
           .from('properties')
           .select('id', { count: 'exact', head: true })
-          .eq('status', status)),
-      ])
-      const queryError = listingsResult.error ?? countResults.find(result => result.error)?.error
-      if (queryError) throw queryError
+          .eq('status', status)
+          .then(result => result, () => null)))
 
       const counts = Object.fromEntries(statuses.map((status, index) => [
-        status, countResults[index].count ?? 0,
+        status, !countResults[index] || countResults[index].error ? 0 : countResults[index].count ?? 0,
       ])) as Record<Exclude<ListingReviewFilter, 'all'>, number>
+      const countErrors = countResults.flatMap((result, index) => {
+        if (result === null) return [`${statuses[index]}: count request failed before a response was received`]
+        if (result.error) return [`${statuses[index]}: ${getErrorMessage(result.error, 'count unavailable')}`]
+        return []
+      })
+      if (countErrors.length) {
+        const message = `Property submissions loaded, but some status counts are unavailable. ${countErrors.join('; ')}`
+        console.error('[vetting] Failed to load property review counts:', countErrors)
+        setListingCountsError(message)
+      }
       setListingCounts({ ...counts, all: Object.values(counts).reduce((sum, count) => sum + count, 0) })
-      setPendingListings(listingsResult.data ?? [])
     } catch (error) {
       console.error('[vetting] Failed to load property review queue:', error)
-      setListingsError(error instanceof Error ? error.message : 'Could not load property submissions.')
+      setListingsError(getErrorMessage(error, 'Could not load property submissions.'))
+      setPendingListings([])
     } finally {
       setListingsLoading(false)
     }
@@ -353,14 +377,7 @@ export default function AdminVetting() {
           />
 
           {/* Workspace navigation */}
-          <div className="relative z-20 hidden sm:flex min-h-14 shrink-0 flex-wrap items-center justify-between gap-3 border-b border-slate-200 bg-white px-6">
-            {activeTab === 'identity' ? <div className="min-w-0">
-              <StatusFilterDropdown
-                value={kycStatusFilter}
-                onChange={setKycStatusFilter}
-                tabs={kycFilterTabs}
-              />
-            </div> : <div />}
+          <div className="relative z-20 hidden min-h-12 shrink-0 items-center justify-end border-b border-slate-200 bg-white px-6 sm:flex">
             <VettingTabs
               active={activeTab}
               onChange={setActiveTab}
@@ -370,7 +387,7 @@ export default function AdminVetting() {
           </div>
 
           {/* Tab switcher (mobile only) */}
-          <div className="relative z-20 shrink-0 space-y-2 border-b border-slate-200 bg-white px-4 pt-2">
+          <div className="relative z-20 flex shrink-0 flex-col gap-2 border-b border-slate-200 bg-white px-4 pt-2 sm:hidden">
             <VettingTabs
               active={activeTab}
               onChange={setActiveTab}
@@ -403,6 +420,13 @@ export default function AdminVetting() {
                     <span className="inline-flex min-w-7 items-center justify-center rounded-full bg-slate-100 px-2 py-1 text-xs font-semibold text-slate-600">
                       {kycFiltered.length}
                     </span>
+                  </div>
+                  <div className="mb-3">
+                    <StatusFilterDropdown
+                      value={kycStatusFilter}
+                      onChange={setKycStatusFilter}
+                      tabs={kycFilterTabs}
+                    />
                   </div>
                   <VettingToolbar
                     search={kycSearch}
@@ -487,6 +511,7 @@ export default function AdminVetting() {
               <ListingsTab
                 listings={pendingListings}
                 listingCounts={listingCounts}
+                listingCountsError={listingCountsError}
                 statusFilter={listingStatusFilter}
                 onStatusFilter={setListingStatusFilter}
                 loading={listingsLoading}
@@ -526,11 +551,12 @@ export default function AdminVetting() {
 // ── Listing Approvals tab ─────────────────────────────────────────────────────
 
 function ListingsTab({
-  listings, listingCounts, statusFilter, onStatusFilter, loading, error, onRetry,
+  listings, listingCounts, listingCountsError, statusFilter, onStatusFilter, loading, error, onRetry,
   processing, onReviewDecision, onReviewIdentity, kycPendingCount,
 }: {
   listings: any[]
   listingCounts: Record<ListingReviewFilter, number>
+  listingCountsError: string
   statusFilter: ListingReviewFilter
   onStatusFilter: (filter: ListingReviewFilter) => void
   loading: boolean
@@ -543,6 +569,8 @@ function ListingsTab({
 }) {
   const [viewingListing, setViewingListing] = useState<any | null>(null)
   const [previewImageIndex, setPreviewImageIndex] = useState(0)
+  const [reviewHistoryLoading, setReviewHistoryLoading] = useState(false)
+  const [reviewHistoryError, setReviewHistoryError] = useState('')
   const [decision, setDecision] = useState<{ listing: any; action: ListingReviewAction } | null>(null)
   const [search, setSearch] = useState('')
   const [sort, setSort] = useState<'newest' | 'oldest' | 'updated'>('newest')
@@ -566,12 +594,30 @@ function ListingsTab({
     })
   }, [listings, search, sort])
 
-  function openListingPreview(listing: any) {
+  async function openListingPreview(listing: any) {
     const images: any[] = [...(listing.property_images ?? [])]
       .sort((a, b) => (a.sort_order ?? 99) - (b.sort_order ?? 99))
     const coverIndex = images.findIndex(image => image.is_cover)
     setPreviewImageIndex(coverIndex >= 0 ? coverIndex : 0)
-    setViewingListing(listing)
+    setViewingListing({ ...listing, property_review_events: [] })
+    setReviewHistoryLoading(true)
+    setReviewHistoryError('')
+    try {
+      const { data, error } = await createClient()
+        .from('property_review_events')
+        .select('id, action, reason, created_at, admin_user_id, property_title')
+        .eq('property_id', listing.id)
+        .order('created_at', { ascending: false })
+      if (error) throw error
+      setViewingListing((current: any) => current?.id === listing.id
+        ? { ...current, property_review_events: data ?? [] }
+        : current)
+    } catch (error) {
+      console.error('[vetting] Could not load property review history:', error)
+      setReviewHistoryError(getErrorMessage(error, 'Review history could not be loaded.'))
+    } finally {
+      setReviewHistoryLoading(false)
+    }
   }
 
   return (
@@ -635,6 +681,11 @@ function ListingsTab({
       </div>
 
       <div className="min-h-0 flex-1 overflow-y-auto p-4 sm:p-6">
+        {listingCountsError && (
+          <p role="status" className="mx-auto mb-4 max-w-6xl rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
+            {listingCountsError}
+          </p>
+        )}
         {loading ? (
           <div className="mx-auto max-w-5xl divide-y divide-slate-100 overflow-hidden rounded-xl border border-slate-200 bg-white">
             {Array.from({ length: 5 }, (_, index) => (
@@ -697,6 +748,8 @@ function ListingsTab({
           <ListingPreviewDialog
             listing={viewingListing}
             imageIndex={previewImageIndex}
+            historyLoading={reviewHistoryLoading}
+            historyError={reviewHistoryError}
             onImageChange={setPreviewImageIndex}
             onClose={() => setViewingListing(null)}
             onDecision={action => {
@@ -803,10 +856,12 @@ function ReviewDecisionDialog({
 }
 
 function ListingPreviewDialog({
-  listing, imageIndex, onImageChange, onClose, onDecision,
+  listing, imageIndex, historyLoading, historyError, onImageChange, onClose, onDecision,
 }: {
   listing: any
   imageIndex: number
+  historyLoading: boolean
+  historyError: string
   onImageChange: (index: number) => void
   onClose: () => void
   onDecision: (action: ListingReviewAction) => void
@@ -1005,6 +1060,12 @@ function ListingPreviewDialog({
                       </li>
                     ))}
                   </ol>
+                ) : historyLoading ? (
+                  <p className="mt-2 text-xs text-slate-500">Loading review history…</p>
+                ) : historyError ? (
+                  <p className="mt-2 break-words text-xs leading-5 text-amber-700">
+                    Review history is unavailable. Apply the property review workflow migration to enable this feature.
+                  </p>
                 ) : (
                   <p className="mt-2 text-xs leading-5 text-slate-500">This submission has not been reviewed before.</p>
                 )}
