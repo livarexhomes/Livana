@@ -149,8 +149,8 @@ export default function CookiePolicyPage() {
                 colour="bg-slate-100 text-slate-600"
                 name="Analytics Cookies"
                 required={false}
-                purpose="First-party analytics help us estimate unique website visitors and page views. A random identifier is stored in your browser's local storage and used only to count public-site visits. We do not use it to identify you or collect your IP address."
-                examples={['livarex_visitor_id', 'Unique visitor estimates', 'Page views']}
+                purpose="First-party property analytics record listing impressions, detail views, contact clicks, and enquiry starts using a random session identifier stored in session storage. We do not use device fingerprinting or store IP addresses for this analytics feature. If you are signed in, your account is associated with the activity for restricted administrator support; landlords receive aggregate totals only and cannot see visitor identities."
+                examples={['livarex_visitor_id', 'livarex_property_analytics_session', 'Property performance totals']}
               />
               <CookieCard
                 icon={Settings2}
@@ -188,6 +188,7 @@ export default function CookiePolicyPage() {
                     { name: 'sb-refresh-token',  provider: 'Supabase',         purpose: 'Auth token refresh',                 duration: '7 days',    type: 'Essential' },
                     { name: 'livarex_prefs',     provider: 'Livarex',          purpose: 'Search filters & preferences',       duration: '30 days',   type: 'Functional' },
                     { name: 'livarex_visitor_id', provider: 'Livarex',          purpose: 'Estimate unique public-site visitors', duration: 'Until cleared', type: 'Analytics' },
+                    { name: 'livarex_property_analytics_session', provider: 'Livarex', purpose: 'Deduplicate property interactions in a browser tab; may be associated with a signed-in account for restricted administrator support', duration: 'Browser tab session', type: 'Analytics' },
                     { name: '_ga',               provider: 'Google Analytics', purpose: 'Distinguish unique users',           duration: '2 years',   type: 'Analytics' },
                     { name: '_gid',              provider: 'Google Analytics', purpose: 'Track session activity',             duration: '24 hours',  type: 'Analytics' },
                     { name: '_fbp',              provider: 'Meta (Facebook)',   purpose: 'Facebook advertising attribution',   duration: '90 days',   type: 'Marketing' },

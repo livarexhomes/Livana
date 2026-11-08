@@ -3,6 +3,7 @@ import { User, Phone, CheckCircle, Mail, Shield } from 'lucide-react'
 import AuthGuard from '../../components/auth/AuthGuard'
 import { UserLayout } from './UserDashboard'
 import { createClient } from '../../lib/supabase'
+import AdminSupportMessagingPreference from '../../components/account/AdminSupportMessagingPreference'
 
 export default function UserProfilePage() {
   const [userId, setUserId]     = useState<string | null>(null)
@@ -142,6 +143,7 @@ export default function UserProfilePage() {
             )}
           </div>
 
+          <AdminSupportMessagingPreference />
         </div>
       </UserLayout>
     </AuthGuard>

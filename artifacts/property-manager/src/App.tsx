@@ -27,6 +27,7 @@ const LandlordVerifyPage = lazy(() => import("@/pages/Landlordverify"));
 
 const LandlordRegisterPage = lazy(() => import("@/pages/landlord/LandlordRegisterPage"));
 const LandlordDashboard = lazy(() => import("@/pages/landlord/LandlordDashboard"));
+const LandlordInsights = lazy(() => import("@/pages/landlord/LandlordInsights"));
 const LandlordBrowseProperties = lazy(() => import("@/pages/landlord/LandlordBrowseProperties"));
 const LandlordOnboarding = lazy(() => import("@/pages/landlord/LandlordOnboarding"));
 const LandlordKYCPage = lazy(() => import("@/pages/landlord/LandlordKYCPage"));
@@ -48,6 +49,7 @@ const AdminProjects = lazy(() => import("@/pages/admin/AdminProjects"));
 const AdminKYC = lazy(() => import("@/pages/admin/AdminKYC"));
 const AdminVetting = lazy(() => import("@/pages/admin/AdminVetting"));
 const AdminActivity = lazy(() => import("@/pages/admin/AdminActivity"));
+const AdminVisitorActivity = lazy(() => import("@/pages/admin/AdminVisitorActivity"));
 const AdminSettings = lazy(() => import("@/pages/admin/AdminSettings"));
 const AdminSupport = lazy(() => import("@/pages/admin/AdminSupport"));
 const AdminHelp = lazy(() => import("@/pages/admin/AdminHelp"));
@@ -141,6 +143,7 @@ function Router() {
 
         <Route path="/landlord/register" component={LandlordRegisterPage} />
         <Route path="/landlord" component={LandlordDashboard} />
+        <Route path="/landlord/insights" component={LandlordInsights} />
         <Route path="/landlord/browse-properties" component={LandlordBrowseProperties} />
         <Route path="/landlord/onboarding" component={LandlordOnboarding} />
         <Route path="/landlord/kyc" component={LandlordKYCPage} />
@@ -163,6 +166,7 @@ function Router() {
         <Route path="/admin/kyc" component={AdminKYC} />
         <Route path="/admin/vetting" component={AdminVetting} />
         <Route path="/admin/activity" component={AdminActivity} />
+        <Route path="/admin/visitor-activity" component={AdminVisitorActivity} />
         <Route path="/admin/settings" component={AdminSettings} />
         <Route path="/admin/support" component={AdminSupport} />
         <Route path="/admin/help" component={AdminHelp} />

@@ -1,9 +1,10 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Link, useLocation } from '@/lib/navigation'
 import { MapPin, BedDouble, Bath, Bookmark, ShieldCheck, Building2, Phone, MessageCircle } from 'lucide-react'
 import type { PropertyWithLandlord } from '@/types'
 import { getSupabaseImageUrl, createClient } from '@/lib/supabase'
 import { DEFAULT_PLATFORM, getPlatformSettings } from '@/lib/platform-settings'
+import { trackPropertyEvent } from '@/lib/property-analytics'
 import { formatDistanceToNow } from 'date-fns'
 
 function waLink(raw: string) {
@@ -64,6 +65,7 @@ export default function ListingCard({
   const [saved, setSaved]   = useState(initialSaved)
   const [saving, setSaving] = useState(false)
   const [fallbackNum, setFallbackNum] = useState(DEFAULT_PLATFORM.phone)
+  const impressionTarget = useRef<HTMLElement | null>(null)
 
   // Load the admin phone (Admin → Settings) as the WhatsApp fallback when a
   // landlord has no number of their own — single source of truth.
@@ -72,6 +74,20 @@ export default function ListingCard({
     getPlatformSettings().then(s => { if (active) setFallbackNum(s.phone) })
     return () => { active = false }
   }, [])
+
+  useEffect(() => {
+    const target = impressionTarget.current
+    if (!target || typeof IntersectionObserver === 'undefined') return
+    const observer = new IntersectionObserver(([entry]) => {
+      if (!entry.isIntersecting) return
+      observer.disconnect()
+      trackPropertyEvent(p.id, 'impression').catch(error => {
+        console.warn('[property-analytics] impression tracking failed:', error)
+      })
+    }, { threshold: 0.25 })
+    observer.observe(target)
+    return () => observer.disconnect()
+  }, [p.id])
 
   const images   = p.property_images ?? []
   const cover    = images.find(i => i.is_cover) ?? images[0]
@@ -116,7 +132,7 @@ export default function ListingCard({
         highlighted ? 'ring-2 ring-blue-500 ring-offset-2' : ''
       }`}
     >
-      <article className={`h-full bg-white rounded-2xl overflow-hidden flex flex-col transition-all duration-200 ${
+      <article ref={impressionTarget} className={`h-full bg-white rounded-2xl overflow-hidden flex flex-col transition-all duration-200 ${
         highlighted
           ? 'shadow-xl shadow-blue-500/10 border border-blue-100'
           : 'border border-slate-100 hover:border-slate-200 hover:shadow-xl hover:shadow-slate-200/60 hover:-translate-y-0.5'

@@ -1,10 +1,11 @@
 
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Link, useLocation } from '@/lib/navigation'
 import { MapPin, BedDouble, Bath, Heart, Building2, Maximize2, ShieldCheck, Flag, X } from 'lucide-react'
 import type { PropertyWithLandlord } from '@/types'
 import { getSupabaseImageUrl } from '@/lib/supabase'
 import { createClient } from '@/lib/supabase'
+import { trackPropertyEvent } from '@/lib/property-analytics'
 
 interface PropertyCardProps {
   property: PropertyWithLandlord
@@ -36,6 +37,21 @@ export default function PropertyCard({ property: p, saved: initialSaved = false,
   const [saving, setSaving] = useState(false)
   const [reportOpen, setReportOpen] = useState(false)
   const [reported, setReported] = useState(false)
+  const impressionTarget = useRef<HTMLElement | null>(null)
+
+  useEffect(() => {
+    const target = impressionTarget.current
+    if (!target || typeof IntersectionObserver === 'undefined') return
+    const observer = new IntersectionObserver(([entry]) => {
+      if (!entry.isIntersecting) return
+      observer.disconnect()
+      trackPropertyEvent(p.id, 'impression').catch(error => {
+        console.warn('[property-analytics] impression tracking failed:', error)
+      })
+    }, { threshold: 0.25 })
+    observer.observe(target)
+    return () => observer.disconnect()
+  }, [p.id])
 
   const REPORT_REASONS = [
     'Fake or scam listing',
@@ -90,7 +106,7 @@ export default function PropertyCard({ property: p, saved: initialSaved = false,
   }
 
   return (
-    <article className="group relative flex h-full min-w-0 flex-col rounded-2xl border border-slate-200 bg-white p-2 text-slate-900 shadow-sm transition-shadow duration-300 hover:shadow-lg hover:shadow-slate-200/60 motion-reduce:transition-none">
+    <article ref={impressionTarget} className="group relative flex h-full min-w-0 flex-col rounded-2xl border border-slate-200 bg-white p-2 text-slate-900 shadow-sm transition-shadow duration-300 hover:shadow-lg hover:shadow-slate-200/60 motion-reduce:transition-none">
       {/* Separate links and buttons keep save/report actions accessible. */}
       <div className="relative isolate aspect-[4/3] overflow-hidden rounded-xl bg-slate-100">
         <Link href={`/listings/${p.id}`} aria-label={p.title}

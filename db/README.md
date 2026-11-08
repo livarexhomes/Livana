@@ -22,9 +22,18 @@ and has already been run against the production database.
 | `013_drop_duplicate_landlord_trigger.sql` | Drops `on_landlord_signup` trigger + `handle_new_landlord` function — a second trigger on `auth.users` that was creating landlord rows for every new signup, bypassing the migration 010 fix |
 | `015_support_ticket_history.sql` | Adds the `support_tickets.archived` flag and index for moving preserved conversations between the active workspace and History |
 | `030_site_visitor_analytics.sql` | Records approximate unique public-site browsers and page views for the admin dashboard |
+| `036_property_analytics.sql` | Private property interaction records, daily aggregates, and admin access audit log |
 
 **To apply a new migration:** paste the SQL into the Supabase SQL Editor and run it.
 Then add the file here with the next sequential number.
+
+Deploy the property visitor API after applying migration 036:
+`supabase functions deploy property-intelligence`. Set the Edge Function secrets
+`SUPABASE_URL`, `SUPABASE_ANON_KEY`, and `SUPABASE_SERVICE_ROLE_KEY`; the service-role
+key must remain server-side.
+
+The analytics table-grant regression assertions are in
+`db/tests/036_property_analytics_security.sql`.
 
 ## Setup scripts (`*.sql`)
 

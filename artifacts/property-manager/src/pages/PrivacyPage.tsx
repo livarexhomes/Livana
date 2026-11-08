@@ -63,6 +63,7 @@ export default function PrivacyPage() {
             <p>Where payments are processed through Livarex or our approved payment partners, we may collect transaction records, payment references, and payment status information. Livarex does not store sensitive debit card details, banking credentials, or payment authentication data except where required by law or through an approved payment process.</p>
             <p className="font-semibold text-gray-800 mt-3">Technical Information</p>
             <p>When you use our Platform, we may automatically collect IP address, browser type and version, device information, operating system, date and time of access, platform usage activity, and log and diagnostic information.</p>
+            <p>Property performance analytics use a random first-party browser-session identifier and interaction timestamps; this feature does not use device fingerprinting or store IP addresses. When you are signed in, the interaction may be associated with your account so an authorized Livarex administrator can review relevant visitor activity. Landlords receive aggregate property metrics only and cannot access visitor names, contact details, profile images, or account identifiers.</p>
           </Section>
 
           <Section title="2. How We Use Your Information">
@@ -118,6 +119,7 @@ export default function PrivacyPage() {
 
           <Section title="8. Cookies and Analytics">
             <p>Livarex may use cookies and similar technologies to improve user experience, remember your preferences, analyze website performance, enhance security, and improve our services.</p>
+            <p>Landlords can view aggregate impressions, views, unique session counts, and enquiry starts for properties they own. Identifiable visitor activity is restricted to authorized administrators and access is logged. Registered users can turn off administrator support messages in their profile or account notification preferences; property interactions may still be recorded for aggregate analytics.</p>
             <p>You may configure your browser settings to refuse or manage cookies, although doing so may affect certain Platform features.</p>
           </Section>
 

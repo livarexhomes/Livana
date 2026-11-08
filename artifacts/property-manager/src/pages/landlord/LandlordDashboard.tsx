@@ -10,6 +10,7 @@ import AuthGuard from '../../components/auth/AuthGuard'
 import { createClient, getSupabaseImageUrl } from '../../lib/supabase'
 import { getListingSettings, type ListingSettings } from '../../lib/platform-settings'
 import type { Landlord } from '@/types'
+import { getLandlordAnalytics, type LandlordAnalytics } from '../../lib/property-analytics'
 
 type PropertySummary = {
   id: string
@@ -92,6 +93,20 @@ export default function LandlordDashboard() {
   const [listingRules, setListingRules] = useState<ListingSettings | null>(null)
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState('')
+  const [performance, setPerformance] = useState<LandlordAnalytics | null>(null)
+  const [performanceError, setPerformanceError] = useState('')
+
+  useEffect(() => {
+    let active = true
+    getLandlordAnalytics(7).then(result => {
+      if (active) setPerformance(result)
+    }).catch(error => {
+      if (!active) return
+      console.warn('[landlord-dashboard] property preview unavailable:', error)
+      setPerformanceError(error instanceof Error ? error.message : 'Property performance is unavailable.')
+    })
+    return () => { active = false }
+  }, [])
 
   const loadDashboard = useCallback(async () => {
     setLoading(true)
@@ -374,6 +389,42 @@ export default function LandlordDashboard() {
                     </div>
                   ))}
                 </section>
+
+                <section aria-label="Property performance preview" className="mt-4 flex flex-col gap-4 rounded-xl border border-slate-200 bg-white px-4 py-3.5 sm:flex-row sm:items-center sm:justify-between sm:px-5">
+                  <div className="grid flex-1 grid-cols-3 gap-3 sm:max-w-[480px]">
+                    {[
+                      { label: 'Views · 7 days', value: performance?.metrics.views },
+                      { label: 'Unique visitors', value: performance?.metrics.uniqueVisitors },
+                      { label: 'Enquiries', value: performance?.metrics.enquiries },
+                    ].map(metric => (
+                      <div key={metric.label} className="min-w-0">
+                        <p className="truncate text-[10px] font-medium text-slate-500">{metric.label}</p>
+                        <p className="mt-1 text-lg font-semibold tabular-nums text-[#142039]">
+                          {metric.value == null ? (performanceError ? '—' : '…') : metric.value.toLocaleString()}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="flex items-center justify-between gap-4 border-t border-slate-100 pt-3 sm:min-w-[280px] sm:justify-end sm:border-l sm:border-t-0 sm:pl-5 sm:pt-0">
+                    <div className="min-w-0 flex-1 sm:max-w-[150px]">
+                      <p className="text-[10px] font-medium text-slate-500">Top property</p>
+                      <p className="mt-1 truncate text-xs font-semibold text-slate-800">
+                        {performance?.topProperty?.title ?? (performanceError ? 'Unavailable' : 'No views yet')}
+                      </p>
+                    </div>
+                    <div className="flex h-8 w-20 shrink-0 items-end gap-1" aria-label="Property views over the last 7 days">
+                      {(performance?.timeseries.slice(-7) ?? []).map(day => {
+                        const maxViews = Math.max(1, ...(performance?.timeseries.slice(-7).map(row => row.views) ?? []))
+                        return <span key={day.date} title={`${day.views} views`} className="flex-1 rounded-t-sm bg-blue-500/80" style={{ height: `${Math.max(3, day.views / maxViews * 28)}px` }} />
+                      })}
+                      {!performance?.timeseries.length && <span className="h-px w-full bg-slate-200" />}
+                    </div>
+                    <Link href="/landlord/insights" className="shrink-0 rounded-lg border border-slate-200 px-3 py-2 text-[11px] font-semibold text-blue-700 hover:bg-blue-50">
+                      Full insights
+                    </Link>
+                  </div>
+                </section>
+                {performanceError && <p role="status" className="mt-1 text-right text-[11px] text-slate-500">Property performance is temporarily unavailable.</p>}
 
                 <div className="grid items-start gap-8 pt-6 lg:grid-cols-[minmax(0,1.55fr)_minmax(280px,.8fr)] xl:gap-10">
                   <section aria-labelledby="recent-properties-heading" className="min-w-0">

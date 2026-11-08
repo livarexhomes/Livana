@@ -14,6 +14,7 @@ import AuthGuard from '@/components/auth/AuthGuard'
 import { createClient, isSupabaseConfigured } from '@/lib/supabase'
 import type { Landlord } from '@/types'
 import { useToast } from '@/hooks/use-toast'
+import AdminSupportMessagingPreference from '../../components/account/AdminSupportMessagingPreference'
 
 const SECTIONS = [
   { id: 'notifications', label: 'Notifications', icon: Bell },
@@ -294,6 +295,7 @@ export default function LandlordSettings() {
 
               {/* ── NOTIFICATIONS ── */}
               {active === 'notifications' && (
+                <div className="space-y-5">
                 <CardSection title="Notification Preferences" desc="Choose what alerts you receive about your listings.">
                   <div className="space-y-3">
                     {NOTIF_ITEMS.map(n => {
@@ -319,6 +321,8 @@ export default function LandlordSettings() {
                     <SaveBtn onClick={saveNotifications} loading={saving} saved={saved} icon={<Save className="w-4 h-4" />} label="Save Preferences" />
                   </div>
                 </CardSection>
+                <AdminSupportMessagingPreference />
+                </div>
               )}
 
               {/* ── ACCOUNT ── */}

@@ -19,6 +19,7 @@ import { calcFeeBreakdown, getFeeConfig, type FeeConfig } from '../lib/fees'
 import { formatNaira } from '../lib/currency'
 import { subscribeListingRulesChange } from '../lib/settings-store'
 import { getPlatformSettings } from '../lib/platform-settings'
+import { trackPropertyEvent } from '../lib/property-analytics'
 import type { PropertyWithLandlord, PropertyImage, Landlord } from '@/types'
 
 
@@ -165,6 +166,13 @@ export default function PropertyDetailPage() {
     init()
   }, [id])
 
+  useEffect(() => {
+    if (!property?.id) return
+    trackPropertyEvent(property.id, 'detail_view').catch(error => {
+      console.warn('[property-analytics] detail view tracking failed:', error)
+    })
+  }, [property?.id])
+
   const images = (property?.property_images ?? [])
     .sort((a, b) => (a.is_cover ? -1 : b.is_cover ? 1 : (a.sort_order ?? 0) - (b.sort_order ?? 0)))
 
@@ -265,11 +273,25 @@ export default function PropertyDetailPage() {
     }, 3000)
   }
 
+  function trackInteraction(eventType: 'contact_admin_click' | 'enquiry_initiated') {
+    if (!property?.id) return
+    trackPropertyEvent(property.id, eventType).catch(error => {
+      console.warn(`[property-analytics] ${eventType} tracking failed:`, error)
+    })
+  }
+
+  function openEnquiryForm() {
+    if (!enquiryOpen) trackInteraction('enquiry_initiated')
+    setEnquiryOpen(true)
+    setEnquirySuccess(false)
+  }
+
   function handleWhatsAppContact() {
     if (userRole === 'guest') { navigate('/login'); return }
     const cleanNumber = supportPhone.replace(/\D/g, '')
     const message = `Hi Livarex, I'm interested in a property: ${property?.title} (ID: ${property?.id}). Can you help me with an inspection?`
     const whatsappUrl = `https://wa.me/234${cleanNumber}?text=${encodeURIComponent(message)}`
+    trackInteraction('contact_admin_click')
     window.open(whatsappUrl, '_blank')
     setContactModalOpen(false)
   }
@@ -284,7 +306,7 @@ export default function PropertyDetailPage() {
   function selectContactMethod(method: 'whatsapp' | 'form') {
     setContactMethod(method)
     if (method === 'form') {
-      setEnquiryOpen(true)
+      openEnquiryForm()
     } else {
       handleWhatsAppContact()
     }
@@ -341,7 +363,7 @@ export default function PropertyDetailPage() {
 
   function handleBookInspection() {
     if (userRole === 'guest') { navigate('/login'); return }
-    setEnquiryOpen(true)
+    openEnquiryForm()
     setEnquiryMsg(`Hi, I'd like to book an inspection for ${property?.title || 'this property'}.`)
   }
 
@@ -790,7 +812,7 @@ export default function PropertyDetailPage() {
                       </button>
                     ) : (
                       <button
-                        onClick={() => { setEnquiryOpen(!enquiryOpen); setEnquirySuccess(false); setContactModalOpen(false) }}
+                        onClick={() => { if (enquiryOpen) setEnquiryOpen(false); else openEnquiryForm(); setEnquirySuccess(false); setContactModalOpen(false) }}
                         className="flex items-center justify-center gap-2 py-3 bg-blue-600 text-white rounded-2xl font-bold text-sm hover:bg-blue-700 transition-all active:scale-[0.98]"
                       >
                         <Calendar className="w-4 h-4" />
