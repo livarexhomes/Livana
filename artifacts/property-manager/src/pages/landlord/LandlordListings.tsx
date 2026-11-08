@@ -12,8 +12,7 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
 import {
-  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator,
-  DropdownMenuTrigger,
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { createClient, getSupabaseImageUrl } from '../../lib/supabase'
 import type { Property, PropertyImage, Landlord } from '@/types'
@@ -132,7 +131,10 @@ export default function LandlordListings() {
           property.city,
           property.address,
         ].some(value => (value ?? '').toLocaleLowerCase().includes(query))
-        const matchesStatus = statusFilter === 'all' || property.status === statusFilter
+        const matchesStatus = statusFilter === 'all'
+          || (statusFilter === 'approved'
+            ? ['available', 'taken', 'coming_soon', 'under_negotiation', 'sold'].includes(property.status)
+            : property.status === statusFilter)
         const matchesType = typeFilter === 'all' || property.type === typeFilter
         return matchesSearch && matchesStatus && matchesType
       })
@@ -287,18 +289,19 @@ export default function LandlordListings() {
         <div className="flex min-w-0 flex-1 flex-col">
           <header className="flex shrink-0 items-center justify-between border-b border-slate-200/80 bg-white py-3 pl-14 pr-4 sm:px-6 lg:px-8">
             <div className="min-w-0">
-              <h1 className="text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">My Listings</h1>
+              <h1 className="text-[22px] font-bold tracking-tight text-slate-900 sm:text-2xl">My Listings</h1>
               <p className="mt-0.5 text-xs text-slate-500 sm:text-sm">
                 {properties.length} {properties.length === 1 ? 'property' : 'properties'} in your portfolio
               </p>
             </div>
             <Link
               href="/landlord/listings/new"
+              aria-label="Add listing"
               className="inline-flex min-h-10 shrink-0 items-center gap-2 rounded-xl bg-blue-600 px-3.5 py-2 text-sm font-semibold text-white shadow-sm transition duration-150 hover:-translate-y-0.5 hover:bg-blue-700 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 sm:px-4"
             >
               <Plus className="h-4 w-4" aria-hidden="true" />
+              <span className="sm:hidden">Add</span>
               <span className="hidden sm:inline">Add Listing</span>
-              <span className="sr-only sm:hidden">Add Listing</span>
             </Link>
           </header>
 
@@ -320,14 +323,19 @@ export default function LandlordListings() {
                   <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:flex lg:shrink-0">
                     <FilterSelect ariaLabel="Filter by property status" value={statusFilter} onChange={setStatusFilter}>
                       <option value="all">All statuses</option>
-                      <option value="available">Available</option>
-                      <option value="taken">Taken</option>
-                      <option value="coming_soon">Coming Soon</option>
-                      <option value="sold">Sold</option>
-                      <option value="under_negotiation">Negotiating</option>
-                      <option value="pending_review">Pending Review</option>
-                      <option value="rejected">Rejected</option>
-                      <option value="changes_requested">Changes Requested</option>
+                      <optgroup label="Availability">
+                        <option value="available">Available</option>
+                        <option value="taken">Taken</option>
+                        <option value="coming_soon">Coming Soon</option>
+                        <option value="sold">Sold</option>
+                        <option value="under_negotiation">Negotiating</option>
+                      </optgroup>
+                      <optgroup label="Moderation">
+                        <option value="approved">Approved</option>
+                        <option value="pending_review">Pending Review</option>
+                        <option value="rejected">Rejected</option>
+                        <option value="changes_requested">Changes Requested</option>
+                      </optgroup>
                     </FilterSelect>
                     <FilterSelect ariaLabel="Filter by listing type" value={typeFilter} onChange={setTypeFilter}>
                       <option value="all">All types</option>
@@ -394,7 +402,7 @@ export default function LandlordListings() {
                   aria-label="Loading listings"
                   aria-busy="true"
                   className={viewMode === 'grid'
-                    ? 'grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3'
+                    ? 'grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3'
                     : 'space-y-3'}
                 >
                   {Array.from({ length: 6 }, (_, index) => (
@@ -445,7 +453,7 @@ export default function LandlordListings() {
                   )}
                 </div>
               ) : viewMode === 'grid' ? (
-                <div className="grid grid-cols-1 gap-4 transition-all sm:grid-cols-2 xl:grid-cols-3">
+                <div className="grid grid-cols-1 gap-4 transition-all md:grid-cols-2 xl:grid-cols-3">
                   {filtered.map(property => (
                     <article
                       key={property.id}
@@ -489,7 +497,7 @@ export default function LandlordListings() {
                           </p>
                         </div>
 
-                        <div className="mt-3 flex min-h-7 items-center gap-4 text-xs text-slate-500">
+                        <div className="mt-2.5 flex min-h-6 items-center gap-4 text-xs text-slate-500">
                           {property.bedrooms != null && (
                             <span className="inline-flex items-center gap-1.5">
                               <BedDouble className="h-4 w-4 text-slate-400" aria-hidden="true" />
@@ -510,7 +518,7 @@ export default function LandlordListings() {
                           </p>
                         )}
 
-                        <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-slate-100 pt-3">
+                        <div className="mt-2.5 flex flex-wrap items-center justify-between gap-2 border-t border-slate-100 pt-2.5">
                           <ListingBadges property={property} />
                           <ListingActions
                             property={property}
@@ -578,12 +586,6 @@ export default function LandlordListings() {
                           />
                         </div>
                         <div className="flex shrink-0 items-center justify-between gap-2 border-t border-slate-100 pt-2 sm:justify-end sm:border-0 sm:pt-0">
-                          <Link
-                            href={`/listings/${property.id}`}
-                            className="inline-flex min-h-9 items-center gap-1.5 rounded-lg px-2.5 text-xs font-semibold text-blue-700 transition hover:bg-blue-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
-                          >
-                            <Eye className="h-4 w-4" aria-hidden="true" /> View details
-                          </Link>
                           <ListingActions
                             property={property}
                             deleting={deleting === property.id}
@@ -661,6 +663,14 @@ function ListingActions({
   return (
     <div className={`flex items-center gap-1 ${className}`}>
       <Link
+        href={`/listings/${property.id}`}
+        aria-label={`View ${property.title}`}
+        title="View details"
+        className="flex h-9 w-9 items-center justify-center rounded-lg text-slate-500 transition hover:bg-blue-50 hover:text-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+      >
+        <Eye className="h-4 w-4" aria-hidden="true" />
+      </Link>
+      <Link
         href={`/landlord/listings/${property.id}/edit`}
         aria-label={`Edit ${property.title}`}
         title="Edit listing"
@@ -680,17 +690,6 @@ function ListingActions({
           </button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-44 rounded-xl border-slate-200 bg-white shadow-lg">
-          <DropdownMenuItem asChild className="cursor-pointer rounded-lg">
-            <Link href={`/listings/${property.id}`}>
-              <Eye className="h-4 w-4" aria-hidden="true" /> View details
-            </Link>
-          </DropdownMenuItem>
-          <DropdownMenuItem asChild className="cursor-pointer rounded-lg">
-            <Link href={`/landlord/listings/${property.id}/edit`}>
-              <Pencil className="h-4 w-4" aria-hidden="true" /> Edit listing
-            </Link>
-          </DropdownMenuItem>
-          <DropdownMenuSeparator />
           <DropdownMenuItem
             disabled={deleting}
             onSelect={event => { event.preventDefault(); onDelete() }}
@@ -736,18 +735,11 @@ function ReviewTimeline({
   events: PropertyReviewEvent[]
   error: string
 }) {
-  const latestEvent = events[events.length - 1]
-  const currentStep = error
-    ? 'Timeline unavailable'
-    : property.status === 'pending_review'
-      ? latestEvent?.action === 'review_started' ? 'Admin is reviewing' : 'Awaiting admin review'
-      : MODERATION[property.status]?.label ?? MODERATION.approved.label
-
   return (
     <details className="group mt-2.5 min-w-0">
       <summary className="flex min-h-8 w-fit max-w-full cursor-pointer list-none items-center gap-1.5 rounded-md text-xs font-medium text-slate-500 marker:hidden transition hover:text-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500">
         <History className="h-3.5 w-3.5 shrink-0 text-blue-600" aria-hidden="true" />
-        <span className="truncate">{currentStep}</span>
+        <span className="truncate">{error ? 'Review history unavailable' : 'Review history'}</span>
         <span className="shrink-0 text-[10px] text-slate-400">· {events.length + 1}</span>
       </summary>
       <div className="mt-1.5 max-h-40 overflow-y-auto rounded-lg border border-slate-100 bg-slate-50 p-3">
@@ -778,7 +770,7 @@ function ReviewTimeline({
               <li className="relative border-l border-transparent pl-3">
                 <span className="absolute -left-[4px] top-1 h-1.5 w-1.5 rounded-full bg-amber-400" />
                 <p className="text-[11px] font-semibold text-amber-700">
-                  {latestEvent?.action === 'review_started' ? 'Admin review in progress' : 'Awaiting admin review'}
+                  {events[events.length - 1]?.action === 'review_started' ? 'Admin review in progress' : 'Awaiting admin review'}
                 </p>
               </li>
             )}
