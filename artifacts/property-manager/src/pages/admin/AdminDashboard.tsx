@@ -248,7 +248,7 @@ export default function AdminDashboard() {
                     <MobileStatCard label="Landlords" value={stats.landlords} icon={Users} />
                     <MobileStatCard label="Tenants" value={stats.tenants} icon={ShieldCheck} />
                     <MobileStatCard label="Enquiries" value={stats.enquiries} icon={MessageSquare} />
-                    <MobileStatCard label="Visitors today" value={visitorStats.today} icon={Eye} />
+                    <MobileStatCard label="Site visitors today" value={visitorStats.today} icon={Eye} />
                   </MobileStatGrid>
                 </div>
 
@@ -258,7 +258,7 @@ export default function AdminDashboard() {
                     { label: 'Landlords',      value: stats.landlords,  icon: Users,       sub: stats.pendingLandlords > 0 ? `${stats.pendingLandlords} pending` : 'all verified', color: 'purple' },
                     { label: 'Tenants',        value: stats.tenants,    icon: ShieldCheck, sub: 'registered users',          color: 'teal'   },
                     { label: 'Enquiries',      value: stats.enquiries, icon: MessageSquare, sub: `${engagementRate} per listing`, color: 'green' },
-                    { label: 'Unique Visitors', value: visitorStats.total, icon: Eye, sub: `${visitorStats.today.toLocaleString()} today`, color: 'blue' },
+                    { label: 'Site Visitors', value: visitorStats.total, icon: Eye, sub: `${visitorStats.today.toLocaleString()} today · all public pages`, color: 'blue' },
                   ].map(item => {
                     const Icon = item.icon
                     const iconBgMap: Record<string, string> = {

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
-import { ArrowUpRight, Eye, MousePointerClick, RefreshCw, Users, MessageSquare } from 'lucide-react'
+import { ArrowUpRight, Eye, Lightbulb, MousePointerClick, RefreshCw, Users, MessageSquare } from 'lucide-react'
 import LandlordSidebar from '../../components/layout/LandlordSidebar'
 import AuthGuard from '../../components/auth/AuthGuard'
 import { getLandlordAnalytics, type LandlordAnalytics } from '../../lib/property-analytics'
@@ -19,6 +19,64 @@ function number(value: number) {
 
 function percent(value: number | undefined) {
   return `${(value ?? 0).toFixed(1)}%`
+}
+
+function getRecommendations(data: LandlordAnalytics | null) {
+  if (!data) return []
+
+  const { metrics, properties } = data
+  const recommendations: { title: string; detail: string }[] = []
+
+  if (metrics.impressions === 0 && metrics.views === 0) {
+    return [{
+      title: 'Collecting property activity',
+      detail: 'No property impressions or detail views were recorded in this date range. Try a longer range, or check again after visitors browse your listings.',
+    }]
+  }
+
+  if (metrics.impressions >= 20 && (metrics.clickThroughRate ?? 0) < 5) {
+    recommendations.push({
+      title: 'Improve listing-card engagement',
+      detail: `Your properties received ${number(metrics.impressions)} impressions and ${number(metrics.views)} detail views (${percent(metrics.clickThroughRate)} click-through). Consider testing a clearer title or stronger cover photo, then compare the same date range.`,
+    })
+  }
+
+  if (metrics.views >= 10 && metrics.contactAdminClicks === 0 && metrics.enquiries === 0) {
+    recommendations.push({
+      title: 'Make the next step clearer',
+      detail: `${number(metrics.views)} detail views have not led to a recorded contact click or enquiry. Review the listing description, key property details, and enquiry instructions.`,
+    })
+  } else if (metrics.contactAdminClicks >= 3 && metrics.enquiries === 0) {
+    recommendations.push({
+      title: 'Review the contact-to-enquiry journey',
+      detail: `${number(metrics.contactAdminClicks)} Contact Admin clicks but no enquiries were recorded in this period. Check that the contact action and enquiry flow are clear and working as expected.`,
+    })
+  }
+
+  const comparable = properties
+    .filter(property => property.impressions >= 10)
+    .map(property => ({
+      ...property,
+      clickThroughRate: property.impressions ? property.views / property.impressions * 100 : 0,
+    }))
+    .sort((a, b) => b.clickThroughRate - a.clickThroughRate)
+  const best = comparable[0]
+  const lower = comparable[comparable.length - 1]
+  if (best && lower && best.id !== lower.id && best.clickThroughRate - lower.clickThroughRate >= 5) {
+    recommendations.push({
+      title: 'Use your stronger listing as a reference',
+      detail: `${best.title} has a ${percent(best.clickThroughRate)} click-through rate, compared with ${percent(lower.clickThroughRate)} for ${lower.title}. Compare how the listings present their titles and cover photos; the difference is a useful signal, not proof of cause.`,
+    })
+  }
+
+  if (metrics.enquiries > 0 && recommendations.length < 3) {
+    recommendations.push({
+      title: 'Keep enquiry-ready listings current',
+      detail: `${number(metrics.enquiries)} enquiries were started in this period. Keep availability and property details up to date, and follow up through your usual support process.`,
+    })
+  }
+
+  return recommendations.slice(0, 3)
 }
 
 export default function LandlordInsights() {
@@ -50,6 +108,7 @@ export default function LandlordInsights() {
     { label: 'Contact clicks', value: metrics?.contactAdminClicks ?? 0, icon: MousePointerClick },
     { label: 'Enquiries', value: metrics?.enquiries ?? 0, icon: MessageSquare },
   ]
+  const recommendations = getRecommendations(data)
 
   return (
     <AuthGuard require="landlord">
@@ -165,6 +224,32 @@ export default function LandlordInsights() {
                   </div>
                 </section>
               </div>
+
+              <section aria-label="Recommendations based on recorded activity" className="rounded-xl border border-blue-100 bg-blue-50/60 p-4 sm:p-5">
+                <div className="flex items-start gap-3">
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white text-blue-700">
+                    <Lightbulb className="h-4 w-4" />
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <h2 className="text-sm font-semibold text-slate-900">Recommendations</h2>
+                    <p className="mt-1 text-xs text-slate-600">Practical signals from the selected date range. These are directional, not guarantees.</p>
+                    {loading ? (
+                      <p className="mt-3 text-sm text-slate-500">Analyzing recorded activity…</p>
+                    ) : recommendations.length ? (
+                      <ul className="mt-3 grid gap-2 sm:grid-cols-2">
+                        {recommendations.map(recommendation => (
+                          <li key={recommendation.title} className="rounded-lg border border-blue-100 bg-white p-3">
+                            <h3 className="text-xs font-semibold text-slate-800">{recommendation.title}</h3>
+                            <p className="mt-1 text-xs leading-relaxed text-slate-600">{recommendation.detail}</p>
+                          </li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <p className="mt-3 text-sm text-slate-600">No clear follow-up signal in this period. Continue monitoring as more activity is recorded.</p>
+                    )}
+                  </div>
+                </div>
+              </section>
 
               <section className="overflow-hidden rounded-xl border border-slate-200 bg-white">
                 <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 px-4 py-4 sm:px-5">
