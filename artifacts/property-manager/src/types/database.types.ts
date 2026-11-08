@@ -18,13 +18,15 @@ export interface Database {
           state: string | null
           kyc_notes: string | null
           kyc_submitted_at: string | null
+          kyc_review_started_at: string | null
+          kyc_review_completed_at: string | null
           years_experience: string | null
           specialization: string | null
           website: string | null
           linkedin: string | null
           twitter: string | null
           instagram: string | null
-          status: 'not_submitted' | 'pending' | 'approved' | 'rejected' | 'suspended'
+          status: 'not_submitted' | 'pending' | 'reviewing' | 'approved' | 'rejected' | 'suspended'
           is_verified: boolean
           created_at: string
           updated_at: string
@@ -43,13 +45,15 @@ export interface Database {
           state?: string | null
           kyc_notes?: string | null
           kyc_submitted_at?: string | null
+          kyc_review_started_at?: string | null
+          kyc_review_completed_at?: string | null
           years_experience?: string | null
           specialization?: string | null
           website?: string | null
           linkedin?: string | null
           twitter?: string | null
           instagram?: string | null
-          status?: 'not_submitted' | 'pending' | 'approved' | 'rejected' | 'suspended'
+          status?: 'not_submitted' | 'pending' | 'reviewing' | 'approved' | 'rejected' | 'suspended'
           is_verified?: boolean
           created_at?: string
           updated_at?: string
@@ -68,13 +72,15 @@ export interface Database {
           state?: string | null
           kyc_notes?: string | null
           kyc_submitted_at?: string | null
+          kyc_review_started_at?: string | null
+          kyc_review_completed_at?: string | null
           years_experience?: string | null
           specialization?: string | null
           website?: string | null
           linkedin?: string | null
           twitter?: string | null
           instagram?: string | null
-          status?: 'not_submitted' | 'pending' | 'approved' | 'rejected' | 'suspended'
+          status?: 'not_submitted' | 'pending' | 'reviewing' | 'approved' | 'rejected' | 'suspended'
           is_verified?: boolean
           created_at?: string
           updated_at?: string

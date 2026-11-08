@@ -13,7 +13,7 @@ export function getRedirectForLandlord(
 
   const status = existingLandlord.status
   if (status === 'not_submitted') return '/landlord/onboarding'
-  if (status === 'pending')       return '/landlord/pending'
+  if (status === 'pending' || status === 'reviewing') return '/landlord/pending'
   if (status === 'rejected')      return '/landlord/rejected'
   if (status === 'suspended')     return '/landlord/suspended'
   return '/landlord'

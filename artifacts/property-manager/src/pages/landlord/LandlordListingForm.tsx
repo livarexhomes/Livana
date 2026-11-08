@@ -113,7 +113,7 @@ export default function LandlordListingForm() {
       // Block unapproved landlords from creating/editing listings
       if (l && l.status !== 'approved') {
         if (l.status === 'not_submitted') { navigate('/landlord/onboarding'); return }
-        if (l.status === 'pending')       { navigate('/landlord/pending');    return }
+        if (l.status === 'pending' || l.status === 'reviewing') { navigate('/landlord/pending'); return }
         if (l.status === 'rejected')      { navigate('/landlord/rejected');   return }
         if (l.status === 'suspended')     { navigate('/landlord/suspended');  return }
       }

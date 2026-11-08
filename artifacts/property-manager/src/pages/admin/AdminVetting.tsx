@@ -70,6 +70,7 @@ function getErrorMessage(error: unknown, fallback: string) {
 
 const KYC_FILTER_TABS_BASE = [
   { key: 'pending',       label: 'Pending' },
+  { key: 'reviewing',     label: 'Reviewing' },
   { key: 'approved',      label: 'Approved' },
   { key: 'rejected',      label: 'Rejected' },
   { key: 'suspended',     label: 'Suspended' },
@@ -283,7 +284,14 @@ export default function AdminVetting() {
 
   async function updateKycStatus(id: string, status: VettingStatus) {
     setKycProcessing(id)
-    const patch = { status, is_verified: status === 'approved' }
+    const now = new Date().toISOString()
+    const patch = {
+      status,
+      is_verified: status === 'approved',
+      ...(status === 'reviewing' ? { kyc_review_started_at: now, kyc_review_completed_at: null } : {}),
+      ...(status === 'pending' ? { kyc_review_started_at: null, kyc_review_completed_at: null } : {}),
+      ...(status === 'approved' || status === 'rejected' ? { kyc_review_completed_at: now } : {}),
+    }
     try {
       if (USE_MOCK_VETTING) {
         setLandlords(ls => ls.map(l => l.id === id ? { ...l, ...patch } : l))
@@ -387,13 +395,14 @@ export default function AdminVetting() {
   const displayName = user?.email ? user.email.split('@')[0] : 'Admin'
   const kycCounts = {
     pending:       landlords.filter(l => l.status === 'pending').length,
+    reviewing:     landlords.filter(l => l.status === 'reviewing').length,
     approved:      landlords.filter(l => l.status === 'approved').length,
     rejected:      landlords.filter(l => l.status === 'rejected').length,
     suspended:     landlords.filter(l => l.status === 'suspended').length,
     not_submitted: landlords.filter(l => l.status === 'not_submitted').length,
     all:           landlords.length,
   }
-  const totalPending = kycCounts.pending + listingCounts.pending_review
+  const totalPending = kycCounts.pending + kycCounts.reviewing + listingCounts.pending_review
 
   // ── Render ─────────────────────────────────────────────────────────────────
 

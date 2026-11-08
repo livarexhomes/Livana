@@ -10,6 +10,7 @@ interface FilterTab {
 
 const DOT: Record<string, string> = {
   pending: 'bg-amber-400',
+  reviewing: 'bg-blue-500',
   approved: 'bg-emerald-500',
   rejected: 'bg-red-500',
   suspended: 'bg-orange-400',

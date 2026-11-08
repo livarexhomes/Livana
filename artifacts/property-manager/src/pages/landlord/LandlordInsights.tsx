@@ -41,15 +41,10 @@ function getRecommendations(data: LandlordAnalytics | null) {
     })
   }
 
-  if (metrics.views >= 10 && metrics.contactAdminClicks === 0 && metrics.enquiries === 0) {
+  if (metrics.views >= 10 && metrics.enquiries === 0) {
     recommendations.push({
       title: 'Make the next step clearer',
-      detail: `${number(metrics.views)} detail views have not led to a recorded contact click or enquiry. Review the listing description, key property details, and enquiry instructions.`,
-    })
-  } else if (metrics.contactAdminClicks >= 3 && metrics.enquiries === 0) {
-    recommendations.push({
-      title: 'Review the contact-to-enquiry journey',
-      detail: `${number(metrics.contactAdminClicks)} Contact Admin clicks but no enquiries were recorded in this period. Check that the contact action and enquiry flow are clear and working as expected.`,
+      detail: `${number(metrics.views)} detail views have not led to a recorded enquiry. Review the listing description, key property details, and enquiry instructions.`,
     })
   }
 
@@ -105,7 +100,6 @@ export default function LandlordInsights() {
     { label: 'Impressions', value: metrics?.impressions ?? 0, icon: Eye },
     { label: 'Property views', value: metrics?.views ?? 0, icon: ArrowUpRight },
     { label: 'Unique visitors', value: metrics?.uniqueVisitors ?? 0, icon: Users },
-    { label: 'Contact clicks', value: metrics?.contactAdminClicks ?? 0, icon: MousePointerClick },
     { label: 'Enquiries', value: metrics?.enquiries ?? 0, icon: MessageSquare },
   ]
   const recommendations = getRecommendations(data)
@@ -157,7 +151,7 @@ export default function LandlordInsights() {
                 </div>
               )}
 
-              <section aria-label="Property performance metrics" className="grid grid-cols-2 gap-3 xl:grid-cols-5">
+              <section aria-label="Property performance metrics" className="grid grid-cols-2 gap-3 xl:grid-cols-4">
                 {summary.map(item => {
                   const Icon = item.icon
                   return (
@@ -264,14 +258,13 @@ export default function LandlordInsights() {
                   )}
                 </div>
                 <div className="overflow-x-auto">
-                  <table className="w-full min-w-[720px] text-left text-sm">
+                  <table className="w-full min-w-[640px] text-left text-sm">
                     <thead className="bg-slate-50 text-[11px] font-semibold uppercase tracking-wide text-slate-500">
                       <tr>
                         <th className="px-5 py-3">Property</th>
                         <th className="px-4 py-3 text-right">Impressions</th>
                         <th className="px-4 py-3 text-right">Views</th>
                         <th className="px-4 py-3 text-right">Unique</th>
-                        <th className="px-4 py-3 text-right">Contact clicks</th>
                         <th className="px-4 py-3 text-right">Enquiries</th>
                       </tr>
                     </thead>
@@ -287,12 +280,11 @@ export default function LandlordInsights() {
                           <td className="px-4 py-3 text-right tabular-nums text-slate-600">{number(property.impressions)}</td>
                           <td className="px-4 py-3 text-right tabular-nums font-semibold text-slate-900">{number(property.views)}</td>
                           <td className="px-4 py-3 text-right tabular-nums text-slate-600">{number(property.uniqueVisitors)}</td>
-                          <td className="px-4 py-3 text-right tabular-nums text-slate-600">{number(property.contactAdminClicks)}</td>
                           <td className="px-4 py-3 text-right tabular-nums text-slate-600">{number(property.enquiries)}</td>
                         </tr>
                       ))}
                       {!loading && !data?.properties.length && (
-                        <tr><td colSpan={6} className="px-5 py-10 text-center text-sm text-slate-400">No properties are available for this account.</td></tr>
+                        <tr><td colSpan={5} className="px-5 py-10 text-center text-sm text-slate-400">No properties are available for this account.</td></tr>
                       )}
                     </tbody>
                   </table>

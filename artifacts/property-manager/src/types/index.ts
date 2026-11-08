@@ -1,6 +1,6 @@
 export type PropertyType = 'sale' | 'rent' | 'lease' | 'commercial'
 export type PropertyStatus = 'available' | 'taken' | 'coming_soon' | 'under_negotiation' | 'pending_review' | 'rejected' | 'changes_requested'
-export type LandlordStatus = 'not_submitted' | 'pending' | 'approved' | 'rejected' | 'suspended'
+export type LandlordStatus = 'not_submitted' | 'pending' | 'reviewing' | 'approved' | 'rejected' | 'suspended'
 
 export interface Landlord {
   id: string
@@ -10,6 +10,8 @@ export interface Landlord {
   bio: string | null
   avatar_url: string | null
   status: LandlordStatus
+  kyc_review_started_at?: string | null
+  kyc_review_completed_at?: string | null
   is_verified: boolean
   created_at: string
   updated_at: string

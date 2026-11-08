@@ -14,6 +14,11 @@ describe('AuthCallback landlord redirect logic', () => {
     expect(redirect).toBe('/landlord/onboarding')
   })
 
+  it('returns verification timeline while a landlord application is being reviewed', () => {
+    const redirect = getRedirectForLandlord({ status: 'reviewing' }, null)
+    expect(redirect).toBe('/landlord/pending')
+  })
+
   it('returns main landlord dashboard for active landlord', () => {
     const existingLandlord = { status: 'active' }
     const redirect = getRedirectForLandlord(existingLandlord, '')

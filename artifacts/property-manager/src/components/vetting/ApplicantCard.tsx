@@ -21,7 +21,9 @@ export default function ApplicantCard({
   tabIndex,
 }: ApplicantCardProps) {
   const meta = KYC_STATUS_META[landlord.status] ?? KYC_STATUS_META.pending
-  const ago = landlord.status === 'pending' ? daysAgo(landlord.kyc_submitted_at) : null
+  const ago = landlord.status === 'reviewing'
+    ? daysAgo(landlord.kyc_review_started_at)
+    : landlord.status === 'pending' ? daysAgo(landlord.kyc_submitted_at) : null
 
   return (
     <button
@@ -66,6 +68,7 @@ export default function ApplicantCard({
             'absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-white shadow-sm',
             landlord.status === 'approved'     && 'bg-emerald-500',
             landlord.status === 'pending'     && 'bg-amber-400',
+            landlord.status === 'reviewing'   && 'bg-blue-500',
             landlord.status === 'rejected'    && 'bg-red-500',
             landlord.status === 'suspended'    && 'bg-orange-500',
             landlord.status === 'not_submitted' && 'bg-slate-300',
@@ -85,8 +88,13 @@ export default function ApplicantCard({
             {landlord.full_name}
           </p>
           {ago && (
-            <span className="shrink-0 rounded-full bg-amber-50 px-1.5 py-0.5 text-[10px] font-bold text-amber-700 ring-1 ring-amber-200/70">
-              {ago}
+            <span className={cn(
+              'shrink-0 rounded-full px-1.5 py-0.5 text-[10px] font-bold ring-1',
+              landlord.status === 'reviewing'
+                ? 'bg-blue-50 text-blue-700 ring-blue-200/70'
+                : 'bg-amber-50 text-amber-700 ring-amber-200/70',
+            )}>
+              {landlord.status === 'reviewing' ? `Reviewing ${ago}` : ago}
             </span>
           )}
         </div>

@@ -107,6 +107,7 @@ export default function MobileReviewScreen({
               'absolute -bottom-1 -right-1 h-4 w-4 rounded-full border-2 border-white shadow-sm',
               landlord.status === 'approved'     && 'bg-emerald-500',
               landlord.status === 'pending'     && 'bg-amber-400',
+              landlord.status === 'reviewing'   && 'bg-blue-500',
               landlord.status === 'rejected'    && 'bg-red-500',
               landlord.status === 'suspended'   && 'bg-orange-500',
               landlord.status === 'not_submitted' && 'bg-slate-300',
@@ -189,6 +190,9 @@ export default function MobileReviewScreen({
       {/* Sticky bottom action bar */}
       <div className="fixed inset-x-0 bottom-0 z-50 border-t border-slate-200 bg-white/95 px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 shadow-[0_-8px_32px_-12px_rgba(15,23,42,0.12)] backdrop-blur">
         <div className="grid grid-cols-4 gap-2">
+          {landlord.status === 'pending' && (
+            <ActionBtn variant="review" onClick={() => setPendingDecision({ status: 'reviewing', label: 'Start review' })} loading={busy} />
+          )}
           {landlord.status !== 'approved' && (
             <ActionBtn variant="approve" onClick={() => setPendingDecision({ status: 'approved', label: 'Approve' })} loading={busy} />
           )}
@@ -231,13 +235,14 @@ export default function MobileReviewScreen({
   )
 }
 
-type MobileActionVariant = 'approve' | 'reject' | 'suspend' | 'reset'
+type MobileActionVariant = 'approve' | 'reject' | 'suspend' | 'reset' | 'review'
 
 const MOBILE_VARIANT: Record<MobileActionVariant, { label: string; icon: typeof AlertTriangle; cls: string }> = {
   approve:  { label: 'Approve',  icon: CheckCircle,    cls: 'border-emerald-200/80 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 active:bg-emerald-200' },
   reject:  { label: 'Reject',   icon: AlertTriangle,  cls: 'border-red-200/80 bg-red-50 text-red-700 hover:bg-red-100 active:bg-red-200' },
   suspend: { label: 'Suspend',  icon: Ban,            cls: 'border-amber-200/80 bg-amber-50 text-amber-700 hover:bg-amber-100 active:bg-amber-200' },
   reset:   { label: 'Reset',    icon: Clock,          cls: 'border-slate-200/80 bg-white text-slate-600 hover:bg-slate-100 active:bg-slate-200' },
+  review:  { label: 'Start review', icon: Clock,     cls: 'border-blue-200/80 bg-blue-50 text-blue-700 hover:bg-blue-100 active:bg-blue-200' },
 }
 
 function ActionBtn({ variant, onClick, loading }: { variant: MobileActionVariant; onClick: () => void; loading: boolean }) {
@@ -266,6 +271,11 @@ function StatusBanner({ status }: { status: VettingStatus }) {
       icon: Clock,          bg: 'bg-gradient-to-br from-amber-50 to-orange-50/60 border-amber-200/80',   text: 'text-amber-700',
       iconBg: 'bg-amber-100 text-amber-600',
       title: 'Awaiting review', sub: 'Review and decide',
+    },
+    reviewing: {
+      icon: Clock,          bg: 'bg-gradient-to-br from-blue-50 to-sky-50/60 border-blue-200/80',   text: 'text-blue-700',
+      iconBg: 'bg-blue-100 text-blue-600',
+      title: 'Review in progress', sub: 'The landlord can see this status',
     },
     rejected: {
       icon: AlertTriangle,  bg: 'bg-gradient-to-br from-red-50 to-rose-50/60 border-red-200/80',     text: 'text-red-700',

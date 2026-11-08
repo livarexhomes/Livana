@@ -787,39 +787,41 @@ export default function PropertyDetailPage() {
 
                 <div className="p-5 space-y-3">
                   {/* Contact Options - WhatsApp + Request Inspection */}
-                  <div className="grid grid-cols-2 gap-2">
-                    {userRole === 'guest' ? (
-                      <button
-                        onClick={() => navigate('/login')}
-                        className="flex items-center justify-center gap-2 py-3 bg-gray-100 text-gray-400 rounded-2xl font-bold text-sm cursor-pointer hover:bg-gray-200 transition-all"
-                      >
-                        <Lock className="w-4 h-4" /> WhatsApp
-                      </button>
-                    ) : (
-                      <button
-                        onClick={handleWhatsAppContact}
-                        className="flex items-center justify-center gap-2 py-3 bg-emerald-600 text-white rounded-2xl font-bold text-sm hover:bg-emerald-700 transition-all active:scale-[0.98]"
-                      >
-                        <Phone className="w-4 h-4" /> WhatsApp
-                      </button>
-                    )}
-                    {userRole === 'guest' ? (
-                      <button
-                        onClick={() => navigate('/login')}
-                        className="flex items-center justify-center gap-2 py-3 bg-gray-100 text-gray-400 rounded-2xl font-bold text-sm cursor-pointer hover:bg-gray-200 transition-all"
-                      >
-                        <Lock className="w-4 h-4" /> Request inspection
-                      </button>
-                    ) : (
-                      <button
-                        onClick={() => { if (enquiryOpen) setEnquiryOpen(false); else openEnquiryForm(); setEnquirySuccess(false); setContactModalOpen(false) }}
-                        className="flex items-center justify-center gap-2 py-3 bg-blue-600 text-white rounded-2xl font-bold text-sm hover:bg-blue-700 transition-all active:scale-[0.98]"
-                      >
-                        <Calendar className="w-4 h-4" />
-                        {enquiryOpen ? 'Close' : 'Request inspection'}
-                      </button>
-                    )}
-                  </div>
+                  {(userRole === 'tenant' || userRole === 'guest') && (
+                    <div className="grid grid-cols-2 gap-2">
+                      {userRole === 'guest' ? (
+                        <button
+                          onClick={() => navigate('/login')}
+                          className="flex items-center justify-center gap-2 py-3 bg-gray-100 text-gray-400 rounded-2xl font-bold text-sm cursor-pointer hover:bg-gray-200 transition-all"
+                        >
+                          <Lock className="w-4 h-4" /> WhatsApp
+                        </button>
+                      ) : (
+                        <button
+                          onClick={handleWhatsAppContact}
+                          className="flex items-center justify-center gap-2 py-3 bg-emerald-600 text-white rounded-2xl font-bold text-sm hover:bg-emerald-700 transition-all active:scale-[0.98]"
+                        >
+                          <Phone className="w-4 h-4" /> WhatsApp
+                        </button>
+                      )}
+                      {userRole === 'guest' ? (
+                        <button
+                          onClick={() => navigate('/login')}
+                          className="flex items-center justify-center gap-2 py-3 bg-gray-100 text-gray-400 rounded-2xl font-bold text-sm cursor-pointer hover:bg-gray-200 transition-all"
+                        >
+                          <Lock className="w-4 h-4" /> Request inspection
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => { if (enquiryOpen) setEnquiryOpen(false); else openEnquiryForm(); setEnquirySuccess(false); setContactModalOpen(false) }}
+                          className="flex items-center justify-center gap-2 py-3 bg-blue-600 text-white rounded-2xl font-bold text-sm hover:bg-blue-700 transition-all active:scale-[0.98]"
+                        >
+                          <Calendar className="w-4 h-4" />
+                          {enquiryOpen ? 'Close' : 'Request inspection'}
+                        </button>
+                      )}
+                    </div>
+                  )}
 
                   {/* Contact Method Modal */}
                   <AnimatePresence>
@@ -991,7 +993,7 @@ export default function PropertyDetailPage() {
                       {landlord.bio && (
                         <p className="text-xs text-gray-500 leading-relaxed mt-3 pt-3 border-t border-gray-100">{landlord.bio}</p>
                       )}
-                      {landlord.whatsapp && (
+                      {landlord.whatsapp && (userRole === 'tenant' || userRole === 'guest') && (
                         <button
                           onClick={handleWhatsAppContact}
                           className={`mt-3 flex items-center gap-2 w-full py-2.5 px-3 rounded-xl text-sm font-semibold transition-colors ${
@@ -1156,20 +1158,22 @@ export default function PropertyDetailPage() {
               <Heart className={`w-4 h-4 ${saved ? 'fill-current' : ''}`} />
             </button>
           )}
-          <button
-            onClick={() => {
-              if (userRole === 'guest') {
-                navigate('/login')
-              } else {
-                openContactModal()
-                window.scrollTo({ top: 0, behavior: 'smooth' })
-              }
-            }}
-            className="px-4 py-3 bg-blue-600 text-white rounded-xl font-bold text-sm hover:bg-blue-700 transition-colors active:scale-95 shadow-sm"
-          >
-            <Phone className="w-4 h-4 inline mr-2" />
-            {userRole === 'guest' ? 'Sign in to Contact' : 'Contact'}
-          </button>
+          {(userRole === 'tenant' || userRole === 'guest') && (
+            <button
+              onClick={() => {
+                if (userRole === 'guest') {
+                  navigate('/login')
+                } else {
+                  openContactModal()
+                  window.scrollTo({ top: 0, behavior: 'smooth' })
+                }
+              }}
+              className="px-4 py-3 bg-blue-600 text-white rounded-xl font-bold text-sm hover:bg-blue-700 transition-colors active:scale-95 shadow-sm"
+            >
+              <Phone className="w-4 h-4 inline mr-2" />
+              {userRole === 'guest' ? 'Sign in to Contact' : 'Contact'}
+            </button>
+          )}
         </div>
       </div>
 

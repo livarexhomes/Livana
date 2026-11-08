@@ -29,6 +29,7 @@ const STATUS_META: Record<string, {
 }> = {
   approved:      { label: 'Approved',      bg: 'bg-emerald-50',  text: 'text-emerald-700', border: 'border-emerald-200', dot: 'bg-emerald-500' },
   pending:       { label: 'Pending KYC',   bg: 'bg-amber-50',    text: 'text-amber-700',   border: 'border-amber-200',   dot: 'bg-amber-500'   },
+  reviewing:     { label: 'Reviewing',     bg: 'bg-blue-50',     text: 'text-blue-700',    border: 'border-blue-200',    dot: 'bg-blue-500'    },
   rejected:      { label: 'Rejected',      bg: 'bg-red-50',      text: 'text-red-600',     border: 'border-red-200',     dot: 'bg-red-500'     },
   suspended:     { label: 'Suspended',     bg: 'bg-orange-50',   text: 'text-orange-700',  border: 'border-orange-200',  dot: 'bg-orange-500'  },
   not_submitted: { label: 'Not Submitted', bg: 'bg-slate-50',    text: 'text-slate-500',   border: 'border-slate-200',   dot: 'bg-slate-400'   },
@@ -196,29 +197,44 @@ export default function AdminKYC() {
 
   async function updateStatus(id: string, status: string) {
     setProcessing(id)
-    const supabase = createClient()
-    const patch: any = { status }
-    if (status === 'approved') patch.is_verified = true
-    if (status !== 'approved') patch.is_verified = false
-    await supabase.from('landlords').update(patch).eq('id', id)
-    setLandlords(ls => ls.map(l => l.id === id ? { ...l, ...patch } : l))
-    if (selected?.id === id) setSelected((s: any) => s ? { ...s, ...patch } : s)
-    setProcessing(null)
+    try {
+      const supabase = createClient()
+      const now = new Date().toISOString()
+      const patch: any = {
+        status,
+        ...(status === 'reviewing' ? { kyc_review_started_at: now, kyc_review_completed_at: null } : {}),
+        ...(status === 'pending' ? { kyc_review_started_at: null, kyc_review_completed_at: null } : {}),
+        ...(status === 'approved' || status === 'rejected' ? { kyc_review_completed_at: now } : {}),
+      }
+      if (status === 'approved') patch.is_verified = true
+      if (status !== 'approved') patch.is_verified = false
+      const { error } = await supabase.from('landlords').update(patch).eq('id', id)
+      if (error) throw error
+      setLandlords(ls => ls.map(l => l.id === id ? { ...l, ...patch } : l))
+      if (selected?.id === id) setSelected((s: any) => s ? { ...s, ...patch } : s)
+    } catch (reason) {
+      setLoadError(reason instanceof Error ? reason.message : 'Could not update landlord verification status.')
+    } finally {
+      setProcessing(null)
+    }
   }
 
   const displayName = user?.email ? user.email.split('@')[0] : 'Admin'
   const counts = {
     pending:       landlords.filter(l => l.status === 'pending').length,
+    reviewing:     landlords.filter(l => l.status === 'reviewing').length,
     approved:      landlords.filter(l => l.status === 'approved').length,
     rejected:      landlords.filter(l => l.status === 'rejected').length,
     suspended:     landlords.filter(l => l.status === 'suspended').length,
     not_submitted: landlords.filter(l => l.status === 'not_submitted').length,
     all:           landlords.length,
   }
+  const activeReviews = counts.pending + counts.reviewing
 
   const FILTER_TABS = [
     { key: 'all',           label: 'All',           count: counts.all           },
     { key: 'pending',       label: 'Pending',       count: counts.pending       },
+    { key: 'reviewing',     label: 'Reviewing',     count: counts.reviewing     },
     { key: 'approved',      label: 'Approved',      count: counts.approved      },
     { key: 'rejected',      label: 'Rejected',      count: counts.rejected      },
     { key: 'suspended',     label: 'Suspended',     count: counts.suspended     },
@@ -242,8 +258,8 @@ export default function AdminKYC() {
         <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
           <AdminHeader
             title="KYC Review"
-            subtitle={`${counts.pending} pending · ${landlords.length} landlords total`}
-            pendingCount={counts.pending}
+            subtitle={`${counts.pending} pending · ${counts.reviewing} reviewing · ${landlords.length} landlords total`}
+            pendingCount={activeReviews}
           />
 
           {loadError && (
@@ -337,8 +353,10 @@ export default function AdminKYC() {
                     {paginatedLandlords.map(l => {
                       const meta       = STATUS_META[l.status] ?? STATUS_META.pending
                       const isSelected = selected?.id === l.id
-                      const isPending  = l.status === 'pending'
-                      const ago        = isPending ? daysAgo(l.kyc_submitted_at) : null
+                      const isPending  = l.status === 'pending' || l.status === 'reviewing'
+                      const ago        = l.status === 'reviewing'
+                        ? daysAgo(l.kyc_review_started_at)
+                        : isPending ? daysAgo(l.kyc_submitted_at) : null
 
                       return (
                         <button key={l.id} type="button" aria-pressed={isSelected} onClick={() => selectLandlord(l)}
@@ -360,8 +378,12 @@ export default function AdminKYC() {
                                 </p>
                                 {/* Waiting timer for pending */}
                                 {ago && (
-                                  <span className="shrink-0 text-[10px] font-bold text-amber-600 bg-amber-50 border border-amber-100 rounded-full px-2 py-0.5 whitespace-nowrap">
-                                    {ago}
+                                  <span className={`shrink-0 text-[10px] font-bold rounded-full px-2 py-0.5 whitespace-nowrap ${
+                                    l.status === 'reviewing'
+                                      ? 'text-blue-700 bg-blue-50 border border-blue-100'
+                                      : 'text-amber-600 bg-amber-50 border border-amber-100'
+                                  }`}>
+                                    {l.status === 'reviewing' ? `Reviewing ${ago}` : ago}
                                   </span>
                                 )}
                               </div>
@@ -490,6 +512,12 @@ function ReviewPanel({
   ]
 
   const ACTIONS = [
+    {
+      key: 'review', show: landlord.status === 'pending',
+      label: 'Start review', icon: Clock,
+      cls: 'border border-blue-200 bg-blue-50 hover:bg-blue-100 text-blue-700',
+      status: 'reviewing',
+    },
     {
       key: 'approve', show: landlord.status !== 'approved',
       label: 'Approve', icon: CheckCircle,

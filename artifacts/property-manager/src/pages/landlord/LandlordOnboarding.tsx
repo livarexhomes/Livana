@@ -86,8 +86,8 @@ export default function LandlordOnboarding() {
       if (!l) { navigate('/'); return }
       // Already approved — go to dashboard
       if (l.status === 'approved') { navigate('/landlord'); return }
-      // Already submitted — show pending screen
-      if (l.status === 'pending') { setSubmitted(true); setLoading(false); return }
+      // Submitted applications use the shared verification status timeline.
+      if (l.status === 'pending' || l.status === 'reviewing') { navigate('/landlord/pending'); return }
       setLandlordId(l.id)
       setProfile({
         full_name: l.full_name ?? '',
@@ -250,6 +250,8 @@ export default function LandlordOnboarding() {
     await supabase.from('landlords').update({
       status: 'pending',
       kyc_submitted_at: new Date().toISOString(),
+      kyc_review_started_at: null,
+      kyc_review_completed_at: null,
     }).eq('id', landlordId)
 
     setOtpLoading(false)

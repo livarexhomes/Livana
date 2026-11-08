@@ -47,7 +47,7 @@ export default function LoginPage() {
     const { data: landlord } = await supabase.from('landlords').select('status').eq('user_id', user.id).single() as { data: { status: string } | null }
     if (landlord) {
       if (landlord.status === 'not_submitted') { navigate('/landlord/onboarding'); return }
-      if (landlord.status === 'pending')       { navigate('/landlord/pending');    return }
+      if (landlord.status === 'pending' || landlord.status === 'reviewing') { navigate('/landlord/pending'); return }
       if (landlord.status === 'rejected')      { navigate('/landlord/rejected');   return }
       if (landlord.status === 'suspended')     { navigate('/landlord/suspended');  return }
       navigate('/landlord')

@@ -114,6 +114,7 @@ export default function ReviewWorkspace({
                 'absolute -bottom-1 -right-1 h-4 w-4 rounded-full border-2 border-white shadow-sm',
                 landlord.status === 'approved'     && 'bg-emerald-500',
                 landlord.status === 'pending'     && 'bg-amber-400',
+                landlord.status === 'reviewing'   && 'bg-blue-500',
                 landlord.status === 'rejected'    && 'bg-red-500',
                 landlord.status === 'suspended'   && 'bg-orange-500',
                 landlord.status === 'not_submitted' && 'bg-slate-300',
@@ -202,6 +203,9 @@ export default function ReviewWorkspace({
             <div className="h-px flex-1 bg-gradient-to-r from-slate-200 via-slate-100 to-transparent" />
           </div>
           <div className="mt-3 grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:items-center">
+            {landlord.status === 'pending' && (
+              <ActionBtn variant="review" onClick={() => setPendingDecision({ status: 'reviewing', label: 'Start review' })} loading={busy} />
+            )}
             {landlord.status !== 'approved' && (
               <ActionBtn variant="approve"  onClick={() => setPendingDecision({ status: 'approved', label: 'Approve' })}   loading={busy} />
             )}
@@ -309,7 +313,7 @@ export default function ReviewWorkspace({
 }
 
 // ── Action buttons ───────────────────────────────────────────────────────────────
-type ActionVariant = 'approve' | 'reject' | 'suspend' | 'reset'
+type ActionVariant = 'approve' | 'reject' | 'suspend' | 'reset' | 'review'
 
 const ACTION_STYLES: Record<ActionVariant, {
   label: string; icon: typeof CheckCircle; cls: string
@@ -333,6 +337,11 @@ const ACTION_STYLES: Record<ActionVariant, {
     label: 'Reset',
     icon: Clock,
     cls: 'border-slate-200/80 bg-white text-slate-600 hover:bg-slate-100 hover:border-slate-300 hover:shadow-md hover:shadow-slate-500/10 active:bg-slate-200',
+  },
+  review: {
+    label: 'Start review',
+    icon: Clock,
+    cls: 'border-blue-200/80 bg-blue-50 text-blue-700 hover:bg-blue-100 hover:border-blue-300 hover:shadow-md hover:shadow-blue-500/10 active:bg-blue-200',
   },
 }
 
@@ -377,6 +386,14 @@ function StatusBanner({ status }: { status: VettingStatus }) {
       iconBg: 'bg-amber-100 text-amber-600',
       title: 'Awaiting your review',
       sub: 'Review the identity details and documents above, then make a decision.',
+    },
+    reviewing: {
+      icon: Clock,
+      bg: 'bg-gradient-to-br from-blue-50 to-sky-50/60 border-blue-200/80',
+      text: 'text-blue-700',
+      iconBg: 'bg-blue-100 text-blue-600',
+      title: 'Review in progress',
+      sub: 'The landlord can see that their application is being reviewed.',
     },
     rejected: {
       icon: AlertTriangle,
