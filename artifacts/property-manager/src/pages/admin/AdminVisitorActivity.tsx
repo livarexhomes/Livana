@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Activity, Clock3, Eye, Loader2, MessageSquare, RefreshCw, UserRound, Users, Globe2, Search, MapPin, CalendarDays, ArrowUpRight } from 'lucide-react'
-import { format } from 'date-fns'
+import { format, isValid } from 'date-fns'
 import { createClient } from '../../lib/supabase'
 import {
   getAdminVisitorActivity,
@@ -23,9 +23,92 @@ import {
 import {
   Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle,
 } from '../../components/ui/sheet'
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from '../../components/ui/select'
+import { Popover, PopoverContent, PopoverTrigger } from '../../components/ui/popover'
+import { Calendar } from '../../components/ui/calendar'
 
 type Range = 7 | 30 | 90 | 'all'
 type PropertyOption = { id: string; title: string; city: string }
+
+function parseDate(value: string) {
+  if (!value) return undefined
+  const [year, month, day] = value.split('-').map(Number)
+  const date = new Date(year, month - 1, day)
+  return isValid(date) && format(date, 'yyyy-MM-dd') === value ? date : undefined
+}
+
+function DateFilter({
+  label,
+  value,
+  min,
+  max,
+  onChange,
+}: {
+  label: string
+  value: string
+  min?: string
+  max?: string
+  onChange: (value: string) => void
+}) {
+  const [open, setOpen] = useState(false)
+  const selected = parseDate(value)
+  const minDate = parseDate(min ?? '')
+  const maxDate = parseDate(max ?? '')
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  const todayAllowed = (!minDate || today >= minDate) && (!maxDate || today <= maxDate)
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <button type="button" aria-label={`${label}${selected ? `: ${format(selected, 'PPP')}` : ''}`}
+          className="flex h-9 min-w-0 w-full items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 text-left text-xs text-slate-700 shadow-sm transition-[border-color,box-shadow] duration-150 hover:border-slate-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/25 data-[state=open]:border-blue-400">
+          <CalendarDays className="h-3.5 w-3.5 shrink-0 text-blue-600" />
+          <span className={selected ? 'truncate' : 'truncate text-slate-500'}>{selected ? format(selected, 'MMM d, yyyy') : label}</span>
+        </button>
+      </PopoverTrigger>
+      <PopoverContent align="start" className="w-auto rounded-xl border-slate-200 bg-white p-2.5 shadow-[0_14px_32px_-14px_rgba(15,23,42,0.24),0_5px_12px_-7px_rgba(15,23,42,0.14)]">
+        <Calendar
+          mode="single"
+          selected={selected}
+          defaultMonth={selected ?? today}
+          onSelect={date => {
+            if (!date) return
+            const next = format(date, 'yyyy-MM-dd')
+            if ((!min || next >= min) && (!max || next <= max)) {
+              onChange(next)
+              setOpen(false)
+            }
+          }}
+          disabled={date => Boolean((minDate && date < minDate) || (maxDate && date > maxDate))}
+          className="p-2 [--cell-size:2.25rem]"
+          classNames={{
+            month: 'animate-in fade-in-0 duration-200',
+            month_caption: 'flex h-9 w-full items-center justify-center px-9 text-sm font-semibold text-slate-900',
+            caption_label: 'select-none font-semibold',
+            button_previous: 'h-8 w-8 rounded-lg p-0 text-blue-600 transition-colors hover:bg-blue-50 hover:text-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/30',
+            button_next: 'h-8 w-8 rounded-lg p-0 text-blue-600 transition-colors hover:bg-blue-50 hover:text-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/30',
+            weekday: 'flex-1 select-none rounded-md text-[0.7rem] font-medium text-slate-400',
+            day_button: 'rounded-lg transition-colors hover:bg-blue-50 hover:text-blue-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/30',
+            today: 'rounded-md text-blue-700 ring-1 ring-inset ring-blue-200 data-[selected=true]:ring-0',
+          }}
+        />
+        <div className="flex items-center justify-between border-t border-slate-100 px-2 pt-2">
+          <button type="button" onClick={() => { onChange(''); setOpen(false) }}
+            disabled={!value} className="rounded-lg px-2.5 py-1.5 text-xs font-medium text-slate-600 transition-colors hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-40">
+            Clear
+          </button>
+          <button type="button" onClick={() => { onChange(format(today, 'yyyy-MM-dd')); setOpen(false) }}
+            disabled={!todayAllowed} className="rounded-lg bg-blue-600 px-2.5 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-blue-700 active:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-40">
+            Today
+          </button>
+        </div>
+      </PopoverContent>
+    </Popover>
+  )
+}
 
 const rangeOptions: { label: string; value: Range }[] = [
   { label: '7 days', value: 7 },
@@ -109,10 +192,10 @@ function Pagination({
       </p>
       <div className="flex gap-2">
         <button type="button" onClick={() => onPageChange(page - 1)} disabled={page <= 1}
-          className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-600 disabled:opacity-40 dark:border-slate-600 dark:text-slate-300">Previous</button>
+          className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-600 transition-[color,background-color,border-color,box-shadow] hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40 dark:border-slate-600 dark:text-slate-300">Previous</button>
         <span className="self-center text-xs tabular-nums text-slate-500 dark:text-slate-400">Page {page} of {pages}</span>
         <button type="button" onClick={() => onPageChange(page + 1)} disabled={page >= pages}
-          className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-600 disabled:opacity-40 dark:border-slate-600 dark:text-slate-300">Next</button>
+          className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-600 transition-[color,background-color,border-color,box-shadow] hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40 dark:border-slate-600 dark:text-slate-300">Next</button>
       </div>
     </nav>
   )
@@ -534,23 +617,31 @@ export default function AdminVisitorActivity() {
                   <div className="flex flex-wrap gap-2">
                     {rangeOptions.map(option => (
                       <button key={option.value} type="button" aria-pressed={range === option.value} onClick={() => { setRange(option.value); setFromDate(''); setToDate('') }}
-                        className={`rounded-lg px-3 py-2 text-xs font-semibold ${range === option.value ? 'bg-slate-900 text-white' : 'bg-slate-50 text-slate-600 hover:bg-slate-100'}`}>
+                        className={`rounded-lg px-3 py-2 text-xs font-semibold transition-[background-color,color,box-shadow,transform] duration-150 active:scale-[0.98] ${range === option.value ? 'bg-blue-600 text-white shadow-sm shadow-blue-600/20 hover:bg-blue-700' : 'bg-slate-50 text-slate-600 hover:bg-blue-50 hover:text-blue-700'}`}>
                         {option.label}
                       </button>
                     ))}
-                    <select aria-label="Filter by visitor type" value={visitorType} onChange={event => setVisitorType(event.target.value as 'all' | 'anonymous' | 'registered')}
-                      className="min-w-0 max-w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs text-slate-700">
-                      <option value="all">All visitor types</option>
-                      <option value="anonymous">Anonymous</option>
-                      <option value="registered">Registered (property activity)</option>
-                    </select>
-                    <select aria-label="Filter by property" value={propertyId} onChange={event => setPropertyId(event.target.value)}
-                      className="min-w-0 max-w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs text-slate-700 sm:w-64">
-                      <option value="">All properties</option>
-                      {properties.map(property => <option key={property.id} value={property.id}>{property.title}</option>)}
-                    </select>
+                    <Select value={visitorType} onValueChange={value => setVisitorType(value as 'all' | 'anonymous' | 'registered')}>
+                      <SelectTrigger aria-label="Filter by visitor type" className="h-9 min-w-0 max-w-full rounded-xl text-xs sm:w-auto">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All visitor types</SelectItem>
+                        <SelectItem value="anonymous">Anonymous</SelectItem>
+                        <SelectItem value="registered">Registered (property activity)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Select value={propertyId || '__all_properties__'} onValueChange={value => setPropertyId(value === '__all_properties__' ? '' : value)}>
+                      <SelectTrigger aria-label="Filter by property" className="h-9 min-w-0 max-w-full rounded-xl text-xs sm:w-64">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="__all_properties__">All properties</SelectItem>
+                        {properties.map(property => <SelectItem key={property.id} value={property.id}>{property.title}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
                   </div>
-                  <button type="button" onClick={() => void load()} disabled={loading} className="inline-flex min-h-9 items-center justify-center gap-2 rounded-lg border border-slate-200 px-3 text-xs font-semibold text-slate-600 hover:bg-slate-50 disabled:opacity-50">
+                  <button type="button" onClick={() => void load()} disabled={loading} className="inline-flex min-h-9 items-center justify-center gap-2 rounded-lg bg-blue-600 px-3 text-xs font-semibold text-white shadow-sm shadow-blue-600/20 transition-[background-color,box-shadow,transform] hover:bg-blue-700 hover:shadow-md active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50">
                     <RefreshCw className={`h-3.5 w-3.5 ${loading ? 'animate-spin' : ''}`} /> Refresh
                   </button>
                 </section>
@@ -634,57 +725,72 @@ export default function AdminVisitorActivity() {
                       <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" />
                       <input value={searchInput} onChange={event => setSearchInput(event.target.value)} maxLength={100}
                         placeholder="Search reference or page" aria-label="Search visitor records"
-                        className="h-9 w-full rounded-lg border border-slate-200 bg-white pl-9 pr-3 text-xs outline-none focus:border-blue-400" />
+                        className="h-9 w-full rounded-xl border border-slate-200 bg-white pl-9 pr-3 text-xs text-slate-800 shadow-sm transition-[border-color,box-shadow] duration-150 placeholder:text-slate-500 hover:border-slate-300 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/15" />
                     </label>
                     <label className="relative">
                       <MapPin className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" />
                       <input value={locationFilter} onChange={event => setLocationFilter(event.target.value)} maxLength={100}
                         placeholder="Location" aria-label="Filter by approximate location"
-                        className="h-9 w-full rounded-lg border border-slate-200 bg-white pl-9 pr-3 text-xs outline-none focus:border-blue-400" />
+                        className="h-9 w-full rounded-xl border border-slate-200 bg-white pl-9 pr-3 text-xs text-slate-800 shadow-sm transition-[border-color,box-shadow] duration-150 placeholder:text-slate-500 hover:border-slate-300 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/15" />
                     </label>
-                    <select aria-label="Filter by traffic source" value={trafficSource} onChange={event => setTrafficSource(event.target.value)}
-                      className="h-9 min-w-0 rounded-lg border border-slate-200 bg-white px-3 text-xs text-slate-700">
-                      <option value="">All traffic sources</option>
-                      <option value="direct">Direct</option>
-                      <option value="organic_search">Organic search</option>
-                      <option value="social">Social</option>
-                      <option value="referral">External referral</option>
-                      <option value="campaign">Campaign</option>
-                      <option value="unknown">Unknown</option>
-                    </select>
-                    <input value={pagePath} onChange={event => setPagePath(event.target.value)} maxLength={300}
-                      placeholder="Page path contains…" aria-label="Filter by page visited"
-                      className="h-9 min-w-0 rounded-lg border border-slate-200 bg-white px-3 text-xs outline-none focus:border-blue-400" />
-                    <select aria-label="Filter by website event" value={eventType} onChange={event => setEventType(event.target.value)}
-                      className="h-9 min-w-0 rounded-lg border border-slate-200 bg-white px-3 text-xs text-slate-700">
-                      <option value="">All event types</option>
-                      {Object.entries(siteEventLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
-                    </select>
-                    <select aria-label="Sort visitor records" value={sortBy} onChange={event => setSortBy(event.target.value as typeof sortBy)}
-                      className="h-9 min-w-0 rounded-lg border border-slate-200 bg-white px-3 text-xs text-slate-700">
-                      <option value="last_active">Sort: Last active</option>
-                      <option value="first_seen">Sort: First seen</option>
-                      <option value="events">Sort: Most events</option>
-                      <option value="page_views">Sort: Most page views</option>
-                    </select>
-                    <label className="flex h-9 min-w-0 items-center gap-2 rounded-lg border border-slate-200 bg-white px-3">
-                      <CalendarDays className="h-3.5 w-3.5 shrink-0 text-slate-400" />
-                      <span className="sr-only">From date</span>
-                      <input type="date" value={fromDate} max={toDate || undefined} onChange={event => setFromDate(event.target.value)}
-                        className="min-w-0 flex-1 text-xs text-slate-700 outline-none" />
+                    <label className="relative">
+                      <Globe2 className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" />
+                      <input value={pagePath} onChange={event => setPagePath(event.target.value)} maxLength={300}
+                        placeholder="Page path contains…" aria-label="Filter by page visited"
+                        className="h-9 w-full min-w-0 rounded-xl border border-slate-200 bg-white pl-9 pr-3 text-xs text-slate-800 shadow-sm transition-[border-color,box-shadow] duration-150 placeholder:text-slate-500 hover:border-slate-300 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/15" />
                     </label>
-                    <label className="flex h-9 min-w-0 items-center gap-2 rounded-lg border border-slate-200 bg-white px-3">
-                      <CalendarDays className="h-3.5 w-3.5 shrink-0 text-slate-400" />
-                      <span className="sr-only">To date</span>
-                      <input type="date" value={toDate} min={fromDate || undefined} onChange={event => setToDate(event.target.value)}
-                        className="min-w-0 flex-1 text-xs text-slate-700 outline-none" />
-                    </label>
-                    <label className="flex h-9 items-center justify-between gap-2 rounded-lg border border-slate-200 bg-white px-3 text-xs text-slate-500">
+                    <Select value={trafficSource || '__all_sources__'} onValueChange={value => setTrafficSource(value === '__all_sources__' ? '' : value)}>
+                      <SelectTrigger aria-label="Filter by traffic source" className="h-9 min-w-0 rounded-xl text-xs">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="__all_sources__">All traffic sources</SelectItem>
+                        <SelectItem value="direct">Direct</SelectItem>
+                        <SelectItem value="organic_search">Organic search</SelectItem>
+                        <SelectItem value="social">Social</SelectItem>
+                        <SelectItem value="referral">External referral</SelectItem>
+                        <SelectItem value="campaign">Campaign</SelectItem>
+                        <SelectItem value="unknown">Unknown</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Select value={eventType || '__all_events__'} onValueChange={value => setEventType(value === '__all_events__' ? '' : value)}>
+                      <SelectTrigger aria-label="Filter by website event" className="h-9 min-w-0 rounded-xl text-xs">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="__all_events__">All event types</SelectItem>
+                        {Object.entries(siteEventLabels).map(([value, label]) => <SelectItem key={value} value={value}>{label}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                    <Select value={sortBy} onValueChange={value => setSortBy(value as typeof sortBy)}>
+                      <SelectTrigger aria-label="Sort visitor records" className="h-9 min-w-0 rounded-xl text-xs">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="last_active">Sort: Last active</SelectItem>
+                        <SelectItem value="first_seen">Sort: First seen</SelectItem>
+                        <SelectItem value="events">Sort: Most events</SelectItem>
+                        <SelectItem value="page_views">Sort: Most page views</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <DateFilter label="Start date" value={fromDate} max={toDate || undefined}
+                      onChange={value => {
+                        if (!value || !toDate || value <= toDate) setFromDate(value)
+                      }} />
+                    <DateFilter label="End date" value={toDate} min={fromDate || undefined}
+                      onChange={value => {
+                        if (!value || !fromDate || value >= fromDate) setToDate(value)
+                      }} />
+                    <label className="flex h-9 min-w-0 items-center justify-between gap-2 rounded-xl border border-slate-200 bg-white px-3 text-xs text-slate-600 shadow-sm">
                       <span>Records per page</span>
-                      <select aria-label="Records per page" value={sitePageSize} onChange={event => setSitePageSize(Number(event.target.value))}
-                        className="bg-transparent font-semibold text-slate-800 outline-none">
-                        {[20, 30, 50, 100].map(size => <option key={size} value={size}>{size}</option>)}
-                      </select>
+                      <Select value={String(sitePageSize)} onValueChange={value => setSitePageSize(Number(value))}>
+                        <SelectTrigger aria-label="Records per page" className="h-7 w-[4.25rem] rounded-lg border-transparent px-2 text-xs font-semibold shadow-none focus:ring-2 focus:ring-blue-500/20">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent align="end">
+                          {[20, 30, 50, 100].map(size => <SelectItem key={size} value={String(size)}>{size}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
                     </label>
                   </div>
                   {loading ? (
