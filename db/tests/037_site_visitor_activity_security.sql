@@ -1,4 +1,4 @@
--- Run after db/migrations/037_site_visitor_activity.sql.
+-- Run after db/migrations/038_site_visitor_country.sql.
 DO $$
 DECLARE
   table_name TEXT;
@@ -34,16 +34,16 @@ BEGIN
     END IF;
   END LOOP;
 
-  IF NOT has_function_privilege(
+  IF has_function_privilege(
     'anon',
     'public.record_site_page_visit(uuid,text)',
     'EXECUTE'
-  ) OR NOT has_function_privilege(
+  ) OR has_function_privilege(
     'authenticated',
     'public.record_site_page_visit(uuid,text)',
     'EXECUTE'
   ) THEN
-    RAISE EXCEPTION 'Site page visits must be recorded only through the anonymous-safe grant';
+    RAISE EXCEPTION 'Direct site page recording must be revoked in favor of the server-side recorder';
   END IF;
 END;
 $$;

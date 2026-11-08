@@ -24,11 +24,12 @@ and has already been run against the production database.
 | `030_site_visitor_analytics.sql` | Records approximate unique public-site browsers and page views for the admin dashboard |
 | `036_property_analytics.sql` | Private property interaction records, daily aggregates, and admin access audit log |
 | `037_site_visitor_activity.sql` | Anonymous public-page history and audited admin detail access |
+| `038_site_visitor_country.sql` | Coarse hosting-edge country code for anonymous site visitors |
 
 **To apply a new migration:** paste the SQL into the Supabase SQL Editor and run it.
 Then add the file here with the next sequential number.
 
-Apply migrations 036 and 037 before deploying the property visitor API:
+Apply migrations 036, 037, and 038 before deploying the property visitor API:
 `supabase functions deploy property-intelligence`. Set the Edge Function secrets
 `SUPABASE_URL`, `SUPABASE_ANON_KEY`, and `SUPABASE_SERVICE_ROLE_KEY`; the service-role
 key must remain server-side.
@@ -37,10 +38,14 @@ Migration 037 adds page-path history for future public-site visits. Existing vis
 counts and timestamps remain available, but page paths cannot be reconstructed for
 records collected before the migration. Public-site records remain anonymous and are
 not linked to account profiles; opening a detailed record is audited.
+Migration 038 records only a country code supplied by the hosting edge; it does not
+store raw IP addresses or call a third-party geolocation service. Location remains
+unavailable when the hosting edge does not provide a country code.
 
 The analytics and visitor-activity grant regression assertions are in
 `db/tests/036_property_analytics_security.sql` and
-`db/tests/037_site_visitor_activity_security.sql`.
+`db/tests/037_site_visitor_activity_security.sql` and
+`db/tests/038_site_visitor_country_security.sql`.
 
 ## Setup scripts (`*.sql`)
 

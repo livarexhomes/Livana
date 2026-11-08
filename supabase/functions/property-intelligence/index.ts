@@ -44,6 +44,19 @@ function isUuid(value: unknown): value is string {
   return typeof value === 'string' && UUID_RE.test(value)
 }
 
+function getPositivePage(value: unknown) {
+  const page = typeof value === 'number' ? value : Number(value ?? 1)
+  if (!Number.isInteger(page) || page < 1 || page > 10_000) throw new HttpError(400, 'Invalid page number.')
+  return page
+}
+
+function getPageRange(value: unknown) {
+  const page = getPositivePage(value)
+  const pageSize = 25
+  const from = (page - 1) * pageSize
+  return { page, pageSize, from, to: from + pageSize - 1 }
+}
+
 function getServiceClient() {
   const url = Deno.env.get('SUPABASE_URL')
   const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
@@ -139,6 +152,27 @@ async function trackEvent(body: Record<string, unknown>, request: Request) {
     throw new HttpError(400, 'Could not record property interaction.')
   }
   return respond({ accepted: Boolean(data) })
+}
+
+async function trackSiteVisit(body: Record<string, unknown>, request: Request) {
+  await authenticate(request, true)
+  if (!isUuid(body.visitorId) || typeof body.pagePath !== 'string') {
+    throw new HttpError(400, 'Invalid public site visit.')
+  }
+  rateLimit(`site-visit:${body.visitorId}`, 60)
+  const rawCountry = request.headers.get('cf-ipcountry')?.toUpperCase() ?? ''
+  const countryCode = /^[A-Z]{2}$/.test(rawCountry) ? rawCountry : null
+  const service = getServiceClient()
+  const { error } = await service.rpc('record_site_page_visit', {
+    p_visitor_id: body.visitorId,
+    p_page_path: body.pagePath,
+    p_country_code: countryCode,
+  })
+  if (error) {
+    console.error('[property-intelligence] site visit recording failed:', error.message)
+    throw new HttpError(400, 'Could not record public site visit.')
+  }
+  return respond({ accepted: true, registeredAccountLinked: false, locationPrecision: countryCode ? 'country' : 'unknown' })
 }
 
 async function landlordAnalytics(body: Record<string, unknown>, user: NonNullable<Awaited<ReturnType<typeof authenticate>>>) {
@@ -265,16 +299,19 @@ async function adminActivity(body: Record<string, unknown>) {
   const service = getServiceClient()
   const days = getWindowDays(body.range)
   if (body.propertyId != null && !isUuid(body.propertyId)) throw new HttpError(400, 'Invalid property filter.')
+  const propertyPage = getPageRange(body.propertyPage)
+  const sitePage = getPageRange(body.sitePage)
 
   let query = service
     .from('property_visitor_sessions')
-    .select('id, property_id, actor_user_id, first_seen_at, last_seen_at, properties(title, city)')
+    .select('id, property_id, actor_user_id, first_seen_at, last_seen_at, properties(title, city)', { count: 'exact' })
     .order('last_seen_at', { ascending: false })
-    .limit(250)
+    .order('id', { ascending: true })
+    .range(propertyPage.from, propertyPage.to)
   if (body.propertyId) query = query.eq('property_id', String(body.propertyId))
   const since = startDate(days)
   if (since) query = query.gte('last_seen_at', since)
-  const { data: sessions, error } = await query
+  const { data: sessions, error, count: propertyVisitorCount } = await query
   if (error) {
     console.error('[property-intelligence] admin activity failed:', error.message)
     throw new HttpError(500, 'Could not load visitor activity.')
@@ -304,9 +341,10 @@ async function adminActivity(body: Record<string, unknown>) {
 
   let siteVisitorQuery = service
     .from('site_visitors')
-    .select('visitor_id, first_seen_at, last_seen_at, page_views', { count: 'exact' })
+    .select('visitor_id, first_seen_at, last_seen_at, page_views, country_code', { count: 'exact' })
     .order('last_seen_at', { ascending: false })
-    .limit(250)
+    .order('visitor_id', { ascending: true })
+    .range(sitePage.from, sitePage.to)
   if (since) siteVisitorQuery = siteVisitorQuery.gte('last_seen_at', since)
   const [
     { data: siteVisitors, error: siteVisitorError, count: siteVisitorCount },
@@ -334,23 +372,38 @@ async function adminActivity(body: Record<string, unknown>) {
       firstSeenAt: visitor.first_seen_at,
       lastSeenAt: visitor.last_seen_at,
       pageViews: Number(visitor.page_views),
+      countryCode: visitor.country_code,
     })),
+    propertyVisitorCount: propertyVisitorCount ?? 0,
+    propertyPage: propertyPage.page,
+    sitePage: sitePage.page,
+    pageSize: propertyPage.pageSize,
     siteVisitorCount: siteVisitorCount ?? 0,
     siteVisitorTotal: siteVisitorTotal ?? 0,
     siteVisitorScope: 'global',
-    limit: 250,
+    limit: propertyPage.pageSize,
   })
 }
 
 async function adminSiteVisitorProfile(body: Record<string, unknown>, adminId: string) {
   if (!isUuid(body.siteVisitorId)) throw new HttpError(400, 'Invalid site visitor record.')
+  const pageRange = getPageRange(body.page)
   const service = getServiceClient()
-  const { data: visitor, error: visitorError } = await service
+  const [
+    { data: visitor, error: visitorError },
+    { count: visitCount, error: visitCountError },
+  ] = await Promise.all([
+    service
     .from('site_visitors')
-    .select('visitor_id, first_seen_at, last_seen_at, page_views')
+    .select('visitor_id, first_seen_at, last_seen_at, page_views, country_code')
     .eq('visitor_id', body.siteVisitorId)
-    .maybeSingle()
+    .maybeSingle(),
+    service.from('site_visitor_page_events')
+      .select('id', { count: 'exact', head: true })
+      .eq('visitor_id', body.siteVisitorId),
+  ])
   if (visitorError) throw new HttpError(500, 'Could not load site visitor record.')
+  if (visitCountError) throw new HttpError(500, 'Could not count site visitor page history.')
   if (!visitor) throw new HttpError(404, 'Site visitor record not found.')
 
   const { error: logError } = await service.from('site_visitor_access_logs').insert({
@@ -364,7 +417,8 @@ async function adminSiteVisitorProfile(body: Record<string, unknown>, adminId: s
     .select('page_path, visited_at')
     .eq('visitor_id', visitor.visitor_id)
     .order('visited_at', { ascending: false })
-    .limit(200)
+    .order('id', { ascending: true })
+    .range(pageRange.from, pageRange.to)
   if (visitsError) throw new HttpError(500, 'Could not load site visitor page history.')
 
   return respond({
@@ -374,9 +428,12 @@ async function adminSiteVisitorProfile(body: Record<string, unknown>, adminId: s
       firstSeenAt: visitor.first_seen_at,
       lastSeenAt: visitor.last_seen_at,
       pageViews: Number(visitor.page_views),
+      countryCode: visitor.country_code,
     },
     visits: visits ?? [],
-    historyAvailable: (visits ?? []).length > 0,
+    visitCount: visitCount ?? 0,
+    page: pageRange.page,
+    pageSize: pageRange.pageSize,
   })
 }
 
@@ -589,6 +646,7 @@ Deno.serve(async request => {
     const body = parsed as Record<string, unknown>
     const action = body.action
     if (action === 'track') return await trackEvent(body, request)
+    if (action === 'track-site-visit') return await trackSiteVisit(body, request)
 
     const user = await authenticate(request)
     rateLimit(`${user!.id}:${String(action)}`, action === 'admin-activity' ? 60 : 30)

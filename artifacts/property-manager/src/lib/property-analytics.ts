@@ -42,6 +42,7 @@ export interface SiteVisitorActivity {
   firstSeenAt: string
   lastSeenAt: string
   pageViews: number
+  countryCode: string | null
 }
 
 export interface SiteVisitorProfile {
@@ -51,9 +52,12 @@ export interface SiteVisitorProfile {
     firstSeenAt: string
     lastSeenAt: string
     pageViews: number
+    countryCode: string | null
   }
   visits: { page_path: string; visited_at: string }[]
-  historyAvailable: boolean
+  visitCount: number
+  page: number
+  pageSize: number
 }
 
 export interface VisitorProfile {
@@ -110,23 +114,34 @@ export function getLandlordAnalytics(range: 7 | 30 | 90 | 'all', propertyId?: st
   })
 }
 
-export async function getAdminVisitorActivity(range: 7 | 30 | 90 | 'all', propertyId?: string) {
+export async function getAdminVisitorActivity(
+  range: 7 | 30 | 90 | 'all',
+  propertyId?: string,
+  propertyPage = 1,
+  sitePage = 1,
+) {
   return invoke<{
     visitors: VisitorActivity[]
     siteVisitors: SiteVisitorActivity[]
     siteVisitorCount: number
     siteVisitorTotal: number
+    propertyVisitorCount: number
+    propertyPage: number
+    sitePage: number
+    pageSize: number
     siteVisitorScope: 'global'
     limit: number
   }>({
     action: 'admin-activity',
     range,
+    propertyPage,
+    sitePage,
     ...(propertyId ? { propertyId } : {}),
   })
 }
 
-export function getAdminSiteVisitorProfile(siteVisitorId: string) {
-  return invoke<SiteVisitorProfile>({ action: 'admin-site-visitor-profile', siteVisitorId })
+export function getAdminSiteVisitorProfile(siteVisitorId: string, page = 1) {
+  return invoke<SiteVisitorProfile>({ action: 'admin-site-visitor-profile', siteVisitorId, page })
 }
 
 export function getAdminVisitorProfile(visitorRecordId: string) {
