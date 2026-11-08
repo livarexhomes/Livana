@@ -1,4 +1,5 @@
 import { createClient, isSupabaseConfigured } from './supabase'
+import { trackSiteInteraction } from './site-analytics'
 
 export type PropertyAnalyticsEvent =
   | 'impression'
@@ -43,6 +44,23 @@ export interface SiteVisitorActivity {
   lastSeenAt: string
   pageViews: number
   countryCode: string | null
+  countryName: string | null
+  city: string | null
+  region: string | null
+  trafficSource: string | null
+  referrerDomain: string | null
+  landingPage: string | null
+  lastVisitedPath: string | null
+  lastEventType: string | null
+  utmSource: string | null
+  utmMedium: string | null
+  utmCampaign: string | null
+  utmContent: string | null
+  utmTerm: string | null
+  deviceCategory: string | null
+  browser: string | null
+  operatingSystem: string | null
+  totalEvents: number
 }
 
 export interface SiteVisitorProfile {
@@ -53,11 +71,45 @@ export interface SiteVisitorProfile {
     lastSeenAt: string
     pageViews: number
     countryCode: string | null
+    countryName: string | null
+    city: string | null
+    region: string | null
+    trafficSource: string | null
+    referrerDomain: string | null
+    landingPage: string | null
+    utmSource: string | null
+    utmMedium: string | null
+    utmCampaign: string | null
+    utmContent: string | null
+    utmTerm: string | null
+    deviceCategory: string | null
+    browser: string | null
+    operatingSystem: string | null
+    totalEvents: number
   }
-  visits: { page_path: string; visited_at: string }[]
+  visits: {
+    page_path: string
+    event_type: string
+    property_id: string | null
+    property_title: string | null
+    event_metadata: { control?: string; destination?: string; filterKeys?: string[] }
+    visited_at: string
+  }[]
   visitCount: number
   page: number
   pageSize: number
+}
+
+export interface SiteVisitorFilters {
+  search?: string
+  location?: string
+  trafficSource?: string
+  pagePath?: string
+  eventType?: string
+  sortBy?: 'last_active' | 'first_seen' | 'events' | 'page_views'
+  from?: string
+  to?: string
+  visitorType?: 'all' | 'anonymous' | 'registered'
 }
 
 export interface VisitorProfile {
@@ -104,6 +156,9 @@ async function invoke<T>(body: Record<string, unknown>): Promise<T> {
 export async function trackPropertyEvent(propertyId: string, eventType: PropertyAnalyticsEvent): Promise<void> {
   if (!isSupabaseConfigured()) return
   await invoke({ action: 'track', propertyId, sessionId: getSessionId(), eventType })
+  if (eventType === 'contact_admin_click' || eventType === 'enquiry_initiated') {
+    await trackSiteInteraction(eventType, { propertyId })
+  }
 }
 
 export function getLandlordAnalytics(range: 7 | 30 | 90 | 'all', propertyId?: string) {
@@ -119,6 +174,8 @@ export async function getAdminVisitorActivity(
   propertyId?: string,
   propertyPage = 1,
   sitePage = 1,
+  sitePageSize = 20,
+  filters: SiteVisitorFilters = {},
 ) {
   return invoke<{
     visitors: VisitorActivity[]
@@ -128,6 +185,7 @@ export async function getAdminVisitorActivity(
     propertyVisitorCount: number
     propertyPage: number
     sitePage: number
+    sitePageSize: number
     pageSize: number
     siteVisitorScope: 'global'
     limit: number
@@ -136,12 +194,14 @@ export async function getAdminVisitorActivity(
     range,
     propertyPage,
     sitePage,
+    sitePageSize,
+    ...filters,
     ...(propertyId ? { propertyId } : {}),
   })
 }
 
-export function getAdminSiteVisitorProfile(siteVisitorId: string, page = 1) {
-  return invoke<SiteVisitorProfile>({ action: 'admin-site-visitor-profile', siteVisitorId, page })
+export function getAdminSiteVisitorProfile(siteVisitorId: string, page = 1, pageSize = 50) {
+  return invoke<SiteVisitorProfile>({ action: 'admin-site-visitor-profile', siteVisitorId, page, pageSize })
 }
 
 export function getAdminVisitorProfile(visitorRecordId: string) {

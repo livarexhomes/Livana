@@ -7,6 +7,7 @@ import { createClient, isSupabaseConfigured } from '../lib/supabase'
 import { isAdminUser } from '../lib/auth'
 import type { User } from '@supabase/supabase-js'
 import SEO from '../components/SEO'
+import { trackSiteInteraction } from '../lib/site-analytics'
 
 function getTenantProfileErrorMessage(error: { code?: string }) {
   if (['42703', 'PGRST204', 'PGRST205'].includes(error.code ?? '')) {
@@ -29,6 +30,9 @@ export default function LoginPage() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
+    trackSiteInteraction('login_attempt').catch(error => {
+      console.warn('[site-analytics] login interaction tracking failed:', error)
+    })
     if (!isSupabaseConfigured()) { setError('Platform is not configured yet.'); return }
     setLoading(true)
     setError('')

@@ -2,13 +2,13 @@ import { Switch, Route, Router as WouterRouter, Redirect, useLocation } from "wo
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { lazy, Suspense, useEffect } from "react";
+import { lazy, Suspense, useEffect, useRef } from "react";
 import ChatWidget from "@/components/ChatWidget";
 import LandingWhatsAppWidget from "@/components/LandingWhatsAppWidget";
 import { ThemeProvider, useTheme } from "@/lib/theme";
 import { slugToLocationLabel } from "@/lib/locationSlug";
 import LivarexLoader from "@/components/LivarexLoader";
-import { trackSiteVisit } from "@/lib/site-analytics";
+import { trackSiteInteraction, trackSiteVisit } from "@/lib/site-analytics";
 
 const HomePage = lazy(() => import("@/pages/HomePage"));
 const ListingsPage = lazy(() => import("@/pages/ListingsPage"));
@@ -84,6 +84,7 @@ const queryClient = new QueryClient();
 function Router() {
   const [location] = useLocation();
   const { resolvedDark } = useTheme();
+  const lastTrackedRoutePath = useRef<string | null>(null)
 
   // Enforce theme scoping: Admin routes respect the admin theme toggle.
   // All other routes (landlord, tenant, public) are always light.
@@ -102,18 +103,53 @@ function Router() {
 
   useEffect(() => {
     const path = location.split(/[?#]/, 1)[0]
+    const publicLandlordPage = path === '/landlord/register' || path === '/landlord/verify'
     const privateRoute = ['/admin', '/landlord', '/user'].some(
       (prefix) => path === prefix || path.startsWith(`${prefix}/`),
-    )
-    const authRoute = ['/login', '/register', '/reset-password', '/auth'].some(
+    ) && !publicLandlordPage
+    const excludedAuthRoute = ['/reset-password', '/auth'].some(
       (prefix) => path === prefix || path.startsWith(`${prefix}/`),
     )
-    if (privateRoute || authRoute) return
+    if (lastTrackedRoutePath.current === path) return
+    lastTrackedRoutePath.current = path
+    if (privateRoute || excludedAuthRoute) return
 
     trackSiteVisit(path).catch((error) => {
       console.warn('[site-analytics] visitor tracking failed:', error)
     })
   }, [location])
+
+  useEffect(() => {
+    function trackNavigation(event: MouseEvent) {
+      if (!(event.target instanceof Element)) return
+      const link = event.target.closest('a[href]')
+      if (!(link instanceof HTMLAnchorElement)) return
+      const destination = new URL(link.href, window.location.href)
+      if (destination.origin !== window.location.origin) {
+        if (destination.protocol === 'http:' || destination.protocol === 'https:') {
+          trackSiteInteraction('cta_click', { metadata: { control: 'external_link' } }).catch((error) => {
+            console.warn('[site-analytics] external action tracking failed:', error)
+          })
+        }
+        return
+      }
+      const path = destination.pathname
+      const publicLandlordPage = path === '/landlord/register' || path === '/landlord/verify'
+      const privateRoute = ['/admin', '/landlord', '/user'].some(
+        (prefix) => path === prefix || path.startsWith(`${prefix}/`),
+      ) && !publicLandlordPage
+      const excludedRoute = ['/reset-password', '/auth'].some(
+        (prefix) => path === prefix || path.startsWith(`${prefix}/`),
+      )
+      if (privateRoute || excludedRoute || path === window.location.pathname) return
+      trackSiteInteraction('navigation', { metadata: { destination: path } }).catch((error) => {
+        console.warn('[site-analytics] navigation tracking failed:', error)
+      })
+    }
+
+    document.addEventListener('click', trackNavigation)
+    return () => document.removeEventListener('click', trackNavigation)
+  }, [])
 
   return (
     <Suspense fallback={<Loading />}>

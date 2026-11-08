@@ -149,7 +149,7 @@ export default function CookiePolicyPage() {
                 colour="bg-slate-100 text-slate-600"
                 name="Analytics Cookies"
                 required={false}
-                purpose="First-party analytics use a random browser identifier to count public-site visits and record public page paths and approximate country (when provided by the hosting edge), and a separate tab-session identifier for property interactions. Public-site paths are not linked to accounts and exclude query strings and private account routes. Raw IP addresses are not stored or sent to a geolocation provider. Property activity may be associated with a signed-in account for restricted administrator support; landlords receive aggregate totals only."
+                purpose="First-party analytics use a random browser identifier to record public website page visits and selected interactions, and a separate tab-session identifier for property performance interactions. Website activity may include approximate location when supplied by the hosting edge, referring domain, campaign tags, and browser/device categories. Website journeys are not linked to accounts; credentials and private form contents are not collected. Raw IP addresses are not stored or sent to a geolocation provider. Property activity may be associated with a signed-in account for restricted administrator support; landlords receive aggregate totals only. Website event histories are retained for up to 180 days, with inactive pseudonymous visitor records removed after 180 days."
                 examples={['livarex_visitor_id', 'livarex_property_analytics_session', 'Property performance totals']}
               />
               <CookieCard

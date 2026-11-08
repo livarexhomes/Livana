@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { Link, useLocation } from '@/lib/navigation'
 import { Eye, EyeOff, Building2, CheckCircle2 } from 'lucide-react'
 import { createClient, isSupabaseConfigured } from '../../lib/supabase'
+import { trackSiteInteraction } from '../../lib/site-analytics'
 
 const FIELD = 'w-full min-h-12 px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 text-base text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:bg-white transition-colors'
 
@@ -22,6 +23,9 @@ export default function LandlordRegisterPage() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
+    trackSiteInteraction('register_attempt').catch(error => {
+      console.warn('[site-analytics] landlord registration tracking failed:', error)
+    })
     if (!isSupabaseConfigured()) { setError('Platform not configured.'); return }
     setLoading(true); setError('')
 

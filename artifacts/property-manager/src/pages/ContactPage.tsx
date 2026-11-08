@@ -26,6 +26,7 @@ import PublicNavbar from '@/components/layout/PublicNavbar'
 import Footer from '@/components/layout/Footer'
 import SEO from '@/components/SEO'
 import { createClient, isSupabaseConfigured } from '@/lib/supabase'
+import { trackSiteInteraction } from '@/lib/site-analytics'
 import {
   getPlatformSettings,
   getNotificationSettings,
@@ -223,6 +224,9 @@ export default function ContactPage() {
       setError('The contact form is temporarily unavailable. Please reach us by email, WhatsApp or phone.')
       return
     }
+    trackSiteInteraction('cta_click', { metadata: { control: 'contact_form_submit' } }).catch(error => {
+      console.warn('[site-analytics] contact action tracking failed:', error)
+    })
     submitting.current = true
     setLoading(true)
     try {

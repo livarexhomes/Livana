@@ -19,6 +19,7 @@ import PropertyCard from '../components/property/PropertyCard'
 import { createClient, isSupabaseConfigured } from '../lib/supabase'
 import type { PropertyWithLandlord } from '@/types'
 import { NIGERIAN_STATES, POPULAR_AREAS } from '../lib/nigerianStates'
+import { trackSiteInteraction } from '../lib/site-analytics'
 
 type Tab = 'Buy' | 'Rent' | 'Lease' | 'Commercial'
 const typeMap: Record<Tab, string> = { Buy: 'sale', Rent: 'rent', Lease: 'lease', Commercial: 'commercial' }
@@ -167,6 +168,9 @@ export default function HomePage() {
   function handleSearch(e?: React.FormEvent) {
     if (e) e.preventDefault()
     setOpenDropdown(null)
+    trackSiteInteraction('search', { metadata: { control: 'home_search' } }).catch(error => {
+      console.warn('[site-analytics] homepage search tracking failed:', error)
+    })
     const params = new URLSearchParams()
     params.set('type', typeMap[activeTab])
     if (searchState) params.set('city', searchState)

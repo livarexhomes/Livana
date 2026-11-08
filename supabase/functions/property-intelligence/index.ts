@@ -9,6 +9,19 @@ const corsHeaders = {
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
 const trackedEvents = new Set(['impression', 'detail_view', 'contact_admin_click', 'enquiry_initiated'])
+const siteEventTypes = new Set([
+  'page_view', 'navigation', 'search', 'filter',
+  'login_page_view', 'register_page_view', 'login_attempt', 'register_attempt',
+  'cta_click', 'property_impression', 'property_detail_view',
+  'contact_admin_click', 'enquiry_initiated',
+])
+const publicSitePages = new Set([
+  '/', '/home', '/listings', '/properties/lagos', '/properties/ogun',
+  '/how-we-verify', '/landlord/verify', '/landlord/register',
+  '/login', '/register', '/about', '/contact', '/faq', '/terms',
+  '/privacy-policy', '/cookie-policy',
+])
+const pageSizes = new Set([20, 30, 50, 100])
 const buckets = new Map<string, { startedAt: number; count: number }>()
 
 type EventType = 'impression' | 'detail_view' | 'contact_admin_click' | 'enquiry_initiated'
@@ -55,6 +68,37 @@ function getPageRange(value: unknown) {
   const pageSize = 25
   const from = (page - 1) * pageSize
   return { page, pageSize, from, to: from + pageSize - 1 }
+}
+
+function getSitePageRange(pageValue: unknown, sizeValue: unknown) {
+  const page = getPositivePage(pageValue)
+  const pageSize = typeof sizeValue === 'number' ? sizeValue : Number(sizeValue ?? 20)
+  if (!pageSizes.has(pageSize)) throw new HttpError(400, 'Invalid visitor page size.')
+  const from = (page - 1) * pageSize
+  return { page, pageSize, from, to: from + pageSize - 1 }
+}
+
+function getSiteDateRange(fromValue: unknown, toValue: unknown, days: WindowDays) {
+  const parseDate = (value: unknown) => {
+    if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+      throw new HttpError(400, 'Invalid visitor date range.')
+    }
+    const date = new Date(`${value}T00:00:00.000Z`)
+    if (Number.isNaN(date.getTime()) || date.toISOString().slice(0, 10) !== value) {
+      throw new HttpError(400, 'Invalid visitor date range.')
+    }
+    return date
+  }
+  const hasFrom = fromValue != null && fromValue !== ''
+  const hasTo = toValue != null && toValue !== ''
+  if (!hasFrom && !hasTo) {
+    return { since: startDate(days), until: null }
+  }
+  const from = hasFrom ? parseDate(fromValue) : null
+  const to = hasTo ? parseDate(toValue) : null
+  if (from && to && to < from) throw new HttpError(400, 'Invalid visitor date range.')
+  if (to) to.setUTCDate(to.getUTCDate() + 1)
+  return { since: from?.toISOString() ?? null, until: to?.toISOString() ?? null }
 }
 
 function getServiceClient() {
@@ -159,20 +203,190 @@ async function trackSiteVisit(body: Record<string, unknown>, request: Request) {
   if (!isUuid(body.visitorId) || typeof body.pagePath !== 'string') {
     throw new HttpError(400, 'Invalid public site visit.')
   }
-  rateLimit(`site-visit:${body.visitorId}`, 60)
+  const path = normalizePublicPath(body.pagePath)
+  if (!path) throw new HttpError(400, 'Invalid public site visit.')
+  const propertyId = path.match(/^\/listings\/([^/]+)$/)?.[1]
+  const eventType = path === '/login'
+    ? 'login_page_view'
+    : path === '/register' || path === '/landlord/register'
+      ? 'register_page_view'
+      : isUuid(propertyId) ? 'property_detail_view' : 'page_view'
+  return await recordSiteEvent(
+    { ...body, ...(isUuid(propertyId) ? { propertyId } : {}) },
+    request,
+    eventType,
+    path,
+    true,
+  )
+}
+
+function normalizePublicPath(value: unknown) {
+  if (typeof value !== 'string' || value.length > 300 || !value.startsWith('/') || value.startsWith('//')
+      || value.includes('?') || value.includes('#')
+      || !/^\/[A-Za-z0-9/_-]*$/.test(value)) return null
+  const recognized = publicSitePages.has(value)
+    || /^\/listings\/[0-9a-f-]{36}$/i.test(value)
+    || /^\/properties-in\/[a-z0-9-]{1,100}$/i.test(value)
+  if (!recognized) return null
+  return value
+}
+
+function cleanAttribution(value: unknown) {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return {}
+  const input = value as Record<string, unknown>
+  const output: Record<string, string> = {}
+  const domain = input.referrerDomain
+  if (typeof domain === 'string' && domain.length <= 253 && /^[a-z0-9.-]+$/i.test(domain)) {
+    output.referrer_domain = domain.toLowerCase().replace(/^www\./, '')
+  }
+  for (const [sourceKey, targetKey] of [
+    ['utm_source', 'utm_source'],
+    ['utm_medium', 'utm_medium'],
+    ['utm_campaign', 'utm_campaign'],
+    ['utm_content', 'utm_content'],
+    ['utm_term', 'utm_term'],
+  ]) {
+    const candidate = input[sourceKey]
+    if (typeof candidate === 'string' && candidate.length <= 100 && /^[\p{L}\p{N} _.-]+$/u.test(candidate)) {
+      const value = candidate.trim()
+      const digits = value.replace(/\D/g, '')
+      if (value && !(digits.length >= 7 && /^[+()\d.\-\s]+$/.test(value))) output[targetKey] = value
+    }
+  }
+  return output
+}
+
+function cleanHeaderLocation(value: string | null, maxLength: number) {
+  if (!value) return null
+  let decoded = value
+  try { decoded = decodeURIComponent(value) } catch { /* Keep the original header value. */ }
+  const clean = decoded.replace(/[\u0000-\u001f\u007f]/g, '').trim()
+  return clean && clean.length <= maxLength ? clean : null
+}
+
+function getDeviceInfo(userAgent: string) {
+  const browser = /\bEdg\//i.test(userAgent) ? 'Edge'
+    : /\b(OPR|Opera)\//i.test(userAgent) ? 'Opera'
+    : /\bFirefox\//i.test(userAgent) ? 'Firefox'
+    : /\b(Chrome|CriOS)\//i.test(userAgent) ? 'Chrome'
+    : /\b(Safari)\//i.test(userAgent) && !/\b(Chrome|CriOS)\//i.test(userAgent) ? 'Safari'
+    : null
+  const operatingSystem = /Windows/i.test(userAgent) ? 'Windows'
+    : /Android/i.test(userAgent) ? 'Android'
+    : /(iPhone|iPad|iPod)/i.test(userAgent) ? 'iOS'
+    : /Mac OS/i.test(userAgent) ? 'macOS'
+    : /Linux/i.test(userAgent) ? 'Linux'
+    : null
+  const deviceCategory = /iPad|Tablet/i.test(userAgent) ? 'tablet'
+    : /Mobile|Android|iPhone|iPod/i.test(userAgent) ? 'mobile'
+    : userAgent ? 'desktop' : 'unknown'
+  return { browser, operatingSystem, deviceCategory }
+}
+
+function classifyTrafficSource(referrerDomain: string | undefined, attribution: Record<string, string>) {
+  if (attribution.utm_source) return 'campaign'
+  if (!referrerDomain) return 'direct'
+  if (/(^|\.)((google|bing|yahoo|duckduckgo|baidu|yandex)\.)/i.test(referrerDomain)) return 'organic_search'
+  if (/(^|\.)((facebook|instagram|tiktok|linkedin|x|twitter|pinterest|youtube|whatsapp)\.)/i.test(referrerDomain)) return 'social'
+  return 'referral'
+}
+
+function sanitizeSiteMetadata(value: unknown) {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return {}
+  const input = value as Record<string, unknown>
+  const output: Record<string, string | string[]> = {}
+  if (typeof input.control === 'string' && /^[a-z0-9_-]{1,60}$/i.test(input.control)) {
+    output.control = input.control
+  }
+  if (typeof input.destination === 'string') {
+    const path = normalizePublicPath(input.destination)
+    if (path) output.destination = path
+  }
+  if (Array.isArray(input.filterKeys)) {
+    const allowed = new Set(['type', 'city', 'area', 'min_price', 'max_price', 'bedrooms', 'sort'])
+    const keys = input.filterKeys.filter((item): item is string => typeof item === 'string' && allowed.has(item)).slice(0, 10)
+    if (keys.length) output.filterKeys = [...new Set(keys)]
+  }
+  return output
+}
+
+async function recordSiteEvent(
+  body: Record<string, unknown>,
+  request: Request,
+  eventType: string,
+  pagePath: string,
+  includeAttribution: boolean,
+) {
+  if (!isUuid(body.visitorId)) throw new HttpError(400, 'Invalid site visitor.')
+  if (!siteEventTypes.has(eventType)) throw new HttpError(400, 'Invalid site visitor event.')
+  const userAgent = request.headers.get('user-agent') ?? ''
+  if (/\b(bot|crawler|spider|slurp|headless|lighthouse|pagespeed|preview)\b/i.test(userAgent)) {
+    return respond({ accepted: false, reason: 'bot' })
+  }
+  rateLimit(`site-event:${body.visitorId}`, 180)
+
+  const attribution = includeAttribution ? cleanAttribution(body.attribution) : {}
+  const referrerDomain = attribution.referrer_domain
   const rawCountry = request.headers.get('cf-ipcountry')?.toUpperCase() ?? ''
   const countryCode = /^[A-Z]{2}$/.test(rawCountry) ? rawCountry : null
+  const countryName = countryCode
+    ? new Intl.DisplayNames(['en'], { type: 'region' }).of(countryCode) ?? null
+    : null
+  const region = cleanHeaderLocation(
+    request.headers.get('cf-region'),
+    100,
+  )
+  const city = cleanHeaderLocation(
+    request.headers.get('cf-ipcity'),
+    100,
+  )
+  const device = getDeviceInfo(userAgent)
+  const propertyId = body.propertyId == null ? null : body.propertyId
+  if (propertyId !== null && !isUuid(propertyId)) throw new HttpError(400, 'Invalid property reference.')
+  const metadata = sanitizeSiteMetadata(body.metadata)
+  const eventData = {
+    country_code: countryCode,
+    country_name: countryName,
+    region,
+    city,
+    traffic_source: classifyTrafficSource(referrerDomain, attribution),
+    referrer_domain: referrerDomain ?? null,
+    landing_page: includeAttribution ? pagePath : null,
+    device_category: device.deviceCategory,
+    browser: device.browser,
+    operating_system: device.operatingSystem,
+    property_id: propertyId,
+    metadata,
+    ...attribution,
+  }
   const service = getServiceClient()
-  const { error } = await service.rpc('record_site_page_visit', {
+  const { error } = await service.rpc('record_site_visitor_event', {
     p_visitor_id: body.visitorId,
-    p_page_path: body.pagePath,
-    p_country_code: countryCode,
+    p_page_path: pagePath,
+    p_event_type: eventType,
+    p_event_data: eventData,
   })
   if (error) {
-    console.error('[property-intelligence] site visit recording failed:', error.message)
-    throw new HttpError(400, 'Could not record public site visit.')
+    console.error('[property-intelligence] site event recording failed:', error.message)
+    throw new HttpError(400, 'Could not record site visitor activity.')
   }
-  return respond({ accepted: true, registeredAccountLinked: false, locationPrecision: countryCode ? 'country' : 'unknown' })
+  return respond({
+    accepted: true,
+    registeredAccountLinked: false,
+    locationPrecision: city ? 'city' : region ? 'region' : countryCode ? 'country' : 'unknown',
+  })
+}
+
+async function trackSiteEvent(body: Record<string, unknown>, request: Request) {
+  const user = await authenticate(request, true)
+  const pagePath = normalizePublicPath(body.pagePath)
+  if (!pagePath || typeof body.eventType !== 'string' || !siteEventTypes.has(body.eventType)) {
+    throw new HttpError(400, 'Invalid public site interaction.')
+  }
+  if (user && body.propertyId != null) {
+    return respond({ accepted: false, reason: 'account-linked property activity is kept separate' })
+  }
+  return await recordSiteEvent(body, request, body.eventType, pagePath, false)
 }
 
 async function landlordAnalytics(body: Record<string, unknown>, user: NonNullable<Awaited<ReturnType<typeof authenticate>>>) {
@@ -300,7 +514,26 @@ async function adminActivity(body: Record<string, unknown>) {
   const days = getWindowDays(body.range)
   if (body.propertyId != null && !isUuid(body.propertyId)) throw new HttpError(400, 'Invalid property filter.')
   const propertyPage = getPageRange(body.propertyPage)
-  const sitePage = getPageRange(body.sitePage)
+  const sitePage = getSitePageRange(body.sitePage, body.sitePageSize)
+  const visitorType = body.visitorType ?? 'all'
+  if (visitorType !== 'all' && visitorType !== 'anonymous' && visitorType !== 'registered') {
+    throw new HttpError(400, 'Invalid visitor type filter.')
+  }
+  const textFilter = (value: unknown, name: string, maximum: number) => {
+    if (value == null || value === '') return null
+    if (typeof value !== 'string' || value.length > maximum) throw new HttpError(400, `Invalid ${name} filter.`)
+    return value.trim() || null
+  }
+  const search = textFilter(body.search, 'search', 100)
+  const location = textFilter(body.location, 'location', 100)
+  const pagePath = textFilter(body.pagePath, 'page', 300)
+  const trafficSource = textFilter(body.trafficSource, 'traffic source', 20)
+  const eventType = textFilter(body.eventType, 'event type', 40)
+  const sortBy = body.sortBy ?? 'last_active'
+  if (sortBy !== 'last_active' && sortBy !== 'first_seen' && sortBy !== 'events' && sortBy !== 'page_views') {
+    throw new HttpError(400, 'Invalid visitor sort order.')
+  }
+  const siteDates = getSiteDateRange(body.from, body.to, days)
 
   let query = service
     .from('property_visitor_sessions')
@@ -311,6 +544,8 @@ async function adminActivity(body: Record<string, unknown>) {
   if (body.propertyId) query = query.eq('property_id', String(body.propertyId))
   const since = startDate(days)
   if (since) query = query.gte('last_seen_at', since)
+  if (visitorType === 'registered') query = query.not('actor_user_id', 'is', null)
+  if (visitorType === 'anonymous') query = query.is('actor_user_id', null)
   const { data: sessions, error, count: propertyVisitorCount } = await query
   if (error) {
     console.error('[property-intelligence] admin activity failed:', error.message)
@@ -339,22 +574,31 @@ async function adminActivity(body: Record<string, unknown>) {
     eventMap.set(event.session_id, list)
   }
 
-  let siteVisitorQuery = service
-    .from('site_visitors')
-    .select('visitor_id, first_seen_at, last_seen_at, page_views, country_code', { count: 'exact' })
-    .order('last_seen_at', { ascending: false })
-    .order('visitor_id', { ascending: true })
-    .range(sitePage.from, sitePage.to)
-  if (since) siteVisitorQuery = siteVisitorQuery.gte('last_seen_at', since)
+  const siteActivityRequest = visitorType === 'registered'
+    ? Promise.resolve({ data: { items: [], total: 0 }, error: null })
+    : service.rpc('get_admin_site_visitors', {
+      p_page: sitePage.page,
+      p_page_size: sitePage.pageSize,
+      p_search: search,
+      p_location: location,
+      p_traffic_source: trafficSource,
+      p_page_path: pagePath,
+      p_event_type: eventType,
+      p_since: siteDates.since,
+      p_until: siteDates.until,
+      p_sort_by: sortBy,
+    })
   const [
-    { data: siteVisitors, error: siteVisitorError, count: siteVisitorCount },
+    { data: siteVisitorResult, error: siteVisitorError },
     { count: siteVisitorTotal, error: siteVisitorTotalError },
   ] = await Promise.all([
-    siteVisitorQuery,
+    siteActivityRequest,
     service.from('site_visitors').select('visitor_id', { count: 'exact', head: true }),
   ])
   if (siteVisitorError) throw new HttpError(500, 'Could not load site visitor activity.')
   if (siteVisitorTotalError) throw new HttpError(500, 'Could not load total site visitors.')
+  const siteVisitorItems = (siteVisitorResult as { items?: Record<string, unknown>[]; total?: number } | null)?.items ?? []
+  const siteVisitorCount = Number((siteVisitorResult as { total?: number } | null)?.total ?? 0)
 
   return respond({
     visitors: (sessions ?? []).map(session => ({
@@ -367,18 +611,36 @@ async function adminActivity(body: Record<string, unknown>) {
       lastSeenAt: session.last_seen_at,
       interactions: eventMap.get(session.id) ?? [],
     })),
-    siteVisitors: (siteVisitors ?? []).map(visitor => ({
-      id: visitor.visitor_id,
+    siteVisitors: siteVisitorItems.map(visitor => ({
+      id: visitor.id,
       firstSeenAt: visitor.first_seen_at,
       lastSeenAt: visitor.last_seen_at,
       pageViews: Number(visitor.page_views),
       countryCode: visitor.country_code,
+      countryName: visitor.country_name,
+      city: visitor.city,
+      region: visitor.region,
+      trafficSource: visitor.traffic_source,
+      referrerDomain: visitor.referrer_domain,
+      landingPage: visitor.landing_page,
+      lastVisitedPath: visitor.last_visited_path,
+      lastEventType: visitor.last_event_type,
+      utmSource: visitor.utm_source,
+      utmMedium: visitor.utm_medium,
+      utmCampaign: visitor.utm_campaign,
+      utmContent: visitor.utm_content,
+      utmTerm: visitor.utm_term,
+      deviceCategory: visitor.device_category,
+      browser: visitor.browser,
+      operatingSystem: visitor.operating_system,
+      totalEvents: Number(visitor.total_events),
     })),
     propertyVisitorCount: propertyVisitorCount ?? 0,
     propertyPage: propertyPage.page,
     sitePage: sitePage.page,
+    sitePageSize: sitePage.pageSize,
     pageSize: propertyPage.pageSize,
-    siteVisitorCount: siteVisitorCount ?? 0,
+    siteVisitorCount,
     siteVisitorTotal: siteVisitorTotal ?? 0,
     siteVisitorScope: 'global',
     limit: propertyPage.pageSize,
@@ -387,7 +649,7 @@ async function adminActivity(body: Record<string, unknown>) {
 
 async function adminSiteVisitorProfile(body: Record<string, unknown>, adminId: string) {
   if (!isUuid(body.siteVisitorId)) throw new HttpError(400, 'Invalid site visitor record.')
-  const pageRange = getPageRange(body.page)
+  const pageRange = getSitePageRange(body.page, body.pageSize ?? 50)
   const service = getServiceClient()
   const [
     { data: visitor, error: visitorError },
@@ -395,7 +657,7 @@ async function adminSiteVisitorProfile(body: Record<string, unknown>, adminId: s
   ] = await Promise.all([
     service
     .from('site_visitors')
-    .select('visitor_id, first_seen_at, last_seen_at, page_views, country_code')
+    .select('visitor_id, first_seen_at, last_seen_at, page_views, country_code, country_name, city, region, traffic_source, referrer_domain, landing_page, utm_source, utm_medium, utm_campaign, utm_content, utm_term, device_category, browser, operating_system, total_events')
     .eq('visitor_id', body.siteVisitorId)
     .maybeSingle(),
     service.from('site_visitor_page_events')
@@ -414,12 +676,18 @@ async function adminSiteVisitorProfile(body: Record<string, unknown>, adminId: s
 
   const { data: visits, error: visitsError } = await service
     .from('site_visitor_page_events')
-    .select('page_path, visited_at')
+    .select('page_path, event_type, property_id, event_metadata, visited_at')
     .eq('visitor_id', visitor.visitor_id)
-    .order('visited_at', { ascending: false })
+    .order('visited_at', { ascending: true })
     .order('id', { ascending: true })
     .range(pageRange.from, pageRange.to)
   if (visitsError) throw new HttpError(500, 'Could not load site visitor page history.')
+  const propertyIds = [...new Set((visits ?? []).map(event => event.property_id).filter((id): id is string => Boolean(id)))]
+  const { data: propertyRows, error: propertiesError } = propertyIds.length
+    ? await service.from('properties').select('id, title').in('id', propertyIds)
+    : { data: [], error: null }
+  if (propertiesError) throw new HttpError(500, 'Could not load visitor property references.')
+  const propertyTitles = new Map((propertyRows ?? []).map(property => [property.id, property.title]))
 
   return respond({
     visitor: {
@@ -429,8 +697,27 @@ async function adminSiteVisitorProfile(body: Record<string, unknown>, adminId: s
       lastSeenAt: visitor.last_seen_at,
       pageViews: Number(visitor.page_views),
       countryCode: visitor.country_code,
+      countryName: visitor.country_name,
+      city: visitor.city,
+      region: visitor.region,
+      trafficSource: visitor.traffic_source,
+      referrerDomain: visitor.referrer_domain,
+      landingPage: visitor.landing_page,
+      utmSource: visitor.utm_source,
+      utmMedium: visitor.utm_medium,
+      utmCampaign: visitor.utm_campaign,
+      utmContent: visitor.utm_content,
+      utmTerm: visitor.utm_term,
+      deviceCategory: visitor.device_category,
+      browser: visitor.browser,
+      operatingSystem: visitor.operating_system,
+      totalEvents: Number(visitor.total_events),
     },
-    visits: visits ?? [],
+    visits: (visits ?? []).map(event => ({
+      ...event,
+      property_title: event.property_id ? propertyTitles.get(event.property_id) ?? null : null,
+      event_metadata: event.event_metadata ?? {},
+    })),
     visitCount: visitCount ?? 0,
     page: pageRange.page,
     pageSize: pageRange.pageSize,
@@ -647,6 +934,7 @@ Deno.serve(async request => {
     const action = body.action
     if (action === 'track') return await trackEvent(body, request)
     if (action === 'track-site-visit') return await trackSiteVisit(body, request)
+    if (action === 'track-site-event') return await trackSiteEvent(body, request)
 
     const user = await authenticate(request)
     rateLimit(`${user!.id}:${String(action)}`, action === 'admin-activity' ? 60 : 30)

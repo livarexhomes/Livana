@@ -4,6 +4,7 @@ import { Link, useLocation } from '@/lib/navigation'
 import { ArrowRight, Eye, EyeOff, CheckCircle2, Loader2, Mail } from 'lucide-react'
 import { createClient, isSupabaseConfigured } from '../lib/supabase'
 import SEO from '../components/SEO'
+import { trackSiteInteraction } from '../lib/site-analytics'
 
 const inputClass = 'w-full min-h-12 rounded-xl border border-slate-200 bg-slate-50/70 px-4 py-3 text-base text-slate-900 placeholder:text-slate-400 outline-none transition-colors focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-500/10'
 const labelClass = 'mb-1.5 block text-sm font-semibold text-slate-700'
@@ -52,6 +53,9 @@ export default function RegisterPage() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
+    trackSiteInteraction('register_attempt').catch(error => {
+      console.warn('[site-analytics] registration interaction tracking failed:', error)
+    })
     if (!isSupabaseConfigured()) { setError('Platform is not configured yet.'); return }
     setLoading(true)
     setError('')

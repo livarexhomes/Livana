@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useState } from 'react'
-import { Activity, Clock3, Eye, Loader2, MessageSquare, RefreshCw, UserRound, Users, Globe2 } from 'lucide-react'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { Activity, Clock3, Eye, Loader2, MessageSquare, RefreshCw, UserRound, Users, Globe2, Search, MapPin, CalendarDays, ArrowUpRight } from 'lucide-react'
 import { format } from 'date-fns'
 import { createClient } from '../../lib/supabase'
 import {
@@ -7,6 +7,7 @@ import {
   getAdminVisitorProfile,
   getAdminSiteVisitorProfile,
   sendAdminVisitorMessage,
+  type SiteVisitorFilters,
   type SiteVisitorActivity,
   type SiteVisitorProfile,
   type VisitorActivity,
@@ -19,6 +20,9 @@ import { MobileSidebarProvider } from '../../components/ui/mobile-admin'
 import {
   Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle,
 } from '../../components/ui/dialog'
+import {
+  Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle,
+} from '../../components/ui/sheet'
 
 type Range = 7 | 30 | 90 | 'all'
 type PropertyOption = { id: string; title: string; city: string }
@@ -38,6 +42,22 @@ const interactionLabels: Record<string, string> = {
   enquiry_initiated: 'Enquiry started',
 }
 
+const siteEventLabels: Record<string, string> = {
+  page_view: 'Viewed page',
+  navigation: 'Navigated to page',
+  search: 'Searched properties',
+  filter: 'Applied listing filters',
+  login_page_view: 'Opened sign-in page',
+  register_page_view: 'Opened registration page',
+  login_attempt: 'Submitted sign-in form',
+  register_attempt: 'Submitted registration form',
+  cta_click: 'Clicked call to action',
+  property_impression: 'Property appeared in listings',
+  property_detail_view: 'Viewed property details',
+  contact_admin_click: 'Clicked Contact Admin',
+  enquiry_initiated: 'Started an enquiry',
+}
+
 function dateTime(value: string) {
   return format(new Date(value), 'd MMM yyyy, h:mm a')
 }
@@ -45,6 +65,29 @@ function dateTime(value: string) {
 function countryName(code: string | null) {
   if (!code) return 'Location unavailable'
   return new Intl.DisplayNames(['en'], { type: 'region' }).of(code) ?? code
+}
+
+function visitorLocation(visitor: Pick<SiteVisitorActivity, 'city' | 'region' | 'countryCode' | 'countryName'>) {
+  const place = [visitor.city, visitor.region].filter(Boolean).join(', ')
+  const country = visitor.countryName ?? countryName(visitor.countryCode)
+  return [place, country === 'Location unavailable' ? null : country].filter(Boolean).join(', ') || 'Location unavailable'
+}
+
+function pageName(path: string | null) {
+  if (!path) return 'No page recorded'
+  if (path === '/') return 'Homepage'
+  if (path === '/listings') return 'Property listings'
+  if (/^\/listings\/[^/]+$/.test(path)) return 'Property details'
+  const knownPages: Record<string, string> = {
+    '/about': 'About Livarex',
+    '/contact': 'Contact',
+    '/login': 'Sign in',
+    '/register': 'Registration',
+    '/faq': 'Frequently asked questions',
+  }
+  if (knownPages[path]) return knownPages[path]
+  const segments = path.split('/').filter(Boolean)
+  return segments[segments.length - 1]?.replace(/[-_]/g, ' ') ?? path
 }
 
 function Pagination({
@@ -59,11 +102,10 @@ function Pagination({
   onPageChange: (page: number) => void
 }) {
   const pages = Math.max(1, Math.ceil(total / pageSize))
-  if (pages <= 1) return null
   return (
     <nav aria-label="Visitor list pagination" className="flex items-center justify-between gap-3 border-t border-slate-100 px-4 py-3 dark:border-slate-700">
       <p className="text-xs text-slate-500">
-        {((page - 1) * pageSize + 1).toLocaleString()}–{Math.min(page * pageSize, total).toLocaleString()} of {total.toLocaleString()}
+        {total ? `${((page - 1) * pageSize + 1).toLocaleString()}–${Math.min(page * pageSize, total).toLocaleString()}` : '0'} of {total.toLocaleString()}
       </p>
       <div className="flex gap-2">
         <button type="button" onClick={() => onPageChange(page - 1)} disabled={page <= 1}
@@ -267,10 +309,10 @@ function SiteVisitorDialog({
   useEffect(() => {
     if (!open || !record) return
     let active = true
-    if (page === 1) setProfile(null)
+    setProfile(null)
     setError('')
     setLoading(true)
-    getAdminSiteVisitorProfile(record.id, page).then(result => {
+    getAdminSiteVisitorProfile(record.id, page, 50).then(result => {
       if (active) setProfile(result)
     }).catch(reason => {
       if (active) setError(reason instanceof Error ? reason.message : 'Could not load site visitor details.')
@@ -281,12 +323,12 @@ function SiteVisitorDialog({
   }, [open, record?.id, page])
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[92dvh] w-[calc(100%-1rem)] max-w-xl overflow-y-auto bg-white p-0 text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 sm:w-full">
-        <DialogHeader className="border-b border-slate-100 bg-white px-5 py-4 pr-12 text-left dark:border-slate-700 dark:bg-slate-900 sm:px-6">
-          <DialogTitle className="text-base text-slate-900 dark:text-slate-100">Anonymous site visitor</DialogTitle>
-          <DialogDescription className="text-slate-500 dark:text-slate-300">Only public page paths are recorded. No account identity or device fingerprint is collected.</DialogDescription>
-        </DialogHeader>
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent side="right" className="w-full max-w-2xl overflow-y-auto bg-white p-0 text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 sm:max-w-2xl">
+        <SheetHeader className="border-b border-slate-100 bg-white px-5 py-5 pr-14 text-left dark:border-slate-700 dark:bg-slate-900 sm:px-7">
+          <SheetTitle className="text-base text-slate-900 dark:text-slate-100">Anonymous visitor journey</SheetTitle>
+          <SheetDescription className="text-slate-500 dark:text-slate-300">Pseudonymous activity only. This record is not linked to an account; profile access is audited.</SheetDescription>
+        </SheetHeader>
         {loading ? (
           <div className="flex items-center justify-center gap-2 px-6 py-12 text-sm text-slate-500">
             <Loader2 className="h-4 w-4 animate-spin" /> Loading visitor details…
@@ -294,43 +336,83 @@ function SiteVisitorDialog({
         ) : error ? (
           <p role="alert" className="m-5 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">{error}</p>
         ) : profile ? (
-          <div className="space-y-5 px-5 pb-5 sm:px-6">
-            <section className="flex items-center gap-3">
+          <div className="space-y-5 px-5 pb-6 sm:px-7">
+            <section className="flex items-start gap-3 pt-1">
               <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-300">
                 <Globe2 className="h-5 w-5" />
               </div>
-              <div>
+              <div className="min-w-0 flex-1">
                 <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">{profile.visitor.label}</h2>
-                <p className="mt-0.5 text-xs text-slate-600 dark:text-slate-300">{profile.visitor.pageViews.toLocaleString()} all-time public page views</p>
-                <p className="mt-0.5 text-xs text-slate-600 dark:text-slate-300">Approximate country: {countryName(profile.visitor.countryCode)}</p>
+                <p className="mt-0.5 break-all font-mono text-[10px] text-slate-500 dark:text-slate-400">{record?.id}</p>
+                <p className="mt-1 text-xs text-slate-600 dark:text-slate-300">{visitorLocation(profile.visitor)}</p>
+              </div>
+              <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-slate-600 dark:bg-slate-800 dark:text-slate-300">Anonymous</span>
+            </section>
+            <section className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+              {[
+                ['Tracked events', profile.visitor.totalEvents],
+                ['Page views', profile.visitor.pageViews],
+                ['First seen', dateTime(profile.visitor.firstSeenAt)],
+                ['Last active', dateTime(profile.visitor.lastSeenAt)],
+              ].map(([label, value]) => (
+                <div key={String(label)} className="min-w-0 rounded-lg border border-slate-200 bg-slate-50 p-3 dark:border-slate-700 dark:bg-slate-950">
+                  <p className="text-[10px] font-medium text-slate-500 dark:text-slate-400">{label}</p>
+                  <p className="mt-1 truncate text-xs font-semibold text-slate-800 dark:text-slate-100">{typeof value === 'number' ? value.toLocaleString() : value}</p>
+                </div>
+              ))}
+            </section>
+            <section className="rounded-xl border border-slate-200 p-4 dark:border-slate-700 dark:bg-slate-950">
+              <h3 className="text-xs font-semibold text-slate-800 dark:text-slate-100">Visitor origin</h3>
+              <div className="mt-3 grid gap-3 text-xs sm:grid-cols-2">
+                <div><p className="text-slate-400">Traffic source</p><p className="mt-0.5 font-medium capitalize text-slate-700 dark:text-slate-200">{profile.visitor.trafficSource?.replace(/_/g, ' ') ?? 'Unknown'}</p></div>
+                <div><p className="text-slate-400">Referring domain</p><p className="mt-0.5 break-all font-medium text-slate-700 dark:text-slate-200">{profile.visitor.referrerDomain ?? 'Direct or unavailable'}</p></div>
+                <div><p className="text-slate-400">Landing page</p><p className="mt-0.5 break-all font-medium text-slate-700 dark:text-slate-200">{profile.visitor.landingPage ?? 'Unavailable'}</p></div>
+                <div><p className="text-slate-400">Campaign</p><p className="mt-0.5 break-words font-medium text-slate-700 dark:text-slate-200">{[profile.visitor.utmSource, profile.visitor.utmMedium, profile.visitor.utmCampaign, profile.visitor.utmContent, profile.visitor.utmTerm].filter(Boolean).join(' / ') || 'None recorded'}</p></div>
+                <div><p className="text-slate-400">Device</p><p className="mt-0.5 font-medium capitalize text-slate-700 dark:text-slate-200">{profile.visitor.deviceCategory ?? 'Unknown'}</p></div>
+                <div><p className="text-slate-400">Browser / operating system</p><p className="mt-0.5 font-medium text-slate-700 dark:text-slate-200">{[profile.visitor.browser, profile.visitor.operatingSystem].filter(Boolean).join(' / ') || 'Unknown'}</p></div>
               </div>
             </section>
             <section className="rounded-xl border border-slate-200 p-4 dark:border-slate-700 dark:bg-slate-950">
-              <p className="text-xs text-slate-600 dark:text-slate-300">First seen {dateTime(profile.visitor.firstSeenAt)}</p>
-              <p className="mt-1 text-xs text-slate-600 dark:text-slate-300">Last seen {dateTime(profile.visitor.lastSeenAt)}</p>
-              <h3 className="mt-4 border-t border-slate-100 pt-3 text-xs font-semibold text-slate-800 dark:border-slate-700 dark:text-slate-100">Public page history</h3>
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <h3 className="text-xs font-semibold text-slate-800 dark:text-slate-100">Website journey</h3>
+                  <p className="mt-1 text-[11px] text-slate-500 dark:text-slate-400">{profile.visitCount.toLocaleString()} retained events · chronological</p>
+                </div>
+                <span className="text-[10px] text-slate-400">Page {profile.page} · {Math.max(1, Math.ceil(profile.visitCount / profile.pageSize))}</span>
+              </div>
               {profile.visitCount > 0 ? (
                 <>
-                <ol className="mt-2 max-h-72 space-y-2 overflow-y-auto">
+                <ol className="mt-4 space-y-0">
                   {profile.visits.map((visit, index) => (
-                    <li key={`${visit.visited_at}-${index}`} className="flex items-start justify-between gap-3 text-xs">
-                      <span className="break-all font-medium text-slate-700 dark:text-slate-200">{visit.page_path}</span>
-                      <time className="shrink-0 text-slate-500 dark:text-slate-400">{dateTime(visit.visited_at)}</time>
+                    <li key={`${visit.visited_at}-${index}`} className="relative flex gap-3 pb-5 last:pb-0">
+                      <span className="absolute bottom-0 left-[9px] top-5 w-px bg-slate-200 last:hidden dark:bg-slate-700" />
+                      <span className="relative mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-blue-200 bg-blue-50 text-blue-700 dark:border-blue-900 dark:bg-blue-950 dark:text-blue-300">
+                        <Activity className="h-2.5 w-2.5" />
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex flex-col justify-between gap-1 sm:flex-row sm:items-start">
+                          <p className="text-xs font-semibold text-slate-800 dark:text-slate-100">{siteEventLabels[visit.event_type] ?? visit.event_type}</p>
+                          <time className="shrink-0 text-[10px] text-slate-500 dark:text-slate-400">{dateTime(visit.visited_at)}</time>
+                        </div>
+                        <p className="mt-1 text-[11px] font-medium capitalize text-slate-600 dark:text-slate-300">{pageName(visit.page_path)} <span className="font-normal text-slate-400">· {visit.page_path}</span></p>
+                        {visit.property_id && <p className="mt-1 text-[11px] text-blue-700 dark:text-blue-300">Property: {visit.property_title ?? visit.property_id}</p>}
+                        {visit.event_metadata.control && <p className="mt-1 text-[11px] text-slate-500 dark:text-slate-400">Action: {visit.event_metadata.control.replace(/_/g, ' ')}</p>}
+                        {visit.event_metadata.destination && <p className="mt-1 flex items-center gap-1 text-[11px] text-slate-500 dark:text-slate-400"><ArrowUpRight className="h-3 w-3" />{visit.event_metadata.destination}</p>}
+                        {Array.isArray(visit.event_metadata.filterKeys) && visit.event_metadata.filterKeys.length > 0 && <p className="mt-1 text-[11px] text-slate-500 dark:text-slate-400">Filters: {visit.event_metadata.filterKeys.join(', ')}</p>}
+                      </div>
                     </li>
                   ))}
                 </ol>
                 <Pagination page={profile.page} total={profile.visitCount} pageSize={profile.pageSize} onPageChange={setPage} />
                 </>
               ) : (
-                <p className="mt-2 text-xs leading-relaxed text-slate-600 dark:text-slate-300">
-                  No page-path history is available for this record. Paths are collected only after the visitor activity update is deployed.
-                </p>
+                <p className="mt-3 text-xs leading-relaxed text-slate-600 dark:text-slate-300">No website events are available yet. Events are collected after the latest tracking deployment.</p>
               )}
             </section>
           </div>
         ) : null}
-      </DialogContent>
-    </Dialog>
+      </SheetContent>
+    </Sheet>
   )
 }
 
@@ -339,6 +421,17 @@ export default function AdminVisitorActivity() {
   const [propertyId, setPropertyId] = useState('')
   const [propertyPage, setPropertyPage] = useState(1)
   const [sitePage, setSitePage] = useState(1)
+  const [sitePageSize, setSitePageSize] = useState(20)
+  const [visitorType, setVisitorType] = useState<'all' | 'anonymous' | 'registered'>('all')
+  const [searchInput, setSearchInput] = useState('')
+  const [search, setSearch] = useState('')
+  const [locationFilter, setLocationFilter] = useState('')
+  const [trafficSource, setTrafficSource] = useState('')
+  const [pagePath, setPagePath] = useState('')
+  const [eventType, setEventType] = useState('')
+  const [sortBy, setSortBy] = useState<'last_active' | 'first_seen' | 'events' | 'page_views'>('last_active')
+  const [fromDate, setFromDate] = useState('')
+  const [toDate, setToDate] = useState('')
   const [properties, setProperties] = useState<PropertyOption[]>([])
   const [visitors, setVisitors] = useState<VisitorActivity[]>([])
   const [siteVisitors, setSiteVisitors] = useState<SiteVisitorActivity[]>([])
@@ -352,28 +445,53 @@ export default function AdminVisitorActivity() {
   const [selectedSiteVisitor, setSelectedSiteVisitor] = useState<SiteVisitorActivity | null>(null)
   const [siteVisitorOpen, setSiteVisitorOpen] = useState(false)
   const [adminEmail, setAdminEmail] = useState<string>()
+  const loadRequest = useRef(0)
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => setSearch(searchInput.trim()), 300)
+    return () => window.clearTimeout(timer)
+  }, [searchInput])
 
   const load = useCallback(async () => {
+    const requestId = ++loadRequest.current
     setLoading(true)
     setError('')
     try {
-      const result = await getAdminVisitorActivity(range, propertyId || undefined, propertyPage, sitePage)
+      const filters: SiteVisitorFilters = {
+        search,
+        location: locationFilter,
+        trafficSource,
+        pagePath,
+        eventType,
+        sortBy,
+        from: fromDate,
+        to: toDate,
+        visitorType,
+      }
+      const result = await getAdminVisitorActivity(
+        range, propertyId || undefined, propertyPage, sitePage, sitePageSize, filters,
+      )
+      if (requestId !== loadRequest.current) return
       setVisitors(result.visitors)
       setSiteVisitors(result.siteVisitors)
       setSiteVisitorCount(result.siteVisitorCount)
       setSiteVisitorTotal(result.siteVisitorTotal)
       setPropertyVisitorCount(result.propertyVisitorCount)
     } catch (reason) {
+      if (requestId !== loadRequest.current) return
       setError(reason instanceof Error ? reason.message : 'Could not load visitor activity.')
     } finally {
-      setLoading(false)
+      if (requestId === loadRequest.current) setLoading(false)
     }
-  }, [range, propertyId, propertyPage, sitePage])
+  }, [range, propertyId, propertyPage, sitePage, sitePageSize, search, locationFilter, trafficSource, pagePath, eventType, sortBy, fromDate, toDate, visitorType])
 
   useEffect(() => {
     setPropertyPage(1)
+  }, [range, propertyId, visitorType])
+
+  useEffect(() => {
     setSitePage(1)
-  }, [range, propertyId])
+  }, [range, sitePageSize, search, locationFilter, trafficSource, pagePath, eventType, sortBy, fromDate, toDate, visitorType])
 
   useEffect(() => {
     const supabase = createClient()
@@ -415,11 +533,17 @@ export default function AdminVisitorActivity() {
                 <section className="flex flex-col gap-3 rounded-xl border border-slate-200 bg-white p-3 sm:flex-row sm:items-center sm:justify-between">
                   <div className="flex flex-wrap gap-2">
                     {rangeOptions.map(option => (
-                      <button key={option.value} type="button" aria-pressed={range === option.value} onClick={() => setRange(option.value)}
+                      <button key={option.value} type="button" aria-pressed={range === option.value} onClick={() => { setRange(option.value); setFromDate(''); setToDate('') }}
                         className={`rounded-lg px-3 py-2 text-xs font-semibold ${range === option.value ? 'bg-slate-900 text-white' : 'bg-slate-50 text-slate-600 hover:bg-slate-100'}`}>
                         {option.label}
                       </button>
                     ))}
+                    <select aria-label="Filter by visitor type" value={visitorType} onChange={event => setVisitorType(event.target.value as 'all' | 'anonymous' | 'registered')}
+                      className="min-w-0 max-w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs text-slate-700">
+                      <option value="all">All visitor types</option>
+                      <option value="anonymous">Anonymous</option>
+                      <option value="registered">Registered (property activity)</option>
+                    </select>
                     <select aria-label="Filter by property" value={propertyId} onChange={event => setPropertyId(event.target.value)}
                       className="min-w-0 max-w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs text-slate-700 sm:w-64">
                       <option value="">All properties</option>
@@ -449,7 +573,7 @@ export default function AdminVisitorActivity() {
                   })}
                 </section>
                 <p className="text-xs text-slate-500">
-                  Site visitors are anonymous browser records, not identified people. Their count is site-wide and is not affected by the property filter.
+                  Website journeys remain pseudonymous and are never linked to signed-in identities. Registered records appear only in the separate property interaction list.
                 </p>
 
                 {error && <p role="alert" className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">{error}</p>}
@@ -496,39 +620,142 @@ export default function AdminVisitorActivity() {
                 <section className="overflow-hidden rounded-xl border border-slate-200 bg-white">
                   <div className="flex items-center justify-between gap-3 border-b border-slate-100 px-4 py-3.5">
                     <div>
-                      <h2 className="text-sm font-semibold text-slate-900">Site-wide visitor activity</h2>
+                      <h2 className="text-sm font-semibold text-slate-900">Website visitor records</h2>
                       <p className="mt-0.5 text-xs text-slate-500">
-                        {siteVisitorCount.toLocaleString()} anonymous browser records in this date range · {siteVisitorTotal.toLocaleString()} all time · 25 per page
+                        {siteVisitorCount.toLocaleString()} matching records · {siteVisitorTotal.toLocaleString()} retained overall
                       </p>
                     </div>
                     <span className="hidden items-center gap-1 text-[10px] text-slate-400 sm:inline-flex">
                       <Eye className="h-3.5 w-3.5" /> Detail access is audited
                     </span>
                   </div>
+                  <div className="grid gap-2 border-b border-slate-100 bg-slate-50/70 p-3 sm:grid-cols-2 lg:grid-cols-4">
+                    <label className="relative sm:col-span-2 lg:col-span-1">
+                      <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" />
+                      <input value={searchInput} onChange={event => setSearchInput(event.target.value)} maxLength={100}
+                        placeholder="Search reference or page" aria-label="Search visitor records"
+                        className="h-9 w-full rounded-lg border border-slate-200 bg-white pl-9 pr-3 text-xs outline-none focus:border-blue-400" />
+                    </label>
+                    <label className="relative">
+                      <MapPin className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" />
+                      <input value={locationFilter} onChange={event => setLocationFilter(event.target.value)} maxLength={100}
+                        placeholder="Location" aria-label="Filter by approximate location"
+                        className="h-9 w-full rounded-lg border border-slate-200 bg-white pl-9 pr-3 text-xs outline-none focus:border-blue-400" />
+                    </label>
+                    <select aria-label="Filter by traffic source" value={trafficSource} onChange={event => setTrafficSource(event.target.value)}
+                      className="h-9 min-w-0 rounded-lg border border-slate-200 bg-white px-3 text-xs text-slate-700">
+                      <option value="">All traffic sources</option>
+                      <option value="direct">Direct</option>
+                      <option value="organic_search">Organic search</option>
+                      <option value="social">Social</option>
+                      <option value="referral">External referral</option>
+                      <option value="campaign">Campaign</option>
+                      <option value="unknown">Unknown</option>
+                    </select>
+                    <input value={pagePath} onChange={event => setPagePath(event.target.value)} maxLength={300}
+                      placeholder="Page path contains…" aria-label="Filter by page visited"
+                      className="h-9 min-w-0 rounded-lg border border-slate-200 bg-white px-3 text-xs outline-none focus:border-blue-400" />
+                    <select aria-label="Filter by website event" value={eventType} onChange={event => setEventType(event.target.value)}
+                      className="h-9 min-w-0 rounded-lg border border-slate-200 bg-white px-3 text-xs text-slate-700">
+                      <option value="">All event types</option>
+                      {Object.entries(siteEventLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+                    </select>
+                    <select aria-label="Sort visitor records" value={sortBy} onChange={event => setSortBy(event.target.value as typeof sortBy)}
+                      className="h-9 min-w-0 rounded-lg border border-slate-200 bg-white px-3 text-xs text-slate-700">
+                      <option value="last_active">Sort: Last active</option>
+                      <option value="first_seen">Sort: First seen</option>
+                      <option value="events">Sort: Most events</option>
+                      <option value="page_views">Sort: Most page views</option>
+                    </select>
+                    <label className="flex h-9 min-w-0 items-center gap-2 rounded-lg border border-slate-200 bg-white px-3">
+                      <CalendarDays className="h-3.5 w-3.5 shrink-0 text-slate-400" />
+                      <span className="sr-only">From date</span>
+                      <input type="date" value={fromDate} max={toDate || undefined} onChange={event => setFromDate(event.target.value)}
+                        className="min-w-0 flex-1 text-xs text-slate-700 outline-none" />
+                    </label>
+                    <label className="flex h-9 min-w-0 items-center gap-2 rounded-lg border border-slate-200 bg-white px-3">
+                      <CalendarDays className="h-3.5 w-3.5 shrink-0 text-slate-400" />
+                      <span className="sr-only">To date</span>
+                      <input type="date" value={toDate} min={fromDate || undefined} onChange={event => setToDate(event.target.value)}
+                        className="min-w-0 flex-1 text-xs text-slate-700 outline-none" />
+                    </label>
+                    <label className="flex h-9 items-center justify-between gap-2 rounded-lg border border-slate-200 bg-white px-3 text-xs text-slate-500">
+                      <span>Records per page</span>
+                      <select aria-label="Records per page" value={sitePageSize} onChange={event => setSitePageSize(Number(event.target.value))}
+                        className="bg-transparent font-semibold text-slate-800 outline-none">
+                        {[20, 30, 50, 100].map(size => <option key={size} value={size}>{size}</option>)}
+                      </select>
+                    </label>
+                  </div>
                   {loading ? (
                     <div className="flex items-center justify-center gap-2 py-10 text-sm text-slate-400"><Loader2 className="h-4 w-4 animate-spin" /> Loading site visits…</div>
                   ) : siteVisitors.length ? (
-                    <div className="divide-y divide-slate-100">
-                      {siteVisitors.map(visitor => (
-                        <button key={visitor.id} type="button" onClick={() => openSiteVisitor(visitor)}
-                          className="flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-slate-50 sm:px-5">
-                          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-100 text-slate-500">
-                            <Globe2 className="h-4 w-4" />
-                          </span>
-                          <span className="min-w-0 flex-1">
-                            <span className="block text-sm font-semibold text-slate-800">Anonymous browser</span>
-                            <span className="mt-0.5 block truncate text-xs text-slate-500">
-                              {visitor.pageViews.toLocaleString()} all-time public page views · {countryName(visitor.countryCode)} · select to view history
+                    <>
+                      <div className="hidden overflow-x-auto md:block">
+                        <table className="w-full min-w-[900px] text-left">
+                          <thead className="bg-white text-[10px] font-semibold uppercase tracking-wide text-slate-400">
+                            <tr>
+                              <th className="px-4 py-3">Visitor reference</th>
+                              <th className="px-4 py-3">Origin / source</th>
+                              <th className="px-4 py-3">Last visited page</th>
+                              <th className="px-4 py-3">Activity</th>
+                              <th className="px-4 py-3">First seen</th>
+                              <th className="px-4 py-3">Last active</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-slate-100">
+                            {siteVisitors.map(visitor => (
+                              <tr key={visitor.id} className="group">
+                                <td className="px-4 py-3">
+                                  <button type="button" onClick={() => openSiteVisitor(visitor)} className="flex max-w-[220px] items-center gap-2 text-left">
+                                    <Globe2 className="h-4 w-4 shrink-0 text-blue-600" />
+                                    <span className="truncate font-mono text-[11px] text-slate-700">{visitor.id}</span>
+                                  </button>
+                                  <span className="ml-6 mt-1 block text-[10px] font-semibold uppercase tracking-wide text-slate-400">Anonymous</span>
+                                </td>
+                                <td className="px-4 py-3">
+                                  <p className="text-xs font-medium text-slate-700">{visitorLocation(visitor)}</p>
+                                  <p className="mt-1 text-[10px] capitalize text-slate-500">{visitor.trafficSource?.replace(/_/g, ' ') ?? 'Unknown'}{visitor.referrerDomain ? ` · ${visitor.referrerDomain}` : ''}</p>
+                                </td>
+                                <td className="max-w-[200px] px-4 py-3">
+                                  <p className="truncate text-xs font-medium capitalize text-slate-700">{pageName(visitor.lastVisitedPath)}</p>
+                                  <p className="mt-1 truncate text-[10px] text-slate-400">{visitor.lastVisitedPath ?? '—'}</p>
+                                </td>
+                                <td className="px-4 py-3">
+                                  <p className="text-xs font-semibold text-slate-700">{visitor.totalEvents.toLocaleString()} events</p>
+                                  <p className="mt-1 text-[10px] text-slate-500">{siteEventLabels[visitor.lastEventType ?? ''] ?? 'Activity recorded'} · {visitor.pageViews.toLocaleString()} views</p>
+                                </td>
+                                <td className="px-4 py-3 text-xs text-slate-500">{dateTime(visitor.firstSeenAt)}</td>
+                                <td className="px-4 py-3 text-xs text-slate-500">{dateTime(visitor.lastSeenAt)}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                      <div className="divide-y divide-slate-100 md:hidden">
+                        {siteVisitors.map(visitor => (
+                          <button key={visitor.id} type="button" onClick={() => openSiteVisitor(visitor)}
+                            className="flex w-full items-start gap-3 px-4 py-3.5 text-left transition-colors hover:bg-slate-50">
+                            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-blue-50 text-blue-700"><Globe2 className="h-4 w-4" /></span>
+                            <span className="min-w-0 flex-1">
+                              <span className="block truncate font-mono text-[10px] text-slate-500">{visitor.id}</span>
+                              <span className="mt-1 block truncate text-sm font-semibold capitalize text-slate-800">{pageName(visitor.lastVisitedPath)}</span>
+                              <span className="mt-1 block truncate text-xs text-slate-500">{visitorLocation(visitor)} · {visitor.trafficSource?.replace(/_/g, ' ') ?? 'Unknown source'}</span>
+                              <span className="mt-1 block text-[10px] text-slate-400">{visitor.totalEvents.toLocaleString()} events</span>
+                              <span className="mt-1 block text-[10px] text-slate-400">First seen {dateTime(visitor.firstSeenAt)} · Last active {dateTime(visitor.lastSeenAt)}</span>
                             </span>
-                          </span>
-                          <time className="shrink-0 text-xs text-slate-400">{dateTime(visitor.lastSeenAt)}</time>
-                        </button>
-                      ))}
-                      <Pagination page={sitePage} total={siteVisitorCount} pageSize={25} onPageChange={setSitePage} />
-                    </div>
+                          </button>
+                        ))}
+                      </div>
+                    </>
                   ) : (
-                    <div className="px-5 py-10 text-center text-sm text-slate-400">No site visitor records in this date range.</div>
+                    <div className="px-5 py-12 text-center">
+                      <Globe2 className="mx-auto h-7 w-7 text-slate-300" />
+                      <p className="mt-2 text-sm font-medium text-slate-700">No matching website visitors</p>
+                      <p className="mt-1 text-xs text-slate-400">Try adjusting the search, filters, or date range.</p>
+                    </div>
                   )}
+                  <Pagination page={sitePage} total={siteVisitorCount} pageSize={sitePageSize} onPageChange={setSitePage} />
                 </section>
               </div>
             </main>

@@ -12,6 +12,7 @@ import { MoneyInput } from '@/components/ui/money-input'
 import { createClient, isSupabaseConfigured } from '@/lib/supabase'
 import { isAdminUser } from '@/lib/auth'
 import { getPlatformSettings, phoneToWaLink } from '@/lib/platform-settings'
+import { trackSiteInteraction } from '@/lib/site-analytics'
 import type { PropertyWithLandlord } from '@/types'
 
 const PropertyMap = lazy(() => import('@/components/property/PropertyMap'))
@@ -147,6 +148,17 @@ export default function ListingsPageClient({
   }
 
   function applyAndClose() {
+    const filterKeys = [
+      typeFilter && 'type',
+      stateFilter && 'city',
+      areaFilter && 'area',
+      minPrice && 'min_price',
+      maxPrice && 'max_price',
+      bedsFilter && 'bedrooms',
+    ].filter((key): key is string => Boolean(key))
+    trackSiteInteraction('filter', { metadata: { control: 'listing_filters', filterKeys } }).catch(error => {
+      console.warn('[site-analytics] listing filter tracking failed:', error)
+    })
     updateUrl({ type: typeFilter, city: stateFilter, area: areaFilter, min_price: minPrice, max_price: maxPrice, bedrooms: bedsFilter })
     setOpenPanel(null)
   }
