@@ -402,7 +402,7 @@ export default function LandlordListings() {
                   aria-label="Loading listings"
                   aria-busy="true"
                   className={viewMode === 'grid'
-                    ? 'grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3'
+                    ? 'grid grid-cols-[repeat(auto-fill,minmax(min(100%,220px),1fr))] gap-3'
                     : 'space-y-3'}
                 >
                   {Array.from({ length: 6 }, (_, index) => (
@@ -453,13 +453,13 @@ export default function LandlordListings() {
                   )}
                 </div>
               ) : viewMode === 'grid' ? (
-                <div className="grid grid-cols-1 gap-4 transition-all md:grid-cols-2 xl:grid-cols-3">
+                <div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,220px),1fr))] gap-3 transition-all">
                   {filtered.map(property => (
                     <article
                       key={property.id}
-                      className="group min-w-0 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition duration-200 hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-md"
+                      className="group min-w-0 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition duration-200 hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-md"
                     >
-                      <div className="relative aspect-[16/10] overflow-hidden bg-slate-100">
+                      <div className="relative aspect-[16/10] max-h-[180px] overflow-hidden bg-slate-100">
                         {getCover(property) ? (
                           <img
                             src={getCover(property) ?? undefined}
@@ -473,17 +473,17 @@ export default function LandlordListings() {
                             <span className="text-xs font-medium">No property photo</span>
                           </div>
                         )}
-                        <span className="absolute left-3 top-3 rounded-lg bg-white/95 px-2.5 py-1 text-[11px] font-semibold text-slate-800 shadow-sm backdrop-blur">
+                        <span className="absolute left-2.5 top-2.5 rounded-lg bg-white/95 px-2 py-1 text-[10px] font-semibold text-slate-800 shadow-sm backdrop-blur">
                           {LISTING_TYPES[property.type] ?? property.type}
                         </span>
                       </div>
 
-                      <div className="p-3.5 sm:p-4">
+                      <div className="p-3">
                         <div className="flex min-w-0 items-start justify-between gap-2">
                           <div className="min-w-0">
                             <Link
                               href={`/listings/${property.id}`}
-                              className="line-clamp-1 text-base font-semibold leading-6 text-slate-900 transition hover:text-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 sm:text-[17px]"
+                              className="line-clamp-1 text-[15px] font-semibold leading-5 text-slate-900 transition hover:text-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
                             >
                               {property.title}
                             </Link>
@@ -492,12 +492,12 @@ export default function LandlordListings() {
                               <span className="truncate">{property.city || property.address}</span>
                             </p>
                           </div>
-                          <p className="shrink-0 pt-0.5 text-sm font-bold text-slate-900 sm:text-[15px]">
+                          <p className="shrink-0 pt-0.5 text-[13px] font-bold text-slate-900">
                             {formatPrice(property.price)}
                           </p>
                         </div>
 
-                        <div className="mt-2.5 flex min-h-6 items-center gap-4 text-xs text-slate-500">
+                        <div className="mt-2 flex min-h-6 items-center gap-3 text-[11px] text-slate-500">
                           {property.bedrooms != null && (
                             <span className="inline-flex items-center gap-1.5">
                               <BedDouble className="h-4 w-4 text-slate-400" aria-hidden="true" />
@@ -518,7 +518,7 @@ export default function LandlordListings() {
                           </p>
                         )}
 
-                        <div className="mt-2.5 flex flex-wrap items-center justify-between gap-2 border-t border-slate-100 pt-2.5">
+                        <div className="mt-2 flex flex-wrap items-center justify-between gap-1 border-t border-slate-100 pt-2">
                           <ListingBadges property={property} />
                           <ListingActions
                             property={property}
