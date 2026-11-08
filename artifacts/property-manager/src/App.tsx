@@ -101,13 +101,16 @@ function Router() {
   }, [location, resolvedDark]);
 
   useEffect(() => {
-    const path = location.split('?')[0]
+    const path = location.split(/[?#]/, 1)[0]
     const privateRoute = ['/admin', '/landlord', '/user'].some(
       (prefix) => path === prefix || path.startsWith(`${prefix}/`),
     )
-    if (privateRoute) return
+    const authRoute = ['/login', '/register', '/reset-password', '/auth'].some(
+      (prefix) => path === prefix || path.startsWith(`${prefix}/`),
+    )
+    if (privateRoute || authRoute) return
 
-    trackSiteVisit().catch((error) => {
+    trackSiteVisit(path).catch((error) => {
       console.warn('[site-analytics] visitor tracking failed:', error)
     })
   }, [location])

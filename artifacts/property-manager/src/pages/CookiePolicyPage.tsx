@@ -149,7 +149,7 @@ export default function CookiePolicyPage() {
                 colour="bg-slate-100 text-slate-600"
                 name="Analytics Cookies"
                 required={false}
-                purpose="First-party property analytics record listing impressions, detail views, contact clicks, and enquiry starts using a random session identifier stored in session storage. We do not use device fingerprinting or store IP addresses for this analytics feature. If you are signed in, your account is associated with the activity for restricted administrator support; landlords receive aggregate totals only and cannot see visitor identities."
+                purpose="First-party analytics use a random browser identifier to count public-site visits and record public page paths, and a separate tab-session identifier for property impressions, detail views, contact clicks, and enquiry starts. Public-site paths are not linked to account identities and exclude query strings and private account routes. Property activity may be associated with a signed-in account for restricted administrator support; landlords receive aggregate totals only. We do not use device fingerprinting."
                 examples={['livarex_visitor_id', 'livarex_property_analytics_session', 'Property performance totals']}
               />
               <CookieCard
@@ -187,7 +187,7 @@ export default function CookiePolicyPage() {
                     { name: 'sb-access-token',   provider: 'Supabase',         purpose: 'Authentication session',             duration: 'Session',   type: 'Essential' },
                     { name: 'sb-refresh-token',  provider: 'Supabase',         purpose: 'Auth token refresh',                 duration: '7 days',    type: 'Essential' },
                     { name: 'livarex_prefs',     provider: 'Livarex',          purpose: 'Search filters & preferences',       duration: '30 days',   type: 'Functional' },
-                    { name: 'livarex_visitor_id', provider: 'Livarex',          purpose: 'Estimate unique public-site visitors', duration: 'Until cleared', type: 'Analytics' },
+                    { name: 'livarex_visitor_id', provider: 'Livarex',          purpose: 'Count anonymous visitors and public page paths', duration: 'Until cleared', type: 'Analytics' },
                     { name: 'livarex_property_analytics_session', provider: 'Livarex', purpose: 'Deduplicate property interactions in a browser tab; may be associated with a signed-in account for restricted administrator support', duration: 'Browser tab session', type: 'Analytics' },
                     { name: '_ga',               provider: 'Google Analytics', purpose: 'Distinguish unique users',           duration: '2 years',   type: 'Analytics' },
                     { name: '_gid',              provider: 'Google Analytics', purpose: 'Track session activity',             duration: '24 hours',  type: 'Analytics' },

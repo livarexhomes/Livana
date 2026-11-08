@@ -37,6 +37,25 @@ export interface VisitorActivity {
   interactions: { type: string; at: string }[]
 }
 
+export interface SiteVisitorActivity {
+  id: string
+  firstSeenAt: string
+  lastSeenAt: string
+  pageViews: number
+}
+
+export interface SiteVisitorProfile {
+  visitor: {
+    registered: false
+    label: string
+    firstSeenAt: string
+    lastSeenAt: string
+    pageViews: number
+  }
+  visits: { page_path: string; visited_at: string }[]
+  historyAvailable: boolean
+}
+
 export interface VisitorProfile {
   visitor: {
     registered: boolean
@@ -92,11 +111,22 @@ export function getLandlordAnalytics(range: 7 | 30 | 90 | 'all', propertyId?: st
 }
 
 export async function getAdminVisitorActivity(range: 7 | 30 | 90 | 'all', propertyId?: string) {
-  return invoke<{ visitors: VisitorActivity[]; limit: number }>({
+  return invoke<{
+    visitors: VisitorActivity[]
+    siteVisitors: SiteVisitorActivity[]
+    siteVisitorCount: number
+    siteVisitorTotal: number
+    siteVisitorScope: 'global'
+    limit: number
+  }>({
     action: 'admin-activity',
     range,
     ...(propertyId ? { propertyId } : {}),
   })
+}
+
+export function getAdminSiteVisitorProfile(siteVisitorId: string) {
+  return invoke<SiteVisitorProfile>({ action: 'admin-site-visitor-profile', siteVisitorId })
 }
 
 export function getAdminVisitorProfile(visitorRecordId: string) {

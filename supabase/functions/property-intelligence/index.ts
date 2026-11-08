@@ -301,6 +301,23 @@ async function adminActivity(body: Record<string, unknown>) {
     list.push({ type: event.event_type, at: event.occurred_at })
     eventMap.set(event.session_id, list)
   }
+
+  let siteVisitorQuery = service
+    .from('site_visitors')
+    .select('visitor_id, first_seen_at, last_seen_at, page_views', { count: 'exact' })
+    .order('last_seen_at', { ascending: false })
+    .limit(250)
+  if (since) siteVisitorQuery = siteVisitorQuery.gte('last_seen_at', since)
+  const [
+    { data: siteVisitors, error: siteVisitorError, count: siteVisitorCount },
+    { count: siteVisitorTotal, error: siteVisitorTotalError },
+  ] = await Promise.all([
+    siteVisitorQuery,
+    service.from('site_visitors').select('visitor_id', { count: 'exact', head: true }),
+  ])
+  if (siteVisitorError) throw new HttpError(500, 'Could not load site visitor activity.')
+  if (siteVisitorTotalError) throw new HttpError(500, 'Could not load total site visitors.')
+
   return respond({
     visitors: (sessions ?? []).map(session => ({
       id: session.id,
@@ -312,7 +329,54 @@ async function adminActivity(body: Record<string, unknown>) {
       lastSeenAt: session.last_seen_at,
       interactions: eventMap.get(session.id) ?? [],
     })),
+    siteVisitors: (siteVisitors ?? []).map(visitor => ({
+      id: visitor.visitor_id,
+      firstSeenAt: visitor.first_seen_at,
+      lastSeenAt: visitor.last_seen_at,
+      pageViews: Number(visitor.page_views),
+    })),
+    siteVisitorCount: siteVisitorCount ?? 0,
+    siteVisitorTotal: siteVisitorTotal ?? 0,
+    siteVisitorScope: 'global',
     limit: 250,
+  })
+}
+
+async function adminSiteVisitorProfile(body: Record<string, unknown>, adminId: string) {
+  if (!isUuid(body.siteVisitorId)) throw new HttpError(400, 'Invalid site visitor record.')
+  const service = getServiceClient()
+  const { data: visitor, error: visitorError } = await service
+    .from('site_visitors')
+    .select('visitor_id, first_seen_at, last_seen_at, page_views')
+    .eq('visitor_id', body.siteVisitorId)
+    .maybeSingle()
+  if (visitorError) throw new HttpError(500, 'Could not load site visitor record.')
+  if (!visitor) throw new HttpError(404, 'Site visitor record not found.')
+
+  const { error: logError } = await service.from('site_visitor_access_logs').insert({
+    admin_user_id: adminId,
+    visitor_id: visitor.visitor_id,
+  })
+  if (logError) throw new HttpError(500, 'Could not audit site visitor record access.')
+
+  const { data: visits, error: visitsError } = await service
+    .from('site_visitor_page_events')
+    .select('page_path, visited_at')
+    .eq('visitor_id', visitor.visitor_id)
+    .order('visited_at', { ascending: false })
+    .limit(200)
+  if (visitsError) throw new HttpError(500, 'Could not load site visitor page history.')
+
+  return respond({
+    visitor: {
+      registered: false,
+      label: 'Anonymous browser',
+      firstSeenAt: visitor.first_seen_at,
+      lastSeenAt: visitor.last_seen_at,
+      pageViews: Number(visitor.page_views),
+    },
+    visits: visits ?? [],
+    historyAvailable: (visits ?? []).length > 0,
   })
 }
 
@@ -532,6 +596,7 @@ Deno.serve(async request => {
 
     const admin = requireAdmin(user)
     if (action === 'admin-activity') return await adminActivity(body)
+    if (action === 'admin-site-visitor-profile') return await adminSiteVisitorProfile(body, admin.id)
     if (action === 'admin-profile') return await adminProfile(body, admin.id)
     if (action === 'admin-message') return await adminMessage(body, admin.id)
     throw new HttpError(400, 'Unknown property intelligence operation.')

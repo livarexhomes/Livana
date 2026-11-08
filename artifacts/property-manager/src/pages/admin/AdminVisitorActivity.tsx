@@ -1,11 +1,14 @@
 import { useCallback, useEffect, useState } from 'react'
-import { Activity, Clock3, Eye, Loader2, MessageSquare, RefreshCw, UserRound, Users } from 'lucide-react'
+import { Activity, Clock3, Eye, Loader2, MessageSquare, RefreshCw, UserRound, Users, Globe2 } from 'lucide-react'
 import { format } from 'date-fns'
 import { createClient } from '../../lib/supabase'
 import {
   getAdminVisitorActivity,
   getAdminVisitorProfile,
+  getAdminSiteVisitorProfile,
   sendAdminVisitorMessage,
+  type SiteVisitorActivity,
+  type SiteVisitorProfile,
   type VisitorActivity,
   type VisitorProfile,
 } from '../../lib/property-analytics'
@@ -126,7 +129,6 @@ function VisitorDialog({
                 {profile.visitor.registered ? 'Registered' : 'Anonymous'}
               </span>
             </section>
-
             <section className="rounded-xl border border-slate-200 p-4">
               <div className="flex items-start justify-between gap-3">
                 <div>
@@ -148,7 +150,6 @@ function VisitorDialog({
                 ))}
               </ol>
             </section>
-
             {profile.enquiries.length > 0 && (
               <section>
                 <h3 className="mb-2 flex items-center gap-2 text-xs font-semibold text-slate-800"><MessageSquare className="h-4 w-4" /> Related enquiries</h3>
@@ -215,15 +216,99 @@ function VisitorDialog({
   )
 }
 
+function SiteVisitorDialog({
+  record,
+  open,
+  onOpenChange,
+}: {
+  record: SiteVisitorActivity | null
+  open: boolean
+  onOpenChange: (open: boolean) => void
+}) {
+  const [profile, setProfile] = useState<SiteVisitorProfile | null>(null)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
+
+  useEffect(() => {
+    if (!open || !record) return
+    let active = true
+    setProfile(null)
+    setError('')
+    setLoading(true)
+    getAdminSiteVisitorProfile(record.id).then(result => {
+      if (active) setProfile(result)
+    }).catch(reason => {
+      if (active) setError(reason instanceof Error ? reason.message : 'Could not load site visitor details.')
+    }).finally(() => {
+      if (active) setLoading(false)
+    })
+    return () => { active = false }
+  }, [open, record?.id])
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-h-[92dvh] w-[calc(100%-1rem)] max-w-xl overflow-y-auto p-0 sm:w-full">
+        <DialogHeader className="border-b border-slate-100 px-5 py-4 pr-12 text-left sm:px-6">
+          <DialogTitle className="text-base">Anonymous site visitor</DialogTitle>
+          <DialogDescription>Only public page paths are recorded. No account identity or device fingerprint is collected.</DialogDescription>
+        </DialogHeader>
+        {loading ? (
+          <div className="flex items-center justify-center gap-2 px-6 py-12 text-sm text-slate-500">
+            <Loader2 className="h-4 w-4 animate-spin" /> Loading visitor details…
+          </div>
+        ) : error ? (
+          <p role="alert" className="m-5 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">{error}</p>
+        ) : profile ? (
+          <div className="space-y-5 px-5 pb-5 sm:px-6">
+            <section className="flex items-center gap-3">
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-slate-100 text-slate-500">
+                <Globe2 className="h-5 w-5" />
+              </div>
+              <div>
+                <h2 className="text-sm font-semibold text-slate-900">{profile.visitor.label}</h2>
+                <p className="mt-0.5 text-xs text-slate-500">{profile.visitor.pageViews.toLocaleString()} all-time public page views</p>
+              </div>
+            </section>
+            <section className="rounded-xl border border-slate-200 p-4">
+              <p className="text-xs text-slate-500">First seen {dateTime(profile.visitor.firstSeenAt)}</p>
+              <p className="mt-1 text-xs text-slate-500">Last seen {dateTime(profile.visitor.lastSeenAt)}</p>
+              <h3 className="mt-4 border-t border-slate-100 pt-3 text-xs font-semibold text-slate-800">Public page history (latest 200)</h3>
+              {profile.historyAvailable ? (
+                <ol className="mt-2 max-h-72 space-y-2 overflow-y-auto">
+                  {profile.visits.map((visit, index) => (
+                    <li key={`${visit.visited_at}-${index}`} className="flex items-start justify-between gap-3 text-xs">
+                      <span className="break-all font-medium text-slate-700">{visit.page_path}</span>
+                      <time className="shrink-0 text-slate-400">{dateTime(visit.visited_at)}</time>
+                    </li>
+                  ))}
+                </ol>
+              ) : (
+                <p className="mt-2 text-xs leading-relaxed text-slate-500">
+                  No page-path history is available for this record. Paths are collected only after the visitor activity update is deployed.
+                </p>
+              )}
+            </section>
+          </div>
+        ) : null}
+      </DialogContent>
+    </Dialog>
+  )
+}
+
 export default function AdminVisitorActivity() {
   const [range, setRange] = useState<Range>(30)
   const [propertyId, setPropertyId] = useState('')
   const [properties, setProperties] = useState<PropertyOption[]>([])
   const [visitors, setVisitors] = useState<VisitorActivity[]>([])
+  const [siteVisitors, setSiteVisitors] = useState<SiteVisitorActivity[]>([])
+  const [siteVisitorCount, setSiteVisitorCount] = useState(0)
+  const [siteVisitorTotal, setSiteVisitorTotal] = useState(0)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [selected, setSelected] = useState<VisitorActivity | null>(null)
   const [open, setOpen] = useState(false)
+  const [selectedSiteVisitor, setSelectedSiteVisitor] = useState<SiteVisitorActivity | null>(null)
+  const [siteVisitorOpen, setSiteVisitorOpen] = useState(false)
   const [adminEmail, setAdminEmail] = useState<string>()
 
   const load = useCallback(async () => {
@@ -232,6 +317,9 @@ export default function AdminVisitorActivity() {
     try {
       const result = await getAdminVisitorActivity(range, propertyId || undefined)
       setVisitors(result.visitors)
+      setSiteVisitors(result.siteVisitors)
+      setSiteVisitorCount(result.siteVisitorCount)
+      setSiteVisitorTotal(result.siteVisitorTotal)
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : 'Could not load visitor activity.')
     } finally {
@@ -259,6 +347,11 @@ export default function AdminVisitorActivity() {
     setOpen(true)
   }
 
+  function openSiteVisitor(record: SiteVisitorActivity) {
+    setSelectedSiteVisitor(record)
+    setSiteVisitorOpen(true)
+  }
+
   const registeredCount = visitors.filter(visitor => visitor.registered).length
   const anonymousCount = visitors.length - registeredCount
 
@@ -268,7 +361,7 @@ export default function AdminVisitorActivity() {
         <div className="flex h-screen h-[100dvh] overflow-hidden bg-[#F5F8FC]">
           <AdminSidebar userEmail={adminEmail} />
           <div className="flex min-w-0 flex-1 flex-col">
-            <AdminHeader title="Visitor Activity" subtitle="Restricted property interaction records" />
+            <AdminHeader title="Visitor Activity" subtitle="Property interactions and anonymous site-wide visits" />
             <main className="flex-1 overflow-y-auto p-3 pb-16 md:p-5">
               <div className="mx-auto max-w-[1440px] space-y-4">
                 <section className="flex flex-col gap-3 rounded-xl border border-slate-200 bg-white p-3 sm:flex-row sm:items-center sm:justify-between">
@@ -290,11 +383,12 @@ export default function AdminVisitorActivity() {
                   </button>
                 </section>
 
-                <section aria-label="Visitor activity summary" className="grid grid-cols-3 gap-2 sm:gap-3">
+                <section aria-label="Visitor activity summary" className="grid grid-cols-2 gap-2 sm:grid-cols-4 sm:gap-3">
                   {[
-                    { label: 'Visitor records', value: visitors.length, icon: Activity },
-                    { label: 'Registered', value: registeredCount, icon: UserRound },
-                    { label: 'Anonymous', value: anonymousCount, icon: Eye },
+                    { label: 'Property records (max 250)', value: visitors.length, icon: Activity },
+                    { label: 'Registered shown', value: registeredCount, icon: UserRound },
+                    { label: 'Anonymous shown', value: anonymousCount, icon: Eye },
+                    { label: 'Site visitors (all time)', value: siteVisitorTotal, icon: Globe2 },
                   ].map(metric => {
                     const Icon = metric.icon
                     return <article key={metric.label} className="rounded-xl border border-slate-200 bg-white p-3 sm:p-4">
@@ -306,6 +400,9 @@ export default function AdminVisitorActivity() {
                     </article>
                   })}
                 </section>
+                <p className="text-xs text-slate-500">
+                  Site visitors are anonymous browser records, not identified people. Their count is site-wide and is not affected by the property filter.
+                </p>
 
                 {error && <p role="alert" className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">{error}</p>}
                 <section className="overflow-hidden rounded-xl border border-slate-200 bg-white">
@@ -347,11 +444,48 @@ export default function AdminVisitorActivity() {
                     </div>
                   )}
                 </section>
+                <section className="overflow-hidden rounded-xl border border-slate-200 bg-white">
+                  <div className="flex items-center justify-between gap-3 border-b border-slate-100 px-4 py-3.5">
+                    <div>
+                      <h2 className="text-sm font-semibold text-slate-900">Site-wide visitor activity</h2>
+                      <p className="mt-0.5 text-xs text-slate-500">
+                        {siteVisitorCount.toLocaleString()} anonymous browser records in this date range · {siteVisitorTotal.toLocaleString()} all time · latest 250 shown
+                      </p>
+                    </div>
+                    <span className="hidden items-center gap-1 text-[10px] text-slate-400 sm:inline-flex">
+                      <Eye className="h-3.5 w-3.5" /> Detail access is audited
+                    </span>
+                  </div>
+                  {loading ? (
+                    <div className="flex items-center justify-center gap-2 py-10 text-sm text-slate-400"><Loader2 className="h-4 w-4 animate-spin" /> Loading site visits…</div>
+                  ) : siteVisitors.length ? (
+                    <div className="divide-y divide-slate-100">
+                      {siteVisitors.map(visitor => (
+                        <button key={visitor.id} type="button" onClick={() => openSiteVisitor(visitor)}
+                          className="flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-slate-50 sm:px-5">
+                          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-100 text-slate-500">
+                            <Globe2 className="h-4 w-4" />
+                          </span>
+                          <span className="min-w-0 flex-1">
+                            <span className="block text-sm font-semibold text-slate-800">Anonymous browser</span>
+                            <span className="mt-0.5 block truncate text-xs text-slate-500">
+                              {visitor.pageViews.toLocaleString()} all-time public page views · select to view history
+                            </span>
+                          </span>
+                          <time className="shrink-0 text-xs text-slate-400">{dateTime(visitor.lastSeenAt)}</time>
+                        </button>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="px-5 py-10 text-center text-sm text-slate-400">No site visitor records in this date range.</div>
+                  )}
+                </section>
               </div>
             </main>
           </div>
         </div>
         <VisitorDialog record={selected} open={open} onOpenChange={setOpen} />
+        <SiteVisitorDialog record={selectedSiteVisitor} open={siteVisitorOpen} onOpenChange={setSiteVisitorOpen} />
       </MobileSidebarProvider>
     </AuthGuard>
   )
