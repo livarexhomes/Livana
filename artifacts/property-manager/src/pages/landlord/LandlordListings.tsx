@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { Link } from '@/lib/navigation'
 import {
   AlertCircle, ArrowDownUp, Bath, BedDouble, Building2, ChevronDown,
-  Eye, History, ImagePlus, LayoutGrid, List, MapPin, MoreHorizontal,
+  Eye, Filter, History, ImagePlus, LayoutGrid, List, MapPin, MoreHorizontal,
   Pencil, Plus, Search, Trash2,
 } from 'lucide-react'
 import LandlordSidebar from '../../components/layout/LandlordSidebar'
@@ -31,7 +31,7 @@ const MODERATION: Record<string, { label: string; tone: string }> = {
   pending_review: { label: 'Pending Review', tone: 'bg-amber-50 text-amber-700 ring-amber-600/10' },
   changes_requested: { label: 'Changes Requested', tone: 'bg-blue-50 text-blue-700 ring-blue-600/10' },
   rejected: { label: 'Rejected', tone: 'bg-red-50 text-red-700 ring-red-600/10' },
-  approved: { label: 'Approved', tone: 'bg-emerald-50 text-emerald-700 ring-emerald-600/10' },
+  approved: { label: 'Approved', tone: 'bg-indigo-50 text-indigo-700 ring-indigo-600/10' },
 }
 
 const LISTING_TYPES: Record<string, string> = {
@@ -66,19 +66,20 @@ function getModeration(status: string) {
 
 function ListingBadges({ property }: { property: Listing }) {
   const availability = AVAILABILITY[property.status]
-  const moderation = getModeration(property.status)
+  const isAvailabilityStatus = ['available', 'taken', 'coming_soon', 'under_negotiation', 'sold'].includes(property.status)
+  const moderation = MODERATION[property.status] ?? (isAvailabilityStatus ? getModeration(property.status) : null)
 
   return (
-    <div className="flex flex-wrap items-center gap-1.5">
+    <div className="flex flex-wrap items-center gap-1">
       {availability && <StatusBadge label={availability.label} tone={availability.tone} />}
-      <StatusBadge label={moderation.label} tone={moderation.tone} />
+      {moderation && <StatusBadge label={moderation.label} tone={moderation.tone} />}
     </div>
   )
 }
 
 function StatusBadge({ label, tone }: { label: string; tone: string }) {
   return (
-    <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-semibold leading-none ring-1 ring-inset ${tone}`}>
+    <span className={`inline-flex items-center whitespace-nowrap rounded-full px-2 py-1 text-[10px] font-semibold leading-none ring-1 ring-inset ${tone}`}>
       {label}
     </span>
   )
@@ -93,7 +94,7 @@ export default function LandlordListings() {
   const [actionError, setActionError] = useState('')
   const [deleting, setDeleting] = useState<string | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<Listing | null>(null)
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('list')
   const [viewModeReady, setViewModeReady] = useState(false)
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
@@ -104,7 +105,7 @@ export default function LandlordListings() {
 
   useEffect(() => {
     try {
-      const savedView = window.localStorage.getItem('landlord-listings-view')
+      const savedView = window.localStorage.getItem('landlord-listings-view-v2')
       if (savedView === 'grid' || savedView === 'list') setViewMode(savedView)
     } catch (error) {
       console.error('[landlord-listings] Could not restore view preference:', error)
@@ -116,7 +117,7 @@ export default function LandlordListings() {
   useEffect(() => {
     if (!viewModeReady) return
     try {
-      window.localStorage.setItem('landlord-listings-view', viewMode)
+      window.localStorage.setItem('landlord-listings-view-v2', viewMode)
     } catch (error) {
       console.error('[landlord-listings] Could not save view preference:', error)
     }
@@ -132,8 +133,8 @@ export default function LandlordListings() {
           property.address,
         ].some(value => (value ?? '').toLocaleLowerCase().includes(query))
         const matchesStatus = statusFilter === 'all'
-          || (statusFilter === 'approved'
-            ? ['available', 'taken', 'coming_soon', 'under_negotiation', 'sold'].includes(property.status)
+          || (statusFilter === 'under_review'
+            ? ['pending_review', 'changes_requested'].includes(property.status)
             : property.status === statusFilter)
         const matchesType = typeFilter === 'all' || property.type === typeFilter
         return matchesSearch && matchesStatus && matchesType
@@ -281,120 +282,147 @@ export default function LandlordListings() {
     return reviewEvents.filter(event => event.property_id === property.id)
   }
 
+  const statusTabs = [
+    { value: 'all', label: 'All Properties', count: properties.length },
+    { value: 'available', label: 'Available', count: properties.filter(property => property.status === 'available').length },
+    { value: 'under_review', label: 'Under Review', count: properties.filter(property => ['pending_review', 'changes_requested'].includes(property.status)).length },
+    { value: 'rejected', label: 'Rejected', count: properties.filter(property => property.status === 'rejected').length },
+    { value: 'taken', label: 'Taken', count: properties.filter(property => property.status === 'taken').length },
+  ]
+
   return (
     <AuthGuard require="landlord">
       <div className="flex h-dvh overflow-hidden bg-slate-50">
         <LandlordSidebar userName={landlord?.full_name} userEmail={user?.email} isVerified={landlord?.is_verified} />
 
         <div className="flex min-w-0 flex-1 flex-col">
-          <header className="flex shrink-0 items-center justify-between border-b border-slate-200/80 bg-white py-3 pl-14 pr-4 sm:px-6 lg:px-8">
+          <header className="flex shrink-0 items-center justify-between border-b border-slate-200/80 bg-white py-3 pl-14 pr-4 sm:px-7 lg:px-9">
             <div className="min-w-0">
-              <h1 className="text-[22px] font-bold tracking-tight text-slate-900 sm:text-2xl">My Listings</h1>
-              <p className="mt-0.5 text-xs text-slate-500 sm:text-sm">
-                {properties.length} {properties.length === 1 ? 'property' : 'properties'} in your portfolio
+              <h1 className="text-xl font-semibold tracking-tight text-slate-900 sm:text-[22px]">Properties</h1>
+              <p className="mt-0.5 text-xs text-slate-500">
+                Manage your property portfolio <span className="px-1 text-slate-300">/</span>
+                <span className="tabular-nums">{properties.length} {properties.length === 1 ? 'property' : 'properties'}</span>
               </p>
             </div>
             <Link
               href="/landlord/listings/new"
-              aria-label="Add listing"
-              className="inline-flex min-h-10 shrink-0 items-center gap-2 rounded-xl bg-blue-600 px-3.5 py-2 text-sm font-semibold text-white shadow-sm transition duration-150 hover:-translate-y-0.5 hover:bg-blue-700 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 sm:px-4"
+              className="inline-flex min-h-9 shrink-0 items-center gap-2 rounded-lg bg-blue-700 px-3 py-2 text-[13px] font-semibold text-white transition-colors hover:bg-blue-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2 sm:px-3.5"
             >
               <Plus className="h-4 w-4" aria-hidden="true" />
-              <span className="sm:hidden">Add</span>
-              <span className="hidden sm:inline">Add Listing</span>
+              <span>Add Property</span>
             </Link>
           </header>
 
-          <main className="min-h-0 flex-1 overflow-y-auto px-4 pb-24 pt-4 sm:px-6 sm:pt-5 lg:px-8 lg:pb-8">
-            <div className="mx-auto max-w-[1600px] space-y-4">
-              <section aria-label="Listing filters" className="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm sm:p-4">
-                <div className="flex flex-col gap-2.5 lg:flex-row lg:items-center">
-                  <label className="flex h-10 min-w-0 flex-1 items-center gap-2.5 rounded-xl border border-slate-200 bg-slate-50 px-3.5 transition focus-within:border-blue-400 focus-within:bg-white focus-within:ring-2 focus-within:ring-blue-100">
-                    <Search className="h-4 w-4 shrink-0 text-slate-400" aria-hidden="true" />
-                    <input
-                      aria-label="Search listings by title, location or city"
-                      value={search}
-                      onChange={event => setSearch(event.target.value)}
-                      placeholder="Search title, location or city"
-                      className="min-w-0 flex-1 bg-transparent text-sm text-slate-800 outline-none placeholder:text-slate-400"
-                    />
-                  </label>
+          <main className="min-h-0 flex-1 overflow-y-auto px-4 pb-24 pt-5 sm:px-7 sm:pt-6 lg:px-9 lg:pb-8">
+            <div className="mx-auto max-w-[1500px] space-y-5">
+              <nav aria-label="Filter properties by status" className="-mx-1 flex gap-1 overflow-x-auto px-1 pb-px [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                {statusTabs.map(tab => (
+                  <button
+                    key={tab.value}
+                    type="button"
+                    aria-pressed={statusFilter === tab.value}
+                    onClick={() => setStatusFilter(tab.value)}
+                    className={`inline-flex min-h-9 shrink-0 items-center gap-2 border-b-2 px-2.5 text-[13px] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${
+                      statusFilter === tab.value
+                        ? 'border-blue-700 font-semibold text-slate-900'
+                        : 'border-transparent text-slate-500 hover:border-slate-300 hover:text-slate-800'
+                    }`}
+                  >
+                    {tab.label}
+                    <span className={`text-[11px] tabular-nums ${statusFilter === tab.value ? 'text-blue-700' : 'text-slate-400'}`}>
+                      {tab.count}
+                    </span>
+                  </button>
+                ))}
+              </nav>
 
-                  <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:flex lg:shrink-0">
-                    <FilterSelect ariaLabel="Filter by property status" value={statusFilter} onChange={setStatusFilter}>
-                      <option value="all">All statuses</option>
-                      <optgroup label="Availability">
-                        <option value="available">Available</option>
-                        <option value="taken">Taken</option>
-                        <option value="coming_soon">Coming Soon</option>
-                        <option value="sold">Sold</option>
-                        <option value="under_negotiation">Negotiating</option>
-                      </optgroup>
-                      <optgroup label="Moderation">
-                        <option value="approved">Approved</option>
-                        <option value="pending_review">Pending Review</option>
-                        <option value="rejected">Rejected</option>
-                        <option value="changes_requested">Changes Requested</option>
-                      </optgroup>
-                    </FilterSelect>
-                    <FilterSelect ariaLabel="Filter by listing type" value={typeFilter} onChange={setTypeFilter}>
-                      <option value="all">All types</option>
-                      <option value="rent">For Rent</option>
-                      <option value="sale">For Sale</option>
-                      <option value="lease">Lease</option>
-                      <option value="commercial">Commercial</option>
-                    </FilterSelect>
-                    <FilterSelect
-                      ariaLabel="Sort listings"
-                      value={sortBy}
-                      onChange={setSortBy}
-                      className="col-span-2 sm:col-span-1"
-                      icon={<ArrowDownUp className="h-3.5 w-3.5 text-slate-400" aria-hidden="true" />}
-                    >
-                      <option value="newest">Recently Added</option>
-                      <option value="oldest">Oldest</option>
-                      <option value="price-low">Price: Low to High</option>
-                      <option value="price-high">Price: High to Low</option>
-                    </FilterSelect>
-                  </div>
+              <section aria-label="Search and listing controls" className="flex flex-wrap items-center gap-2 border-y border-slate-200 py-3">
+                <label className="flex h-9 w-full min-w-0 flex-1 items-center gap-2 border-b border-transparent px-1 transition-colors focus-within:border-blue-700 sm:w-auto sm:max-w-sm">
+                  <Search className="h-4 w-4 shrink-0 text-slate-400" aria-hidden="true" />
+                  <input
+                    aria-label="Search listings by title, location or city"
+                    value={search}
+                    onChange={event => setSearch(event.target.value)}
+                    placeholder="Search properties"
+                    className="min-w-0 flex-1 bg-transparent text-[13px] text-slate-800 outline-none placeholder:text-slate-400"
+                  />
+                </label>
 
-                  <div className="flex h-10 items-center justify-end rounded-xl border border-slate-200 bg-slate-50 p-1 lg:ml-auto">
-                    <button
-                      type="button"
-                      aria-label="Grid view"
-                      aria-pressed={viewMode === 'grid'}
-                      onClick={() => setViewMode('grid')}
-                      className={`flex h-8 w-9 items-center justify-center rounded-lg transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${viewMode === 'grid' ? 'bg-white text-blue-700 shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}
-                    >
-                      <LayoutGrid className="h-4 w-4" aria-hidden="true" />
-                    </button>
+                <div className="ml-0 flex w-full flex-wrap items-center justify-between gap-1.5 sm:ml-auto sm:w-auto sm:justify-end">
+                  <details className="group relative">
+                    <summary className="flex h-9 cursor-pointer list-none items-center gap-2 rounded-md px-2.5 text-xs font-medium text-slate-600 transition-colors hover:bg-white hover:text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500">
+                      <Filter className="h-3.5 w-3.5" aria-hidden="true" />
+                      <span>Filter</span>
+                      <ChevronDown className="h-3 w-3 text-slate-400 transition-transform group-open:rotate-180" aria-hidden="true" />
+                    </summary>
+                    <div className="absolute right-0 top-full z-20 mt-2 w-52 rounded-md border border-slate-200 bg-white p-3 shadow-lg">
+                      <label className="block text-[11px] font-semibold uppercase tracking-wide text-slate-400">
+                        Listing type
+                        <select
+                          aria-label="Filter by listing type"
+                          value={typeFilter}
+                          onChange={event => setTypeFilter(event.target.value)}
+                          className="mt-1.5 h-9 w-full rounded-md border border-slate-200 bg-white px-2.5 text-xs font-medium normal-case tracking-normal text-slate-700 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                        >
+                          <option value="all">All types</option>
+                          <option value="rent">For Rent</option>
+                          <option value="sale">For Sale</option>
+                          <option value="lease">Lease</option>
+                          <option value="commercial">Commercial</option>
+                        </select>
+                      </label>
+                    </div>
+                  </details>
+
+                  <FilterSelect
+                    ariaLabel="Sort listings"
+                    value={sortBy}
+                    onChange={setSortBy}
+                    icon={<ArrowDownUp className="h-3.5 w-3.5 text-slate-400" aria-hidden="true" />}
+                  >
+                    <option value="newest">Recently added</option>
+                    <option value="oldest">Oldest</option>
+                    <option value="price-low">Price: low to high</option>
+                    <option value="price-high">Price: high to low</option>
+                  </FilterSelect>
+
+                  <div className="ml-1 flex items-center border-l border-slate-200 pl-1.5 sm:pl-2">
                     <button
                       type="button"
                       aria-label="List view"
                       aria-pressed={viewMode === 'list'}
+                      title="List view"
                       onClick={() => setViewMode('list')}
-                      className={`flex h-8 w-9 items-center justify-center rounded-lg transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${viewMode === 'list' ? 'bg-white text-blue-700 shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}
+                      className={`flex h-8 w-8 items-center justify-center rounded-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${viewMode === 'list' ? 'bg-slate-200/70 text-slate-900' : 'text-slate-500 hover:bg-white hover:text-slate-900'}`}
                     >
                       <List className="h-4 w-4" aria-hidden="true" />
+                    </button>
+                    <button
+                      type="button"
+                      aria-label="Grid view"
+                      aria-pressed={viewMode === 'grid'}
+                      title="Grid view"
+                      onClick={() => setViewMode('grid')}
+                      className={`flex h-8 w-8 items-center justify-center rounded-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${viewMode === 'grid' ? 'bg-slate-200/70 text-slate-900' : 'text-slate-500 hover:bg-white hover:text-slate-900'}`}
+                    >
+                      <LayoutGrid className="h-4 w-4" aria-hidden="true" />
                     </button>
                   </div>
                 </div>
               </section>
 
               {actionError && (
-                <div role="alert" className="flex items-start gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+                <div role="alert" className="flex items-start gap-2 border-l-2 border-red-500 bg-red-50 px-3 py-2.5 text-sm text-red-800">
                   <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
                   <span>{actionError}</span>
                 </div>
               )}
 
-              <div className="flex items-center justify-between px-0.5">
-                <p className="text-sm text-slate-500" aria-live="polite">
-                  <span className="font-semibold text-slate-800">{filtered.length}</span>
-                  {' '}{filtered.length === 1 ? 'listing' : 'listings'}
-                  {(search || statusFilter !== 'all' || typeFilter !== 'all') && <span> matching your filters</span>}
+              <div className="flex items-center justify-between text-xs text-slate-500">
+                <p aria-live="polite">
+                  Showing <span className="font-semibold tabular-nums text-slate-800">{filtered.length}</span> of {properties.length} properties
                 </p>
-                <span className="hidden text-xs text-slate-400 sm:inline">Manage your property portfolio</span>
+                <span className="hidden text-[11px] text-slate-400 sm:inline">Sorted by {sortBy === 'newest' ? 'recently added' : sortBy === 'oldest' ? 'oldest' : sortBy === 'price-low' ? 'lowest price' : 'highest price'}</span>
               </div>
 
               {loading ? (
@@ -402,15 +430,15 @@ export default function LandlordListings() {
                   aria-label="Loading listings"
                   aria-busy="true"
                   className={viewMode === 'grid'
-                    ? 'grid grid-cols-[repeat(auto-fill,minmax(min(100%,220px),1fr))] gap-3'
-                    : 'space-y-3'}
+                    ? 'grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3'
+                    : 'divide-y divide-slate-200 border-y border-slate-200'}
                 >
                   {Array.from({ length: 6 }, (_, index) => (
                     <ListingSkeleton key={index} viewMode={viewMode} />
                   ))}
                 </div>
               ) : loadError ? (
-                <div role="alert" className="rounded-2xl border border-red-200 bg-white px-5 py-10 text-center shadow-sm">
+                <div role="alert" className="border-y border-red-200 bg-white px-5 py-10 text-center">
                   <AlertCircle className="mx-auto mb-3 h-9 w-9 text-red-500" aria-hidden="true" />
                   <h2 className="font-semibold text-slate-900">We couldn’t load your listings</h2>
                   <p className="mt-1 text-sm text-slate-500">{loadError}</p>
@@ -423,8 +451,8 @@ export default function LandlordListings() {
                   </button>
                 </div>
               ) : filtered.length === 0 ? (
-                <div className="rounded-2xl border border-slate-200 bg-white px-5 py-12 text-center shadow-sm sm:py-16">
-                  <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-50 text-blue-600">
+                <div className="border-y border-slate-200 bg-white px-5 py-12 text-center sm:py-14">
+                  <div className="mx-auto mb-4 flex h-10 w-10 items-center justify-center border border-slate-200 text-slate-500">
                     {properties.length === 0 ? <Building2 className="h-6 w-6" /> : <Search className="h-6 w-6" />}
                   </div>
                   <h2 className="text-base font-semibold text-slate-900">
@@ -438,7 +466,7 @@ export default function LandlordListings() {
                   {properties.length === 0 ? (
                     <Link
                       href="/landlord/listings/new"
-                      className="mt-5 inline-flex min-h-10 items-center gap-2 rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
+                      className="mt-5 inline-flex min-h-9 items-center gap-2 rounded-md bg-blue-700 px-3.5 py-2 text-[13px] font-semibold text-white transition hover:bg-blue-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
                     >
                       <Plus className="h-4 w-4" aria-hidden="true" /> Add your first listing
                     </Link>
@@ -453,13 +481,13 @@ export default function LandlordListings() {
                   )}
                 </div>
               ) : viewMode === 'grid' ? (
-                <div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,220px),1fr))] gap-3 transition-all">
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3 transition-all">
                   {filtered.map(property => (
                     <article
                       key={property.id}
-                      className="group min-w-0 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition duration-200 hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-md"
+                      className="group min-w-0 overflow-hidden border border-slate-200 bg-white transition-colors duration-200 hover:border-slate-300"
                     >
-                      <div className="relative aspect-[16/10] max-h-[180px] overflow-hidden bg-slate-100">
+                      <div className="relative h-[180px] overflow-hidden bg-slate-100 sm:h-[190px]">
                         {getCover(property) ? (
                           <img
                             src={getCover(property) ?? undefined}
@@ -473,12 +501,12 @@ export default function LandlordListings() {
                             <span className="text-xs font-medium">No property photo</span>
                           </div>
                         )}
-                        <span className="absolute left-2.5 top-2.5 rounded-lg bg-white/95 px-2 py-1 text-[10px] font-semibold text-slate-800 shadow-sm backdrop-blur">
+                        <span className="absolute left-3 top-3 rounded-sm bg-white/95 px-2 py-1 text-[10px] font-semibold text-slate-800 shadow-sm backdrop-blur">
                           {LISTING_TYPES[property.type] ?? property.type}
                         </span>
                       </div>
 
-                      <div className="p-3">
+                      <div className="p-3.5">
                         <div className="flex min-w-0 items-start justify-between gap-2">
                           <div className="min-w-0">
                             <Link
@@ -537,47 +565,57 @@ export default function LandlordListings() {
                   ))}
                 </div>
               ) : (
-                <div className="space-y-2.5 transition-all">
+                <div className="divide-y divide-slate-200 border-y border-slate-200 transition-all">
                   {filtered.map(property => (
                     <article
                       key={property.id}
-                      className="flex min-w-0 flex-row gap-3 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm transition hover:border-slate-300 hover:shadow-md sm:items-center sm:gap-4 sm:p-3.5"
+                      className="group grid min-w-0 grid-cols-[76px_minmax(0,1fr)] items-center gap-x-3 gap-y-2 px-2 py-3 transition-colors hover:bg-white/70 md:grid-cols-[88px_minmax(0,1fr)] md:px-3 lg:grid-cols-[112px_minmax(0,1fr)_auto] lg:gap-x-5"
                     >
                       <Link
                         href={`/listings/${property.id}`}
                         aria-label={`View ${property.title}`}
-                        className="relative h-[72px] w-[100px] shrink-0 overflow-hidden rounded-xl bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 sm:h-[82px] sm:w-[132px]"
+                        className="relative h-[52px] w-full overflow-hidden bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 md:h-[58px] lg:h-[70px]"
                       >
                         {getCover(property) ? (
-                          <img src={getCover(property) ?? undefined} alt="" loading="lazy" className="h-full w-full object-cover" />
+                          <img src={getCover(property) ?? undefined} alt="" loading="lazy" className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.04]" />
                         ) : (
                           <span className="flex h-full items-center justify-center text-slate-400">
                             <Building2 className="h-6 w-6" aria-hidden="true" />
                           </span>
                         )}
                       </Link>
-                      <div className="flex min-w-0 flex-1 flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                      <div className="min-w-0">
                         <div className="min-w-0">
-                          <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                          <div className="flex min-w-0 items-center justify-between gap-2">
                             <Link
                               href={`/listings/${property.id}`}
-                              className="line-clamp-1 text-[15px] font-semibold text-slate-900 hover:text-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+                              className="line-clamp-1 min-w-0 text-[14px] font-semibold tracking-[-0.01em] text-slate-900 transition-colors hover:text-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 sm:text-[15px]"
                             >
                               {property.title}
                             </Link>
-                            <span className="text-[11px] font-medium text-slate-400">
-                              {LISTING_TYPES[property.type] ?? property.type}
-                            </span>
                           </div>
-                          <p className="mt-1 flex items-center gap-1.5 text-xs text-slate-500">
-                            <MapPin className="h-3.5 w-3.5 shrink-0 text-slate-400" aria-hidden="true" />
+                          <p className="mt-1 flex min-w-0 items-center gap-1.5 text-[12px] text-slate-500">
+                            <MapPin className="h-3 w-3 shrink-0 text-slate-400" aria-hidden="true" />
                             <span className="truncate">{property.city || property.address}</span>
                           </p>
-                          <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-500">
-                            {property.bedrooms != null && <span>{property.bedrooms} beds</span>}
-                            {property.bathrooms != null && <span>{property.bathrooms} baths</span>}
-                            <span className="font-semibold text-slate-900">{formatPrice(property.price)}</span>
-                            <ListingBadges property={property} />
+                          <div className="mt-1.5 flex min-w-0 flex-wrap items-center gap-x-2.5 gap-y-1 text-[11px] text-slate-500">
+                            <span className="text-[12px] font-semibold tabular-nums text-slate-900">{formatPrice(property.price)}</span>
+                            <span className="font-medium text-slate-600">{LISTING_TYPES[property.type] ?? property.type}</span>
+                            {property.bedrooms != null && (
+                              <span className="inline-flex items-center gap-1">
+                                <BedDouble className="h-3.5 w-3.5 text-slate-400" aria-hidden="true" />
+                                {property.bedrooms} bed
+                              </span>
+                            )}
+                            {property.bathrooms != null && (
+                              <span className="inline-flex items-center gap-1">
+                                <Bath className="h-3.5 w-3.5 text-slate-400" aria-hidden="true" />
+                                {property.bathrooms} bath
+                              </span>
+                            )}
+                            {property.review_feedback && (
+                              <span title={property.review_feedback} className="max-w-full truncate text-amber-700">{property.review_feedback}</span>
+                            )}
                           </div>
                           <ReviewTimeline
                             property={property}
@@ -585,7 +623,12 @@ export default function LandlordListings() {
                             error={reviewTimelineError}
                           />
                         </div>
-                        <div className="flex shrink-0 items-center justify-between gap-2 border-t border-slate-100 pt-2 sm:justify-end sm:border-0 sm:pt-0">
+                      </div>
+                      <div className="col-span-2 flex min-w-0 items-center justify-between gap-2 border-t border-slate-100 pt-2 md:col-span-2 lg:col-span-1 lg:border-0 lg:pt-0">
+                        <div className="flex min-w-0 flex-wrap items-center gap-1.5">
+                          <ListingBadges property={property} />
+                        </div>
+                        <div className="shrink-0">
                           <ListingActions
                             property={property}
                             deleting={deleting === property.id}
@@ -643,7 +686,7 @@ function FilterSelect({
         aria-label={ariaLabel}
         value={value}
         onChange={event => onChange(event.target.value)}
-        className={`h-10 w-full appearance-none rounded-xl border border-slate-200 bg-white pl-3 pr-8 text-xs font-medium text-slate-600 outline-none transition hover:border-slate-300 focus:border-blue-400 focus:ring-2 focus:ring-blue-100 sm:min-w-[132px] sm:text-[13px] ${icon ? 'pl-9' : ''}`}
+        className={`h-9 w-full appearance-none rounded-md border border-slate-200 bg-white pl-2.5 pr-7 text-[11px] font-medium text-slate-600 outline-none transition hover:border-slate-300 focus:border-blue-400 focus:ring-2 focus:ring-blue-100 min-[400px]:min-w-[118px] sm:min-w-[132px] sm:text-xs ${icon ? 'pl-8' : ''}`}
       >
         {children}
       </select>
@@ -666,7 +709,7 @@ function ListingActions({
         href={`/listings/${property.id}`}
         aria-label={`View ${property.title}`}
         title="View details"
-        className="flex h-9 w-9 items-center justify-center rounded-lg text-slate-500 transition hover:bg-blue-50 hover:text-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+        className="flex h-11 w-11 items-center justify-center rounded-md text-slate-500 transition hover:bg-blue-50 hover:text-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 sm:h-9 sm:w-9"
       >
         <Eye className="h-4 w-4" aria-hidden="true" />
       </Link>
@@ -674,7 +717,7 @@ function ListingActions({
         href={`/landlord/listings/${property.id}/edit`}
         aria-label={`Edit ${property.title}`}
         title="Edit listing"
-        className="flex h-9 w-9 items-center justify-center rounded-lg text-slate-500 transition hover:bg-blue-50 hover:text-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+        className="flex h-11 w-11 items-center justify-center rounded-md text-slate-500 transition hover:bg-blue-50 hover:text-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 sm:h-9 sm:w-9"
       >
         <Pencil className="h-4 w-4" aria-hidden="true" />
       </Link>
@@ -684,7 +727,7 @@ function ListingActions({
             type="button"
             aria-label={`More options for ${property.title}`}
             title="More options"
-            className="flex h-9 w-9 items-center justify-center rounded-lg text-slate-500 transition hover:bg-slate-100 hover:text-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+            className="flex h-11 w-11 items-center justify-center rounded-md text-slate-500 transition hover:bg-slate-100 hover:text-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 sm:h-9 sm:w-9"
           >
             <MoreHorizontal className="h-4 w-4" aria-hidden="true" />
           </button>
@@ -706,23 +749,27 @@ function ListingActions({
 function ListingSkeleton({ viewMode }: { viewMode: 'grid' | 'list' }) {
   if (viewMode === 'list') {
     return (
-      <div className="flex animate-pulse items-center gap-4 rounded-2xl border border-slate-200 bg-white p-3">
-        <div className="h-[76px] w-[120px] shrink-0 rounded-xl bg-slate-100" />
-        <div className="flex-1 space-y-2">
-          <div className="h-4 w-1/3 rounded bg-slate-100" />
-          <div className="h-3 w-1/4 rounded bg-slate-100" />
-          <div className="h-3 w-1/5 rounded bg-slate-100" />
+      <div className="grid animate-pulse grid-cols-[76px_minmax(0,1fr)] items-center gap-x-3 gap-y-2 border-b border-slate-200 px-2 py-3 md:grid-cols-[88px_minmax(0,1fr)] lg:grid-cols-[112px_minmax(0,1fr)_auto]">
+        <div className="h-[52px] w-full bg-slate-100 md:h-[58px] lg:h-[70px]" />
+        <div className="space-y-2">
+          <div className="h-4 w-2/3 rounded-sm bg-slate-100" />
+          <div className="h-3 w-1/3 rounded-sm bg-slate-100" />
+          <div className="h-3 w-1/2 rounded-sm bg-slate-100" />
+        </div>
+        <div className="col-span-2 flex justify-between border-t border-slate-100 pt-2 lg:col-span-1 lg:border-0 lg:pt-0">
+          <div className="h-5 w-28 rounded-sm bg-slate-100" />
+          <div className="h-8 w-24 rounded-sm bg-slate-100" />
         </div>
       </div>
     )
   }
   return (
-    <div className="animate-pulse overflow-hidden rounded-2xl border border-slate-200 bg-white">
-      <div className="aspect-[16/10] bg-slate-100" />
-      <div className="space-y-3 p-4">
-        <div className="h-4 w-2/3 rounded bg-slate-100" />
-        <div className="h-3 w-1/2 rounded bg-slate-100" />
-        <div className="h-3 w-1/3 rounded bg-slate-100" />
+    <div className="animate-pulse overflow-hidden border border-slate-200 bg-white">
+      <div className="h-[180px] bg-slate-100 sm:h-[190px]" />
+      <div className="space-y-3 p-3.5">
+        <div className="h-4 w-2/3 rounded-sm bg-slate-100" />
+        <div className="h-3 w-1/2 rounded-sm bg-slate-100" />
+        <div className="h-3 w-1/3 rounded-sm bg-slate-100" />
       </div>
     </div>
   )
@@ -736,9 +783,9 @@ function ReviewTimeline({
   error: string
 }) {
   return (
-    <details className="group mt-2.5 min-w-0">
-      <summary className="flex min-h-8 w-fit max-w-full cursor-pointer list-none items-center gap-1.5 rounded-md text-xs font-medium text-slate-500 marker:hidden transition hover:text-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500">
-        <History className="h-3.5 w-3.5 shrink-0 text-blue-600" aria-hidden="true" />
+    <details className="group mt-1 min-w-0">
+      <summary className="flex min-h-6 w-fit max-w-full cursor-pointer list-none items-center gap-1 rounded-sm text-[11px] font-medium text-slate-400 marker:hidden transition hover:text-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500">
+        <History className="h-3 w-3 shrink-0" aria-hidden="true" />
         <span className="truncate">{error ? 'Review history unavailable' : 'Review history'}</span>
         <span className="shrink-0 text-[10px] text-slate-400">· {events.length + 1}</span>
       </summary>
