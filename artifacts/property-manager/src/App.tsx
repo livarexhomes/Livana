@@ -12,7 +12,7 @@ import { trackSiteInteraction, trackSiteVisit } from "@/lib/site-analytics";
 
 const HomePage = lazy(() => import("@/pages/HomePage"));
 const ListingsPage = lazy(() => import("@/pages/ListingsPage"));
-const PropertyDetailPage = lazy(() => import("@/pages/PropertyDetailPageV2"));
+const PropertyDetailPage = lazy(() => import("@/pages/PropertyDetailPage"));
 const LoginPage = lazy(() => import("@/pages/LoginPage"));
 const RegisterPage = lazy(() => import("@/pages/RegisterPage"));
 const ResetPasswordPage = lazy(() => import("@/pages/ResetPasswordPage"));
