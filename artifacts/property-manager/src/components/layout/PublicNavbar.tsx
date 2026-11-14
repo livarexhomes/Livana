@@ -50,14 +50,16 @@ const BEDROOM_OPTIONS = [
   { value: '4', label: '4+ Bedrooms' },
 ]
 
-const NAV_LINKS = [
+type NavLink = { href: string | null; label: string; comingSoon: boolean }
+
+const NAV_LINKS: NavLink[] = [
   { href: '/listings?type=rent', label: 'Rent', comingSoon: false },
   { href: '/listings?type=lease', label: 'Lease', comingSoon: false },
   { href: null, label: 'Buy', comingSoon: true },
   { href: null, label: 'Commercial', comingSoon: true },
   { href: '/about', label: 'About', comingSoon: false },
   { href: '/contact', label: 'Contact', comingSoon: false },
-] as const
+]
 
 const PANEL_CARD = 'absolute z-20 rounded-3xl bg-white p-3 ring-1 ring-slate-200/80 shadow-[0_18px_50px_rgba(15,23,42,0.14)]'
 const PANEL_TITLE = 'px-1 text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400'
