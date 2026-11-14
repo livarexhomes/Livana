@@ -2,14 +2,14 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { Link, useParams, useLocation } from '@/lib/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
-  MapPin, BedDouble, Bath, Maximize, Heart,
+  BedDouble, Bath, Maximize, Heart,
   ArrowLeft, Share2, CheckCircle,
-  Building2, Calendar, ShieldCheck, Info,
+  Building2, Calendar, ShieldCheck,
   Mail, Wifi, Car, Dumbbell, Waves, Wind, Shield, Zap,
   Droplets, TreePine, UtensilsCrossed, Tv, Lock, Sun, Package,
-  Eye, Phone, X, ReceiptText, ChevronRight, ChevronLeft,
-  Star, MapPin as MapPinIcon, User, MessageCircle,
-  ArrowUpRight, ExternalLink, Clock, Key, Home,
+  Eye, X, ChevronRight, ChevronLeft,
+  MapPin as MapPinIcon, MessageCircle,
+  ArrowUpRight, ExternalLink, Clock, Key, Home, AlertCircle,
 } from 'lucide-react'
 import PropertyDetailMap from '../components/property/PropertyDetailMap'
 import PublicNavbar from '../components/layout/PublicNavbar'
@@ -42,20 +42,6 @@ const AMENITIES = [
   { icon: Sun,             label: 'Solar Panels',           category: 'utilities' },
   { icon: Package,         label: 'Storage Room',           category: 'indoor' },
 ]
-
-const AMENITY_CATEGORIES = [
-  { key: 'all', label: 'All' },
-  { key: 'security', label: 'Security', icon: Shield },
-  { key: 'comfort', label: 'Comfort', icon: Wind },
-  { key: 'utilities', label: 'Utilities', icon: Zap },
-  { key: 'lifestyle', label: 'Lifestyle', icon: Waves },
-  { key: 'indoor', label: 'Indoor', icon: Home },
-  { key: 'outdoor', label: 'Outdoor', icon: TreePine },
-  { key: 'parking', label: 'Parking', icon: Car },
-  { key: 'connectivity', label: 'Connectivity', icon: Wifi },
-]
-
-type ActiveTab = 'overview' | 'amenities' | 'location' | 'details'
 
 type FullProperty = PropertyWithLandlord & {
   landlords: Pick<Landlord, 'id' | 'full_name' | 'whatsapp' | 'bio' | 'avatar_url' | 'is_verified'> | null
@@ -94,84 +80,6 @@ function timeAgo(iso: string) {
 
 // ─── Helper Components ───
 
-function Badge({ children, className = '', variant = 'default' }: { children: React.ReactNode; className?: string; variant?: 'default' | 'success' | 'warning' | 'info' | 'primary' }) {
-  const variants = {
-    default: 'bg-slate-100 text-slate-700 border-slate-200',
-    success: 'bg-emerald-50 text-emerald-700 border-emerald-100',
-    warning: 'bg-amber-50 text-amber-700 border-amber-100',
-    info: 'bg-blue-50 text-blue-700 border-blue-100',
-    primary: 'bg-blue-600 text-white border-blue-600',
-  }
-  return (
-    <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border ${variants[variant]} ${className}`}>
-      {children}
-    </span>
-  )
-}
-
-function StatCard({ icon: Icon, value, label, trend }: { icon: IconComponent; value: string | number; label: string; trend?: string }) {
-  return (
-    <div className="group bg-white rounded-2xl border border-slate-200 p-5 sm:p-6 transition-all duration-200 hover:border-blue-200 hover:shadow-md">
-      <div className="w-10 h-10 rounded-xl bg-slate-50 group-hover:bg-blue-50 flex items-center justify-center mb-3 transition-colors">
-        <Icon className="w-5 h-5 text-slate-400 group-hover:text-blue-600 transition-colors" strokeWidth={1.5} />
-      </div>
-      <p className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">{value}</p>
-      <p className="text-xs text-slate-400 font-semibold mt-1 uppercase tracking-wide">{label}</p>
-      {trend && <p className="text-xs text-emerald-600 font-semibold mt-1 flex items-center gap-1">{trend}</p>}
-    </div>
-  )
-}
-
-function InfoRow({ label, value, icon: Icon }: { label: string; value: string; icon?: IconComponent }) {
-  return (
-    <div className="rounded-2xl bg-slate-50 border border-slate-100 px-4 py-3.5 flex items-center gap-3">
-      {Icon && <div className="w-8 h-8 rounded-xl bg-white border border-slate-100 flex items-center justify-center shrink-0"><Icon className="w-4 h-4 text-slate-400" strokeWidth={1.5} /></div>}
-      <div className="min-w-0">
-        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">{label}</p>
-        <p className="text-sm font-bold text-slate-800 truncate">{value}</p>
-      </div>
-    </div>
-  )
-}
-
-function AmenityCard({ icon: Icon, label, category, isActive }: { icon: IconComponent; label: string; category: string; isActive: boolean }) {
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 8 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.2 }}
-      className={`group flex items-center gap-3 p-3.5 rounded-2xl border transition-all cursor-default ${
-        isActive
-          ? 'bg-white border-blue-200 shadow-sm shadow-blue-100'
-          : 'bg-slate-50 border-slate-100 hover:bg-white hover:border-slate-200 hover:shadow-sm'
-      }`}
-    >
-      <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 transition-all ${
-        isActive ? 'bg-blue-100' : 'bg-white border border-slate-100 group-hover:border-blue-100 group-hover:bg-blue-50'
-      }`}>
-        <Icon className={`w-4.5 h-4.5 transition-colors ${isActive ? 'text-blue-600' : 'text-slate-400 group-hover:text-blue-600'}`} strokeWidth={1.5} />
-      </div>
-      <span className={`text-sm font-medium ${isActive ? 'text-slate-900' : 'text-slate-600 group-hover:text-slate-900'}`}>{label}</span>
-      <span className="ml-auto text-[10px] font-semibold text-slate-400 uppercase tracking-wider opacity-0 group-hover:opacity-100 transition-opacity">{category}</span>
-    </motion.div>
-  )
-}
-
-function SectionHeader({ title, description, icon: Icon, action }: { title: string; description?: string; icon?: IconComponent; action?: React.ReactNode }) {
-  return (
-    <div className="flex items-start justify-between gap-4 mb-6">
-      <div className="flex items-start gap-3">
-        {Icon && <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center shrink-0"><Icon className="w-5 h-5 text-blue-600" strokeWidth={1.5} /></div>}
-        <div>
-          <h2 className="text-lg sm:text-xl font-black text-slate-900">{title}</h2>
-          {description && <p className="text-sm text-slate-500 mt-0.5">{description}</p>}
-        </div>
-      </div>
-      {action && <div className="flex-shrink-0 mt-1">{action}</div>}
-    </div>
-  )
-}
-
 function PropertyImage({ src, alt, priority = false, className = '', sizes }: { src: string; alt: string; priority?: boolean; className?: string; sizes?: string }) {
   return (
     <img
@@ -197,8 +105,6 @@ export default function PropertyDetailPage() {
   const [saving, setSaving]     = useState(false)
   const [activeImg, setActiveImg] = useState(0)
   const [lightboxOpen, setLightboxOpen] = useState(false)
-  const [activeTab, setActiveTab] = useState<ActiveTab>('overview')
-  const [amenityFilter, setAmenityFilter] = useState<string>('all')
   const [copied, setCopied]       = useState(false)
   const [feeConfig, setFeeConfig] = useState<FeeConfig | null>(null)
   const [userRole, setUserRole] = useState<'guest' | 'tenant' | 'landlord' | 'admin'>('guest')
@@ -209,11 +115,8 @@ export default function PropertyDetailPage() {
   const [enquirySuccess, setEnquirySuccess] = useState(false)
   const [contactModalOpen, setContactModalOpen] = useState(false)
   const [supportPhone, setSupportPhone] = useState('07061370742')
-  const [showFullDescription, setShowFullDescription] = useState(false)
-  const [imageLoadStates, setImageLoadStates] = useState<Record<number, boolean>>({})
 
   const touchStartX = useRef<number | null>(null)
-  const galleryRef = useRef<HTMLDivElement>(null)
 
   // Load platform settings
   useEffect(() => {
@@ -514,10 +417,6 @@ export default function PropertyDetailPage() {
     mainEntityOfPage: `https://livarex.com.ng/property/${property.id}`,
   } : undefined
 
-  const filteredAmenities = amenityFilter === 'all'
-    ? AMENITIES.filter(a => property.amenities?.includes(a.label))
-    : AMENITIES.filter(a => property.amenities?.includes(a.label) && a.category === amenityFilter)
-
   return (
     <div className="min-h-screen bg-white">
       <SEO
@@ -653,7 +552,7 @@ export default function PropertyDetailPage() {
                 transition={{ delay: 0.5 }}
                 className="absolute bottom-0 left-0 right-0 z-20 px-4 pb-4"
               >
-                <div className="flex gap-2 overflow-x-auto scrollbar-hide max-w-7xl mx-auto" ref={galleryRef}>
+                <div className="flex gap-2 overflow-x-auto scrollbar-hide max-w-7xl mx-auto">
                   {images.map((img, i) => (
                     <motion.button
                       key={img.id}
@@ -726,525 +625,395 @@ export default function PropertyDetailPage() {
       </div>
 
       {/* ── MAIN CONTENT ── */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 lg:py-16">
-        <div className="grid lg:grid-cols-[minmax(0,1fr)_360px] xl:grid-cols-[minmax(0,1fr)_400px] gap-8 lg:gap-10 xl:gap-12">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
+        <div className="grid lg:grid-cols-[1fr_380px] xl:grid-cols-[1fr_420px] gap-8 lg:gap-12">
 
-          {/* LEFT COLUMN */}
-          <div className="space-y-8 min-w-0">
-            {/* Stats Row */}
-            <motion.div
+          {/* LEFT COLUMN - Content Sections */}
+          <div className="space-y-10 min-w-0">
+            
+            {/* Property Description Section */}
+            <motion.section
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 }}
-              className="grid grid-cols-2 sm:grid-cols-4 gap-4"
+              className="bg-white"
             >
-              <StatCard icon={BedDouble} value={property.bedrooms ?? '—'} label="Bedrooms" />
-              <StatCard icon={Bath} value={property.bathrooms ?? '—'} label="Bathrooms" />
-              {property.area_sqft && (
-                <StatCard icon={Maximize} value={property.area_sqft.toLocaleString()} label="Sq. Ft." />
-              )}
-              <StatCard icon={Calendar} value={new Date(property.created_at).getFullYear()} label="Year Listed" />
-            </motion.div>
+              <h2 className="text-2xl font-bold text-slate-900 mb-4">Property Description</h2>
+              <div className="prose prose-slate max-w-none">
+                <p className="text-slate-600 leading-relaxed text-base whitespace-pre-line break-words">
+                  {property.description || 'No description provided for this listing.'}
+                </p>
+              </div>
+              <div className="mt-4 flex items-center gap-4 text-sm text-slate-500">
+                <span className="flex items-center gap-1.5">
+                  <Clock className="w-4 h-4" />
+                  {timeAgo(property.created_at)}
+                </span>
+                {property.area_sqft && (
+                  <span className="flex items-center gap-1.5">
+                    <Maximize className="w-4 h-4" />
+                    {property.area_sqft.toLocaleString()} sq ft
+                  </span>
+                )}
+              </div>
+            </motion.section>
 
-            {/* Tab Navigation */}
-            <motion.div
+            {/* Property Details Section */}
+            <motion.section
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3 }}
-              className="bg-white rounded-2xl border border-slate-200 overflow-hidden"
+              className="bg-white"
             >
-              <div className="flex border-b border-slate-200 bg-slate-50/60 overflow-x-auto scrollbar-hide">
-                {([
-                  { id: 'overview',  label: 'Overview', icon: Info },
-                  { id: 'details',   label: 'Details', icon: Home },
-                  { id: 'amenities', label: 'Amenities', icon: Star },
-                  { id: 'location',  label: 'Location', icon: MapPinIcon },
-                ] as { id: ActiveTab; label: string; icon: IconComponent }[]).map((tab, index) => (
-                  <motion.button
-                    key={tab.id}
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                    onClick={() => setActiveTab(tab.id)}
-                    className={`relative flex items-center gap-2 px-5 py-4 text-sm font-semibold whitespace-nowrap transition-colors ${
-                      activeTab === tab.id ? 'text-blue-700 bg-white' : 'text-slate-500 hover:text-blue-600 hover:bg-white/50'
-                    }`}
-                  >
-                    <tab.icon className="w-4 h-4" strokeWidth={2} />
-                    {tab.label}
-                    {activeTab === tab.id && (
-                      <motion.div
-                        layoutId="tab-line"
-                        className="absolute bottom-0 left-0 right-0 h-[3px] bg-blue-600 rounded-full"
-                      />
-                    )}
-                  </motion.button>
-                ))}
+              <h2 className="text-2xl font-bold text-slate-900 mb-6">Property Details</h2>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                <div className="flex items-center gap-3 p-4 rounded-xl bg-slate-50 border border-slate-100">
+                  <Home className="w-5 h-5 text-blue-600 shrink-0" />
+                  <div>
+                    <p className="text-xs text-slate-500">Property Type</p>
+                    <p className="font-semibold text-slate-900">{property.property_type || TYPE_LABEL[property.type]}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3 p-4 rounded-xl bg-slate-50 border border-slate-100">
+                  <BedDouble className="w-5 h-5 text-blue-600 shrink-0" />
+                  <div>
+                    <p className="text-xs text-slate-500">Bedrooms</p>
+                    <p className="font-semibold text-slate-900">{property.bedrooms ?? '—'}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3 p-4 rounded-xl bg-slate-50 border border-slate-100">
+                  <Bath className="w-5 h-5 text-blue-600 shrink-0" />
+                  <div>
+                    <p className="text-xs text-slate-500">Bathrooms</p>
+                    <p className="font-semibold text-slate-900">{property.bathrooms ?? '—'}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3 p-4 rounded-xl bg-slate-50 border border-slate-100">
+                  <ShieldCheck className="w-5 h-5 text-blue-600 shrink-0" />
+                  <div>
+                    <p className="text-xs text-slate-500">Status</p>
+                    <p className="font-semibold text-slate-900">{statusCfg.label}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3 p-4 rounded-xl bg-slate-50 border border-slate-100">
+                  <MapPinIcon className="w-5 h-5 text-blue-600 shrink-0" />
+                  <div>
+                    <p className="text-xs text-slate-500">City</p>
+                    <p className="font-semibold text-slate-900">{property.city}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3 p-4 rounded-xl bg-slate-50 border border-slate-100">
+                  <Calendar className="w-5 h-5 text-blue-600 shrink-0" />
+                  <div>
+                    <p className="text-xs text-slate-500">Listed</p>
+                    <p className="font-semibold text-slate-900">{new Date(property.created_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</p>
+                  </div>
+                </div>
               </div>
+            </motion.section>
 
-              {/* Tab Content */}
-              <div className="p-6 sm:p-8">
-                <AnimatePresence mode="wait">
-
-                  {/* OVERVIEW TAB */}
-                  {activeTab === 'overview' && (
+            {/* Amenities Section */}
+            {property.amenities && property.amenities.length > 0 && (
+              <motion.section
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.4 }}
+                className="bg-white"
+              >
+                <h2 className="text-2xl font-bold text-slate-900 mb-6">Included in Your Rental</h2>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                  {AMENITIES.filter(a => property.amenities?.includes(a.label)).map((amenity, i) => (
                     <motion.div
-                      key="overview"
+                      key={amenity.label}
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -10 }}
-                      transition={{ duration: 0.2 }}
-                      className="space-y-8"
+                      transition={{ delay: i * 0.03 }}
+                      className="flex items-center gap-3 p-4 rounded-xl bg-slate-50 border border-slate-100 hover:border-blue-200 hover:bg-blue-50/50 transition-all"
                     >
-                      <div>
-                        <SectionHeader title="About this property" icon={Info} />
-                        <div className="prose prose-slate max-w-none">
-                          <p className="text-slate-600 leading-[1.8] text-base whitespace-pre-line break-words">
-                            {property.description || 'No description provided for this listing.'}
-                          </p>
-                        </div>
+                      <div className="w-10 h-10 rounded-lg bg-white border border-slate-200 flex items-center justify-center shrink-0">
+                        <amenity.icon className="w-5 h-5 text-blue-600" strokeWidth={1.5} />
                       </div>
-
-                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                        <InfoRow label="Type" value={TYPE_LABEL[property.type] ?? property.type} icon={Home} />
-                        <InfoRow label="Status" value={statusCfg.label} icon={ShieldCheck} />
-                        <InfoRow label="City" value={property.city} icon={MapPinIcon} />
-                        <InfoRow label="Listed" value={new Date(property.created_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })} icon={Calendar} />
-                      </div>
+                      <span className="text-sm font-medium text-slate-700">{amenity.label}</span>
                     </motion.div>
-                  )}
+                  ))}
+                </div>
+              </motion.section>
+            )}
 
-                  {/* DETAILS TAB */}
-                  {activeTab === 'details' && (
-                    <motion.div
-                      key="details"
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -10 }}
-                      transition={{ duration: 0.2 }}
-                      className="space-y-6"
-                    >
-                      <SectionHeader title="Property Details" icon={Home} />
-                      
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        {[
-                          { label: 'Property Type', value: property.property_type || '—', icon: Building2 },
-                          { label: 'Transaction Type', value: TYPE_LABEL[property.type] ?? property.type, icon: Home },
-                          { label: 'Furnishing', value: property.furnished ? 'Furnished' : 'Unfurnished', icon: Package },
-                          { label: 'Availability', value: statusCfg.label, icon: ShieldCheck },
-                          { label: 'Bedrooms', value: property.bedrooms?.toString() ?? '—', icon: BedDouble },
-                          { label: 'Bathrooms', value: property.bathrooms?.toString() ?? '—', icon: Bath },
-                          { label: 'Area', value: property.area_sqft ? `${property.area_sqft.toLocaleString()} sq ft` : '—', icon: Maximize },
-                          { label: 'Year Built', value: property.year_built?.toString() ?? '—', icon: Calendar },
-                        ].map((item, i) => (
-                          <motion.div
-                            key={item.label}
-                            initial={{ opacity: 0, y: 10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: i * 0.03 }}
-                            className="group bg-white rounded-2xl border border-slate-200 p-5 transition-all hover:border-blue-200 hover:shadow-sm"
-                          >
-                            <div className="w-10 h-10 rounded-xl bg-slate-50 group-hover:bg-blue-50 flex items-center justify-center mb-3 transition-colors">
-                              <item.icon className="w-5 h-5 text-slate-400 group-hover:text-blue-600 transition-colors" strokeWidth={1.5} />
-                            </div>
-                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">{item.label}</p>
-                            <p className="text-lg font-bold text-slate-900">{item.value}</p>
-                          </motion.div>
-                        ))}
-                      </div>
-
-                      
-                    </motion.div>
-                  )}
-
-                  {/* AMENITIES TAB */}
-                  {activeTab === 'amenities' && (
-                    <motion.div
-                      key="amenities"
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -10 }}
-                      transition={{ duration: 0.2 }}
-                      className="space-y-6"
-                    >
-                      <div className="flex items-center justify-between">
-                        <SectionHeader title="What this place offers" icon={Star} description={`${property.amenities?.length || 0} amenities available`} />
-                      </div>
-
-                      {/* Category Filter */}
-                      <div className="flex flex-wrap gap-2" role="tablist" aria-label="Amenity categories">
-                        {AMENITY_CATEGORIES.map(cat => (
-                          <motion.button
-                            key={cat.key}
-                            whileHover={{ scale: 1.02 }}
-                            whileTap={{ scale: 0.98 }}
-                            onClick={() => setAmenityFilter(cat.key)}
-                            role="tab"
-                            aria-selected={amenityFilter === cat.key}
-                            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-medium transition-all ${
-                              amenityFilter === cat.key
-                                ? 'bg-blue-600 text-white shadow-sm shadow-blue-600/20'
-                                : 'bg-white text-slate-600 border border-slate-200 hover:border-blue-300 hover:bg-blue-50'
-                            }`}
-                          >
-                            {cat.icon && <cat.icon className="w-3.5 h-3.5" strokeWidth={2} />}
-                            {cat.label}
-                          </motion.button>
-                        ))}
-                      </div>
-
-                      {/* Amenities Grid */}
-                      {filteredAmenities.length > 0 ? (
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                          {filteredAmenities.map((amenity, i) => (
-                            <AmenityCard
-                              key={amenity.label}
-                              icon={amenity.icon}
-                              label={amenity.label}
-                              category={amenity.category}
-                              isActive={false}
-                            />
-                          ))}
-                        </div>
-                      ) : (
-                        <div className="text-center py-12">
-                          <div className="w-16 h-16 rounded-2xl bg-slate-100 flex items-center justify-center mx-auto mb-4">
-                            <Star className="w-8 h-8 text-slate-300" strokeWidth={1.5} />
-                          </div>
-                          <p className="text-slate-500">No amenities listed for this category.</p>
-                        </div>
-                      )}
-                    </motion.div>
-                  )}
-
-                  {/* LOCATION TAB */}
-                  {activeTab === 'location' && (
-                    <motion.div
-                      key="location"
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -10 }}
-                      transition={{ duration: 0.2 }}
-                      className="space-y-6"
-                    >
-                      <div>
-                        <SectionHeader title="Where you'll be" icon={MapPinIcon} />
-                        <div className="flex items-center gap-3 p-4 rounded-2xl bg-slate-50 border border-slate-100">
-                          <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center shrink-0">
-                            <MapPinIcon className="w-5 h-5 text-blue-600" />
-                          </div>
-                          <div>
-                            <p className="font-semibold text-slate-900">{addressVisible ? fullLocation : property.city}, Nigeria</p>
-                            {!addressVisible && (
-                              <p className="text-sm text-slate-500 mt-0.5">Sign in to view the full address and request an inspection through Livarex.</p>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-
-                      {property.latitude && property.longitude ? (
-                        <div className="rounded-2xl overflow-hidden border border-slate-200 shadow-sm">
-                          <PropertyDetailMap
-                            lat={property.latitude}
-                            lng={property.longitude}
-                            title={property.title}
-                          />
-                        </div>
-                      ) : (
-                        <div className="rounded-2xl border border-slate-200 h-[300px] flex items-center justify-center bg-slate-50">
-                          <div className="text-center px-6">
-                            <MapPinIcon className="w-12 h-12 text-slate-300 mx-auto mb-3" strokeWidth={1.5} />
-                            <p className="text-slate-500">Map location not available for this property.</p>
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Nearby highlights */}
-                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                        {[
-                          { label: 'City Center', value: '~5 km', icon: MapPinIcon },
-                          { label: 'Public Transport', value: '~500 m', icon: Car },
-                          { label: 'Shopping', value: '~1 km', icon: Package },
-                        ].map((item, i) => (
-                          <motion.div
-                            key={item.label}
-                            initial={{ opacity: 0, y: 10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: i * 0.05 }}
-                            className="group p-5 rounded-2xl bg-white border border-slate-200 hover:border-blue-200 hover:shadow-sm transition-all"
-                          >
-                            <div className="w-10 h-10 rounded-xl bg-slate-50 group-hover:bg-blue-50 flex items-center justify-center mb-3 transition-colors">
-                              <item.icon className="w-5 h-5 text-slate-400 group-hover:text-blue-600 transition-colors" strokeWidth={1.5} />
-                            </div>
-                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">{item.label}</p>
-                            <p className="text-lg font-bold text-slate-900">{item.value}</p>
-                          </motion.div>
-                        ))}
-                      </div>
-                    </motion.div>
-                  )}
-
-                </AnimatePresence>
+            {/* Location Section */}
+            <motion.section
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.5 }}
+              className="bg-white"
+            >
+              <h2 className="text-2xl font-bold text-slate-900 mb-4">Where you'll be</h2>
+              <div className="flex items-center gap-2 mb-4">
+                <MapPinIcon className="w-5 h-5 text-slate-400" />
+                <p className="text-slate-600">{addressVisible ? fullLocation : property.city}, Nigeria</p>
               </div>
-            </motion.div>
+              {!addressVisible && (
+                <p className="text-sm text-slate-500 mb-4">Sign in to view the full address and request an inspection through Livarex.</p>
+              )}
+              {property.latitude && property.longitude ? (
+                <div className="rounded-xl overflow-hidden border border-slate-200">
+                  <PropertyDetailMap
+                    lat={property.latitude}
+                    lng={property.longitude}
+                    title={property.title}
+                  />
+                </div>
+              ) : (
+                <div className="rounded-xl border border-slate-200 h-[300px] flex items-center justify-center bg-slate-50">
+                  <div className="text-center px-6">
+                    <MapPinIcon className="w-12 h-12 text-slate-300 mx-auto mb-3" strokeWidth={1.5} />
+                    <p className="text-slate-500">Map location not available for this property.</p>
+                  </div>
+                </div>
+              )}
+            </motion.section>
+
           </div>
 
-          {/* RIGHT SIDEBAR - BOOKING CARD */}
-          <aside id="property-contact" className="min-w-0 scroll-mt-24 lg:sticky lg:top-24">
-            <div className="space-y-5">
+          {/* RIGHT SIDEBAR - Pricing & Agent Card */}
+          <aside className="min-w-0 lg:sticky lg:top-24 self-start">
+            <div className="space-y-6">
 
-              {/* Price & Booking Card */}
+              {/* Pricing Card */}
               <motion.div
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.4 }}
-                className="bg-white rounded-2xl border border-slate-200 shadow-xl shadow-slate-200/40 overflow-hidden"
+                transition={{ delay: 0.3 }}
+                className="bg-white rounded-2xl border border-slate-200 shadow-lg overflow-hidden"
               >
                 {/* Price Header */}
-                <div className="px-6 py-6 border-b border-slate-100 bg-gradient-to-r from-blue-50 to-transparent">
-                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">
-                    {TYPE_LABEL[property.type]}
-                  </p>
-                  <div className="flex flex-wrap items-baseline gap-2">
-                    <span className="text-3xl sm:text-4xl font-extrabold text-blue-700 tracking-tight break-words">
+                <div className="px-6 py-5 border-b border-slate-100">
+                  <div className="flex items-center justify-between mb-2">
+                    <p className="text-sm font-medium text-slate-500">
+                      {TYPE_LABEL[property.type]}
+                    </p>
+                    {landlord?.is_verified && (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                        <CheckCircle className="w-3 h-3" />
+                        Verified
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-3xl font-bold text-slate-900">
                       {formatNaira(property.price)}
                     </span>
                     {property.type === 'rent' && (
-                      <span className="text-sm text-slate-400 font-medium self-end mb-1">/year</span>
+                      <span className="text-sm text-slate-500">/year</span>
                     )}
                   </div>
                 </div>
 
-                {/* Total Payable Breakdown */}
+                {/* Move-in Breakdown */}
                 {breakdown && (
-                  <div className="px-6 py-5 border-b border-blue-100 bg-blue-50/40">
-                    <div className="flex items-center gap-2 mb-4">
-                      <div className="w-8 h-8 rounded-xl bg-blue-100 flex items-center justify-center">
-                        <ReceiptText className="w-4 h-4 text-blue-600" />
+                  <div className="px-6 py-5 border-b border-slate-100 bg-slate-50/50">
+                    <p className="text-sm font-semibold text-slate-900 mb-4">Move-in Breakdown</p>
+                    <div className="space-y-3">
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <p className="text-sm font-medium text-slate-700">Rental Price</p>
+                          <p className="text-xs text-slate-500">{property.type === 'rent' ? 'Yearly' : 'One-time'}</p>
+                        </div>
+                        <p className="text-sm font-semibold text-slate-900">{formatNaira(breakdown.rent)}</p>
                       </div>
-                      <p className="text-xs font-bold text-slate-900 uppercase tracking-widest">What you'll pay</p>
-                    </div>
-                    <div className="space-y-2 text-sm">
-                      <div className="flex items-center justify-between text-slate-600">
-                        <span>Rent</span>
-                        <span className="font-semibold text-slate-900">{formatNaira(breakdown.rent)}</span>
-                      </div>
-                      <div className="flex items-center justify-between text-slate-600">
-                        <span>Livarex Service Fee{feeConfig ? ` (${feeConfig.agencyFeePercent}%)` : ''}</span>
-                        <span className="font-semibold text-slate-900">{formatNaira(breakdown.agencyFee)}</span>
-                      </div>
+                      {breakdown.agencyFee > 0 && (
+                        <div className="flex items-start justify-between">
+                          <div>
+                            <p className="text-sm font-medium text-slate-700">Agency Fee</p>
+                            <p className="text-xs text-slate-500">Commission to the agent{feeConfig ? ` (${feeConfig.agencyFeePercent}%)` : ''}</p>
+                          </div>
+                          <p className="text-sm font-semibold text-slate-900">{formatNaira(breakdown.agencyFee)}</p>
+                        </div>
+                      )}
                       {breakdown.agreementFee > 0 && (
-                        <div className="flex items-center justify-between text-slate-600">
-                          <span>Agreement Fee</span>
-                          <span className="font-semibold text-slate-900">{formatNaira(breakdown.agreementFee)}</span>
+                        <div className="flex items-start justify-between">
+                          <div>
+                            <p className="text-sm font-medium text-slate-700">Legal Fee</p>
+                            <p className="text-xs text-slate-500">For tenancy / legal agreement</p>
+                          </div>
+                          <p className="text-sm font-semibold text-slate-900">{formatNaira(breakdown.agreementFee)}</p>
                         </div>
                       )}
                       {breakdown.commissionFee > 0 && (
-                        <div className="flex items-center justify-between text-slate-600">
-                          <span>Commission Fee</span>
-                          <span className="font-semibold text-slate-900">{formatNaira(breakdown.commissionFee)}</span>
+                        <div className="flex items-start justify-between">
+                          <div>
+                            <p className="text-sm font-medium text-slate-700">Commission Fee</p>
+                            <p className="text-xs text-slate-500">Additional commission</p>
+                          </div>
+                          <p className="text-sm font-semibold text-slate-900">{formatNaira(breakdown.commissionFee)}</p>
                         </div>
                       )}
                       {breakdown.otherCharges > 0 && (
-                        <div className="flex items-center justify-between text-slate-600">
-                          <span>Other Charges</span>
-                          <span className="font-semibold text-slate-900">{formatNaira(breakdown.otherCharges)}</span>
+                        <div className="flex items-start justify-between">
+                          <div>
+                            <p className="text-sm font-medium text-slate-700">Other Charges</p>
+                            <p className="text-xs text-slate-500">Additional fees</p>
+                          </div>
+                          <p className="text-sm font-semibold text-slate-900">{formatNaira(breakdown.otherCharges)}</p>
                         </div>
                       )}
-                      <div className="flex items-center justify-between pt-3 border-t border-blue-100">
-                        <span className="font-bold text-slate-900">Total Payable</span>
-                        <span className="font-extrabold text-blue-700 text-lg">{formatNaira(breakdown.total)}</span>
+                      <div className="pt-3 border-t border-slate-200">
+                        <div className="flex items-center justify-between">
+                          <p className="text-base font-bold text-slate-900">Total Due at Move-in</p>
+                          <p className="text-xl font-bold text-blue-600">{formatNaira(breakdown.total)}</p>
+                        </div>
                       </div>
                     </div>
                   </div>
                 )}
 
-                <div className="p-6 space-y-4">
-                  {/* Primary Actions */}
-                  <div className="grid grid-cols-2 gap-3">
-                    {userRole === 'guest' ? (
-                      <>
-                        <motion.button
-                          whileHover={{ scale: 1.02 }}
-                          whileTap={{ scale: 0.98 }}
-                          onClick={() => navigate('/login')}
-                          className="flex items-center justify-center gap-2 py-3.5 bg-slate-100 text-slate-400 rounded-xl font-bold text-sm cursor-pointer hover:bg-slate-200 transition-all"
-                        >
-                          <MessageCircle className="w-4 h-4" /> WhatsApp
-                        </motion.button>
-                        <motion.button
-                          whileHover={{ scale: 1.02 }}
-                          whileTap={{ scale: 0.98 }}
-                          onClick={() => navigate('/login')}
-                          className="flex items-center justify-center gap-2 py-3.5 bg-slate-100 text-slate-400 rounded-xl font-bold text-sm cursor-pointer hover:bg-slate-200 transition-all"
-                        >
-                          <Calendar className="w-4 h-4" /> Request inspection
-                        </motion.button>
-                      </>
-                    ) : (
-                      <>
-                        <motion.button
-                          whileHover={{ scale: 1.02 }}
-                          whileTap={{ scale: 0.98 }}
-                          onClick={handleWhatsAppContact}
-                          className="flex items-center justify-center gap-2 py-3.5 bg-emerald-600 text-white rounded-xl font-bold text-sm hover:bg-emerald-700 transition-all active:scale-[0.98] shadow-sm shadow-emerald-600/20"
-                        >
-                          <MessageCircle className="w-4 h-4" /> WhatsApp
-                        </motion.button>
-                        <motion.button
-                          whileHover={{ scale: 1.02 }}
-                          whileTap={{ scale: 0.98 }}
-                          onClick={handleBookInspection}
-                          className="flex items-center justify-center gap-2 py-3.5 bg-blue-600 text-white rounded-xl font-bold text-sm hover:bg-blue-700 transition-all active:scale-[0.98] shadow-sm shadow-blue-600/20"
-                        >
-                          <Calendar className="w-4 h-4" /> Request inspection
-                        </motion.button>
-                      </>
-                    )}
-                  </div>
-
-                  {/* Secondary Actions for Tenants */}
-                  {userRole === 'tenant' && (
-                    <div className="flex gap-3 pt-2">
+                {/* Action Buttons */}
+                <div className="p-6 space-y-3">
+                  {userRole === 'guest' ? (
+                    <>
                       <motion.button
                         whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.98 }}
-                        onClick={handleSave}
-                        disabled={saving}
-                        className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl font-semibold text-sm border transition-all ${
-                          saved
-                            ? 'bg-rose-50 text-rose-600 border-rose-200 hover:bg-rose-100'
-                            : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
-                        }`}
+                        onClick={() => navigate('/login')}
+                        className="w-full py-3 bg-blue-600 text-white rounded-xl font-semibold text-sm hover:bg-blue-700 transition-all"
                       >
-                        <Heart className={`w-4 h-4 ${saved ? 'fill-current' : ''}`} />
-                        {saved ? 'Saved' : 'Save'}
+                        Apply Now
                       </motion.button>
                       <motion.button
                         whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.98 }}
-                        onClick={handleShare}
-                        className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl bg-slate-50 border border-slate-200 hover:bg-slate-100 text-slate-600 font-semibold text-sm transition-all"
+                        onClick={() => navigate('/login')}
+                        className="w-full py-3 bg-white text-blue-600 border-2 border-blue-600 rounded-xl font-semibold text-sm hover:bg-blue-50 transition-all"
                       >
-                        <Share2 className="w-4 h-4" />
-                        {copied ? 'Copied!' : 'Share'}
+                        Schedule Inspection
                       </motion.button>
-                    </div>
-                  )}
-
-                  {/* Guest CTA */}
-                  {userRole === 'guest' && (
-                    <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 flex flex-col gap-3">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-slate-200 flex items-center justify-center shrink-0">
-                          <Lock className="w-5 h-5 text-slate-500" />
-                        </div>
-                        <div>
-                          <p className="text-sm font-bold text-slate-700">Create an account to request inspections</p>
-                          <p className="text-xs text-slate-400">Free signup unlocks inspection booking, reservations, and alerts.</p>
-                        </div>
-                      </div>
-                      <div className="rounded-2xl bg-white border border-slate-100 p-3 text-xs text-slate-500">
-                        <p className="font-semibold text-slate-700 mb-1">Why register?</p>
-                        <ul className="list-disc pl-5 space-y-1">
-                          <li>Request inspection or reserve this property</li>
-                          <li>Unlock full property address</li>
-                          <li>Save properties and get alerts</li>
-                        </ul>
-                      </div>
-                    </div>
+                    </>
+                  ) : (
+                    <>
+                      <motion.button
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                        onClick={handleBookInspection}
+                        className="w-full py-3 bg-blue-600 text-white rounded-xl font-semibold text-sm hover:bg-blue-700 transition-all"
+                      >
+                        Schedule Inspection
+                      </motion.button>
+                      <motion.button
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                        onClick={handleWhatsAppContact}
+                        className="w-full py-3 bg-emerald-600 text-white rounded-xl font-semibold text-sm hover:bg-emerald-700 transition-all"
+                      >
+                        <MessageCircle className="w-4 h-4 inline mr-2" />
+                        Contact via WhatsApp
+                      </motion.button>
+                    </>
                   )}
                 </div>
+              </motion.div>
 
-                {/* Landlord Section */}
-                {landlord && (
-                  <div className="px-6 pb-6">
-                    <div className="rounded-2xl bg-slate-50 border border-slate-100 p-5">
-                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-4">Listed by</p>
-                      <div className="flex items-center gap-3">
-                        <div className="w-12 h-12 rounded-full bg-white border border-slate-200 overflow-hidden shrink-0 shadow-sm">
-                          {landlord.avatar_url
-                            ? <img src={landlord.avatar_url} className="w-full h-full object-cover" alt={landlord.full_name ?? ''} onError={e => { (e.currentTarget as HTMLImageElement).style.display = 'none' }} />
-                            : <div className="w-full h-full flex items-center justify-center text-slate-600 font-bold text-sm">{landlordInitials}</div>
-                          }
-                        </div>
-                        <div className="min-w-0">
-                          <p className="font-bold text-slate-900 text-sm truncate">{landlord.full_name}</p>
-                          {landlord.is_verified
-                            ? <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-600"><CheckCircle className="w-3 h-3" /> Verified landlord</span>
-                            : <p className="text-xs text-slate-400">Landlord on Livarex</p>
-                          }
-                        </div>
-                      </div>
-                      {landlord.bio && (
-                        <p className="text-xs text-slate-500 leading-relaxed mt-4 pt-4 border-t border-slate-100">{landlord.bio}</p>
-                      )}
-                      {landlord.whatsapp && (userRole === 'tenant' || userRole === 'guest') && (
-                        <motion.button
-                          whileHover={{ scale: 1.02 }}
-                          whileTap={{ scale: 0.98 }}
-                          onClick={handleWhatsAppContact}
-                          className={`mt-4 flex items-center gap-2 w-full py-2.5 px-3 rounded-xl text-sm font-semibold transition-colors ${
-                            userRole === 'guest'
-                              ? 'bg-slate-100 border border-slate-200 text-slate-400 cursor-pointer hover:bg-slate-200'
-                              : 'bg-emerald-50 border border-emerald-200 text-emerald-700 hover:bg-emerald-100'
-                          }`}
-                        >
-                          <MessageCircle className="w-4 h-4" />
-                          {userRole === 'guest' ? 'Sign in to chat with Livarex' : 'WhatsApp Livarex Support'}
-                        </motion.button>
+              {/* Agent Card */}
+              {landlord && (
+                <motion.div
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.4 }}
+                  className="bg-white rounded-2xl border border-slate-200 p-6"
+                >
+                  <div className="flex items-start gap-4 mb-4">
+                    <div className="w-14 h-14 rounded-full bg-slate-100 border-2 border-slate-200 overflow-hidden shrink-0">
+                      {landlord.avatar_url
+                        ? <img src={landlord.avatar_url} className="w-full h-full object-cover" alt={landlord.full_name ?? ''} onError={e => { (e.currentTarget as HTMLImageElement).style.display = 'none' }} />
+                        : <div className="w-full h-full flex items-center justify-center text-slate-600 font-bold text-lg">{landlordInitials}</div>
+                      }
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-bold text-slate-900 text-base truncate">{landlord.full_name}</p>
+                      <p className="text-sm text-slate-500">Real Estate Agent</p>
+                      {landlord.is_verified && (
+                        <span className="inline-flex items-center gap-1 mt-1 text-xs font-semibold text-emerald-600">
+                          <CheckCircle className="w-3 h-3" />
+                          Verified Agent
+                        </span>
                       )}
                     </div>
                   </div>
-                )}
-              </motion.div>
+                  {landlord.bio && (
+                    <p className="text-sm text-slate-600 leading-relaxed mb-4">{landlord.bio}</p>
+                  )}
+                  {landlord.whatsapp && (userRole === 'tenant' || userRole === 'guest') && (
+                    <motion.button
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      onClick={handleWhatsAppContact}
+                      className={`w-full py-2.5 rounded-xl text-sm font-semibold transition-colors ${
+                        userRole === 'guest'
+                          ? 'bg-slate-100 border border-slate-200 text-slate-400 cursor-pointer hover:bg-slate-200'
+                          : 'bg-emerald-50 border border-emerald-200 text-emerald-700 hover:bg-emerald-100'
+                      }`}
+                    >
+                      <MessageCircle className="w-4 h-4 inline mr-2" />
+                      {userRole === 'guest' ? 'Sign in to Contact' : 'Contact Agent'}
+                    </motion.button>
+                  )}
+                </motion.div>
+              )}
 
               {/* Safety Tip */}
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.5 }}
-                className="rounded-2xl border border-slate-200 bg-white p-5"
+                className="bg-amber-50 border border-amber-200 rounded-2xl p-5"
               >
                 <div className="flex gap-3">
-                  <div className="w-9 h-9 rounded-xl bg-blue-50 flex items-center justify-center shrink-0">
-                    <ShieldCheck className="w-4.5 h-4.5 text-blue-600" />
-                  </div>
+                  <AlertCircle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
                   <div>
-                    <p className="text-sm font-bold text-slate-900 mb-1">Livarex Safety Tip</p>
-                    <p className="text-xs text-slate-500 leading-relaxed">Always inspect the property in person before making any payments. We never ask for money via the platform.</p>
+                    <p className="text-sm font-semibold text-amber-900 mb-1">Safety Tip</p>
+                    <p className="text-xs text-amber-700 leading-relaxed">Always inspect the property in person before making any payments. Livarex doesn't handle payments or agreements for listings.</p>
                   </div>
                 </div>
               </motion.div>
 
-              {/* Verification Process */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.6 }}
-                className="rounded-2xl border border-slate-200 bg-white p-5"
-              >
-                <p className="text-sm font-bold text-slate-900 mb-4">How Livarex verifies landlords</p>
-                <ol className="space-y-3 text-sm text-slate-600">
-                  {[
-                    'Government ID check',
-                    'Phone verification',
-                    'Property ownership review',
-                    'Manual admin approval',
-                  ].map((step, i) => (
-                    <li key={i} className="flex gap-3">
-                      <span className="w-5 h-5 rounded-full bg-blue-100 text-blue-600 text-xs font-bold flex items-center justify-center shrink-0">{i + 1}</span>
-                      <span>{step}</span>
-                    </li>
-                  ))}
-                </ol>
-              </motion.div>
+              {/* Secondary Actions */}
+              {userRole === 'tenant' && (
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.6 }}
+                  className="flex gap-3"
+                >
+                  <motion.button
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={handleSave}
+                    disabled={saving}
+                    className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl font-semibold text-sm border transition-all ${
+                      saved
+                        ? 'bg-rose-50 text-rose-600 border-rose-200 hover:bg-rose-100'
+                        : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
+                    }`}
+                  >
+                    <Heart className={`w-4 h-4 ${saved ? 'fill-current' : ''}`} />
+                    {saved ? 'Saved' : 'Save'}
+                  </motion.button>
+                  <motion.button
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={handleShare}
+                    className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl bg-white border border-slate-200 hover:bg-slate-50 text-slate-600 font-semibold text-sm transition-all"
+                  >
+                    <Share2 className="w-4 h-4" />
+                    {copied ? 'Copied!' : 'Share'}
+                  </motion.button>
+                </motion.div>
+              )}
 
             </div>
           </aside>
 
         </div>
       </main>
-
       {/* ── FULLSCREEN LIGHTBOX ── */}
       <AnimatePresence>
         {lightboxOpen && images.length > 0 && (
