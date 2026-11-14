@@ -94,18 +94,35 @@ function PropertyImage({ src, alt, priority = false, className = '', sizes }: { 
 
 function SectionHeading({ eyebrow, title }: { eyebrow: string; title: string }) {
   return (
-    <div className="mb-6">
-      <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-blue-600 mb-1.5">{eyebrow}</p>
-      <h2 className="text-2xl sm:text-[28px] font-extrabold text-slate-950 tracking-tight">{title}</h2>
+    <div className="mb-5 sm:mb-6">
+      <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-blue-600 mb-1">{eyebrow}</p>
+      <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900">{title}</h2>
     </div>
   )
 }
 
-const fadeUp = {
-  initial: { opacity: 0, y: 24 },
-  whileInView: { opacity: 1, y: 0 },
-  viewport: { once: true, margin: '-60px' },
-  transition: { duration: 0.5, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] },
+function FactPill({ icon: Icon, value, label }: { icon: IconComponent; value: React.ReactNode; label: string }) {
+  return (
+    <div className="flex items-center gap-2.5 rounded-2xl bg-slate-50 ring-1 ring-slate-200/70 px-4 py-2.5">
+      <Icon className="w-4.5 h-4.5 w-5 h-5 text-blue-600" strokeWidth={1.8} />
+      <div className="leading-tight">
+        <span className="block text-sm font-bold text-slate-900">{value}</span>
+        <span className="block text-[11px] font-medium text-slate-400 uppercase tracking-wide">{label}</span>
+      </div>
+    </div>
+  )
+}
+
+function FeeRow({ label, sub, value }: { label: string; sub: string; value: string }) {
+  return (
+    <div className="flex items-start justify-between gap-4">
+      <div>
+        <p className="text-sm font-medium text-slate-700">{label}</p>
+        <p className="text-xs text-slate-400">{sub}</p>
+      </div>
+      <p className="text-sm font-semibold text-slate-900 whitespace-nowrap">{value}</p>
+    </div>
+  )
 }
 
 // ─── Main Component ───
@@ -264,7 +281,7 @@ export default function PropertyDetailPage() {
     if (!tenantId || !property) return
     setEnquiryLoading(true)
     const supabase = createClient()
-    
+
     const { error } = await supabase.from('enquiries').insert({
       tenant_id: tenantId,
       property_id: id!,
@@ -272,13 +289,13 @@ export default function PropertyDetailPage() {
       message: enquiryMsg,
       status: 'open',
     })
-    
+
     if (error) {
       console.error('Enquiry error:', error)
       setEnquiryLoading(false)
       return
     }
-    
+
     setEnquirySuccess(true)
     setEnquiryLoading(false)
     setEnquiryMsg('')
@@ -358,18 +375,31 @@ export default function PropertyDetailPage() {
     setEnquiryMsg(`Hi, I'd like to book an inspection for ${property?.title || 'this property'}.`)
   }
 
-  // Loading state
+  // Loading state — skeleton layout
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-50 flex flex-col">
+      <div className="min-h-screen bg-white flex flex-col">
         <PublicNavbar />
-        <div className="flex-1 flex items-center justify-center">
-          <div className="flex flex-col items-center gap-5">
-            <div className="relative w-12 h-12">
-              <div className="absolute inset-0 rounded-full border-2 border-slate-200" />
-              <div className="absolute inset-0 rounded-full border-2 border-transparent border-t-blue-600 animate-spin" />
+        <div className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 pt-4 sm:pt-6 pb-16">
+          <div className="animate-pulse space-y-6" aria-busy="true">
+            <div className="grid gap-2 sm:gap-3 lg:grid-cols-[1.8fr_1fr]">
+              <div className="rounded-2xl lg:rounded-l-3xl lg:rounded-r-none bg-slate-200/70 aspect-[4/3] sm:aspect-[16/9] lg:aspect-[16/10]" />
+              <div className="hidden lg:grid grid-rows-2 gap-3">
+                <div className="rounded-tr-3xl bg-slate-200/70" />
+                <div className="rounded-br-3xl bg-slate-100" />
+              </div>
             </div>
-            <p className="text-sm text-slate-400 font-medium tracking-wide">Loading property…</p>
+            <div className="h-9 w-2/3 sm:w-1/2 rounded-xl bg-slate-200/70" />
+            <div className="h-4 w-1/3 rounded bg-slate-100" />
+            <div className="grid lg:grid-cols-[1fr_380px] xl:grid-cols-[1fr_420px] gap-8 lg:gap-12">
+              <div className="space-y-3">
+                {[...Array(5)].map((_, i) => (
+                  <div key={i} className="h-4 rounded bg-slate-100" style={{ width: `${90 - i * 8}%` }} />
+                ))}
+              </div>
+              <div className="h-96 rounded-3xl bg-slate-200/70" />
+            </div>
+            <p className="sr-only">Loading property…</p>
           </div>
         </div>
       </div>
@@ -379,15 +409,20 @@ export default function PropertyDetailPage() {
   // Not found state
   if (notFound || !property) {
     return (
-      <div className="min-h-screen bg-slate-50 flex flex-col">
+      <div className="min-h-screen bg-white flex flex-col">
         <PublicNavbar />
-        <div className="flex-1 flex flex-col items-center justify-center text-center px-4 pt-24">
-          <div className="w-24 h-24 rounded-[2rem] bg-white border border-slate-200 shadow-xl shadow-slate-200/60 flex items-center justify-center mx-auto mb-8">
-            <MapPinIcon className="w-10 h-10 text-slate-300" />
+        <div className="flex-1 flex flex-col items-center justify-center text-center px-4 pt-24 pb-16">
+          <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-slate-50 to-slate-100 ring-1 ring-slate-200/70 flex items-center justify-center mx-auto mb-6 shadow-inner">
+            <MapPinIcon className="w-9 h-9 text-slate-300" strokeWidth={1.5} />
           </div>
-          <h1 className="text-3xl font-extrabold text-slate-950 tracking-tight mb-2">Property not found</h1>
-          <p className="text-slate-500 mb-8 max-w-sm">This listing may have been removed or doesn't exist.</p>
-          <Link href="/listings" className="px-6 py-3 bg-slate-950 hover:bg-slate-800 text-white rounded-full font-semibold transition-colors text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2">Browse Listings</Link>
+          <h1 className="text-2xl font-bold text-slate-900 mb-2 tracking-tight">Property not found</h1>
+          <p className="text-slate-500 mb-6">This listing may have been removed or doesn't exist.</p>
+          <Link
+            href="/listings"
+            className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-semibold transition-all text-sm shadow-lg shadow-blue-600/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 active:scale-95"
+          >
+            Browse Listings
+          </Link>
         </div>
       </div>
     )
@@ -436,24 +471,8 @@ export default function PropertyDetailPage() {
     mainEntityOfPage: `https://livarex.com.ng/property/${property.id}`,
   } : undefined
 
-  const quickStats = [
-    { icon: BedDouble, value: property.bedrooms ?? '—', label: 'Bedrooms' },
-    { icon: Bath, value: property.bathrooms ?? '—', label: 'Bathrooms' },
-    ...(property.area_sqft ? [{ icon: Maximize, value: property.area_sqft.toLocaleString(), label: 'Sq ft' }] : []),
-    { icon: TypeIcon as IconComponent, value: TYPE_LABEL[property.type], label: 'Listing' },
-  ]
-
-  const detailRows: { icon: IconComponent; label: string; value: string | number }[] = [
-    { icon: Home, label: 'Property Type', value: property.property_type || TYPE_LABEL[property.type] },
-    { icon: BedDouble, label: 'Bedrooms', value: property.bedrooms ?? '—' },
-    { icon: Bath, label: 'Bathrooms', value: property.bathrooms ?? '—' },
-    { icon: ShieldCheck, label: 'Status', value: statusCfg.label },
-    { icon: MapPinIcon, label: 'City', value: property.city },
-    { icon: Calendar, label: 'Listed', value: new Date(property.created_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) },
-  ]
-
   return (
-    <div className="min-h-screen bg-slate-50 pb-24 lg:pb-0 selection:bg-blue-600 selection:text-white">
+    <div className="min-h-screen bg-white">
       <SEO
         title={`${property.title} — ${TYPE_LABEL[property.type]} in ${property.city ?? 'Nigeria'}`}
         description={property.description
@@ -466,306 +485,379 @@ export default function PropertyDetailPage() {
       />
       <PublicNavbar />
 
-      {/* ── GALLERY ── */}
-      <section className="relative pt-4 sm:pt-6" aria-label="Property photos">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="relative rounded-[28px] sm:rounded-[36px] overflow-hidden bg-slate-200 aspect-[4/3] sm:aspect-[16/9] lg:aspect-[2.2/1] max-h-[640px] shadow-2xl shadow-slate-900/10 ring-1 ring-slate-900/5">
-            <AnimatePresence mode="wait">
-              {images[activeImg] ? (
-                <motion.div
-                  key={activeImg}
-                  initial={{ opacity: 0, scale: 1.04 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0 }}
-                  transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-                  className="absolute inset-0"
-                  onTouchStart={onTouchStart}
-                  onTouchEnd={onTouchEnd}
-                >
-                  <PropertyImage
-                    src={getSupabaseImageUrl(images[activeImg].storage_path)}
-                    alt={images[activeImg].alt_text || property.title}
-                    priority
-                    sizes="100vw"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-slate-950/70 via-slate-950/10 to-slate-950/30 pointer-events-none" />
-                  <button
-                    onClick={() => setLightboxOpen(true)}
-                    aria-label="View photos fullscreen"
-                    className="absolute inset-0 z-10 cursor-zoom-in focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-inset"
-                  />
-                </motion.div>
-              ) : (
-                <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-slate-100 via-slate-50 to-blue-50">
-                  <Building2 className="w-24 h-24 text-slate-200" strokeWidth={1} />
-                </div>
-              )}
-            </AnimatePresence>
+      {/* ── GALLERY SECTION ── */}
+      <section className="relative" aria-label="Property photos">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4 sm:pt-6">
+          <div className="grid gap-2 sm:gap-3 lg:grid-cols-[1.8fr_1fr]">
 
-            {/* Top controls */}
-            <div className="absolute top-4 left-4 right-4 sm:top-6 sm:left-6 sm:right-6 z-20 flex items-center justify-between">
-              <motion.button
-                whileHover={{ scale: 1.04 }}
-                whileTap={{ scale: 0.96 }}
-                onClick={() => navigate('/listings')}
-                className="flex items-center gap-2 pl-3 pr-4 py-2.5 bg-white/80 backdrop-blur-xl border border-white/40 text-slate-900 rounded-full text-sm font-semibold shadow-lg shadow-slate-900/10 hover:bg-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
-                aria-label="Back to listings"
-              >
-                <ArrowLeft className="w-4 h-4" /> Back
-              </motion.button>
-              <div className="flex items-center gap-2">
-                <motion.button
-                  whileHover={{ scale: 1.08 }}
-                  whileTap={{ scale: 0.92 }}
-                  onClick={handleShare}
-                  aria-label="Share this property"
-                  className="flex h-11 w-11 items-center justify-center bg-white/80 backdrop-blur-xl border border-white/40 text-slate-900 rounded-full hover:bg-white transition-colors shadow-lg shadow-slate-900/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
-                >
-                  <Share2 className="w-4 h-4" />
-                </motion.button>
-                {userRole === 'tenant' && (
-                  <motion.button
-                    whileHover={{ scale: 1.08 }}
-                    whileTap={{ scale: 0.92 }}
-                    onClick={handleSave}
-                    disabled={saving}
-                    aria-label={saved ? 'Remove from saved' : 'Save property'}
-                    aria-pressed={saved}
-                    className={`flex h-11 w-11 items-center justify-center rounded-full transition-colors shadow-lg shadow-slate-900/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 ${
-                      saved
-                        ? 'bg-rose-500 border border-rose-400 text-white'
-                        : 'bg-white/80 backdrop-blur-xl border border-white/40 text-slate-900 hover:bg-white'
-                    }`}
+            {/* Main Image */}
+            <div className="relative overflow-hidden rounded-2xl lg:rounded-l-3xl lg:rounded-r-none bg-slate-100 aspect-[4/3] sm:aspect-[16/9] lg:aspect-[16/10] group">
+              <AnimatePresence mode="wait">
+                {images[activeImg] ? (
+                  <motion.div
+                    key={activeImg}
+                    initial={{ opacity: 0, scale: 1.02 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.98 }}
+                    transition={{ duration: 0.4, ease: [0.25, 0.46, 0.45, 0.94] }}
+                    className="absolute inset-0"
+                    onTouchStart={onTouchStart}
+                    onTouchEnd={onTouchEnd}
                   >
-                    <Heart className={`w-4 h-4 ${saved ? 'fill-current' : ''}`} />
-                  </motion.button>
-                )}
-              </div>
-            </div>
-
-            {/* Bottom-left: badges */}
-            <div className="absolute bottom-4 left-4 sm:bottom-6 sm:left-6 z-20 flex flex-wrap items-center gap-2">
-              <motion.span
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.2 }}
-                className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-bold backdrop-blur-xl border border-white/50 ${statusCfg.bg} ${statusCfg.text}`}
-              >
-                <span className={`w-1.5 h-1.5 rounded-full ${statusCfg.dot} animate-pulse`} />
-                {statusCfg.label}
-              </motion.span>
-              <motion.span
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.3 }}
-                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold bg-white/80 backdrop-blur-xl border border-white/50 text-slate-900"
-              >
-                <TypeIcon className="w-3.5 h-3.5 text-blue-600" strokeWidth={2.25} />
-                {TYPE_LABEL[property.type]}
-              </motion.span>
-            </div>
-
-            {/* Bottom-right: counter + expand */}
-            {images.length > 0 && (
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.4 }}
-                className="absolute bottom-4 right-4 sm:bottom-6 sm:right-6 z-20 flex items-center gap-2"
-              >
-                {images.length > 1 && (
-                  <div className="flex items-center gap-1.5 px-3.5 py-1.5 bg-slate-950/50 backdrop-blur-xl rounded-full border border-white/15">
-                    <Eye className="w-3.5 h-3.5 text-white/70" />
-                    <span className="text-white text-xs font-semibold tabular-nums">{activeImg + 1} / {images.length}</span>
+                    <PropertyImage
+                      src={getSupabaseImageUrl(images[activeImg].storage_path)}
+                      alt={images[activeImg].alt_text || property.title}
+                      priority
+                      sizes="(max-width: 1024px) 100vw, 60vw"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/45 via-transparent to-black/10 pointer-events-none" />
+                    <button
+                      onClick={() => setLightboxOpen(true)}
+                      aria-label="View photos fullscreen"
+                      className="absolute inset-0 z-10 cursor-zoom-in focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
+                    />
+                  </motion.div>
+                ) : (
+                  <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100">
+                    <Building2 className="w-20 h-20 text-slate-200" strokeWidth={1} />
                   </div>
                 )}
-                <button
-                  onClick={() => setLightboxOpen(true)}
-                  aria-label="Open fullscreen gallery"
-                  className="hidden sm:flex items-center gap-1.5 px-3.5 py-1.5 bg-white/90 backdrop-blur-xl rounded-full text-xs font-bold text-slate-900 hover:bg-white transition-colors"
-                >
-                  <Maximize className="w-3.5 h-3.5" /> View all
-                </button>
-              </motion.div>
-            )}
+              </AnimatePresence>
 
-            {/* Arrows */}
-            {images.length > 1 && (
-              <>
-                <button
-                  onClick={prevImage}
-                  aria-label="Previous photo"
-                  className="hidden sm:flex absolute left-6 top-1/2 -translate-y-1/2 z-20 h-11 w-11 items-center justify-center rounded-full bg-white/80 backdrop-blur-xl text-slate-900 hover:bg-white shadow-lg transition-all hover:scale-105"
+              {/* Top Controls */}
+              <div className="absolute top-3 sm:top-4 left-3 sm:left-4 right-3 sm:right-4 z-20 flex items-center justify-between">
+                <motion.button
+                  whileHover={{ scale: 1.03 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => navigate('/listings')}
+                  className="inline-flex items-center gap-2 h-10 px-4 bg-white/90 backdrop-blur-md text-slate-900 rounded-full text-sm font-semibold shadow-lg ring-1 ring-black/5 hover:bg-white transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+                  aria-label="Back to listings"
                 >
-                  <ChevronLeft className="w-5 h-5" />
-                </button>
-                <button
-                  onClick={nextImage}
-                  aria-label="Next photo"
-                  className="hidden sm:flex absolute right-6 top-1/2 -translate-y-1/2 z-20 h-11 w-11 items-center justify-center rounded-full bg-white/80 backdrop-blur-xl text-slate-900 hover:bg-white shadow-lg transition-all hover:scale-105"
+                  <ArrowLeft className="w-4 h-4" /> Back
+                </motion.button>
+                <div className="flex items-center gap-2">
+                  <motion.button
+                    whileHover={{ scale: 1.08 }}
+                    whileTap={{ scale: 0.9 }}
+                    onClick={handleShare}
+                    aria-label="Share this property"
+                    className="flex h-10 w-10 items-center justify-center bg-white/90 backdrop-blur-md text-slate-900 rounded-full shadow-lg ring-1 ring-black/5 hover:bg-white transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+                  >
+                    <Share2 className="w-4 h-4" />
+                  </motion.button>
+                  {userRole === 'tenant' && (
+                    <motion.button
+                      whileHover={{ scale: 1.08 }}
+                      whileTap={{ scale: 0.9 }}
+                      onClick={handleSave}
+                      disabled={saving}
+                      aria-label={saved ? 'Remove from saved' : 'Save property'}
+                      aria-pressed={saved}
+                      className={`flex h-10 w-10 items-center justify-center rounded-full shadow-lg transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${
+                        saved
+                          ? 'bg-rose-500 text-white ring-1 ring-rose-400'
+                          : 'bg-white/90 backdrop-blur-md text-slate-900 ring-1 ring-black/5 hover:bg-white'
+                      }`}
+                    >
+                      <Heart className={`w-4 h-4 ${saved ? 'fill-current' : ''}`} />
+                    </motion.button>
+                  )}
+                </div>
+              </div>
+
+              {/* Desktop arrows */}
+              {images.length > 1 && (
+                <>
+                  <motion.button
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.9 }}
+                    onClick={(e) => { e.stopPropagation(); prevImage() }}
+                    aria-label="Previous photo"
+                    className="hidden sm:flex absolute left-3 top-1/2 -translate-y-1/2 z-20 h-9 w-9 items-center justify-center rounded-full bg-white/90 backdrop-blur-md text-slate-900 shadow-lg ring-1 ring-black/5 opacity-0 group-hover:opacity-100 transition-opacity focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+                  >
+                    <ChevronLeft className="w-5 h-5" />
+                  </motion.button>
+                  <motion.button
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.9 }}
+                    onClick={(e) => { e.stopPropagation(); nextImage() }}
+                    aria-label="Next photo"
+                    className="hidden sm:flex absolute right-3 top-1/2 -translate-y-1/2 z-20 h-9 w-9 items-center justify-center rounded-full bg-white/90 backdrop-blur-md text-slate-900 shadow-lg ring-1 ring-black/5 opacity-0 group-hover:opacity-100 transition-opacity focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+                  >
+                    <ChevronRight className="w-5 h-5" />
+                  </motion.button>
+                </>
+              )}
+
+              {/* Status & Type Badges */}
+              <div className="absolute bottom-3 sm:bottom-4 left-3 sm:left-4 z-20 flex flex-wrap items-center gap-2">
+                <motion.span
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.2 }}
+                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-bold uppercase tracking-wide ring-1 ring-black/5 shadow-lg ${statusCfg.bg} ${statusCfg.text}`}
                 >
-                  <ChevronRight className="w-5 h-5" />
-                </button>
-              </>
-            )}
+                  <span className={`w-1.5 h-1.5 rounded-full ${statusCfg.dot} animate-pulse`} />
+                  {statusCfg.label}
+                </motion.span>
+                <motion.span
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.3 }}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-bold uppercase tracking-wide bg-white/90 backdrop-blur-md ring-1 ring-black/5 text-slate-800 shadow-lg"
+                >
+                  <TypeIcon className="w-3.5 h-3.5 text-blue-600" strokeWidth={2} />
+                  {TYPE_LABEL[property.type]}
+                </motion.span>
+              </div>
+
+              {/* Image Counter */}
+              {images.length > 1 && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.4 }}
+                  className="absolute bottom-3 sm:bottom-4 right-3 sm:right-4 z-20 flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-black/50 backdrop-blur-md ring-1 ring-white/10"
+                >
+                  <Eye className="w-3.5 h-3.5 text-white/70" />
+                  <span className="text-white/90 text-xs font-semibold tabular-nums">{activeImg + 1} / {images.length}</span>
+                </motion.div>
+              )}
+            </div>
+
+            {/* Side Grid — desktop only */}
+            <div className="hidden lg:grid grid-rows-2 gap-3 h-full">
+              {[1, 2].map((offset) => {
+                const img = images[offset]
+                return img ? (
+                  <button
+                    key={img.id}
+                    onClick={() => { setActiveImg(offset); setLightboxOpen(true) }}
+                    aria-label={`Open photo ${offset + 1} of ${images.length} in fullscreen`}
+                    className={`relative group/tile overflow-hidden bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${
+                      offset === 1 ? 'rounded-tr-3xl' : 'rounded-br-3xl'
+                    }`}
+                  >
+                    <PropertyImage
+                      src={getSupabaseImageUrl(img.storage_path, 800)}
+                      alt={img.alt_text || property.title}
+                      sizes="(min-width: 1024px) 33vw"
+                      className="transition-transform duration-700 group-hover/tile:scale-105"
+                    />
+                    <div className="absolute inset-0 bg-slate-900/0 group-hover/tile:bg-slate-900/10 transition-colors" />
+                    {offset === 2 && images.length > 3 && (
+                      <span className="absolute bottom-3 right-3 inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-white/95 backdrop-blur text-xs font-bold text-slate-900 shadow-lg ring-1 ring-black/5 group-hover/tile:scale-105 transition-transform">
+                        <Maximize className="w-3.5 h-3.5" />
+                        View all {images.length} photos
+                      </span>
+                    )}
+                  </button>
+                ) : (
+                  <div
+                    key={`placeholder-${offset}`}
+                    className={`bg-gradient-to-br from-slate-50 to-slate-100 ring-1 ring-slate-200/60 flex items-center justify-center ${
+                      offset === 1 ? 'rounded-tr-3xl' : 'rounded-br-3xl'
+                    }`}
+                  >
+                    <Building2 className="w-10 h-10 text-slate-200" strokeWidth={1} />
+                  </div>
+                )
+              })}
+            </div>
           </div>
 
-          {/* Thumbnail strip */}
+          {/* Mobile Thumbnail Strip */}
           {images.length > 1 && (
-            <div className="mt-3 flex gap-2.5 overflow-x-auto scrollbar-hide pb-1">
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.4 }}
+              className="flex gap-2 mt-3 overflow-x-auto scrollbar-hide lg:hidden"
+            >
               {images.map((img, i) => (
                 <motion.button
                   key={img.id}
-                  whileHover={{ y: -2 }}
-                  whileTap={{ scale: 0.96 }}
+                  whileTap={{ scale: 0.95 }}
                   onClick={() => setActiveImg(i)}
                   aria-label={`View photo ${i + 1} of ${images.length}`}
                   aria-current={activeImg === i ? 'true' : undefined}
-                  className={`relative shrink-0 w-20 h-14 sm:w-28 sm:h-[72px] rounded-2xl overflow-hidden transition-all ${
-                    activeImg === i
-                      ? 'ring-2 ring-slate-950 ring-offset-2 ring-offset-slate-50'
-                      : 'opacity-60 hover:opacity-100'
+                  className={`relative shrink-0 w-20 h-14 rounded-xl overflow-hidden transition-all ${
+                    activeImg === i ? 'ring-2 ring-blue-600 ring-offset-2' : 'opacity-60 hover:opacity-100 ring-1 ring-slate-200'
                   }`}
                 >
                   <PropertyImage
                     src={getSupabaseImageUrl(img.storage_path, 300)}
                     alt={img.alt_text || `Photo ${i + 1}`}
-                    sizes="112px"
+                    sizes="80px"
                   />
                 </motion.button>
               ))}
-            </div>
+            </motion.div>
           )}
         </div>
       </section>
 
-      {/* ── TITLE & QUICK STATS ── */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 sm:pt-12">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2, duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-          className="space-y-5"
-        >
-          <div className="flex flex-wrap items-center gap-x-3 gap-y-2 text-sm">
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-600/10 text-blue-700 font-semibold">
-              <MapPinIcon className="w-3.5 h-3.5 shrink-0" />
-              {locationText}, Nigeria
-            </span>
-            <span className="inline-flex items-center gap-1.5 text-slate-500 font-medium">
-              <Clock className="w-3.5 h-3.5" />
-              Listed {timeAgo(property.created_at)}
-            </span>
-          </div>
+      {/* ── TITLE & LOCATION ── */}
+      <div className="bg-white border-b border-slate-100">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+          <motion.nav
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.15 }}
+            aria-label="Breadcrumb"
+            className="flex items-center gap-1.5 text-xs text-slate-400 mb-3"
+          >
+            <Link href="/listings" className="hover:text-blue-600 font-medium transition-colors">Listings</Link>
+            <ChevronRight className="w-3 h-3" />
+            <span className="hover:text-blue-600 transition-colors">{property.city || 'Nigeria'}</span>
+            <ChevronRight className="w-3 h-3" />
+            <span className="text-slate-600 font-medium truncate max-w-[160px] sm:max-w-xs">{property.title}</span>
+          </motion.nav>
 
-          <h1 className="text-[2rem] sm:text-5xl lg:text-6xl font-black text-slate-950 tracking-[-0.035em] leading-[1.05] max-w-4xl">
-            {property.title}
-          </h1>
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.25, duration: 0.5 }}
+            className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between lg:gap-10"
+          >
+            <div className="min-w-0">
+              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-slate-900 tracking-tight leading-[1.15]">
+                {property.title}
+              </h1>
 
-          {!addressVisible && (
-            <motion.p
-              initial={{ opacity: 0, y: -8 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="inline-flex items-center gap-2 text-sm text-slate-500 bg-white border border-slate-200 rounded-full px-4 py-2 shadow-sm"
-            >
-              <Lock className="w-3.5 h-3.5 text-slate-400" />
-              Create a free account to unlock the full address and contact details.
-            </motion.p>
-          )}
-
-          <div className={`grid gap-3 pt-2 ${quickStats.length === 4 ? 'grid-cols-2 sm:grid-cols-4' : 'grid-cols-3'}`}>
-            {quickStats.map(({ icon: Icon, value, label }) => (
-              <div
-                key={label}
-                className="group flex items-center gap-3.5 p-4 rounded-2xl bg-white border border-slate-200/80 shadow-sm hover:shadow-md hover:border-blue-200 transition-all"
-              >
-                <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-100 flex items-center justify-center shrink-0 group-hover:from-blue-600 group-hover:to-indigo-600 transition-all">
-                  <Icon className="w-5 h-5 text-blue-600 group-hover:text-white transition-colors" strokeWidth={1.75} />
-                </div>
-                <div className="min-w-0">
-                  <p className="text-lg font-extrabold text-slate-950 leading-tight truncate">{value}</p>
-                  <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">{label}</p>
-                </div>
+              <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-sm text-slate-500">
+                <span className="inline-flex items-center gap-1.5">
+                  <MapPinIcon className="w-4 h-4 text-blue-500 shrink-0" />
+                  <span className="font-medium">{locationText}, Nigeria</span>
+                </span>
+                <span className="w-1 h-1 rounded-full bg-slate-300 hidden sm:block" />
+                <span className="inline-flex items-center gap-1.5">
+                  <Clock className="w-3.5 h-3.5 text-slate-400" />
+                  {timeAgo(property.created_at)}
+                </span>
               </div>
-            ))}
-          </div>
-        </motion.div>
+
+              {!addressVisible && (
+                <motion.p
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.4 }}
+                  className="mt-4 inline-flex items-center gap-2 text-xs font-medium text-slate-500 bg-slate-50 ring-1 ring-slate-200/70 rounded-full px-3.5 py-2"
+                >
+                  <Lock className="w-3.5 h-3.5 text-slate-400" />
+                  Create a free account to unlock the full address and contact details.
+                </motion.p>
+              )}
+            </div>
+
+            {/* Quick Facts */}
+            <div className="flex flex-wrap gap-2.5 shrink-0">
+              <FactPill icon={BedDouble} value={property.bedrooms ?? '—'} label="Beds" />
+              <FactPill icon={Bath} value={property.bathrooms ?? '—'} label="Baths" />
+              {property.area_sqft && (
+                <FactPill icon={Maximize} value={property.area_sqft.toLocaleString()} label="Sq ft" />
+              )}
+            </div>
+          </motion.div>
+        </div>
       </div>
 
       {/* ── MAIN CONTENT ── */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-14">
-        <div className="grid lg:grid-cols-[1fr_380px] xl:grid-cols-[1fr_420px] gap-10 lg:gap-14">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 pb-16">
+        <div className="grid lg:grid-cols-[1fr_380px] xl:grid-cols-[1fr_420px] gap-8 lg:gap-12">
 
-          {/* LEFT COLUMN */}
-          <div className="space-y-14 min-w-0">
+          {/* LEFT COLUMN - Content Sections */}
+          <div className="space-y-12 min-w-0">
 
-            {/* About */}
-            <motion.section {...fadeUp}>
+            {/* Property Description Section */}
+            <motion.section
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+            >
               <SectionHeading eyebrow="Overview" title="About this property" />
-              <p className="text-slate-600 leading-[1.8] text-[17px] whitespace-pre-line break-words">
+              <p className="text-slate-600 leading-relaxed text-[15px] sm:text-base whitespace-pre-line break-words">
                 {property.description || 'No description provided for this listing.'}
               </p>
             </motion.section>
 
-            {/* Details */}
-            <motion.section {...fadeUp}>
-              <SectionHeading eyebrow="At a glance" title="Property details" />
-              <div className="rounded-3xl bg-white border border-slate-200/80 shadow-sm overflow-hidden">
-                <div className="grid sm:grid-cols-2 divide-y sm:divide-y-0 divide-slate-100">
-                  {detailRows.map(({ icon: Icon, label, value }, i) => (
-                    <div
-                      key={label}
-                      className={`flex items-center justify-between gap-4 px-5 py-4 sm:px-6 ${
-                        i < detailRows.length - 2 ? 'sm:border-b sm:border-slate-100' : ''
-                      } ${i % 2 === 0 ? 'sm:border-r sm:border-slate-100' : ''}`}
-                    >
-                      <span className="flex items-center gap-3 text-sm text-slate-500">
-                        <Icon className="w-[18px] h-[18px] text-blue-600 shrink-0" strokeWidth={1.75} />
-                        {label}
-                      </span>
-                      <span className="text-sm font-bold text-slate-950 text-right">{value}</span>
+            {/* Property Details Section */}
+            <motion.section
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3 }}
+            >
+              <SectionHeading eyebrow="Specifications" title="Property details" />
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
+                {[
+                  { icon: Home, label: 'Property Type', value: property.property_type || TYPE_LABEL[property.type] },
+                  { icon: BedDouble, label: 'Bedrooms', value: property.bedrooms ?? '—' },
+                  { icon: Bath, label: 'Bathrooms', value: property.bathrooms ?? '—' },
+                  { icon: ShieldCheck, label: 'Status', value: statusCfg.label },
+                  { icon: MapPinIcon, label: 'City', value: property.city },
+                  { icon: Calendar, label: 'Listed', value: new Date(property.created_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) },
+                ].map((item) => (
+                  <div
+                    key={item.label}
+                    className="flex items-center gap-3 p-4 rounded-2xl bg-white ring-1 ring-slate-200/70 hover:ring-blue-200 hover:shadow-sm hover:shadow-blue-900/5 transition-all"
+                  >
+                    <div className="w-9 h-9 rounded-xl bg-blue-50 flex items-center justify-center shrink-0">
+                      <item.icon className="w-4.5 h-4.5 w-5 h-5 text-blue-600" strokeWidth={1.8} />
                     </div>
-                  ))}
-                </div>
+                    <div className="min-w-0">
+                      <p className="text-[11px] font-medium text-slate-400 uppercase tracking-wide">{item.label}</p>
+                      <p className="font-semibold text-slate-900 text-sm truncate">{item.value}</p>
+                    </div>
+                  </div>
+                ))}
               </div>
             </motion.section>
 
-            {/* Amenities */}
+            {/* Amenities Section */}
             {property.amenities && property.amenities.length > 0 && (
-              <motion.section {...fadeUp}>
-                <SectionHeading eyebrow="Lifestyle" title="Included in your rental" />
-                <div className="grid grid-cols-1 min-[420px]:grid-cols-2 sm:grid-cols-3 gap-3">
+              <motion.section
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.4 }}
+              >
+                <SectionHeading eyebrow="Comfort & Convenience" title="What's included" />
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                   {AMENITIES.filter(a => property.amenities?.includes(a.label)).map((amenity, i) => (
                     <motion.div
                       key={amenity.label}
                       initial={{ opacity: 0, y: 10 }}
-                      whileInView={{ opacity: 1, y: 0 }}
-                      viewport={{ once: true }}
-                      transition={{ delay: i * 0.04 }}
-                      className="group flex items-center gap-3 p-3.5 rounded-2xl bg-white border border-slate-200/80 hover:border-blue-300 hover:shadow-md hover:-translate-y-0.5 transition-all"
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: i * 0.03 }}
+                      className="flex items-center gap-3 p-3.5 rounded-2xl bg-slate-50/80 ring-1 ring-slate-200/60 hover:bg-white hover:ring-blue-200 hover:shadow-sm hover:shadow-blue-900/5 transition-all"
                     >
-                      <div className="w-10 h-10 rounded-xl bg-slate-50 group-hover:bg-blue-600 flex items-center justify-center shrink-0 transition-colors">
-                        <amenity.icon className="w-5 h-5 text-blue-600 group-hover:text-white transition-colors" strokeWidth={1.75} />
+                      <div className="w-9 h-9 rounded-xl bg-white ring-1 ring-slate-200/80 flex items-center justify-center shrink-0">
+                        <amenity.icon className="w-4.5 h-4.5 w-5 h-5 text-blue-600" strokeWidth={1.6} />
                       </div>
-                      <span className="text-sm font-semibold text-slate-700">{amenity.label}</span>
+                      <span className="text-sm font-medium text-slate-700">{amenity.label}</span>
                     </motion.div>
                   ))}
                 </div>
               </motion.section>
             )}
 
-            {/* Location */}
-            <motion.section {...fadeUp}>
+            {/* Location Section */}
+            <motion.section
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.5 }}
+            >
               <SectionHeading eyebrow="Neighbourhood" title="Where you'll be" />
-              <div className="flex items-center gap-2 mb-4">
-                <MapPinIcon className="w-5 h-5 text-blue-600" />
-                <p className="text-slate-700 font-medium">{addressVisible ? fullLocation : property.city}, Nigeria</p>
+              <div className="flex items-center gap-2 mb-4 text-sm text-slate-600">
+                <MapPinIcon className="w-4 h-4 text-blue-500 shrink-0" />
+                <span className="font-medium">{addressVisible ? fullLocation : property.city}, Nigeria</span>
               </div>
               {!addressVisible && (
-                <p className="text-sm text-slate-500 mb-4">Sign in to view the full address and request an inspection through Livarex.</p>
+                <p className="text-sm text-slate-500 mb-4 bg-slate-50 rounded-xl px-4 py-3 ring-1 ring-slate-200/60">
+                  Sign in to view the full address and request an inspection through Livarex.
+                </p>
               )}
               {property.latitude && property.longitude ? (
-                <div className="rounded-3xl overflow-hidden border border-slate-200 shadow-sm ring-4 ring-white">
+                <div className="rounded-3xl overflow-hidden ring-1 ring-slate-200/70 shadow-sm">
                   <PropertyDetailMap
                     lat={property.latitude}
                     lng={property.longitude}
@@ -773,12 +865,12 @@ export default function PropertyDetailPage() {
                   />
                 </div>
               ) : (
-                <div className="rounded-3xl border border-dashed border-slate-300 h-[300px] flex items-center justify-center bg-white">
+                <div className="rounded-3xl ring-1 ring-slate-200/70 h-[300px] flex items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100">
                   <div className="text-center px-6">
-                    <div className="w-16 h-16 rounded-2xl bg-slate-50 flex items-center justify-center mx-auto mb-3">
-                      <MapPinIcon className="w-8 h-8 text-slate-300" strokeWidth={1.5} />
+                    <div className="w-14 h-14 rounded-2xl bg-white ring-1 ring-slate-200 flex items-center justify-center mx-auto mb-3">
+                      <MapPinIcon className="w-6 h-6 text-slate-300" strokeWidth={1.5} />
                     </div>
-                    <p className="text-slate-500 text-sm">Map location not available for this property.</p>
+                    <p className="text-sm text-slate-500">Map location not available for this property.</p>
                   </div>
                 </div>
               )}
@@ -786,118 +878,101 @@ export default function PropertyDetailPage() {
 
           </div>
 
-          {/* RIGHT SIDEBAR */}
+          {/* RIGHT SIDEBAR - Pricing & Agent Card */}
           <aside className="min-w-0 lg:sticky lg:top-24 self-start">
             <div className="space-y-5">
 
               {/* Pricing Card */}
               <motion.div
-                initial={{ opacity: 0, x: 24 }}
+                initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.3, duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-                className="relative rounded-[28px] overflow-hidden bg-slate-950 text-white shadow-2xl shadow-blue-950/20"
+                transition={{ delay: 0.3 }}
+                className="bg-white rounded-3xl ring-1 ring-slate-200/70 shadow-xl shadow-slate-900/5 overflow-hidden"
               >
-                <div className="pointer-events-none absolute -top-24 -right-24 w-72 h-72 rounded-full bg-blue-600/30 blur-3xl" />
-                <div className="pointer-events-none absolute -bottom-32 -left-16 w-72 h-72 rounded-full bg-indigo-500/20 blur-3xl" />
-
-                {/* Price header */}
-                <div className="relative px-6 pt-6 pb-5">
-                  <div className="flex items-center justify-between mb-3">
-                    <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-white/50">
+                {/* Price Header */}
+                <div className="px-6 py-5 border-b border-slate-100">
+                  <div className="flex items-center justify-between mb-2">
+                    <p className="text-[11px] font-bold uppercase tracking-[0.15em] text-slate-400">
                       {TYPE_LABEL[property.type]}
                     </p>
                     {landlord?.is_verified && (
-                      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-400/15 text-emerald-300 border border-emerald-400/20">
+                      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200">
                         <CheckCircle className="w-3 h-3" />
                         Verified
                       </span>
                     )}
                   </div>
-                  <div className="flex items-baseline gap-2 flex-wrap">
-                    <span className="text-[2.5rem] leading-none font-black tracking-tight">
+                  <div className="flex items-baseline gap-1.5">
+                    <span className="text-3xl sm:text-4xl font-extrabold tracking-tight text-slate-900">
                       {formatNaira(property.price)}
                     </span>
                     {property.type === 'rent' && (
-                      <span className="text-sm text-white/50 font-medium">/year</span>
+                      <span className="text-sm font-medium text-slate-400">/year</span>
                     )}
                   </div>
                 </div>
 
-                {/* Breakdown */}
+                {/* Move-in Breakdown */}
                 {breakdown && (
-                  <div className="relative mx-4 mb-4 rounded-2xl bg-white/[0.06] border border-white/10 backdrop-blur-sm px-5 py-5">
-                    <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-white/50 mb-4">Move-in Breakdown</p>
-                    <div className="space-y-3.5">
-                      <div className="flex items-start justify-between gap-3">
-                        <div>
-                          <p className="text-sm font-semibold text-white">Rental Price</p>
-                          <p className="text-xs text-white/45">{property.type === 'rent' ? 'Yearly' : 'One-time'}</p>
-                        </div>
-                        <p className="text-sm font-bold tabular-nums">{formatNaira(breakdown.rent)}</p>
-                      </div>
+                  <div className="px-6 py-5 border-b border-slate-100 bg-slate-50/60">
+                    <p className="text-sm font-bold text-slate-900 mb-4">Move-in breakdown</p>
+                    <div className="space-y-3">
+                      <FeeRow
+                        label="Rental Price"
+                        sub={property.type === 'rent' ? 'Yearly' : 'One-time'}
+                        value={formatNaira(breakdown.rent)}
+                      />
                       {breakdown.agencyFee > 0 && (
-                        <div className="flex items-start justify-between gap-3">
-                          <div>
-                            <p className="text-sm font-semibold text-white">Agency Fee</p>
-                            <p className="text-xs text-white/45">Commission to the agent{feeConfig ? ` (${feeConfig.agencyFeePercent}%)` : ''}</p>
-                          </div>
-                          <p className="text-sm font-bold tabular-nums">{formatNaira(breakdown.agencyFee)}</p>
-                        </div>
+                        <FeeRow
+                          label="Agency Fee"
+                          sub={`Commission to the agent${feeConfig ? ` (${feeConfig.agencyFeePercent}%)` : ''}`}
+                          value={formatNaira(breakdown.agencyFee)}
+                        />
                       )}
                       {breakdown.agreementFee > 0 && (
-                        <div className="flex items-start justify-between gap-3">
-                          <div>
-                            <p className="text-sm font-semibold text-white">Legal Fee</p>
-                            <p className="text-xs text-white/45">For tenancy / legal agreement</p>
-                          </div>
-                          <p className="text-sm font-bold tabular-nums">{formatNaira(breakdown.agreementFee)}</p>
-                        </div>
+                        <FeeRow
+                          label="Legal Fee"
+                          sub="For tenancy / legal agreement"
+                          value={formatNaira(breakdown.agreementFee)}
+                        />
                       )}
                       {breakdown.commissionFee > 0 && (
-                        <div className="flex items-start justify-between gap-3">
-                          <div>
-                            <p className="text-sm font-semibold text-white">Commission Fee</p>
-                            <p className="text-xs text-white/45">Additional commission</p>
-                          </div>
-                          <p className="text-sm font-bold tabular-nums">{formatNaira(breakdown.commissionFee)}</p>
-                        </div>
+                        <FeeRow
+                          label="Commission Fee"
+                          sub="Additional commission"
+                          value={formatNaira(breakdown.commissionFee)}
+                        />
                       )}
                       {breakdown.otherCharges > 0 && (
-                        <div className="flex items-start justify-between gap-3">
-                          <div>
-                            <p className="text-sm font-semibold text-white">Other Charges</p>
-                            <p className="text-xs text-white/45">Additional fees</p>
-                          </div>
-                          <p className="text-sm font-bold tabular-nums">{formatNaira(breakdown.otherCharges)}</p>
-                        </div>
+                        <FeeRow
+                          label="Other Charges"
+                          sub="Additional fees"
+                          value={formatNaira(breakdown.otherCharges)}
+                        />
                       )}
-                      <div className="pt-4 mt-1 border-t border-dashed border-white/15">
-                        <div className="flex items-end justify-between gap-3">
-                          <p className="text-sm font-bold text-white/80">Total Due at Move-in</p>
-                          <p className="text-2xl font-black tracking-tight bg-gradient-to-r from-blue-300 to-indigo-300 bg-clip-text text-transparent tabular-nums">{formatNaira(breakdown.total)}</p>
-                        </div>
+                      <div className="mt-4 flex items-center justify-between rounded-2xl bg-blue-50 ring-1 ring-blue-100 px-4 py-3.5">
+                        <p className="text-sm font-bold text-blue-900">Total due at move-in</p>
+                        <p className="text-lg font-extrabold text-blue-700 tabular-nums">{formatNaira(breakdown.total)}</p>
                       </div>
                     </div>
                   </div>
                 )}
 
-                {/* Actions */}
-                <div className="relative px-4 pb-4 space-y-2.5">
+                {/* Action Buttons */}
+                <div className="p-5 sm:p-6 space-y-3">
                   {userRole === 'guest' ? (
                     <>
                       <motion.button
-                        whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.98 }}
                         onClick={() => navigate('/login')}
-                        className="w-full py-3.5 bg-gradient-to-r from-blue-500 to-indigo-500 text-white rounded-2xl font-bold text-sm shadow-lg shadow-blue-600/30 hover:from-blue-400 hover:to-indigo-400 transition-all"
+                        className="w-full py-3.5 bg-blue-600 text-white rounded-xl font-bold text-sm hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/25 active:scale-[0.98]"
                       >
                         Apply Now
                       </motion.button>
                       <motion.button
-                        whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.98 }}
                         onClick={() => navigate('/login')}
-                        className="w-full py-3.5 bg-white/10 text-white border border-white/15 rounded-2xl font-bold text-sm hover:bg-white/15 transition-all"
+                        className="w-full py-3.5 bg-white text-blue-700 ring-1 ring-inset ring-blue-200 rounded-xl font-bold text-sm hover:bg-blue-50 transition-all active:scale-[0.98]"
                       >
                         Schedule Inspection
                       </motion.button>
@@ -905,20 +980,18 @@ export default function PropertyDetailPage() {
                   ) : (
                     <>
                       <motion.button
-                        whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.98 }}
                         onClick={handleBookInspection}
-                        className="w-full py-3.5 bg-gradient-to-r from-blue-500 to-indigo-500 text-white rounded-2xl font-bold text-sm shadow-lg shadow-blue-600/30 hover:from-blue-400 hover:to-indigo-400 transition-all"
+                        className="w-full py-3.5 bg-blue-600 text-white rounded-xl font-bold text-sm hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/25 active:scale-[0.98]"
                       >
                         Schedule Inspection
                       </motion.button>
                       <motion.button
-                        whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.98 }}
                         onClick={handleWhatsAppContact}
-                        className="w-full py-3.5 bg-emerald-500 text-white rounded-2xl font-bold text-sm shadow-lg shadow-emerald-500/20 hover:bg-emerald-400 transition-all"
+                        className="w-full py-3.5 bg-emerald-600 text-white rounded-xl font-bold text-sm hover:bg-emerald-700 transition-all flex items-center justify-center gap-2 shadow-lg shadow-emerald-600/25 active:scale-[0.98]"
                       >
-                        <MessageCircle className="w-4 h-4 inline mr-2 -mt-0.5" />
+                        <MessageCircle className="w-4 h-4" />
                         Contact via WhatsApp
                       </motion.button>
                     </>
@@ -929,25 +1002,30 @@ export default function PropertyDetailPage() {
               {/* Agent Card */}
               {landlord && (
                 <motion.div
-                  initial={{ opacity: 0, x: 24 }}
+                  initial={{ opacity: 0, x: 20 }}
                   animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.4, duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-                  className="bg-white rounded-3xl border border-slate-200/80 shadow-sm p-6"
+                  transition={{ delay: 0.4 }}
+                  className="bg-white rounded-3xl ring-1 ring-slate-200/70 shadow-sm p-6"
                 >
-                  <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400 mb-4">Listed by</p>
                   <div className="flex items-start gap-4 mb-4">
-                    <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-50 to-indigo-100 ring-2 ring-white shadow-md overflow-hidden shrink-0">
-                      {landlord.avatar_url
-                        ? <img src={landlord.avatar_url} className="w-full h-full object-cover" alt={landlord.full_name ?? ''} onError={e => { (e.currentTarget as HTMLImageElement).style.display = 'none' }} />
-                        : <div className="w-full h-full flex items-center justify-center text-blue-700 font-extrabold text-lg">{landlordInitials}</div>
-                      }
+                    <div className="relative shrink-0">
+                      <div className="w-14 h-14 rounded-2xl bg-slate-100 ring-2 ring-white shadow-md overflow-hidden">
+                        {landlord.avatar_url
+                          ? <img src={landlord.avatar_url} className="w-full h-full object-cover" alt={landlord.full_name ?? ''} onError={e => { (e.currentTarget as HTMLImageElement).style.display = 'none' }} />
+                          : <div className="w-full h-full flex items-center justify-center text-slate-600 font-bold text-lg">{landlordInitials}</div>
+                        }
+                      </div>
+                      {landlord.is_verified && (
+                        <span className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-emerald-500 ring-2 ring-white flex items-center justify-center">
+                          <CheckCircle className="w-3 h-3 text-white" />
+                        </span>
+                      )}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="font-extrabold text-slate-950 text-base truncate">{landlord.full_name}</p>
-                      <p className="text-sm text-slate-500">Real Estate Agent</p>
+                      <p className="font-bold text-slate-900 text-base truncate">{landlord.full_name}</p>
+                      <p className="text-xs font-medium text-slate-400 uppercase tracking-wide">Real Estate Agent</p>
                       {landlord.is_verified && (
-                        <span className="inline-flex items-center gap-1 mt-1.5 text-xs font-bold text-emerald-600">
-                          <CheckCircle className="w-3.5 h-3.5" />
+                        <span className="inline-flex items-center gap-1 mt-1 text-xs font-semibold text-emerald-600">
                           Verified Agent
                         </span>
                       )}
@@ -958,16 +1036,15 @@ export default function PropertyDetailPage() {
                   )}
                   {landlord.whatsapp && (userRole === 'tenant' || userRole === 'guest') && (
                     <motion.button
-                      whileHover={{ scale: 1.02 }}
                       whileTap={{ scale: 0.98 }}
                       onClick={handleWhatsAppContact}
-                      className={`w-full py-3 rounded-2xl text-sm font-bold transition-colors ${
+                      className={`w-full py-3 rounded-xl text-sm font-bold transition-all flex items-center justify-center gap-2 active:scale-[0.98] ${
                         userRole === 'guest'
-                          ? 'bg-slate-100 border border-slate-200 text-slate-400 cursor-pointer hover:bg-slate-200'
-                          : 'bg-emerald-50 border border-emerald-200 text-emerald-700 hover:bg-emerald-100'
+                          ? 'bg-slate-100 ring-1 ring-slate-200 text-slate-400 hover:bg-slate-200'
+                          : 'bg-emerald-50 ring-1 ring-emerald-200 text-emerald-700 hover:bg-emerald-100'
                       }`}
                     >
-                      <MessageCircle className="w-4 h-4 inline mr-2 -mt-0.5" />
+                      <MessageCircle className="w-4 h-4" />
                       {userRole === 'guest' ? 'Sign in to Contact' : 'Contact Agent'}
                     </motion.button>
                   )}
@@ -979,15 +1056,15 @@ export default function PropertyDetailPage() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.5 }}
-                className="bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-200/70 rounded-3xl p-5"
+                className="rounded-3xl bg-gradient-to-br from-amber-50 to-orange-50 ring-1 ring-amber-200/70 p-5"
               >
-                <div className="flex gap-3">
-                  <div className="w-9 h-9 rounded-xl bg-amber-100 flex items-center justify-center shrink-0">
+                <div className="flex gap-3.5">
+                  <div className="w-10 h-10 rounded-xl bg-white/80 ring-1 ring-amber-200 flex items-center justify-center shrink-0">
                     <AlertCircle className="w-5 h-5 text-amber-600" />
                   </div>
                   <div>
-                    <p className="text-sm font-bold text-amber-950 mb-1">Safety Tip</p>
-                    <p className="text-xs text-amber-800/80 leading-relaxed">Always inspect the property in person before making any payments. Livarex doesn't handle payments or agreements for listings.</p>
+                    <p className="text-sm font-bold text-amber-900 mb-1">Safety first</p>
+                    <p className="text-xs text-amber-700/90 leading-relaxed">Always inspect the property in person before making any payments. Livarex doesn't handle payments or agreements for listings.</p>
                   </div>
                 </div>
               </motion.div>
@@ -1001,24 +1078,22 @@ export default function PropertyDetailPage() {
                   className="flex gap-3"
                 >
                   <motion.button
-                    whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
                     onClick={handleSave}
                     disabled={saving}
-                    className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-2xl font-bold text-sm border transition-all ${
+                    className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl font-bold text-sm ring-1 transition-all active:scale-[0.98] ${
                       saved
-                        ? 'bg-rose-50 text-rose-600 border-rose-200 hover:bg-rose-100'
-                        : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
+                        ? 'bg-rose-50 text-rose-600 ring-rose-200 hover:bg-rose-100'
+                        : 'bg-white text-slate-600 ring-slate-200 hover:bg-slate-50'
                     }`}
                   >
                     <Heart className={`w-4 h-4 ${saved ? 'fill-current' : ''}`} />
                     {saved ? 'Saved' : 'Save'}
                   </motion.button>
                   <motion.button
-                    whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
                     onClick={handleShare}
-                    className="flex-1 flex items-center justify-center gap-2 py-3 rounded-2xl bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 font-bold text-sm transition-all"
+                    className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl bg-white ring-1 ring-slate-200 hover:bg-slate-50 text-slate-600 font-bold text-sm transition-all active:scale-[0.98]"
                   >
                     <Share2 className="w-4 h-4" />
                     {copied ? 'Copied!' : 'Share'}
@@ -1039,8 +1114,8 @@ export default function PropertyDetailPage() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.25 }}
-            className="fixed inset-0 z-[100] bg-slate-950/95 backdrop-blur-xl flex flex-col"
+            transition={{ duration: 0.2 }}
+            className="fixed inset-0 z-[100] bg-black/95 backdrop-blur-sm flex flex-col"
             role="dialog"
             aria-modal="true"
             aria-label="Property photos"
@@ -1048,12 +1123,13 @@ export default function PropertyDetailPage() {
             onTouchStart={onTouchStart}
             onTouchEnd={onTouchEnd}
           >
-            <div className="flex items-center justify-between px-4 py-4 sm:px-8 shrink-0" onClick={e => e.stopPropagation()}>
-              <span className="px-3.5 py-1.5 rounded-full bg-white/10 text-white/90 text-xs font-bold tabular-nums">
+            {/* Top Bar */}
+            <div className="flex items-center justify-between px-4 py-3 sm:px-6 shrink-0" onClick={e => e.stopPropagation()}>
+              <span className="text-white/80 text-sm font-semibold tabular-nums">
                 {activeImg + 1} / {images.length}
               </span>
               <motion.button
-                whileHover={{ scale: 1.1, rotate: 90 }}
+                whileHover={{ scale: 1.1 }}
                 whileTap={{ scale: 0.9 }}
                 onClick={() => setLightboxOpen(false)}
                 aria-label="Close photo viewer"
@@ -1063,17 +1139,18 @@ export default function PropertyDetailPage() {
               </motion.button>
             </div>
 
+            {/* Image Stage */}
             <div
-              className="flex-1 flex items-center justify-center min-h-0 px-4 sm:px-20 select-none"
+              className="flex-1 flex items-center justify-center min-h-0 px-4 sm:px-16 select-none"
               onClick={e => e.stopPropagation()}
             >
               <AnimatePresence mode="wait">
                 <motion.img
                   key={activeImg}
-                  initial={{ opacity: 0, scale: 0.96 }}
+                  initial={{ opacity: 0, scale: 0.95 }}
                   animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 1.03 }}
-                  transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+                  exit={{ opacity: 0, scale: 1.05 }}
+                  transition={{ duration: 0.3, ease: [0.25, 0.46, 0.45, 0.94] }}
                   src={getSupabaseImageUrl(images[activeImg].storage_path, 1600)}
                   alt={images[activeImg].alt_text || property.title}
                   className="max-w-full max-h-full object-contain rounded-2xl shadow-2xl"
@@ -1082,6 +1159,7 @@ export default function PropertyDetailPage() {
               </AnimatePresence>
             </div>
 
+            {/* Navigation */}
             {images.length > 1 && (
               <>
                 <motion.button
@@ -1089,7 +1167,7 @@ export default function PropertyDetailPage() {
                   whileTap={{ scale: 0.9 }}
                   onClick={(e) => { e.stopPropagation(); prevImage() }}
                   aria-label="Previous photo"
-                  className="absolute left-2 sm:left-8 top-1/2 -translate-y-1/2 p-3.5 rounded-full bg-white/10 hover:bg-white/25 backdrop-blur text-white transition-colors"
+                  className="absolute left-2 sm:left-6 top-1/2 -translate-y-1/2 p-3 rounded-full bg-white/10 hover:bg-white/25 text-white transition-colors backdrop-blur-sm"
                 >
                   <ChevronLeft className="w-6 h-6" />
                 </motion.button>
@@ -1098,19 +1176,20 @@ export default function PropertyDetailPage() {
                   whileTap={{ scale: 0.9 }}
                   onClick={(e) => { e.stopPropagation(); nextImage() }}
                   aria-label="Next photo"
-                  className="absolute right-2 sm:right-8 top-1/2 -translate-y-1/2 p-3.5 rounded-full bg-white/10 hover:bg-white/25 backdrop-blur text-white transition-colors"
+                  className="absolute right-2 sm:right-6 top-1/2 -translate-y-1/2 p-3 rounded-full bg-white/10 hover:bg-white/25 text-white transition-colors backdrop-blur-sm"
                 >
                   <ChevronRight className="w-6 h-6" />
                 </motion.button>
               </>
             )}
 
+            {/* Thumbnails */}
             {images.length > 1 && (
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.1 }}
-                className="flex items-center justify-center gap-2 px-4 py-4 overflow-x-auto shrink-0"
+                className="flex items-center gap-2 px-4 py-4 overflow-x-auto shrink-0 scrollbar-hide"
                 onClick={e => e.stopPropagation()}
               >
                 {images.map((img, i) => (
@@ -1119,9 +1198,11 @@ export default function PropertyDetailPage() {
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                     onClick={() => setActiveImg(i)}
+                    aria-label={`View photo ${i + 1} of ${images.length}`}
+                    aria-current={activeImg === i ? 'true' : undefined}
                     className={`relative shrink-0 w-16 h-12 rounded-xl overflow-hidden transition-all ${
                       activeImg === i
-                        ? 'ring-2 ring-white ring-offset-2 ring-offset-slate-950'
+                        ? 'ring-2 ring-white ring-offset-2 ring-offset-black'
                         : 'opacity-40 hover:opacity-80'
                     }`}
                   >
@@ -1139,46 +1220,47 @@ export default function PropertyDetailPage() {
       </AnimatePresence>
 
       {/* Mobile Sticky Bar */}
-      <div className="lg:hidden fixed bottom-0 left-0 right-0 z-50 px-3 pb-3 pt-2 pointer-events-none">
-        <div className="pointer-events-auto flex items-center justify-between gap-3 rounded-[22px] bg-white/85 backdrop-blur-2xl border border-white/60 ring-1 ring-slate-900/5 px-4 py-3 shadow-[0_12px_40px_rgba(15,23,42,0.18)]">
-          <div className="min-w-0">
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Price</p>
-            <p className="text-xl font-black text-slate-950 tracking-tight overflow-hidden text-ellipsis whitespace-nowrap">{formatNaira(property.price)}</p>
-          </div>
-          <div className="flex gap-2 shrink-0">
-            {userRole === 'tenant' && (
-              <motion.button
-                whileTap={{ scale: 0.94 }}
-                onClick={handleSave}
-                disabled={saving}
-                aria-label={saved ? 'Remove from saved' : 'Save property'}
-                className={`h-12 w-12 flex items-center justify-center rounded-2xl border transition-all ${
-                  saved ? 'bg-rose-50 border-rose-200 text-rose-500' : 'bg-white border-slate-200 text-slate-500'
-                }`}
-              >
-                <Heart className={`w-4 h-4 ${saved ? 'fill-current' : ''}`} />
-              </motion.button>
-            )}
-            {(userRole === 'tenant' || userRole === 'guest') && (
-              <motion.button
-                whileTap={{ scale: 0.96 }}
-                onClick={() => {
-                  if (userRole === 'guest') {
-                    navigate('/login')
-                  } else {
-                    openContactModal()
-                    window.scrollTo({ top: 0, behavior: 'smooth' })
-                  }
-                }}
-                className="h-12 px-5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-2xl font-bold text-sm shadow-lg shadow-blue-600/30"
-              >
-                <MessageCircle className="w-4 h-4 inline mr-2 -mt-0.5" />
-                {userRole === 'guest' ? 'Sign in to Contact' : 'Contact'}
-              </motion.button>
-            )}
-          </div>
+      <div className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-xl border-t border-slate-200 px-4 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] flex items-center justify-between gap-3 shadow-[0_-8px_30px_rgba(15,23,42,0.1)]">
+        <div className="min-w-0">
+          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.15em]">Price</p>
+          <p className="text-xl font-extrabold text-slate-900 tracking-tight truncate">{formatNaira(property.price)}</p>
+        </div>
+        <div className="flex gap-2 shrink-0">
+          {userRole === 'tenant' && (
+            <motion.button
+              whileTap={{ scale: 0.92 }}
+              onClick={handleSave}
+              disabled={saving}
+              aria-label={saved ? 'Remove from saved' : 'Save property'}
+              className={`p-3 rounded-xl ring-1 font-semibold transition-all active:scale-95 ${
+                saved ? 'bg-rose-50 ring-rose-200 text-rose-500' : 'bg-white ring-slate-200 text-slate-500'
+              }`}
+            >
+              <Heart className={`w-4 h-4 ${saved ? 'fill-current' : ''}`} />
+            </motion.button>
+          )}
+          {(userRole === 'tenant' || userRole === 'guest') && (
+            <motion.button
+              whileTap={{ scale: 0.96 }}
+              onClick={() => {
+                if (userRole === 'guest') {
+                  navigate('/login')
+                } else {
+                  openContactModal()
+                  window.scrollTo({ top: 0, behavior: 'smooth' })
+                }
+              }}
+              className="px-5 py-3 bg-blue-600 text-white rounded-xl font-bold text-sm hover:bg-blue-700 transition-colors active:scale-95 shadow-lg shadow-blue-600/25 flex items-center gap-2"
+            >
+              <MessageCircle className="w-4 h-4" />
+              {userRole === 'guest' ? 'Sign in to Contact' : 'Contact'}
+            </motion.button>
+          )}
         </div>
       </div>
+
+      {/* Footer spacer so sticky bar never covers content on mobile */}
+      <div className="h-20 lg:hidden" aria-hidden="true" />
 
       {/* Contact Modal */}
       <AnimatePresence>
@@ -1188,65 +1270,60 @@ export default function PropertyDetailPage() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
-            className="fixed inset-0 z-[90] bg-slate-950/50 backdrop-blur-sm flex items-end justify-center px-4 pb-4 sm:items-center sm:px-0"
+            className="fixed inset-0 z-[90] bg-black/60 backdrop-blur-sm flex items-end justify-center px-4 pb-4 sm:items-center sm:px-0"
             onClick={() => setContactModalOpen(false)}
             role="dialog"
             aria-modal="true"
             aria-label="Contact options"
           >
             <motion.div
-              initial={{ opacity: 0, y: 30, scale: 0.97 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: 30, scale: 0.97 }}
-              transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
-              className="w-full max-w-md bg-white rounded-[28px] shadow-2xl overflow-hidden"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 20 }}
+              transition={{ duration: 0.2 }}
+              className="w-full max-w-md bg-white rounded-3xl shadow-2xl overflow-hidden"
               onClick={e => e.stopPropagation()}
             >
-              <div className="px-6 py-5 flex items-center justify-between">
-                <div>
-                  <p className="text-lg font-extrabold text-slate-950 tracking-tight">Contact options</p>
-                  <p className="text-sm text-slate-500">Choose how you'd like to reach us</p>
-                </div>
+              <div className="px-6 py-4.5 py-5 border-b border-slate-100 flex items-center justify-between">
+                <p className="text-lg font-bold text-slate-900 tracking-tight">Contact options</p>
                 <motion.button
                   whileHover={{ scale: 1.1 }}
                   whileTap={{ scale: 0.9 }}
                   onClick={() => setContactModalOpen(false)}
-                  aria-label="Close"
-                  className="p-2 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 transition-colors"
+                  aria-label="Close contact options"
+                  className="p-2 rounded-xl hover:bg-slate-100 text-slate-400 transition-colors"
                 >
                   <X className="w-5 h-5" />
                 </motion.button>
               </div>
-              <div className="px-5 pb-5 space-y-3">
+              <div className="p-5 sm:p-6 space-y-3">
                 <motion.button
-                  whileHover={{ scale: 1.015 }}
                   whileTap={{ scale: 0.98 }}
                   onClick={() => { selectContactMethod('whatsapp'); setContactModalOpen(false) }}
-                  className="flex items-center gap-4 w-full p-4 rounded-2xl bg-white border border-slate-200 hover:border-emerald-300 hover:shadow-md hover:bg-emerald-50/50 transition-all text-left"
+                  className="flex items-center gap-4 w-full p-4 rounded-2xl bg-white ring-1 ring-slate-200 hover:ring-emerald-300 hover:bg-emerald-50/50 hover:shadow-sm transition-all text-left active:scale-[0.98]"
                 >
-                  <div className="w-12 h-12 rounded-2xl bg-emerald-500 flex items-center justify-center shrink-0 shadow-lg shadow-emerald-500/25">
-                    <MessageCircle className="w-6 h-6 text-white" />
+                  <div className="w-12 h-12 rounded-2xl bg-emerald-50 ring-1 ring-emerald-100 flex items-center justify-center shrink-0">
+                    <MessageCircle className="w-6 h-6 text-emerald-600" />
                   </div>
-                  <div>
-                    <p className="text-base font-bold text-slate-950">WhatsApp Livarex</p>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-base font-bold text-slate-900">WhatsApp Livarex</p>
                     <p className="text-sm text-slate-500">Instant chat with our support team</p>
                   </div>
-                  <ExternalLink className="w-5 h-5 text-slate-300 ml-auto" />
+                  <ExternalLink className="w-5 h-5 text-slate-300 shrink-0" />
                 </motion.button>
                 <motion.button
-                  whileHover={{ scale: 1.015 }}
                   whileTap={{ scale: 0.98 }}
                   onClick={() => { selectContactMethod('form'); setContactModalOpen(false) }}
-                  className="flex items-center gap-4 w-full p-4 rounded-2xl bg-white border border-slate-200 hover:border-blue-300 hover:shadow-md hover:bg-blue-50/50 transition-all text-left"
+                  className="flex items-center gap-4 w-full p-4 rounded-2xl bg-white ring-1 ring-slate-200 hover:ring-blue-300 hover:bg-blue-50/50 hover:shadow-sm transition-all text-left active:scale-[0.98]"
                 >
-                  <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center shrink-0 shadow-lg shadow-blue-600/25">
-                    <Mail className="w-6 h-6 text-white" />
+                  <div className="w-12 h-12 rounded-2xl bg-blue-50 ring-1 ring-blue-100 flex items-center justify-center shrink-0">
+                    <Mail className="w-6 h-6 text-blue-600" />
                   </div>
-                  <div>
-                    <p className="text-base font-bold text-slate-950">Send Enquiry</p>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-base font-bold text-slate-900">Send Enquiry</p>
                     <p className="text-sm text-slate-500">We'll contact you shortly</p>
                   </div>
-                  <ArrowUpRight className="w-5 h-5 text-slate-300 ml-auto" />
+                  <ArrowUpRight className="w-5 h-5 text-slate-300 shrink-0" />
                 </motion.button>
               </div>
             </motion.div>
@@ -1262,44 +1339,41 @@ export default function PropertyDetailPage() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
-            className="fixed inset-0 z-[90] bg-slate-950/50 backdrop-blur-sm flex items-center justify-center px-4 py-8"
+            className="fixed inset-0 z-[90] bg-black/60 backdrop-blur-sm flex items-center justify-center px-4 py-8"
             onClick={() => { setEnquiryOpen(false); setEnquirySuccess(false) }}
             role="dialog"
             aria-modal="true"
             aria-label="Send enquiry"
           >
             <motion.div
-              initial={{ opacity: 0, y: 24, scale: 0.96 }}
+              initial={{ opacity: 0, y: 20, scale: 0.95 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: 24, scale: 0.96 }}
-              transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
-              className="w-full max-w-md bg-white rounded-[28px] shadow-2xl overflow-hidden"
+              exit={{ opacity: 0, y: 20, scale: 0.95 }}
+              transition={{ duration: 0.2 }}
+              className="w-full max-w-md bg-white rounded-3xl shadow-2xl overflow-hidden"
               onClick={e => e.stopPropagation()}
             >
-              <div className="px-6 py-5 flex items-center justify-between">
-                <div>
-                  <p className="text-lg font-extrabold text-slate-950 tracking-tight">Send Enquiry</p>
-                  <p className="text-sm text-slate-500 truncate max-w-[240px]">{property.title}</p>
-                </div>
+              <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between">
+                <p className="text-lg font-bold text-slate-900 tracking-tight">Send Enquiry</p>
                 <motion.button
                   whileHover={{ scale: 1.1 }}
                   whileTap={{ scale: 0.9 }}
                   onClick={() => { setEnquiryOpen(false); setEnquirySuccess(false) }}
-                  aria-label="Close"
-                  className="p-2 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 transition-colors"
+                  aria-label="Close enquiry form"
+                  className="p-2 rounded-xl hover:bg-slate-100 text-slate-400 transition-colors"
                 >
                   <X className="w-5 h-5" />
                 </motion.button>
               </div>
-              <div className="px-6 pb-6">
+              <div className="p-6">
                 {enquirySuccess ? (
-                  <div className="flex items-center gap-3 p-4 bg-emerald-50 text-emerald-700 rounded-2xl text-sm font-medium border border-emerald-100">
-                    <div className="w-10 h-10 rounded-full bg-emerald-500 flex items-center justify-center shrink-0">
-                      <CheckCircle className="w-5 h-5 text-white" />
+                  <div className="flex flex-col items-center gap-3 py-8 text-center">
+                    <div className="w-14 h-14 rounded-full bg-emerald-50 ring-1 ring-emerald-200 flex items-center justify-center">
+                      <CheckCircle className="w-7 h-7 text-emerald-600" />
                     </div>
                     <div>
-                      <p className="font-bold">Enquiry sent!</p>
-                      <p className="text-xs text-emerald-600">Our team will contact you shortly.</p>
+                      <p className="font-bold text-slate-900">Enquiry sent!</p>
+                      <p className="text-sm text-slate-500 mt-1">Our team will contact you shortly.</p>
                     </div>
                   </div>
                 ) : (
@@ -1309,19 +1383,19 @@ export default function PropertyDetailPage() {
                       <textarea
                         id="enquiry-message"
                         required
+                        maxLength={500}
                         value={enquiryMsg}
                         onChange={e => setEnquiryMsg(e.target.value)}
                         placeholder="Tell us why you're interested in this property…"
-                        className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 focus:bg-white min-h-[110px] resize-none transition-all"
+                        className="w-full p-4 bg-slate-50 ring-1 ring-slate-200 rounded-2xl text-sm placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:bg-white min-h-[110px] resize-none transition-all"
                         rows={4}
                       />
                       <p className="text-xs text-slate-400 mt-1.5 text-right tabular-nums">{enquiryMsg.length}/500</p>
                     </div>
                     <motion.button
-                      whileHover={{ scale: 1.02 }}
                       whileTap={{ scale: 0.98 }}
                       disabled={enquiryLoading || enquiryMsg.length < 10}
-                      className="w-full py-3.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-2xl font-bold text-sm shadow-lg shadow-blue-600/25 disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none transition-all"
+                      className="w-full py-3.5 bg-blue-600 text-white rounded-xl font-bold text-sm hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-lg shadow-blue-600/25 active:scale-[0.98]"
                     >
                       {enquiryLoading ? 'Sending…' : 'Send Message'}
                     </motion.button>
