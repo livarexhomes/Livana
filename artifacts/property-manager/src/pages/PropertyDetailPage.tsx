@@ -487,7 +487,7 @@ export default function PropertyDetailPage() {
 
       {/* ── GALLERY SECTION ── */}
       <section className="relative" aria-label="Property photos">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4 sm:pt-6">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 sm:pt-6">
           <div className="grid gap-2 sm:gap-3 lg:grid-cols-[1.8fr_1fr]">
 
             {/* Main Image */}
